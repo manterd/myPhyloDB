@@ -1,0 +1,99 @@
+body {
+	color: #333;
+	background-color: #FFF;
+	margin: 0;
+}
+
+body, td, th {
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 14px;
+}
+
+input, select {
+	font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+	font-size: 13px;
+}
+
+hr {
+    margin: 0;
+}
+
+h1 {
+	color: #F90;
+	font-size: 18px;
+	margin: 0;
+}
+
+h2 {
+	color: #7CBE29;
+	font-size: 16px;
+}
+
+table, fieldset {
+	background: #F4F4F4;
+}
+
+#Content {
+    top: 100px;
+    left: 125px;
+    position: absolute;
+}
+
+#header {
+    top: 0;
+    position: absolute;
+    z-index: 999;
+    width: 1100px;
+	border-bottom: 3px double #7CBE29;
+}
+
+#Menu {
+    left: 5px;
+    top: 100px;
+	width: 115px;
+    height: 350px;
+    position: fixed;
+    z-index: 999;
+	background: url('../images/sf_menu.png') repeat-x;
+	border: 1px solid #7CBE29;
+    font-size: 12px;
+}
+
+.menuTitle {
+    margin-top: 10px;
+	font-weight: bold;
+	color: #000;
+	text-align: center;
+}
+
+.menuItems {
+    margin-top: 10px;
+	text-align: center;
+}
+
+.menuItems p {
+    font-size: 12px;
+    margin-top:0;
+    margin-bottom:0;
+    margin-left: 0;
+}
+
+.menuItems li {
+    margin-left: 15px;
+    text-align: left;
+}
+
+.Onmouse {
+	color: navy;
+	text-decoration: underline;
+}
+
+.Offmouse {
+	color: navy;
+	text-decoration: none;
+}
+
+.disabled {
+    color: grey;
+    font-style: italic;
+}

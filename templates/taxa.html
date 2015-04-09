@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>Taxa</title>
+{% endblock pagetitle%}
+
+{% block javascript %}
+    <script type="text/javascript">
+        var search = "";
+
+        $(function () {
+            $("#textbox").change(function () {
+                search = $(this).val();
+                $("#MicrobeWiki").attr("href", "https://microbewiki.kenyon.edu/index.php/Special:Search?search=" + search);
+                $("#Wiki").attr("href", "http://en.wikipedia.org/wiki/" + search);
+                $("#Google").attr("href", "http://www.google.com/search?q=" + search);
+            });
+
+            $('#dist_table').append('{{ table|escapejs }}').find('.table').DataTable({
+                "dom": 'T<"clear">lfrtip',
+                "tableTools": {
+                "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                },
+                "scrollX": true,
+                "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+            }).draw();
+
+        });
+
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <h2>Search External Links:</h2>
+
+    <table width="400px">
+        <tr>
+            <td width="60%">
+                Taxa name:<input type="text" id="textbox">
+            </td>
+            <td width="40%">
+                <ul>
+                    <a style="font-size: 12px;" id="MicrobeWiki" class="Offmouse" href="https://microbewiki.kenyon.edu" target="_blank">-MicrobeWiki-</a><br>
+                    <a style="font-size: 12px;" id="Wiki" class="Offmouse" href="http://en.wikipedia.org/wiki/" target="_blank">-Wiki-</a><br>
+                    <a style="font-size: 12px;" id="Google" class="Offmouse" href="http://www.google.com/" target="_blank">-Google-</a>
+                </ul>
+            </td>
+        </tr>
+    </table>
+    <br><br>
+
+    <div id="dist_table" style="width: 950px;">
+        <h2>All taxa in database:</h2>
+
+    </div>
+{% endblock my_content%}

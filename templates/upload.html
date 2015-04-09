@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block pagetitle %}
+    <title>Upload</title>
+{% endblock %}
+
+{% block javascript %}
+    <style>
+        #progressBar {
+                width: 200px;
+                height: 22px;
+                border: 1px solid #111;
+                background-color: #292929;
+        }
+
+        #progressBar div {
+                height: 100%;
+                color: #fff;
+                text-align: right;
+                line-height: 22px;
+                width: 0;
+                background-color: #0099ff;
+        }
+    </style>
+
+    <script type="text/javascript">
+        $(function () {
+            $("#Upload").click(function() {
+                $("#stage").show();
+                $("#progressBar").show();
+                setInterval(updateStatus, 1000);
+            });
+        });
+
+        function updateStatus() {
+            $.ajax({
+                url: '/status/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    var perc = obj['perc'];
+                    updateStage(stage);
+                    progressBar(perc, $("#progressBar"));
+                }
+            });
+        }
+
+        function updateStage(stage) {
+            $("#stage").empty().append(stage);
+        }
+
+        function progressBar(percent, $element) {
+           var progressBarWidth = percent * $element.width() / 100;
+            $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
+        }
+    </script>
+{% endblock %}
+{% block my_content %}
+
+    <h2>Upload any new data files:</h2>
+
+    <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td colspan="2">1.) Select associated meta files (required):</td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
+                        <th colspan="2">Metadata files:</th>
+                        <tr>
+                            <td>{{ form1.docfile1.label_tag }}</td>
+                            <td>{{ form1.docfile1 }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ form1.docfile2.label_tag }}</td>
+                            <td>{{ form1.docfile2 }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td colspan="2">2.) Choose one of the following formats for your taxonomic profile data:</td>
+            </tr>
+            <tr>
+                <td colspan="2"></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table id="mothur" width="100%" border="2" cellspacing="0" cellpadding="1">
+                        <th colspan="2">Mothur files:</th>
+                        <tr>
+                            <td>{{ form2.docfile3.label_tag }}</td>
+                            <td>{{ form2.docfile3 }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ form2.docfile4.label_tag }}</td>
+                            <td>{{ form2.docfile4 }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2"></td>
+            </tr>
+        </table>
+
+        <input id='Upload' name='Upload' type="submit" value="Upload Files"/>
+    </form>
+
+    <br>
+    <div id="stage" style="display: none"></div>
+    <div id="progressBar" style="display: none"><div></div></div>
+
+    <h2>List of previously uploaded projects:</h2>
+    <form method="post" action="{% url 'upload' %}">
+        {% csrf_token %}
+        <table>
+            <td>
+                {% if projects %}
+                    {% for project in projects %}
+                        <input name="chkbx" type="checkbox" value="{{ project.projectid }}"/>
+                        {{ project.project_name }}: {{ project.project_desc }}
+                        <br>
+                    {% endfor %}
+                {% else %}
+                    <p>No projects uploaded.</p>
+                {% endif %}
+            </td>
+        </table>
+        <p><input name="clickMe" type="submit" value="Remove selected projects"/></p>
+    </form>
+{% endblock my_content %}

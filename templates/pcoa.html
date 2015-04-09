@@ -1,0 +1,765 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>Multivariate-PCoA</title>
+{% endblock pagetitle %}
+
+{% block menu_item %}
+    <input id="run" name="run" type="submit" value="Run Analysis!"/>
+{% endblock menu_item %}
+
+{% block javascript %}
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var button1 = 1, button2 = 2, selTheme = 0;
+        var nodesCat = "", nodesQuant = "", taxaLevel = 7;
+        var chart1 = {}, chart2 = {};
+        var catOptions = {}, quantOptions = {};
+        var distance = 7, PC1 = 'PC1', PC2 ='PC2', test = 1;
+        var remove = 0;
+        var refresh;
+
+        $(function () {
+            $("#tree_metaCat").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: '/getSampleCatTree/',
+                    dataType: 'jsonp',
+                    data: {}
+                },
+                onLazyRead: function(node) {
+                    node.appendAjax({
+                        url: '/getSampleCatTreeChildren/',
+                        data: {field: node.data.title},
+                        success: function(node) {
+                            if (node.childList == undefined) {
+                                alert('No samples are available for this variable!');
+                            }
+                        }
+                    });
+                },
+                onSelect: function(flag, node) {
+                    if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            node.select(false);
+                            node.select(true);
+                        });
+                    }
+                    nodesCat = node.tree.getSelectedNodes();
+                    $("#run").css("background-color", "lightgray");
+                }
+            });
+
+            $("#tree_metaQuant").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: '/getSampleQuantTree/',
+                    dataType: 'jsonp',
+                    data: {}
+                },
+                onLazyRead: function(node) {
+                    node.appendAjax({
+                        url: '/getSampleQuantTreeChildren/',
+                        data: {field: node.data.title},
+                        success: function(node) {
+                            if (node.childList == undefined) {
+                                alert('No samples are available for this variable!');
+                            }
+                        }
+                    });
+                },
+                onSelect: function(flag, node) {
+                    if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            node.select(false);
+                            node.select(true);
+                        });
+                    }
+                    nodesQuant = node.tree.getSelectedNodes();
+                    $("#run").css("background-color", "lightgray");
+                }
+            });
+
+            $("#normalize").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#theme").change(function () {
+                selTheme = $(this).val();
+
+                if (selTheme == 1) {
+                    if (button1 == 1) {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    }
+                    else if (button1 == 2) {
+                        $("#container-2").empty();
+                        new Highcharts.Chart(quantOptions);
+                    }
+                }
+                else if (selTheme == 2) {
+                    $.getScript('../media/highcharts/themes/dark-blue.js', function () {
+                        if (button1 == 1) {
+                            $("#container-1").empty();
+                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        }
+                        else if (button1 == 2) {
+                            $("#container-2").empty();
+                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                        }
+                    });
+                }
+                else if (selTheme == 3) {
+                    $.getScript('../media/highcharts/themes/dark-green.js', function () {
+                        if (button1 == 1) {
+                            $("#container-1").empty();
+                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        }
+                        else if (button1 == 2) {
+                            $("#container-2").empty();
+                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                        }
+                    });
+                }
+                else if (selTheme == 4) {
+                    $.getScript('../media/highcharts/themes/dark-unica.js', function () {
+                        if (button1 == 1) {
+                            $("#container-1").empty();
+                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        }
+                        else if (button1 == 2) {
+                            $("#container-2").empty();
+                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                        }
+                    });
+                }
+                else if (selTheme == 5) {
+                    $.getScript('../media/highcharts/themes/gray.js', function () {
+                        if (button1 == 1) {
+                            $("#container-1").empty();
+                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        }
+                        else if (button1 == 2) {
+                            $("#container-2").empty();
+                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                        }
+                    });
+                }
+                else if (selTheme == 6) {
+                    $.getScript('../media/highcharts/themes/grid.js', function () {
+                        if (button1 == 1) {
+                            $("#container-1").empty();
+                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        }
+                        else if (button1 == 2) {
+                            $("#container-2").empty();
+                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                        }
+                    });
+                }
+                else if (selTheme == 7) {
+                    $.getScript('../media/highcharts/themes/grid-light.js', function () {
+                        if (button1 == 1) {
+                            $("#container-1").empty();
+                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        }
+                        else if (button1 == 2) {
+                            $("#container-2").empty();
+                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                        }
+                    });
+                }
+                else if (selTheme == 8) {
+                    $.getScript('../media/highcharts/themes/sand-signika.js', function () {
+                        if (button1 == 1) {
+                            $("#container-1").empty();
+                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        }
+                        else if (button1 == 2) {
+                            $("#container-2").empty();
+                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                        }
+                    });
+                }
+                else if (selTheme == 9) {
+                    $.getScript('../media/highcharts/themes/skies.js', function () {
+                        if (button1 == 1) {
+                            $("#container-1").empty();
+                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        }
+                        else if (button1 == 2) {
+                            $("#container-2").empty();
+                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                        }
+                    });
+                }
+            });
+
+            $("#button1").change(function () {
+                button1 = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#button2").change(function () {
+                button2 = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#selectall").change(function () {
+                taxaLevel = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#distance").change(function () {
+                distance = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+                if (distance==7) $("#alphaLevel").show();
+                else $("#alphaLevel").hide();
+            });
+
+            $("#PC1").change(function () {
+                PC1 = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#PC2").change(function () {
+                PC2 = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#test").change(function () {
+                test = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#alphaLevel").change(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#perms").change(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#run").click(function () {
+                chooseData();
+            });
+
+            $("#clearMeta").click(function(){
+                if (button1 == 1) {
+                    $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                        node.select(false);
+                    });
+                }
+                else if (button1 == 2) {
+                    $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
+                        node.select(false);
+                    });
+                }
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#remove").change(function () {
+                if ( document.getElementById('remove').checked ) {
+                    remove = 1
+                } else {
+                    remove = 0
+                }
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+        });
+
+        function updateStatus() {
+            $.ajax({
+                url: '/statusPCoA/',
+                type: 'GET',
+                dataType: 'json',
+                data: {},
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    if (button1 == 1) {
+                        $('#container-1').empty().append(stage);
+                    } else if (button1 == 2) {
+                        $('#container-2').empty().append(stage);
+                    }
+                }
+            });
+        }
+
+        function startTimer() {
+            refresh = setInterval(updateStatus, 1000);
+            return refresh
+        }
+
+        function stopTimer() {
+            clearInterval(refresh)
+        }
+
+        function chooseDisplay() {
+            if (button1 == 1) {
+                $("#tree_metaQuant").hide();
+                $("#tree_metaCat").show();
+                $("#container-2").hide();
+                $("#container-1").show();
+                $("#PC2").show();
+                $("#PC2-text").show();
+                $("#test").show();
+                $("#test-text").show();
+            }
+            else if (button1 == 2) {
+                $("#tree_metaCat").hide();
+                $("#tree_metaQuant").show();
+                $("#container-1").hide();
+                $("#container-2").show();
+                $("#PC2").hide();
+                $("#PC2-text").hide();
+                $("#test").hide();
+                $("#test-text").hide();
+            }
+        }
+
+        function chooseData() {
+            if ((nodesCat != "") && (button1 == 1)) {
+                if (
+                    (document.getElementById("normalize").value == "") ||
+                    (document.getElementById("alphaVal").value == "") ||
+                    (document.getElementById("perms").value == "")
+                    ) {
+                    $("#container-1").empty().append('Please check all of the text boxes for appropriate values!');
+                    $("#run").css("background-color", "red");
+                } else {
+                    $("#run").css("background-color", "yellow");
+                    $("#container-1").empty().append('Analysis is running...please be patient');
+                    getCatGraphData();
+                }
+            }
+            else if ((nodesQuant != "") && (button1 == 2)) {
+                if (
+                    (document.getElementById("normalize").value == "") ||
+                    (document.getElementById("alphaVal").value == "") ||
+                    (document.getElementById("perms").value == "")
+                    ) {
+                    $("#container-2").empty().append('Please check all of the text boxes for appropriate values!');
+                    $("#run").css("background-color", "red");
+                } else {
+                    $("#run").css("background-color", "yellow");
+                    $("#container-2").empty().append('Analysis is running...please be patient');
+                    getQuantGraphData();
+                }
+            }
+            else if ((nodesCat == "") && (taxaLevel != "") && (button1 == 1)) {
+                $("#container-1").empty().append('Please choose your meta variable(s)!');
+                $("#text-1").val('No data selected');
+                $("#text-raw").val('No data selected');
+                $("#run").css("background-color", "red");
+            }
+            else if ((nodesQuant == "") && (taxaLevel != "") && (button1 == 2)) {
+                $("#container-2").empty().append('Please choose your meta variable(s)!');
+                $("#text-1").val('No data selected');
+                $("#text-raw").val('No data selected');
+                $("#run").css("background-color", "red");
+            }
+        }
+
+        function getCatGraphData() {
+            startTimer();
+            var array1 = [];
+            for (var i = 0; i < nodesCat.length; i++) {
+                var key1 = nodesCat[i].data.id;
+                var value1 = nodesCat[i].data.title;
+                if (nodesCat[i].getLevel() == 4) {
+                    var next1 = '"' + key1 + '" : "' + value1 + '"';
+                    array1.push(next1);
+                }
+            }
+            var meta = "{" + array1.join(",") + "}";
+
+            var myDict = {};
+            myDict['meta'] = meta;
+            myDict['taxa'] = taxaLevel;
+            myDict['button'] = button2;
+            myDict['distance'] = distance;
+            myDict['PC1'] = PC1;
+            myDict['PC2'] = PC2;
+            myDict['normalize'] = document.getElementById("normalize").value;
+            myDict['remove'] = remove;
+            myDict['test'] = test;
+            myDict['alpha'] = document.getElementById("alphaVal").value;
+            myDict['perms'] = document.getElementById("perms").value;
+            myDict['perms'] = document.getElementById("perms").value;
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                url: '/getCatPCoAData/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: jsonDict
+                },
+                success: function(data) {
+                    stopTimer(refresh);
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var xAxis = obj['xAxis'];
+                    var series = obj['series'];
+                    var yAxis = obj['yAxis'];
+                    linechart1(xAxis, yAxis, series);
+
+                    var text = obj['text'];
+                    $('#text-1').val(text);
+
+                    var res_table = obj['res_table'];
+                    $('#res_table').empty().append(res_table).find('.table').DataTable({
+                        "dom": 'T<"clear">lfrtip',
+                        "tableTools": {
+                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        },
+                        "scrollX": true,
+                        "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                    }).draw();
+
+                    var dist_table = obj['dist_table'];
+                    $('#dist_table').empty().append(dist_table).find('.table').DataTable({
+                        "dom": 'T<"clear">lfrtip',
+                        "tableTools": {
+                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        },
+                        "bSort": false,
+                        "scrollX": true,
+                        "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                    }).draw();
+
+                    $("#run").css("background-color", "green");
+                }
+            });
+        }
+
+        function getQuantGraphData() {
+            startTimer();
+            var array1 = [];
+            for (var i = 0; i < nodesQuant.length; i++) {
+                var key1 = nodesQuant[i].data.tooltip;
+                var value1 = nodesQuant[i].data.title;
+                if (nodesQuant[i].getLevel() == 3) {
+                    var next1 = '"' + key1 + '" : "' + value1 + '"';
+                    array1.push(next1);
+                }
+            }
+            var meta = "{" + array1.join(",") + "}";
+
+            var myDict = {};
+            myDict['meta'] = meta;
+            myDict['taxa'] = taxaLevel;
+            myDict['button'] = button2;
+            myDict['distance'] = distance;
+            myDict['PC1'] = PC1;
+            myDict['normalize'] = document.getElementById("normalize").value;
+            myDict['remove'] = remove;
+            myDict['alpha'] = document.getElementById("alphaVal").value;
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                url: '/getQuantPCoAData/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: jsonDict
+                },
+                success: function(data) {
+                    stopTimer();
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var xAxis = obj['xAxis'];
+                    var series = obj['series'];
+                    var yAxis = obj['yAxis'];
+                    linechart2(xAxis, yAxis, series);
+
+                    var text = obj['text'];
+                    $('#text-1').val(text);
+
+                    var res_table = obj['res_table'];
+                    $('#res_table').empty().append(res_table).find('.table').DataTable({
+                        "dom": 'T<"clear">lfrtip',
+                        "tableTools": {
+                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        },
+                        "scrollX": true,
+                        "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                    }).draw();
+
+                    var dist_table = obj['dist_table'];
+                    $('#dist_table').empty().append(dist_table).find('.table').DataTable({
+                        "dom": 'T<"clear">lfrtip',
+                        "tableTools": {
+                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        },
+                        "bSort": false,
+                        "scrollX": true,
+                        "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                    }).draw();
+
+                    $("#run").css("background-color", "green");
+                }
+            });
+        }
+
+        function linechart1(xAxis, yAxis, series) {
+            catOptions = {
+                chart: { renderTo: 'container-1', type: 'scatter', zoomType: 'xy'},
+                title: { text: null },
+                legend: {
+                    itemStyle: {
+                        fontSize: '7px',
+                        font: '7pt Trebuchet MS, Verdana, sans-serif'
+                    },
+                    align: 'right',
+                    verticalAlign: 'top',
+                    layout: 'vertical',
+                    x: 0,
+                    y: 20
+                },
+                xAxis: xAxis,
+                yAxis: yAxis,
+                series: series,
+                tooltip: {
+                    formatter: function () {
+                        return this.series.name + '<br/>' + '(' + this.x + ',' + this.y + ')'
+                    }
+                },
+                credits: { enabled: false }
+            };
+            chart1 = new Highcharts.Chart(catOptions);
+        }
+
+        function linechart2(xAxis, yAxis, series) {
+            quantOptions = {
+                chart: { renderTo: 'container-2', type: 'scatter', zoomType: 'xy'},
+                title: { text: null },
+                legend: {
+                    itemStyle: {
+                        fontSize: '7px',
+                        font: '7pt Trebuchet MS, Verdana, sans-serif'
+                    },
+                    align: 'right',
+                    verticalAlign: 'top',
+                    layout: 'vertical',
+                    x: 0,
+                    y: 20
+                },
+                xAxis: xAxis,
+                yAxis: yAxis,
+                series: series,
+                tooltip: {
+                    formatter: function () {
+                        return this.series.name + '<br/>' + '(' + this.x + ',' + this.y + ')'
+                    }
+                },
+                credits: { enabled: false }
+            };
+            chart2 = new Highcharts.Chart(quantOptions);
+        }
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <br>
+    Select data type:
+    <select id="button1">
+        <option value="1" selected="selected">Categorical</option>
+        <option value="2" >Quantitative</option>
+    </select>
+
+    <!-- tree tables -->
+    <div>
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <th>Select Meta Data:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree_metaCat"></div>
+                <div id="tree_metaQuant" style="display: none"></div>
+            </td>
+        </tr>
+    </table>
+
+    <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+        <tr>
+            <th bgcolor="white"></th>
+            <th bgcolor="white"></th>
+            <th bgcolor="white"></th>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="selectall">
+                    <option value="1">Kingdoms</option>
+                    <option value="2">Phyla</option>
+                    <option value="3">Classes</option>
+                    <option value="4">Orders</option>
+                    <option value="5">Families</option>
+                    <option value="6">Genera</option>
+                    <option value="7" selected="selected">Species</option>
+                </select>
+                &nbsp<-- Taxa Level selected
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="distance">
+                    <option value="1" selected="selected">Bray-Curtis</option>
+                    <option value="2">Canberra</option>
+                    <option value="3">Dice</option>
+                    <option value="4">Euclidean</option>
+                    <option value="5">Jaccard</option>
+                    <option value="6">MorisitaHorn</option>
+                    <option value="7" selected="selected">wOdum</option>
+                </select>
+                &nbsp<-- Distance score selected
+            </td>
+            <td bgcolor="white">
+                <div id="alphaLevel">&#945 parameter: <input type="text" id="alphaVal" value="1" style="width:40px"/></div>
+            </td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="PC1">
+                    <option value="PC1" selected="selected">PC1</option>
+                    <option value="PC2">PC2</option>
+                    <option value="PC3">PC3</option>
+                    <option value="PC4">PC4</option>
+                    <option value="PC5">PC5</option>
+                    <option value="PC6">PC6</option>
+                    <option value="PC7">PC7</option>
+                    <option value="PC8">PC8</option>
+                    <option value="PC9">PC9</option>
+                    <option value="PC10">PC10</option>
+                </select>
+                &nbsp<-- Principal coordinate selected (x-axis)
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white" id="PC2-text">
+                <select id="PC2">
+                    <option value="PC1">PC1</option>
+                    <option value="PC2" selected="selected">PC2</option>
+                    <option value="PC3">PC3</option>
+                    <option value="PC4">PC4</option>
+                    <option value="PC5">PC5</option>
+                    <option value="PC6">PC6</option>
+                    <option value="PC7">PC7</option>
+                    <option value="PC8">PC8</option>
+                    <option value="PC9">PC9</option>
+                    <option value="PC10">PC10</option>
+                </select>
+                &nbsp<-- Principal coordinate selected (y-axis)
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white" id="test-text">
+                <select id="test">
+                    <option value=1 selected="selected">AMOVA</option>
+                    <option value=2>HOMOVA</option>
+                </select>
+                &nbsp<-- Test selected
+            </td>
+            <td bgcolor="white">
+                <div id="permutations">permutations: <input type="text" id="perms" value="1000" style="width:40px"/></div>
+            </td>
+        </tr>
+    </table>
+    </div>
+    <br>
+
+    <div id="stage"></div>
+    <br><br>
+
+    <div style="float: right;">Select chart theme:
+        <select id="theme">
+            <option value="1" selected="selected">default</option>
+            <option value="2">dark-blue</option>
+            <option value="3">dark-green</option>
+            <option value="4">dark-unica</option>
+            <option value="5">gray</option>
+            <option value="6">grid</option>
+            <option value="7">grid-light</option>
+            <option value="8">sand-signika</option>
+            <option value="9">skies</option>
+        </select>
+        &nbsp&nbsp
+    </div>
+    <table width="950px" border="2">
+        <tr>
+            <th style="padding-right: 10px;">GraphData</th>
+        </tr>
+        <tr>
+            <td style="float: left;">Select dependent variable:
+                <select id="button2">
+                    <option value="1" >Sequence Reads</option>
+                    <option value="2" selected="selected">Relative Abundance</option>
+                    <option value="3">Species Richness</option>
+                    <option value="4">Shannon Diversity</option>
+                </select>
+            </td>
+            <td style="float: right;">Normalize data (sequence reads):
+                <input type="text" id="normalize" value="median" style="width:50px"/>
+                &nbsp
+            </td>
+        </tr>
+        <tr>
+            <td style="float: right;">Remove samples below threshold:
+                <input type="checkbox" id="remove"/>
+                &nbsp
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div id="container-1" style="height: 400px;">No Data has been selected!</div>
+                <div id="container-2" style="height: 400px; display: none">No Data has been selected!</div>
+            </td>
+        </tr>
+    </table>
+
+    <div id="txt-1">
+        <h2>Test Results:</h2>
+        <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
+        <br>
+    </div>
+    <br>
+
+    <h2>Principal Coordinates:</h2>
+    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
+    <br>
+
+    <h2>Distance Scores:</h2>
+    <div id="dist_table" style="width: 950px; overflow-x: auto;"></div>
+    <br>
+    <br>
+
+{% endblock my_content%}
