@@ -9,6 +9,8 @@ from scipy import stats
 import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF
 import numpy as np
+import datetime
+import json
 
 
 stage = ''
@@ -162,8 +164,6 @@ def getCatUnivData(request):
                 grouped2 = group1.groupby(fieldList)['rel_abund']
             elif button == 3:
                 grouped2 = group1.groupby(fieldList)['rich']
-                if group1['rich'].sum() == group1['rich'].count():
-                    equal_error = 'yes'
             elif button == 4:
                 grouped2 = group1.groupby(fieldList)['diversity']
 
@@ -176,21 +176,17 @@ def getCatUnivData(request):
                 valList.append(list(group2.T))
 
             D = Anova1way()
-            if equal_error == 'no':
-                try:
-                    D.run(valList, conditions_list=trtList)
-                    anova_error = 'no'
-                except:
-                    D['p'] = 1
-                    anova_error = 'yes'
-            else:
-                D['p'] = 1
+            try:
+                D.run(valList, conditions_list=trtList)
+                anova_error = 'no'
+            except:
+                D = 'a or b too big, or ITMAX too small in Betacf.\n' + 'Samples sizes are either too unequal or n=1.\n'
                 anova_error = 'yes'
 
             stage = 'Step 3 of 4: Performing ANOVA...complete'
             stage = 'Step 4 of 4: Preparing graph data...'
             if sig_only == 1:
-                if D['p'] <= 0.05 and anova_error == 'no':
+                if D['p'] <= 0.05:
                     result = result + '===============================================\n'
                     result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                     result = result + 'Taxa name: ' + str(name1[1]) + '\n'
@@ -207,8 +203,8 @@ def getCatUnivData(request):
                     indVar = ' x '.join(fieldList)
                     result = result + 'Independent Variable: ' + str(indVar) + '\n'
 
-                    if equal_error == 'yes' or anova_error == 'yes':
-                        result = result + 'Analysis cannot be performed...' + '\n'
+                    if anova_error == 'yes':
+                        result = result + '\nANOVA cannot be performed...' + '\n' + D + '\n'
                     else:
                         result = result + str(D) + '\n'
                     result = result + '===============================================\n'
@@ -264,8 +260,8 @@ def getCatUnivData(request):
                 indVar = ' x '.join(fieldList)
                 result = result + 'Independent Variable: ' + str(indVar) + '\n'
 
-                if equal_error == 'yes' or anova_error == 'yes':
-                    result = result + 'Analysis cannot be performed...' + '\n'
+                if anova_error == 'yes':
+                        result = result + '\nANOVA cannot be performed...' + '\n' + D + '\n'
                 else:
                     result = result + str(D) + '\n'
                 result = result + '===============================================\n'
@@ -313,10 +309,62 @@ def getCatUnivData(request):
             finalDict['empty'] = 1
 
         finalDF.reset_index(drop=True, inplace=True)
+        if button == 1:
+            finalDF.drop(['rel_abund', 'rich', 'diversity'], axis=1, inplace=True)
+        elif button == 2:
+            finalDF.drop(['count', 'rich', 'diversity'], axis=1, inplace=True)
+        elif button == 3:
+            finalDF.drop(['count', 'rel_abund', 'diversity'], axis=1, inplace=True)
+        elif button == 4:
+            finalDF.drop(['count', 'rel_abund', 'rich'], axis=1, inplace=True)
+
+        biome = {}
+        newList = ['sampleid', 'sample_name']
+        newList.extend(fieldList)
+        grouped = finalDF.groupby(newList, sort=False)
+        nameList = []
+        for name, group in grouped:
+            metaDict = {}
+            for i in xrange(1, len(newList)):
+                metaDict[str(newList[i])] = str(name[i])
+            nameList.append({"id": str(name[0]), "metadata": metaDict})
+
+        grouped = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'], sort=False)
+        taxaList = []
+        dataList = []
+        for name, group in grouped:
+            metaDict ={}
+            taxonList = []
+            taxonList.append(str(name[1]))
+            metaDict['taxonomy'] = taxonList
+            taxaList.append({"id": str(name[2]), "metadata": metaDict})
+            if button == 1:
+                dataList.append(group['count'].tolist())
+            if button == 2:
+                dataList.append(group['rel_abund'].tolist())
+            if button == 3:
+                dataList.append(group['rich'].tolist())
+            if button == 4:
+                dataList.append(group['diversity'].tolist())
+
+        biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
+        biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
+        biome['type'] = 'OTU table'
+        biome['generated_by'] = 'myPhyloDB'
+        biome['date'] = str(datetime.datetime.now())
+        biome['matrix_type'] = 'dense'
+        biome['matrix_element_type'] = 'float'
+        biome['rows'] = taxaList
+        biome['columns'] = nameList
+        biome['data'] = dataList
+
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
         stage = 'Step 4 of 4: Preparing graph data...complete'
+
+        biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
+        finalDict['biome'] = str(biome_json)
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')
@@ -535,6 +583,55 @@ def getQuantUnivData(request):
             finalDict['empty'] = 1
 
         finalDF.reset_index(drop=True, inplace=True)
+        if button == 1:
+            finalDF.drop(['rel_abund', 'rich', 'diversity'], axis=1, inplace=True)
+        elif button == 2:
+            finalDF.drop(['count', 'rich', 'diversity'], axis=1, inplace=True)
+        elif button == 3:
+            finalDF.drop(['count', 'rel_abund', 'diversity'], axis=1, inplace=True)
+        elif button == 4:
+            finalDF.drop(['count', 'rel_abund', 'rich'], axis=1, inplace=True)
+
+        biome = {}
+        newList = ['sampleid', 'sample_name']
+        newList.extend(fieldList)
+        grouped = finalDF.groupby(newList, sort=False)
+        nameList = []
+        for name, group in grouped:
+            metaDict = {}
+            for i in xrange(1, len(newList)):
+                metaDict[str(newList[i])] = str(name[i])
+            nameList.append({"id": str(name[0]), "metadata": metaDict})
+
+        grouped = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'], sort=False)
+        taxaList = []
+        dataList = []
+        for name, group in grouped:
+            metaDict ={}
+            taxonList = []
+            taxonList.append(str(name[1]))
+            metaDict['taxonomy'] = taxonList
+            taxaList.append({"id": str(name[2]), "metadata": metaDict})
+            if button == 1:
+                dataList.append(group['count'].tolist())
+            if button == 2:
+                dataList.append(group['rel_abund'].tolist())
+            if button == 3:
+                dataList.append(group['rich'].tolist())
+            if button == 4:
+                dataList.append(group['diversity'].tolist())
+
+        biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
+        biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
+        biome['type'] = 'OTU table'
+        biome['generated_by'] = 'myPhyloDB'
+        biome['date'] = str(datetime.datetime.now())
+        biome['matrix_type'] = 'dense'
+        biome['matrix_element_type'] = 'float'
+        biome['rows'] = taxaList
+        biome['columns'] = nameList
+        biome['data'] = dataList
+
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
@@ -551,6 +648,9 @@ def getQuantUnivData(request):
         finalDict['text'] = result
 
         stage = 'Step 4 of 4: Preparing graph data...complete'
+
+        biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
+        finalDict['biome'] = str(biome_json)
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')

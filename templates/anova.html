@@ -36,18 +36,18 @@
                     dataType: 'jsonp',
                     data: {}
                 },
-                onLazyRead: function(node) {
+                onLazyRead: function (node) {
                     node.appendAjax({
                         url: '/getSampleCatTreeChildren/',
                         data: {field: node.data.title},
-                        success: function(node) {
+                        success: function (node) {
                             if (node.childList == undefined) {
                                 alert('No samples are available for this variable!');
                             }
                         }
                     });
                 },
-                onSelect: function(flag, node) {
+                onSelect: function (flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
                             node.select(false);
@@ -67,18 +67,18 @@
                     dataType: 'jsonp',
                     data: {}
                 },
-                onLazyRead: function(node) {
+                onLazyRead: function (node) {
                     node.appendAjax({
                         url: '/getSampleQuantTreeChildren/',
                         data: {field: node.data.title},
-                        success: function(node) {
+                        success: function (node) {
                             if (node.childList == undefined) {
                                 alert('No samples are available for this variable!');
                             }
                         }
                     });
                 },
-                onSelect: function(flag, node) {
+                onSelect: function (flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
                             node.select(false);
@@ -98,7 +98,7 @@
                     dataType: 'jsonp',
                     data: {}
                 },
-                onLazyRead: function(node) {
+                onLazyRead: function (node) {
                     node.appendAjax({
                         url: '/getTaxaTreeChildren/',
                         data: {
@@ -107,7 +107,7 @@
                         }
                     });
                 },
-                onSelect: function(flag, node) {
+                onSelect: function (flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
                             node.select(false);
@@ -138,7 +138,7 @@
             });
 
             $("#sig_box-1").change(function () {
-                if ( document.getElementById('sig_box-1').checked ) {
+                if (document.getElementById('sig_box-1').checked) {
                     sig1_only = 1
                 } else {
                     sig1_only = 0
@@ -148,7 +148,7 @@
             });
 
             $("#sig_box-2").change(function () {
-                if ( document.getElementById('sig_box-2').checked ) {
+                if (document.getElementById('sig_box-2').checked) {
                     sig2_only = 1
                 } else {
                     sig2_only = 0
@@ -273,7 +273,7 @@
                 }
             });
 
-            $("#clearMeta").click(function(){
+            $("#clearMeta").click(function () {
                 if (button1 == 1) {
                     $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                         node.select(false);
@@ -287,7 +287,7 @@
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#clearTaxa").click(function() {
+            $("#clearTaxa").click(function () {
                 $("#selectall").val(0);
                 $("#tree_taxa").dynatree("getRoot").visit(function (node) {
                     node.select(false);
@@ -302,7 +302,7 @@
             });
 
             $("#remove").change(function () {
-                if ( document.getElementById('remove').checked ) {
+                if (document.getElementById('remove').checked) {
                     remove = 1
                 } else {
                     remove = 0
@@ -310,6 +310,7 @@
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
+        });
 
         function updateStatus() {
             $.ajax({
@@ -469,20 +470,18 @@
                 },
                 success: function(data) {
                     stopTimer();
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var xAxis = obj['xAxis'];
-                    var series = obj['series'];
-                    var yAxis = obj['yAxis'];
-                    var empty = obj['empty'];
+                    var xAxis = data['xAxis'];
+                    var series = data['series'];
+                    var yAxis = data['yAxis'];
+                    var empty = data['empty'];
                     if (empty == 0) {
                         alert('No significant ANOVAs!');
                     }
                     barchart(xAxis, yAxis, series);
-                    var text = obj['text'];
+                    var text = data['text'];
                     $('#text-1').val(text);
 
-                    var res_table = obj['res_table'];
+                    var res_table = data['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
                         "bDestroy": true,
                         "dom": 'T<"clear">lfrtip',
@@ -492,6 +491,9 @@
                         "scrollX": true,
                         "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
                     }).draw();
+
+                    var biome = data['biome'];
+                    $("#biome-text").empty().append(biome);
 
                     $("#run").css("background-color", "green");
                 }
@@ -540,20 +542,18 @@
                 },
                 success: function(data) {
                     stopTimer();
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var xAxis = obj['xAxis'];
-                    var series = obj['series'];
-                    var yAxis = obj['yAxis'];
-                    var empty = obj['empty'];
+                    var xAxis = data['xAxis'];
+                    var series = data['series'];
+                    var yAxis = data['yAxis'];
+                    var empty = data['empty'];
                     if (empty == 0) {
                         alert('No significant regressions!');
                     }
                     linechart(xAxis, yAxis, series);
-                    var text = obj['text'];
+                    var text = data['text'];
                     $('#text-2').val(text);
 
-                    var res_table = obj['res_table'];
+                    var res_table = data['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
                         "bDestroy": true,
                         "dom": 'T<"clear">lfrtip',
@@ -563,6 +563,9 @@
                         "scrollX": true,
                         "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
                     }).draw();
+
+                    var biome = data['biome'];
+                    $("#biome-text").empty().append(biome);
 
                     $("#run").css("background-color", "green");
                 }
@@ -647,7 +650,6 @@
             };
             chart2 = new Highcharts.Chart(quantOptions);
         }
-    });
     </script>
 {% endblock javascript %}
 
@@ -761,8 +763,13 @@
         <br>
     </div>
 
-    <h2>Raw Data:</h2>
+    <br>
+    <h2>Raw Data (Tabular):</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
+
+    <br>
+    <h2>Raw Data (Biom Format):</h2>
+    <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
     <br>
     <br>
 

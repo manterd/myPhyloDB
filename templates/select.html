@@ -158,6 +158,7 @@
                     }
                 });
             });
+        });
 
         function updateNodes(selKeys) {
             updateProjectTable(selKeys);
@@ -427,7 +428,6 @@
                     {% endfor %}
             });
         }
-    });
     </script>
 {% endblock javascript %}
 
@@ -450,7 +450,7 @@
     <h2>Project/Sample information for selected samples</h2>
     <input id="drawtable" type="button" value="Add to DataTable!"/>
     <br><br>
-    Select datatable:&nbsp;
+    Select datatable:&nbsp
     <select id="selectTable">
         <option selected="selected" value="1">Project</option>
         <option value="2">MIMARKs</option>

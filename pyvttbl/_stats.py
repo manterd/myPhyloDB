@@ -1559,7 +1559,7 @@ Usage:   lbetacf(a,b,x)
         bz = 1.0
         if (abs(az-aold)<(EPS*abs(az))):
             return az
-    print 'a or b too big, or ITMAX too small in Betacf.'
+    #print 'a or b too big, or ITMAX too small in Betacf.'
 
 
 def lgammln(xx):

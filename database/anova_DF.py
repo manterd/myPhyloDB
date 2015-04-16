@@ -389,7 +389,7 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
                 myDict['rank'] = rank
                 myDict['taxa_id'] = taxaList
                 myDict['count'] = groupReads[taxaList]
-                myDict['total'] = groupReads.sum()
+                #myDict['total'] = groupReads.sum()
                 myDict['rel_abund'] = groupAbund[taxaList]
                 myDict['rich'] = groupRich[taxaList]
                 myDict['diversity'] = groupDiversity[taxaList]
@@ -401,14 +401,15 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
                     myDict['rank'] = rank
                     myDict['taxa_id'] = j
                     myDict['count'] = groupReads[j]
-                    myDict['total'] = groupReads.sum()
+                    #myDict['total'] = groupReads.sum()
                     myDict['rel_abund'] = groupAbund[j]
                     myDict['rich'] = groupRich[j]
                     myDict['diversity'] = groupDiversity[j]
                     rowsList.append(myDict)
-        DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'rank', 'taxa_id', 'count', 'total', 'rel_abund', 'rich', 'diversity'])
+        DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'rank', 'taxa_id', 'count', 'rel_abund', 'rich', 'diversity'])
         DF1 = DF1.merge(namesDF, on='taxa_id', how='outer')
-        DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'count', 'total', 'rel_abund', 'rich', 'diversity']]
+        DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'count', 'rel_abund', 'rich', 'diversity']]
+
         if normDF.empty:
             normDF = DF1
         else:

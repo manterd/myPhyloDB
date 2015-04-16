@@ -142,38 +142,38 @@ def parse_taxonomy(Document):
                 kid = uuid4().hex
                 record = Kingdom(kingdomid=kid, kingdomName=taxon[0])
                 record.save()
-            k = Kingdom.objects.get(kingdomName=taxon[0]).kingdomid
 
+            k = Kingdom.objects.get(kingdomName=taxon[0]).kingdomid
             if not Phyla.objects.filter(kingdomid_id=k, phylaName=taxon[1]).exists():
                 pid = uuid4().hex
                 record = Phyla(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
                 record.save()
-            p = Phyla.objects.get(kingdomid_id=k, phylaName=taxon[1]).phylaid
 
+            p = Phyla.objects.get(kingdomid_id=k, phylaName=taxon[1]).phylaid
             if not Class.objects.filter(kingdomid_id=k, phylaid_id=p, className=taxon[2]).exists():
                 cid = uuid4().hex
                 record = Class(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
                 record.save()
-            c = Class.objects.get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
 
+            c = Class.objects.get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
             if not Order.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).exists():
                 oid = uuid4().hex
                 record = Order(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
                 record.save()
-            o = Order.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
 
+            o = Order.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
             if not Family.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).exists():
                 fid = uuid4().hex
                 record = Family(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
                 record.save()
-            f = Family.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
 
+            f = Family.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
             if not Genus.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).exists():
                 gid = uuid4().hex
                 record = Genus(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
                 record.save()
-            g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
 
+            g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
             if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
                 sid = uuid4().hex
                 record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
