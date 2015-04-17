@@ -261,6 +261,7 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
         countDF = df2[taxaID].reset_index(drop=True)
         manager = mp.Manager()
         d = manager.dict()
+
         if os.name == 'nt':
             numcore = 1
         else:

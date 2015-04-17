@@ -85,7 +85,7 @@ def pval(perms, numcore, trtList, mySet, lt, Bart, output, x):
     seed = int(time.time()) + x
     np.random.mtrand.seed(seed)
     iter = (perms*1.0)/numcore
-    for i in range(int(math.floor(iter*x)), int(math.floor(iter*(x+1)))):
+    for i in range(int(math.floor(iter*x)), int(math.floor(iter*(x+1)-1))):
         rList = permutation(trtList)
         rBart = Bartlett(mySet, rList, lt)
         if rBart >= Bart:

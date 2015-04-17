@@ -587,7 +587,7 @@
                     x: 0,
                     y: 20,
                     labelFormatter: function () {
-                        return this.name[0] + ': ' + this.name[1] + '<br/>'
+                        return this.name[0] + ': ' + this.name[1] + '<br/>' + 'ID: ' + this.name[2] + '<br/>'
                     }
                 },
                 xAxis: xAxis,
@@ -626,7 +626,7 @@
                     y: 20,
                     labelFormatter: function () {
                         if (this.type == 'scatter') {
-                            return this.name[0] + ': ' + this.name[1]
+                            return this.name[0] + ': ' + this.name[1] + '<br/>' + 'ID: ' + this.name[2] + '<br/>'
                         } else {
                             return this.name[3]
                         }

@@ -7,6 +7,11 @@ from models import Project, Sample, Collect, Climate, Soil_class, Soil_nutrient,
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from pandas import Series
 from uuid import uuid4
+import numpy as np
+from numpy import *
+import multiprocessing as mp
+from multiprocessing import Process, Value, Lock
+import os
 
 
 stage = ''
@@ -54,15 +59,16 @@ def parse_sample(Document, p_uuid):
     global stage, perc
     stage = "Step 2 of 4: Parsing sample file..."
     perc = 0
-    step = 0.0
-    total = 0.0
+
     f = csv.reader(Document)
     f.next()
+    total = 0.0
     for row in f:
         if row:
             total += 1.0
 
     f = csv.DictReader(Document, delimiter=',')
+    step = 0.0
     for row in f:
         if row:
             row_dict = dict((k, v) for k, v in row.iteritems() if v != '')
@@ -115,22 +121,24 @@ def parse_sample(Document, p_uuid):
                 userDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
                 m = User(projectid=project, sampleid=sample, **userDict)
                 m.save()
+    Document.close()
 
 
 def parse_taxonomy(Document):
     global stage, perc
     stage = "Step 3 of 4: Parsing taxonomy file..."
     perc = 0
-    step = 0.0
-    total = 0.0
+
     f = csv.reader(Document)
     f.next()
+    total = 0.0
     for row in f:
         if row:
             total += 1.0
 
     f = csv.reader(Document, delimiter='\t')
     f.next()
+    step = 0.0
     for row in f:
         if row:
             step += 1.0
@@ -184,8 +192,6 @@ def parse_profile(file3, file4, p_uuid):
     global stage, perc
     stage = "Step 4 of 4: Parsing shared file..."
     perc = 0
-    step = 0.0
-    total = 0.0
 
     f1 = csv.DictReader(file3, delimiter='\t')
     rows_list1 = []
@@ -209,26 +215,33 @@ def parse_profile(file3, file4, p_uuid):
     file4.close()
     df2.drop(['label', 'numOtus'], axis=1, inplace=True)
     df3 = df2.T
+    del df2
 
     df4 = df1.merge(df3, left_index=True, right_index=True, how='outer')
     df4['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', value='', regex=True, inplace=True)
     df4.reset_index(drop=True, inplace=True)
+    del df1, df3
 
     df4.set_index(['Taxonomy'], inplace=True)
     df5 = df4.unstack().reset_index(name='count')
     df5.rename(columns={'level_0': 'sample'}, inplace=True)
+    del df4
 
     df6 = df5.groupby('sample')['count'].sum().reset_index()
     df6.rename(columns={'count': 'total'}, inplace=True)
     df7 = df5.merge(df6, on='sample', how='outer')
+    del df5, df6
 
     df8 = df7['Taxonomy'].str.split(';').apply(Series, 1)
     df8.rename(columns={0: 'kingdom', 1: 'phyla', 2: 'class', 3: 'order', 4: 'family', 5: 'genus', 6: 'species'}, inplace=True)
     df9 = df7.join(df8, how='outer')
+    del df7, df8
 
+    total = 0.0
     for row in df9.iterrows():
         total += 1.0
 
+    step = 0.0
     for index, row in df9.iterrows():
         step += 1.0
         perc = int(step / total * 100)

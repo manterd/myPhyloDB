@@ -85,7 +85,7 @@ def pval(perms, cores, trtList, mySet, lt, SStotal, trts, bigN, Fvalue, output, 
     seed = int(time.time()) + x
     np.random.mtrand.seed(seed)
     iter = (perms*1.0)/cores
-    for i in range(int(math.floor(iter*x)), int(math.floor(iter*(x+1)))):
+    for i in range(int(math.floor(iter*x)), int(math.floor(iter*(x+1)-1))):
         rList = permutation(trtList)
         rSSwithin = SSW(mySet, rList, lt)
         rSSamong = SStotal - rSSwithin
