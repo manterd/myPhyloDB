@@ -5,25 +5,43 @@ import simplejson
 from django.http import HttpResponse
 from models import Project, Sample, Collect, Climate, Soil_class, Soil_nutrient, Management, Microbial, User
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
-from pandas import Series
 from uuid import uuid4
 import numpy as np
 from numpy import *
 import multiprocessing as mp
-from multiprocessing import Process, Value, Lock
-import os
+
+
+class Counter(object):
+    def __init__(self, initval=0):
+        self.val = mp.Value('i', initval)
+        self.lock = mp.Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+
+    def update(self, step, total):
+        with self.lock:
+            self.val.value = int(float(step.value()) / total * 100)
+
+    def value(self):
+        with self.lock:
+            return self.val.value
 
 
 stage = ''
 perc = 0
+done = Counter(0)
 
 
 def status(request):
-    global stage, perc
     if request.is_ajax():
         dict = {}
         dict['stage'] = stage
-        dict['perc'] = perc
+        if stage == 'Step 4 of 4: Parsing shared file...':
+            dict['perc'] = done.value()
+        else:
+            dict['perc'] = perc
         json_data = simplejson.dumps(dict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
@@ -189,89 +207,84 @@ def parse_taxonomy(Document):
 
 
 def parse_profile(file3, file4, p_uuid):
-    global stage, perc
+    global stage, done
     stage = "Step 4 of 4: Parsing shared file..."
-    perc = 0
 
-    f1 = csv.DictReader(file3, delimiter='\t')
-    rows_list1 = []
-    for row in f1:
-        if row:
-            row_dict = dict((k, v) for k, v in row.iteritems() if v)
-            rows_list1.append(row_dict)
-    df1 = pd.DataFrame(rows_list1)
-    df1.set_index('OTU', inplace=True)
+    data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True)
+    arr1 = np.delete(data1, 1, axis=1)
+    df1 = pd.DataFrame(arr1[1:, 1:], index=arr1[1:, 0], columns=arr1[0, 1:])
+    df1 = df1[df1.index != 'False']
     file3.close()
-    df1.drop('Size', axis=1, inplace=True)
 
-    f2 = csv.DictReader(file4, delimiter='\t')
-    rows_list2 = []
-    for row in f2:
-        if row:
-            row_dict = dict((k, v) for k, v in row.iteritems() if v != '')
-            rows_list2.append(row_dict)
-    df2 = pd.DataFrame(rows_list2)
-    df2.set_index('Group', inplace=True)
+    data2 = genfromtxt(file4, delimiter='\t', dtype=None, autostrip=True)
+    arr2 = data2.T
+    arr2 = np.delete(arr2, 0, axis=0)
+    arr2 = np.delete(arr2, 1, axis=0)
+    df2 = pd.DataFrame(arr2[1:, 1:], index=arr2[1:, 0], columns=arr2[0, 1:])
+    df2 = df2[df2.index != 'False']
     file4.close()
-    df2.drop(['label', 'numOtus'], axis=1, inplace=True)
-    df3 = df2.T
-    del df2
 
-    df4 = df1.merge(df3, left_index=True, right_index=True, how='outer')
-    df4['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', value='', regex=True, inplace=True)
-    df4.reset_index(drop=True, inplace=True)
-    del df1, df3
+    df3 = df1.join(df2, how='outer')
+    df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', value='', regex=True, inplace=True)
+    df3.reset_index(drop=True, inplace=True)
+    del df1, df2
 
-    df4.set_index(['Taxonomy'], inplace=True)
-    df5 = df4.unstack().reset_index(name='count')
-    df5.rename(columns={'level_0': 'sample'}, inplace=True)
-    del df4
+    indexList = df3.index.values.tolist()
+    total = len(indexList)
+    sampleList = df3.columns.values.tolist()
+    sampleList.remove('Taxonomy')
 
-    df6 = df5.groupby('sample')['count'].sum().reset_index()
-    df6.rename(columns={'count': 'total'}, inplace=True)
-    df7 = df5.merge(df6, on='sample', how='outer')
-    del df5, df6
+    step = Counter(0)
+    numcore = mp.cpu_count()-1 or 1
+    processes = [mp.Process(target=readRows, args=(x, numcore, p_uuid, df3, total, sampleList, step, done)) for x in range(numcore)]
 
-    df8 = df7['Taxonomy'].str.split(';').apply(Series, 1)
-    df8.rename(columns={0: 'kingdom', 1: 'phyla', 2: 'class', 3: 'order', 4: 'family', 5: 'genus', 6: 'species'}, inplace=True)
-    df9 = df7.join(df8, how='outer')
-    del df7, df8
+    for p in processes:
+        p.start()
+    for p in processes:
+        p.join()
 
-    total = 0.0
-    for row in df9.iterrows():
-        total += 1.0
 
-    step = 0.0
-    for index, row in df9.iterrows():
-        step += 1.0
-        perc = int(step / total * 100)
+def readRows(x, numcore, p_uuid, df3, total, sampleList, step, done):
+    iter = (total*1.0)/numcore
+    if x == 0:
+        start = int(math.floor(iter*x))
+    else:
+        start = int(math.floor((iter*x)+1))
+    stop = int(math.floor(iter*(x+1)))
+    myList = range(start, stop)
+    df4 = df3.ix[myList]
+    for index, row in df4.iterrows():
+        step.increment()
+        done.update(step, total)
+        taxon = str(row['Taxonomy'])
+        taxaList = taxon.split(';')
+        k = taxaList[0]
+        p = taxaList[1]
+        c = taxaList[2]
+        o = taxaList[3]
+        f = taxaList[4]
+        g = taxaList[5]
+        s = taxaList[6]
+        t_kingdom = Kingdom.objects.get(kingdomName=k)
+        t_phyla = Phyla.objects.get(kingdomid_id=t_kingdom, phylaName=p)
+        t_class = Class.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, className=c)
+        t_order = Order.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderName=o)
+        t_family = Family.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyName=f)
+        t_genus = Genus.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusName=g)
+        t_species = Species.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesName=s)
 
-        if row['count'] > 0:
-            name = row['sample']
-            k = row['kingdom']
-            p = row['phyla']
-            c = row['class']
-            o = row['order']
-            f = row['family']
-            g = row['genus']
-            s = row['species']
-            count = row['count']
-            project = Project.objects.get(projectid=p_uuid)
-            sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
-            t_kingdom = Kingdom.objects.get(kingdomName=k)
-            t_phyla = Phyla.objects.get(kingdomid_id=t_kingdom, phylaName=p)
-            t_class = Class.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, className=c)
-            t_order = Order.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderName=o)
-            t_family = Family.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyName=f)
-            t_genus = Genus.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusName=g)
-            t_species = Species.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesName=s)
+        for name in sampleList:
+            count = int(row[str(name)])
+            if count > 0:
+                project = Project.objects.get(projectid=p_uuid)
+                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
 
-            if Profile.objects.filter(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species).exists():
-                t = Profile.objects.get(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species)
-                old = t.count
-                new = old + int(count)
-                t.count = new
-                t.save()
-            else:
-                record = Profile(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
-                record.save()
+                if Profile.objects.filter(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species).exists():
+                    t = Profile.objects.get(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species)
+                    old = t.count
+                    new = old + int(count)
+                    t.count = new
+                    t.save()
+                else:
+                    record = Profile(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
+                    record.save()

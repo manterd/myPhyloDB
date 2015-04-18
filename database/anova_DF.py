@@ -262,14 +262,11 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
         manager = mp.Manager()
         d = manager.dict()
 
-        if os.name == 'nt':
-            numcore = 1
-        else:
-            numcore = mp.cpu_count()-1 or 1
-
         if depvar == 2:
+            numcore = 1
             processes = [mp.Process(target=weightedProb1, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
         else:
+            numcore = mp.cpu_count()-1 or 1
             processes = [mp.Process(target=weightedProb2, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
 
 

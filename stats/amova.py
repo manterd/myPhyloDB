@@ -25,10 +25,7 @@ def amova(dm, trtList, perms):
     Fvalue = MSamong / MSwithin
 
     output = mp.Queue()
-    if os.name == 'nt':
-        numcore = 1
-    else:
-        numcore = mp.cpu_count()-1 or 1
+    numcore = mp.cpu_count()-1 or 1
 
     processes = [mp.Process(target=pval, args=(perms, numcore, trtList, mySet, lt, SStotal, trts, bigN, Fvalue, output, x)) for x in range(numcore)]
     for p in processes:

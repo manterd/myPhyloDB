@@ -186,7 +186,7 @@ def getCatUnivData(request):
             stage = 'Step 3 of 4: Performing ANOVA...complete'
             stage = 'Step 4 of 4: Preparing graph data...'
             if sig_only == 1:
-                if D['p'] <= 0.05:
+                if float(D['p']) <= 0.05:
                     result = result + '===============================================\n'
                     result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                     result = result + 'Taxa name: ' + str(name1[1]) + '\n'
