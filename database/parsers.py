@@ -214,6 +214,9 @@ def parse_profile(file3, file4, p_uuid):
     arr1 = np.delete(data1, 1, axis=1)
     df1 = pd.DataFrame(arr1[1:, 1:], index=arr1[1:, 0], columns=arr1[0, 1:])
     df1 = df1[df1.index != 'False']
+    a = df1.columns.values.tolist()
+    a = [x for x in a if x != 'False']
+    df1 = df1[a]
     file3.close()
 
     data2 = genfromtxt(file4, delimiter='\t', dtype=None, autostrip=True)
@@ -222,6 +225,9 @@ def parse_profile(file3, file4, p_uuid):
     arr2 = np.delete(arr2, 1, axis=0)
     df2 = pd.DataFrame(arr2[1:, 1:], index=arr2[1:, 0], columns=arr2[0, 1:])
     df2 = df2[df2.index != 'False']
+    b = df2.columns.values.tolist()
+    b = [x for x in b if x != 'False']
+    df2 = df2[b]
     file4.close()
 
     df3 = df1.join(df2, how='outer')

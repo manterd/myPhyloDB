@@ -28,34 +28,38 @@ def upload(request):
 
         if form1.is_valid():
             if form2.is_valid():
-                project = ".".join(["project", "csv"])
-                file1 = request.FILES['docfile1']
-                p_uuid = projectid(file1)
-                date = datetime.date.today().isoformat()
-                hour = datetime.datetime.now().hour
-                minute = datetime.datetime.now().minute
-                second = datetime.datetime.now().second
-                timestamp =".".join([str(hour), str(minute), str(second)])
-                datetimestamp ="_".join([str(date), str(timestamp)])
-                dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
-                handle_uploaded_file(file1, dest, project)
-                parse_project(file1, dest, p_uuid)
+                try:
+                    project = ".".join(["project", "csv"])
+                    file1 = request.FILES['docfile1']
+                    p_uuid = projectid(file1)
+                    date = datetime.date.today().isoformat()
+                    hour = datetime.datetime.now().hour
+                    minute = datetime.datetime.now().minute
+                    second = datetime.datetime.now().second
+                    timestamp =".".join([str(hour), str(minute), str(second)])
+                    datetimestamp ="_".join([str(date), str(timestamp)])
+                    dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
+                    handle_uploaded_file(file1, dest, project)
+                    parse_project(file1, dest, p_uuid)
 
-                sample = ".".join(["sample", "csv"])
-                file2 = request.FILES['docfile2']
-                handle_uploaded_file(file2, dest, sample)
-                parse_sample(file2, p_uuid)
+                    sample = ".".join(["sample", "csv"])
+                    file2 = request.FILES['docfile2']
+                    handle_uploaded_file(file2, dest, sample)
+                    parse_sample(file2, p_uuid)
 
-                taxonomy = ".".join(["mothur", "taxonomy"])
-                file3 = request.FILES['docfile3']
-                handle_uploaded_file(file3, dest, taxonomy)
-                parse_taxonomy(file3)
+                    taxonomy = ".".join(["mothur", "taxonomy"])
+                    file3 = request.FILES['docfile3']
+                    handle_uploaded_file(file3, dest, taxonomy)
+                    parse_taxonomy(file3)
 
-                shared = ".".join(["mothur", "shared"])
-                file4 = request.FILES['docfile4']
-                handle_uploaded_file(file4, dest, shared)
+                    shared = ".".join(["mothur", "shared"])
+                    file4 = request.FILES['docfile4']
+                    handle_uploaded_file(file4, dest, shared)
 
-                parse_profile(file3, file4, p_uuid)
+                    parse_profile(file3, file4, p_uuid)
+
+                except:
+                    print('Upload failed. Please check your file formats...')
 
             else:
                 print("Please upload taxonomic profile data")
