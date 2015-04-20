@@ -121,10 +121,10 @@ sample_files = Datafiles(
     )
 
 uploads = Datafiles(
-    'uploads/4e8c073551df4f8e9486e1c2052ea100/2015-04-20_9.28.27/project.csv',
-    'uploads/4e8c073551df4f8e9486e1c2052ea100/2015-04-20_9.28.27/sample.csv',
-    'uploads/4e8c073551df4f8e9486e1c2052ea100/2015-04-20_9.28.27/mothur.shared',
-    'uploads/4e8c073551df4f8e9486e1c2052ea100/2015-04-20_9.28.27/mothur.taxonomy',
+    'uploads/b0755b4aea63414b90f1b49543015788/2015-04-20_15.40.15/project.csv',
+    'uploads/b0755b4aea63414b90f1b49543015788/2015-04-20_15.40.15/sample.csv',
+    'uploads/b0755b4aea63414b90f1b49543015788/2015-04-20_15.40.15/mothur.shared',
+    'uploads/b0755b4aea63414b90f1b49543015788/2015-04-20_15.40.15/mothur.taxonomy',
     strip_path=False
     )
 

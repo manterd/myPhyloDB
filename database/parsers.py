@@ -11,37 +11,15 @@ from numpy import *
 import multiprocessing as mp
 
 
-class Counter(object):
-    def __init__(self, initval=0):
-        self.val = mp.Value('i', initval)
-        self.lock = mp.Lock()
-
-    def increment(self):
-        with self.lock:
-            self.val.value += 1
-
-    def update(self, step, total):
-        with self.lock:
-            self.val.value = int(float(step.value()) / total * 100)
-
-    def value(self):
-        with self.lock:
-            return self.val.value
-
-
 stage = ''
 perc = 0
-done = Counter(0)
 
 
 def status(request):
     if request.is_ajax():
         dict = {}
         dict['stage'] = stage
-        if stage == 'Step 4 of 4: Parsing shared file...':
-            dict['perc'] = done.value()
-        else:
-            dict['perc'] = perc
+        dict['perc'] = perc
         json_data = simplejson.dumps(dict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
@@ -207,8 +185,9 @@ def parse_taxonomy(Document):
 
 
 def parse_profile(file3, file4, p_uuid):
-    global stage, done
+    global stage, perc
     stage = "Step 4 of 4: Parsing shared file..."
+    perc = 0
 
     data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True)
     arr1 = np.delete(data1, 1, axis=1)
@@ -240,28 +219,10 @@ def parse_profile(file3, file4, p_uuid):
     sampleList = df3.columns.values.tolist()
     sampleList.remove('Taxonomy')
 
-    step = Counter(0)
-    numcore = mp.cpu_count()-1 or 1
-    processes = [mp.Process(target=readRows, args=(x, numcore, p_uuid, df3, total, sampleList, step, done)) for x in range(numcore)]
-
-    for p in processes:
-        p.start()
-    for p in processes:
-        p.join()
-
-
-def readRows(x, numcore, p_uuid, df3, total, sampleList, step, done):
-    iter = (total*1.0)/numcore
-    if x == 0:
-        start = int(math.floor(iter*x))
-    else:
-        start = int(math.floor((iter*x)+1))
-    stop = int(math.floor(iter*(x+1)))
-    myList = range(start, stop)
-    df4 = df3.ix[myList]
-    for index, row in df4.iterrows():
-        step.increment()
-        done.update(step, total)
+    step = 0.0
+    for index, row in df3.iterrows():
+        step += 1.0
+        perc = int(step / total * 100)
         taxon = str(row['Taxonomy'])
         taxaList = taxon.split(';')
         k = taxaList[0]
