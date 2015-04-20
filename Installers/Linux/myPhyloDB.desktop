@@ -1,0 +1,7 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PhyloDB
+Icon=database_2_48.png
+Exec=gnome-terminal -e "bash -c \"cd $HOME/myPhyloDB; ./myPhyloDB.exe; \""
+Name[en_US]=myPhyloDB
