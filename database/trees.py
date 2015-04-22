@@ -44,14 +44,13 @@ def getProjectTreeChildren(request):
         nodes = []
         for sample in samples:
             reads = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if reads['count__sum'] is not None:
-                myNode = {
-                    'title': sample.sample_name + ' (' + str(reads['count__sum']) + ')',
-                    'tooltip': sample.title,
-                    'id': sample.sampleid,
-                    'isFolder': False
-                }
-                nodes.append(myNode)
+            myNode = {
+                'title': sample.sample_name + ' (' + str(reads['count__sum']) + ')',
+                'tooltip': sample.title,
+                'id': sample.sampleid,
+                'isFolder': False
+            }
+            nodes.append(myNode)
 
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
