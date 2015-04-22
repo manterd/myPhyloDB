@@ -18,7 +18,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, button2 = 2, selTheme = 0, i = 0;
+        var button1 = 1, button2 = 2, selTheme = 0, i = 0, statistic = 1;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
@@ -128,6 +128,12 @@
                 button1 = $(this).val();
                 chooseDisplay();
                 $('#res_table').empty();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#statistic").change(function () {
+                statistic = $(this).val();
+                chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
 
@@ -350,6 +356,8 @@
                 $("#text-2").hide();
                 $("#sig_text-1").show();
                 $("#sig_text-2").hide();
+                $("#statistic").show();
+                $("#stat-text").show();
             }
             else if (button1 == 2) {
                 $("#tree_metaCat").hide();
@@ -360,6 +368,8 @@
                 $("#text-2").show();
                 $("#sig_text-1").hide();
                 $("#sig_text-2").show();
+                $("#statistic").hide();
+                $("#stat-text").hide();
             }
         }
 
@@ -459,6 +469,7 @@
             myDict['selectAll'] = selectAll;
             myDict['normalize'] = document.getElementById("normalize").value;
             myDict['remove'] = remove;
+            myDict['statistic'] = statistic;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -742,6 +753,12 @@
             </td>
         </tr>
         <tr>
+            <td id="stat-text" style="float: left;">Summary statistic:
+                <select id="statistic">
+                    <option value="1" selected="selected">Average</option>
+                    <option value="2">Sum</option>
+                </select>
+            </td>
             <td style="float: right;">Remove samples below threshold:
                 <input type="checkbox" id="remove"/>
                 &nbsp

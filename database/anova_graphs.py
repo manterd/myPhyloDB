@@ -41,6 +41,7 @@ def getCatUnivData(request):
         factor = all["normalize"]
         selectAll = int(all["selectAll"])
         remove = int(all["remove"])
+        stat = int(all["statistic"])
 
         countList = []
         for sample in qs1:
@@ -151,7 +152,6 @@ def getCatUnivData(request):
 
         ### group DataFrame by each taxa level selected
         grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
-        equal_error = 'no'
 
         ### group DataFrame by each meta variable selected
         for name1, group1 in grouped1:
@@ -211,7 +211,10 @@ def getCatUnivData(request):
                     result = result + '\n\n\n\n'
 
                     dataList = []
-                    grouped2 = group1.groupby(fieldList).mean()
+                    if stat == 1:
+                        grouped2 = group1.groupby(fieldList).mean()
+                    else:
+                        grouped2 = group1.groupby(fieldList).sum()
 
                     if button == 1:
                         dataList.extend(list(grouped2['count'].T))
@@ -268,7 +271,10 @@ def getCatUnivData(request):
                 result = result + '\n\n\n\n'
 
                 dataList = []
-                grouped2 = group1.groupby(fieldList).mean()
+                if stat == 1:
+                    grouped2 = group1.groupby(fieldList).mean()
+                else:
+                    grouped2 = group1.groupby(fieldList).sum()
                 if button == 1:
                     dataList.extend(list(grouped2['count'].T))
                 elif button == 2:
