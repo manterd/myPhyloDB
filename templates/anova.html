@@ -494,11 +494,12 @@
 
                     var res_table = data['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        "bDestroy": true,
-                        "dom": 'T<"clear">lfrtip',
-                        "tableTools": {
-                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        "jQueryUI": true,
+                        "sDom": 'T<"clear">lfrtip',
+                        "oTableTools": {
+                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
                         },
+                        "bSort": false,
                         "scrollX": true
                     }).draw();
 
@@ -565,11 +566,12 @@
 
                     var res_table = data['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        "bDestroy": true,
-                        "dom": 'T<"clear">lfrtip',
-                        "tableTools": {
-                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        "jQueryUI": true,
+                        "sDom": 'T<"clear">lfrtip',
+                        "oTableTools": {
+                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
                         },
+                        "bSort": false,
                         "scrollX": true
                     }).draw();
 

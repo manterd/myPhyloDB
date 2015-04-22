@@ -433,18 +433,21 @@
 
                     var res_table = obj['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        "dom": 'T<"clear">lfrtip',
-                        "tableTools": {
-                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        "jQueryUI": true,
+                        "sDom": 'T<"clear">lfrtip',
+                        "oTableTools": {
+                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
                         },
+                        "bSort": false,
                         "scrollX": true
                     }).draw();
 
                     var dist_table = obj['dist_table'];
                     $('#dist_table').empty().append(dist_table).find('.table').DataTable({
-                        "dom": 'T<"clear">lfrtip',
-                        "tableTools": {
-                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        "jQueryUI": true,
+                        "sDom": 'T<"clear">lfrtip',
+                        "oTableTools": {
+                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
                         },
                         "bSort": false,
                         "scrollX": true
@@ -500,23 +503,24 @@
 
                     var res_table = obj['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        "dom": 'T<"clear">lfrtip',
-                        "tableTools": {
-                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        "jQueryUI": true,
+                        "sDom": 'T<"clear">lfrtip',
+                        "oTableTools": {
+                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
                         },
-                        "scrollX": true,
-                        "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                        "bSort": false,
+                        "scrollX": true
                     }).draw();
 
                     var dist_table = obj['dist_table'];
                     $('#dist_table').empty().append(dist_table).find('.table').DataTable({
-                        "dom": 'T<"clear">lfrtip',
-                        "tableTools": {
-                        "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        "jQueryUI": true,
+                        "sDom": 'T<"clear">lfrtip',
+                        "oTableTools": {
+                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
                         },
                         "bSort": false,
-                        "scrollX": true,
-                        "aLengthMenu":[[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                        "scrollX": true
                     }).draw();
 
                     $("#run").css("background-color", "green");

@@ -42,6 +42,7 @@ templates = Datafiles(
 media = Datafiles(
     'media/css/style.css',
     'media/datatables/css/jquery.dataTables.css',
+    'media/datatables/css/jquery.dataTables_themeroller.css',
     'media/datatables/images/back_disabled.png',
     'media/datatables/images/back_enabled.png',
     'media/datatables/images/back_enabled_hover.png',
@@ -121,10 +122,10 @@ sample_files = Datafiles(
     )
 
 uploads = Datafiles(
-    'uploads/b0755b4aea63414b90f1b49543015788/2015-04-20_15.40.15/project.csv',
-    'uploads/b0755b4aea63414b90f1b49543015788/2015-04-20_15.40.15/sample.csv',
-    'uploads/b0755b4aea63414b90f1b49543015788/2015-04-20_15.40.15/mothur.shared',
-    'uploads/b0755b4aea63414b90f1b49543015788/2015-04-20_15.40.15/mothur.taxonomy',
+    'uploads/1f9f146180d24df7b173af60d93c3365/2015-04-22_10.29.18/project.csv',
+    'uploads/1f9f146180d24df7b173af60d93c3365/2015-04-22_10.29.18/sample.csv',
+    'uploads/1f9f146180d24df7b173af60d93c3365/2015-04-22_10.29.18/mothur.shared',
+    'uploads/1f9f146180d24df7b173af60d93c3365/2015-04-22_10.29.18/mothur.taxonomy',
     strip_path=False
     )
 

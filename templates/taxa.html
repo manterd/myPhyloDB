@@ -18,10 +18,12 @@
             });
 
             $('#dist_table').append('{{ table|escapejs }}').find('.table').DataTable({
-                "dom": 'T<"clear">lfrtip',
-                "tableTools": {
-                "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                "jQueryUI": true,
+                "sDom": 'T<"clear">lfrtip',
+                "oTableTools": {
+                    "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
                 },
+                "bSort": false,
                 "scrollX": true
             }).draw();
 
