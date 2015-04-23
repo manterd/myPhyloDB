@@ -178,15 +178,17 @@ def getCatUnivData(request):
             D = Anova1way()
             try:
                 D.run(valList, conditions_list=trtList)
+                p_val = float(D['p'])
                 anova_error = 'no'
             except:
+                p_val = 1.0
                 D = 'a or b too big, or ITMAX too small in Betacf.\n' + 'Samples sizes are either too unequal or n=1.\n'
                 anova_error = 'yes'
 
             stage = 'Step 3 of 4: Performing ANOVA...complete'
             stage = 'Step 4 of 4: Preparing graph data...'
             if sig_only == 1:
-                if float(D['p']) <= 0.05:
+                if p_val <= 0.05:
                     result = result + '===============================================\n'
                     result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                     result = result + 'Taxa name: ' + str(name1[1]) + '\n'
@@ -204,7 +206,7 @@ def getCatUnivData(request):
                     result = result + 'Independent Variable: ' + str(indVar) + '\n'
 
                     if anova_error == 'yes':
-                        result = result + '\nANOVA cannot be performed...' + '\n' + D + '\n'
+                        result = result + '\nANOVA cannot be performed...' + '\n' + str(D) + '\n'
                     else:
                         result = result + str(D) + '\n'
                     result = result + '===============================================\n'

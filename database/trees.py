@@ -114,6 +114,13 @@ def getSampleCatTreeChildren(request):
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
 
+    filterList = []
+    for sample in selected:
+        reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
+        if reads['count__sum'] is not None:
+            filterList.append(sample[0])
+    filtered = Sample.objects.all().filter(sampleid__in=filterList).values_list('sampleid')
+
     if request.is_ajax():
         field = request.GET["field"]
         mimark = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city',  'geo_loc_farm', 'geo_loc_plot', 'material']
@@ -126,7 +133,7 @@ def getSampleCatTreeChildren(request):
         if field in mimark:
             exclude_list = []
             exclude_list.append(Q(**{field: 'null'}))
-            values = Sample.objects.values_list(field, flat='True').filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(field)
+            values = Sample.objects.values_list(field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(field)
             for j in range(len(values)):
                 myNode1 = {
                     'title': values[j],
@@ -137,7 +144,7 @@ def getSampleCatTreeChildren(request):
                 }
                 args_list = []
                 args_list.append(Q(**{field: values[j]}))
-                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
                     myNode2 = {
                         'title': 'Sample: ' + item.sample_name,
@@ -153,7 +160,7 @@ def getSampleCatTreeChildren(request):
             table_field = 'collect__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
+            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
             for j in range(len(values)):
                 myNode1 = {
                     'title': values[j],
@@ -164,7 +171,7 @@ def getSampleCatTreeChildren(request):
                 }
                 args_list = []
                 args_list.append(Q(**{table_field: values[j]}))
-                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
                     myNode2 = {
                         'title': 'Sample: ' + item.sample_name,
@@ -180,7 +187,7 @@ def getSampleCatTreeChildren(request):
             table_field = 'soil_class__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
+            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
             for j in range(len(values)):
                 myNode1 = {
                     'title': values[j],
@@ -191,7 +198,7 @@ def getSampleCatTreeChildren(request):
                 }
                 args_list = []
                 args_list.append(Q(**{table_field: values[j]}))
-                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
                     myNode2 = {
                         'title': 'Sample: ' + item.sample_name,
@@ -207,7 +214,7 @@ def getSampleCatTreeChildren(request):
             table_field = 'management__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
+            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
             for j in range(len(values)):
                 myNode1 = {
                     'title': values[j],
@@ -218,7 +225,7 @@ def getSampleCatTreeChildren(request):
                 }
                 args_list = []
                 args_list.append(Q(**{table_field: values[j]}))
-                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
                     myNode2 = {
                         'title': 'Sample: ' + item.sample_name,
@@ -235,7 +242,7 @@ def getSampleCatTreeChildren(request):
             table_field = 'user__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
+            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
             for j in range(len(values)):
                 myNode1 = {
                     'title': values[j],
@@ -246,7 +253,7 @@ def getSampleCatTreeChildren(request):
                 }
                 args_list = []
                 args_list.append(Q(**{table_field: values[j]}))
-                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
                     myNode2 = {
                         'title': 'Sample: ' + item.sample_name,
@@ -337,6 +344,13 @@ def getSampleQuantTreeChildren(request):
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
 
+    filterList = []
+    for sample in selected:
+        reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
+        if reads['count__sum'] is not None:
+            filterList.append(sample[0])
+    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid')
+
     if request.is_ajax():
         field = request.GET["field"]
         mimark = ['latitude', 'longitude', 'elevation']
@@ -351,7 +365,7 @@ def getSampleQuantTreeChildren(request):
         if field in mimark:
             exclude_list = []
             exclude_list.append(Q(**{field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
                 myNode1 = {
                     'title': 'Sample: ' + item.sample_name,
@@ -366,7 +380,7 @@ def getSampleQuantTreeChildren(request):
             table_field = 'collect__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
                 myNode1 = {
                     'title': 'Sample: ' + item.sample_name,
@@ -381,7 +395,7 @@ def getSampleQuantTreeChildren(request):
             table_field = 'climate__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
                 myNode1 = {
                     'title': 'Sample: ' + item.sample_name,
@@ -396,7 +410,7 @@ def getSampleQuantTreeChildren(request):
             table_field = 'soil_class__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
                 myNode1 = {
                     'title': 'Sample: ' + item.sample_name,
@@ -411,7 +425,7 @@ def getSampleQuantTreeChildren(request):
             table_field = 'soil_nutrient__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
                 myNode1 = {
                     'title': 'Sample: ' + item.sample_name,
@@ -426,7 +440,7 @@ def getSampleQuantTreeChildren(request):
             table_field = 'microbial__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
                 myNode1 = {
                     'title': 'Sample: ' + item.sample_name,
@@ -441,7 +455,7 @@ def getSampleQuantTreeChildren(request):
             table_field = 'user__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=selected).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
                 myNode1 = {
                     'title': 'Sample: ' + item.sample_name,
@@ -460,7 +474,15 @@ def getTaxaTree(request):
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
-    selected_taxa = Profile.objects.filter(sampleid_id__in=selected)
+
+    filterList = []
+    for sample in selected:
+        reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
+        if reads['count__sum'] is not None:
+            filterList.append(sample[0])
+
+    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid')
+    selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
 
     myTree = {'title': 'Taxa Name', 'tooltip': 'root', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
 
@@ -505,7 +527,15 @@ def getTaxaTreeChildren(request):
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
-    selected_taxa = Profile.objects.filter(sampleid_id__in=selected)
+
+    filterList = []
+    for sample in selected:
+        reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
+        if reads['count__sum'] is not None:
+            filterList.append(sample[0])
+
+    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid')
+    selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
 
     if request.is_ajax():
         taxa = request.GET["tooltip"]

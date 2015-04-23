@@ -117,6 +117,9 @@
                     nodesTaxa = node.tree.getSelectedNodes();
                     $("#run").css("background-color", "lightgray");
                     searchData();
+                },
+                onClick: function () {
+                    $("#selectall").val(0);
                 }
             });
 
@@ -305,6 +308,9 @@
             $("#selectall").change(function () {
                 selectAll = $(this).val();
                 $("#run").css("background-color", "lightgray");
+                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
             });
 
             $("#remove").change(function () {
