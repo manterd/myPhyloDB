@@ -29,8 +29,8 @@ class Server(object):
 
     def run(self):
         engine = cherrypy.engine
-        engine.signal_handler.subscribe()
-
+        if hasattr(engine, "signal_handler"):
+            engine.signal_handler.subscribe()
         if hasattr(engine, "console_control_handler"):
             engine.console_control_handler.subscribe()
         cherrypy.engine.subscribe('engine.start', Server.browse(self), priority=90)

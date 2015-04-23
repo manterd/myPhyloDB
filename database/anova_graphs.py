@@ -215,6 +215,10 @@ def getCatUnivData(request):
                     dataList = []
                     if stat == 1:
                         grouped2 = group1.groupby(fieldList).mean()
+                    elif stat == 2:
+                        grouped2 = group1.groupby(fieldList).min()
+                    elif stat == 3:
+                        grouped2 = group1.groupby(fieldList).max()
                     else:
                         grouped2 = group1.groupby(fieldList).sum()
 
@@ -275,8 +279,13 @@ def getCatUnivData(request):
                 dataList = []
                 if stat == 1:
                     grouped2 = group1.groupby(fieldList).mean()
+                elif stat == 2:
+                    grouped2 = group1.groupby(fieldList).min()
+                elif stat == 3:
+                    grouped2 = group1.groupby(fieldList).max()
                 else:
                     grouped2 = group1.groupby(fieldList).sum()
+
                 if button == 1:
                     dataList.extend(list(grouped2['count'].T))
                 elif button == 2:
