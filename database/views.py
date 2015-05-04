@@ -8,11 +8,10 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from forms import UploadForm1, UploadForm2
-from models import Project, Sample, Species, Profile
+from models import Project, Sample, Species
 from parsers import projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout
 
 
 def home(request):
@@ -21,51 +20,41 @@ def home(request):
 
 @login_required(login_url='/myPhyloDB/login/')
 def upload(request):
-    #logout(request)
     if request.method == 'POST' and 'Upload' in request.POST:
         form1 = UploadForm1(request.POST, request.FILES)
         form2 = UploadForm2(request.POST, request.FILES)
 
         if form1.is_valid():
             if form2.is_valid():
-                try:
-                    project = ".".join(["project", "csv"])
-                    file1 = request.FILES['docfile1']
-                    p_uuid = projectid(file1)
-                    date = datetime.date.today().isoformat()
-                    hour = datetime.datetime.now().hour
-                    minute = datetime.datetime.now().minute
-                    second = datetime.datetime.now().second
-                    timestamp =".".join([str(hour), str(minute), str(second)])
-                    datetimestamp ="_".join([str(date), str(timestamp)])
-                    dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
-                    handle_uploaded_file(file1, dest, project)
-                    parse_project(file1, dest, p_uuid)
+                project = ".".join(["project", "csv"])
+                file1 = request.FILES['docfile1']
+                p_uuid = projectid(file1)
 
-                    sample = ".".join(["sample", "csv"])
-                    file2 = request.FILES['docfile2']
-                    handle_uploaded_file(file2, dest, sample)
-                    parse_sample(file2, p_uuid)
+                date = datetime.date.today().isoformat()
+                hour = datetime.datetime.now().hour
+                minute = datetime.datetime.now().minute
+                second = datetime.datetime.now().second
+                timestamp =".".join([str(hour), str(minute), str(second)])
+                datetimestamp ="_".join([str(date), str(timestamp)])
 
-                    taxonomy = ".".join(["mothur", "taxonomy"])
-                    file3 = request.FILES['docfile3']
-                    handle_uploaded_file(file3, dest, taxonomy)
-                    parse_taxonomy(file3)
+                dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
+                handle_uploaded_file(file1, dest, project)
+                parse_project(file1, dest, p_uuid)
 
-                    shared = ".".join(["mothur", "shared"])
-                    file4 = request.FILES['docfile4']
-                    handle_uploaded_file(file4, dest, shared)
+                sample = ".".join(["sample", "csv"])
+                file2 = request.FILES['docfile2']
+                handle_uploaded_file(file2, dest, sample)
+                parse_sample(file2, p_uuid)
 
-                    parse_profile(file3, file4, p_uuid)
+                taxonomy = ".".join(["mothur", "taxonomy"])
+                file3 = request.FILES['docfile3']
+                handle_uploaded_file(file3, dest, taxonomy)
+                parse_taxonomy(file3)
 
-                except:
-                    print('Upload failed. Please check your file formats...')
-
-            else:
-                print("Please upload taxonomic profile data")
-
-        else:
-            print("Please upload meta files")
+                shared = ".".join(["mothur", "shared"])
+                file4 = request.FILES['docfile4']
+                handle_uploaded_file(file4, dest, shared)
+                parse_profile(file3, file4, p_uuid)
 
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)

@@ -10,7 +10,6 @@ import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF
 import numpy as np
 import datetime
-import json
 
 
 stage = ''

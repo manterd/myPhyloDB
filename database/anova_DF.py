@@ -8,7 +8,6 @@ from numpy import *
 from numpy.random import mtrand
 from scipy.spatial.distance import *
 import math
-import os
 
 
 def catUnivMetaDF(qs1, metaDict):
@@ -268,7 +267,6 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
         else:
             numcore = mp.cpu_count()-1 or 1
             processes = [mp.Process(target=weightedProb2, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
-
 
         for p in processes:
             p.start()

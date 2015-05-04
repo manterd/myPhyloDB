@@ -8,7 +8,6 @@ from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from uuid import uuid4
 import numpy as np
 from numpy import *
-import multiprocessing as mp
 
 
 stage = ''
