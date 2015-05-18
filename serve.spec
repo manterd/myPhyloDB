@@ -36,6 +36,7 @@ templates = Datafiles(
     'templates/select.html',
     'templates/taxa.html',
     'templates/upload.html',
+    'templates/users.html',
     strip_path=False
     )
 

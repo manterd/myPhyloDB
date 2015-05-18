@@ -1,0 +1,10 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('PhyloDB Admin Page') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('PhyloDB administration') }}</a></h1>
+    <a href="/myPhyloDB/home/">Back to myPhyloDB</a>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

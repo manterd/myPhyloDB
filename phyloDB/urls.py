@@ -12,6 +12,7 @@ urlpatterns = patterns('',
     url(r'^myPhyloDB/taxa/$', 'database.views.taxa', name='taxa'),
     url(r'^myPhyloDB/ANOVA/$', 'database.views.ANOVA', name='anova'),
     url(r'^myPhyloDB/PCoA/$', 'database.views.PCoA', name='pcoa'),
+    url(r'^myPhyloDB/users/$', 'database.views.users', name='users'),
 
     url(r'^saveCookie/$', 'database.views.saveCookie', name='saveCookie'),
     url(r'^getCookie/$', 'database.views.getCookie', name='getCookie'),

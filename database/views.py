@@ -17,6 +17,10 @@ from django.contrib.auth.decorators import login_required
 def home(request):
     return render_to_response('home.html')
 
+@login_required(login_url='/myPhyloDB/login/')
+def users(request):
+    return render_to_response('users.html')
+
 
 @login_required(login_url='/myPhyloDB/login/')
 def upload(request):
