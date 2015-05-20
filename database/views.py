@@ -12,10 +12,16 @@ from models import Project, Sample, Species
 from parsers import projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 
 
 def home(request):
     return render_to_response('home.html')
+
+
+def logout_view(request):
+    logout(request)
+
 
 @login_required(login_url='/myPhyloDB/login/')
 def users(request):

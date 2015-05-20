@@ -6,6 +6,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     (r'^myPhyloDB/admin/', include(admin.site.urls)),
     (r'^myPhyloDB/login/$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
+    url(r'^myPhyloDB/logout/$', 'django.contrib.auth.views.logout', name='logout'),
     url(r'^myPhyloDB/home/$', 'database.views.home', name='home'),
     url(r'^myPhyloDB/upload/$', 'database.views.upload', name='upload'),
     url(r'^myPhyloDB/select/$', 'database.views.select', name='select'),
