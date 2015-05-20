@@ -10,16 +10,9 @@ class UploadForm2(forms.Form):
     docfile3 = forms.FileField(label='Select conserved taxonomy file:')
     docfile4 = forms.FileField(label='Select .shared file:')
 
-'''
+
 class UploadForm3(forms.Form):
-    docfile5 = forms.FileField(label='Select QIIME BIOM file:')
-
-
-class UploadForm4(forms.Form):
-    docfile6 = forms.FileField(label='Select QIIME OTU Table file:')
-
-
-class UploadForm5(forms.Form):
-    docfile7 = forms.FileField(label='Select MG-RAST table file:')
-'''
+    docfile5 = forms.FileField(label='Select sff file:')
+    docfile6 = forms.FileField(label='Select Oligos file:')
+    docfile7 = forms.FileField(label='Select Mothur batch file:')
 

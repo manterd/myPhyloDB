@@ -8,10 +8,36 @@ from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from uuid import uuid4
 import numpy as np
 from numpy import *
+import subprocess
+import glob
+import os
+import shutil
 
 
 stage = ''
 perc = 0
+
+
+def mothur(dest):
+    global stage, perc
+    stage = "Step 3 of 5: Running mothur...please check your terminal for progress!"
+    perc = 0
+
+    subprocess.call('mothur/mothur.exe mothur/temp/mothur.batch')
+
+    shutil.move('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
+    shutil.move('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
+    shutil.move('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
+    shutil.move('mothur/temp/final.fasta', '% s/final.fasta' % dest)
+    shutil.move('mothur/temp/final.names', '% s/final.names' % dest)
+    shutil.move('mothur/temp/final.groups', '% s/final.groups' % dest)
+    shutil.move('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
+    shutil.move('mothur/temp/final.shared', '% s/mothur.shared' % dest)
+
+    shutil.rmtree('mothur/temp')
+
+    for fl in glob.glob("*.logfile"):
+        os.remove(fl)
 
 
 def status(request):
@@ -36,7 +62,7 @@ def projectid(Document):
 
 def parse_project(Document, path, p_uuid):
     global stage, perc
-    stage = "Step 1 of 4: Parsing project file..."
+    stage = "Step 1 of 5: Parsing project file..."
     perc = 0
 
     f = csv.DictReader(Document, delimiter=',')
@@ -52,10 +78,10 @@ def parse_project(Document, path, p_uuid):
 
 def parse_sample(Document, p_uuid):
     global stage, perc
-    stage = "Step 2 of 4: Parsing sample file..."
+    stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
 
-    f = csv.reader(Document)
+    f = csv.reader(Document, delimiter=',')
     f.next()
     total = 0.0
     for row in f:
@@ -119,19 +145,22 @@ def parse_sample(Document, p_uuid):
     Document.close()
 
 
-def parse_taxonomy(Document):
+def parse_taxonomy(Document, arg):
     global stage, perc
-    stage = "Step 3 of 4: Parsing taxonomy file..."
+    stage = "Step 4 of 5: Parsing taxonomy file..."
     perc = 0
 
-    f = csv.reader(Document)
+    f = csv.reader(Document, delimiter='\t')
     f.next()
     total = 0.0
     for row in f:
         if row:
             total += 1.0
 
-    f = csv.reader(Document, delimiter='\t')
+    if arg == "1":
+        f = csv.reader(Document, delimiter='\t')
+    else:
+        Document.seek(0)
     f.next()
     step = 0.0
     for row in f:
@@ -185,7 +214,7 @@ def parse_taxonomy(Document):
 
 def parse_profile(file3, file4, p_uuid):
     global stage, perc
-    stage = "Step 4 of 4: Parsing shared file..."
+    stage = "Step 5 of 5: Parsing shared file..."
     perc = 0
 
     data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True)

@@ -34,6 +34,7 @@ class Server(object):
         if hasattr(engine, "console_control_handler"):
             engine.console_control_handler.subscribe()
         cherrypy.engine.subscribe('engine.start', Server.browse(self), priority=90)
+        cherrypy.log.screen = None
         engine.start()
         engine.block()
 

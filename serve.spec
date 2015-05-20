@@ -37,6 +37,7 @@ templates = Datafiles(
     'templates/taxa.html',
     'templates/upload.html',
     'templates/users.html',
+    'templates/admin/base_site.html',
     strip_path=False
     )
 
@@ -115,18 +116,30 @@ media = Datafiles(
     )
 
 sample_files = Datafiles(
-    'sample_files/final.pds.wang.tx.shared',
-    'sample_files/final.pds.wang.tx.1.cons.taxonomy',
-    'sample_files/Project.csv',
-    'sample_files/Sample.csv',
+    'sample_files/Example1.project.csv',
+    'sample_files/Example1.sample.csv',
+    'sample_files/Example1.taxonomy',
+    'sample_files/Example1.shared',
+    'sample_files/Example2.project.csv',
+    'sample_files/Example2.sample.csv',
+    'sample_files/Example2.batch',
+    'sample_files/Example2.oligos',
+    'sample_files/Example2.sff',
     strip_path=False
     )
 
-uploads = Datafiles(
-    'uploads/c943d20117ef491c95278d997a3316c3/2015-05-04_8.56.18/project.csv',
-    'uploads/c943d20117ef491c95278d997a3316c3/2015-05-04_8.56.18/sample.csv',
-    'uploads/c943d20117ef491c95278d997a3316c3/2015-05-04_8.56.18/mothur.shared',
-    'uploads/c943d20117ef491c95278d997a3316c3/2015-05-04_8.56.18/mothur.taxonomy',
+mothur_files = Datafiles(
+    'mothur/mothur.exe',
+    'mothur/uchime.exe',
+    'mothur/lookupFiles/LookUp_GS20.pat',
+    'mothur/lookupFiles/LookUp_GSFLX.pat',
+    'mothur/lookupFiles/LookUp_Titanium.pat',
+    'mothur/reference/gg_13_5_99.fasta',
+    'mothur/reference/gg_13_5_99.pds.tax',
+    'mothur/reference/silva.archaea.fasta',
+    'mothur/reference/silva.bacteria.fasta',
+    'mothur/reference/silva.eukarya.fasta',
+    'mothur/reference/silva.gold.ng.fasta',
     strip_path=False
     )
 
@@ -156,7 +169,7 @@ coll = COLLECT(exe,
 			   media,
 			   sample_files,
 			   instructions,
-			   uploads,
+			   mothur_files,
                strip=None,
                upx=True,
                name='myPhyloDB')
