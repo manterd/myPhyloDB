@@ -20,7 +20,7 @@ perc = 0
 
 def mothur(dest):
     global stage, perc
-    stage = "Step 3 of 5: Running mothur...please check your terminal for progress!"
+    stage = "Step 3 of 5: Running mothur...please check your host terminal for progress!"
     perc = 0
 
     if os.name == 'nt':
@@ -41,8 +41,6 @@ def mothur(dest):
 
     for fl in glob.glob("*.logfile"):
         os.remove(fl)
-
-    # Change
 
 
 def status(request):
