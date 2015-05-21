@@ -26,7 +26,7 @@ def mothur(dest):
     if os.name == 'nt':
         subprocess.call('mothur/mothur-win/mothur.exe mothur/temp/mothur.batch')
     else:
-        subprocess.call('mothur/mothur-linux/mothur.exe mothur/temp/mothur.batch')
+        subprocess.call('mothur/mothur-linux/mothur mothur/temp/mothur.batch', shell=True)
 
     shutil.move('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
     shutil.move('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
