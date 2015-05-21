@@ -255,10 +255,19 @@ def oligos(request):
     return response
 
 
-def batch(request):
-    filename = "sample_files/Example2.batch"
+def batch1(request):
+    filename = "sample_files/Example2.mothur_win.batch"
     wrapper = FileWrapper(file(filename))
     response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Example2.batch"'
+    response['Content-Disposition'] = 'attachment; filename="Example2.mothur_win.batch"'
+    response['Content-Length'] = os.path.getsize(filename)
+    return response
+
+
+def batch2(request):
+    filename = "sample_files/Example2.mothur_linux.batch"
+    wrapper = FileWrapper(file(filename))
+    response = HttpResponse(wrapper, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="Example2.mothur_linux.batch"'
     response['Content-Length'] = os.path.getsize(filename)
     return response

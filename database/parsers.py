@@ -23,7 +23,10 @@ def mothur(dest):
     stage = "Step 3 of 5: Running mothur...please check your terminal for progress!"
     perc = 0
 
-    subprocess.call('mothur/mothur.exe mothur/temp/mothur.batch')
+    if os.name == 'nt':
+        subprocess.call('mothur/mothur-win/mothur.exe mothur/temp/mothur.batch')
+    else:
+        subprocess.call('mothur/mothur-linux/mothur.exe mothur/temp/mothur.batch')
 
     shutil.move('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
     shutil.move('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)

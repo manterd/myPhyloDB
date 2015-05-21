@@ -8,7 +8,7 @@ from django.core.handlers.wsgi import WSGIHandler
 import webbrowser
 import multiprocessing as mp
 
-#CHANGE!!
+#CHANGE!
 class Server(object):
     def __init__(self):
         self.base_dir = os.path.join(os.path.abspath(os.getcwd()), "phyloDB")

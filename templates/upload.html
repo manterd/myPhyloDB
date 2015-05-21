@@ -72,7 +72,7 @@
             <tr>
                 <td colspan="2">
                     <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
-                        <th colspan="2">Metadata files:</th>
+                        <th colspan="2">Metadata Files:</th>
                         <tr>
                             <td>{{ form1.docfile1.label_tag }}</td>
                             <td>{{ form1.docfile1 }}</td>
@@ -96,7 +96,7 @@
             <tr>
                 <td colspan="2">
                     <table id="mothur" width="100%" border="2" cellspacing="0" cellpadding="1">
-                        <th colspan="2">Pre-processed Mothur files:</th>
+                        <th colspan="2">Pre-processed Mothur Files:</th>
                         <tr>
                             <td>{{ form2.docfile3.label_tag }}</td>
                             <td>{{ form2.docfile3 }}</td>
@@ -114,7 +114,7 @@
             <tr>
                 <td colspan="2">
                     <table id="mothur" width="100%" border="2" cellspacing="0" cellpadding="1">
-                        <th colspan="2">Raw data files:</th>
+                        <th colspan="2">Raw 454 Data Files:</th>
                         <tr>
                             <td>{{ form3.docfile5.label_tag }}</td>
                             <td>{{ form3.docfile5 }}</td>
@@ -150,7 +150,7 @@
                 {% if projects %}
                     {% for project in projects %}
                         <input name="chkbx" type="checkbox" value="{{ project.projectid }}"/>
-                        {{ project.project_name }}: {{ project.project_desc }}
+                        Project ID: {{ project.projectid }} // Project Name: {{ project.project_name }} // Project PI: {{ project.pi_last }}<br>
                         <br>
                     {% endfor %}
                 {% else %}

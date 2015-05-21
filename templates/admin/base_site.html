@@ -2,17 +2,9 @@
 {% load i18n admin_static %}<!DOCTYPE html>
 {% block title %}{{ title }} | {{ site_title|default:_('PhyloDB Admin Page') }}{% endblock %}
 
-
-
-
 {% load static %}
 
-
-
 <body>
-
-
-
     <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>
     <link href="{% static "css/style.css" %}" rel='stylesheet' type='text/css' media='screen'>
 
@@ -82,11 +74,6 @@
             </table>
         </div>
 
-
-
-
-
-
         <div id="Menu" style="background-color: white">
             <div class="menuTitle">
                Menu
@@ -132,11 +119,11 @@
         <div id="Content">
             {% block my_content %}
                 <div id="adminStuff">
-                <li>
                     {% if user.is_authenticated %}
-                        <a href="{% url "django.contrib.auth.views.logout" %}">Logout</a>
+                        <li>
+                            <a href="{% url "django.contrib.auth.views.logout" %}">Logout</a>
+                        </li>
                     {% endif %}
-                </li>
                 {% block usertools %}{% endblock %}
                 {% block welcome-msg %}
                 {% block userlinks %}{% endblock %}
