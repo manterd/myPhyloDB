@@ -42,6 +42,8 @@ def mothur(dest):
     for fl in glob.glob("*.logfile"):
         os.remove(fl)
 
+    # Change
+
 
 def status(request):
     if request.is_ajax():
