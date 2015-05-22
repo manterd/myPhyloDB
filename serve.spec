@@ -43,6 +43,7 @@ def extra_datas(mydir):
 
     return extra_datas
 
+a.datas += extra_datas('instructions')
 a.datas += extra_datas('media/admin/img')
 a.datas += extra_datas('media/css')
 a.datas += extra_datas('media/datatables/css')

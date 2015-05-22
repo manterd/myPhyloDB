@@ -19,6 +19,7 @@ Source: "..\..\..\dist\myPhyloDB\include\*"; DestDir: "{app}\include"; Flags: re
 Source: "..\..\..\dist\myPhyloDB\instructions\*"; DestDir: "{app}\instructions"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\IPython\*"; DestDir: "{app}\IPython"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\media\*"; DestDir: "{app}\media"; Flags: recursesubdirs
+Source: "..\..\..\dist\myPhyloDB\mothur\*"; DestDir: "{app}\mothur"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\mpl-data\*"; DestDir: "{app}\mpl-data"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\pytz\*"; DestDir: "{app}\pytz"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\sample_files\*"; DestDir: "{app}\sample_files"; Flags: recursesubdirs
