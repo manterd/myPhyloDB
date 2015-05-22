@@ -10,7 +10,7 @@ from django.template import RequestContext
 from forms import UploadForm1, UploadForm2, UploadForm3
 from models import Project, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
-from utils import handle_uploaded_file, remove_list
+from utils import handle_uploaded_file, remove_list, remove_proj
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 
@@ -30,15 +30,31 @@ def users(request):
 
 @login_required(login_url='/myPhyloDB/login/')
 def upload(request):
+
+
+
     if request.method == 'POST' and 'Upload' in request.POST:
         form1 = UploadForm1(request.POST, request.FILES)
         form2 = UploadForm2(request.POST, request.FILES)
         form3 = UploadForm3(request.POST, request.FILES)
 
         if form1.is_valid():
-            project = ".".join(["project", "csv"])
-            file1 = request.FILES['docfile1']
-            p_uuid = projectid(file1)
+            try:
+                project = ".".join(["project", "csv"])
+                file1 = request.FILES['docfile1']
+                p_uuid = projectid(file1)
+            except:
+                print("Error with project file")
+                projects = Project.objects.all().order_by('project_name')
+                return render_to_response(
+                    'upload.html',
+                    {'projects': projects,
+                     'form1': UploadForm1,
+                     'form2': UploadForm2,
+                     'form3': UploadForm3,
+                     'error': "There was an error parsing your Project file"},
+                    context_instance=RequestContext(request)
+                )
 
             date = datetime.date.today().isoformat()
             hour = datetime.datetime.now().hour
@@ -49,23 +65,79 @@ def upload(request):
 
             dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
             handle_uploaded_file(file1, dest, project)
-            parse_project(file1, dest, p_uuid)
+            try:
+                parse_project(file1, dest, p_uuid)
+            except:
+                print("Error with project file")
+                remove_proj(p_uuid)
+                projects = Project.objects.all().order_by('project_name')
+                return render_to_response(
+                    'upload.html',
+                    {'projects': projects,
+                     'form1': UploadForm1,
+                     'form2': UploadForm2,
+                     'form3': UploadForm3,
+                     'error': "There was an error parsing your Project file"},
+                    context_instance=RequestContext(request)
+                )
 
             sample = ".".join(["sample", "csv"])
             file2 = request.FILES['docfile2']
             handle_uploaded_file(file2, dest, sample)
-            parse_sample(file2, p_uuid)
+            try:
+                parse_sample(file2, p_uuid)
+            except:
+                print("Error with sample file")
+                remove_proj(p_uuid)
+                projects = Project.objects.all().order_by('project_name')
+                return render_to_response(
+                    'upload.html',
+                    {'projects': projects,
+                     'form1': UploadForm1,
+                     'form2': UploadForm2,
+                     'form3': UploadForm3,
+                     'error': "There was an error parsing your Sample file"},
+                    context_instance=RequestContext(request)
+                )
 
             if form2.is_valid():
                 taxonomy = ".".join(["mothur", "taxonomy"])
                 file3 = request.FILES['docfile3']
                 handle_uploaded_file(file3, dest, taxonomy)
-                parse_taxonomy(file3, "1")
+                try:
+                    parse_taxonomy(file3, "1")
+                except:
+                    print("Error with taxonomy file")
+                    remove_proj(p_uuid)
+                    projects = Project.objects.all().order_by('project_name')
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'form3': UploadForm3,
+                         'error': "There was an error parsing your Taxonomy file"},
+                        context_instance=RequestContext(request)
+                    )
 
                 shared = ".".join(["mothur", "shared"])
                 file4 = request.FILES['docfile4']
                 handle_uploaded_file(file4, dest, shared)
-                parse_profile(file3, file4, p_uuid)
+                try:
+                    parse_profile(file3, file4, p_uuid)
+                except:
+                    print("Error with shared file")
+                    remove_proj(p_uuid)
+                    projects = Project.objects.all().order_by('project_name')
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'form3': UploadForm3,
+                         'error': "There was an error parsing your Shared file"},
+                        context_instance=RequestContext(request)
+                    )
 
             if form3.is_valid():
                 mothurdest = 'mothur/temp'
@@ -84,14 +156,56 @@ def upload(request):
                 file7 = request.FILES['docfile7']
                 handle_uploaded_file(file7, mothurdest, batch)
 
-                mothur(dest)
+                try:
+                    mothur(dest)
+                except:
+                    print("Encountered error with Mothur")
+                    remove_proj(p_uuid)
+                    projects = Project.objects.all().order_by('project_name')
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'form3': UploadForm3,
+                         'error': "There was an error with Mothur"},
+                        context_instance=RequestContext(request)
+                    )
 
-                with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                    parse_taxonomy(file3, "no")
+                try:
+                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                        parse_taxonomy(file3, "no")
+                except:
+                    print("Error with post-mothur taxonomy file")
+                    remove_proj(p_uuid)
+                    projects = Project.objects.all().order_by('project_name')
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'form3': UploadForm3,
+                         'error': "There was an error parsing your Taxonomy file (post-Mothur)"},
+                        context_instance=RequestContext(request)
+                    )
 
-                with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                    with open('% s/mothur.shared' % dest, 'rb') as file4:
-                        parse_profile(file3, file4, p_uuid)
+                try:
+                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/mothur.shared' % dest, 'rb') as file4:
+                            parse_profile(file3, file4, p_uuid)
+                except:
+                    print("Error with parsing post-mothur profile")
+                    remove_proj(p_uuid)
+                    projects = Project.objects.all().order_by('project_name')
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'form3': UploadForm3,
+                         'error': "There was an error parsing your Profile (post-Mothur)"},
+                        context_instance=RequestContext(request)
+                    )
 
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)
@@ -102,7 +216,8 @@ def upload(request):
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'form3': UploadForm3},
+         'form3': UploadForm3,
+         'error': ""},
         context_instance=RequestContext(request)
     )
 

@@ -30,13 +30,20 @@ def handle_uploaded_file(f, path, name):
             destination.write(chunk)
 
 
-def remove_list(request):
+def remove_list(request):  # TODO make another function that removes a single project
     items = request.POST.getlist('chkbx')
     for item in items:
         q = Project.objects.get(projectid=item)
         path = "/".join(['uploads', str(q.projectid)])
         shutil.rmtree(path)
         Project.objects.get(projectid=item).delete()
+
+
+def remove_proj(puid):
+    q = Project.objects.get(projectid=puid)
+    path = "/".join(['uploads', str(q.projectid)])
+    shutil.rmtree(path)
+    Project.objects.get(projectid=puid).delete()
 
 
 def multidict(ordered_pairs):

@@ -24,7 +24,17 @@
     </style>
 
     <script type="text/javascript">
+
+
+
+
         $(function () {
+
+            var test = '{{ error }}';
+            if (test != "") {
+                alert(test);
+            }
+
             $("#Upload").click(function() {
                 $("#stage").show();
                 $("#progressBar").show();
