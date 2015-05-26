@@ -30,7 +30,7 @@ def handle_uploaded_file(f, path, name):
             destination.write(chunk)
 
 
-def remove_list(request):  # TODO make another function that removes a single project
+def remove_list(request):
     items = request.POST.getlist('chkbx')
     for item in items:
         q = Project.objects.get(projectid=item)
