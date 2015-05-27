@@ -62,8 +62,8 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'America/Denver'
 
 USE_I18N = False
-USE_L10N = False
-USE_TZ = False
+USE_L10N = True
+USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/

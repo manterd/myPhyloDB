@@ -5,9 +5,24 @@ a = Analysis(['serve.py'],
              hiddenimports=[
                 'scipy.special._ufuncs_cxx',
                 'django.templatetags.future',
+                'django.templatetags.i18n',
+                'django.templatetags.__init__',
+                'django.templatetags.cache',
+                'django.templatetags.l10n',
+                'django.templatetags.static',
+                'django.templatetags.tz',
+                'django.contrib.admin.templatetags.log',
+                'django.contrib.admin.templatetags.__init__',
+                'django.contrib.admin.templatetags.admin_list',
+                'django.contrib.admin.templatetags.admin_modify',
+                'django.contrib.admin.templatetags.admin_static',
+                'django.contrib.admin.templatetags.admin_urls',
             ],
              hookspath=None,
              runtime_hooks=None)
+
+
+
 
 def Datafiles(*filenames, **kw):
     import os
