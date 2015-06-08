@@ -251,32 +251,35 @@ def quantUnivMetaDF(qs1, metaDict):
     return metaDF
 
 
-def normalizeUniv(df, taxaDict, mySet, reads, depvar):
+def normalizeUniv(df, taxaDict, mySet, meth, reads):
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
     countDF = pd.DataFrame()
-    if reads >= 0:
-        countDF = df2[taxaID].reset_index(drop=True)
-        manager = mp.Manager()
-        d = manager.dict()
+    if meth == 1:
+        countDF = df2.reset_index(drop=True)
 
-        if depvar == 2:
-            numcore = 1
-            processes = [mp.Process(target=weightedProb1, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
-        else:
+    elif meth == 2 or meth == 3:
+        if reads >= 0:
+            countDF = df2[taxaID].reset_index(drop=True)
+            manager = mp.Manager()
+            d = manager.dict()
+
             numcore = mp.cpu_count()-1 or 1
-            processes = [mp.Process(target=weightedProb2, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
+            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
 
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
 
-        for key, value in d.items():
-            countDF[key] = value
+            for key, value in d.items():
+                countDF[key] = value
 
-    elif reads < 0:
+        elif reads < 0:
+            countDF = df2.reset_index(drop=True)
+
+    elif meth == 4:
         countDF = df2.reset_index(drop=True)
 
     relabundDF = pd.DataFrame(countDF[taxaID])
@@ -375,8 +378,10 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
             field = 'speciesid'
 
         for i in mySet:
-            groupReads = countDF.groupby(field)[i].sum()
-            groupAbund = relabundDF.groupby(field)[i].sum()
+            if meth == 4:
+                groupAbund = relabundDF.groupby(field)[i].sum()
+            else:
+                groupAbund = countDF.groupby(field)[i].sum()
             groupRich = binaryDF.groupby(field)[i].sum()
             groupDiversity = diversityDF.groupby(field)[i].sum()
             if isinstance(taxaList, unicode):
@@ -384,9 +389,7 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
                 myDict['sampleid'] = i
                 myDict['rank'] = rank
                 myDict['taxa_id'] = taxaList
-                myDict['count'] = groupReads[taxaList]
-                #myDict['total'] = groupReads.sum()
-                myDict['rel_abund'] = groupAbund[taxaList]
+                myDict['abund'] = groupAbund[taxaList]
                 myDict['rich'] = groupRich[taxaList]
                 myDict['diversity'] = groupDiversity[taxaList]
                 rowsList.append(myDict)
@@ -396,15 +399,13 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
                     myDict['sampleid'] = i
                     myDict['rank'] = rank
                     myDict['taxa_id'] = j
-                    myDict['count'] = groupReads[j]
-                    #myDict['total'] = groupReads.sum()
-                    myDict['rel_abund'] = groupAbund[j]
+                    myDict['abund'] = groupAbund[j]
                     myDict['rich'] = groupRich[j]
                     myDict['diversity'] = groupDiversity[j]
                     rowsList.append(myDict)
-        DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'rank', 'taxa_id', 'count', 'rel_abund', 'rich', 'diversity'])
+        DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'rank', 'taxa_id', 'abund', 'rich', 'diversity'])
         DF1 = DF1.merge(namesDF, on='taxa_id', how='outer')
-        DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'count', 'rel_abund', 'rich', 'diversity']]
+        DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
 
         if normDF.empty:
             normDF = DF1
@@ -413,22 +414,7 @@ def normalizeUniv(df, taxaDict, mySet, reads, depvar):
     return normDF
 
 
-def weightedProb1(x, cores, reads, mySet, df, d):
-    high = len(mySet)
-    set = mySet[x:high:cores]
-
-    for i in set:
-        arr = asarray(df[i])
-        cols = shape(arr)
-        sample = arr.astype(dtype=np.float64)
-        if sample.sum() <= reads:
-            prob = (sample + 0.1) / (sample.sum() + cols[0] * 0.1)
-        else:
-            prob = sample / sample.sum()
-        d[i] = prob
-
-
-def weightedProb2(x, cores, reads, mySet, df, d):
+def weightedProb(x, cores, reads, mySet, df, d):
     high = len(mySet)
     set = mySet[x:high:cores]
 

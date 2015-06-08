@@ -18,12 +18,11 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, button2 = 2, selTheme = 0, i = 0, statistic = 1;
+        var button1 = 1, DepVar = 1, NormMeth = 4, StatTest = 2, selTheme = 0, i = 0;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
         var sig1_only = 0, sig2_only = 0;
-        var remove = 0;
         var refresh;
 
         $(function () {
@@ -135,14 +134,30 @@
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#statistic").change(function () {
-                statistic = $(this).val();
+            $("#DepVar").change(function () {
+                DepVar = $(this).val();
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#button2").change(function () {
-                button2 = $(this).val();
+            $("#NormMeth").change(function () {
+                NormMeth = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#NormVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#FdrVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#StatTest").change(function () {
+                StatTest = $(this).val();
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
@@ -163,11 +178,6 @@
                 } else {
                     sig2_only = 0
                 }
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#normalize").change(function () {
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
@@ -313,16 +323,6 @@
                     node.select(false);
                 });
             });
-
-            $("#remove").change(function () {
-                if (document.getElementById('remove').checked) {
-                    remove = 1
-                } else {
-                    remove = 0
-                }
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
         });
 
         function updateStatus() {
@@ -363,8 +363,15 @@
                 $("#text-2").hide();
                 $("#sig_text-1").show();
                 $("#sig_text-2").hide();
-                $("#statistic").show();
-                $("#stat-text").show();
+                $("#StatTest").show();
+                $("#StatTest-text").show();
+                if (StatTest == 2) {
+                    $("#FdrRow").show();
+                    $("#FdrRow-off").hide();
+                } else {
+                    $("#FdrRow").hide();
+                    $("#FdrRow-off").show();
+                }
             }
             else if (button1 == 2) {
                 $("#tree_metaCat").hide();
@@ -375,31 +382,30 @@
                 $("#text-2").show();
                 $("#sig_text-1").hide();
                 $("#sig_text-2").show();
-                $("#statistic").hide();
-                $("#stat-text").hide();
+                $("#StatTest").hide();
+                $("#StatTest-text").hide();
+                $("#FdrRow").hide();
+                $("#FdrRow-off").show();
+            }
+            if ((NormMeth == 2) || (NormMeth == 3)) {
+                $("#NormRow").show();
+                $("#NormRow-off").hide();
+            } else {
+                $("#NormRow").hide();
+                $("#NormRow-off").show();
             }
         }
 
         function chooseData() {
             if ((nodesCat != "") && (((nodesTaxa != "") || (selectAll != 0))) && (button1 == 1)) {
-                if ( document.getElementById("normalize").value == "") {
-                    $("#container-1").empty().append('Please check all of the text boxes for appropriate values!');
-                    $("#run").css("background-color", "red");
-                } else {
-                    $("#run").css("background-color", "yellow");
-                    $("#container-1").empty().append('Analysis is running...please be patient');
-                    getCatGraphData();
-                }
+                $("#run").css("background-color", "yellow");
+                $("#container-1").empty().append('Analysis is running...please be patient');
+                getCatGraphData();
             }
             else if ((nodesQuant != "") && (((nodesTaxa != "") || (selectAll != 0))) && (button1 == 2)) {
-                if ( document.getElementById("normalize").value == "") {
-                    $("#container-2").empty().append('Please check all of the text boxes for appropriate values!');
-                    $("#run").css("background-color", "red");
-                } else {
-                    $("#run").css("background-color", "yellow");
-                    $("#container-2").empty().append('Analysis is running...please be patient');
-                    getQuantGraphData();
-                }
+                $("#run").css("background-color", "yellow");
+                $("#container-2").empty().append('Analysis is running...please be patient');
+                getQuantGraphData();
             }
             else if ((nodesCat == "") && (nodesTaxa == "") && (selectAll == 0) && (button1 == 1)) {
                 $("#container-1").empty().append('Please choose your meta variable(s) and taxa level(s)!');
@@ -471,12 +477,17 @@
             var myDict = {};
             myDict['meta'] = meta;
             myDict['taxa'] = taxa;
-            myDict['button'] = button2;
+            myDict['DepVar'] = DepVar;
             myDict['sig_only'] = sig1_only;
             myDict['selectAll'] = selectAll;
-            myDict['normalize'] = document.getElementById("normalize").value;
-            myDict['remove'] = remove;
-            myDict['statistic'] = statistic;
+            if ((NormMeth == 2) || (NormMeth == 3)){
+                myDict['NormVal'] = document.getElementById("NormVal").value;
+            } else {
+                myDict['NormVal'] = "none"
+            }
+            myDict['FdrVal'] = document.getElementById("FdrVal").value;
+            myDict['NormMeth'] = NormMeth;
+            myDict['StatTest'] = StatTest;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -493,7 +504,7 @@
                     var yAxis = data['yAxis'];
                     var empty = data['empty'];
                     if (empty == 0) {
-                        alert('No significant ANOVAs!');
+                        alert('No significant tests!');
                     }
                     barchart(xAxis, yAxis, series);
                     var text = data['text'];
@@ -544,11 +555,15 @@
             var myDict = {};
             myDict['meta'] = meta;
             myDict['taxa'] = taxa;
-            myDict['button'] = button2;
+            myDict['DepVar'] = DepVar;
             myDict['sig_only'] = sig2_only;
             myDict['selectAll'] = selectAll;
-            myDict['normalize'] = document.getElementById("normalize").value;
-            myDict['remove'] = remove;
+            if ((NormMeth == 2) || (NormMeth == 3)){
+                myDict['NormVal'] = document.getElementById("NormVal").value;
+            } else {
+                myDict['NormVal'] = "none"
+            }
+            myDict['NormMeth'] = NormMeth;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -719,11 +734,11 @@
     <br><br>
 
     <div style="float: left; padding-left: 10px;" id="sig_text-1">
-        Display only significantly different taxa (p <= 0.05): &nbsp
+        Display only significantly different taxa (p <= 0.05):
         <input type="checkbox" id="sig_box-1">
     </div>
     <div style="float: left; padding-left: 10px; display: none" id="sig_text-2">
-        Display only significant regressions (p <= 0.05): &nbsp
+        Display only significant regressions (p <= 0.05):
         <input type="checkbox" id="sig_box-2">
     </div>
 
@@ -743,38 +758,49 @@
     </div>
     <table width="950px" border="2">
         <tr>
-            <th style="padding-right: 10px;">GraphData</th>
+            <th colspan="3" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td style="float: left;">Select dependent variable:
-                <select id="button2">
-                    <option value="1">Sequence Reads</option>
-                    <option value="2" selected="selected">Relative Abundance</option>
-                    <option value="3">Species Richness</option>
-                    <option value="4">Shannon Diversity</option>
+            <td style="width: 33%; tet-align: left">
+                Dependent variable:<select id="DepVar">
+                    <option value="1">Abundance</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
                 </select>
             </td>
-            <td style="float: right;">Normalize data (sequence reads):
-                <input type="text" id="normalize" value="median" style="width:50px"/>
-                &nbsp
-            </td>
-        </tr>
-        <tr>
-            <td id="stat-text" style="float: left;">Summary statistic:
-                <select id="statistic">
-                    <option value="1" selected="selected">Average</option>
-                    <option value="2">Min</option>
-                    <option value="3">Max</option>
-                    <option value="4">Sum</option>
+            <td style="width: 34%; text-align: center">
+                Normalization method:
+                <select id="NormMeth">
+                    <option value="1">None</option>
+                    <option value="2">Rarefaction (remove)</option>
+                    <option value="3">Rarefaction (keep)</option>
+                    <option value="4" selected="selected">Proportion</option>
                 </select>
             </td>
-            <td style="float: right;">Remove samples below threshold:
-                <input type="checkbox" id="remove"/>
-                &nbsp
+            <td id="StatTest-text" style="width: 33%; text-align: right">
+                Statistical test:
+                <select id="StatTest">
+                    <option value="1">ANOVA</option>
+                    <option value="2" selected="selected">Welch's two-sided t-test</option>
+                    <option value="3">exact bionomial test</option>
+                </select>
             </td>
         </tr>
         <tr>
-            <td>
+            <td></td>
+            <td id="NormRow" style="display: none; text-align: center">
+                Sample size:
+                <input type="text" id="NormVal" value="min"/>
+            </td>
+            <td id="NormRow-off"></td>
+            <td id="FdrRow" style="text-align: right">
+                False Discovery Rate:
+                <input type="text" id="FdrVal" value="0.05"/>
+            </td>
+            <td id="FdrRow-off" style="display: none;"></td>
+        </tr>
+        <tr>
+            <td colspan="3">
                 <div id="container-1" style="height: 400px;">No Data has been selected!</div>
                 <div id="container-2" style="height: 400px; display: none">No Data has been selected!</div>
             </td>

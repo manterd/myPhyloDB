@@ -10,6 +10,8 @@ import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF
 import numpy as np
 import datetime
+from pyper import *
+import math
 
 
 stage = ''
@@ -27,47 +29,55 @@ def statusANOVA(request):
 def getCatUnivData(request):
     global stage
     stage = 'Step 1 of 4: Querying database...'
+
+    # Get selected samples from cookie and query database for sample info
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
     qs1 = Sample.objects.all().filter(sampleid__in=selected)
 
     if request.is_ajax():
+        # Get variables from web page
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
-        button = int(all["button"])
-        sig_only = int(all["sig_only"])
-        factor = all["normalize"]
         selectAll = int(all["selectAll"])
-        remove = int(all["remove"])
-        stat = int(all["statistic"])
+        DepVar = int(all["DepVar"])
+        NormMeth = int(all["NormMeth"])
+        NormVal = all["NormVal"]
+        FDR = float(all["FdrVal"])
+        StatTest = int(all["StatTest"])
+        sig_only = int(all["sig_only"])
 
+        # Generate a list of sequence reads per sample
         countList = []
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if total['count__sum'] is not None:
                 countList.append(total['count__sum'])
 
+        # Calculate min/median/max of sequence reads for rarefaction
         minSize = int(min(countList))
         medianSize = int(np.median(np.array(countList)))
         maxSize = int(max(countList))
 
-        if factor == "min":
-            norm = minSize
-        elif factor == "median":
-            norm = medianSize
-        elif factor == "max":
-            norm = maxSize
-        elif factor == "none":
-            norm = -1
+        if NormVal == "min":
+            NormReads = minSize
+        elif NormVal == "median":
+            NormReads = medianSize
+        elif NormVal == "max":
+            NormReads = maxSize
+        elif NormVal == "none":
+            NormReads = -1
         else:
-            norm = int(all["normalize"])
+            NormReads = int(all["NormVal"])
 
+        # Remove samples if below the sequence threshold set by user (rarefaction)
         newList = []
+        result = 'Data Normalization:\n'
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if remove == 1:
-                if total['count__sum'] is not None and int(total['count__sum']) >= norm:
+            if NormMeth == 2:
+                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
                     id = sample.sampleid
                     newList.append(id)
             else:
@@ -75,27 +85,43 @@ def getCatUnivData(request):
                     id = sample.sampleid
                     newList.append(id)
 
+        # If user set reads to high sample list will be blank
+        if not newList:
+            NormReads = medianSize
+            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                    id = sample.sampleid
+                    newList.append(id)
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
 
+        # Get dict of selected meta variables
         metaString = all["meta"]
         metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
 
+        # Convert dict to list
         fieldList = []
         for key in metaDict:
             fieldList.append(key)
 
+        # Create dataframe of meta variables by sample
         metaDF = catUnivMetaDF(qs2, metaDict)
         metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sample_name', inplace=True)
 
+        # Create unique list of samples in meta dataframe (may be different than selected samples due to null values)
         myList = metaDF['sampleid'].tolist()
         mySet = list(ordered_set(myList))
 
+        # Create dataframe with all taxa/count data by sample
         taxaDF = taxaProfileDF(mySet)
 
+        # Select only the taxa of interest if user used the taxa tree
         taxaString = all["taxa"]
-
         taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+
+        # Select only the taxa of interest if user used the selectAll button
         if selectAll == 1:
             taxaDict = {}
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('kingdomid', flat='True').distinct()
@@ -126,24 +152,24 @@ def getCatUnivData(request):
             taxaDict['Species'] = qs3
 
         stage = 'Step 1 of 4: Querying database...complete'
+
+        # Normalize data
         stage = 'Step 2 of 4: Normalizing data...'
-        normDF = normalizeUniv(taxaDF, taxaDict, mySet, norm, button)
-        stage = 'Step 2 of 4: Normalizing data...complete'
-        stage = 'Step 3 of 4: Performing ANOVA...'
+        normDF = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads)
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
-        finalDF[['count', 'rel_abund', 'rich', 'diversity']] = finalDF[['count', 'rel_abund', 'rich', 'diversity']].astype(float)
+        finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
         pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
 
         finalDict = {}
-        result = 'Data Normalization:\n'
-        if norm == -1:
-            result = result + 'Data were not normalized...\n'
-        else:
-            result = result + 'Data normalized to ' + str(norm) + ' sequence reads...\n'
-        if remove == 1:
-            result = result + 'Samples below this threshold were removed\n\n'
-        if remove == 0:
-            result = result + 'All selected samples were included in the analysis\n\n'
+        if NormMeth == 1:
+            result = result + 'No normalization was performed...\n'
+        if NormMeth == 2 or NormMeth == 3:
+            result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+        if NormMeth == 4:
+            result = result + 'Data were normalized by the total number of sequence reads...\n'
+
+        stage = 'Step 2 of 4: Normalizing data...complete'
+        stage = 'Step 3 of 4: Performing statistical test...'
 
         seriesList = []
         xAxisDict = {}
@@ -157,13 +183,11 @@ def getCatUnivData(request):
             trtList = []
             valList = []
             grouped2 = pd.DataFrame()
-            if button == 1:
-                grouped2 = group1.groupby(fieldList)['count']
-            elif button == 2:
-                grouped2 = group1.groupby(fieldList)['rel_abund']
-            elif button == 3:
+            if DepVar == 1:
+                grouped2 = group1.groupby(fieldList)['abund']
+            elif DepVar == 2:
                 grouped2 = group1.groupby(fieldList)['rich']
-            elif button == 4:
+            elif DepVar == 3:
                 grouped2 = group1.groupby(fieldList)['diversity']
 
             for name2, group2 in grouped2:
@@ -174,17 +198,99 @@ def getCatUnivData(request):
                 trtList.append(trt)
                 valList.append(list(group2.T))
 
-            D = Anova1way()
-            try:
-                D.run(valList, conditions_list=trtList)
-                p_val = float(D['p'])
-                anova_error = 'no'
-            except:
-                p_val = 1.0
-                D = 'a or b too big, or ITMAX too small in Betacf.\n' + 'Samples sizes are either too unequal or n=1.\n'
-                anova_error = 'yes'
+            D = ""
+            p_val = 1.0
+            if StatTest == 1:
+                # transform data to help equalize variances
+                for row in valList:
+                    row[:] = [math.log(x, 2) for x in row]
 
-            stage = 'Step 3 of 4: Performing ANOVA...complete'
+                D = Anova1way()
+                try:
+                    D.run(valList, conditions_list=trtList)
+                    p_val = float(D['p'])
+                except:
+                    p_val = 1.0
+                    D = 'Samples sizes are either too unequal or n=1.\n'
+
+            elif StatTest == 2:
+                rows_list = []
+                m = 0.0
+                for i, val1 in enumerate(trtList):
+                    smp1 = valList[i]
+                    start = i + 1
+                    stop = int(len(trtList))
+                    for j in range(start, stop):
+                        if i != j:
+                            val2 = trtList[j]
+                            smp2 = valList[j]
+                            if len(smp1) > 1 and len(smp2) > 1:
+                                (t_val, p_val) = stats.ttest_ind(smp1, smp2, equal_var=False)
+                                m += 1.0
+                            else:
+                                p_val = "Nan"
+                            dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'p_value': p_val}
+                            rows_list.append(dict1)
+                pvalDF = pd.DataFrame(rows_list)
+                pvalDF.sort(columns='p_value', inplace=True)
+                pvalDF.reset_index(drop=True, inplace=True)
+                pvalDF.index += 1
+                pvalDF['BH'] = pvalDF.index / m * FDR
+                pvalDF['Sig'] = pvalDF.p_value <= pvalDF.BH
+
+                pvalDF[['p_value', 'BH']] = pvalDF[['p_value', 'BH']].astype(float)
+                D = pvalDF.to_string(columns=['sample1', 'sample2', 'p_value', 'BH', 'Sig'])
+                if True in pvalDF['Sig'].values:
+                    p_val = 0.0
+                else:
+                    p_val = 1.0
+
+            elif StatTest == 3:
+                rows_list = []
+                m = 0.0
+                for i, val1 in enumerate(trtList):
+                    smp1 = valList[i]
+                    sum1 = sum(smp1)
+                    newList = [x / sum1 for x in smp1]
+
+                    start = i + 1
+                    stop = int(len(trtList))
+                    for j in range(start, stop):
+                        if i != j:
+                            val2 = trtList[j]
+                            smp2 = valList[j]
+                            if len(smp1) > 1 and len(smp2) > 1:
+                                (t_val, p_val) = stats.binom_test(smp1, smp2, equal_var=False)
+                                m += 1.0
+                            else:
+                                p_val = "Nan"
+                            dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'p_value': p_val}
+                            rows_list.append(dict1)
+                pvalDF = pd.DataFrame(rows_list)
+                pvalDF.sort(columns='p_value', inplace=True)
+                pvalDF.reset_index(drop=True, inplace=True)
+                pvalDF.index += 1
+                pvalDF['BH'] = pvalDF.index / m * FDR
+                pvalDF['Sig'] = pvalDF.p_value <= pvalDF.BH
+
+                pvalDF[['p_value', 'BH']] = pvalDF[['p_value', 'BH']].astype(float)
+                D = pvalDF.to_string(columns=['sample1', 'sample2', 'p_value', 'BH', 'Sig'])
+                if True in pvalDF['Sig'].values:
+                    p_val = 0.0
+                else:
+                    p_val = 1.0
+
+
+            ### testing PypeR (needs a working R installation)
+            r = R()
+            test = 10
+            r('myvar1 <- % d' % test)
+            r('myvar2 <- 12')
+            #print r.myvar1
+            #print r.myvar2
+            ### end testing PypeR
+
+            stage = 'Step 3 of 4: Performing statistical test...complete'
             stage = 'Step 4 of 4: Preparing graph data...'
             if sig_only == 1:
                 if p_val <= 0.05:
@@ -192,42 +298,28 @@ def getCatUnivData(request):
                     result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                     result = result + 'Taxa name: ' + str(name1[1]) + '\n'
                     result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
-                    if button == 1:
-                        result = result + 'Dependent Variable: Sequence Reads' + '\n'
-                    elif button == 2:
-                        result = result + 'Dependent Variable: Relative Abundance' + '\n'
-                    elif button == 3:
+                    if DepVar == 1:
+                        result = result + 'Dependent Variable: Abundance' + '\n'
+                    elif DepVar == 2:
                         result = result + 'Dependent Variable: Species Richness' + '\n'
-                    elif button == 4:
-                        result = result + 'Dependent Variable: Shannon Diversity' + '\n'
+                    elif DepVar == 3:
+                        result = result + 'Dependent Variable: Species Diversity' + '\n'
 
                     indVar = ' x '.join(fieldList)
                     result = result + 'Independent Variable: ' + str(indVar) + '\n'
 
-                    if anova_error == 'yes':
-                        result = result + '\nANOVA cannot be performed...' + '\n' + str(D) + '\n'
-                    else:
-                        result = result + str(D) + '\n'
+                    result = result + str(D) + '\n'
                     result = result + '===============================================\n'
                     result = result + '\n\n\n\n'
 
                     dataList = []
-                    if stat == 1:
-                        grouped2 = group1.groupby(fieldList).mean()
-                    elif stat == 2:
-                        grouped2 = group1.groupby(fieldList).min()
-                    elif stat == 3:
-                        grouped2 = group1.groupby(fieldList).max()
-                    else:
-                        grouped2 = group1.groupby(fieldList).sum()
+                    grouped2 = group1.groupby(fieldList).mean()
 
-                    if button == 1:
-                        dataList.extend(list(grouped2['count'].T))
-                    elif button == 2:
-                        dataList.extend(list(grouped2['rel_abund'].T))
-                    elif button == 3:
+                    if DepVar == 1:
+                        dataList.extend(list(grouped2['abund'].T))
+                    elif DepVar == 2:
                         dataList.extend(list(grouped2['rich'].T))
-                    elif button == 4:
+                    elif DepVar == 3:
                         dataList.extend(list(grouped2['diversity'].T))
 
                     seriesDict = {}
@@ -241,14 +333,12 @@ def getCatUnivData(request):
                     xAxisDict['categories'] = trtList
 
                     yTitle = {}
-                    if button == 1:
-                        yTitle['text'] = 'Sequence Reads'
-                    elif button == 2:
-                        yTitle['text'] = 'Relative Abundance'
-                    elif button == 3:
+                    if DepVar == 1:
+                        yTitle['text'] = 'Abundance'
+                    elif DepVar == 2:
                         yTitle['text'] = 'Species Richness'
-                    elif button == 4:
-                        yTitle['text'] = 'Shannon Diversity'
+                    elif DepVar == 3:
+                        yTitle['text'] = 'Species Diversity'
                     yAxisDict['title'] = yTitle
 
             if sig_only == 0:
@@ -256,42 +346,28 @@ def getCatUnivData(request):
                 result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                 result = result + 'Taxa name: ' + str(name1[1]) + '\n'
                 result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
-                if button == 1:
-                    result = result + 'Dependent Variable: Sequence Reads' + '\n'
-                elif button == 2:
-                    result = result + 'Dependent Variable: Relative Abundance' + '\n'
-                elif button == 3:
+                if DepVar == 1:
+                    result = result + 'Dependent Variable: Abundance' + '\n'
+                elif DepVar == 2:
                     result = result + 'Dependent Variable: Species Richness' + '\n'
-                elif button == 4:
-                    result = result + 'Dependent Variable: Shannon Diversity' + '\n'
+                elif DepVar == 3:
+                    result = result + 'Dependent Variable: Species Diversity' + '\n'
 
                 indVar = ' x '.join(fieldList)
                 result = result + 'Independent Variable: ' + str(indVar) + '\n'
 
-                if anova_error == 'yes':
-                        result = result + '\nANOVA cannot be performed...' + '\n' + D + '\n'
-                else:
-                    result = result + str(D) + '\n'
+                result = result + str(D) + '\n'
                 result = result + '===============================================\n'
                 result = result + '\n\n\n\n'
 
                 dataList = []
-                if stat == 1:
-                    grouped2 = group1.groupby(fieldList).mean()
-                elif stat == 2:
-                    grouped2 = group1.groupby(fieldList).min()
-                elif stat == 3:
-                    grouped2 = group1.groupby(fieldList).max()
-                else:
-                    grouped2 = group1.groupby(fieldList).sum()
+                grouped2 = group1.groupby(fieldList).mean()
 
-                if button == 1:
-                    dataList.extend(list(grouped2['count'].T))
-                elif button == 2:
-                    dataList.extend(list(grouped2['rel_abund'].T))
-                elif button == 3:
+                if DepVar == 1:
+                    dataList.extend(list(grouped2['abund'].T))
+                elif DepVar == 2:
                     dataList.extend(list(grouped2['rich'].T))
-                elif button == 4:
+                elif DepVar == 3:
                     dataList.extend(list(grouped2['diversity'].T))
 
                 seriesDict = {}
@@ -305,14 +381,12 @@ def getCatUnivData(request):
                 xAxisDict['categories'] = trtList
 
                 yTitle = {}
-                if button == 1:
-                    yTitle['text'] = 'Sequence Reads'
-                elif button == 2:
-                    yTitle['text'] = 'Relative Abundance'
-                elif button == 3:
+                if DepVar == 1:
+                    yTitle['text'] = 'Abundance'
+                elif DepVar == 2:
                     yTitle['text'] = 'Species Richness'
-                elif button == 4:
-                    yTitle['text'] = 'Shannon Diversity'
+                elif DepVar == 3:
+                    yTitle['text'] = 'Species Diversity'
                 yAxisDict['title'] = yTitle
 
         finalDict['series'] = seriesList
@@ -325,14 +399,12 @@ def getCatUnivData(request):
             finalDict['empty'] = 1
 
         finalDF.reset_index(drop=True, inplace=True)
-        if button == 1:
-            finalDF.drop(['rel_abund', 'rich', 'diversity'], axis=1, inplace=True)
-        elif button == 2:
-            finalDF.drop(['count', 'rich', 'diversity'], axis=1, inplace=True)
-        elif button == 3:
-            finalDF.drop(['count', 'rel_abund', 'diversity'], axis=1, inplace=True)
-        elif button == 4:
-            finalDF.drop(['count', 'rel_abund', 'rich'], axis=1, inplace=True)
+        if DepVar == 1:
+            finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
+        elif DepVar == 2:
+            finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
+        elif DepVar == 3:
+            finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
         biome = {}
         newList = ['sampleid', 'sample_name']
@@ -354,13 +426,11 @@ def getCatUnivData(request):
             taxonList.append(str(name[1]))
             metaDict['taxonomy'] = taxonList
             taxaList.append({"id": str(name[2]), "metadata": metaDict})
-            if button == 1:
-                dataList.append(group['count'].tolist())
-            if button == 2:
-                dataList.append(group['rel_abund'].tolist())
-            if button == 3:
+            if DepVar == 1:
+                dataList.append(group['abund'].tolist())
+            if DepVar == 2:
                 dataList.append(group['rich'].tolist())
-            if button == 4:
+            if DepVar == 3:
                 dataList.append(group['diversity'].tolist())
 
         biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
@@ -397,11 +467,11 @@ def getQuantUnivData(request):
     if request.is_ajax():
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
-        button = int(all["button"])
-        sig_only = int(all["sig_only"])
-        factor = all["normalize"]
         selectAll = int(all["selectAll"])
-        remove = int(all["remove"])
+        DepVar = int(all["DepVar"])
+        NormMeth = all["NormMeth"]
+        NormVal = all["NormVal"]
+        sig_only = int(all["sig_only"])
 
         countList = []
         for sample in qs1:
@@ -413,29 +483,28 @@ def getQuantUnivData(request):
         medianSize = int(np.median(np.array(countList)))
         maxSize = int(max(countList))
 
-        if factor == "min":
-            norm = minSize
-        elif factor == "median":
-            norm = medianSize
-        elif factor == "max":
-            norm = maxSize
-        elif factor == "none":
-            norm = -1
+        if NormVal == "min":
+            NormReads = minSize
+        elif NormVal == "median":
+            NormReads = medianSize
+        elif NormVal == "max":
+            NormReads = maxSize
+        elif NormVal == "none":
+            NormReads = -1
         else:
-            norm = int(all["normalize"])
+            NormReads = int(all["NormVal"])
 
         newList = []
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if remove == 1:
-                if total['count__sum'] is not None and int(total['count__sum']) >= norm:
+            if NormMeth == 2:
+                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
                     id = sample.sampleid
                     newList.append(id)
             else:
                 if total['count__sum'] is not None:
                     id = sample.sampleid
                     newList.append(id)
-
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
 
         metaString = all["meta"]
@@ -487,12 +556,12 @@ def getQuantUnivData(request):
 
         stage = 'Step 1 of 4: Querying database...complete'
         stage = 'Step 2 of 4: Normalizing data...'
-        normDF = normalizeUniv(taxaDF, taxaDict, mySet, norm, button)
+        normDF = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads)
         stage = 'Step 2 of 4: Normalizing data...complete'
         stage = 'Step 3 of 4: Performing linear regression...'
 
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
-        finalDF[[fieldList[0], 'count', 'rel_abund', 'rich', 'diversity']] = finalDF[[fieldList[0], 'count', 'rel_abund', 'rich', 'diversity']].astype(float)
+        finalDF[[fieldList[0], 'abund', 'rich', 'diversity']] = finalDF[[fieldList[0], 'abund', 'rich', 'diversity']].astype(float)
         pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
 
         finalDict = {}
@@ -504,19 +573,15 @@ def getQuantUnivData(request):
             dataList = []
             x = []
             y = []
-            if button == 1:
-                dataList = group1[[fieldList[0], 'count']].values.tolist()
+            if DepVar == 1:
+                dataList = group1[[fieldList[0], 'abund']].values.tolist()
                 x = group1[fieldList[0]].values.tolist()
-                y = group1['count'].values.tolist()
-            elif button == 2:
-                dataList = group1[[fieldList[0], 'rel_abund']].values.tolist()
-                x = group1[fieldList[0]].values.tolist()
-                y = group1['rel_abund'].values.tolist()
-            elif button == 3:
+                y = group1['abund'].values.tolist()
+            elif DepVar == 2:
                 dataList = group1[[fieldList[0], 'rich']].values.tolist()
                 x = group1[fieldList[0]].values.tolist()
                 y = group1['rich'].values.tolist()
-            elif button == 4:
+            elif DepVar == 3:
                 dataList = group1[[fieldList[0], 'diversity']].values.tolist()
                 x = group1[fieldList[0]].values.tolist()
                 y = group1['diversity'].values.tolist()
@@ -580,13 +645,11 @@ def getQuantUnivData(request):
             xAxisDict['title'] = xTitle
 
             yTitle = {}
-            if button == 1:
-                yTitle['text'] = 'Sequence Reads'
-            elif button == 2:
-                yTitle['text'] = 'Relative Abundance'
-            elif button == 3:
+            if DepVar == 1:
+                yTitle['text'] = 'Abundance'
+            elif DepVar == 2:
                 yTitle['text'] = 'Species Richness'
-            elif button == 4:
+            elif DepVar == 3:
                 yTitle['text'] = 'Shannon Diversity'
             yAxisDict['title'] = yTitle
 
@@ -599,14 +662,12 @@ def getQuantUnivData(request):
             finalDict['empty'] = 1
 
         finalDF.reset_index(drop=True, inplace=True)
-        if button == 1:
-            finalDF.drop(['rel_abund', 'rich', 'diversity'], axis=1, inplace=True)
-        elif button == 2:
-            finalDF.drop(['count', 'rich', 'diversity'], axis=1, inplace=True)
-        elif button == 3:
-            finalDF.drop(['count', 'rel_abund', 'diversity'], axis=1, inplace=True)
-        elif button == 4:
-            finalDF.drop(['count', 'rel_abund', 'rich'], axis=1, inplace=True)
+        if DepVar == 1:
+            finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
+        elif DepVar == 2:
+            finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
+        elif DepVar == 3:
+            finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
         biome = {}
         newList = ['sampleid', 'sample_name']
@@ -628,13 +689,11 @@ def getQuantUnivData(request):
             taxonList.append(str(name[1]))
             metaDict['taxonomy'] = taxonList
             taxaList.append({"id": str(name[2]), "metadata": metaDict})
-            if button == 1:
-                dataList.append(group['count'].tolist())
-            if button == 2:
-                dataList.append(group['rel_abund'].tolist())
-            if button == 3:
+            if DepVar == 1:
+                dataList.append(group['abund'].tolist())
+            if DepVar == 2:
                 dataList.append(group['rich'].tolist())
-            if button == 4:
+            if DepVar == 3:
                 dataList.append(group['diversity'].tolist())
 
         biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
@@ -653,16 +712,14 @@ def getQuantUnivData(request):
         finalDict['res_table'] = str(res_table)
 
         result = 'Data Normalization:\n'
-        if norm == -1:
-            result = result + 'Data were not normalized...\n'
-        else:
-            result = result + 'Data normalized to ' + str(norm) + ' sequence reads...\n'
-        if remove == 1:
-            result = result + 'Samples below this threshold were removed\n\n'
-        if remove == 0:
-            result = result + 'All selected samples were included in the analysis\n\n'
-        finalDict['text'] = result
+        if NormMeth == 1:
+            result = result + 'No normalization was performed...\n'
+        if NormMeth == 2 or NormMeth == 3:
+            result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+        if NormMeth == 4:
+            result = result + 'Data were normalized by the total number of sequence reads...\n'
 
+        finalDict['text'] = result
         stage = 'Step 4 of 4: Preparing graph data...complete'
 
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
