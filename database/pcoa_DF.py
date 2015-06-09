@@ -275,39 +275,31 @@ def quantPCoAMetaDF(qs1, metaDict):
 
 def normalizePCoA(df, taxaLevel, mySet, meth, reads):
     df2 = df.reset_index()
-    taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
-    field = ''
-    rank = ''
-    if taxaLevel == 1:
-        rank = 'Kingdom'
-        field = 'kingdomid'
+    taxaID = ''
+    if taxaLevel == 0:
+        taxaID = 'kingdomid'
+    elif taxaLevel == 1:
+        taxaID = 'phylaid'
     elif taxaLevel == 2:
-        rank = 'Phyla'
-        field = 'phylaid'
+        taxaID = 'classid'
     elif taxaLevel == 3:
-        rank = 'Class'
-        field = 'classid'
+        taxaID = 'orderid'
     elif taxaLevel == 4:
-        rank = 'Order'
-        field = 'orderid'
+        taxaID = 'familyid'
     elif taxaLevel == 5:
-        rank = 'Family'
-        field = 'familyid'
+        taxaID = 'genusid'
     elif taxaLevel == 6:
-        rank = 'Genus'
-        field = 'genusid'
-    elif taxaLevel == 7:
-        rank = 'Species'
-        field = 'speciesid'
+        taxaID = 'speciesid'
 
-    countDF = pd.DataFrame()
+    normDF = pd.DataFrame()
     if meth == 1:
-        countDF = df2.reset_index(drop=True)
+        normDF = df2.reset_index(drop=True)
 
     elif meth == 2 or meth == 3:
         if reads >= 0:
-            countDF = df2[taxaID].reset_index(drop=True)
+            normDF[taxaID] = df2[taxaID].reset_index(drop=True)
+
             manager = mp.Manager()
             d = manager.dict()
 
@@ -320,32 +312,19 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads):
                 p.join()
 
             for key, value in d.items():
-                countDF[key] = value
+                normDF[key] = value
 
         elif reads < 0:
-            countDF = df2.reset_index(drop=True)
+            normDF[taxaID] = df2.reset_index(drop=True)
 
     elif meth == 4:
-        countDF = df2.reset_index(drop=True)
+        normDF[taxaID] = df2[taxaID].reset_index(drop=True)
+        for i in mySet:
+            normDF[i] = df2[i].div(df2[i].sum(), axis=0)
 
-    relabundDF = pd.DataFrame(countDF[taxaID])
-    for i in mySet:
-        relabundDF[i] = countDF[i].div(countDF[i].sum(), axis=0)
-
-    normDF = pd.DataFrame(columns=['sampleid', 'rank', 'abund'])
-    for i in mySet:
-        tmpDF = pd.DataFrame()
-        if meth == 4:
-            tmpDF['abund'] = relabundDF.groupby(field)[i].sum()
-        else:
-            tmpDF['abund'] = countDF.groupby(field)[i].sum()
-        tmpDF['sampleid'] = i
-        tmpDF['rank'] = rank
-        tmpDF.reset_index(inplace=True)
-        normDF = normDF.append(tmpDF)
-    normDF.rename(columns={field: 'taxaid'}, inplace=True)
-
-    return normDF
+    normDF.set_index(taxaID, inplace=True)
+    finalDF = normDF.transpose()
+    return finalDF
 
 
 def weightedProb(x, cores, reads, mySet, df, meth, d):

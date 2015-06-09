@@ -46,7 +46,6 @@ def getCatPCoAData(request):
         test = int(all["test"])
         alpha = float(all["alpha"])
         perms = int(all["perms"])
-        remove = int(all["remove"])
         NormMeth = int(all["NormMeth"])
         NormVal = all["NormVal"]
 
@@ -112,13 +111,21 @@ def getCatPCoAData(request):
         metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sample_name', inplace=True)
 
-        myList = metaDF['sampleid'].tolist()
-        mySet = list(ordered_set(myList))
-        taxaDF = taxaProfileDF(mySet)
+        taxaDF = taxaProfileDF(newList)
 
         stage = 'Step 1 of 6: Querying database...complete'
         stage = 'Step 2 of 6: Normalizing data...'
-        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads)
+
+        # Create combined metadata column
+        # Only need this for DESeq
+        if len(fieldList) > 1:
+            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+        else:
+            metaDF['merge'] = metaDF[fieldList[0]]
+
+        # Sum by taxa level
+        taxaDF = taxaDF.groupby(level=taxaLevel).sum()
+        normDF = normalizePCoA(taxaDF, taxaLevel, newList, NormMeth, NormReads)
 
         finalDict = {}
         if NormMeth == 1:
@@ -132,14 +139,9 @@ def getCatPCoAData(request):
         stage = 'Step 2 of 6: Normalizing data...complete'
         stage = 'Step 3 of 6: Calculating distance matrix...'
 
-        finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
-        pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
+        metaDF.set_index('sampleid', inplace=True)
 
-        #matrixDF = pd.DataFrame()
-        matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='abund')
-
-        datamtx = asarray(matrixDF[mySet].T)
-
+        datamtx = asarray(normDF)
         numrows, numcols = shape(datamtx)
         dists = np.zeros((numrows, numrows))
 
@@ -177,8 +179,7 @@ def getCatPCoAData(request):
         propDF = pd.DataFrame(proportion_explained, columns=['Variance Explained (R2)'], index=axesList)
         eigenDF = valsDF.join(propDF)
 
-        metaDF.set_index('sampleid', drop=True, inplace=True)
-        pcoaDF = pd.DataFrame(coordinates, columns=axesList, index=mySet)
+        pcoaDF = pd.DataFrame(coordinates, columns=axesList, index=newList)
         resultDF = metaDF.join(pcoaDF)
         pd.set_option('display.max_rows', resultDF.shape[0], 'display.max_columns', resultDF.shape[1], 'display.width', 1000)
 

@@ -11,7 +11,7 @@ import math
 from pyper import *
 
 
-def catUnivMetaDF(qs1, metaDict):
+def catDiffAbundDF(qs1, metaDict):
     sampleTableList = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'material']
     collectTableList = ['depth', 'pool_dna_extracts', 'samp_collection_device', 'sieving', 'storage_cond']
     soil_classTableList = ['drainage_class', 'fao_class', 'horizon', 'local_class', 'profile_position', 'slope_aspect', 'soil_type', 'texture_class']
@@ -132,35 +132,15 @@ def catUnivMetaDF(qs1, metaDict):
     return metaDF
 
 
-def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
+def normalizeDiffAbundDA(df, taxaDict, mySet, meth, metaDF):
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
     countDF = pd.DataFrame()
-    if meth == 1 or meth == 4:
+    if meth == 1 or meth == 2:
         countDF = df2.reset_index(drop=True)
 
-    elif meth == 2 or meth == 3:
-        if reads >= 0:
-            countDF = df2[taxaID].reset_index(drop=True)
-            manager = mp.Manager()
-            d = manager.dict()
-
-            numcore = mp.cpu_count()-1 or 1
-            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, mySet, df, meth, d)) for x in range(numcore)]
-
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
-
-            for key, value in d.items():
-                countDF[key] = value
-
-        elif reads < 0:
-            countDF = df2.reset_index(drop=True)
-
-    elif meth == 5:
+    elif meth == 3:
         # Create CountDataSet for DESeq
         r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         df3 = df2.drop(taxaID, axis=1)
@@ -173,6 +153,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
         r("cds <- estimateSizeFactors(cds)")
         r("cds <- estimateDispersions(cds, method='blind')")
         r("vsd <- getVarianceStabilizedData(cds)")
+        r("res <- nbinomTest(cds, 'Kanlow', 'Summer')")
+        print r("res")
 
         df4 = df2[taxaID].reset_index(drop=True)
         samples = metaDF['sampleid'].tolist()
@@ -275,7 +257,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
             field = 'speciesid'
 
         for i in mySet:
-            if meth == 4:
+            if meth == 2:
                 groupAbund = relabundDF.groupby(field)[i].sum()
             else:
                 groupAbund = countDF.groupby(field)[i].sum()
@@ -309,27 +291,3 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
         else:
             normDF = normDF.append(DF1)
     return normDF
-
-
-def weightedProb(x, cores, reads, mySet, df, meth, d):
-    high = len(mySet)
-    set = mySet[x:high:cores]
-
-    for i in set:
-        arr = asarray(df[i])
-        cols = shape(arr)
-        sample = arr.astype(dtype=np.float64)
-
-        if meth == 3:
-            prob = (sample + 0.1) / (sample.sum() + cols[0] * 0.1)
-        else:
-            prob = sample / sample.sum()
-
-        temp = np.zeros(cols)
-        for n in range(reads):
-            sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
-            temp2 = np.zeros(cols)
-            np.put(temp2, sub, 1)
-            temp = np.core.umath.add(temp, temp2)
-        d[i] = temp
-

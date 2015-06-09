@@ -18,9 +18,9 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar = 1, NormMeth = 4, StatTest = 2, selTheme = 0, i = 0;
-        var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
-        var chart1 = {}, chart2 = {};
+        var NormMeth = 1, StatTest = 1, selTheme = 0, i = 0;
+        var nodesCat = "", nodesTaxa = "", selectAll = 1;
+        var chart1 = {};
         var catOptions = {};
         var sig1_only = 0, sig2_only = 0;
         var refresh;
@@ -58,69 +58,21 @@
                 }
             });
 
-            $("#tree_taxa").dynatree({
-                checkbox: true,
-                selectMode: 2,
-                initAjax: {
-                    url: '/getTaxaTree/',
-                    dataType: 'jsonp',
-                    data: {}
-                },
-                onLazyRead: function (node) {
-                    node.appendAjax({
-                        url: '/getTaxaTreeChildren/',
-                        data: {
-                            tooltip: node.data.tooltip,
-                            id: node.data.id
-                        }
-                    });
-                },
-                onSelect: function (flag, node) {
-                    if (flag && node.childList == undefined) {
-                        node.reloadChildren(function () {
-                            node.select(false);
-                            node.select(true);
-                        });
-                    }
-                    nodesTaxa = node.tree.getSelectedNodes();
-                    $("#run").css("background-color", "lightgray");
-                    searchData();
-                },
-                onClick: function () {
-                    selectAll = 0;
-                    $("#selectall").val(0);
-                }
-            });
-
             $("#run").show().click(function () {
                 chooseData();
             });
 
-            $("#DepVar").change(function () {
-                DepVar = $(this).val();
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
             $("#NormMeth").change(function () {
                 NormMeth = $(this).val();
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#NormVal").change(function () {
-                chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
 
             $("#FdrVal").change(function () {
-                chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
 
             $("#StatTest").change(function () {
                 StatTest = $(this).val();
-                chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
 
@@ -130,7 +82,6 @@
                 } else {
                     sig1_only = 0
                 }
-                chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
 
@@ -198,15 +149,6 @@
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#clearTaxa").click(function () {
-                $("#selectall").val(0);
-                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                selectAll = 0;
-                $("#run").css("background-color", "lightgray");
-            });
-
             $("#selectall").change(function () {
                 selectAll = $(this).val();
                 $("#run").css("background-color", "lightgray");
@@ -233,42 +175,32 @@
 
         function startTimer() {
             refresh = setInterval(updateStatus, 1000);
-            return refresh
+            return refresh;
         }
 
         function stopTimer() {
             clearInterval(refresh)
         }
 
-        function chooseDisplay() {
-            if ((NormMeth == 2) || (NormMeth == 3)) {
-                $("#NormRow").show();
-                $("#NormRow-off").hide();
-            } else {
-                $("#NormRow").hide();
-                $("#NormRow-off").show();
-            }
-        }
-
         function chooseData() {
-            if ( (nodesCat != "") && ((nodesTaxa != "") || (selectAll != 0))) {
+            if ( (nodesCat != "") && (selectAll != 0)) {
                 $("#run").css("background-color", "yellow");
                 $("#container-1").empty().append('Analysis is running...please be patient');
                 getCatGraphData();
             }
-            else if ((nodesCat == "") && (nodesTaxa == "") && (selectAll == 0) ) {
-                $("#container-1").empty().append('Please choose your meta variable(s) and taxa level(s)!');
+            else if ((nodesCat == "") && (selectAll == 0) ) {
+                $("#container-1").empty().append('Please choose your meta variable(s) and taxa level!');
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
                 $("#run").css("background-color", "red");
             }
-            else if ((nodesCat != "") && (nodesTaxa == "") && (selectAll == 0)) {
-                $("#container-1").empty().append('Please also choose your taxa level(s)!');
+            else if ((nodesCat != "") && (selectAll == 0)) {
+                $("#container-1").empty().append('Please also choose your taxa level!');
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
                 $("#run").css("background-color", "red");
             }
-            else if ((nodesCat == "") && (nodesTaxa != "")) {
+            else if ((nodesCat == "") && (selectAll != 0)) {
                 $("#container-1").empty().append('Please also choose your meta variable(s)!');
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
@@ -308,25 +240,18 @@
                 }
             }
             var taxa = "{" + array2.join(",") + "}";
-
             var myDict = {};
             myDict['meta'] = meta;
             myDict['taxa'] = taxa;
-            myDict['DepVar'] = DepVar;
             myDict['sig_only'] = sig1_only;
             myDict['selectAll'] = selectAll;
-            if ((NormMeth == 2) || (NormMeth == 3)){
-                myDict['NormVal'] = document.getElementById("NormVal").value;
-            } else {
-                myDict['NormVal'] = "none"
-            }
             myDict['FdrVal'] = document.getElementById("FdrVal").value;
             myDict['NormMeth'] = NormMeth;
             myDict['StatTest'] = StatTest;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getCatUnivData/',
+                url: '/getDiffAbund/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -409,8 +334,7 @@
     <span style="padding-left: 225px">
         Select all taxa:
         <select id="selectall">
-            <option value="0" selected="selected">Off</option>
-            <option value="1">Kingdoms</option>
+            <option value="1" selected="selected">Kingdoms</option>
             <option value="2">Phyla</option>
             <option value="3">Classes</option>
             <option value="4">Orders</option>
@@ -431,16 +355,7 @@
                 </td>
             </tr>
         </table>
-        <table border="2" cellspacing="0" cellpadding="5" class="inlineTable" style="margin-left:10px;">
-            <tr>
-                <th>Select Taxa:<a href="#" id="clearTaxa" style="font-size: 12px;">-Deselect all-</a></th>
-            </tr>
-            <tr>
-                <td style="padding-right: 10px; vertical-align: top">
-                    <div id="tree_taxa"></div>
-                </td>
-            </tr>
-        </table>
+
     </div>
     <br><br>
 
@@ -487,11 +402,7 @@
         </tr>
         <tr>
             <td></td>
-            <td id="NormRow" style="display: none; text-align: center">
-                Sample size:
-                <input type="text" id="NormVal" value="min"/>
-            </td>
-            <td id="NormRow-off"></td>
+            <td></td>
             <td id="FdrRow" style="text-align: right">
                 False Discovery Rate:
                 <input type="text" id="FdrVal" value="0.05"/>

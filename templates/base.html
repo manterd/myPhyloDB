@@ -50,14 +50,12 @@
                         $("#link2").hide();
                         $("#link3").hide();
                         $("#link4").hide();
-                        $("#link5").hide();
                     } else if (data == 'yes') {
                         $("#link0").show();
                         $("#link1").show();
                         $("#link2").show();
                         $("#link3").show();
                         $("#link4").show();
-                        $("#link5").show();
                     }
                 }
             });
@@ -111,13 +109,15 @@
                 <hr><p><em><strong>Analysis</strong></em></p><hr>
             </div>
 
-            <p id="link1" style="display: none"><strong>Univariate</strong></p>
-            <a id="link2" style="display: none" class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px">ANOVA/Regr</li></a>
-            <a id="link5" style="display: none" class="Offmouse" href="{% url "DiffAbund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px">Diff Abund</li></a>
+            <p id="link1" style="display: none;"><strong>Univariate</strong></p>
+            <div id="link2" style="display: none;" >
+                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px">ANOVA/Regr</li></a>
+                <a class="Offmouse" href="{% url "DiffAbund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px">Diff Abund</li></a>
+            </div>
             <br>
 
-            <p id="link3" style="display: none"><strong>Multivariate</strong></p>
-            <a id="link4" style="display: none" class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px">PCoA</li></a>
+            <p id="link3" style="display: none;"><strong>Multivariate</strong></p>
+            <a id="link4" style="display: none;" class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px">PCoA</li></a>
             <br>
 
             {% block menu_item %}{% endblock menu_item %}

@@ -1,4 +1,4 @@
-from anova_DF import catUnivMetaDF, quantUnivMetaDF, normalizeUniv
+from diffabund_DF import catDiffAbundDF, normalizeDiffAbundDA
 from django.http import HttpResponse
 from database.models import Sample, Profile
 from django.db.models import Sum
@@ -26,10 +26,9 @@ def statusDiffAbund(request):
         return HttpResponse(json_data, content_type='application/json')
 
 
-def getCatUnivData(request):
+def getDiffAbund(request):
     global stage
     stage = 'Step 1 of 4: Querying database...'
-
     # Get selected samples from cookie and query database for sample info
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
@@ -38,12 +37,11 @@ def getCatUnivData(request):
 
     if request.is_ajax():
         # Get variables from web page
+        #taxaLevel = int(all["taxa"])    ### need to add selectbox to html
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
         selectAll = int(all["selectAll"])
-        DepVar = int(all["DepVar"])
         NormMeth = int(all["NormMeth"])
-        NormVal = all["NormVal"]
         FDR = float(all["FdrVal"])
         StatTest = int(all["StatTest"])
         sig_only = int(all["sig_only"])
@@ -55,6 +53,7 @@ def getCatUnivData(request):
             if total['count__sum'] is not None:
                 countList.append(total['count__sum'])
 
+        '''
         # Calculate min/median/max of sequence reads for rarefaction
         minSize = int(min(countList))
         medianSize = int(np.median(np.array(countList)))
@@ -70,11 +69,13 @@ def getCatUnivData(request):
             NormReads = -1
         else:
             NormReads = int(all["NormVal"])
+        '''
 
         # Remove samples if below the sequence threshold set by user (rarefaction)
-        newList = []
+        #newList = []
         result = 'Data Normalization:\n'
 
+        '''
         # Limit reads to max value
         if NormReads > maxSize:
             NormReads = medianSize
@@ -100,6 +101,7 @@ def getCatUnivData(request):
                     id = sample.sampleid
                     newList.append(id)
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
+        '''
 
         # Get dict of selected meta variables
         metaString = all["meta"]
@@ -111,7 +113,7 @@ def getCatUnivData(request):
             fieldList.append(key)
 
         # Create dataframe of meta variables by sample
-        metaDF = catUnivMetaDF(qs2, metaDict)
+        metaDF = catDiffAbundDF(qs1, metaDict)
         metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sample_name', inplace=True)
 
@@ -122,42 +124,7 @@ def getCatUnivData(request):
         # Create dataframe with all taxa/count data by sample
         taxaDF = taxaProfileDF(mySet)
 
-        # Select only the taxa of interest if user used the taxa tree
-        taxaString = all["taxa"]
-        taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-
-        # Select only the taxa of interest if user used the selectAll button
-        if selectAll == 1:
-            taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('kingdomid', flat='True').distinct()
-            taxaDict['Kingdom'] = qs3
-        elif selectAll == 2:
-            taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('phylaid', flat='True').distinct()
-            taxaDict['Phyla'] = qs3
-        elif selectAll == 3:
-            taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('classid', flat='True').distinct()
-            taxaDict['Class'] = qs3
-        elif selectAll == 4:
-            taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('orderid', flat='True').distinct()
-            taxaDict['Order'] = qs3
-        elif selectAll == 5:
-            taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('familyid', flat='True').distinct()
-            taxaDict['Family'] = qs3
-        elif selectAll == 6:
-            taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('genusid', flat='True').distinct()
-            taxaDict['Genus'] = qs3
-        elif selectAll == 7:
-            taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
-            taxaDict['Species'] = qs3
-
         stage = 'Step 1 of 4: Querying database...complete'
-
         # Normalize data
         stage = 'Step 2 of 4: Normalizing data...'
 
@@ -168,7 +135,12 @@ def getCatUnivData(request):
         else:
             metaDF['merge'] = metaDF[fieldList[0]]
 
-        normDF = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
+        # Sum by taxa level
+        taxaLevel = 0
+        taxaDF = taxaDF.groupby(level=taxaLevel).sum()
+        print taxaDF
+
+        normDF = normalizeDiffAbundDA(taxaDF, taxaLevel, mySet, NormMeth, metaDF)
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
         finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
         pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
@@ -176,10 +148,10 @@ def getCatUnivData(request):
         finalDict = {}
         if NormMeth == 1:
             result = result + 'No normalization was performed...\n'
-        if NormMeth == 2 or NormMeth == 3:
-            result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-        if NormMeth == 4:
+        if NormMeth == 2:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
+        if NormMeth == 3 :
+            result = result + 'Data were normalized by DESeq...\n'
         result = result + '===============================================\n\n\n'
 
         stage = 'Step 2 of 4: Normalizing data...complete'
@@ -196,13 +168,7 @@ def getCatUnivData(request):
         for name1, group1 in grouped1:
             trtList = []
             valList = []
-            grouped2 = pd.DataFrame()
-            if DepVar == 1:
-                grouped2 = group1.groupby(fieldList)['abund']
-            elif DepVar == 2:
-                grouped2 = group1.groupby(fieldList)['rich']
-            elif DepVar == 3:
-                grouped2 = group1.groupby(fieldList)['diversity']
+            grouped2 = group1.groupby(fieldList)['abund']
 
             for name2, group2 in grouped2:
                 if isinstance(name2, unicode):
@@ -271,12 +237,7 @@ def getCatUnivData(request):
                     result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                     result = result + 'Taxa name: ' + str(name1[1]) + '\n'
                     result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
-                    if DepVar == 1:
-                        result = result + 'Dependent Variable: Abundance' + '\n'
-                    elif DepVar == 2:
-                        result = result + 'Dependent Variable: Species Richness' + '\n'
-                    elif DepVar == 3:
-                        result = result + 'Dependent Variable: Species Diversity' + '\n'
+                    result = result + 'Dependent Variable: Abundance' + '\n'
 
                     indVar = ' x '.join(fieldList)
                     result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
@@ -288,12 +249,7 @@ def getCatUnivData(request):
                     dataList = []
                     grouped2 = group1.groupby(fieldList).mean()
 
-                    if DepVar == 1:
-                        dataList.extend(list(grouped2['abund'].T))
-                    elif DepVar == 2:
-                        dataList.extend(list(grouped2['rich'].T))
-                    elif DepVar == 3:
-                        dataList.extend(list(grouped2['diversity'].T))
+                    dataList.extend(list(grouped2['abund'].T))
 
                     seriesDict = {}
                     seriesDict['name'] = name1
@@ -306,12 +262,7 @@ def getCatUnivData(request):
                     xAxisDict['categories'] = trtList
 
                     yTitle = {}
-                    if DepVar == 1:
-                        yTitle['text'] = 'Abundance'
-                    elif DepVar == 2:
-                        yTitle['text'] = 'Species Richness'
-                    elif DepVar == 3:
-                        yTitle['text'] = 'Species Diversity'
+                    yTitle['text'] = 'Abundance'
                     yAxisDict['title'] = yTitle
 
             if sig_only == 0:
@@ -319,12 +270,7 @@ def getCatUnivData(request):
                 result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                 result = result + 'Taxa name: ' + str(name1[1]) + '\n'
                 result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
-                if DepVar == 1:
-                    result = result + 'Dependent Variable: Abundance' + '\n'
-                elif DepVar == 2:
-                    result = result + 'Dependent Variable: Species Richness' + '\n'
-                elif DepVar == 3:
-                    result = result + 'Dependent Variable: Species Diversity' + '\n'
+                result = result + 'Dependent Variable: Abundance' + '\n'
 
                 indVar = ' x '.join(fieldList)
                 result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
@@ -336,12 +282,7 @@ def getCatUnivData(request):
                 dataList = []
                 grouped2 = group1.groupby(fieldList).mean()
 
-                if DepVar == 1:
-                    dataList.extend(list(grouped2['abund'].T))
-                elif DepVar == 2:
-                    dataList.extend(list(grouped2['rich'].T))
-                elif DepVar == 3:
-                    dataList.extend(list(grouped2['diversity'].T))
+                dataList.extend(list(grouped2['abund'].T))
 
                 seriesDict = {}
                 seriesDict['name'] = name1
@@ -354,12 +295,7 @@ def getCatUnivData(request):
                 xAxisDict['categories'] = trtList
 
                 yTitle = {}
-                if DepVar == 1:
-                    yTitle['text'] = 'Abundance'
-                elif DepVar == 2:
-                    yTitle['text'] = 'Species Richness'
-                elif DepVar == 3:
-                    yTitle['text'] = 'Species Diversity'
+                yTitle['text'] = 'Abundance'
                 yAxisDict['title'] = yTitle
 
         finalDict['series'] = seriesList
@@ -372,12 +308,6 @@ def getCatUnivData(request):
             finalDict['empty'] = 1
 
         finalDF.reset_index(drop=True, inplace=True)
-        if DepVar == 1:
-            finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
-        elif DepVar == 2:
-            finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
-        elif DepVar == 3:
-            finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
         biome = {}
         newList = ['sampleid', 'sample_name']
@@ -399,12 +329,7 @@ def getCatUnivData(request):
             taxonList.append(str(name[1]))
             metaDict['taxonomy'] = taxonList
             taxaList.append({"id": str(name[2]), "metadata": metaDict})
-            if DepVar == 1:
-                dataList.append(group['abund'].tolist())
-            if DepVar == 2:
-                dataList.append(group['rich'].tolist())
-            if DepVar == 3:
-                dataList.append(group['diversity'].tolist())
+            dataList.append(group['abund'].tolist())
 
         biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
         biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
