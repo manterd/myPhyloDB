@@ -50,12 +50,14 @@
                         $("#link2").hide();
                         $("#link3").hide();
                         $("#link4").hide();
+                        $("#link5").hide();
                     } else if (data == 'yes') {
                         $("#link0").show();
                         $("#link1").show();
                         $("#link2").show();
                         $("#link3").show();
                         $("#link4").show();
+                        $("#link5").show();
                     }
                 }
             });
@@ -111,6 +113,7 @@
 
             <p id="link1" style="display: none"><strong>Univariate</strong></p>
             <a id="link2" style="display: none" class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px">ANOVA/Regr</li></a>
+            <a id="link5" style="display: none" class="Offmouse" href="{% url "DiffAbund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px">Diff Abund</li></a>
             <br>
 
             <p id="link3" style="display: none"><strong>Multivariate</strong></p>

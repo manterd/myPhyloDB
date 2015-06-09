@@ -18,7 +18,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, button2 = 2, selTheme = 0;
+        var button1 = 1, NormMeth = 4, selTheme = 0;
         var nodesCat = "", nodesQuant = "", taxaLevel = 7;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
@@ -211,12 +211,6 @@
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#button2").change(function () {
-                button2 = $(this).val();
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
             $("#selectall").change(function () {
                 taxaLevel = $(this).val();
                 chooseDisplay();
@@ -239,6 +233,17 @@
 
             $("#PC2").change(function () {
                 PC2 = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#NormMeth").change(function () {
+                NormMeth = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#NormVal").change(function () {
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
@@ -339,12 +344,19 @@
                 $("#permutations").hide();
                 $("#perms").hide();
             }
+            if ((NormMeth == 2) || (NormMeth == 3)) {
+                $("#NormRow").show();
+                $("#NormRow-off").hide();
+            } else {
+                $("#NormRow").hide();
+                $("#NormRow-off").show();
+            }
         }
 
         function chooseData() {
             if ((nodesCat != "") && (button1 == 1)) {
                 if (
-                    (document.getElementById("normalize").value == "") ||
+                    (document.getElementById("NormVal").value == "") ||
                     (document.getElementById("alphaVal").value == "") ||
                     (document.getElementById("perms").value == "")
                     ) {
@@ -358,7 +370,7 @@
             }
             else if ((nodesQuant != "") && (button1 == 2)) {
                 if (
-                    (document.getElementById("normalize").value == "") ||
+                    (document.getElementById("NormVal").value == "") ||
                     (document.getElementById("alphaVal").value == "") ||
                     (document.getElementById("perms").value == "")
                     ) {
@@ -400,16 +412,19 @@
             var myDict = {};
             myDict['meta'] = meta;
             myDict['taxa'] = taxaLevel;
-            myDict['button'] = button2;
             myDict['distance'] = distance;
             myDict['PC1'] = PC1;
             myDict['PC2'] = PC2;
-            myDict['normalize'] = document.getElementById("normalize").value;
             myDict['remove'] = remove;
             myDict['test'] = test;
             myDict['alpha'] = document.getElementById("alphaVal").value;
             myDict['perms'] = document.getElementById("perms").value;
-            myDict['perms'] = document.getElementById("perms").value;
+            myDict['NormMeth'] = NormMeth;
+            if ((NormMeth == 2) || (NormMeth == 3)){
+                myDict['NormVal'] = document.getElementById("NormVal").value;
+            } else {
+                myDict['NormVal'] = "none"
+            }
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -474,12 +489,16 @@
             var myDict = {};
             myDict['meta'] = meta;
             myDict['taxa'] = taxaLevel;
-            myDict['button'] = button2;
             myDict['distance'] = distance;
             myDict['PC1'] = PC1;
-            myDict['normalize'] = document.getElementById("normalize").value;
             myDict['remove'] = remove;
             myDict['alpha'] = document.getElementById("alphaVal").value;
+            myDict['NormMeth'] = NormMeth;
+            if ((NormMeth == 2) || (NormMeth == 3)){
+                myDict['NormVal'] = document.getElementById("NormVal").value;
+            } else {
+                myDict['NormVal'] = "none"
+            }
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -634,7 +653,7 @@
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <select id="distance">
-                    <option value="1" selected="selected">Bray-Curtis</option>
+                    <option value="1">Bray-Curtis</option>
                     <option value="2">Canberra</option>
                     <option value="3">Dice</option>
                     <option value="4">Euclidean</option>
@@ -722,30 +741,32 @@
     </div>
     <table width="950px" border="2">
         <tr>
-            <th style="padding-right: 10px;">GraphData</th>
+            <th colspan="3" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td style="float: left;">Select dependent variable:
-                <select id="button2">
-                    <option value="1" >Sequence Reads</option>
-                    <option value="2" selected="selected">Relative Abundance</option>
-                    <option value="3">Species Richness</option>
-                    <option value="4">Shannon Diversity</option>
+            <td style="width: 33%; tet-align: left"> </td>
+            <td style="width: 34%; text-align: center">
+                Normalization method:
+                <select id="NormMeth">
+                    <option value="1">None</option>
+                    <option value="2">Rarefaction (remove)</option>
+                    <option value="3">Rarefaction (keep)</option>
+                    <option value="4" selected="selected">Proportion</option>
                 </select>
             </td>
-            <td style="float: right;">Normalize data (sequence reads):
-                <input type="text" id="normalize" value="median" style="width:50px"/>
-                &nbsp
-            </td>
+            <td style="width: 33%; tet-align: left"> </td>
         </tr>
         <tr>
-            <td style="float: right;">Remove samples below threshold:
-                <input type="checkbox" id="remove"/>
-                &nbsp
+            <td></td>
+            <td id="NormRow" style="display: none; text-align: center">
+                Sample size:
+                <input type="text" id="NormVal" value="min"/>
             </td>
+            <td id="NormRow-off"></td>
+            <td></td>
         </tr>
         <tr>
-            <td>
+            <td colspan="3">
                 <div id="container-1" style="height: 400px;">No Data has been selected!</div>
                 <div id="container-2" style="height: 400px; display: none">No Data has been selected!</div>
             </td>

@@ -30,9 +30,6 @@ def users(request):
 
 @login_required(login_url='/myPhyloDB/login/')
 def upload(request):
-
-
-
     if request.method == 'POST' and 'Upload' in request.POST:
         form1 = UploadForm1(request.POST, request.FILES)
         form2 = UploadForm2(request.POST, request.FILES)
@@ -257,6 +254,13 @@ def taxa(request):
 def ANOVA(request):
     return render_to_response(
         'anova.html',
+        context_instance=RequestContext(request)
+    )
+
+
+def DiffAbund(request):
+    return render_to_response(
+        'diff_abund.html',
         context_instance=RequestContext(request)
     )
 

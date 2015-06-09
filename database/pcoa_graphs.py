@@ -39,16 +39,16 @@ def getCatPCoAData(request):
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
 
-        button = int(all["button"])
         taxaLevel = int(all["taxa"])
         distance = int(all["distance"])
-        factor = all["normalize"]
         PC1 = all["PC1"]
         PC2 = all["PC2"]
         test = int(all["test"])
         alpha = float(all["alpha"])
         perms = int(all["perms"])
         remove = int(all["remove"])
+        NormMeth = int(all["NormMeth"])
+        NormVal = all["NormVal"]
 
         countList = []
         for sample in qs1:
@@ -60,22 +60,30 @@ def getCatPCoAData(request):
         medianSize = int(np.median(np.array(countList)))
         maxSize = int(max(countList))
 
-        if factor == "min":
-            norm = minSize
-        elif factor == "median":
-            norm = medianSize
-        elif factor == "max":
-            norm = maxSize
-        elif factor == "none":
-            norm = -1
+        if NormVal == "min":
+            NormReads = minSize
+        elif NormVal == "median":
+            NormReads = medianSize
+        elif NormVal == "max":
+            NormReads = maxSize
+        elif NormVal == "none":
+            NormReads = -1
         else:
-            norm = int(all["normalize"])
+            NormReads = int(all["NormVal"])
 
+        # Remove samples if below the sequence threshold set by user (rarefaction)
         newList = []
+        result = 'Data Normalization:\n'
+
+        # Limit reads to max value
+        if NormReads > maxSize:
+            NormReads = medianSize
+            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if remove == 1:
-                if total['count__sum'] is not None and int(total['count__sum']) >= norm:
+            if NormMeth == 2:
+                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
                     id = sample.sampleid
                     newList.append(id)
             else:
@@ -83,6 +91,15 @@ def getCatPCoAData(request):
                     id = sample.sampleid
                     newList.append(id)
 
+        # If user set reads to high sample list will be blank
+        if not newList:
+            NormReads = medianSize
+            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                    id = sample.sampleid
+                    newList.append(id)
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
 
         metaString = all["meta"]
@@ -101,22 +118,25 @@ def getCatPCoAData(request):
 
         stage = 'Step 1 of 6: Querying database...complete'
         stage = 'Step 2 of 6: Normalizing data...'
-        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, norm, button)
+        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads)
+
+        finalDict = {}
+        if NormMeth == 1:
+            result = result + 'No normalization was performed...\n'
+        if NormMeth == 2 or NormMeth == 3:
+            result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+        if NormMeth == 4:
+            result = result + 'Data were normalized by the total number of sequence reads...\n'
+        result = result + '===============================================\n\n\n'
+
         stage = 'Step 2 of 6: Normalizing data...complete'
         stage = 'Step 3 of 6: Calculating distance matrix...'
 
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
         pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
 
-        matrixDF = pd.DataFrame()
-        if button == 1:
-            matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='count')
-        elif button == 2:
-            matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='rel_abund')
-        elif button == 3:
-            matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='rich')
-        elif button == 4:
-            matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='diversity')
+        #matrixDF = pd.DataFrame()
+        matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='abund')
 
         datamtx = asarray(matrixDF[mySet].T)
 
@@ -187,7 +207,6 @@ def getCatPCoAData(request):
                     stage = 'Step 5 of 6: Performing AMOVA...complete'
 
         stage = 'Step 6 of 6: Preparing graph data...'
-        finalDict = {}
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
@@ -215,17 +234,6 @@ def getCatPCoAData(request):
         finalDict['xAxis'] = xAxisDict
         finalDict['yAxis'] = yAxisDict
 
-        result = 'Data Normalization:\n'
-        if norm == -1:
-            result = result + 'Data were not normalized...\n'
-        else:
-            result = result + 'Data normalized to ' + str(norm) + ' sequence reads...\n'
-        if remove == 1:
-            result = result + 'Samples below this threshold were removed\n\n'
-        if remove == 0:
-            result = result + 'All selected samples were included in the analysis\n\n'
-
-        result = result + '===============================================\n'
         if taxaLevel == 1:
             result = result + 'Taxa level: Kingdom' + '\n'
         elif taxaLevel == 2:
@@ -240,17 +248,9 @@ def getCatPCoAData(request):
             result = result + 'Taxa level: Genus' + '\n'
         elif taxaLevel == 7:
             result = result + 'Taxa level: Species' + '\n'
-        if button == 1:
-            result = result + 'Dependent Variable: Sequence Reads' + '\n'
-        elif button == 2:
-            result = result + 'Dependent Variable: Relative Abundance' + '\n'
-        elif button == 3:
-            result = result + 'Dependent Variable: Species Richness' + '\n'
-        elif button == 4:
-            result = result + 'Dependent Variable: Shannon Diversity' + '\n'
 
         indVar = ' x '.join(fieldList)
-        result = result + 'Independent Variable: ' + str(indVar) + '\n'
+        result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
         if distance == 1:
             result = result + 'Distance score: Bray-Curtis' + '\n'
         elif distance == 2:
@@ -307,13 +307,13 @@ def getQuantPCoAData(request):
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
 
-        button = int(all["button"])
         taxaLevel = int(all["taxa"])
         distance = int(all["distance"])
         PC1 = all["PC1"]
         alpha = float(all["alpha"])
-        factor = all["normalize"]
         remove = int(all["remove"])
+        NormMeth = int(all["NormMeth"])
+        NormVal = all["NormVal"]
 
         countList = []
         for sample in qs1:
@@ -324,22 +324,30 @@ def getQuantPCoAData(request):
         medianSize = int(np.median(np.array(countList)))
         maxSize = int(max(countList))
 
-        if factor == "min":
-            norm = minSize
-        elif factor == "median":
-            norm = medianSize
-        elif factor == "max":
-            norm = maxSize
-        elif factor == "none":
-            norm = -1
+        if NormVal == "min":
+            NormReads = minSize
+        elif NormVal == "median":
+            NormReads = medianSize
+        elif NormVal == "max":
+            NormReads = maxSize
+        elif NormVal == "none":
+            NormReads = -1
         else:
-            norm = int(all["normalize"])
+            NormReads = int(all["NormVal"])
 
+        # Remove samples if below the sequence threshold set by user (rarefaction)
         newList = []
+        result = 'Data Normalization:\n'
+
+        # Limit reads to max value
+        if NormReads > maxSize:
+            NormReads = medianSize
+            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if remove == 1:
-                if total['count__sum'] is not None and int(total['count__sum']) >= norm:
+            if NormMeth == 2:
+                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
                     id = sample.sampleid
                     newList.append(id)
             else:
@@ -347,9 +355,16 @@ def getQuantPCoAData(request):
                     id = sample.sampleid
                     newList.append(id)
 
+        # If user set reads to high sample list will be blank
+        if not newList:
+            NormReads = medianSize
+            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                    id = sample.sampleid
+                    newList.append(id)
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
-
-
 
         metaString = all["meta"]
         metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
@@ -368,7 +383,17 @@ def getQuantPCoAData(request):
 
         stage = 'Step 1 of 6: Querying database...complete'
         stage = 'Step 2 of 6: Normalizing data...'
-        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, norm, button)
+        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads)
+
+        finalDict = {}
+        if NormMeth == 1:
+            result = result + 'No normalization was performed...\n'
+        if NormMeth == 2 or NormMeth == 3:
+            result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+        if NormMeth == 4:
+            result = result + 'Data were normalized by the total number of sequence reads...\n'
+        result = result + '===============================================\n\n\n'
+
         stage = 'Step 2 of 6: Normalizing data...complete'
         stage = 'Step 3 of 6: Calculating distance matrix...'
 
@@ -377,14 +402,7 @@ def getQuantPCoAData(request):
 
         print(pd.DataFrame)
         matrixDF = pd.DataFrame()
-        if button == 1:
-            matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='count')
-        elif button == 2:
-            matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='rel_abund')
-        elif button == 3:
-            matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='rich')
-        elif button == 4:
-            matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='diversity')
+        matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='abund')
 
         datamtx = asarray(matrixDF[mySet].T)
         numrows, numcols = shape(datamtx)
@@ -431,7 +449,6 @@ def getQuantPCoAData(request):
 
         stage = 'Step 4 of 6: Principal coordinates analysis...complete'
         stage = 'Step 5 of 6: Performing linear regression...'
-        finalDict = {}
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
@@ -488,7 +505,7 @@ def getQuantPCoAData(request):
         finalDict['yAxis'] = yAxisDict
 
         result = 'Data Normalization:\n'
-        if norm == -1:
+        if NormVal == -1:
             result = result + 'Data were not normalized...\n'
         else:
             result = result + 'Data normalized to ' + str(norm) + ' sequence reads...\n'
@@ -512,16 +529,7 @@ def getQuantPCoAData(request):
         elif taxaLevel == 7:
             result = result + 'Taxa level: Species' + '\n'
 
-        if button == 1:
-            result = result + 'Dependent Variable: Sequence Reads' + '\n'
-        elif button == 2:
-            result = result + 'Dependent Variable: Relative Abundance' + '\n'
-        elif button == 3:
-            result = result + 'Dependent Variable: Species Richness' + '\n'
-        elif button == 4:
-            result = result + 'Dependent Variable: Shannon Diversity' + '\n'
-
-        result = result + 'Independent Variable: ' + str(fieldList[0]) + '\n'
+        result = result + 'Independent Variable: ' + str(fieldList[0]) + '\n\n'
 
         if distance == 1:
             result = result + 'Distance score: Bray-Curtis' + '\n'

@@ -10,6 +10,7 @@ import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF
 import numpy as np
 import datetime
+import pyper as pr
 from pyper import *
 import math
 
@@ -74,6 +75,11 @@ def getCatUnivData(request):
         # Remove samples if below the sequence threshold set by user (rarefaction)
         newList = []
         result = 'Data Normalization:\n'
+
+        # Limit reads to max value
+        if NormReads > maxSize:
+            NormReads = medianSize
+            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if NormMeth == 2:
@@ -85,7 +91,7 @@ def getCatUnivData(request):
                     id = sample.sampleid
                     newList.append(id)
 
-        # If user set reads to high sample list will be blank
+        # If user set reads too high sample list will be blank
         if not newList:
             NormReads = medianSize
             result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
@@ -155,6 +161,7 @@ def getCatUnivData(request):
 
         # Normalize data
         stage = 'Step 2 of 4: Normalizing data...'
+
         normDF = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads)
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
         finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
@@ -167,6 +174,7 @@ def getCatUnivData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         if NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
+        result = result + '===============================================\n\n\n'
 
         stage = 'Step 2 of 4: Normalizing data...complete'
         stage = 'Step 3 of 4: Performing statistical test...'
@@ -203,7 +211,10 @@ def getCatUnivData(request):
             if StatTest == 1:
                 # transform data to help equalize variances
                 for row in valList:
-                    row[:] = [math.log(x, 2) for x in row]
+                    if NormMeth == 4:
+                        row[:] = [math.asin(x) for x in row]
+                    else:
+                        row[:] = [math.log(x + 1, 2) for x in row]
 
                 D = Anova1way()
                 try:
@@ -231,6 +242,7 @@ def getCatUnivData(request):
                                 p_val = "Nan"
                             dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'p_value': p_val}
                             rows_list.append(dict1)
+
                 pvalDF = pd.DataFrame(rows_list)
                 pvalDF.sort(columns='p_value', inplace=True)
                 pvalDF.reset_index(drop=True, inplace=True)
@@ -244,51 +256,6 @@ def getCatUnivData(request):
                     p_val = 0.0
                 else:
                     p_val = 1.0
-
-            elif StatTest == 3:
-                rows_list = []
-                m = 0.0
-                for i, val1 in enumerate(trtList):
-                    smp1 = valList[i]
-                    sum1 = sum(smp1)
-                    newList = [x / sum1 for x in smp1]
-
-                    start = i + 1
-                    stop = int(len(trtList))
-                    for j in range(start, stop):
-                        if i != j:
-                            val2 = trtList[j]
-                            smp2 = valList[j]
-                            if len(smp1) > 1 and len(smp2) > 1:
-                                (t_val, p_val) = stats.binom_test(smp1, smp2, equal_var=False)
-                                m += 1.0
-                            else:
-                                p_val = "Nan"
-                            dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'p_value': p_val}
-                            rows_list.append(dict1)
-                pvalDF = pd.DataFrame(rows_list)
-                pvalDF.sort(columns='p_value', inplace=True)
-                pvalDF.reset_index(drop=True, inplace=True)
-                pvalDF.index += 1
-                pvalDF['BH'] = pvalDF.index / m * FDR
-                pvalDF['Sig'] = pvalDF.p_value <= pvalDF.BH
-
-                pvalDF[['p_value', 'BH']] = pvalDF[['p_value', 'BH']].astype(float)
-                D = pvalDF.to_string(columns=['sample1', 'sample2', 'p_value', 'BH', 'Sig'])
-                if True in pvalDF['Sig'].values:
-                    p_val = 0.0
-                else:
-                    p_val = 1.0
-
-
-            ### testing PypeR (needs a working R installation)
-            r = R()
-            test = 10
-            r('myvar1 <- % d' % test)
-            r('myvar2 <- 12')
-            #print r.myvar1
-            #print r.myvar2
-            ### end testing PypeR
 
             stage = 'Step 3 of 4: Performing statistical test...complete'
             stage = 'Step 4 of 4: Preparing graph data...'
@@ -306,7 +273,7 @@ def getCatUnivData(request):
                         result = result + 'Dependent Variable: Species Diversity' + '\n'
 
                     indVar = ' x '.join(fieldList)
-                    result = result + 'Independent Variable: ' + str(indVar) + '\n'
+                    result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
 
                     result = result + str(D) + '\n'
                     result = result + '===============================================\n'
@@ -354,7 +321,7 @@ def getCatUnivData(request):
                     result = result + 'Dependent Variable: Species Diversity' + '\n'
 
                 indVar = ' x '.join(fieldList)
-                result = result + 'Independent Variable: ' + str(indVar) + '\n'
+                result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
 
                 result = result + str(D) + '\n'
                 result = result + '===============================================\n'
@@ -494,7 +461,15 @@ def getQuantUnivData(request):
         else:
             NormReads = int(all["NormVal"])
 
+        # Remove samples if below the sequence threshold set by user (rarefaction)
         newList = []
+        result = 'Data Normalization:\n'
+
+        # Limit reads to max value
+        if NormReads > maxSize:
+            NormReads = medianSize
+            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if NormMeth == 2:
@@ -503,6 +478,16 @@ def getQuantUnivData(request):
                     newList.append(id)
             else:
                 if total['count__sum'] is not None:
+                    id = sample.sampleid
+                    newList.append(id)
+
+        # If user set reads to high sample list will be blank
+        if not newList:
+            NormReads = medianSize
+            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
                     id = sample.sampleid
                     newList.append(id)
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
@@ -557,6 +542,16 @@ def getQuantUnivData(request):
         stage = 'Step 1 of 4: Querying database...complete'
         stage = 'Step 2 of 4: Normalizing data...'
         normDF = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads)
+
+        finalDict = {}
+        if NormMeth == 1:
+            result = result + 'No normalization was performed...\n'
+        if NormMeth == 2 or NormMeth == 3:
+            result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+        if NormMeth == 4:
+            result = result + 'Data were normalized by the total number of sequence reads...\n'
+        result = result + '===============================================\n\n\n'
+
         stage = 'Step 2 of 4: Normalizing data...complete'
         stage = 'Step 3 of 4: Performing linear regression...'
 
@@ -564,7 +559,6 @@ def getQuantUnivData(request):
         finalDF[[fieldList[0], 'abund', 'rich', 'diversity']] = finalDF[[fieldList[0], 'abund', 'rich', 'diversity']].astype(float)
         pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
 
-        finalDict = {}
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
@@ -710,14 +704,6 @@ def getQuantUnivData(request):
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
-
-        result = 'Data Normalization:\n'
-        if NormMeth == 1:
-            result = result + 'No normalization was performed...\n'
-        if NormMeth == 2 or NormMeth == 3:
-            result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-        if NormMeth == 4:
-            result = result + 'Data were normalized by the total number of sequence reads...\n'
 
         finalDict['text'] = result
         stage = 'Step 4 of 4: Preparing graph data...complete'

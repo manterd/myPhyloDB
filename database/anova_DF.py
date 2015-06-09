@@ -8,6 +8,7 @@ from numpy import *
 from numpy.random import mtrand
 from scipy.spatial.distance import *
 import math
+from pyper import *
 
 
 def catUnivMetaDF(qs1, metaDict):
@@ -256,7 +257,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads):
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
     countDF = pd.DataFrame()
-    if meth == 1:
+    if meth == 1 or meth == 4:
         countDF = df2.reset_index(drop=True)
 
     elif meth == 2 or meth == 3:
@@ -266,7 +267,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads):
             d = manager.dict()
 
             numcore = mp.cpu_count()-1 or 1
-            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
+            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, mySet, df, meth, d)) for x in range(numcore)]
 
             for p in processes:
                 p.start()
@@ -278,9 +279,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads):
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
-
-    elif meth == 4:
-        countDF = df2.reset_index(drop=True)
 
     relabundDF = pd.DataFrame(countDF[taxaID])
     binaryDF = pd.DataFrame(countDF[taxaID])
@@ -414,7 +412,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads):
     return normDF
 
 
-def weightedProb(x, cores, reads, mySet, df, d):
+def weightedProb(x, cores, reads, mySet, df, meth, d):
     high = len(mySet)
     set = mySet[x:high:cores]
 
@@ -423,14 +421,14 @@ def weightedProb(x, cores, reads, mySet, df, d):
         cols = shape(arr)
         sample = arr.astype(dtype=np.float64)
 
-        if sample.sum() <= reads:
+        if meth == 3:
             prob = (sample + 0.1) / (sample.sum() + cols[0] * 0.1)
         else:
             prob = sample / sample.sum()
 
         temp = np.zeros(cols)
         for n in range(reads):
-            sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
+            sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
             temp2 = np.zeros(cols)
             np.put(temp2, sub, 1)
             temp = np.core.umath.add(temp, temp2)

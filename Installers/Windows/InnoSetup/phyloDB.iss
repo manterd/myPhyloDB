@@ -12,6 +12,7 @@ OutputBaseFilename=myPhyloDB_1.0_Win_x64_install
 
 [Files]
 Source: "..\..\..\dist\myPhyloDB\*"; DestDir: "{app}";
+Source: "..\..\..\dist\myPhyloDB\dbMicrobe"; DestDir: "{app}"; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "..\..\..\dist\myPhyloDB\_MEI\*"; DestDir: "{app}\_MEI"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\django\*"; DestDir: "{app}\django"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\eggs\*"; DestDir: "{app}\eggs"; Flags: recursesubdirs
@@ -19,7 +20,8 @@ Source: "..\..\..\dist\myPhyloDB\include\*"; DestDir: "{app}\include"; Flags: re
 Source: "..\..\..\dist\myPhyloDB\instructions\*"; DestDir: "{app}\instructions"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\IPython\*"; DestDir: "{app}\IPython"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\media\*"; DestDir: "{app}\media"; Flags: recursesubdirs
-Source: "..\..\..\dist\myPhyloDB\mothur\*"; DestDir: "{app}\mothur"; Flags: recursesubdirs
+Source: "..\..\..\dist\myPhyloDB\mothur\mothur-win\*"; DestDir: "{app}\mothur"; Flags: recursesubdirs
+Source: "..\..\..\dist\myPhyloDB\mothur\reference\*"; DestDir: "{app}\mothur"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\mpl-data\*"; DestDir: "{app}\mpl-data"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\pytz\*"; DestDir: "{app}\pytz"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\sample_files\*"; DestDir: "{app}\sample_files"; Flags: recursesubdirs

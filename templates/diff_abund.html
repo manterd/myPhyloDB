@@ -1,0 +1,525 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>Univariate-DiffAbund</title>
+{% endblock pagetitle%}
+
+{% block menu_item %}
+    <p><input id="run" type="submit" value="Run Analysis!"/></p>
+{% endblock menu_item %}
+
+{% block javascript %}
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var DepVar = 1, NormMeth = 4, StatTest = 2, selTheme = 0, i = 0;
+        var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
+        var chart1 = {}, chart2 = {};
+        var catOptions = {};
+        var sig1_only = 0, sig2_only = 0;
+        var refresh;
+
+        $(function () {
+            $("#tree_metaCat").dynatree({
+                checkbox: true,
+                rootVisible: false,
+                selectMode: 3,
+                initAjax: {
+                    url: '/getSampleCatTree/',
+                    dataType: 'jsonp',
+                    data: {}
+                },
+                onLazyRead: function (node) {
+                    node.appendAjax({
+                        url: '/getSampleCatTreeChildren/',
+                        data: {field: node.data.title},
+                        success: function (node) {
+                            if (node.childList == undefined) {
+                                alert('No samples are available for this variable!');
+                            }
+                        }
+                    });
+                },
+                onSelect: function (flag, node) {
+                    if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            node.select(false);
+                            node.select(true);
+                        });
+                    }
+                    nodesCat = node.tree.getSelectedNodes();
+                    $("#run").css("background-color", "lightgray");
+                }
+            });
+
+            $("#tree_taxa").dynatree({
+                checkbox: true,
+                selectMode: 2,
+                initAjax: {
+                    url: '/getTaxaTree/',
+                    dataType: 'jsonp',
+                    data: {}
+                },
+                onLazyRead: function (node) {
+                    node.appendAjax({
+                        url: '/getTaxaTreeChildren/',
+                        data: {
+                            tooltip: node.data.tooltip,
+                            id: node.data.id
+                        }
+                    });
+                },
+                onSelect: function (flag, node) {
+                    if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            node.select(false);
+                            node.select(true);
+                        });
+                    }
+                    nodesTaxa = node.tree.getSelectedNodes();
+                    $("#run").css("background-color", "lightgray");
+                    searchData();
+                },
+                onClick: function () {
+                    selectAll = 0;
+                    $("#selectall").val(0);
+                }
+            });
+
+            $("#run").show().click(function () {
+                chooseData();
+            });
+
+            $("#DepVar").change(function () {
+                DepVar = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#NormMeth").change(function () {
+                NormMeth = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#NormVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#FdrVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#StatTest").change(function () {
+                StatTest = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#sig_box-1").change(function () {
+                if (document.getElementById('sig_box-1').checked) {
+                    sig1_only = 1
+                } else {
+                    sig1_only = 0
+                }
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#theme").change(function () {
+                selTheme = $(this).val();
+
+                if (selTheme == 1) {
+                    $("#container-1").empty();
+                    new Highcharts.Chart(catOptions);
+                }
+                else if (selTheme == 2) {
+                    $.getScript('{% static 'highcharts/themes/dark-blue.js' %}', function () {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    });
+                }
+                else if (selTheme == 3) {
+                    $.getScript('{% static 'highcharts/themes/dark-green.js' %}', function () {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    });
+                }
+                else if (selTheme == 4) {
+                    $.getScript('{% static 'highcharts/themes/dark-unica.js' %}', function () {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    });
+                }
+                else if (selTheme == 5) {
+                    $.getScript('{% static 'highcharts/themes/gray.js' %}', function () {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    });
+                }
+                else if (selTheme == 6) {
+                    $.getScript('{% static 'highcharts/themes/grid.js' %}', function () {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    });
+                }
+                else if (selTheme == 7) {
+                    $.getScript('{% static 'highcharts/themes/grid-light.js' %}', function () {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    });
+                }
+                else if (selTheme == 8) {
+                    $.getScript('{% static 'highcharts/themes/sand-signika.js' %}', function () {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    });
+                }
+                else if (selTheme == 9) {
+                    $.getScript('{% static 'highcharts/themes/skies.js' %}', function () {
+                        $("#container-1").empty();
+                        new Highcharts.Chart(catOptions);
+                    });
+                }
+            });
+
+            $("#clearMeta").click(function () {
+                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#clearTaxa").click(function () {
+                $("#selectall").val(0);
+                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                selectAll = 0;
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#selectall").change(function () {
+                selectAll = $(this).val();
+                $("#run").css("background-color", "lightgray");
+                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+        });
+
+        function updateStatus() {
+            $.ajax({
+                url: '/statusDiffAbund/',
+                type: 'GET',
+                dataType: 'json',
+                data: {},
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    $('#container-1').empty().append(stage);
+                }
+            });
+        }
+
+        function startTimer() {
+            refresh = setInterval(updateStatus, 1000);
+            return refresh
+        }
+
+        function stopTimer() {
+            clearInterval(refresh)
+        }
+
+        function chooseDisplay() {
+            if ((NormMeth == 2) || (NormMeth == 3)) {
+                $("#NormRow").show();
+                $("#NormRow-off").hide();
+            } else {
+                $("#NormRow").hide();
+                $("#NormRow-off").show();
+            }
+        }
+
+        function chooseData() {
+            if ( (nodesCat != "") && ((nodesTaxa != "") || (selectAll != 0))) {
+                $("#run").css("background-color", "yellow");
+                $("#container-1").empty().append('Analysis is running...please be patient');
+                getCatGraphData();
+            }
+            else if ((nodesCat == "") && (nodesTaxa == "") && (selectAll == 0) ) {
+                $("#container-1").empty().append('Please choose your meta variable(s) and taxa level(s)!');
+                $("#text-1").val('No data selected');
+                $("#text-raw").val('No data selected');
+                $("#run").css("background-color", "red");
+            }
+            else if ((nodesCat != "") && (nodesTaxa == "") && (selectAll == 0)) {
+                $("#container-1").empty().append('Please also choose your taxa level(s)!');
+                $("#text-1").val('No data selected');
+                $("#text-raw").val('No data selected');
+                $("#run").css("background-color", "red");
+            }
+            else if ((nodesCat == "") && (nodesTaxa != "")) {
+                $("#container-1").empty().append('Please also choose your meta variable(s)!');
+                $("#text-1").val('No data selected');
+                $("#text-raw").val('No data selected');
+                $("#run").css("background-color", "red");
+            }
+        }
+
+        function searchData() {
+            var search = $.map(nodesTaxa, function(node) {
+                return node.data.title;
+            });
+            $("#MicrobeWiki").attr("href", "https://microbewiki.kenyon.edu/index.php/Special:Search?search=" + search);
+            $("#Wiki").attr("href", "http://en.wikipedia.org/wiki/" + search);
+            $("#Google").attr("href", "http://www.google.com/search?q=" + search);
+        }
+
+        function getCatGraphData() {
+            startTimer();
+            var array1 = [];
+            for (var i = 0; i < nodesCat.length; i++) {
+                var key1 = nodesCat[i].data.id;
+                var value1 = nodesCat[i].data.title;
+                if (nodesCat[i].getLevel() == 4) {
+                    var next1 = '"' + key1 + '" : "' + value1 + '"';
+                    array1.push(next1);
+                }
+            }
+            var meta = "{" + array1.join(",") + "}";
+
+            var array2 = [];
+            for (i = 0; i < nodesTaxa.length; i++) {
+                var key2 = nodesTaxa[i].data.tooltip;
+                var value2 = nodesTaxa[i].data.id;
+                if (nodesTaxa[i].getLevel() >= 2) {
+                    var next2 = '"' + key2 + '" : "' + value2 + '"';
+                    array2.push(next2);
+                }
+            }
+            var taxa = "{" + array2.join(",") + "}";
+
+            var myDict = {};
+            myDict['meta'] = meta;
+            myDict['taxa'] = taxa;
+            myDict['DepVar'] = DepVar;
+            myDict['sig_only'] = sig1_only;
+            myDict['selectAll'] = selectAll;
+            if ((NormMeth == 2) || (NormMeth == 3)){
+                myDict['NormVal'] = document.getElementById("NormVal").value;
+            } else {
+                myDict['NormVal'] = "none"
+            }
+            myDict['FdrVal'] = document.getElementById("FdrVal").value;
+            myDict['NormMeth'] = NormMeth;
+            myDict['StatTest'] = StatTest;
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                url: '/getCatUnivData/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: jsonDict
+                },
+                success: function(data) {
+                    stopTimer();
+                    var xAxis = data['xAxis'];
+                    var series = data['series'];
+                    var yAxis = data['yAxis'];
+                    var empty = data['empty'];
+                    if (empty == 0) {
+                        alert('No significant tests!');
+                    }
+                    barchart(xAxis, yAxis, series);
+                    var text = data['text'];
+                    $('#text-1').val(text);
+
+                    var res_table = data['res_table'];
+                    $('#res_table').empty().append(res_table).find('.table').DataTable({
+                        "jQueryUI": true,
+                        "sDom": 'T<"clear">lfrtip',
+                        "oTableTools": {
+                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                        },
+                        "bSort": false,
+                        "scrollX": true
+                    }).draw();
+
+                    var biome = data['biome'];
+                    $("#biome-text").empty().append(biome);
+
+                    $("#run").css("background-color", "green");
+                }
+            });
+        }
+
+        function barchart(xAxis, yAxis, series) {
+           catOptions = {
+                chart: { renderTo: 'container-1', type: 'column' },
+                title: { text: null },
+                legend: {
+                    itemStyle: {
+                        fontSize: '7px',
+                        font: '7pt Trebuchet MS, Verdana, sans-serif'
+                    },
+                    align: 'right',
+                    verticalAlign: 'top',
+                    layout: 'vertical',
+                    x: 0,
+                    y: 20,
+                    labelFormatter: function () {
+                        return this.name[0] + ': ' + this.name[1] + '<br/>' + 'ID: ' + this.name[2] + '<br/>'
+                    }
+                },
+                xAxis: xAxis,
+                yAxis: yAxis,
+                series: series,
+                tooltip: {
+                    formatter: function () {
+                        return this.series.name[0] + ':' + this.series.name[1] + '<br/>' +
+                            'ID: ' + this.series.name[2] + '<br/>' +
+                            'Value: ' + this.y + '<br/>' +
+                            'Total: ' + this.point.stackTotal;
+                    }
+                },
+                plotOptions: {
+                    column: { stacking: 'normal' },
+                    series: { borderWidth: 0}
+                },
+                credits: { enabled: false }
+            };
+            chart1 = new Highcharts.Chart(catOptions);
+        }
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <br>
+    <span style="padding-left: 225px">
+        Select all taxa:
+        <select id="selectall">
+            <option value="0" selected="selected">Off</option>
+            <option value="1">Kingdoms</option>
+            <option value="2">Phyla</option>
+            <option value="3">Classes</option>
+            <option value="4">Orders</option>
+            <option value="5">Families</option>
+            <option value="6">Genera</option>
+            <option value="7">Species</option>
+        </select>
+    </span>
+    <!-- tree tables -->
+    <div>
+        <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+            <tr>
+                <th>Select Meta Data:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            </tr>
+            <tr>
+                <td style="padding-right: 10px; vertical-align: top">
+                    <div id="tree_metaCat"></div>
+                </td>
+            </tr>
+        </table>
+        <table border="2" cellspacing="0" cellpadding="5" class="inlineTable" style="margin-left:10px;">
+            <tr>
+                <th>Select Taxa:<a href="#" id="clearTaxa" style="font-size: 12px;">-Deselect all-</a></th>
+            </tr>
+            <tr>
+                <td style="padding-right: 10px; vertical-align: top">
+                    <div id="tree_taxa"></div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <br><br>
+
+    <div style="float: left; padding-left: 10px;" id="sig_text-1">
+        Display only significantly different taxa (p <= 0.05):
+        <input type="checkbox" id="sig_box-1">
+    </div>
+
+    <div  style="float: right; padding-right: 10px;">Select chart theme:
+        <select id="theme">
+            <option value="1" selected="selected">default</option>
+            <option value="2">dark-blue</option>
+            <option value="3">dark-green</option>
+            <option value="4">dark-unica</option>
+            <option value="5">gray</option>
+            <option value="6">grid</option>
+            <option value="7">grid-light</option>
+            <option value="8">sand-signika</option>
+            <option value="9">skies</option>
+        </select>
+        &nbsp&nbsp
+    </div>
+    <table width="950px" border="2">
+        <tr>
+            <th colspan="3" style="padding-right: 10px;">GraphData</th>
+        </tr>
+        <tr>
+            <td style="width: 33%; tet-align: left">
+            </td>
+            <td style="width: 34%; text-align: center">
+                Normalization method:
+                <select id="NormMeth">
+                    <option value="1">None</option>
+                    <option value="2" selected="selected">Proportion</option>
+                    <option value="3">DESeqVS</option>
+                </select>
+            </td>
+            <td id="StatTest-text" style="width: 33%; text-align: right">
+                Statistical test:
+                <select id="StatTest">
+                    <option value="1">exact bionomial test</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td id="NormRow" style="display: none; text-align: center">
+                Sample size:
+                <input type="text" id="NormVal" value="min"/>
+            </td>
+            <td id="NormRow-off"></td>
+            <td id="FdrRow" style="text-align: right">
+                False Discovery Rate:
+                <input type="text" id="FdrVal" value="0.05"/>
+            </td>
+            <td id="FdrRow-off" style="display: none;"></td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <div id="container-1" style="height: 400px;">No Data has been selected!</div>
+            </td>
+        </tr>
+    </table>
+
+
+    <div id="txt-1">
+        <h2>Test Results:</h2>
+        <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
+        <br>
+    </div>
+
+    <br>
+    <h2>Raw Data (Tabular):</h2>
+    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
+
+    <br>
+    <h2>Raw Data (Biom Format):</h2>
+    <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
+    <br>
+    <br>
+
+{% endblock my_content%}

@@ -273,7 +273,7 @@ def quantPCoAMetaDF(qs1, metaDict):
     return metaDF
 
 
-def normalizePCoA(df, taxaLevel, mySet, reads, depvar):
+def normalizePCoA(df, taxaLevel, mySet, meth, reads):
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
@@ -302,44 +302,43 @@ def normalizePCoA(df, taxaLevel, mySet, reads, depvar):
         field = 'speciesid'
 
     countDF = pd.DataFrame()
-    if reads >= 0:
-        countDF = df2[taxaID].reset_index(drop=True)
-        manager = mp.Manager()
-        d = manager.dict()
+    if meth == 1:
+        countDF = df2.reset_index(drop=True)
 
-        if depvar == 2:
-            numcore = 1
-            processes = [mp.Process(target=weightedProb1, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
-        else:
+    elif meth == 2 or meth == 3:
+        if reads >= 0:
+            countDF = df2[taxaID].reset_index(drop=True)
+            manager = mp.Manager()
+            d = manager.dict()
+
             numcore = mp.cpu_count()-1 or 1
-            processes = [mp.Process(target=weightedProb2, args=(x, numcore, reads, mySet, df, d)) for x in range(numcore)]
+            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, mySet, df, meth, d)) for x in range(numcore)]
 
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
+            for p in processes:
+                p.start()
+            for p in processes:
+                p.join()
 
-        for key, value in d.items():
-            countDF[key] = value
+            for key, value in d.items():
+                countDF[key] = value
 
-    elif reads < 0:
+        elif reads < 0:
+            countDF = df2.reset_index(drop=True)
+
+    elif meth == 4:
         countDF = df2.reset_index(drop=True)
 
     relabundDF = pd.DataFrame(countDF[taxaID])
-    binaryDF = pd.DataFrame(countDF[taxaID])
-    diversityDF = pd.DataFrame(countDF[taxaID])
     for i in mySet:
         relabundDF[i] = countDF[i].div(countDF[i].sum(), axis=0)
-        binaryDF[i] = countDF[i].apply(lambda x: 1 if x != 0 else 0)
-        diversityDF[i] = relabundDF[i].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
 
-    normDF = pd.DataFrame(columns=['sampleid', 'rank', 'count', 'rel_abund', 'rich', 'diversity'])
+    normDF = pd.DataFrame(columns=['sampleid', 'rank', 'abund'])
     for i in mySet:
         tmpDF = pd.DataFrame()
-        tmpDF['count'] = countDF.groupby(field)[i].sum()
-        tmpDF['rel_abund'] = relabundDF.groupby(field)[i].sum()
-        tmpDF['rich'] = binaryDF.groupby(field)[i].sum()
-        tmpDF['diversity'] = diversityDF.groupby(field)[i].sum()
+        if meth == 4:
+            tmpDF['abund'] = relabundDF.groupby(field)[i].sum()
+        else:
+            tmpDF['abund'] = countDF.groupby(field)[i].sum()
         tmpDF['sampleid'] = i
         tmpDF['rank'] = rank
         tmpDF.reset_index(inplace=True)
@@ -349,22 +348,7 @@ def normalizePCoA(df, taxaLevel, mySet, reads, depvar):
     return normDF
 
 
-def weightedProb1(x, cores, reads, mySet, df, d):
-    high = len(mySet)
-    set = mySet[x:high:cores]
-
-    for i in set:
-        arr = asarray(df[i])
-        cols = shape(arr)
-        sample = arr.astype(dtype=np.float64)
-        if sample.sum() <= reads:
-            prob = (sample + 0.1) / (sample.sum() + cols[0] * 0.1)
-        else:
-            prob = sample / sample.sum()
-        d[i] = prob
-
-
-def weightedProb2(x, cores, reads, mySet, df, d):
+def weightedProb(x, cores, reads, mySet, df, meth, d):
     high = len(mySet)
     set = mySet[x:high:cores]
 
@@ -373,14 +357,14 @@ def weightedProb2(x, cores, reads, mySet, df, d):
         cols = shape(arr)
         sample = arr.astype(dtype=np.float64)
 
-        if sample.sum() <= reads:
+        if meth == 3:
             prob = (sample + 0.1) / (sample.sum() + cols[0] * 0.1)
         else:
             prob = sample / sample.sum()
 
         temp = np.zeros(cols)
         for n in range(reads):
-            sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
+            sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
             temp2 = np.zeros(cols)
             np.put(temp2, sub, 1)
             temp = np.core.umath.add(temp, temp2)
