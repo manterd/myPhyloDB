@@ -293,6 +293,7 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
         taxaID = 'speciesid'
 
     normDF = pd.DataFrame()
+    DESeq_error = ''
     if meth == 1:
         normDF = df2.reset_index(drop=True)
 
@@ -333,18 +334,24 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
         r("cds <- newCountDataSet(countTable, condition)")
         r("cds <- estimateSizeFactors(cds)")
         r("cds <- estimateDispersions(cds, method='blind')")
+        r("vsd <- getVarianceStabilizedData(cds)")
 
-        #TODO why does normalization data set fail for vsd, other projects work!
-        r("vsd <- varianceStabilizingTransformation(cds)")
-        print r("vsd")
         colList = df3.columns.tolist()
         indList = df2[taxaID].tolist()
-        normDF = pd.DataFrame(r.get("exprs(vsd)"), columns=[colList])
-        normDF[taxaID] = indList
+        normDF = pd.DataFrame(r.get("vsd"), columns=[colList])
+
+        if len(normDF) != 0:
+            DESeq_error = 'no'
+            normDF[taxaID] = indList
+        else:
+            DESeq_error = 'yes'
+            normDF = pd.DataFrame(r.get("counts(cds)"), columns=[colList])
+            normDF[taxaID] = indList
+            print normDF
 
     normDF.set_index(taxaID, inplace=True)
     finalDF = normDF.transpose()
-    return finalDF
+    return finalDF, DESeq_error
 
 
 def weightedProb(x, cores, reads, mySet, df, meth, d):

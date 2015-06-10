@@ -128,7 +128,7 @@ def getCatPCoAData(request):
 
         # Sum by taxa level
         taxaDF = taxaDF.groupby(level=taxaLevel).sum()
-        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
+        normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
 
         finalDict = {}
         if NormMeth == 1:
@@ -137,8 +137,12 @@ def getCatPCoAData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
-        elif NormMeth == 5:
+        elif NormMeth == 5 and DESeq_error == 'no':
             result = result + 'Data were normalized by DESeq variance stabilization ...\n'
+        elif NormMeth == 5 and DESeq_error == 'yes':
+            result = result + 'DESeq variance stabilization failed...\n'
+            result = result + 'Data were normalized by library size only...\n'
+
         result = result + '===============================================\n\n\n'
 
         stage = 'Step 2 of 6: Normalizing data...complete'
