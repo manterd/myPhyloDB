@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import *
 
-
+#TODO fix crash if division by 0
 def wOdum(data, alpha):
     length = data.__len__()
     numrows, numcols = shape(data)

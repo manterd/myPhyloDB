@@ -160,7 +160,7 @@
                 {% if projects %}
                     {% for project in projects %}
                         <input name="chkbx" type="checkbox" value="{{ project.projectid }}"/>
-                        Project ID: {{ project.projectid }} // Project Name: {{ project.project_name }} // Project PI: {{ project.pi_last }}<br>
+                        Project: {{ project.project_name }} (UUID: {{ project.projectid }})<br>
                         <br>
                     {% endfor %}
                 {% else %}

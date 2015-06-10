@@ -8,7 +8,7 @@ from scipy.spatial.distance import *
 import multiprocessing as mp
 import math
 import os
-
+from pyper import *
 
 def catPCoAMetaDF(qs1, metaDict):
     sampleTableList = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'material']
@@ -273,7 +273,7 @@ def quantPCoAMetaDF(qs1, metaDict):
     return metaDF
 
 
-def normalizePCoA(df, taxaLevel, mySet, meth, reads):
+def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
     df2 = df.reset_index()
 
     taxaID = ''
@@ -321,6 +321,26 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads):
         normDF[taxaID] = df2[taxaID].reset_index(drop=True)
         for i in mySet:
             normDF[i] = df2[i].div(df2[i].sum(), axis=0)
+
+    elif meth == 5:
+        # Create CountDataSet for DESeq
+        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        df3 = df2.drop(taxaID, axis=1)
+        r.assign("countTable", df3)
+        r.assign("metaDF", metaDF)
+        r("condition <- factor(metaDF$merge)")
+        r("library(DESeq)")
+        r("cds <- newCountDataSet(countTable, condition)")
+        r("cds <- estimateSizeFactors(cds)")
+        r("cds <- estimateDispersions(cds, method='blind')")
+
+        #TODO why does normalization data set fail for vsd, other projects work!
+        r("vsd <- varianceStabilizingTransformation(cds)")
+        print r("vsd")
+        colList = df3.columns.tolist()
+        indList = df2[taxaID].tolist()
+        normDF = pd.DataFrame(r.get("exprs(vsd)"), columns=[colList])
+        normDF[taxaID] = indList
 
     normDF.set_index(taxaID, inplace=True)
     finalDF = normDF.transpose()

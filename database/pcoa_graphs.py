@@ -111,13 +111,16 @@ def getCatPCoAData(request):
         metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sample_name', inplace=True)
 
-        taxaDF = taxaProfileDF(newList)
+        # Create unique list of samples in meta dataframe (may be different than selected samples)
+        myList = metaDF['sampleid'].tolist()
+        mySet = list(ordered_set(myList))
+
+        taxaDF = taxaProfileDF(mySet)
 
         stage = 'Step 1 of 6: Querying database...complete'
         stage = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
-        # Only need this for DESeq
         if len(fieldList) > 1:
             metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
         else:
@@ -125,16 +128,17 @@ def getCatPCoAData(request):
 
         # Sum by taxa level
         taxaDF = taxaDF.groupby(level=taxaLevel).sum()
-        normDF = normalizePCoA(taxaDF, taxaLevel, newList, NormMeth, NormReads)
+        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
 
         finalDict = {}
         if NormMeth == 1:
             result = result + 'No normalization was performed...\n'
-        if NormMeth == 2 or NormMeth == 3:
+        elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-        if NormMeth == 4:
+        elif NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
-
+        elif NormMeth == 5:
+            result = result + 'Data were normalized by DESeq variance stabilization ...\n'
         result = result + '===============================================\n\n\n'
 
         stage = 'Step 2 of 6: Normalizing data...complete'
@@ -193,6 +197,7 @@ def getCatPCoAData(request):
 
         trtLength = len(set(trtList))
 
+        #TODO switch to adonis in vegan package (allows multi-factor)
         bigf = 'nan'
         if trtLength > 1:
             if perms <= 2:
@@ -380,7 +385,11 @@ def getQuantPCoAData(request):
         metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sample_name', inplace=True)
 
-        taxaDF = taxaProfileDF(newList)
+        # Create unique list of samples in meta dataframe (may be different than selected samples)
+        myList = metaDF['sampleid'].tolist()
+        mySet = list(ordered_set(myList))
+
+        taxaDF = taxaProfileDF(mySet)
 
         stage = 'Step 1 of 6: Querying database...complete'
         stage = 'Step 2 of 6: Normalizing data...'
@@ -394,16 +403,17 @@ def getQuantPCoAData(request):
 
         # Sum by taxa level
         taxaDF = taxaDF.groupby(level=taxaLevel).sum()
-        normDF = normalizePCoA(taxaDF, taxaLevel, newList, NormMeth, NormReads)
+        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
 
         finalDict = {}
         if NormMeth == 1:
             result = result + 'No normalization was performed...\n'
-        if NormMeth == 2 or NormMeth == 3:
+        elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-        if NormMeth == 4:
+        elif NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
-
+        elif NormMeth == 5:
+            result = result + 'Data were normalized by DESeq variance stabilization ...\n'
         result = result + '===============================================\n\n\n'
 
         stage = 'Step 2 of 6: Normalizing data...complete'

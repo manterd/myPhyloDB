@@ -18,7 +18,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, NormMeth = 4, selTheme = 0;
+        var button1 = 1, NormMeth = 1, selTheme = 0;
         var nodesCat = "", nodesQuant = "", taxaLevel = 6;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
@@ -664,7 +664,7 @@
                 &nbsp<-- Distance score selected
             </td>
             <td bgcolor="white">
-                <div id="alphaLevel">&#945 parameter: <input type="text" id="alphaVal" value="1" style="width:40px"/></div>
+                <div id="alphaLevel">&#945 parameter: <input type="text" id="alphaVal" value="1" style="width:40px; background-color: white"/></div>
             </td>
         </tr>
         <tr>
@@ -715,7 +715,7 @@
                 &nbsp<-- Test selected
             </td>
             <td bgcolor="white">
-                <div id="permutations">permutations: <input type="text" id="perms" value="1000" style="width:40px"/></div>
+                <div  style="background-color: white" id="permutations">permutations: <input type="text" id="perms" value="1000" style="width:40px; background-color: white"/></div>
             </td>
         </tr>
     </table>
@@ -748,10 +748,11 @@
             <td style="width: 34%; text-align: center">
                 Normalization method:
                 <select id="NormMeth">
-                    <option value="1">None</option>
+                    <option value="1" selected="selected">None</option>
                     <option value="2">Rarefaction (remove)</option>
                     <option value="3">Rarefaction (keep)</option>
-                    <option value="4" selected="selected">Proportion</option>
+                    <option value="4">Proportion</option>
+                    <option value="5">DESeqVS</option>
                 </select>
             </td>
             <td style="width: 33%; tet-align: left"> </td>

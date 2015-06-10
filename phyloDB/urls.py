@@ -53,7 +53,7 @@ urlpatterns = patterns('',
     url(r'^statusANOVA', 'database.anova_graphs.statusANOVA', name='statusANOVA'),
     url(r'^statusPCoA', 'database.pcoa_graphs.statusPCoA', name='statusPCoA'),
     url(r'^status', 'database.parsers.status', name='status'),
-    url(r'^statusDiffAbund', 'database.diffabund_graphs.statusDiffAbund', name='statusDiffAbund'),
+    url(r'^updateDiffAbund', 'database.diffabund_graphs.updateDiffAbund', name='updateDiffAbund'),
 
     url('getDiffAbund', 'database.diffabund_graphs.getDiffAbund', name='getDiffAbund'),
 

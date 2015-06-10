@@ -157,7 +157,7 @@
 
         function updateStatus() {
             $.ajax({
-                url: '/statusDiffAbund/',
+                url: '/updateDiffAbund/',
                 type: 'GET',
                 dataType: 'json',
                 data: {},
@@ -296,18 +296,6 @@
 
 {% block my_content %}
     <br>
-    <span style="padding-left: 225px">
-        Select all taxa:
-        <select id="selectall">
-            <option value="0">Kingdoms</option>
-            <option value="1" selected="selected">Phyla</option>
-            <option value="2">Classes</option>
-            <option value="3">Orders</option>
-            <option value="4">Families</option>
-            <option value="5">Genera</option>
-            <option value="6">Species</option>
-        </select>
-    </span>
     <!-- tree tables -->
     <div>
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
@@ -320,7 +308,25 @@
                 </td>
             </tr>
         </table>
-
+        <table>
+            <tr>
+                <th bgcolor="white"></th>
+                <th bgcolor="white"></th>
+                <th bgcolor="white"></th>
+            </tr>
+            <tr>
+                Select all taxa:
+                <select id="taxaLevel">
+                    <option value="0">Kingdoms</option>
+                    <option value="1" selected="selected">Phyla</option>
+                    <option value="2">Classes</option>
+                    <option value="3">Orders</option>
+                    <option value="4">Families</option>
+                    <option value="5">Genera</option>
+                    <option value="6">Species</option>
+                </select>
+            </tr>
+        </table>
     </div>
     <br><br>
 
@@ -370,7 +376,7 @@
             <td></td>
             <td id="FdrRow" style="text-align: right">
                 False Discovery Rate:
-                <input type="text" id="FdrVal" value="0.05"/>
+                <input style="background-color: white" type="text" id="FdrVal" value="0.05"/>
             </td>
             <td id="FdrRow-off" style="display: none;"></td>
         </tr>

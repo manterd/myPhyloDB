@@ -1,10 +1,9 @@
-from diffabund_DF import catDiffAbundDF, normalizeDiffAbundDA
+from diffabund_DF import catDiffAbundDF
 from django.http import HttpResponse
 from database.models import Sample, Profile
 from django.db.models import Sum
 import pandas as pd
 import pickle
-from pyvttbl.Anova1way import Anova1way
 from scipy import stats
 import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF
@@ -17,7 +16,7 @@ import math
 stage = ''
 
 
-def statusDiffAbund(request):
+def updateDiffAbund(request):
     global stage
     if request.is_ajax():
         myDict = {}
@@ -61,7 +60,6 @@ def getDiffAbund(request):
             if total['count__sum'] is not None:
                 id = sample.sampleid
                 newList.append(id)
-
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
 
         # Get dict of selected meta variables
@@ -76,7 +74,11 @@ def getDiffAbund(request):
         metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sample_name', inplace=True)
 
-        taxaDF = taxaProfileDF(newList)
+        # Create unique list of samples in meta dataframe (may be different than selected samples)
+        myList = metaDF['sampleid'].tolist()
+        mySet = list(ordered_set(myList))
+
+        taxaDF = taxaProfileDF(mySet)
 
         stage = 'Step 1 of 4: Querying database...complete'
         stage = 'Step 2 of 4: Normalizing data...'
@@ -89,20 +91,74 @@ def getDiffAbund(request):
 
         # Sum by taxa level
         taxaDF = taxaDF.groupby(level=taxaLevel).sum()
-        normDF = normalizeDiffAbundDA(taxaDF, taxaLevel, newList, NormMeth, metaDF)
 
         if NormMeth == 1:
             result = result + 'No normalization was performed...\n'
-        if NormMeth == 2:
+        elif NormMeth == 2:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
-        if NormMeth == 3:
+        elif NormMeth == 3:
             result = result + 'Data were normalized by DESeqVS...\n'
 
         result = result + '===============================================\n\n\n'
 
-        stage = 'Step 2 of 4: Normalizing data...complete'
-        stage = 'Step 3 of 4: Performing statistical test...'
+        #countDF = pd.DataFrame()
+        #if NormMeth == 1:
+            #TODO add no normalization
 
-        ### get data from normDF & R
+        #if NormMeth == 2:
+            #TODO add independent filtering
 
+        if NormMeth == 3:
+            # Create CountDataSet for DESeq
+            r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            r.assign("countTable", taxaDF)
+            print r("countTable")
+            r.assign("metaDF", metaDF)
+            print r("metaDF")
+            r("condition <- factor(metaDF$merge)")
+            r("library(DESeq)")
+            r("cds <- newCountDataSet(countTable, condition)")
+            r("cds <- estimateSizeFactors(cds)")
+            r("cds <- estimateDispersions(cds, method='blind')")
+            print r("cds")
+            r("vsd <- varianceStabilizingTransformation(cds)")
+
+            ### Create a heatmap of genes vs sample.
+            r("pdf('test.pdf')")
+            r("library(RColorBrewer)")
+            r("library(gplots)")
+            r("hmcol=colorRampPalette(brewer.pal(9,'GnBu'))(100)")
+            r("heatmap.2(exprs(vsd), col=hmcol, trace='none', margin=c(15,15), cexRow=0.8, cexCol=0.8)")
+
+            stage = 'Step 2 of 4: Normalizing data...complete'
+            stage = 'Step 3 of 4: Performing statistical test...'
+
+            # nbinomTest
+            mergeList = metaDF['merge'].tolist()
+            mergeSet = list(set(mergeList))
+
+            #if len(mergeSet) == 1:
+                #TODO
+
+            if len(mergeSet) == 2:
+                r.assign("trt1", mergeSet[0])
+                print r("trt1")
+                r.assign("trt2", mergeSet[1])
+                print r("trt2")
+                r("res <- nbinomTest(cds, trt1, trt2)")
+                print r("res")
+
+                # TODO output res to dataframe
+
+            #if len(mergeSet) == 3:
+                #TODO
+                #not sure how to deal with this?
+                #multiple nbinomTests?
+
+            #TODO add multifactor (fitNbinomGLMs)
+
+        #TODO finish result string and add foldchange graph
+        #TODO add significant only capability
+
+        result = ''
         return HttpResponse(result, content_type='application/json')

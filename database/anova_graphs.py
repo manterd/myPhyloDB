@@ -116,7 +116,7 @@ def getCatUnivData(request):
         metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sample_name', inplace=True)
 
-        # Create unique list of samples in meta dataframe (may be different than selected samples due to null values)
+        # Create unique list of samples in meta dataframe (may be different than selected samples)
         myList = metaDF['sampleid'].tolist()
         mySet = list(ordered_set(myList))
 
@@ -170,9 +170,9 @@ def getCatUnivData(request):
         finalDict = {}
         if NormMeth == 1:
             result = result + 'No normalization was performed...\n'
-        if NormMeth == 2 or NormMeth == 3:
+        elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-        if NormMeth == 4:
+        elif NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
         result = result + '===============================================\n\n\n'
 
@@ -206,6 +206,7 @@ def getCatUnivData(request):
                 trtList.append(trt)
                 valList.append(list(group2.T))
 
+            #TODO switch to ANOVA in R to allow multi-factor
             D = ""
             p_val = 1.0
             if StatTest == 1:
@@ -546,9 +547,9 @@ def getQuantUnivData(request):
         finalDict = {}
         if NormMeth == 1:
             result = result + 'No normalization was performed...\n'
-        if NormMeth == 2 or NormMeth == 3:
+        elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-        if NormMeth == 4:
+        elif NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
         result = result + '===============================================\n\n\n'
 
