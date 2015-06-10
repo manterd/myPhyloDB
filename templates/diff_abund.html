@@ -19,7 +19,7 @@
 
     <script type="text/javascript">
         var NormMeth = 1, StatTest = 1, selTheme = 0, i = 0;
-        var nodesCat = "", nodesTaxa = "", selectAll = 1;
+        var nodesCat = "", nodesTaxa = "", taxaLevel = 1;
         var chart1 = {};
         var catOptions = {};
         var sig1_only = 0, sig2_only = 0;
@@ -149,12 +149,9 @@
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#selectall").change(function () {
-                selectAll = $(this).val();
+            $("#taxaLevel").change(function () {
+                taxaLevel = $(this).val();
                 $("#run").css("background-color", "lightgray");
-                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
             });
         });
 
@@ -183,38 +180,17 @@
         }
 
         function chooseData() {
-            if ( (nodesCat != "") && (selectAll != 0)) {
+            if (nodesCat != "")  {
                 $("#run").css("background-color", "yellow");
                 $("#container-1").empty().append('Analysis is running...please be patient');
                 getCatGraphData();
             }
-            else if ((nodesCat == "") && (selectAll == 0) ) {
-                $("#container-1").empty().append('Please choose your meta variable(s) and taxa level!');
+            else if (nodesCat == "") {
+                $("#container-1").empty().append('Please choose your meta variable(s)!');
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
                 $("#run").css("background-color", "red");
             }
-            else if ((nodesCat != "") && (selectAll == 0)) {
-                $("#container-1").empty().append('Please also choose your taxa level!');
-                $("#text-1").val('No data selected');
-                $("#text-raw").val('No data selected');
-                $("#run").css("background-color", "red");
-            }
-            else if ((nodesCat == "") && (selectAll != 0)) {
-                $("#container-1").empty().append('Please also choose your meta variable(s)!');
-                $("#text-1").val('No data selected');
-                $("#text-raw").val('No data selected');
-                $("#run").css("background-color", "red");
-            }
-        }
-
-        function searchData() {
-            var search = $.map(nodesTaxa, function(node) {
-                return node.data.title;
-            });
-            $("#MicrobeWiki").attr("href", "https://microbewiki.kenyon.edu/index.php/Special:Search?search=" + search);
-            $("#Wiki").attr("href", "http://en.wikipedia.org/wiki/" + search);
-            $("#Google").attr("href", "http://www.google.com/search?q=" + search);
         }
 
         function getCatGraphData() {
@@ -230,21 +206,10 @@
             }
             var meta = "{" + array1.join(",") + "}";
 
-            var array2 = [];
-            for (i = 0; i < nodesTaxa.length; i++) {
-                var key2 = nodesTaxa[i].data.tooltip;
-                var value2 = nodesTaxa[i].data.id;
-                if (nodesTaxa[i].getLevel() >= 2) {
-                    var next2 = '"' + key2 + '" : "' + value2 + '"';
-                    array2.push(next2);
-                }
-            }
-            var taxa = "{" + array2.join(",") + "}";
             var myDict = {};
             myDict['meta'] = meta;
-            myDict['taxa'] = taxa;
             myDict['sig_only'] = sig1_only;
-            myDict['selectAll'] = selectAll;
+            myDict['taxaLevel'] = taxaLevel;
             myDict['FdrVal'] = document.getElementById("FdrVal").value;
             myDict['NormMeth'] = NormMeth;
             myDict['StatTest'] = StatTest;
@@ -334,13 +299,13 @@
     <span style="padding-left: 225px">
         Select all taxa:
         <select id="selectall">
-            <option value="1" selected="selected">Kingdoms</option>
-            <option value="2">Phyla</option>
-            <option value="3">Classes</option>
-            <option value="4">Orders</option>
-            <option value="5">Families</option>
-            <option value="6">Genera</option>
-            <option value="7">Species</option>
+            <option value="0">Kingdoms</option>
+            <option value="1" selected="selected">Phyla</option>
+            <option value="2">Classes</option>
+            <option value="3">Orders</option>
+            <option value="4">Families</option>
+            <option value="5">Genera</option>
+            <option value="6">Species</option>
         </select>
     </span>
     <!-- tree tables -->

@@ -134,6 +134,7 @@ def getCatPCoAData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         if NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
+
         result = result + '===============================================\n\n\n'
 
         stage = 'Step 2 of 6: Normalizing data...complete'
@@ -179,7 +180,8 @@ def getCatPCoAData(request):
         propDF = pd.DataFrame(proportion_explained, columns=['Variance Explained (R2)'], index=axesList)
         eigenDF = valsDF.join(propDF)
 
-        pcoaDF = pd.DataFrame(coordinates, columns=axesList, index=newList)
+        indexList = normDF.index
+        pcoaDF = pd.DataFrame(coordinates, columns=axesList, index=indexList)
         resultDF = metaDF.join(pcoaDF)
         pd.set_option('display.max_rows', resultDF.shape[0], 'display.max_columns', resultDF.shape[1], 'display.width', 1000)
 
@@ -312,7 +314,6 @@ def getQuantPCoAData(request):
         distance = int(all["distance"])
         PC1 = all["PC1"]
         alpha = float(all["alpha"])
-        remove = int(all["remove"])
         NormMeth = int(all["NormMeth"])
         NormVal = all["NormVal"]
 
@@ -360,11 +361,13 @@ def getQuantPCoAData(request):
         if not newList:
             NormReads = medianSize
             result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
                     id = sample.sampleid
                     newList.append(id)
+
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
 
         metaString = all["meta"]
@@ -373,18 +376,25 @@ def getQuantPCoAData(request):
         fieldList = []
         for key in metaDict:
             fieldList.append(metaDict[key])
-
         metaDF = quantPCoAMetaDF(qs2, metaDict)
         metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sample_name', inplace=True)
 
-        myList = metaDF['sampleid'].tolist()
-        mySet = list(ordered_set(myList))
-        taxaDF = taxaProfileDF(mySet)
+        taxaDF = taxaProfileDF(newList)
 
         stage = 'Step 1 of 6: Querying database...complete'
         stage = 'Step 2 of 6: Normalizing data...'
-        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads)
+
+        # Create combined metadata column
+        # Only need this for DESeq
+        if len(fieldList) > 1:
+            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+        else:
+            metaDF['merge'] = metaDF[fieldList[0]]
+
+        # Sum by taxa level
+        taxaDF = taxaDF.groupby(level=taxaLevel).sum()
+        normDF = normalizePCoA(taxaDF, taxaLevel, newList, NormMeth, NormReads)
 
         finalDict = {}
         if NormMeth == 1:
@@ -393,19 +403,15 @@ def getQuantPCoAData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         if NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
+
         result = result + '===============================================\n\n\n'
 
         stage = 'Step 2 of 6: Normalizing data...complete'
         stage = 'Step 3 of 6: Calculating distance matrix...'
 
-        finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
-        pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
+        metaDF.set_index('sampleid', inplace=True)
 
-        print(pd.DataFrame)
-        matrixDF = pd.DataFrame()
-        matrixDF = finalDF.pivot(index='taxaid', columns='sampleid', values='abund')
-
-        datamtx = asarray(matrixDF[mySet].T)
+        datamtx = asarray(normDF)
         numrows, numcols = shape(datamtx)
         dists = zeros((numrows, numrows))
 
@@ -443,8 +449,8 @@ def getQuantPCoAData(request):
         propDF = pd.DataFrame(proportion_explained, columns=['Variance Explained (R2)'], index=axesList)
         eigenDF = valsDF.join(propDF)
 
-        metaDF.set_index('sampleid', drop=True, inplace=True)
-        pcoaDF = pd.DataFrame(coordinates, columns=axesList, index=mySet)
+        indexList = normDF.index
+        pcoaDF = pd.DataFrame(coordinates, columns=axesList, index=indexList)
         resultDF = metaDF.join(pcoaDF)
         pd.set_option('display.max_rows', resultDF.shape[0], 'display.max_columns', resultDF.shape[1], 'display.width', 1000)
 
@@ -505,29 +511,19 @@ def getQuantPCoAData(request):
         finalDict['xAxis'] = xAxisDict
         finalDict['yAxis'] = yAxisDict
 
-        result = 'Data Normalization:\n'
-        if NormVal == -1:
-            result = result + 'Data were not normalized...\n'
-        else:
-            result = result + 'Data normalized to ' + str(norm) + ' sequence reads...\n'
-        if remove == 1:
-            result = result + 'Samples below this threshold were removed\n\n'
-        if remove == 0:
-            result = result + 'All selected samples were included in the analysis\n\n'
-        result = result + '===============================================\n'
-        if taxaLevel == 1:
+        if taxaLevel == 0:
             result = result + 'Taxa level: Kingdom' + '\n'
-        elif taxaLevel == 2:
+        elif taxaLevel == 1:
             result = result + 'Taxa level: Phyla' + '\n'
-        elif taxaLevel == 3:
+        elif taxaLevel == 2:
             result = result + 'Taxa level: Class' + '\n'
-        elif taxaLevel == 4:
+        elif taxaLevel == 3:
             result = result + 'Taxa level: Order' + '\n'
-        elif taxaLevel == 5:
+        elif taxaLevel == 4:
             result = result + 'Taxa level: Family' + '\n'
-        elif taxaLevel == 6:
+        elif taxaLevel == 5:
             result = result + 'Taxa level: Genus' + '\n'
-        elif taxaLevel == 7:
+        elif taxaLevel == 67:
             result = result + 'Taxa level: Species' + '\n'
 
         result = result + 'Independent Variable: ' + str(fieldList[0]) + '\n\n'
