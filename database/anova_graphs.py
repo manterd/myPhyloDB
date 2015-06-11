@@ -206,7 +206,6 @@ def getCatUnivData(request):
                 trtList.append(trt)
                 valList.append(list(group2.T))
 
-            #TODO switch to ANOVA in R to allow multi-factor
             D = ""
             p_val = 1.0
             if StatTest == 1:

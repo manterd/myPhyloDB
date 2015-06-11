@@ -13,6 +13,7 @@ from scipy import stats
 from scipy.spatial.distance import *
 import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF, PCoA
+from pyper import *
 
 
 stage = ''
@@ -129,6 +130,7 @@ def getCatPCoAData(request):
         # Sum by taxa level
         taxaDF = taxaDF.groupby(level=taxaLevel).sum()
         normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
+        normDF.sort_index(inplace=True)
 
         finalDict = {}
         if NormMeth == 1:
@@ -141,7 +143,7 @@ def getCatPCoAData(request):
             result = result + 'Data were normalized by DESeq variance stabilization ...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
             result = result + 'DESeq variance stabilization failed...\n'
-            result = result + 'Data were normalized by library size only...\n'
+            result = result + 'No normalization was performed...\n'
 
         result = result + '===============================================\n\n\n'
 
@@ -149,6 +151,7 @@ def getCatPCoAData(request):
         stage = 'Step 3 of 6: Calculating distance matrix...'
 
         metaDF.set_index('sampleid', inplace=True)
+        metaDF.sort_index(inplace=True)
 
         datamtx = asarray(normDF)
         numrows, numcols = shape(datamtx)
@@ -194,14 +197,11 @@ def getCatPCoAData(request):
         pd.set_option('display.max_rows', resultDF.shape[0], 'display.max_columns', resultDF.shape[1], 'display.width', 1000)
 
         ### create trtList that merges all categorical values
-        groupList = metaDF[fieldList].values.tolist()
-        trtList = []
-        for i in groupList:
-            trtList.append(':'.join(i))
-
+        trtList = metaDF['merge'].values.tolist()
         trtLength = len(set(trtList))
+        nameList = metaDF['sample_name'].tolist()
+        distsDF = pd.DataFrame(dists, columns=nameList, index=nameList)
 
-        #TODO switch to adonis in vegan package (allows multi-factor)
         bigf = 'nan'
         if trtLength > 1:
             if perms <= 2:
@@ -209,14 +209,44 @@ def getCatPCoAData(request):
             else:
                 if test == 1:
                     stage = 'Step 4 of 6: Principal coordinates analysis...complete'
-                    stage = 'Step 5 of 6: Performing AMOVA...'
-                    bigf = amova(dists, trtList, perms)
-                    stage = 'Step 5 of 6: Performing AMOVA...complete'
+                    stage = 'Step 5 of 6: Performing perMANOVA...'
+
+                    r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                    r.assign("matrix", distsDF)
+                    r("d <- as.dist(matrix, diag=TRUE, upper=TRUE)")
+                    r.assign("metaDF", metaDF)
+                    r("trtList <- factor(metaDF$merge)")
+                    r.assign("perms", perms)
+                    r("library(vegan)")
+                    r("res <- adonis(d ~ trtList, perms=perms)")
+                    bigf = r("res$aov.tab")
+                    tempStuff = bigf.split('\n')
+                    bigf = ""
+                    for part in tempStuff:
+                        if part != tempStuff[0]:
+                            bigf += part + '\n'
+
+                    stage = 'Step 5 of 6: Performing perMANOVA...complete'
                 elif test == 2:
                     stage = 'Step 4 of 6: Principal coordinates analysis...complete'
-                    stage = 'Step 5 of 6: Performing HOMOVA...'
-                    bigf = homova(dists, trtList, perms)
-                    stage = 'Step 5 of 6: Performing AMOVA...complete'
+                    stage = 'Step 5 of 6: Performing BetaDisper...'
+                    r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                    r.assign("matrix", distsDF)
+                    r("d <- as.dist(matrix, diag=TRUE, upper=TRUE)")
+                    r.assign("metaDF", metaDF)
+                    r("trtList <- factor(metaDF$merge)")
+                    r.assign("perms", perms)
+                    r("library(vegan)")
+                    r("res <- betadisper(d, trtList, perms=perms)")
+                    r("something <- anova(res)")
+                    bigf = r("something")
+                    tempStuff = bigf.split('\n')
+                    bigf = ""
+                    for part in tempStuff:
+                        if part != tempStuff[0]:
+                            bigf += part + '\n'
+
+                    stage = 'Step 5 of 6: Performing BetaDisper... complete'
 
         stage = 'Step 6 of 6: Preparing graph data...'
         seriesList = []
@@ -246,19 +276,19 @@ def getCatPCoAData(request):
         finalDict['xAxis'] = xAxisDict
         finalDict['yAxis'] = yAxisDict
 
-        if taxaLevel == 1:
+        if taxaLevel == 0:
             result = result + 'Taxa level: Kingdom' + '\n'
-        elif taxaLevel == 2:
+        elif taxaLevel == 1:
             result = result + 'Taxa level: Phyla' + '\n'
-        elif taxaLevel == 3:
+        elif taxaLevel == 2:
             result = result + 'Taxa level: Class' + '\n'
-        elif taxaLevel == 4:
+        elif taxaLevel == 3:
             result = result + 'Taxa level: Order' + '\n'
-        elif taxaLevel == 5:
+        elif taxaLevel == 4:
             result = result + 'Taxa level: Family' + '\n'
-        elif taxaLevel == 6:
+        elif taxaLevel == 5:
             result = result + 'Taxa level: Genus' + '\n'
-        elif taxaLevel == 7:
+        elif taxaLevel == 6:
             result = result + 'Taxa level: Species' + '\n'
 
         indVar = ' x '.join(fieldList)
@@ -295,8 +325,6 @@ def getCatPCoAData(request):
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
 
-        nameList = list(metaDF['sample_name'])
-        distsDF = pd.DataFrame(dists, columns=nameList, index=nameList)
         dist_table = distsDF.to_html(classes="table display")
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
@@ -399,7 +427,6 @@ def getQuantPCoAData(request):
         stage = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
-        # Only need this for DESeq
         if len(fieldList) > 1:
             metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
         else:
@@ -407,7 +434,8 @@ def getQuantPCoAData(request):
 
         # Sum by taxa level
         taxaDF = taxaDF.groupby(level=taxaLevel).sum()
-        normDF = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
+        normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
+        normDF.sort_index(inplace=True)
 
         finalDict = {}
         if NormMeth == 1:
@@ -416,14 +444,18 @@ def getQuantPCoAData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
-        elif NormMeth == 5:
+        elif NormMeth == 5 and DESeq_error == 'no':
             result = result + 'Data were normalized by DESeq variance stabilization ...\n'
+        elif NormMeth == 5 and DESeq_error == 'yes':
+            result = result + 'DESeq variance stabilization failed...\n'
+            result = result + 'No normalization was performed...\n'
         result = result + '===============================================\n\n\n'
 
         stage = 'Step 2 of 6: Normalizing data...complete'
         stage = 'Step 3 of 6: Calculating distance matrix...'
 
-        metaDF.set_index('sampleid', inplace=True)
+        metaDF.set_index('sampleid', inplace=True)  # TODO fix crash here
+        metaDF.sort_index(inplace=True)
 
         datamtx = asarray(normDF)
         numrows, numcols = shape(datamtx)
@@ -485,9 +517,9 @@ def getQuantPCoAData(request):
         y = resultDF[fieldList[0]].values.tolist()
 
         if max(x) == min(x):
-            stop = 0
+            regrDict = {'type': 'line', 'name': 'No Data', 'data': 'No Data'}
+            seriesList.append(regrDict)
         else:
-            stop = 1
             slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
             p_value = "%0.3f" % p_value
             r_square = r_value * r_value
@@ -496,7 +528,6 @@ def getQuantPCoAData(request):
             max_y = slope*max(x) + intercept
             slope = "%.3E" % slope
             intercept = "%.3E" % intercept
-
             regrList = []
             regrList.append([min(x), min_y])
             regrList.append([max(x), max_y])
@@ -504,14 +535,11 @@ def getQuantPCoAData(request):
             stage = 'Step 5 of 6: Performing linear regression...complete'
             stage = 'Step 6 of 6: Preparing graph data...'
 
-            if stop == 0:
-                regDict = {}
-            elif stop == 1:
-                regrDict = {}
-                regrDict['type'] = 'line'
-                regrDict['name'] = 'R2: ' + str(r_square) + '; p-value: ' + str(p_value) + '<br>' + '(y = ' + str(slope) + 'x' + ' + ' + str(intercept) + ')'
-                regrDict['data'] = regrList
-                seriesList.append(regrDict)
+            regrDict = {}
+            regrDict['type'] = 'line'
+            regrDict['name'] = 'R2: ' + str(r_square) + '; p-value: ' + str(p_value) + '<br>' + '(y = ' + str(slope) + 'x' + ' + ' + str(intercept) + ')'
+            regrDict['data'] = regrList
+            seriesList.append(regrDict)
 
         xTitle = {}
         xTitle['text'] = PC1

@@ -11,7 +11,6 @@ def amova(dm, trtList, perms):
     bigN, ncols = np.shape(dm)
     mySet = ordered_set(trtList)
     trts = float(len(mySet))
-
     lt = np.tril(dm, k=-1)
     subtotal = 0.0
     for x in np.nditer(lt):
@@ -89,7 +88,7 @@ def pval(perms, cores, trtList, mySet, lt, SStotal, trts, bigN, Fvalue, output, 
         rMSamong = rSSamong / (trts - 1)
         rMSwithin = rSSwithin / (bigN - trts)
         rFvalue = rMSamong / rMSwithin
-        if rFvalue >= Fvalue:
+        if rFvalue > Fvalue:
             frac += 1
     final = {}
     final["frac"] = frac

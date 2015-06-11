@@ -112,16 +112,15 @@ def getDiffAbund(request):
             # Create CountDataSet for DESeq
             r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
             r.assign("countTable", taxaDF)
-            print r("countTable")
             r.assign("metaDF", metaDF)
-            print r("metaDF")
             r("condition <- factor(metaDF$merge)")
             r("library(DESeq)")
             r("cds <- newCountDataSet(countTable, condition)")
             r("cds <- estimateSizeFactors(cds)")
-            r("cds <- estimateDispersions(cds, method='blind')")
-            print r("cds")
+            pycds = r.get("sizeFactors(cds)")
+            r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
             r("vsd <- varianceStabilizingTransformation(cds)")
+            print r("varianceStabilizingTransformation(cds)")
 
             ### Create a heatmap of genes vs sample.
             r("pdf('test.pdf')")
@@ -129,6 +128,11 @@ def getDiffAbund(request):
             r("library(gplots)")
             r("hmcol=colorRampPalette(brewer.pal(9,'GnBu'))(100)")
             r("heatmap.2(exprs(vsd), col=hmcol, trace='none', margin=c(15,15), cexRow=0.8, cexCol=0.8)")
+
+            found = False
+            for thing in pycds:
+                if str(thing) == "None":
+                    found = True
 
             stage = 'Step 2 of 4: Normalizing data...complete'
             stage = 'Step 3 of 4: Performing statistical test...'
@@ -142,11 +146,18 @@ def getDiffAbund(request):
 
             if len(mergeSet) == 2:
                 r.assign("trt1", mergeSet[0])
-                print r("trt1")
                 r.assign("trt2", mergeSet[1])
-                print r("trt2")
-                r("res <- nbinomTest(cds, trt1, trt2)")
-                print r("res")
+
+                if found:
+                    DESeq_error = 'no'
+                    r("res <- nbinomTest(cds, trt1, trt2)")
+                    print "cds"
+                    print r("res")
+                else:
+                    DESeq_error = 'yes'
+                    r("res <- nbinomTest(exprs(vsd), trt1, trt2)")
+                    print "vsd"
+                    print r("res")
 
                 # TODO output res to dataframe
 
