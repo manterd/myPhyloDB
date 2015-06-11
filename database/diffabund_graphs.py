@@ -7,6 +7,7 @@ import pickle
 from scipy import stats
 import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF
+from numpy import *
 import numpy as np
 import datetime
 from pyper import *
@@ -92,84 +93,110 @@ def getDiffAbund(request):
         # Sum by taxa level
         taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
+        # Normalization
+        finalDict = {}
+        DESeq_error = ''
+        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        r.assign("metaDF", metaDF)
+        r("condition <- factor(metaDF$merge)")
+        r("library(DESeq)")
+
         if NormMeth == 1:
-            result = result + 'No normalization was performed...\n'
-        elif NormMeth == 2:
-            result = result + 'Data were normalized by the total number of sequence reads...\n'
-        elif NormMeth == 3:
-            result = result + 'Data were normalized by DESeqVS...\n'
-
-        result = result + '===============================================\n\n\n'
-
-        #countDF = pd.DataFrame()
-        #if NormMeth == 1:
-            #TODO add no normalization
-
-        #if NormMeth == 2:
-            #TODO add independent filtering
-
-        if NormMeth == 3:
-            # Create CountDataSet for DESeq
-            r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
             r.assign("countTable", taxaDF)
-            r.assign("metaDF", metaDF)
-            r("condition <- factor(metaDF$merge)")
-            r("library(DESeq)")
+            r("cds <- newCountDataSet(countTable, condition)")
+            sizeFactor = []
+            for i in mySet:
+                sizeFactor.append(1)
+            r.assign("sizeFactor", sizeFactor)
+            r("cds$sizeFactor <- sizeFactor")
+            r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
+
+        #FIXME proportion data not working (remove from options?)
+        #NormMeth 1 & 3 do work
+        elif NormMeth == 2:
+            sizeFactor = []
+            newDF = taxaDF.drop(mySet, axis=1)
+            for i in mySet:
+                newDF[i] = taxaDF[i].div(taxaDF[i].sum(), axis=0)
+                sizeFactor.append(1)
+            r.assign("relabundTable", newDF)
+            r("cds <- newCountDataSet(relabundTable, condition)")
+            r.assign("sizeFactor", sizeFactor)
+            r("cds$sizeFactor <- sizeFactor")
+            r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
+
+        elif NormMeth == 3:
+            r.assign("countTable", taxaDF)
             r("cds <- newCountDataSet(countTable, condition)")
             r("cds <- estimateSizeFactors(cds)")
             pycds = r.get("sizeFactors(cds)")
-            r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
-            r("vsd <- varianceStabilizingTransformation(cds)")
-            print r("varianceStabilizingTransformation(cds)")
 
-            ### Create a heatmap of genes vs sample.
-            r("pdf('test.pdf')")
-            r("library(RColorBrewer)")
-            r("library(gplots)")
-            r("hmcol=colorRampPalette(brewer.pal(9,'GnBu'))(100)")
-            r("heatmap.2(exprs(vsd), col=hmcol, trace='none', margin=c(15,15), cexRow=0.8, cexCol=0.8)")
-
-            found = False
+            found = 0
             for thing in pycds:
                 if str(thing) == "None":
-                    found = True
+                    found += 1
 
-            stage = 'Step 2 of 4: Normalizing data...complete'
-            stage = 'Step 3 of 4: Performing statistical test...'
+            if found == 0:
+                DESeq_error = 'no'
+                r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
 
-            # nbinomTest
+            else:
+                DESeq_error = 'yes'
+                sizeFactor = []
+                for i in mySet:
+                    sizeFactor.append(1)
+                r.assign("sizeFactor", sizeFactor)
+                r("cds$sizeFactor <- sizeFactor")
+                r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
+
+        #elif NormMeth == 4:
+            #TODO add DESeq with independent filtering
+
+        if NormMeth == 1:
+            result += 'No normalization was performed...\n'
+        elif NormMeth == 2:
+            result += 'Data were normalized by the total number of sequence reads...\n'
+        elif NormMeth == 3 and DESeq_error == 'no':
+            result += 'Data were normalized by DESeq variance stabilization ...\n'
+        elif NormMeth == 3 and DESeq_error == 'yes':
+            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'To try again, please select fewer samples or another normalization method...\n'
+        result += '===============================================\n\n\n'
+
+        stage = 'Step 2 of 4: Normalizing data...complete'
+        stage = 'Step 3 of 4: Performing statistical test...'
+
+        # nbinomTest
+        if StatTest == 1:
             mergeList = metaDF['merge'].tolist()
             mergeSet = list(set(mergeList))
 
             #if len(mergeSet) == 1:
-                #TODO
+                #TODO need to send an error back (No statistical test performed only 1 level in data)
 
             if len(mergeSet) == 2:
                 r.assign("trt1", mergeSet[0])
                 r.assign("trt2", mergeSet[1])
+                r("res <- nbinomTest(cds, trt1, trt2)")
+                print r("res")
 
-                if found:
-                    DESeq_error = 'no'
-                    r("res <- nbinomTest(cds, trt1, trt2)")
-                    print "cds"
-                    print r("res")
-                else:
-                    DESeq_error = 'yes'
-                    r("res <- nbinomTest(exprs(vsd), trt1, trt2)")
-                    print "vsd"
-                    print r("res")
-
-                # TODO output res to dataframe
+                # TODO add res to result string
 
             #if len(mergeSet) == 3:
-                #TODO
-                #not sure how to deal with this?
-                #multiple nbinomTests?
+                #TODO need to add loop to deal with each pairwise comparison
+                #TODO or potentially switch to fitNbinomGLMs
 
-            #TODO add multifactor (fitNbinomGLMs)
+        #elif StatTest == 2:
+        #TODO add multifactor (fitNbinomGLMs)
+
+        stage = 'Step 3 of 4: Performing statistical test...completed'
+        stage = 'Step 4 of 4: Preparing graph data...'
 
         #TODO finish result string and add foldchange graph
         #TODO add significant only capability
 
-        result = ''
-        return HttpResponse(result, content_type='application/json')
+        stage = 'Step 4 of 4: Preparing graph data...completed'
+        finalDict['text'] = result
+        res = simplejson.dumps(finalDict)
+        return HttpResponse(res, content_type='application/json')

@@ -78,7 +78,7 @@ def getCatPCoAData(request):
         # Limit reads to max value
         if NormReads > maxSize:
             NormReads = medianSize
-            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            result += 'The desired sample size was too high and automatically reset to the median value...\n'
 
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
@@ -94,7 +94,7 @@ def getCatPCoAData(request):
         # If user set reads to high sample list will be blank
         if not newList:
             NormReads = medianSize
-            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            result += 'The desired sample size was too high and automatically reset to the median value...\n'
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
@@ -118,7 +118,7 @@ def getCatPCoAData(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        stage = 'Step 1 of 6: Querying database...complete'
+        stage = 'Step 1 of 6: Querying database...completed'
         stage = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
@@ -134,20 +134,20 @@ def getCatPCoAData(request):
 
         finalDict = {}
         if NormMeth == 1:
-            result = result + 'No normalization was performed...\n'
+            result += 'No normalization was performed...\n'
         elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
-            result = result + 'Data were normalized by the total number of sequence reads...\n'
+            result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result = result + 'Data were normalized by DESeq variance stabilization ...\n'
+            result += 'Data were normalized by DESeq variance stabilization ...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
-            result = result + 'DESeq variance stabilization failed...\n'
-            result = result + 'No normalization was performed...\n'
+            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'To try again, please select fewer samples or another normalization method...\n'
+        result += '===============================================\n\n\n'
 
-        result = result + '===============================================\n\n\n'
-
-        stage = 'Step 2 of 6: Normalizing data...complete'
+        stage = 'Step 2 of 6: Normalizing data...completed'
         stage = 'Step 3 of 6: Calculating distance matrix...'
 
         metaDF.set_index('sampleid', inplace=True)
@@ -177,7 +177,7 @@ def getCatPCoAData(request):
         elif distance == 7:
             dists = wOdum(datamtx, alpha)
 
-        stage = 'Step 3 of 6: Calculating distance matrix...complete'
+        stage = 'Step 3 of 6: Calculating distance matrix...completed'
         stage = 'Step 4 of 6: Principal coordinates analysis...'
         eigvals, coordinates, proportion_explained = PCoA(dists)
 
@@ -208,7 +208,7 @@ def getCatPCoAData(request):
                 bigf = 'Not enough permutations for the test to run...'
             else:
                 if test == 1:
-                    stage = 'Step 4 of 6: Principal coordinates analysis...complete'
+                    stage = 'Step 4 of 6: Principal coordinates analysis...completed'
                     stage = 'Step 5 of 6: Performing perMANOVA...'
 
                     r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -226,7 +226,7 @@ def getCatPCoAData(request):
                         if part != tempStuff[0]:
                             bigf += part + '\n'
 
-                    stage = 'Step 5 of 6: Performing perMANOVA...complete'
+                    stage = 'Step 5 of 6: Performing perMANOVA...completed'
                 elif test == 2:
                     stage = 'Step 4 of 6: Principal coordinates analysis...complete'
                     stage = 'Step 5 of 6: Performing BetaDisper...'
@@ -307,16 +307,16 @@ def getCatPCoAData(request):
             result = result + 'Distance score: MorisitaHorn' + '\n'
         elif distance == 7:
             result = result + 'Distance score: wOdum' + '\n'
-        result = result + '===============================================\n'
+        result += '===============================================\n'
         result = result + 'Test results' + '\n'
         if trtLength == 1:
             result = result + 'test cannot be run...' + '\n'
         else:
             result = result + str(bigf) + '\n'
-        result = result + '===============================================\n'
+        result += '===============================================\n'
         result = result + str(eigenDF) + '\n'
-        result = result + '===============================================\n'
-        result = result + '\n\n\n\n'
+        result += '===============================================\n'
+        result += '\n\n\n\n'
 
         finalDict['text'] = result
 
@@ -329,7 +329,7 @@ def getCatPCoAData(request):
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
 
-        stage = 'Step 6 of 6: Preparing graph data...complete'
+        stage = 'Step 6 of 6: Preparing graph data...completed'
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')
@@ -381,7 +381,7 @@ def getQuantPCoAData(request):
         # Limit reads to max value
         if NormReads > maxSize:
             NormReads = medianSize
-            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            result += 'The desired sample size was too high and automatically reset to the median value...\n'
 
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
@@ -397,7 +397,7 @@ def getQuantPCoAData(request):
         # If user set reads to high sample list will be blank
         if not newList:
             NormReads = medianSize
-            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            result += 'The desired sample size was too high and automatically reset to the median value...\n'
 
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
@@ -423,7 +423,7 @@ def getQuantPCoAData(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        stage = 'Step 1 of 6: Querying database...complete'
+        stage = 'Step 1 of 6: Querying database...completed'
         stage = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
@@ -439,19 +439,20 @@ def getQuantPCoAData(request):
 
         finalDict = {}
         if NormMeth == 1:
-            result = result + 'No normalization was performed...\n'
+            result += 'No normalization was performed...\n'
         elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
-            result = result + 'Data were normalized by the total number of sequence reads...\n'
+            result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result = result + 'Data were normalized by DESeq variance stabilization ...\n'
+            result += 'Data were normalized by DESeq variance stabilization ...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
-            result = result + 'DESeq variance stabilization failed...\n'
-            result = result + 'No normalization was performed...\n'
-        result = result + '===============================================\n\n\n'
+            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'To try again, please select fewer samples or another normalization method...\n'
+        result += '===============================================\n\n\n'
 
-        stage = 'Step 2 of 6: Normalizing data...complete'
+        stage = 'Step 2 of 6: Normalizing data...completed'
         stage = 'Step 3 of 6: Calculating distance matrix...'
 
         metaDF.set_index('sampleid', inplace=True)  # TODO fix crash here
@@ -481,7 +482,7 @@ def getQuantPCoAData(request):
         elif distance == 7:
             dists = wOdum(datamtx, alpha)
 
-        stage = 'Step 3 of 6: Calculating distance matrix...complete'
+        stage = 'Step 3 of 6: Calculating distance matrix...completed'
         stage = 'Step 4 of 6: Principal coordinates analysis...'
         eigvals, coordinates, proportion_explained = PCoA(dists)
 
@@ -500,7 +501,7 @@ def getQuantPCoAData(request):
         resultDF = metaDF.join(pcoaDF)
         pd.set_option('display.max_rows', resultDF.shape[0], 'display.max_columns', resultDF.shape[1], 'display.width', 1000)
 
-        stage = 'Step 4 of 6: Principal coordinates analysis...complete'
+        stage = 'Step 4 of 6: Principal coordinates analysis...completed'
         stage = 'Step 5 of 6: Performing linear regression...'
         seriesList = []
         xAxisDict = {}
@@ -532,7 +533,7 @@ def getQuantPCoAData(request):
             regrList.append([min(x), min_y])
             regrList.append([max(x), max_y])
 
-            stage = 'Step 5 of 6: Performing linear regression...complete'
+            stage = 'Step 5 of 6: Performing linear regression...completed'
             stage = 'Step 6 of 6: Preparing graph data...'
 
             regrDict = {}
@@ -584,11 +585,11 @@ def getQuantPCoAData(request):
             result = result + 'Distance score: MorisitaHorn' + '\n'
         elif distance == 7:
             result = result + 'Distance score: wOdum' + '\n'
-        result = result + '===============================================\n'
+        result += '===============================================\n'
         result = result + str(eigenDF) + '\n'
 
-        result = result + '===============================================\n'
-        result = result + '\n\n\n\n'
+        result += '===============================================\n'
+        result += '\n\n\n\n'
 
         finalDict['text'] = result
 

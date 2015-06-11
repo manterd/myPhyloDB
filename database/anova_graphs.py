@@ -79,7 +79,7 @@ def getCatUnivData(request):
         # Limit reads to max value
         if NormReads > maxSize:
             NormReads = medianSize
-            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            result += 'The desired sample size was too high and automatically reset to the median value...\n'
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if NormMeth == 2:
@@ -94,7 +94,7 @@ def getCatUnivData(request):
         # If user set reads too high sample list will be blank
         if not newList:
             NormReads = medianSize
-            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            result += 'The desired sample size was too high and automatically reset to the median value...\n'
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
@@ -157,7 +157,7 @@ def getCatUnivData(request):
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-        stage = 'Step 1 of 4: Querying database...complete'
+        stage = 'Step 1 of 4: Querying database...completed'
 
         # Normalize data
         stage = 'Step 2 of 4: Normalizing data...'
@@ -169,14 +169,14 @@ def getCatUnivData(request):
 
         finalDict = {}
         if NormMeth == 1:
-            result = result + 'No normalization was performed...\n'
+            result += 'No normalization was performed...\n'
         elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
-            result = result + 'Data were normalized by the total number of sequence reads...\n'
-        result = result + '===============================================\n\n\n'
+            result += 'Data were normalized by the total number of sequence reads...\n'
+        result += '===============================================\n\n\n'
 
-        stage = 'Step 2 of 4: Normalizing data...complete'
+        stage = 'Step 2 of 4: Normalizing data...completed'
         stage = 'Step 3 of 4: Performing statistical test...'
 
         seriesList = []
@@ -257,11 +257,11 @@ def getCatUnivData(request):
                 else:
                     p_val = 1.0
 
-            stage = 'Step 3 of 4: Performing statistical test...complete'
+            stage = 'Step 3 of 4: Performing statistical test...completed'
             stage = 'Step 4 of 4: Preparing graph data...'
             if sig_only == 1:
                 if p_val <= 0.05:
-                    result = result + '===============================================\n'
+                    result += '===============================================\n'
                     result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                     result = result + 'Taxa name: ' + str(name1[1]) + '\n'
                     result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
@@ -276,8 +276,8 @@ def getCatUnivData(request):
                     result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
 
                     result = result + str(D) + '\n'
-                    result = result + '===============================================\n'
-                    result = result + '\n\n\n\n'
+                    result += '===============================================\n'
+                    result += '\n\n\n\n'
 
                     dataList = []
                     grouped2 = group1.groupby(fieldList).mean()
@@ -309,7 +309,7 @@ def getCatUnivData(request):
                     yAxisDict['title'] = yTitle
 
             if sig_only == 0:
-                result = result + '===============================================\n'
+                result += '===============================================\n'
                 result = result + 'Taxa level: ' + str(name1[0]) + '\n'
                 result = result + 'Taxa name: ' + str(name1[1]) + '\n'
                 result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
@@ -324,8 +324,8 @@ def getCatUnivData(request):
                 result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
 
                 result = result + str(D) + '\n'
-                result = result + '===============================================\n'
-                result = result + '\n\n\n\n'
+                result += '===============================================\n'
+                result += '\n\n\n\n'
 
                 dataList = []
                 grouped2 = group1.groupby(fieldList).mean()
@@ -414,7 +414,7 @@ def getCatUnivData(request):
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
-        stage = 'Step 4 of 4: Preparing graph data...complete'
+        stage = 'Step 4 of 4: Preparing graph data...completed'
 
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
         finalDict['biome'] = str(biome_json)
@@ -468,7 +468,7 @@ def getQuantUnivData(request):
         # Limit reads to max value
         if NormReads > maxSize:
             NormReads = medianSize
-            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            result += 'The desired sample size was too high and automatically reset to the median value...\n'
 
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
@@ -484,7 +484,7 @@ def getQuantUnivData(request):
         # If user set reads to high sample list will be blank
         if not newList:
             NormReads = medianSize
-            result = result + 'The desired sample size was too high and automatically reset to the median value...\n'
+            result += 'The desired sample size was too high and automatically reset to the median value...\n'
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
@@ -539,20 +539,20 @@ def getQuantUnivData(request):
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-        stage = 'Step 1 of 4: Querying database...complete'
+        stage = 'Step 1 of 4: Querying database...completed'
         stage = 'Step 2 of 4: Normalizing data...'
         normDF = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads)
 
         finalDict = {}
         if NormMeth == 1:
-            result = result + 'No normalization was performed...\n'
+            result += 'No normalization was performed...\n'
         elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
-        result = result + '===============================================\n\n\n'
+        result += '===============================================\n\n\n'
 
-        stage = 'Step 2 of 4: Normalizing data...complete'
+        stage = 'Step 2 of 4: Normalizing data...completed'
         stage = 'Step 3 of 4: Performing linear regression...'
 
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
@@ -597,7 +597,7 @@ def getQuantUnivData(request):
                 regrList.append([min(x), min_y])
                 regrList.append([max(x), max_y])
 
-            stage = 'Step 3 of 4: Performing linear regression...complete'
+            stage = 'Step 3 of 4: Performing linear regression...completed'
             stage = 'Step 4 of 4: Preparing graph data...'
             if sig_only == 0:
                 seriesDict = {}
@@ -706,7 +706,7 @@ def getQuantUnivData(request):
         finalDict['res_table'] = str(res_table)
 
         finalDict['text'] = result
-        stage = 'Step 4 of 4: Preparing graph data...complete'
+        stage = 'Step 4 of 4: Preparing graph data...completed'
 
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
         finalDict['biome'] = str(biome_json)

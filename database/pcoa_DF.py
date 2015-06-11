@@ -334,26 +334,35 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
         r("cds <- newCountDataSet(countTable, condition)")
         r("cds <- estimateSizeFactors(cds)")
         pycds = r.get("sizeFactors(cds)")
-        colList = df3.columns.tolist()
-        indList = df2[taxaID].tolist()
 
-        found = False
+        found = 0
         for thing in pycds:
             if str(thing) == "None":
-                found = True
+                found += 1
 
-        if not found:
+        if found == 0:
             DESeq_error = 'no'
             r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
             r("vsd <- getVarianceStabilizedData(cds)")
+            colList = df3.columns.tolist()
+            indList = df2[taxaID].tolist()
             normDF = pd.DataFrame(r.get("vsd"), columns=[colList])
             normDF[taxaID] = indList
         else:
             DESeq_error = 'yes'
-            normDF = df2.reset_index(drop=True)
+            sizeFactor = []
+            for i in mySet:
+                sizeFactor.append(1)
+            r.assign("sizeFactor", sizeFactor)
+            r("cds$sizeFactor <- sizeFactor")
+            r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
+            r("vsd <- getVarianceStabilizedData(cds)")
+            colList = df3.columns.tolist()
+            indList = df2[taxaID].tolist()
+            normDF = pd.DataFrame(r.get("vsd"), columns=[colList])
+            normDF[taxaID] = indList
 
     normDF.set_index(taxaID, inplace=True)
-
     finalDF = normDF.transpose()
     return finalDF, DESeq_error
 

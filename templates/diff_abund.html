@@ -18,8 +18,8 @@
     </style>
 
     <script type="text/javascript">
-        var NormMeth = 1, StatTest = 1, selTheme = 0, i = 0;
-        var nodesCat = "", nodesTaxa = "", taxaLevel = 1;
+        var NormMeth = 3, StatTest = 1, selTheme = 0, i = 0;
+        var nodesCat = "", nodesTaxa = "", taxaLevel = 6;
         var chart1 = {};
         var catOptions = {};
         var sig1_only = 0, sig2_only = 0;
@@ -318,12 +318,12 @@
                 Select all taxa:
                 <select id="taxaLevel">
                     <option value="0">Kingdoms</option>
-                    <option value="1" selected="selected">Phyla</option>
+                    <option value="1">Phyla</option>
                     <option value="2">Classes</option>
                     <option value="3">Orders</option>
                     <option value="4">Families</option>
                     <option value="5">Genera</option>
-                    <option value="6">Species</option>
+                    <option value="6" selected="selected">Species</option>
                 </select>
             </tr>
         </table>
@@ -360,14 +360,15 @@
                 Normalization method:
                 <select id="NormMeth">
                     <option value="1">None</option>
-                    <option value="2" selected="selected">Proportion</option>
-                    <option value="3">DESeqVS</option>
+                    <option value="2">Proportion</option>
+                    <option value="3" selected="selected">DESeq</option>
+                    <option value="4">Independent filtering</option>
                 </select>
             </td>
             <td id="StatTest-text" style="width: 33%; text-align: right">
                 Statistical test:
                 <select id="StatTest">
-                    <option value="1">exact bionomial test</option>
+                    <option value="1">nbinomTest</option>
                 </select>
             </td>
         </tr>
