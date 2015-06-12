@@ -139,11 +139,15 @@ def getCatPCoAData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
-        elif NormMeth == 5 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq variance stabilization ...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
             result += 'DESeq cannot run estimateSizeFactors...\n'
-            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'Analysis was run without normalization...\n'
+            result += 'To try again, please select fewer samples or another normalization method...\n'
+        elif NormMeth == 6 and DESeq_error == 'no':
+            result += 'Data were normalized by DESeq with variance stabilization...\n'
+        elif NormMeth == 6 and DESeq_error == 'yes':
+            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
@@ -445,10 +449,16 @@ def getQuantPCoAData(request):
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq variance stabilization ...\n'
+            result += 'Data were normalized by DESeq...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
             result += 'DESeq cannot run estimateSizeFactors...\n'
-            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'Analysis was run without normalization...\n'
+            result += 'To try again, please select fewer samples or another normalization method...\n'
+        elif NormMeth == 6 and DESeq_error == 'no':
+            result += 'Data were normalized by DESeq with variance stabilization...\n'
+        elif NormMeth == 6 and DESeq_error == 'yes':
+            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 

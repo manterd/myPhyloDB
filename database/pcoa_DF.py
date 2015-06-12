@@ -342,6 +342,41 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
 
         if found == 0:
             DESeq_error = 'no'
+            colList = df3.columns.tolist()
+            indList = df2[taxaID].tolist()
+            normDF = pd.DataFrame(r.get("counts(cds, normalize=TRUE)"), columns=[colList])
+            normDF[taxaID] = indList
+        else:
+            DESeq_error = 'yes'
+            sizeFactor = []
+            for i in mySet:
+                sizeFactor.append(1)
+            r.assign("sizeFactor", sizeFactor)
+            r("cds$sizeFactor <- sizeFactor")
+            colList = df3.columns.tolist()
+            indList = df2[taxaID].tolist()
+            normDF = pd.DataFrame(r.get("counts(cds, normalize=TRUE)"), columns=[colList])
+            normDF[taxaID] = indList
+
+    elif meth == 6:
+        # Create CountDataSet for DESeq
+        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        df3 = df2.drop(taxaID, axis=1)
+        r.assign("countTable", df3)
+        r.assign("metaDF", metaDF)
+        r("condition <- factor(metaDF$merge)")
+        r("library(DESeq)")
+        r("cds <- newCountDataSet(countTable, condition)")
+        r("cds <- estimateSizeFactors(cds)")
+        pycds = r.get("sizeFactors(cds)")
+
+        found = 0
+        for thing in pycds:
+            if str(thing) == "None":
+                found += 1
+
+        if found == 0:
+            DESeq_error = 'no'
             r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
             r("vsd <- getVarianceStabilizedData(cds)")
             colList = df3.columns.tolist()

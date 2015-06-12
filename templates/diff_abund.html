@@ -18,7 +18,7 @@
     </style>
 
     <script type="text/javascript">
-        var NormMeth = 3, StatTest = 1, selTheme = 0, i = 0;
+        var NormMeth = 1, StatTest = 1, selTheme = 0, i = 0;
         var nodesCat = "", nodesTaxa = "", taxaLevel = 6;
         var chart1 = {};
         var catOptions = {};
@@ -330,10 +330,10 @@
     </div>
     <br><br>
 
-    <div style="float: left; padding-left: 10px;" id="sig_text-1">
+    <!--<div style="float: left; padding-left: 10px;" id="sig_text-1">
         Display only significantly different taxa (p <= 0.05):
         <input type="checkbox" id="sig_box-1">
-    </div>
+    </div>-->
 
     <div  style="float: right; padding-right: 10px;">Select chart theme:
         <select id="theme">
@@ -354,15 +354,12 @@
             <th colspan="3" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td style="width: 33%; tet-align: left">
+            <td style="width: 33%; text-align: left">
             </td>
             <td style="width: 34%; text-align: center">
                 Normalization method:
                 <select id="NormMeth">
-                    <option value="1">None</option>
-                    <option value="2">Proportion</option>
-                    <option value="3" selected="selected">DESeq</option>
-                    <option value="4">Independent filtering</option>
+                    <option value="1" selected="selected">DESeq</option>
                 </select>
             </td>
             <td id="StatTest-text" style="width: 33%; text-align: right">
@@ -375,11 +372,11 @@
         <tr>
             <td></td>
             <td></td>
-            <td id="FdrRow" style="text-align: right">
+            <td id="FdrRow" style="text-align: right; display: none;">
                 False Discovery Rate:
-                <input style="background-color: white" type="text" id="FdrVal" value="0.05"/>
+                <input style="background-color: white;" type="text" id="FdrVal" value="0.05"/>
             </td>
-            <td id="FdrRow-off" style="display: none;"></td>
+            <td id="FdrRow-off"></td>
         </tr>
         <tr>
             <td colspan="3">

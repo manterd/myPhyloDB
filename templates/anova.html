@@ -18,7 +18,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, DepVar = 1, NormMeth = 4, StatTest = 2, selTheme = 0, i = 0;
+        var button1 = 1, DepVar = 1, NormMeth = 1, StatTest = 1, selTheme = 0, i = 0;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
@@ -761,7 +761,7 @@
             <th colspan="3" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td style="width: 33%; tet-align: left">
+            <td style="width: 33%; text-align: left">
                 Dependent variable:<select id="DepVar">
                     <option value="1">Abundance</option>
                     <option value="2">Species Richness</option>
@@ -771,19 +771,18 @@
             <td style="width: 34%; text-align: center">
                 Normalization method:
                 <select id="NormMeth">
-                    <option value="1">None</option>
+                    <option value="1" selected="selected">None</option>
                     <option value="2">Rarefaction (remove)</option>
                     <option value="3">Rarefaction (keep)</option>
-                    <option value="4" selected="selected">Proportion</option>
+                    <option value="4">Proportion</option>
                     <option value="5">DESeq</option>
                 </select>
             </td>
             <td id="StatTest-text" style="width: 33%; text-align: right">
                 Statistical test:
                 <select id="StatTest">
-                    <option value="1">ANOVA</option>
-                    <option value="2" selected="selected">Welch's two-sided t-test</option>
-                    <option value="3">BinomGLMs</option>
+                    <option value="1" selected="selected">ANOVA</option>
+                    <option value="2">Welch's two-sided t-test</option>
                 </select>
             </td>
         </tr>
@@ -794,11 +793,11 @@
                 <input style="background-color: white" type="text" id="NormVal" value="min"/>
             </td>
             <td id="NormRow-off"></td>
-            <td id="FdrRow" style="text-align: right">
+            <td id="FdrRow" style="text-align: right; display: none">
                 False Discovery Rate:
-                <input style="background-color: white" type="text" id="FdrVal" value="0.05"/>
+                <input style="background-color: white" type="text" id="FdrVal" value="0.10"/>
             </td>
-            <td id="FdrRow-off" style="display: none;"></td>
+            <td id="FdrRow-off"></td>
         </tr>
         <tr>
             <td colspan="3">

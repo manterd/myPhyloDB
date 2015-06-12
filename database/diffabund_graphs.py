@@ -95,75 +95,36 @@ def getDiffAbund(request):
 
         # Normalization
         finalDict = {}
-        DESeq_error = ''
         r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         r.assign("metaDF", metaDF)
         r("condition <- factor(metaDF$merge)")
         r("library(DESeq)")
+        r.assign("countTable", taxaDF)
+        r("cds <- newCountDataSet(countTable, condition)")
+        r("cds <- estimateSizeFactors(cds)")
+        r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
 
-        if NormMeth == 1:
-            r.assign("countTable", taxaDF)
-            r("cds <- newCountDataSet(countTable, condition)")
+        pycds = r.get("sizeFactors(cds)")
+        found = 0
+        for thing in pycds:
+            if str(thing) == "None":
+                found += 1
+
+        DESeq_error = 'no'
+        if found > 0:
+            DESeq_error = 'yes'
             sizeFactor = []
-            for i in mySet:
+            for i in myList:
                 sizeFactor.append(1)
             r.assign("sizeFactor", sizeFactor)
             r("cds$sizeFactor <- sizeFactor")
             r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
 
-        #FIXME proportion data not working (remove from options?)
-        #NormMeth 1 & 3 do work
-        elif NormMeth == 2:
-            sizeFactor = []
-            newDF = taxaDF.drop(mySet, axis=1)
-            for i in mySet:
-                newDF[i] = taxaDF[i].div(taxaDF[i].sum(), axis=0)
-                sizeFactor.append(1)
-            r.assign("relabundTable", newDF)
-            r("cds <- newCountDataSet(relabundTable, condition)")
-            r.assign("sizeFactor", sizeFactor)
-            r("cds$sizeFactor <- sizeFactor")
-            print r("counts(cds)")
-            #r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
-
-        elif NormMeth == 3:
-            r.assign("countTable", taxaDF)
-            r("cds <- newCountDataSet(countTable, condition)")
-
-            #FIXME size factors will fail if too many counts in dataset (INT16 problem in R)
-            r("cds <- estimateSizeFactors(cds)")
-            pycds = r.get("sizeFactors(cds)")
-
-            found = 0
-            for thing in pycds:
-                if str(thing) == "None":
-                    found += 1
-
-            if found == 0:
-                DESeq_error = 'no'
-                r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
-
-            else:
-                DESeq_error = 'yes'
-                sizeFactor = []
-                for i in mySet:
-                    sizeFactor.append(1)
-                r.assign("sizeFactor", sizeFactor)
-                r("cds$sizeFactor <- sizeFactor")
-                r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
-
-        #elif NormMeth == 4:
-            #TODO add DESeq with independent filtering
-
-        if NormMeth == 1:
-            result += 'No normalization was performed...\n'
-        elif NormMeth == 2:
-            result += 'Data were normalized by the total number of sequence reads...\n'
-        elif NormMeth == 3 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq variance stabilization ...\n'
-        elif NormMeth == 3 and DESeq_error == 'yes':
+        if NormMeth == 1 and DESeq_error == 'no':
+            result += 'Data were normalized by DESeq...\n'
+        elif NormMeth == 1 and DESeq_error == 'yes':
             result += 'DESeq cannot run estimateSizeFactors...\n'
-            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
@@ -174,30 +135,41 @@ def getDiffAbund(request):
         if StatTest == 1:
             mergeList = metaDF['merge'].tolist()
             mergeSet = list(set(mergeList))
+            for i, val in enumerate(mergeSet):
+                start = i + 1
+                stop = int(len(mergeSet))
+                for j in range(start, stop):
+                    if i != j:
+                        result += '===============================================\n'
+                        result = result + 'Comparison ' + str(mergeSet[i]) + ' vs ' + str(mergeSet[j]) + '\n'
+                        r.assign("trt1", mergeSet[i])
+                        r.assign("trt2", mergeSet[j])
+                        r("res <- nbinomTest(cds, trt1, trt2)")
 
-            #if len(mergeSet) == 1:
-                #TODO need to send an error back (No statistical test performed only 1 level in data)
+                        nbinom_res = r.get("res")
+                        result += str(nbinom_res)
+                result += '===============================================\n\n\n'
 
-            if len(mergeSet) == 2:
-                r.assign("trt1", mergeSet[0])
-                r.assign("trt2", mergeSet[1])
-                r("res <- nbinomTest(cds, trt1, trt2)")
-                print r("res")
+                # TODO modify output sent to result string
+                    # write nbinom_res to datafame
+                    # add taxa name and rank columns
+                    # remove baseMean
+                    # output to string
 
-                # TODO add res to result string
+                # TODO output means to datatable
+                    # write
 
-            #if len(mergeSet) == 3:
-                #TODO need to add loop to deal with each pairwise comparison
-                #TODO or potentially switch to fitNbinomGLMs
 
-        #elif StatTest == 2:
-        #TODO add multifactor (fitNbinomGLMs)
 
         stage = 'Step 3 of 4: Performing statistical test...completed'
         stage = 'Step 4 of 4: Preparing graph data...'
 
-        #TODO finish result string and add foldchange graph
-        #TODO add significant only capability
+        # TODO add fold change graph
+            # create highcharts scatter plot
+            # x = taxa name
+            # y = log2 fold change
+            # significant points in red
+            # OR see if we can a
 
         stage = 'Step 4 of 4: Preparing graph data...completed'
         finalDict['text'] = result

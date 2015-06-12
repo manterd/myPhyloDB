@@ -169,6 +169,7 @@ def getCatUnivData(request):
             metaDF['merge'] = metaDF[fieldList[0]]
 
         normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
+
         normDF.sort('sampleid')
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
         finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
@@ -182,10 +183,10 @@ def getCatUnivData(request):
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq variance stabilization ...\n'
+            result += 'Data were normalized by DESeq...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
             result += 'DESeq cannot run estimateSizeFactors...\n'
-            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
@@ -196,41 +197,6 @@ def getCatUnivData(request):
         xAxisDict = {}
         yAxisDict = {}
 
-        # group DataFrame by each meta variable selected
-        if NormMeth is not 4:
-            varDep = ""
-            if DepVar == 1:
-                varDep = "abund"
-            if DepVar == 2:
-                varDep = "rich"
-            if DepVar == 3:
-                varDep = "diversity"
-
-            seqDF = finalDF.pivot('taxa_id', 'sampleid', varDep)
-            r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
-            r("library(DESeq)")
-            r.assign("countTable", seqDF)
-            r.assign("data", metaDF)
-            r("condition <- factor(data$merge)")
-            r("cds <- newCountDataSet(countTable, condition)")
-            r("cds <- estimateSizeFactors(cds)")
-            pycds = r.get("sizeFactors(cds)")
-
-            found = 0
-            for thing in pycds:
-                if str(thing) == "None":
-                    found += 1
-
-            if found > 0:
-                r("size <- length(condition)")
-                r("sizeFactors <- rep(0.1, size)")
-                r("cds$sizeFactor <- sizeFactors")
-                #print "DESeq error"
-
-            print r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
-            print r("vsd <- getVarianceStabilizedData(cds)")
-            print r("vsd")
-
         # group DataFrame by each taxa level selected
         grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
 
@@ -238,6 +204,7 @@ def getCatUnivData(request):
             trtList = []
             valList = []
             grouped2 = pd.DataFrame()
+
             if DepVar == 1:
                 grouped2 = group1.groupby(fieldList)['abund']
             elif DepVar == 2:
@@ -256,13 +223,6 @@ def getCatUnivData(request):
             D = ""
             p_val = 1.0
             if StatTest == 1:
-                # transform data to help equalize variances
-                for row in valList:
-                    if NormMeth == 4:
-                        row[:] = [math.asin(x) for x in row]
-                    else:
-                        row[:] = [math.log(x + 1, 2) for x in row]
-
                 D = Anova1way()
                 try:
                     D.run(valList, conditions_list=trtList)
@@ -304,7 +264,6 @@ def getCatUnivData(request):
                     p_val = 0.0
                 else:
                     p_val = 1.0
-
 
             stage = 'Step 3 of 4: Performing statistical test...completed'
             stage = 'Step 4 of 4: Preparing graph data...'
@@ -598,12 +557,12 @@ def getQuantUnivData(request):
         elif NormMeth == 2 or NormMeth == 3:
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
-            result = result + 'Data were normalized by the total number of sequence reads...\n'
+            result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq variance stabilization ...\n'
+            result += 'Data were normalized by DESeq...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
             result += 'DESeq cannot run estimateSizeFactors...\n'
-            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
