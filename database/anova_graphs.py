@@ -114,7 +114,7 @@ def getCatUnivData(request):
         # Create dataframe of meta variables by sample
         metaDF = catUnivMetaDF(qs2, metaDict)
         metaDF.dropna(subset=fieldList, inplace=True)
-        metaDF.sort(columns='sample_name', inplace=True)
+        metaDF.sort(columns='sampleid', inplace=True)
 
         # Create unique list of samples in meta dataframe (may be different than selected samples)
         myList = metaDF['sampleid'].tolist()
@@ -162,7 +162,14 @@ def getCatUnivData(request):
         # Normalize data
         stage = 'Step 2 of 4: Normalizing data...'
 
-        normDF = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads)
+        # Create combined metadata column
+        if len(fieldList) > 1:
+            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+        else:
+            metaDF['merge'] = metaDF[fieldList[0]]
+
+        normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
+        normDF.sort('sampleid')
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
         finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
         pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
@@ -174,6 +181,12 @@ def getCatUnivData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
+        elif NormMeth == 5 and DESeq_error == 'no':
+            result += 'Data were normalized by DESeq variance stabilization ...\n'
+        elif NormMeth == 5 and DESeq_error == 'yes':
+            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
         stage = 'Step 2 of 4: Normalizing data...completed'
@@ -183,10 +196,44 @@ def getCatUnivData(request):
         xAxisDict = {}
         yAxisDict = {}
 
-        ### group DataFrame by each taxa level selected
+        # group DataFrame by each meta variable selected
+        if NormMeth is not 4:
+            varDep = ""
+            if DepVar == 1:
+                varDep = "abund"
+            if DepVar == 2:
+                varDep = "rich"
+            if DepVar == 3:
+                varDep = "diversity"
+
+            seqDF = finalDF.pivot('taxa_id', 'sampleid', varDep)
+            r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            r("library(DESeq)")
+            r.assign("countTable", seqDF)
+            r.assign("data", metaDF)
+            r("condition <- factor(data$merge)")
+            r("cds <- newCountDataSet(countTable, condition)")
+            r("cds <- estimateSizeFactors(cds)")
+            pycds = r.get("sizeFactors(cds)")
+
+            found = 0
+            for thing in pycds:
+                if str(thing) == "None":
+                    found += 1
+
+            if found > 0:
+                r("size <- length(condition)")
+                r("sizeFactors <- rep(0.1, size)")
+                r("cds$sizeFactor <- sizeFactors")
+                #print "DESeq error"
+
+            print r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
+            print r("vsd <- getVarianceStabilizedData(cds)")
+            print r("vsd")
+
+        # group DataFrame by each taxa level selected
         grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
 
-        ### group DataFrame by each meta variable selected
         for name1, group1 in grouped1:
             trtList = []
             valList = []
@@ -240,7 +287,7 @@ def getCatUnivData(request):
                                 m += 1.0
                             else:
                                 p_val = "Nan"
-                            dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'p_value': p_val}
+                            dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'mean1': np.mean(smp1), 'mean2': np.mean(smp2), 'stdev1': np.std(smp1), 'stdev2': np.std(smp2), 'p_value': p_val}
                             rows_list.append(dict1)
 
                 pvalDF = pd.DataFrame(rows_list)
@@ -248,14 +295,16 @@ def getCatUnivData(request):
                 pvalDF.reset_index(drop=True, inplace=True)
                 pvalDF.index += 1
                 pvalDF['BH'] = pvalDF.index / m * FDR
+                pvalDF['p_adj'] = pvalDF['p_value'] * m / pvalDF.index
                 pvalDF['Sig'] = pvalDF.p_value <= pvalDF.BH
 
-                pvalDF[['p_value', 'BH']] = pvalDF[['p_value', 'BH']].astype(float)
-                D = pvalDF.to_string(columns=['sample1', 'sample2', 'p_value', 'BH', 'Sig'])
+                pvalDF[['mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj']] = pvalDF[['mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj']].astype(float)
+                D = pvalDF.to_string(columns=['sample1', 'sample2', 'mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj', 'Sig'])
                 if True in pvalDF['Sig'].values:
                     p_val = 0.0
                 else:
                     p_val = 1.0
+
 
             stage = 'Step 3 of 4: Performing statistical test...completed'
             stage = 'Step 4 of 4: Preparing graph data...'
@@ -501,7 +550,7 @@ def getQuantUnivData(request):
 
         metaDF = quantUnivMetaDF(qs2, metaDict)
         metaDF.dropna(subset=fieldList, inplace=True)
-        metaDF.sort(columns='sample_name', inplace=True)
+        metaDF.sort(columns='sampleid', inplace=True)
 
         myList = metaDF['sampleid'].tolist()
         mySet = list(ordered_set(myList))
@@ -541,7 +590,7 @@ def getQuantUnivData(request):
 
         stage = 'Step 1 of 4: Querying database...completed'
         stage = 'Step 2 of 4: Normalizing data...'
-        normDF = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads)
+        normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
 
         finalDict = {}
         if NormMeth == 1:
@@ -550,6 +599,12 @@ def getQuantUnivData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
             result = result + 'Data were normalized by the total number of sequence reads...\n'
+        elif NormMeth == 5 and DESeq_error == 'no':
+            result += 'Data were normalized by DESeq variance stabilization ...\n'
+        elif NormMeth == 5 and DESeq_error == 'yes':
+            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'Analysis was run with size factors set to 1)...\n'
+            result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
         stage = 'Step 2 of 4: Normalizing data...completed'

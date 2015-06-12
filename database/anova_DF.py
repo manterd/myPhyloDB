@@ -252,11 +252,12 @@ def quantUnivMetaDF(qs1, metaDict):
     return metaDF
 
 
-def normalizeUniv(df, taxaDict, mySet, meth, reads):
+def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
     countDF = pd.DataFrame()
+    DESeq_error = ''
     if meth == 1 or meth == 4:
         countDF = df2.reset_index(drop=True)
 
@@ -278,6 +279,32 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads):
                 countDF[key] = value
 
         elif reads < 0:
+            countDF = df2.reset_index(drop=True)
+
+    elif meth == 5:
+        countDF = df2[taxaID].reset_index(drop=True)
+        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        df3 = df2.drop(taxaID, axis=1)
+        r.assign("countTable", df3)
+        r.assign("metaDF", metaDF)
+        r("condition <- factor(metaDF$merge)")
+        r("library(DESeq)")
+        r("cds <- newCountDataSet(countTable, condition)")
+        r("cds <- estimateSizeFactors(cds)")
+        pycds = r.get("sizeFactors(cds)")
+        colList = df3.columns.tolist()
+
+        found = False
+        for thing in pycds:
+            if str(thing) == "None":
+                found = True
+
+        if not found:
+            DESeq_error = 'no'
+            cdsDF = pd.DataFrame(r.get("counts(cds, normalize=TRUE)"), columns=[colList])
+            countDF[colList] = cdsDF[colList]
+        else:
+            DESeq_error = 'yes'
             countDF = df2.reset_index(drop=True)
 
     relabundDF = pd.DataFrame(countDF[taxaID])
@@ -409,7 +436,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads):
             normDF = DF1
         else:
             normDF = normDF.append(DF1)
-    return normDF
+    return normDF, DESeq_error
 
 
 def weightedProb(x, cores, reads, mySet, df, meth, d):

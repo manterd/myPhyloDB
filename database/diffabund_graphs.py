@@ -123,11 +123,14 @@ def getDiffAbund(request):
             r("cds <- newCountDataSet(relabundTable, condition)")
             r.assign("sizeFactor", sizeFactor)
             r("cds$sizeFactor <- sizeFactor")
-            r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
+            print r("counts(cds)")
+            #r("cds <- estimateDispersions(cds, method='blind', fitType='local')")
 
         elif NormMeth == 3:
             r.assign("countTable", taxaDF)
             r("cds <- newCountDataSet(countTable, condition)")
+
+            #FIXME size factors will fail if too many counts in dataset (INT16 problem in R)
             r("cds <- estimateSizeFactors(cds)")
             pycds = r.get("sizeFactors(cds)")
 
