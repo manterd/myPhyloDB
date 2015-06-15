@@ -193,8 +193,9 @@ def getCatPCoAData(request):
         elif distance == 14:
             r("dist <- vegdist(data, method='cao')")
         elif distance == 15:
+            r("library(matrixStats)")
             r.assign("alpha", alpha)
-            print r("dist <- designdist(data, method='sum((abs(x-y)/(x+y)*(x+y)**alpha))/sum(((x+y)**alpha))', terms='minimum')")
+            print r("dist <- designdist(data, method='(sum(abs(colDiffs(rbind(x,y))))/(x+y)*(x+y)^alpha))sum(/((x+y)^alpha)', terms='minimum')")
             print r("dist")
         r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
         mat = r.get("mat")
