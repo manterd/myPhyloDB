@@ -22,7 +22,7 @@
         var nodesCat = "", nodesQuant = "", taxaLevel = 6;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
-        var distance = 7, PC1 = 'PC1', PC2 ='PC2', test = 1;
+        var distance = 4, PC1 = 3, PC2 =4, test = 1;
         var remove = 0;
         var refresh;
 
@@ -221,7 +221,7 @@
                 distance = $(this).val();
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
-                if (distance==7) $("#alphaLevel").show();
+                if (distance==15) $("#alphaLevel").show();
                 else $("#alphaLevel").hide();
             });
 
@@ -644,6 +644,7 @@
                     <option value="4">Families</option>
                     <option value="5">Genera</option>
                     <option value="6" selected="selected">Species</option>
+                    <!--<option value="7">OTU</option>-->
                 </select>
                 &nbsp<-- Taxa Level selected
             </td>
@@ -653,34 +654,37 @@
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <select id="distance">
-                    <option value="1">Bray-Curtis</option>
-                    <option value="2">Canberra</option>
-                    <option value="3">Dice</option>
-                    <option value="4">Euclidean</option>
-                    <option value="5">Jaccard</option>
-                    <option value="6">MorisitaHorn</option>
-                    <option value="7" selected="selected">wOdum</option>
+                    <option value="1">Manhattan</option>
+                    <option value="2">Euclidean</option>
+                    <option value="3">Canberra</option>
+                    <option value="4" selected="selected">Bray</option>
+                    <option value="5">Kulczynski</option>
+                    <option value="6">Jaccard</option>
+                    <option value="7">Gower</option>
+                    <option value="8">altGower</option>
+                    <option value="9">Morisita</option>
+                    <option value="10">Horn</option>
+                    <option value="11">Mountford</option>
+                    <option value="12">Binomial</option>
+                    <option value="13">Chao</option>
+                    <option value="14">Cao</option>
+                    <option value="15">wOdum</option>
                 </select>
                 &nbsp<-- Distance score selected
             </td>
             <td bgcolor="white">
-                <div id="alphaLevel">&#945 parameter: <input type="text" id="alphaVal" value="1" style="width:40px; background-color: white"/></div>
+                <div id="alphaLevel" style="display: none">&#945 parameter: <input type="text" id="alphaVal" value="1" style="width:40px; background-color: white"/></div>
             </td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <select id="PC1">
-                    <option value="PC1" selected="selected">PC1</option>
-                    <option value="PC2">PC2</option>
-                    <option value="PC3">PC3</option>
-                    <option value="PC4">PC4</option>
-                    <option value="PC5">PC5</option>
-                    <option value="PC6">PC6</option>
-                    <option value="PC7">PC7</option>
-                    <option value="PC8">PC8</option>
-                    <option value="PC9">PC9</option>
-                    <option value="PC10">PC10</option>
+                    <option value="3" selected="selected">PC1</option>
+                    <option value="4">PC2</option>
+                    <option value="5">PC3</option>
+                    <option value="6">PC4</option>
+                    <option value="7">PC5</option>
                 </select>
                 &nbsp<-- Principal coordinate selected (x-axis)
             </td>
@@ -690,16 +694,11 @@
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white" id="PC2-text">
                 <select id="PC2">
-                    <option value="PC1">PC1</option>
-                    <option value="PC2" selected="selected">PC2</option>
-                    <option value="PC3">PC3</option>
-                    <option value="PC4">PC4</option>
-                    <option value="PC5">PC5</option>
-                    <option value="PC6">PC6</option>
-                    <option value="PC7">PC7</option>
-                    <option value="PC8">PC8</option>
-                    <option value="PC9">PC9</option>
-                    <option value="PC10">PC10</option>
+                    <option value="3">PC1</option>
+                    <option value="4" selected="selected">PC2</option>
+                    <option value="5">PC3</option>
+                    <option value="6">PC4</option>
+                    <option value="7">PC5</option>
                 </select>
                 &nbsp<-- Principal coordinate selected (y-axis)
             </td>

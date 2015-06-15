@@ -22,7 +22,7 @@
         var nodesCat = "", nodesTaxa = "", taxaLevel = 6;
         var chart1 = {};
         var catOptions = {};
-        var sig1_only = 0, sig2_only = 0;
+        var sig1_only = 0;
         var refresh;
 
         $(function () {
@@ -64,10 +64,7 @@
 
             $("#NormMeth").change(function () {
                 NormMeth = $(this).val();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#FdrVal").change(function () {
+                chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
 
@@ -153,6 +150,11 @@
                 taxaLevel = $(this).val();
                 $("#run").css("background-color", "lightgray");
             });
+
+            $("#NormVal").change(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
         });
 
         function updateStatus() {
@@ -179,6 +181,15 @@
             clearInterval(refresh)
         }
 
+        function chooseDisplay() {
+            if (NormMeth == 2) {
+                $("#ThetaRow").show();
+                $("#ThetaRow-off").hide();
+            } else {
+                $("#ThetaRow").hide();
+                $("#ThetaRow-off").show();
+            }
+        }
         function chooseData() {
             if (nodesCat != "")  {
                 $("#run").css("background-color", "yellow");
@@ -210,7 +221,8 @@
             myDict['meta'] = meta;
             myDict['sig_only'] = sig1_only;
             myDict['taxaLevel'] = taxaLevel;
-            myDict['FdrVal'] = document.getElementById("FdrVal").value;
+            myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['Theta'] = document.getElementById("Theta").value;
             myDict['NormMeth'] = NormMeth;
             myDict['StatTest'] = StatTest;
             var jsonDict = JSON.stringify(myDict);
@@ -330,10 +342,10 @@
     </div>
     <br><br>
 
-    <!--<div style="float: left; padding-left: 10px;" id="sig_text-1">
+    <div style="float: left; padding-left: 10px;" id="sig_text-1">
         Display only significantly different taxa (p <= 0.05):
         <input type="checkbox" id="sig_box-1">
-    </div>-->
+    </div>
 
     <div  style="float: right; padding-right: 10px;">Select chart theme:
         <select id="theme">
@@ -359,7 +371,8 @@
             <td style="width: 34%; text-align: center">
                 Normalization method:
                 <select id="NormMeth">
-                    <option value="1" selected="selected">DESeq</option>
+                    <option value="1" selected="selected">DESeq2</option>
+                    <option value="2">DESeq2+Filter</option>
                 </select>
             </td>
             <td id="StatTest-text" style="width: 33%; text-align: right">
@@ -371,12 +384,21 @@
         </tr>
         <tr>
             <td></td>
-            <td></td>
-            <td id="FdrRow" style="text-align: right; display: none;">
-                False Discovery Rate:
-                <input style="background-color: white;" type="text" id="FdrVal" value="0.05"/>
+            <td id="NormRow" style="text-align: center">
+                Minimum sample size:
+                <input type="text" id="NormVal" value="1000"/>
             </td>
-            <td id="FdrRow-off"></td>
+            <td id="NormRow-off" style="display: none"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td id="ThetaRow" style="display: none; text-align: center">
+                theta:
+                <input type="text" id="Theta" value="0.4"/>
+            </td>
+            <td id="ThetaRow-off"></td>
+            <td></td>
         </tr>
         <tr>
             <td colspan="3">
@@ -391,8 +413,8 @@
         <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
         <br>
     </div>
-
-    <br>
+    <br><br>
+    <!--<br>
     <h2>Raw Data (Tabular):</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
 
@@ -400,6 +422,6 @@
     <h2>Raw Data (Biom Format):</h2>
     <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
     <br>
-    <br>
+    <br>-->
 
 {% endblock my_content%}

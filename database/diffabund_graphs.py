@@ -43,9 +43,10 @@ def getDiffAbund(request):
 
         taxaLevel = int(all["taxaLevel"])
         NormMeth = int(all["NormMeth"])
-        FDR = float(all["FdrVal"])
         StatTest = int(all["StatTest"])
         sig_only = int(all["sig_only"])
+        size = int(all["NormVal"])
+        theta = float(all["Theta"])
 
         # Generate a list of sequence reads per sample
         countList = []
@@ -74,7 +75,6 @@ def getDiffAbund(request):
             fieldList.append(key)
         metaDF = catDiffAbundDF(qs2, metaDict)
         metaDF.dropna(subset=fieldList, inplace=True)
-        metaDF.sort(columns='sample_name', inplace=True)
 
         # Create unique list of samples in meta dataframe (may be different than selected samples)
         myList = metaDF['sampleid'].tolist()
@@ -98,100 +98,130 @@ def getDiffAbund(request):
         finalDict = {}
         r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         r.assign("metaDF", metaDF)
-        r("condition <- factor(metaDF$merge)")
-        r("library(DESeq)")
-        r.assign("countTable", taxaDF)
-        r("cds <- newCountDataSet(countTable, condition)")
-        r("cds <- estimateSizeFactors(cds)")
-        r("cds <- estimateDispersions(cds, method='blind', fitType='local', sharingMode='fit-only')")
+        r("trt <- factor(metaDF$merge)")
+        r.assign("count", taxaDF)
 
-        pycds = r.get("sizeFactors(cds)")
-        found = 0
-        for thing in pycds:
-            if str(thing) == "None":
-                found += 1
+        #Create filter for samples below threshold
+        r.assign("size", size)
+        r("total <- colSums(count)")
+        r("col <- (total > size)")
 
-        DESeq_error = 'no'
-        if found > 0:
-            DESeq_error = 'yes'
-            sizeFactor = []
-            for i in myList:
-                sizeFactor.append(1)
-            r.assign("sizeFactor", sizeFactor)
-            r("cds$sizeFactor <- sizeFactor")
-            r("cds <- estimateDispersions(cds, method='blind', fitType='local', sharingMode='fit-only')")
+        DESeq_error = ''
+        if NormMeth == 1:
+            r("countFilt <- count[,col]")
+            r("trtFilt <- trt[col]")
+
+            r("library(DESeq2)")
+            r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
+            r("dds <- DESeqDataSetFromMatrix(countData=countFilt, colData=colData, design= ~ trt)")
+
+            r("dds <- estimateSizeFactors(dds)")
+            pycds = r.get("sizeFactors(dds)")
+
+            if pycds is not None:
+                DESeq_error = 'no'
+                r("dds <- estimateDispersions(dds)")
+                r("dds <- nbinomWaldTest(dds)")
+            elif pycds is None:
+                DESeq_error = 'yes'
+                r("sizeFactor <- rep(1, length(trtFilt))")
+                r("dds$sizeFactor <- sizeFactor")
+                r("dds <- estimateDispersions(dds)")
+                r("dds <- nbinomWaldTest(dds)")
+
+        elif NormMeth == 2:
+            r("rs = rowSums(count)")
+            r.assign("theta", theta)
+            r("row <- (rs > quantile(rs, probs=theta))")
+            r("countFilt <- count[row,col]")
+            r("trtFilt <- trt[col]")
+
+            r("library(DESeq2)")
+            r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
+            r("dds <- DESeqDataSetFromMatrix(countData=countFilt, colData=colData, design= ~ trt)")
+
+            r("dds <- estimateSizeFactors(dds)")
+            pycds = r.get("sizeFactors(dds)")
+
+            if pycds is not None:
+                DESeq_error = 'no'
+                r("dds <- estimateDispersions(dds)")
+                r("dds <- nbinomWaldTest(dds)")
+            elif pycds is None:
+                DESeq_error = 'yes'
+                r("sizeFactor <- rep(1, length(trtFilt))")
+                r("dds$sizeFactor <- sizeFactor")
+                r("dds <- estimateDispersions(dds)")
+                r("dds <- nbinomWaldTest(dds)")
 
         if NormMeth == 1 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq...\n'
+            result += 'Data were normalized by DESeq2...\n'
         elif NormMeth == 1 and DESeq_error == 'yes':
-            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'DESeq2 cannot run estimateSizeFactors...\n'
             result += 'Analysis was run without normalization...\n'
-            result += 'To try again, please select fewer samples or another normalization method...\n'
+            result += 'To try again, please increase the minimum sample size...\n'
+        elif NormMeth == 2 and DESeq_error == 'no':
+            result += 'Data were normalized by DESeq+Filter...\n'
+        elif NormMeth == 2 and DESeq_error == 'yes':
+            result += 'DESeq2 cannot run estimateSizeFactors...\n'
+            result += 'Analysis was run without normalization...\n'
+            result += 'To try again, please increase the minimum sample size...\n'
         result += '===============================================\n\n\n'
 
         stage = 'Step 2 of 4: Normalizing data...complete'
         stage = 'Step 3 of 4: Performing statistical test...'
+
         AxisArray = {}
-        # nbinomTest
-        if StatTest == 1:
-            mergeList = metaDF['merge'].tolist()
-            mergeSet = list(set(mergeList))
-            for i, val in enumerate(mergeSet):
-                start = i + 1
-                stop = int(len(mergeSet))
-                for j in range(start, stop):
-                    if i != j:
-                        result += '===============================================\n'
-                        result = result + 'Comparison ' + str(mergeSet[i]) + ' vs ' + str(mergeSet[j]) + '\n'
-                        r.assign("trt1", mergeSet[i])
-                        r.assign("trt2", mergeSet[j])
-                        r("res <- nbinomTest(cds, trt1, trt2)")
-                        nbinom_res = r.get("res")
+        mergeList = metaDF['merge'].tolist()
+        mergeSet = list(set(mergeList))
 
-                        names = []
-                        for item in nbinom_res["id"]:
-                            names.append(findTaxa(item))
+        for i, val in enumerate(mergeSet):
+            start = i + 1
+            stop = int(len(mergeSet))
+            for j in range(start, stop):
+                if i != j:
+                    result += '===============================================\n'
+                    result = result + 'Comparison: ' + str(mergeSet[i]) + ' vs ' + str(mergeSet[j]) + '\n'
+                    r.assign("trt1", mergeSet[i])
+                    r.assign("trt2", mergeSet[j])
+                    r("res <- results(dds, contrast=c('trt', trt1, trt2))")
+                    r("df <- data.frame(id=rownames(res), baseMean=res$baseMean, log2FoldChange=res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                    nbinom_res = r.get("df")
 
-                        try:
-                            nbinom_res['Taxa name'] = names
-                            nbinom_res.rename(columns={'id': 'Taxa ID'}, inplace=True)
-                            stuff = ['Taxa ID', 'Taxa name', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' foldChange ', ' log2FoldChange ', ' pval ', ' padj ']
-                            nbinom_res = nbinom_res.reindex(columns=stuff)
-                            nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
-                            nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
-                            nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
-                            nbinom_res.rename(columns={' pval ': 'pval'}, inplace=True)
-                            nbinom_res.rename(columns={' padj ': 'padj'}, inplace=True)
-                        except:
-                            print ("Join failed")
+                    names = []
+                    for item in nbinom_res["id"]:
+                        names.append(findTaxa(item))
+                    try:
+                        nbinom_res['Taxa Name'] = names
+                        nbinom_res.rename(columns={'id': 'Taxa ID'}, inplace=True)
+                        stuff = ['Taxa ID', 'Taxa Name', ' baseMean ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
+                        nbinom_res = nbinom_res.reindex(columns=stuff)
+                        nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
+                        nbinom_res.rename(columns={' stderr ': 'stderr'}, inplace=True)
+                        nbinom_res.rename(columns={' stat ': 'stat'}, inplace=True)
+                        nbinom_res.rename(columns={' pval ': 'pval'}, inplace=True)
+                        nbinom_res.rename(columns={' padj ': 'padj'}, inplace=True)
+                        nbinom_res[['pval', 'padj']].astype(float)
+                        print str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
+                        print "DESeq_error: ", DESeq_error
+                        print "nbinom_res\n", nbinom_res
+                    except:
+                        print ("Join failed")
 
-                        try:
-                            iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])  # + taxa
-                            print ("Iteration: "+iterationName)
-                            dataSet = [None]
-                            print "DataSet: "+str(dataSet)
-                            for thing in nbinom_res["log2FoldChange"]:
-                                print("Element!")
-                                print("thing: "+str(thing))
-                                dataSet.append(thing)
-                            AxisArray[iterationName] = dataSet
-                        except:
-                            print("Failed to add xAxis data")
+                    try:
+                        iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
+                        dataSet = [None]
+                        for thing in nbinom_res["log2FoldChange"]:
+                            dataSet.append(thing)
+                        AxisArray[iterationName] = dataSet
+                    except:
+                        print("Failed to add xAxis data")
 
-                        try:
-                            nbinom_res.drop(' baseMean ', axis=1, inplace=True)
+                    if sig_only == 1:
+                        nbinom_res = nbinom_res[nbinom_res.pval <= 0.05]
 
-                        except:
-                            print"Deletion failed"
-                            print sys.exc_info()[0]
-
-                        result += nbinom_res.to_string()
-                        result += '\n===============================================\n\n\n'
-
-                # TODO output means to datatable ???
-                    # write
-
-
+                    result += nbinom_res.to_string()
+                    result += '\n===============================================\n\n\n'
 
         stage = 'Step 3 of 4: Performing statistical test...completed'
         stage = 'Step 4 of 4: Preparing graph data...'
@@ -206,7 +236,7 @@ def getDiffAbund(request):
         regrDict['type'] = 'line'
         regrDict['name'] = 'R2: ' + str(r_square) + '; p-value: ' + str(p_value) + '<br>' + '(y = ' + str(slope) + 'x' + ' + ' + str(intercept) + ')'
         regrDict['data'] = regrList
-        seriesList.append(regrDict)'''
+        seriesList.append(regrDict)
 
         xAxisDict = {}
         yAxisDict = {}
@@ -221,12 +251,13 @@ def getDiffAbund(request):
 
         finalDict['series'] = seriesList
         finalDict['xAxis'] = xAxisDict
-        finalDict['yAxis'] = yAxisDict
+        finalDict['yAxis'] = yAxisDict'''
 
         stage = 'Step 4 of 4: Preparing graph data...completed'
         finalDict['text'] = result
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')
+
 
 def findTaxa(id):
     taxa = ""
@@ -262,15 +293,3 @@ def findTaxa(id):
                                 # not found, error!
                                 print("Could not find taxa for "+str(id))
     return taxa
-
-    '''qs1 = Species.objects.values('kingdomid__kingdomName', 'kingdomid', 'phylaid__phylaName', 'phylaid', 'classid__className', 'classid', 'orderid__orderName', 'orderid', 'familyid__familyName', 'familyid', 'genusid__genusName', 'genusid', 'speciesName', 'speciesid')
-    speciesDF = pd.DataFrame.from_records(qs1)
-    speciesDF.rename(columns={'kingdomid__kingdomName': 'Kingdom Name', 'kingdomid': 'Kingdom ID'}, inplace=True)
-    speciesDF.rename(columns={'phylaid__phylaName': 'Phylum Name', 'phylaid': 'Phylum ID'}, inplace=True)
-    speciesDF.rename(columns={'classid__className': 'Class Name', 'classid': 'Class ID'}, inplace=True)
-    speciesDF.rename(columns={'orderid__orderName': 'Order Name', 'orderid': 'Order ID'}, inplace=True)
-    speciesDF.rename(columns={'familyid__familyName': 'Family Name', 'familyid': 'Family ID'}, inplace=True)
-    speciesDF.rename(columns={'genusid__genusName': 'Genus Name', 'genusid': 'Genus ID'}, inplace=True)
-    speciesDF.rename(columns={'speciesName': 'Species Name', 'speciesid': 'Species ID'}, inplace=True)
-    table = speciesDF.to_html(classes="table display", columns=['Kingdom Name', 'Kingdom ID', 'Phylum Name', 'Phylum ID', 'Class Name', 'Class ID', 'Order Name', 'Order ID', 'Family Name', 'Family ID', 'Genus Name', 'Genus ID', 'Species Name', 'Species ID'])
-    table = table.replace('border="1"', 'border="0"')'''
