@@ -268,7 +268,7 @@
 
         function barchart(xAxis, yAxis, series) {
            catOptions = {
-                chart: { renderTo: 'container-1', type: 'column' },
+                chart: { renderTo: 'container-1', type: 'scatter', zoomType: 'xy' },
                 title: { text: null },
                 legend: {
                     itemStyle: {
@@ -281,7 +281,7 @@
                     x: 0,
                     y: 20,
                     labelFormatter: function () {
-                        return this.name[0] + ': ' + this.name[1] + '<br/>' + 'ID: ' + this.name[2] + '<br/>'
+                        return this.name + '<br/>'
                     }
                 },
                 xAxis: xAxis,
@@ -289,15 +289,10 @@
                 series: series,
                 tooltip: {
                     formatter: function () {
-                        return this.series.name[0] + ':' + this.series.name[1] + '<br/>' +
-                            'ID: ' + this.series.name[2] + '<br/>' +
+                        return this.series.name + '<br/>' +
                             'Value: ' + this.y + '<br/>' +
                             'Total: ' + this.point.stackTotal;
                     }
-                },
-                plotOptions: {
-                    column: { stacking: 'normal' },
-                    series: { borderWidth: 0}
                 },
                 credits: { enabled: false }
             };
@@ -342,10 +337,10 @@
     </div>
     <br><br>
 
-    <div style="float: left; padding-left: 10px;" id="sig_text-1">
+    <!--<div style="float: left; padding-left: 10px;" id="sig_text-1">
         Display only significantly different taxa (p <= 0.05):
         <input type="checkbox" id="sig_box-1">
-    </div>
+    </div>-->
 
     <div  style="float: right; padding-right: 10px;">Select chart theme:
         <select id="theme">

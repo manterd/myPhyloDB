@@ -142,6 +142,8 @@ def getCatPCoAData(request):
             result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
+        elif NormMeth == 5 and DESeq_error == 'no':
+            result += 'Data were normalized by DESeq...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
             result += 'DESeq cannot run estimateSizeFactors...\n'
             result += 'Analysis was run without normalization...\n'
@@ -269,6 +271,7 @@ def getCatPCoAData(request):
         grouped = pcoaDF.groupby('Treatment')
         for name, group in grouped:
             dataList = group.icol([PC1,PC2]).values.astype(np.float).tolist()
+
             trt = name
             seriesDict = {}
             seriesDict['name'] = str(trt)

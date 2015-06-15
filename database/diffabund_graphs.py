@@ -171,10 +171,16 @@ def getDiffAbund(request):
         stage = 'Step 2 of 4: Normalizing data...complete'
         stage = 'Step 3 of 4: Performing statistical test...'
 
-        AxisArray = {}
+        yAxisArray = {}
+        xAxisArray = {}
+        sigX = {}
+        sigY = {}
+        sigNames = []
+        namesArray = []
         mergeList = metaDF['merge'].tolist()
         mergeSet = list(set(mergeList))
 
+        nbinom_res = pd.DataFrame()
         for i, val in enumerate(mergeSet):
             start = i + 1
             stop = int(len(mergeSet))
@@ -202,61 +208,141 @@ def getDiffAbund(request):
                         nbinom_res.rename(columns={' pval ': 'pval'}, inplace=True)
                         nbinom_res.rename(columns={' padj ': 'padj'}, inplace=True)
                         nbinom_res[['pval', 'padj']].astype(float)
-                        print str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
-                        print "DESeq_error: ", DESeq_error
-                        print "nbinom_res\n", nbinom_res
+                        #print str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
+                        #print "DESeq_error: ", DESeq_error
+                        #print "nbinom_res\n", nbinom_res
                     except:
                         print ("Join failed")
 
-                    try:
-                        iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
-                        dataSet = [None]
-                        for thing in nbinom_res["log2FoldChange"]:
-                            dataSet.append(thing)
-                        AxisArray[iterationName] = dataSet
-                    except:
-                        print("Failed to add xAxis data")
-
-                    if sig_only == 1:
-                        nbinom_res = nbinom_res[nbinom_res.pval <= 0.05]
-
                     result += nbinom_res.to_string()
                     result += '\n===============================================\n\n\n'
+
+                    # split past here, xAxisArray, yAxisArray, namesArray --> sigX, sigY, sigNames
+
+                    try:
+                        iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
+                        xdataSet = []
+                        ydataSet = []
+                        xsigSet = []
+                        ysigSet = []
+                        counter = 0
+                        for thing in nbinom_res["pval"]:
+                            if float(thing) <0.05:
+                                #place in sigpile
+                                if thing == thing:
+                                    ysigSet.append(nbinom_res["log2FoldChange"][counter])
+                                else:
+                                    ysigSet.append(0)
+                                xsigSet.append(math.log(nbinom_res[" baseMean "][counter], 2))  # changed from Taxa Name
+                            else:
+                                #normal/nonsig
+                                if thing == thing:
+                                    ydataSet.append(nbinom_res["log2FoldChange"][counter])
+                                else:
+                                    ydataSet.append(0)
+                                xdataSet.append(math.log(nbinom_res[" baseMean "][counter], 2))  # changed from Taxa Name
+                            counter += 1
+                        yAxisArray[iterationName] = ydataSet
+                        xAxisArray[iterationName] = xdataSet
+                        namesArray.append(iterationName)
+                        sigNames.append(iterationName)
+                        sigX[iterationName] = xsigSet
+                        sigY[iterationName] = ysigSet
+                        #print "yAxisArray: " + str(yAxisArray[iterationName])
+                        #print "xAxisArray: " + str(xAxisArray[iterationName])
+                        #print (yAxisArray.__len__() == xAxisArray.__len__())
+                    except Exception as inst:
+                        print("Failed to add data")
+                        print("Error type: "+str(type(inst)))
+                        print("Arguments: "+str(inst.args))
+                        print("Name: "+str(inst))
 
         stage = 'Step 3 of 4: Performing statistical test...completed'
         stage = 'Step 4 of 4: Preparing graph data...'
 
         # TODO add fold change graph
+
             # create highcharts scatter plot
             # x = taxa name
             # y = log2 fold change
             # significant points in red
 
-        '''regrDict = {}
-        regrDict['type'] = 'line'
-        regrDict['name'] = 'R2: ' + str(r_square) + '; p-value: ' + str(p_value) + '<br>' + '(y = ' + str(slope) + 'x' + ' + ' + str(intercept) + ')'
-        regrDict['data'] = regrList
-        seriesList.append(regrDict)
-
+        seriesList = []
         xAxisDict = {}
         yAxisDict = {}
+        try:
+            for name in namesArray:
+                seriesDict = {}
+                seriesDict['name'] = str(name)
+                dataStuff = []
+                taxaStuff = []
+                counterA = 0
+                for thing in xAxisArray[name]:
+                    dataStuff.append([float(thing), float(yAxisArray[name][counterA])])
+                    #taxaStuff.append(str(thing))
+                    counterA += 1
+                seriesDict['data'] = dataStuff
+                seriesList.append(seriesDict)
+        except:
+            print("Failed to add seriesList")
 
-        xTitle = {}
-        xTitle['text'] = taxaDF  # taxalist here?
-        xAxisDict['title'] = xTitle
+        try:
+            for name in sigNames:
+                seriesDict = {}
+                seriesDict['name'] = "SIG:"+str(name)
+                dataStuff = []
+                taxaStuff = []
+                counterA = 0
+                for thing in sigX[name]:
+                    dataStuff.append([float(thing), float(sigY[name][counterA])])
+                    #taxaStuff.append(str(thing))
+                    counterA += 1
+                seriesDict['data'] = dataStuff
+                seriesList.append(seriesDict)
+        except:
+            print("Failed to add seriesList")
 
-        yTitle = {}
-        yTitle['text'] = fieldList[0]
-        yAxisDict['title'] = yTitle
+        try:
+            xTitle = {}
+            xTitle['text'] = "logBaseMean"
+            xAxisDict['title'] = xTitle
+            #xAxisDict['categories'] = taxaStuff
+        except:
+            print("X failed")
 
-        finalDict['series'] = seriesList
-        finalDict['xAxis'] = xAxisDict
-        finalDict['yAxis'] = yAxisDict'''
+        try:
+            yTitle = {}
+            yTitle['text'] = "log2foldchange"
+            yAxisDict['title'] = yTitle
+            #yAxisDict['type'] = 'linear'
+        except:
+            print("Y failed")
 
-        stage = 'Step 4 of 4: Preparing graph data...completed'
-        finalDict['text'] = result
-        res = simplejson.dumps(finalDict)
-        return HttpResponse(res, content_type='application/json')
+        try:
+            finalDict['series'] = seriesList
+            finalDict['xAxis'] = xAxisDict
+            finalDict['yAxis'] = yAxisDict
+        except:
+            print("Final Failed")
+
+        try:
+            stage = 'Step 4 of 4: Preparing graph data...completed'
+            finalDict['text'] = result
+            res = simplejson.dumps(finalDict)
+        except Exception as inst:
+            print("Almost returning failed")
+            print("Error type: "+str(type(inst)))
+            print("Arguments: "+str(inst.args))
+            print("Name: "+str(inst))
+            res = ''
+
+        try:
+            return HttpResponse(res, content_type='application/json')
+        except Exception as inst:
+            print("Returning failed")
+            print("Error type: "+str(type(inst)))
+            print("Arguments: "+str(inst.args))
+            print("Name: "+str(inst))
 
 
 def findTaxa(id):
