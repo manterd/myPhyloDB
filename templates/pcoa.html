@@ -354,6 +354,13 @@
         }
 
         function chooseData() {
+
+            if (document.getElementById("alphaVal").value < 0 || document.getElementById("alphaVal").value > 10)
+            {
+                alert("Alpha must be between 0 and 10");
+                return;
+            }
+
             if ((nodesCat != "") && (button1 == 1)) {
                 if (
                     (document.getElementById("NormVal").value == "") ||
@@ -415,6 +422,7 @@
             myDict['distance'] = distance;
             myDict['PC1'] = PC1;
             myDict['PC2'] = PC2;
+            myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['remove'] = remove;
             myDict['test'] = test;
             myDict['alpha'] = document.getElementById("alphaVal").value;

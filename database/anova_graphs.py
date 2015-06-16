@@ -15,21 +15,35 @@ from pyper import *
 import math
 
 
+base = ''
 stage = ''
+time1 = time.time()
+time2 = time.time()
+TimeDiff = 0
 
+def resetTracking():
+    global stage, time1, time2, TimeDiff
+    stage = ''
+    time1 = time.time()
+    time2 = time.time()
+    TimeDiff = 0
 
 def statusANOVA(request):
-    global stage
+    global base, stage, time1, time2, TimeDiff
     if request.is_ajax():
+        time2 = time.time()
+        TimeDiff = time2 - time1
         myDict = {}
+        stage = str(base) + '%.1f seconds have elapsed' % TimeDiff
         myDict['stage'] = stage
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
 def getCatUnivData(request):
-    global stage
-    stage = 'Step 1 of 4: Querying database...'
+    global base, time1, TimeDiff
+    time1 = time.time()
+    base = 'Step 1 of 4: Querying database...'
 
     # Get selected samples from cookie and query database for sample info
     samples = Sample.objects.all()
@@ -157,10 +171,10 @@ def getCatUnivData(request):
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-        stage = 'Step 1 of 4: Querying database...completed'
+        base = 'Step 1 of 4: Querying database...completed'
 
         # Normalize data
-        stage = 'Step 2 of 4: Normalizing data...'
+        base = 'Step 2 of 4: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -190,8 +204,8 @@ def getCatUnivData(request):
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        stage = 'Step 2 of 4: Normalizing data...completed'
-        stage = 'Step 3 of 4: Performing statistical test...'
+        base = 'Step 2 of 4: Normalizing data...completed'
+        base = 'Step 3 of 4: Performing statistical test...'
 
         seriesList = []
         xAxisDict = {}
@@ -264,8 +278,8 @@ def getCatUnivData(request):
                 else:
                     p_val = 1.0
 
-            stage = 'Step 3 of 4: Performing statistical test...completed'
-            stage = 'Step 4 of 4: Preparing graph data...'
+            base = 'Step 3 of 4: Performing statistical test...completed'
+            base = 'Step 4 of 4: Preparing graph data...'
             if sig_only == 1:
                 if p_val <= 0.05:
                     result += '===============================================\n'
@@ -421,18 +435,25 @@ def getCatUnivData(request):
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
-        stage = 'Step 4 of 4: Preparing graph data...completed'
+        base = 'Step 4 of 4: Preparing graph data...completed'
 
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
         finalDict['biome'] = str(biome_json)
 
         res = simplejson.dumps(finalDict)
+
+        try:
+            resetTracking()
+        except:
+            print("Failed to reset stuff")
+
         return HttpResponse(res, content_type='application/json')
 
 
 def getQuantUnivData(request):
-    global stage
-    stage = 'Step 1 of 4: Querying database...'
+    global base, time1, TimeDiff
+    time1 = time.time()
+    base = 'Step 1 of 4: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -546,8 +567,8 @@ def getQuantUnivData(request):
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-        stage = 'Step 1 of 4: Querying database...completed'
-        stage = 'Step 2 of 4: Normalizing data...'
+        base = 'Step 1 of 4: Querying database...completed'
+        base = 'Step 2 of 4: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -579,8 +600,8 @@ def getQuantUnivData(request):
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        stage = 'Step 2 of 4: Normalizing data...completed'
-        stage = 'Step 3 of 4: Performing linear regression...'
+        base = 'Step 2 of 4: Normalizing data...completed'
+        base = 'Step 3 of 4: Performing linear regression...'
 
         seriesList = []
         xAxisDict = {}
@@ -620,8 +641,8 @@ def getQuantUnivData(request):
                 regrList.append([min(x), min_y])
                 regrList.append([max(x), max_y])
 
-            stage = 'Step 3 of 4: Performing linear regression...completed'
-            stage = 'Step 4 of 4: Preparing graph data...'
+            base = 'Step 3 of 4: Performing linear regression...completed'
+            base = 'Step 4 of 4: Preparing graph data...'
             if sig_only == 0:
                 seriesDict = {}
                 seriesDict['type'] = 'scatter'
@@ -729,12 +750,18 @@ def getQuantUnivData(request):
         finalDict['res_table'] = str(res_table)
 
         finalDict['text'] = result
-        stage = 'Step 4 of 4: Preparing graph data...completed'
+        base = 'Step 4 of 4: Preparing graph data...completed'
 
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
         finalDict['biome'] = str(biome_json)
 
         res = simplejson.dumps(finalDict)
+
+        try:
+            resetTracking()
+        except:
+            print("Failed to reset stuff")
+
         return HttpResponse(res, content_type='application/json')
 
 

@@ -15,21 +15,37 @@ import math
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
 
+base = ''
 stage = ''
+time1 = time.time()
+time2 = time.time()
+TimeDiff = 0
+
+
+def resetTracking():
+    global stage, time1, time2, TimeDiff
+    stage = ''
+    time1 = time.time()
+    time2 = time.time()
+    TimeDiff = 0
 
 
 def updateDiffAbund(request):
-    global stage
+    global base, stage, time1, time2, TimeDiff
     if request.is_ajax():
+        time2 = time.time()
+        TimeDiff = time2 - time1
         myDict = {}
+        stage = str(base) + '%.1f seconds have elapsed' % TimeDiff
         myDict['stage'] = stage
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
 def getDiffAbund(request):
-    global stage
-    stage = 'Step 1 of 4: Querying database...'
+    global base, time1, TimeDiff
+    time1 = time.time()
+    base = 'Step 1 of 4: Querying database...'
     # Get selected samples from cookie and query database for sample info
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
@@ -81,8 +97,8 @@ def getDiffAbund(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        stage = 'Step 1 of 4: Querying database...complete'
-        stage = 'Step 2 of 4: Normalizing data...'
+        base = 'Step 1 of 4: Querying database...complete'
+        base = 'Step 2 of 4: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -167,8 +183,8 @@ def getDiffAbund(request):
             result += 'To try again, please increase the minimum sample size...\n'
         result += '===============================================\n\n\n'
 
-        stage = 'Step 2 of 4: Normalizing data...complete'
-        stage = 'Step 3 of 4: Performing statistical test...'
+        base = 'Step 2 of 4: Normalizing data...complete'
+        base = 'Step 3 of 4: Performing statistical test...'
 
         mergeList = metaDF['merge'].tolist()
         mergeSet = list(set(mergeList))
@@ -182,7 +198,9 @@ def getDiffAbund(request):
                     r.assign("trt1", mergeSet[i])
                     r.assign("trt2", mergeSet[j])
                     r("res <- results(dds, contrast=c('trt', trt1, trt2))")
-                    r("df <- data.frame(id=rownames(res), baseMean=res$baseMean, log2FoldChange=res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                    r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1])")
+                    r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2])")
+                    r("df <- data.frame(id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
                     nbinom_res = r.get("df")
 
                     names = []
@@ -191,12 +209,14 @@ def getDiffAbund(request):
 
                     nbinom_res['Taxa Name'] = names
                     nbinom_res.rename(columns={'id': 'Taxa ID'}, inplace=True)
-                    stuff = ['Taxa ID', 'Taxa Name', ' baseMean ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
+                    stuff = ['Taxa ID', 'Taxa Name', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
                     nbinom_res = nbinom_res.reindex(columns=stuff)
                     iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
                     nbinom_res['Comparison'] = iterationName
 
                     nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
+                    nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
+                    nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
                     nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
                     nbinom_res.rename(columns={' stderr ': 'StdErr'}, inplace=True)
                     nbinom_res.rename(columns={' stat ': 'Stat'}, inplace=True)
@@ -209,14 +229,17 @@ def getDiffAbund(request):
                     else:
                         finalDF = pd.concat([finalDF, nbinom_res])
 
-        stage = 'Step 3 of 4: Performing statistical test...completed'
-
-        stage = 'Step 4 of 4: Preparing graph data...'
+        base = 'Step 3 of 4: Performing statistical test...completed'
+        base = 'Step 4 of 4: Preparing graph data...'
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
 
         grouped = finalDF.groupby('Comparison')
+
+        listOfShapes = ['square', 'circle', 'triangle', 'diamond', 'triangle-down']
+        shapeIterator = 0
+
         for name, group in grouped:
             nosigDF = group[group["p-adjusted"] > FdrVal]
             allData = nosigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
@@ -226,12 +249,22 @@ def getDiffAbund(request):
             seriesDict = {}
             seriesDict['name'] = "NotSig: " + str(name)
             seriesDict['data'] = allData
+            markerDict = {}
+            markerDict['symbol'] = listOfShapes[shapeIterator]
+            seriesDict['marker'] = markerDict
             seriesList.append(seriesDict)
 
             seriesDict = {}
             seriesDict['name'] = "Sig: " + str(name)
             seriesDict['data'] = sigData
+            markerDict = {}
+            markerDict['symbol'] = listOfShapes[shapeIterator]
+            seriesDict['marker'] = markerDict
             seriesList.append(seriesDict)
+
+            shapeIterator += 1
+            if shapeIterator >= listOfShapes.__len__():
+                shapeIterator = 0
 
         xTitle = {}
         xTitle['text'] = "baseMean"
@@ -247,17 +280,21 @@ def getDiffAbund(request):
         finalDict['xAxis'] = xAxisDict
         finalDict['yAxis'] = yAxisDict
 
-        finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
+        finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
         finalDict['text'] = result
 
         res = simplejson.dumps(finalDict)
-        stage = 'Step 4 of 4: Preparing graph data...completed'
+        base = 'Step 4 of 4: Preparing graph data...completed'
+
+        try:
+            resetTracking()
+        except:
+            print("Failed to reset stuff")
 
         return HttpResponse(res, content_type='application/json')
-
 
 
 def findTaxa(id):

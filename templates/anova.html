@@ -397,6 +397,20 @@
         }
 
         function chooseData() {
+
+            if (document.getElementById("NormVal").value < 0)
+            {
+                alert("Sample size can only be zero, a positive integer, min, median, or max");
+                return;
+            }
+
+            if (document.getElementById("FdrVal").value < 0 || document.getElementById("FdrVal").value > 1)
+            {
+                alert("False Discovery Rate must be between 0 and 1");
+                return;
+            }
+
+
             if ((nodesCat != "") && (((nodesTaxa != "") || (selectAll != 0))) && (button1 == 1)) {
                 $("#run").css("background-color", "yellow");
                 $("#container-1").empty().append('Analysis is running...please be patient');
@@ -478,6 +492,7 @@
             myDict['meta'] = meta;
             myDict['taxa'] = taxa;
             myDict['DepVar'] = DepVar;
+            myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['sig_only'] = sig1_only;
             myDict['selectAll'] = selectAll;
             if ((NormMeth == 2) || (NormMeth == 3)){
@@ -792,6 +807,10 @@
                 Sample size:
                 <input style="background-color: white" type="text" id="NormVal" value="min"/>
             </td>
+            <!---<td id="NormRow" style="text-align: center">
+                Minimum sample size:
+                <input type="text" id="NormVal" value="1000"/>
+            </td>-->
             <td id="NormRow-off"></td>
             <td id="FdrRow" style="text-align: right; display: none">
                 False Discovery Rate:

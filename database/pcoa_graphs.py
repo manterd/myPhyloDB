@@ -16,21 +16,29 @@ from database.utils import multidict, ordered_set, taxaProfileDF, PCoA
 from pyper import *
 
 
+base = ''
 stage = ''
+time1 = time.time()
+time2 = time.time()
+TimeDiff = 0
 
 
 def statusPCoA(request):
-    global stage
+    global base, stage, time1, time2, TimeDiff
     if request.is_ajax():
+        time2 = time.time()
+        TimeDiff = time2 - time1
         myDict = {}
+        stage = str(base) + '%.1f seconds have elapsed' % TimeDiff
         myDict['stage'] = stage
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
 def getCatPCoAData(request):
-    global stage
-    stage = 'Step 1 of 6: Querying database...'
+    global base, time1, TimeDiff
+    time1 = time.time()
+    base = 'Step 1 of 6: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -118,8 +126,8 @@ def getCatPCoAData(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        stage = 'Step 1 of 6: Querying database...completed'
-        stage = 'Step 2 of 6: Normalizing data...'
+        base = 'Step 1 of 6: Querying database...completed'
+        base = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -154,8 +162,8 @@ def getCatPCoAData(request):
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        stage = 'Step 2 of 6: Normalizing data...completed'
-        stage = 'Step 3 of 6: Calculating distance matrix...'
+        base = 'Step 2 of 6: Normalizing data...completed'
+        base = 'Step 3 of 6: Calculating distance matrix...'
 
         metaDF.set_index('sampleid', inplace=True)
         metaDF.sort_index(inplace=True)
@@ -202,8 +210,8 @@ def getCatPCoAData(request):
         rowList = metaDF['sample_name'].tolist()
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
-        stage = 'Step 3 of 6: Calculating distance matrix...completed'
-        stage = 'Step 4 of 6: Principal coordinates analysis...'
+        base = 'Step 3 of 6: Calculating distance matrix...completed'
+        base = 'Step 4 of 6: Principal coordinates analysis...'
 
         r.assign("meta", metaDF)
         r("trt <- factor(meta$merge)")
@@ -214,7 +222,7 @@ def getCatPCoAData(request):
         pcoaDF = r.get("pcoa")
         pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
         pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
-        pcoaDF.rename(columns={' meta.merge ': 'Treatment'}, inplace=True)
+        pcoaDF.rename(columns={'meta.merge': 'Treatment'}, inplace=True)
 
         r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
         r("eig <- data.frame(Stat, res$cont$importance)")
@@ -230,8 +238,8 @@ def getCatPCoAData(request):
                 bigf = 'Not enough permutations for the test to run...'
             else:
                 if test == 1:
-                    stage = 'Step 4 of 6: Principal coordinates analysis...completed'
-                    stage = 'Step 5 of 6: Performing perMANOVA...'
+                    base = 'Step 4 of 6: Principal coordinates analysis...completed'
+                    base = 'Step 5 of 6: Performing perMANOVA...'
 
                     r("trtList <- factor(meta$merge)")
                     r.assign("perms", perms)
@@ -243,10 +251,10 @@ def getCatPCoAData(request):
                         if part != tempStuff[0]:
                             bigf += part + '\n'
 
-                    stage = 'Step 5 of 6: Performing perMANOVA...completed'
+                    base = 'Step 5 of 6: Performing perMANOVA...completed'
                 elif test == 2:
-                    stage = 'Step 4 of 6: Principal coordinates analysis...complete'
-                    stage = 'Step 5 of 6: Performing BetaDisper...'
+                    base = 'Step 4 of 6: Principal coordinates analysis...complete'
+                    base = 'Step 5 of 6: Performing BetaDisper...'
 
                     r("trtList <- factor(meta$merge)")
                     r.assign("perms", perms)
@@ -259,17 +267,15 @@ def getCatPCoAData(request):
                         if part != tempStuff[0]:
                             bigf += part + '\n'
 
-                    stage = 'Step 5 of 6: Performing BetaDisper... complete'
+                    base = 'Step 5 of 6: Performing BetaDisper... complete'
 
-        stage = 'Step 6 of 6: Preparing graph data...'
+        base = 'Step 6 of 6: Preparing graph data...'
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
-
         grouped = pcoaDF.groupby('Treatment')
         for name, group in grouped:
-            dataList = group.icol([PC1,PC2]).values.astype(np.float).tolist()
-
+            dataList = group.icol([PC1, PC2]).values.astype(np.float).tolist()
             trt = name
             seriesDict = {}
             seriesDict['name'] = str(trt)
@@ -347,7 +353,6 @@ def getCatPCoAData(request):
         result = result + str(eigStr) + '\n'
         result += '===============================================\n'
         result += '\n\n\n\n'
-
         finalDict['text'] = result
 
         pcoaDF.reset_index(drop=True, inplace=True)
@@ -359,15 +364,16 @@ def getCatPCoAData(request):
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
 
-        stage = 'Step 6 of 6: Preparing graph data...completed'
+        base = 'Step 6 of 6: Preparing graph data...completed'
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')
 
 
 def getQuantPCoAData(request):
-    global stage
-    stage = 'Step 1 of 6: Querying database...'
+    global base, time1, TimeDiff
+    time1 = time.time()
+    base = 'Step 1 of 6: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -453,8 +459,8 @@ def getQuantPCoAData(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        stage = 'Step 1 of 6: Querying database...completed'
-        stage = 'Step 2 of 6: Normalizing data...'
+        base = 'Step 1 of 6: Querying database...completed'
+        base = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -488,8 +494,8 @@ def getQuantPCoAData(request):
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        stage = 'Step 2 of 6: Normalizing data...completed'
-        stage = 'Step 3 of 6: Calculating distance matrix...'
+        base = 'Step 2 of 6: Normalizing data...completed'
+        base = 'Step 3 of 6: Calculating distance matrix...'
 
         metaDF.set_index('sampleid', inplace=True)  # TODO fix crash here
         metaDF.sort_index(inplace=True)
@@ -536,8 +542,8 @@ def getQuantPCoAData(request):
         rowList = metaDF['sample_name'].tolist()
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
-        stage = 'Step 3 of 6: Calculating distance matrix...completed'
-        stage = 'Step 4 of 6: Principal coordinates analysis...'
+        base = 'Step 3 of 6: Calculating distance matrix...completed'
+        base = 'Step 4 of 6: Principal coordinates analysis...'
 
         r.assign("meta", metaDF)
         r("trt <- factor(meta$merge)")
@@ -548,18 +554,14 @@ def getQuantPCoAData(request):
         pcoaDF = r.get("pcoa")
         pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
         pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
-        pcoaDF.rename(columns={' meta.merge ': 'Treatment'}, inplace=True)
+        pcoaDF.rename(columns={'meta.merge': 'Treatment'}, inplace=True)
 
         r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
         r("eig <- data.frame(Stat, res$cont$importance)")
         eigDF = r.get("eig")
 
-        ### create trtList that merges all categorical values
-        #trtList = metaDF['merge'].values.tolist()
-        #trtLength = len(set(trtList))
-
-        stage = 'Step 4 of 6: Principal coordinates analysis...completed'
-        stage = 'Step 5 of 6: Performing linear regression...'
+        base = 'Step 4 of 6: Principal coordinates analysis...completed'
+        base = 'Step 5 of 6: Performing linear regression...'
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
@@ -591,8 +593,8 @@ def getQuantPCoAData(request):
             regrList.append([min(x), min_y])
             regrList.append([max(x), max_y])
 
-            stage = 'Step 5 of 6: Performing linear regression...completed'
-            stage = 'Step 6 of 6: Preparing graph data...'
+            base = 'Step 5 of 6: Performing linear regression...completed'
+            base = 'Step 6 of 6: Preparing graph data...'
 
             regrDict = {}
             regrDict['type'] = 'line'
@@ -677,7 +679,7 @@ def getQuantPCoAData(request):
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
 
-        stage = 'Step 6 of 6: Preparing graph data...completed'
+        base = 'Step 6 of 6: Preparing graph data...completed'
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')

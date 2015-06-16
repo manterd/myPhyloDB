@@ -195,6 +195,19 @@
             }
         }
         function chooseData() {
+
+            if (document.getElementById("FdrVal").value < 0 || document.getElementById("FdrVal").value > 1)
+            {
+                alert("False Discovery Rate must be between 0 and 1");
+                return;
+            }
+
+            if (document.getElementById("Theta").value < 0 || document.getElementById("Theta").value > 1)
+            {
+                alert("Theta must be between 0 and 1");
+                return;
+            }
+
             if (nodesCat != "")  {
                 $("#run").css("background-color", "yellow");
                 $("#container-1").empty().append('Analysis is running...please be patient');
@@ -273,6 +286,7 @@
         function scatter(xAxis, yAxis, series) {
            catOptions = {
                 chart: { renderTo: 'container-1', type: 'scatter', zoomType: 'xy' },
+                colors: ['rgba(0,0,0,.5)', 'rgba(255,0,0,.5)'],
                 title: { text: null },
                 legend: {
                     itemStyle: {
@@ -294,7 +308,7 @@
                 tooltip: {
                     formatter: function () {
                         return this.series.name + '<br/>' +
-                            'Value: ' + this.y + '<br/>';
+                            'Value: (' + Math.round(this.x*1000)/1000 + ',' + Math.round(1000*this.y)/1000 + ')<br/>';
                     }
                 },
                 credits: { enabled: false }
@@ -391,7 +405,7 @@
                 False Discovery Rate:
                 <input style="background-color: white" type="text" id="FdrVal" value="0.10"/>
             </td>
-            <td id="FdrRow-off"></td>
+            <td id="FdrRow-off" style="display: none"></td>
         </tr>
         <tr>
             <td></td>
