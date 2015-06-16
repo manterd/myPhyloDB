@@ -43,8 +43,7 @@ def getDiffAbund(request):
 
         taxaLevel = int(all["taxaLevel"])
         NormMeth = int(all["NormMeth"])
-        StatTest = int(all["StatTest"])
-        sig_only = int(all["sig_only"])
+        FdrVal = float(all["FdrVal"])
         size = int(all["NormVal"])
         theta = float(all["Theta"])
 
@@ -171,23 +170,15 @@ def getDiffAbund(request):
         stage = 'Step 2 of 4: Normalizing data...complete'
         stage = 'Step 3 of 4: Performing statistical test...'
 
-        yAxisArray = {}
-        xAxisArray = {}
-        sigX = {}
-        sigY = {}
-        sigNames = []
-        namesArray = []
         mergeList = metaDF['merge'].tolist()
         mergeSet = list(set(mergeList))
 
-        nbinom_res = pd.DataFrame()
+        finalDF = pd.DataFrame()
         for i, val in enumerate(mergeSet):
             start = i + 1
             stop = int(len(mergeSet))
             for j in range(start, stop):
                 if i != j:
-                    result += '===============================================\n'
-                    result = result + 'Comparison: ' + str(mergeSet[i]) + ' vs ' + str(mergeSet[j]) + '\n'
                     r.assign("trt1", mergeSet[i])
                     r.assign("trt2", mergeSet[j])
                     r("res <- results(dds, contrast=c('trt', trt1, trt2))")
@@ -197,152 +188,76 @@ def getDiffAbund(request):
                     names = []
                     for item in nbinom_res["id"]:
                         names.append(findTaxa(item))
-                    try:
-                        nbinom_res['Taxa Name'] = names
-                        nbinom_res.rename(columns={'id': 'Taxa ID'}, inplace=True)
-                        stuff = ['Taxa ID', 'Taxa Name', ' baseMean ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
-                        nbinom_res = nbinom_res.reindex(columns=stuff)
-                        nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
-                        nbinom_res.rename(columns={' stderr ': 'stderr'}, inplace=True)
-                        nbinom_res.rename(columns={' stat ': 'stat'}, inplace=True)
-                        nbinom_res.rename(columns={' pval ': 'pval'}, inplace=True)
-                        nbinom_res.rename(columns={' padj ': 'padj'}, inplace=True)
-                        nbinom_res[['pval', 'padj']].astype(float)
-                        #print str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
-                        #print "DESeq_error: ", DESeq_error
-                        #print "nbinom_res\n", nbinom_res
-                    except:
-                        print ("Join failed")
 
-                    result += nbinom_res.to_string()
-                    result += '\n===============================================\n\n\n'
+                    nbinom_res['Taxa Name'] = names
+                    nbinom_res.rename(columns={'id': 'Taxa ID'}, inplace=True)
+                    stuff = ['Taxa ID', 'Taxa Name', ' baseMean ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
+                    nbinom_res = nbinom_res.reindex(columns=stuff)
+                    iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
+                    nbinom_res['Comparison'] = iterationName
 
-                    # split past here, xAxisArray, yAxisArray, namesArray --> sigX, sigY, sigNames
+                    nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
+                    nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
+                    nbinom_res.rename(columns={' stderr ': 'StdErr'}, inplace=True)
+                    nbinom_res.rename(columns={' stat ': 'Stat'}, inplace=True)
+                    nbinom_res.rename(columns={' pval ': 'p-value'}, inplace=True)
+                    nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
+                    nbinom_res[['p-value', 'p-adjusted']].astype(float)
 
-                    try:
-                        iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
-                        xdataSet = []
-                        ydataSet = []
-                        xsigSet = []
-                        ysigSet = []
-                        counter = 0
-                        for thing in nbinom_res["pval"]:
-                            if float(thing) <0.05:
-                                #place in sigpile
-                                if thing == thing:
-                                    ysigSet.append(nbinom_res["log2FoldChange"][counter])
-                                else:
-                                    ysigSet.append(0)
-                                xsigSet.append(math.log(nbinom_res[" baseMean "][counter], 2))  # changed from Taxa Name
-                            else:
-                                #normal/nonsig
-                                if thing == thing:
-                                    ydataSet.append(nbinom_res["log2FoldChange"][counter])
-                                else:
-                                    ydataSet.append(0)
-                                xdataSet.append(math.log(nbinom_res[" baseMean "][counter], 2))  # changed from Taxa Name
-                            counter += 1
-                        yAxisArray[iterationName] = ydataSet
-                        xAxisArray[iterationName] = xdataSet
-                        namesArray.append(iterationName)
-                        sigNames.append(iterationName)
-                        sigX[iterationName] = xsigSet
-                        sigY[iterationName] = ysigSet
-                        #print "yAxisArray: " + str(yAxisArray[iterationName])
-                        #print "xAxisArray: " + str(xAxisArray[iterationName])
-                        #print (yAxisArray.__len__() == xAxisArray.__len__())
-                    except Exception as inst:
-                        print("Failed to add data")
-                        print("Error type: "+str(type(inst)))
-                        print("Arguments: "+str(inst.args))
-                        print("Name: "+str(inst))
+                    if finalDF .empty:
+                        finalDF = nbinom_res
+                    else:
+                        finalDF = pd.concat([finalDF, nbinom_res])
 
         stage = 'Step 3 of 4: Performing statistical test...completed'
+
         stage = 'Step 4 of 4: Preparing graph data...'
-
-        # TODO add fold change graph
-
-            # create highcharts scatter plot
-            # x = taxa name
-            # y = log2 fold change
-            # significant points in red
-
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
-        try:
-            for name in namesArray:
-                seriesDict = {}
-                seriesDict['name'] = str(name)
-                dataStuff = []
-                taxaStuff = []
-                counterA = 0
-                for thing in xAxisArray[name]:
-                    dataStuff.append([float(thing), float(yAxisArray[name][counterA])])
-                    #taxaStuff.append(str(thing))
-                    counterA += 1
-                seriesDict['data'] = dataStuff
-                seriesList.append(seriesDict)
-        except:
-            print("Failed to add seriesList")
 
-        try:
-            for name in sigNames:
-                seriesDict = {}
-                seriesDict['name'] = "SIG:"+str(name)
-                dataStuff = []
-                taxaStuff = []
-                counterA = 0
-                for thing in sigX[name]:
-                    dataStuff.append([float(thing), float(sigY[name][counterA])])
-                    #taxaStuff.append(str(thing))
-                    counterA += 1
-                seriesDict['data'] = dataStuff
-                seriesList.append(seriesDict)
-        except:
-            print("Failed to add seriesList")
+        grouped = finalDF.groupby('Comparison')
+        for name, group in grouped:
+            nosigDF = group[group["p-adjusted"] > FdrVal]
+            allData = nosigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
+            sigDF = group[group["p-adjusted"] <= FdrVal]
+            sigData = sigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
 
-        try:
-            xTitle = {}
-            xTitle['text'] = "logBaseMean"
-            xAxisDict['title'] = xTitle
-            #xAxisDict['categories'] = taxaStuff
-        except:
-            print("X failed")
+            seriesDict = {}
+            seriesDict['name'] = "NotSig: " + str(name)
+            seriesDict['data'] = allData
+            seriesList.append(seriesDict)
 
-        try:
-            yTitle = {}
-            yTitle['text'] = "log2foldchange"
-            yAxisDict['title'] = yTitle
-            #yAxisDict['type'] = 'linear'
-        except:
-            print("Y failed")
+            seriesDict = {}
+            seriesDict['name'] = "Sig: " + str(name)
+            seriesDict['data'] = sigData
+            seriesList.append(seriesDict)
 
-        try:
-            finalDict['series'] = seriesList
-            finalDict['xAxis'] = xAxisDict
-            finalDict['yAxis'] = yAxisDict
-        except:
-            print("Final Failed")
+        xTitle = {}
+        xTitle['text'] = "baseMean"
+        xAxisDict['title'] = xTitle
+        xAxisDict['type'] = 'logarithmic'
 
-        try:
-            stage = 'Step 4 of 4: Preparing graph data...completed'
-            finalDict['text'] = result
-            res = simplejson.dumps(finalDict)
-        except Exception as inst:
-            print("Almost returning failed")
-            print("Error type: "+str(type(inst)))
-            print("Arguments: "+str(inst.args))
-            print("Name: "+str(inst))
-            res = ''
+        yTitle = {}
+        yTitle['text'] = "log2FoldChange"
+        yAxisDict['title'] = yTitle
+        yAxisDict['type'] = 'linear'
 
-        try:
-            return HttpResponse(res, content_type='application/json')
-        except Exception as inst:
-            print("Returning failed")
-            print("Error type: "+str(type(inst)))
-            print("Arguments: "+str(inst.args))
-            print("Name: "+str(inst))
+        finalDict['series'] = seriesList
+        finalDict['xAxis'] = xAxisDict
+        finalDict['yAxis'] = yAxisDict
+
+        finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
+        res_table = finalDF.to_html(classes="table display")
+        res_table = res_table.replace('border="1"', 'border="0"')
+        finalDict['res_table'] = str(res_table)
+        finalDict['text'] = result
+
+        res = simplejson.dumps(finalDict)
+        stage = 'Step 4 of 4: Preparing graph data...completed'
+
+        return HttpResponse(res, content_type='application/json')
+
 
 
 def findTaxa(id):

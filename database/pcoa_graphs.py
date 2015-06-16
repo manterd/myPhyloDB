@@ -128,9 +128,7 @@ def getCatPCoAData(request):
             metaDF['merge'] = metaDF[fieldList[0]]
 
         # Sum by taxa level
-        #TODO add OTU level
-        if taxaLevel != 7:
-            taxaDF = taxaDF.groupby(level=taxaLevel).sum()
+        taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
         normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
         normDF.sort_index(inplace=True)
@@ -195,10 +193,10 @@ def getCatPCoAData(request):
         elif distance == 14:
             r("dist <- vegdist(data, method='cao')")
         elif distance == 15:
-            r("library(matrixStats)")
-            r.assign("alpha", alpha)
-            print r("dist <- designdist(data, method='(sum(abs(colDiffs(rbind(x,y))))/(x+y)*(x+y)^alpha))sum(/((x+y)^alpha)', terms='minimum')")
-            print r("dist")
+            datamtx = asarray(normDF)
+            dists = wOdum(datamtx, alpha)
+            r.assign("dist", dists)
+
         r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
         mat = r.get("mat")
         rowList = metaDF['sample_name'].tolist()
@@ -216,7 +214,7 @@ def getCatPCoAData(request):
         pcoaDF = r.get("pcoa")
         pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
         pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
-        pcoaDF.rename(columns={'meta.merge': 'Treatment'}, inplace=True)
+        pcoaDF.rename(columns={' meta.merge ': 'Treatment'}, inplace=True)
 
         r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
         r("eig <- data.frame(Stat, res$cont$importance)")
@@ -309,18 +307,34 @@ def getCatPCoAData(request):
 
         result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
         if distance == 1:
-            result = result + 'Distance score: Bray-Curtis' + '\n'
+            result = result + 'Distance score: Manhattan' + '\n'
         elif distance == 2:
-            result = result + 'Distance score: Canberra' + '\n'
-        elif distance == 3:
-            result = result + 'Distance score: Dice' + '\n'
-        elif distance == 4:
             result = result + 'Distance score: Euclidean' + '\n'
+        elif distance == 3:
+            result = result + 'Distance score: Canberra' + '\n'
+        elif distance == 4:
+            result = result + 'Distance score: Bray-Curtis' + '\n'
         elif distance == 5:
-            result = result + 'Distance score: Jaccard' + '\n'
+            result = result + 'Distance score: Kulczynski' + '\n'
         elif distance == 6:
-            result = result + 'Distance score: MorisitaHorn' + '\n'
+            result = result + 'Distance score: Jaccard' + '\n'
         elif distance == 7:
+            result = result + 'Distance score: Gower' + '\n'
+        elif distance == 8:
+            result = result + 'Distance score: altGower' + '\n'
+        elif distance == 9:
+            result = result + 'Distance score: Morisita' + '\n'
+        elif distance == 10:
+            result = result + 'Distance score: Horn' + '\n'
+        elif distance == 11:
+            result = result + 'Distance score: Mountford' + '\n'
+        elif distance == 12:
+            result = result + 'Distance score: Binomial' + '\n'
+        elif distance == 13:
+            result = result + 'Distance score: Chao' + '\n'
+        elif distance == 14:
+            result = result + 'Distance score: Cao' + '\n'
+        elif distance == 15:
             result = result + 'Distance score: wOdum' + '\n'
         result += '===============================================\n'
         result = result + 'Test results' + '\n'
@@ -365,7 +379,7 @@ def getQuantPCoAData(request):
 
         taxaLevel = int(all["taxa"])
         distance = int(all["distance"])
-        PC1 = all["PC1"]
+        PC1 = int(all["PC1"])
         alpha = float(all["alpha"])
         NormMeth = int(all["NormMeth"])
         NormVal = all["NormVal"]
@@ -480,55 +494,77 @@ def getQuantPCoAData(request):
         metaDF.set_index('sampleid', inplace=True)  # TODO fix crash here
         metaDF.sort_index(inplace=True)
 
-        datamtx = asarray(normDF)
-        numrows, numcols = shape(datamtx)
-        dists = zeros((numrows, numrows))
+        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        r.assign("data", normDF)
+        r("library(vegan)")
 
         if distance == 1:
-            dist = pdist(datamtx, 'braycurtis')
-            dists = squareform(dist)
+            r("dist <- vegdist(data, method='manhattan')")
         elif distance == 2:
-            dist = pdist(datamtx, 'canberra')
-            dists = squareform(dist)
+            r("dist <- vegdist(data, method='euclidean')")
         elif distance == 3:
-            dist = pdist(datamtx, 'dice')
-            dists = squareform(dist)
+            r("dist <- vegdist(data, method='canberra')")
         elif distance == 4:
-            dist = pdist(datamtx, 'euclidean')
-            dists = squareform(dist)
+            r("dist <- vegdist(data, method='bray')")
         elif distance == 5:
-            dist = pdist(datamtx, 'jaccard')
-            dists = squareform(dist)
+            r("dist <- vegdist(data, method='kulczynski')")
         elif distance == 6:
-            dists = MorisitaHorn(datamtx)
+            r("dist <- vegdist(data, method='jaccard')")
         elif distance == 7:
+            r("dist <- vegdist(data, method='gower')")
+        elif distance == 8:
+            r("dist <- vegdist(data, method='altGower')")
+        elif distance == 9:
+            r("dist <- vegdist(data, method='morisita')")
+        elif distance == 10:
+            r("dist <- vegdist(data, method='horn')")
+        elif distance == 11:
+            r("dist <- vegdist(data, method='mountford')")
+        elif distance == 12:
+            r("dist <- vegdist(data, method='binomial')")
+        elif distance == 13:
+            r("dist <- vegdist(data, method='chao')")
+        elif distance == 14:
+            r("dist <- vegdist(data, method='cao')")
+        elif distance == 15:
+            datamtx = asarray(normDF)
             dists = wOdum(datamtx, alpha)
+            r.assign("dist", dists)
+
+        r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
+        mat = r.get("mat")
+        rowList = metaDF['sample_name'].tolist()
+        distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
         stage = 'Step 3 of 6: Calculating distance matrix...completed'
         stage = 'Step 4 of 6: Principal coordinates analysis...'
-        eigvals, coordinates, proportion_explained = PCoA(dists)
 
-        numaxes = len(eigvals)
-        axesList = []
-        for i in range(numaxes):
-            j = i + 1
-            axesList.append('PC' + str(j))
+        r.assign("meta", metaDF)
+        r("trt <- factor(meta$merge)")
+        r("ord <- capscale(dist~trt)")
+        r("res <- summary(ord)")
+        r("id <- rownames(meta)")
+        r("pcoa <- data.frame(id, meta$sample_name, meta$merge, res$sites)")
+        pcoaDF = r.get("pcoa")
+        pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
+        pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
+        pcoaDF.rename(columns={' meta.merge ': 'Treatment'}, inplace=True)
 
-        valsDF = pd.DataFrame(eigvals, columns=['EigenVals'], index=axesList)
-        propDF = pd.DataFrame(proportion_explained, columns=['Variance Explained (R2)'], index=axesList)
-        eigenDF = valsDF.join(propDF)
+        r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
+        r("eig <- data.frame(Stat, res$cont$importance)")
+        eigDF = r.get("eig")
 
-        indexList = normDF.index
-        pcoaDF = pd.DataFrame(coordinates, columns=axesList, index=indexList)
-        resultDF = metaDF.join(pcoaDF)
-        pd.set_option('display.max_rows', resultDF.shape[0], 'display.max_columns', resultDF.shape[1], 'display.width', 1000)
+        ### create trtList that merges all categorical values
+        #trtList = metaDF['merge'].values.tolist()
+        #trtLength = len(set(trtList))
 
         stage = 'Step 4 of 6: Principal coordinates analysis...completed'
         stage = 'Step 5 of 6: Performing linear regression...'
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
-        dataList = resultDF[[PC1, fieldList[0]]].values.tolist()
+
+        dataList = pcoaDF.icol([PC1, 2]).values.astype(np.float).tolist()
 
         seriesDict = {}
         seriesDict['type'] = 'scatter'
@@ -536,8 +572,8 @@ def getQuantPCoAData(request):
         seriesDict['data'] = dataList
         seriesList.append(seriesDict)
 
-        x = resultDF[PC1].values.tolist()
-        y = resultDF[fieldList[0]].values.tolist()
+        x = pcoaDF.icol(PC1).values.astype(np.float).tolist()
+        y = pcoaDF.icol(2).values.astype(np.float).tolist()
 
         if max(x) == min(x):
             regrDict = {'type': 'line', 'name': 'No Data', 'data': 'No Data'}
@@ -594,37 +630,53 @@ def getQuantPCoAData(request):
         result = result + 'Independent Variable: ' + str(fieldList[0]) + '\n\n'
 
         if distance == 1:
-            result = result + 'Distance score: Bray-Curtis' + '\n'
+            result = result + 'Distance score: Manhattan' + '\n'
         elif distance == 2:
-            result = result + 'Distance score: Canberra' + '\n'
-        elif distance == 3:
-            result = result + 'Distance score: Dice' + '\n'
-        elif distance == 4:
             result = result + 'Distance score: Euclidean' + '\n'
+        elif distance == 3:
+            result = result + 'Distance score: Canberra' + '\n'
+        elif distance == 4:
+            result = result + 'Distance score: Bray-Curtis' + '\n'
         elif distance == 5:
-            result = result + 'Distance score: Jaccard' + '\n'
+            result = result + 'Distance score: Kulczynski' + '\n'
         elif distance == 6:
-            result = result + 'Distance score: MorisitaHorn' + '\n'
+            result = result + 'Distance score: Jaccard' + '\n'
         elif distance == 7:
+            result = result + 'Distance score: Gower' + '\n'
+        elif distance == 8:
+            result = result + 'Distance score: altGower' + '\n'
+        elif distance == 9:
+            result = result + 'Distance score: Morisita' + '\n'
+        elif distance == 10:
+            result = result + 'Distance score: Horn' + '\n'
+        elif distance == 11:
+            result = result + 'Distance score: Mountford' + '\n'
+        elif distance == 12:
+            result = result + 'Distance score: Binomial' + '\n'
+        elif distance == 13:
+            result = result + 'Distance score: Chao' + '\n'
+        elif distance == 14:
+            result = result + 'Distance score: Cao' + '\n'
+        elif distance == 15:
             result = result + 'Distance score: wOdum' + '\n'
         result += '===============================================\n'
-        result = result + str(eigenDF) + '\n'
 
+        eigStr = eigDF.to_string()
+        result = result + str(eigStr) + '\n'
         result += '===============================================\n'
         result += '\n\n\n\n'
 
         finalDict['text'] = result
 
-        resultDF.reset_index(drop=True, inplace=True)
-        res_table = resultDF.to_html(classes="table display")
+        pcoaDF.reset_index(drop=True, inplace=True)
+        res_table = pcoaDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
 
-        nameList = list(metaDF['sample_name'])
-        distsDF = pd.DataFrame(dists, columns=nameList, index=nameList)
-        dist_table = distsDF.to_html(classes="table display")
+        dist_table = distDF.to_html(classes="table display")
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
+
         stage = 'Step 6 of 6: Preparing graph data...completed'
 
         res = simplejson.dumps(finalDict)

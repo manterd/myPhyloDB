@@ -68,6 +68,10 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#FdrVal").change(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
             $("#StatTest").change(function () {
                 StatTest = $(this).val();
                 $("#run").css("background-color", "lightgray");
@@ -225,6 +229,7 @@
             myDict['Theta'] = document.getElementById("Theta").value;
             myDict['NormMeth'] = NormMeth;
             myDict['StatTest'] = StatTest;
+            myDict['FdrVal'] = document.getElementById("FdrVal").value;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -243,7 +248,7 @@
                     if (empty == 0) {
                         alert('No significant tests!');
                     }
-                    barchart(xAxis, yAxis, series);
+
                     var text = data['text'];
                     $('#text-1').val(text);
 
@@ -254,19 +259,18 @@
                         "oTableTools": {
                             "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
                         },
-                        "bSort": false,
+                        "bSort": true,
                         "scrollX": true
                     }).draw();
 
-                    var biome = data['biome'];
-                    $("#biome-text").empty().append(biome);
+                    scatter(xAxis, yAxis, series);
 
                     $("#run").css("background-color", "green");
                 }
             });
         }
 
-        function barchart(xAxis, yAxis, series) {
+        function scatter(xAxis, yAxis, series) {
            catOptions = {
                 chart: { renderTo: 'container-1', type: 'scatter', zoomType: 'xy' },
                 title: { text: null },
@@ -290,8 +294,7 @@
                 tooltip: {
                     formatter: function () {
                         return this.series.name + '<br/>' +
-                            'Value: ' + this.y + '<br/>' +
-                            'Total: ' + this.point.stackTotal;
+                            'Value: ' + this.y + '<br/>';
                     }
                 },
                 credits: { enabled: false }
@@ -384,7 +387,11 @@
                 <input type="text" id="NormVal" value="1000"/>
             </td>
             <td id="NormRow-off" style="display: none"></td>
-            <td></td>
+            <td id="FdrRow" style="text-align: right;">
+                False Discovery Rate:
+                <input style="background-color: white" type="text" id="FdrVal" value="0.10"/>
+            </td>
+            <td id="FdrRow-off"></td>
         </tr>
         <tr>
             <td></td>
@@ -402,13 +409,16 @@
         </tr>
     </table>
 
-
     <div id="txt-1">
-        <h2>Test Results:</h2>
-        <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
+        <h2>Normalization Results:</h2>
+        <textarea style="width: 950px;" wrap="off" id="text-1" rows="6"></textarea>
         <br>
     </div>
+
+    <h2>nbinomTest Results:</h2>
+    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br><br>
+
     <!--<br>
     <h2>Raw Data (Tabular):</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>

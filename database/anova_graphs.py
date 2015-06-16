@@ -254,9 +254,8 @@ def getCatUnivData(request):
                 pvalDF.sort(columns='p_value', inplace=True)
                 pvalDF.reset_index(drop=True, inplace=True)
                 pvalDF.index += 1
-                pvalDF['BH'] = pvalDF.index / m * FDR
                 pvalDF['p_adj'] = pvalDF['p_value'] * m / pvalDF.index
-                pvalDF['Sig'] = pvalDF.p_value <= pvalDF.BH
+                pvalDF['Sig'] = pvalDF.p_adj <= FDR
 
                 pvalDF[['mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj']] = pvalDF[['mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj']].astype(float)
                 D = pvalDF.to_string(columns=['sample1', 'sample2', 'mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj', 'Sig'])
@@ -549,7 +548,21 @@ def getQuantUnivData(request):
 
         stage = 'Step 1 of 4: Querying database...completed'
         stage = 'Step 2 of 4: Normalizing data...'
+
+        # Create combined metadata column
+        if len(fieldList) > 1:
+            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+        else:
+            metaDF['merge'] = metaDF[fieldList[0]]
+
+        #FIXME normalizeUniv doesn't work for quantitative only
+        # check fromat of taxaDF, etc.
         normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
+        normDF.sort('sampleid')
+
+        finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
+        finalDF[[fieldList[0], 'abund', 'rich', 'diversity']] = finalDF[[fieldList[0], 'abund', 'rich', 'diversity']].astype(float)
+        pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
 
         finalDict = {}
         if NormMeth == 1:
@@ -568,10 +581,6 @@ def getQuantUnivData(request):
 
         stage = 'Step 2 of 4: Normalizing data...completed'
         stage = 'Step 3 of 4: Performing linear regression...'
-
-        finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
-        finalDF[[fieldList[0], 'abund', 'rich', 'diversity']] = finalDF[[fieldList[0], 'abund', 'rich', 'diversity']].astype(float)
-        pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
 
         seriesList = []
         xAxisDict = {}
