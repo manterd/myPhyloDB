@@ -325,7 +325,7 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
 
     elif meth == 5:
         # Create CountDataSet for DESeq
-        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        '''r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         df3 = df2.drop(taxaID, axis=1)
         r.assign("countTable", df3)
         r.assign("metaDF", metaDF)
@@ -333,7 +333,23 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
         r("library(DESeq)")
         r("cds <- newCountDataSet(countTable, condition)")
         r("cds <- estimateSizeFactors(cds)")
-        pycds = r.get("sizeFactors(cds)")
+        pycds = r.get("sizeFactors(cds)")'''
+        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        #print r('library("BiocParallel")')
+        #numcore = mp.cpu_count()-1 or 1
+        #r.assign("numcore", numcore)
+        #print r('register(SnowParam(numcore))')
+        df3 = df2.drop(taxaID, axis=1)
+        r.assign("count", df3)
+        r.assign("metaDF", metaDF)
+        r("trt <- factor(metaDF$merge)")
+
+        print r("library(DESeq2)")
+        print r("colData <- data.frame(row.names=colnames(count), trt=trt)")
+        print r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design= ~ trt)")
+        print r("dds <- estimateSizeFactors(dds)")
+        pycds = r.get("sizeFactors(dds)")
+        colList = df3.columns.tolist()
 
         found = 0
         for thing in pycds:
@@ -360,7 +376,7 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
 
     elif meth == 6:
         # Create CountDataSet for DESeq
-        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        '''r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         df3 = df2.drop(taxaID, axis=1)
         r.assign("countTable", df3)
         r.assign("metaDF", metaDF)
@@ -368,7 +384,23 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
         r("library(DESeq)")
         r("cds <- newCountDataSet(countTable, condition)")
         r("cds <- estimateSizeFactors(cds)")
-        pycds = r.get("sizeFactors(cds)")
+        pycds = r.get("sizeFactors(cds)")'''
+        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        #print r('library("BiocParallel")')
+        #numcore = mp.cpu_count()-1 or 1
+        #r.assign("numcore", numcore)
+        #print r('register(SnowParam(numcore))')
+        df3 = df2.drop(taxaID, axis=1)
+        r.assign("count", df3)
+        r.assign("metaDF", metaDF)
+        r("trt <- factor(metaDF$merge)")
+
+        print r("library(DESeq2)")
+        print r("colData <- data.frame(row.names=colnames(count), trt=trt)")
+        print r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design= ~ trt)")
+        print r("dds <- estimateSizeFactors(dds)")
+        pycds = r.get("sizeFactors(dds)")
+        colList = df3.columns.tolist()
 
         found = 0
         for thing in pycds:
@@ -403,7 +435,7 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
 
 
 def weightedProb(x, cores, reads, mySet, df, meth, d):
-    high = len(mySet)
+    high = mySet.__len__()
     set = mySet[x:high:cores]
 
     for i in set:

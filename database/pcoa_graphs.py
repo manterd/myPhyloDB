@@ -218,25 +218,39 @@ def getCatPCoAData(request):
         base = 'Step 3 of 6: Calculating distance matrix...completed'
         base = 'Step 4 of 6: Principal coordinates analysis...'
 
-        r.assign("meta", metaDF)
-        r("trt <- factor(meta$merge)")
-        r("ord <- capscale(dist~trt)")
-        r("res <- summary(ord)")
-        r("id <- rownames(meta)")
-        r("pcoa <- data.frame(id, meta$sample_name, meta$merge, res$sites)")
+        print r.assign("meta", metaDF)
+        print("Duh")
+        print r("trt <- factor(meta$merge)")
+        print("Duh")
+        print r("ord <- capscale('dist'~trt)")  # TODO FIX, "cannot coerce type 'closure' to vector of type 'any'
+        print("Duh")
+        print r("res <- summary(ord)")
+        print("Duh")
+        print r("id <- rownames(meta)")
+        print("Duh")
+        print r("pcoa <- data.frame(id, meta$sample_name, meta$merge, res$sites)")
+        print("Duh")
         pcoaDF = r.get("pcoa")
+        print("Duh")
         pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
+        print("Duh")
         pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
+        print("Duh")
         pcoaDF.rename(columns={'meta.merge': 'Treatment'}, inplace=True)
+        print("Duh")
 
-        r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
-        r("eig <- data.frame(Stat, res$cont$importance)")
+        print r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
+        print("Duh")
+        print r("eig <- data.frame(Stat, res$cont$importance)")
+        print("Duh")
         eigDF = r.get("eig")
+        print("Duh")
 
         ### create trtList that merges all categorical values
         trtList = metaDF['merge'].values.tolist()
-        trtLength = len(set(trtList))
-
+        print("Duh")
+        trtLength = set(trtList).__len__()
+        print("Duh")
         bigf = 'nan'
         if trtLength > 1:
             if perms <= 2:

@@ -23,7 +23,7 @@
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
         var sig1_only = 0, sig2_only = 0;
-        var refresh;
+        var refresh=0;
 
         $(function () {
             $("#tree_metaCat").dynatree({
@@ -355,7 +355,7 @@
         }
 
         function stopTimer() {
-            clearInterval(refresh)
+            clearInterval(refresh);
         }
 
         function chooseDisplay() {
@@ -523,7 +523,7 @@
                     all: jsonDict
                 },
                 success: function(data) {
-                    stopTimer();
+                    stopTimer(refresh);
                     var xAxis = data['xAxis'];
                     var series = data['series'];
                     var yAxis = data['yAxis'];
@@ -550,6 +550,9 @@
                     $("#biome-text").empty().append(biome);
 
                     $("#run").css("background-color", "green");
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    alert("Error! "+textStatus+", "+errorThrown);
                 }
             });
         }
@@ -596,7 +599,7 @@
                     all: jsonDict
                 },
                 success: function(data) {
-                    stopTimer();
+                    stopTimer(refresh);
                     var xAxis = data['xAxis'];
                     var series = data['series'];
                     var yAxis = data['yAxis'];
@@ -797,7 +800,7 @@
                     <option value="2">Rarefaction (remove)</option>
                     <option value="3">Rarefaction (keep)</option>
                     <option value="4">Proportion</option>
-                    <option value="5">DESeq</option>
+                    <option value="5">DESeq2</option>
                 </select>
             </td>
             <td id="StatTest-text" style="width: 33%; text-align: right">

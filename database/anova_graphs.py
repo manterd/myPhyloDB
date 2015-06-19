@@ -92,33 +92,60 @@ def getCatUnivData(request):
         result = 'Data Normalization:\n'
 
         # Limit reads to max value
-        if NormReads > maxSize:
-            NormReads = medianSize
-            result += 'The desired sample size was too high and automatically reset to the median value...\n'
-        for sample in qs1:
-            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if NormMeth == 2:
-                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                    id = sample.sampleid
-                    newList.append(id)
-            elif NormMeth == 4 or NormMeth == 5:
-                if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                    id = sample.sampleid
-                    newList.append(id)
-            else:
-                if total['count__sum'] is not None:
-                    id = sample.sampleid
-                    newList.append(id)
-
-        # If user set reads too high sample list will be blank
-        if not newList:
-            NormReads = medianSize
-            result += 'The desired sample size was too high and automatically reset to the median value...\n'
+        if NormMeth == 2 or 3:
+            if NormReads > maxSize:
+                NormReads = medianSize
+                result += 'The desired sample size was too high and automatically reset to the median value...\n'
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                    id = sample.sampleid
-                    newList.append(id)
+                if NormMeth == 2:
+                    if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        id = sample.sampleid
+                        newList.append(id)
+                elif NormMeth == 4 or NormMeth == 5:
+                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                        id = sample.sampleid
+                        newList.append(id)
+                else:
+                    if total['count__sum'] is not None:
+                        id = sample.sampleid
+                        newList.append(id)
+
+            # If user set reads too high sample list will be blank
+            if not newList:
+                NormReads = medianSize
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        id = sample.sampleid
+                        newList.append(id)
+        if NormMeth == 4 or 5:
+            if size > maxSize:
+                size = medianSize
+                result += 'The desired sample size was too high and automatically reset to the median value...\n'
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if NormMeth == 2:
+                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                        id = sample.sampleid
+                        newList.append(id)
+                elif NormMeth == 4 or NormMeth == 5:
+                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                        id = sample.sampleid
+                        newList.append(id)
+                else:
+                    if total['count__sum'] is not None:
+                        id = sample.sampleid
+                        newList.append(id)
+
+            # If user set reads too high sample list will be blank
+            if not newList:
+                size = medianSize
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                        id = sample.sampleid
+                        newList.append(id)
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
 
         # Get dict of selected meta variables
@@ -188,8 +215,8 @@ def getCatUnivData(request):
             metaDF['merge'] = metaDF[fieldList[0]]
 
         normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
-
         normDF.sort('sampleid')
+
         finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
         finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
         pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
@@ -382,7 +409,7 @@ def getCatUnivData(request):
                     yTitle['text'] = 'Species Diversity'
                 yAxisDict['title'] = yTitle
 
-        finalDict['series'] = seriesList
+        finalDict['series'] = seriesList  # ME
         finalDict['xAxis'] = xAxisDict
         finalDict['yAxis'] = yAxisDict
         finalDict['text'] = result
@@ -444,7 +471,6 @@ def getCatUnivData(request):
 
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
         finalDict['biome'] = str(biome_json)
-
         res = simplejson.dumps(finalDict)
 
         try:
@@ -452,7 +478,10 @@ def getCatUnivData(request):
         except:
             print("Failed to reset stuff")
 
-        return HttpResponse(res, content_type='application/json')
+        try:
+            return HttpResponse(res, content_type='application/json')
+        except Exception:
+            print("failed to return, "+str(Exception))
 
 
 def getQuantUnivData(request):

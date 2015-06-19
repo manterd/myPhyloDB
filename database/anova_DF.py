@@ -284,24 +284,34 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
     elif meth == 5:
         countDF = df2[taxaID].reset_index(drop=True)
         r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        #print r('library("BiocParallel")')
+        #numcore = mp.cpu_count()-1 or 1
+        #r.assign("numcore", numcore)
+        #print r('register(SnowParam(numcore))')
         df3 = df2.drop(taxaID, axis=1)
-        r.assign("countTable", df3)
+        r.assign("count", df3)
         r.assign("metaDF", metaDF)
-        r("condition <- factor(metaDF$merge)")
-        r("library(DESeq)")
-        r("cds <- newCountDataSet(countTable, condition)")
-        r("cds <- estimateSizeFactors(cds)")
-        pycds = r.get("sizeFactors(cds)")
+        r("trt <- factor(metaDF$merge)")
+
+        print r("library(DESeq2)")
+        print r("colData <- data.frame(row.names=colnames(count), trt=trt)")
+        print r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design= ~ trt)")
+        print r("dds <- estimateSizeFactors(dds)")
+        pycds = r.get("sizeFactors(dds)")
         colList = df3.columns.tolist()
 
         found = False
-        for thing in pycds:
-            if str(thing) == "None":
+        if pycds is list:
+            for thing in pycds:
+                if str(thing) == "None":
+                    found = True
+        else:
+            if pycds is None:
                 found = True
 
         if not found:
             DESeq_error = 'no'
-            cdsDF = pd.DataFrame(r.get("counts(cds, normalize=TRUE)"), columns=[colList])
+            cdsDF = pd.DataFrame(r.get("counts(dds, normalize=TRUE)"), columns=[colList])
             countDF[colList] = cdsDF[colList]
         else:
             DESeq_error = 'yes'
@@ -440,7 +450,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
 
 
 def weightedProb(x, cores, reads, mySet, df, meth, d):
-    high = len(mySet)
+    high = mySet.__len__()
     set = mySet[x:high:cores]
 
     for i in set:
