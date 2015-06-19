@@ -62,6 +62,7 @@ def getCatUnivData(request):
         FDR = float(all["FdrVal"])
         StatTest = int(all["StatTest"])
         sig_only = int(all["sig_only"])
+        size = int(all["MinSize"])
 
         # Generate a list of sequence reads per sample
         countList = []
@@ -98,6 +99,10 @@ def getCatUnivData(request):
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if NormMeth == 2:
                 if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                    id = sample.sampleid
+                    newList.append(id)
+            elif NormMeth == 4 or NormMeth == 5:
+                if total['count__sum'] is not None and int(total['count__sum']) >= size:
                     id = sample.sampleid
                     newList.append(id)
             else:
@@ -464,9 +469,10 @@ def getQuantUnivData(request):
         all = simplejson.loads(allJson)
         selectAll = int(all["selectAll"])
         DepVar = int(all["DepVar"])
-        NormMeth = all["NormMeth"]
+        NormMeth = int(all["NormMeth"])
         NormVal = all["NormVal"]
         sig_only = int(all["sig_only"])
+        size = int(all["MinSize"])
 
         countList = []
         for sample in qs1:
@@ -502,6 +508,10 @@ def getQuantUnivData(request):
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if NormMeth == 2:
                 if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                    id = sample.sampleid
+                    newList.append(id)
+            elif NormMeth == 4 or NormMeth == 5:
+                if total['count__sum'] is not None and int(total['count__sum']) >= size:
                     id = sample.sampleid
                     newList.append(id)
             else:
@@ -576,8 +586,6 @@ def getQuantUnivData(request):
         else:
             metaDF['merge'] = metaDF[fieldList[0]]
 
-        #FIXME normalizeUniv doesn't work for quantitative only
-        # check fromat of taxaDF, etc.
         normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
         normDF.sort('sampleid')
 

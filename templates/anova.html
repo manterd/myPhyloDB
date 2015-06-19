@@ -151,6 +151,11 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#MinVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
             $("#FdrVal").change(function () {
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
@@ -394,18 +399,28 @@
                 $("#NormRow").hide();
                 $("#NormRow-off").show();
             }
+           if ((NormMeth == 4) || (NormMeth == 5)) {
+                $("#MinRow").show();
+                $("#NormRow-off").hide();
+            } else {
+                $("#MinRow").hide();
+                $("#NormRow-off").show();
+            }
         }
 
         function chooseData() {
 
-            if (document.getElementById("NormVal").value < 0)
-            {
-                alert("Sample size can only be zero, a positive integer, min, median, or max");
+            if (document.getElementById("NormVal").value < 0) {
+                alert("Sample size can only be a positive integer, 'min', 'median', or 'max'");
                 return;
             }
 
-            if (document.getElementById("FdrVal").value < 0 || document.getElementById("FdrVal").value > 1)
-            {
+            if (document.getElementById("MinVal").value < 0) {
+                alert("Sample size can only be a positive integer");
+                return;
+            }
+
+            if (document.getElementById("FdrVal").value < 0 || document.getElementById("FdrVal").value > 1) {
                 alert("False Discovery Rate must be between 0 and 1");
                 return;
             }
@@ -493,13 +508,14 @@
             myDict['taxa'] = taxa;
             myDict['DepVar'] = DepVar;
             myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['MinSize'] = document.getElementById("MinVal").value;
             myDict['sig_only'] = sig1_only;
             myDict['selectAll'] = selectAll;
-            if ((NormMeth == 2) || (NormMeth == 3)){
-                myDict['NormVal'] = document.getElementById("NormVal").value;
-            } else {
-                myDict['NormVal'] = "none"
-            }
+            //if ((NormMeth == 2) || (NormMeth == 3)){
+            //    myDict['NormVal'] = document.getElementById("NormVal").value;
+            //} else {
+            //    myDict['NormVal'] = "none"
+            //}
             myDict['FdrVal'] = document.getElementById("FdrVal").value;
             myDict['NormMeth'] = NormMeth;
             myDict['StatTest'] = StatTest;
@@ -573,11 +589,13 @@
             myDict['DepVar'] = DepVar;
             myDict['sig_only'] = sig2_only;
             myDict['selectAll'] = selectAll;
-            if ((NormMeth == 2) || (NormMeth == 3)){
-                myDict['NormVal'] = document.getElementById("NormVal").value;
-            } else {
-                myDict['NormVal'] = "none"
-            }
+            myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['MinSize'] = document.getElementById("MinVal").value;
+            //if ((NormMeth == 2) || (NormMeth == 3)){
+            //    myDict['NormVal'] = document.getElementById("NormVal").value;
+            //} else {
+            //    myDict['NormVal'] = "none"
+            //}
             myDict['NormMeth'] = NormMeth;
             var jsonDict = JSON.stringify(myDict);
 
@@ -807,10 +825,10 @@
                 Sample size:
                 <input style="background-color: white" type="text" id="NormVal" value="min"/>
             </td>
-            <!---<td id="NormRow" style="text-align: center">
+            <td id="MinRow" style="display: none; text-align: center">
                 Minimum sample size:
-                <input type="text" id="NormVal" value="1000"/>
-            </td>-->
+                <input type="text" id="MinVal" value="1000"/>
+            </td>
             <td id="NormRow-off"></td>
             <td id="FdrRow" style="text-align: right; display: none">
                 False Discovery Rate:

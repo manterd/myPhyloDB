@@ -248,6 +248,12 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#MinVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+
             $("#test").change(function () {
                 test = $(this).val();
                 chooseDisplay();
@@ -351,12 +357,18 @@
                 $("#NormRow").hide();
                 $("#NormRow-off").show();
             }
+           if ((NormMeth == 4) || (NormMeth == 5) || (NormMeth == 6)) {
+                $("#MinRow").show();
+                $("#NormRow-off").hide();
+            } else {
+                $("#MinRow").hide();
+                $("#NormRow-off").show();
+            }
         }
 
         function chooseData() {
 
-            if (document.getElementById("alphaVal").value < 0 || document.getElementById("alphaVal").value > 10)
-            {
+            if (document.getElementById("alphaVal").value < 0 || document.getElementById("alphaVal").value > 10){
                 alert("Alpha must be between 0 and 10");
                 return;
             }
@@ -428,11 +440,12 @@
             myDict['alpha'] = document.getElementById("alphaVal").value;
             myDict['perms'] = document.getElementById("perms").value;
             myDict['NormMeth'] = NormMeth;
-            if ((NormMeth == 2) || (NormMeth == 3)){
-                myDict['NormVal'] = document.getElementById("NormVal").value;
-            } else {
-                myDict['NormVal'] = "none"
-            }
+            myDict['MinSize'] = document.getElementById("MinVal").value;
+            //if ((NormMeth == 2) || (NormMeth == 3)){
+            //    myDict['NormVal'] = document.getElementById("NormVal").value;
+            //} else {
+            //    myDict['NormVal'] = "none"
+            //}
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -502,11 +515,13 @@
             myDict['remove'] = remove;
             myDict['alpha'] = document.getElementById("alphaVal").value;
             myDict['NormMeth'] = NormMeth;
-            if ((NormMeth == 2) || (NormMeth == 3)){
-                myDict['NormVal'] = document.getElementById("NormVal").value;
-            } else {
-                myDict['NormVal'] = "none"
-            }
+            myDict['MinSize'] = document.getElementById("MinVal").value;
+            myDict['NormVal'] = document.getElementById("NormVal").value;
+
+            //if ((NormMeth == 2) || (NormMeth == 3)){
+            //} else {
+            //    myDict['NormVal'] = "none"
+            //}
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -770,6 +785,10 @@
             <td id="NormRow" style="display: none; text-align: center">
                 Sample size:
                 <input type="text" id="NormVal" value="min"/>
+            </td>
+            <td id="MinRow" style="display: none; text-align: center">
+                Minimum sample size:
+                <input type="text" id="MinVal" value="1000"/>
             </td>
             <td id="NormRow-off"></td>
             <td></td>

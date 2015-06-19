@@ -45,7 +45,7 @@ def getProjectTreeChildren(request):
         for sample in samples:
             reads = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             myNode = {
-                'title': sample.sample_name + ' (' + str(reads['count__sum']) + ')',
+                'title': 'Sample: ' + sample.sample_name + '; Reads: ' + str(reads['count__sum']),
                 'tooltip': sample.title,
                 'id': sample.sampleid,
                 'isFolder': False
@@ -146,8 +146,9 @@ def getSampleCatTreeChildren(request):
                 args_list.append(Q(**{field: values[j]}))
                 items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
+                    reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                     myNode2 = {
-                        'title': 'Sample: ' + item.sample_name,
+                        'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                         'id': item.sampleid,
                         'tooltip': 'Project: ' + item.projectid.project_name,
                         'hideCheckbox': True,
@@ -173,8 +174,9 @@ def getSampleCatTreeChildren(request):
                 args_list.append(Q(**{table_field: values[j]}))
                 items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
+                    reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                     myNode2 = {
-                        'title': 'Sample: ' + item.sample_name,
+                        'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                         'id': item.sampleid,
                         'tooltip': 'Project: ' + item.projectid.project_name,
                         'hideCheckbox': True,
@@ -200,8 +202,9 @@ def getSampleCatTreeChildren(request):
                 args_list.append(Q(**{table_field: values[j]}))
                 items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
+                    reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                     myNode2 = {
-                        'title': 'Sample: ' + item.sample_name,
+                        'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                         'id': item.sampleid,
                         'tooltip': 'Project: ' + item.projectid.project_name,
                         'hideCheckbox': True,
@@ -227,8 +230,9 @@ def getSampleCatTreeChildren(request):
                 args_list.append(Q(**{table_field: values[j]}))
                 items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
+                    reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                     myNode2 = {
-                        'title': 'Sample: ' + item.sample_name,
+                        'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                         'id': item.sampleid,
                         'tooltip': 'Project: ' + item.projectid.project_name,
                         'hideCheckbox': True,
@@ -255,8 +259,9 @@ def getSampleCatTreeChildren(request):
                 args_list.append(Q(**{table_field: values[j]}))
                 items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
                 for item in items:
+                    reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                     myNode2 = {
-                        'title': 'Sample: ' + item.sample_name,
+                        'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                         'id': item.sampleid,
                         'tooltip': 'Project: ' + item.projectid.project_name,
                         'hideCheckbox': True,
@@ -367,8 +372,9 @@ def getSampleQuantTreeChildren(request):
             exclude_list.append(Q(**{field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
+                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                 myNode1 = {
-                    'title': 'Sample: ' + item.sample_name,
+                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                     'id': item.sampleid,
                     'tooltip': 'Project: ' + item.projectid.project_name,
                     'hideCheckbox': True,
@@ -382,8 +388,9 @@ def getSampleQuantTreeChildren(request):
             exclude_list.append(Q(**{table_field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
+                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                 myNode1 = {
-                    'title': 'Sample: ' + item.sample_name,
+                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                     'id': item.sampleid,
                     'tooltip': 'Project: ' + item.projectid.project_name,
                     'hideCheckbox': True,
@@ -397,8 +404,9 @@ def getSampleQuantTreeChildren(request):
             exclude_list.append(Q(**{table_field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
+                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                 myNode1 = {
-                    'title': 'Sample: ' + item.sample_name,
+                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                     'id': item.sampleid,
                     'tooltip': 'Project: ' + item.projectid.project_name,
                     'hideCheckbox': True,
@@ -412,8 +420,9 @@ def getSampleQuantTreeChildren(request):
             exclude_list.append(Q(**{table_field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
+                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                 myNode1 = {
-                    'title': 'Sample: ' + item.sample_name,
+                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                     'id': item.sampleid,
                     'tooltip': 'Project: ' + item.projectid.project_name,
                     'hideCheckbox': True,
@@ -427,8 +436,9 @@ def getSampleQuantTreeChildren(request):
             exclude_list.append(Q(**{table_field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
+                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                 myNode1 = {
-                    'title': 'Sample: ' + item.sample_name,
+                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                     'id': item.sampleid,
                     'tooltip': 'Project: ' + item.projectid.project_name,
                     'hideCheckbox': True,
@@ -442,8 +452,9 @@ def getSampleQuantTreeChildren(request):
             exclude_list.append(Q(**{table_field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
+                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                 myNode1 = {
-                    'title': 'Sample: ' + item.sample_name,
+                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                     'id': item.sampleid,
                     'tooltip': 'Project: ' + item.projectid.project_name,
                     'hideCheckbox': True,
@@ -457,8 +468,9 @@ def getSampleQuantTreeChildren(request):
             exclude_list.append(Q(**{table_field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
             for item in items:
+                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                 myNode1 = {
-                    'title': 'Sample: ' + item.sample_name,
+                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                     'id': item.sampleid,
                     'tooltip': 'Project: ' + item.projectid.project_name,
                     'hideCheckbox': True,

@@ -75,7 +75,7 @@ def getDiffAbund(request):
         result = 'Data Normalization:\n'
         for sample in qs1:
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if total['count__sum'] is not None:
+            if total['count__sum'] is not None and total['count__sum'] >= size:
                 id = sample.sampleid
                 newList.append(id)
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
@@ -117,14 +117,14 @@ def getDiffAbund(request):
         r.assign("count", taxaDF)
 
         #Create filter for samples below threshold
-        r.assign("size", size)
-        r("total <- colSums(count)")
-        r("col <- (total > size)")
+        #r.assign("size", size)
+        #r("total <- colSums(count)")
+        #r("col <- (total > size)")
 
         DESeq_error = ''
         if NormMeth == 1:
-            r("countFilt <- count[,col]")
-            r("trtFilt <- trt[col]")
+            r("countFilt <- count")
+            r("trtFilt <- trt")
 
             r("library(DESeq2)")
             r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
@@ -148,8 +148,8 @@ def getDiffAbund(request):
             r("rs = rowSums(count)")
             r.assign("theta", theta)
             r("row <- (rs > quantile(rs, probs=theta))")
-            r("countFilt <- count[row,col]")
-            r("trtFilt <- trt[col]")
+            r("countFilt <- count[row,]")
+            r("trtFilt <- trt")
 
             r("library(DESeq2)")
             r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
@@ -237,7 +237,7 @@ def getDiffAbund(request):
 
         grouped = finalDF.groupby('Comparison')
 
-        listOfShapes = ['square', 'circle', 'triangle', 'diamond', 'triangle-down']
+        listOfShapes = ['square', 'circle', 'triangle', 'triangle-down', 'diamond',]
         shapeIterator = 0
 
         for name, group in grouped:

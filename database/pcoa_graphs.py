@@ -57,6 +57,7 @@ def getCatPCoAData(request):
         perms = int(all["perms"])
         NormMeth = int(all["NormMeth"])
         NormVal = all["NormVal"]
+        size = int(all["MinSize"])
 
         countList = []
         for sample in qs1:
@@ -92,6 +93,10 @@ def getCatPCoAData(request):
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if NormMeth == 2:
                 if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                    id = sample.sampleid
+                    newList.append(id)
+            elif NormMeth == 4 or NormMeth == 5 or NormMeth == 6:
+                if total['count__sum'] is not None and int(total['count__sum']) >= size:
                     id = sample.sampleid
                     newList.append(id)
             else:
@@ -389,6 +394,7 @@ def getQuantPCoAData(request):
         alpha = float(all["alpha"])
         NormMeth = int(all["NormMeth"])
         NormVal = all["NormVal"]
+        size = int(all["MinSize"])
 
         countList = []
         for sample in qs1:
@@ -423,6 +429,10 @@ def getQuantPCoAData(request):
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if NormMeth == 2:
                 if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                    id = sample.sampleid
+                    newList.append(id)
+            elif NormMeth == 4 or NormMeth == 5 or NormMeth == 6:
+                if total['count__sum'] is not None and int(total['count__sum']) >= size:
                     id = sample.sampleid
                     newList.append(id)
             else:
