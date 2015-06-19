@@ -28,6 +28,7 @@ Source: "..\..\..\dist\myPhyloDB\sample_files\*"; DestDir: "{app}\sample_files";
 Source: "..\..\..\dist\myPhyloDB\sphinx\*"; DestDir: "{app}\sphinx"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\zmq\*"; DestDir: "{app}\zmq"; Flags: recursesubdirs
+Source: "..\..\..\dist\myPhyloDB\R-Portable\*"; DestDir: "{app}\R-Portable"; Flags: recursesubdirs
 
 [Icons]
 Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\media\images\database_2_48.ico"

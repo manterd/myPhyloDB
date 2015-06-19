@@ -399,7 +399,7 @@
                 $("#NormRow").hide();
                 $("#NormRow-off").show();
             }
-           if ((NormMeth == 4) || (NormMeth == 5)) {
+           if ((NormMeth == 4) || (NormMeth == 5) || (NormMeth == 6)) {
                 $("#MinRow").show();
                 $("#NormRow-off").hide();
             } else {
@@ -424,7 +424,6 @@
                 alert("False Discovery Rate must be between 0 and 1");
                 return;
             }
-
 
             if ((nodesCat != "") && (((nodesTaxa != "") || (selectAll != 0))) && (button1 == 1)) {
                 $("#run").css("background-color", "yellow");
@@ -511,11 +510,6 @@
             myDict['MinSize'] = document.getElementById("MinVal").value;
             myDict['sig_only'] = sig1_only;
             myDict['selectAll'] = selectAll;
-            //if ((NormMeth == 2) || (NormMeth == 3)){
-            //    myDict['NormVal'] = document.getElementById("NormVal").value;
-            //} else {
-            //    myDict['NormVal'] = "none"
-            //}
             myDict['FdrVal'] = document.getElementById("FdrVal").value;
             myDict['NormMeth'] = NormMeth;
             myDict['StatTest'] = StatTest;
@@ -591,11 +585,6 @@
             myDict['selectAll'] = selectAll;
             myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['MinSize'] = document.getElementById("MinVal").value;
-            //if ((NormMeth == 2) || (NormMeth == 3)){
-            //    myDict['NormVal'] = document.getElementById("NormVal").value;
-            //} else {
-            //    myDict['NormVal'] = "none"
-            //}
             myDict['NormMeth'] = NormMeth;
             var jsonDict = JSON.stringify(myDict);
 
@@ -822,7 +811,7 @@
         <tr>
             <td></td>
             <td id="NormRow" style="display: none; text-align: center">
-                Sample size:
+                Subsample size:
                 <input style="background-color: white" type="text" id="NormVal" value="min"/>
             </td>
             <td id="MinRow" style="display: none; text-align: center">
