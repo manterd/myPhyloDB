@@ -29,7 +29,7 @@ def statusPCoA(request):
         time2 = time.time()
         TimeDiff = time2 - time1
         myDict = {}
-        stage = str(base) + '%.1f seconds have elapsed' % TimeDiff
+        stage = str(base) + '<br>Analysis has been running for %.1f seconds' % TimeDiff
         myDict['stage'] = stage
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
@@ -38,7 +38,7 @@ def statusPCoA(request):
 def getCatPCoAData(request):
     global base, time1, TimeDiff
     time1 = time.time()
-    base = 'Step 1 of 6: Querying database...'
+    base = 'Step 1 of 8: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -85,35 +85,64 @@ def getCatPCoAData(request):
         result = 'Data Normalization:\n'
 
         # Limit reads to max value
-        if NormReads > maxSize:
-            NormReads = medianSize
-            result += 'The desired sample size was too high and automatically reset to the median value...\n'
-
-        for sample in qs1:
-            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if NormMeth == 2:
-                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                    id = sample.sampleid
-                    newList.append(id)
-            elif NormMeth == 4 or NormMeth == 5 or NormMeth == 6:
-                if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                    id = sample.sampleid
-                    newList.append(id)
-            else:
+        if NormMeth == 1:
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if total['count__sum'] is not None:
                     id = sample.sampleid
                     newList.append(id)
 
-        # If user set reads to high sample list will be blank
-        if not newList:
-            NormReads = medianSize
-            result += 'The desired sample size was too high and automatically reset to the median value...\n'
+        elif NormMeth == 2 or NormMeth == 3:
+            if NormReads > maxSize:
+                NormReads = medianSize
+                result += 'The subsample size was too high and automatically reset to the median value...\n'
+
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                if NormMeth == 2:
+                    if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        id = sample.sampleid
+                        newList.append(id)
+                else:
+                    if total['count__sum'] is not None:
+                        id = sample.sampleid
+                        newList.append(id)
+
+            # If user set reads too high sample list will be blank
+            if not newList:
+                NormReads = medianSize
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        id = sample.sampleid
+                        newList.append(id)
+
+        elif NormMeth == 4 or NormMeth == 5 or NormMeth == 6:
+            if size > maxSize:
+                size = medianSize
+                result += 'The minimum sample size was too high and automatically reset to the median value...\n'
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if total['count__sum'] is not None and int(total['count__sum']) >= size:
                     id = sample.sampleid
                     newList.append(id)
+
+            # If user set reads too high sample list will be blank
+            if not newList:
+                size = medianSize
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                        id = sample.sampleid
+                        newList.append(id)
+
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
+        numberRem = len(countList) - len(newList)
+        if numberRem > 0:
+            result += str(numberRem) + ' samples did not met the desired normalization criteria; and were not included in the analysis...\n'
+            result += str(len(newList)) + ' samples met the desired normalization criteria; and were included in the analysis...\n'
+        else:
+            result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
         metaString = all["meta"]
         metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
@@ -131,8 +160,8 @@ def getCatPCoAData(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        base = 'Step 1 of 6: Querying database...completed'
-        base = 'Step 2 of 6: Normalizing data...'
+        base = 'Step 1 of 8: Querying database...done!'
+        base = 'Step 2 of 8: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -154,21 +183,21 @@ def getCatPCoAData(request):
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq...\n'
+            result += 'Data were normalized by DESeq2...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
-            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'DESeq2 cannot run estimateSizeFactors...\n'
             result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         elif NormMeth == 6 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq with variance stabilization...\n'
+            result += 'Data were normalized by DESeq2 with variance stabilization...\n'
         elif NormMeth == 6 and DESeq_error == 'yes':
-            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'DESeq2 cannot run estimateSizeFactors...\n'
             result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 6: Normalizing data...completed'
-        base = 'Step 3 of 6: Calculating distance matrix...'
+        base = 'Step 2 of 8: Normalizing data...done!'
+        base = 'Step 3 of 8: Calculating distance matrix...'
 
         metaDF.set_index('sampleid', inplace=True)
         metaDF.sort_index(inplace=True)
@@ -215,50 +244,35 @@ def getCatPCoAData(request):
         rowList = metaDF['sample_name'].tolist()
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
-        base = 'Step 3 of 6: Calculating distance matrix...completed'
-        base = 'Step 4 of 6: Principal coordinates analysis...'
+        base = 'Step 3 of 8: Calculating distance matrix...done!'
+        base = 'Step 4 of 8: Principal coordinates analysis...'
 
-        print r.assign("meta", metaDF)
-        print("Duh")
-        print r("trt <- factor(meta$merge)")
-        print("Duh")
-        print r("ord <- capscale('dist'~trt)")  # TODO FIX, "cannot coerce type 'closure' to vector of type 'any'
-        print("Duh")
-        print r("res <- summary(ord)")
-        print("Duh")
-        print r("id <- rownames(meta)")
-        print("Duh")
-        print r("pcoa <- data.frame(id, meta$sample_name, meta$merge, res$sites)")
-        print("Duh")
+        r.assign("meta", metaDF)
+        r("trt <- factor(meta$merge)")
+        r("ord <- capscale(mat~trt)")
+        r("res <- summary(ord)")
+        r("id <- rownames(meta)")
+        r("pcoa <- data.frame(id, meta$sample_name, meta$merge, res$sites)")
         pcoaDF = r.get("pcoa")
-        print("Duh")
         pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
-        print("Duh")
         pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
-        print("Duh")
         pcoaDF.rename(columns={'meta.merge': 'Treatment'}, inplace=True)
-        print("Duh")
 
-        print r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
-        print("Duh")
-        print r("eig <- data.frame(Stat, res$cont$importance)")
-        print("Duh")
+        r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
+        r("eig <- data.frame(Stat, res$cont$importance)")
         eigDF = r.get("eig")
-        print("Duh")
 
         ### create trtList that merges all categorical values
         trtList = metaDF['merge'].values.tolist()
-        print("Duh")
         trtLength = set(trtList).__len__()
-        print("Duh")
         bigf = 'nan'
         if trtLength > 1:
             if perms <= 2:
                 bigf = 'Not enough permutations for the test to run...'
             else:
                 if test == 1:
-                    base = 'Step 4 of 6: Principal coordinates analysis...completed'
-                    base = 'Step 5 of 6: Performing perMANOVA...'
+                    base = 'Step 4 of 8: Principal coordinates analysis...done!'
+                    base = 'Step 5 of 8: Performing perMANOVA...'
 
                     r("trtList <- factor(meta$merge)")
                     r.assign("perms", perms)
@@ -269,11 +283,11 @@ def getCatPCoAData(request):
                     for part in tempStuff:
                         if part != tempStuff[0]:
                             bigf += part + '\n'
+                    base = 'Step 5 of 8: Performing perMANOVA...done!'
 
-                    base = 'Step 5 of 6: Performing perMANOVA...completed'
                 elif test == 2:
-                    base = 'Step 4 of 6: Principal coordinates analysis...complete'
-                    base = 'Step 5 of 6: Performing BetaDisper...'
+                    base = 'Step 4 of 8: Principal coordinates analysis...done!'
+                    base = 'Step 5 of 8: Performing BetaDisper...'
 
                     r("trtList <- factor(meta$merge)")
                     r.assign("perms", perms)
@@ -285,10 +299,10 @@ def getCatPCoAData(request):
                     for part in tempStuff:
                         if part != tempStuff[0]:
                             bigf += part + '\n'
+                    base = 'Step 5 of 8: Performing BetaDisper...done!'
 
-                    base = 'Step 5 of 6: Performing BetaDisper... complete'
+        base = 'Step 6 of 8: Formatting graph data for display...'
 
-        base = 'Step 6 of 6: Preparing graph data...'
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
@@ -374,16 +388,22 @@ def getCatPCoAData(request):
         result += '\n\n\n\n'
         finalDict['text'] = result
 
+        base = 'Step 6 of 8: Formatting graph data for display...done!'
+        base = 'Step 7 of 8: Formatting PCoA table...'
+
         pcoaDF.reset_index(drop=True, inplace=True)
         res_table = pcoaDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
 
+        base = 'Step 7 of 8: Formatting PCoA table...done!'
+        base = 'Step 8 of 8: Formatting distance score table...'
+
         dist_table = distDF.to_html(classes="table display")
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
 
-        base = 'Step 6 of 6: Preparing graph data...completed'
+        base = 'Step 8 of 8: Formatting distance score table...done!'
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')
@@ -392,7 +412,7 @@ def getCatPCoAData(request):
 def getQuantPCoAData(request):
     global base, time1, TimeDiff
     time1 = time.time()
-    base = 'Step 1 of 6: Querying database...'
+    base = 'Step 1 of 8: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -415,6 +435,7 @@ def getQuantPCoAData(request):
             total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             if total['count__sum'] is not None:
                 countList.append(total['count__sum'])
+
         minSize = int(min(countList))
         medianSize = int(np.median(np.array(countList)))
         maxSize = int(max(countList))
@@ -435,37 +456,65 @@ def getQuantPCoAData(request):
         result = 'Data Normalization:\n'
 
         # Limit reads to max value
-        if NormReads > maxSize:
-            NormReads = medianSize
-            result += 'The desired sample size was too high and automatically reset to the median value...\n'
-
-        for sample in qs1:
-            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if NormMeth == 2:
-                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                    id = sample.sampleid
-                    newList.append(id)
-            elif NormMeth == 4 or NormMeth == 5 or NormMeth == 6:
-                if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                    id = sample.sampleid
-                    newList.append(id)
-            else:
+        if NormMeth == 1:
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if total['count__sum'] is not None:
                     id = sample.sampleid
                     newList.append(id)
 
-        # If user set reads to high sample list will be blank
-        if not newList:
-            NormReads = medianSize
-            result += 'The desired sample size was too high and automatically reset to the median value...\n'
+
+        elif NormMeth == 2 or NormMeth == 3:
+            if NormReads > maxSize:
+                NormReads = medianSize
+                result += 'The subsample size was too high and automatically reset to the median value...\n'
 
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                if NormMeth == 2:
+                    if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        id = sample.sampleid
+                        newList.append(id)
+                else:
+                    if total['count__sum'] is not None:
+                        id = sample.sampleid
+                        newList.append(id)
+
+            # If user set reads too high sample list will be blank
+            if not newList:
+                NormReads = medianSize
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        id = sample.sampleid
+                        newList.append(id)
+
+        elif NormMeth == 4 or NormMeth == 5 or NormMeth == 6:
+            if size > maxSize:
+                size = medianSize
+                result += 'The minimum size was too high and automatically reset to the median value...\n'
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if total['count__sum'] is not None and int(total['count__sum']) >= size:
                     id = sample.sampleid
                     newList.append(id)
 
+            # If user set reads too high sample list will be blank
+            if not newList:
+                size = medianSize
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                        id = sample.sampleid
+                        newList.append(id)
+
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
+        numberRem = len(countList) - len(newList)
+        if numberRem > 0:
+            result += str(numberRem) + ' samples did not met the desired normalization criteria; and were not included in the analysis...\n'
+            result += str(len(newList)) + ' samples met the desired normalization criteria; and were included in the analysis...\n'
+        else:
+            result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
         metaString = all["meta"]
         metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
@@ -483,8 +532,8 @@ def getQuantPCoAData(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        base = 'Step 1 of 6: Querying database...completed'
-        base = 'Step 2 of 6: Normalizing data...'
+        base = 'Step 1 of 8: Querying database...done!'
+        base = 'Step 2 of 8: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -505,23 +554,23 @@ def getQuantPCoAData(request):
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq...\n'
+            result += 'Data were normalized by DESeq2...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
-            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'DESeq2 cannot run estimateSizeFactors...\n'
             result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         elif NormMeth == 6 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq with variance stabilization...\n'
+            result += 'Data were normalized by DESeq2 with variance stabilization...\n'
         elif NormMeth == 6 and DESeq_error == 'yes':
-            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'DESeq2 cannot run estimateSizeFactors...\n'
             result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 6: Normalizing data...completed'
-        base = 'Step 3 of 6: Calculating distance matrix...'
+        base = 'Step 2 of 8: Normalizing data...done!'
+        base = 'Step 3 of 8: Calculating distance matrix...'
 
-        metaDF.set_index('sampleid', inplace=True)  # TODO fix crash here
+        metaDF.set_index('sampleid', inplace=True)
         metaDF.sort_index(inplace=True)
 
         r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -566,8 +615,8 @@ def getQuantPCoAData(request):
         rowList = metaDF['sample_name'].tolist()
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
-        base = 'Step 3 of 6: Calculating distance matrix...completed'
-        base = 'Step 4 of 6: Principal coordinates analysis...'
+        base = 'Step 3 of 8: Calculating distance matrix...done!'
+        base = 'Step 4 of 8: Principal coordinates analysis...'
 
         r.assign("meta", metaDF)
         r("trt <- factor(meta$merge)")
@@ -584,8 +633,9 @@ def getQuantPCoAData(request):
         r("eig <- data.frame(Stat, res$cont$importance)")
         eigDF = r.get("eig")
 
-        base = 'Step 4 of 6: Principal coordinates analysis...completed'
-        base = 'Step 5 of 6: Performing linear regression...'
+        base = 'Step 4 of 8: Principal coordinates analysis...done!'
+        base = 'Step 5 of 8: Performing linear regression...'
+
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
@@ -617,8 +667,8 @@ def getQuantPCoAData(request):
             regrList.append([min(x), min_y])
             regrList.append([max(x), max_y])
 
-            base = 'Step 5 of 6: Performing linear regression...completed'
-            base = 'Step 6 of 6: Preparing graph data...'
+            base = 'Step 5 of 8: Performing linear regression...done!'
+            base = 'Step 6 of 8: Formatting graph data for display...'
 
             regrDict = {}
             regrDict['type'] = 'line'
@@ -694,16 +744,22 @@ def getQuantPCoAData(request):
 
         finalDict['text'] = result
 
+        base = 'Step 6 of 8: Formatting graph data for display...done!'
+        base = 'Step 7 of 8: Formatting PCoA table...done!'
+
         pcoaDF.reset_index(drop=True, inplace=True)
         res_table = pcoaDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
 
+        base = 'Step 7 of 8: Formatting PCoA table...done!'
+        base = 'Step 8 of 8: Formatting distance score table...'
+
         dist_table = distDF.to_html(classes="table display")
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
 
-        base = 'Step 6 of 6: Preparing graph data...completed'
+        base = 'Step 8 of 8: Formatting distance score table...done!'
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')

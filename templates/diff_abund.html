@@ -232,55 +232,62 @@
                     array1.push(next1);
                 }
             }
-            var meta = "{" + array1.join(",") + "}";
+            if (array1.length != 1) {
+                var meta = "{" + array1.join(",") + "}";
 
-            var myDict = {};
-            myDict['meta'] = meta;
-            myDict['sig_only'] = sig1_only;
-            myDict['taxaLevel'] = taxaLevel;
-            myDict['NormVal'] = document.getElementById("NormVal").value;
-            myDict['Theta'] = document.getElementById("Theta").value;
-            myDict['NormMeth'] = NormMeth;
-            myDict['StatTest'] = StatTest;
-            myDict['FdrVal'] = document.getElementById("FdrVal").value;
-            var jsonDict = JSON.stringify(myDict);
+                var myDict = {};
+                myDict['meta'] = meta;
+                myDict['sig_only'] = sig1_only;
+                myDict['taxaLevel'] = taxaLevel;
+                myDict['NormVal'] = document.getElementById("NormVal").value;
+                myDict['Theta'] = document.getElementById("Theta").value;
+                myDict['NormMeth'] = NormMeth;
+                myDict['StatTest'] = StatTest;
+                myDict['FdrVal'] = document.getElementById("FdrVal").value;
+                var jsonDict = JSON.stringify(myDict);
 
-            $.ajax({
-                url: '/getDiffAbund/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: jsonDict
-                },
-                success: function(data) {
-                    stopTimer();
-                    var xAxis = data['xAxis'];
-                    var series = data['series'];
-                    var yAxis = data['yAxis'];
-                    var empty = data['empty'];
-                    if (empty == 0) {
-                        alert('No significant tests!');
+                $.ajax({
+                    url: '/getDiffAbund/',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        all: jsonDict
+                    },
+                    success: function(data) {
+                        stopTimer();
+                        var xAxis = data['xAxis'];
+                        var series = data['series'];
+                        var yAxis = data['yAxis'];
+                        var empty = data['empty'];
+                        if (empty == 0) {
+                            alert('No significant tests!');
+                        }
+
+                        var text = data['text'];
+                        $('#text-1').val(text);
+
+                        var res_table = data['res_table'];
+                        $('#res_table').empty().append(res_table).find('.table').DataTable({
+                            "jQueryUI": true,
+                            "sDom": 'T<"clear">lfrtip',
+                            "oTableTools": {
+                                "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                            },
+                            "bSort": true,
+                            "scrollX": true
+                        }).draw();
+
+                        scatter(xAxis, yAxis, series);
+
+                        $("#run").css("background-color", "green");
                     }
-
-                    var text = data['text'];
-                    $('#text-1').val(text);
-
-                    var res_table = data['res_table'];
-                    $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        "jQueryUI": true,
-                        "sDom": 'T<"clear">lfrtip',
-                        "oTableTools": {
-                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
-                        },
-                        "bSort": true,
-                        "scrollX": true
-                    }).draw();
-
-                    scatter(xAxis, yAxis, series);
-
-                    $("#run").css("background-color", "green");
-                }
-            });
+                });
+            } else {
+                stopTimer();
+                $("#run").css("background-color", "lightgray");
+                $("#container-1").empty().append('Analysis has been cancelled!');
+                alert("Selected meta data only has one level.\nPlease select a different variable.");
+            }
         }
 
         function scatter(xAxis, yAxis, series) {
@@ -341,7 +348,6 @@
             <tr>
                 Select all taxa:
                 <select id="taxaLevel">
-                    <option value="0">Kingdoms</option>
                     <option value="1">Phyla</option>
                     <option value="2">Classes</option>
                     <option value="3">Orders</option>
@@ -353,26 +359,6 @@
         </table>
     </div>
     <br><br>
-
-    <!--<div style="float: left; padding-left: 10px;" id="sig_text-1">
-        Display only significantly different taxa (p <= 0.05):
-        <input type="checkbox" id="sig_box-1">
-    </div>
-
-    <div  style="float: right; padding-right: 10px;">Select chart theme:
-        <select id="theme">
-            <option value="1" selected="selected">default</option>
-            <option value="2">dark-blue</option>
-            <option value="3">dark-green</option>
-            <option value="4">dark-unica</option>
-            <option value="5">gray</option>
-            <option value="6">grid</option>
-            <option value="7">grid-light</option>
-            <option value="8">sand-signika</option>
-            <option value="9">skies</option>
-        </select>
-        &nbsp&nbsp
-    </div>-->
 
     <table width="950px" border="2">
         <tr>

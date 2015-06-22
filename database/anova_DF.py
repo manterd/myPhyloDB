@@ -257,7 +257,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
     countDF = pd.DataFrame()
-    DESeq_error = ''
+    DESeq_error = 'no'
     if meth == 1 or meth == 4:
         countDF = df2.reset_index(drop=True)
 
@@ -284,19 +284,15 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
     elif meth == 5:
         countDF = df2[taxaID].reset_index(drop=True)
         r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
-        #print r('library("BiocParallel")')
-        #numcore = mp.cpu_count()-1 or 1
-        #r.assign("numcore", numcore)
-        #print r('register(SnowParam(numcore))')
         df3 = df2.drop(taxaID, axis=1)
         r.assign("count", df3)
         r.assign("metaDF", metaDF)
         r("trt <- factor(metaDF$merge)")
 
-        print r("library(DESeq2)")
-        print r("colData <- data.frame(row.names=colnames(count), trt=trt)")
-        print r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design= ~ trt)")
-        print r("dds <- estimateSizeFactors(dds)")
+        r("library(DESeq2)")
+        r("colData <- data.frame(row.names=colnames(count), trt=trt)")
+        r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design= ~ trt)")
+        r("dds <- estimateSizeFactors(dds)")
         pycds = r.get("sizeFactors(dds)")
         colList = df3.columns.tolist()
 

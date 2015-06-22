@@ -24,7 +24,7 @@
         var catOptions = {}, quantOptions = {};
         var distance = 4, PC1 = 3, PC2 =4, test = 1;
         var remove = 0;
-        var refresh;
+        var refresh = 0;
 
         $(function () {
             $("#tree_metaCat").dynatree({
@@ -660,14 +660,12 @@
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <select id="selectall">
-                    <option value="0">Kingdoms</option>
                     <option value="1">Phyla</option>
                     <option value="2">Classes</option>
                     <option value="3">Orders</option>
                     <option value="4">Families</option>
                     <option value="5">Genera</option>
                     <option value="6" selected="selected">Species</option>
-                    <!--<option value="7">OTU</option>-->
                 </select>
                 &nbsp<-- Taxa Level selected
             </td>

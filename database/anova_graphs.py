@@ -34,7 +34,7 @@ def statusANOVA(request):
         time2 = time.time()
         TimeDiff = time2 - time1
         myDict = {}
-        stage = str(base) + '%.1f seconds have elapsed' % TimeDiff
+        stage = str(base) + '<br>Analysis has been running for %.1f seconds' % TimeDiff
         myDict['stage'] = stage
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
@@ -43,7 +43,7 @@ def statusANOVA(request):
 def getCatUnivData(request):
     global base, time1, TimeDiff
     time1 = time.time()
-    base = 'Step 1 of 4: Querying database...'
+    base = 'Step 1 of 6: Querying database...'
 
     # Get selected samples from cookie and query database for sample info
     samples = Sample.objects.all()
@@ -92,18 +92,22 @@ def getCatUnivData(request):
         result = 'Data Normalization:\n'
 
         # Limit reads to max value
-        if NormMeth == 2 or 3:
+        if NormMeth == 1:
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if total['count__sum'] is not None:
+                    id = sample.sampleid
+                    newList.append(id)
+
+        elif NormMeth == 2 or NormMeth == 3:
             if NormReads > maxSize:
                 NormReads = medianSize
-                result += 'The desired sample size was too high and automatically reset to the median value...\n'
+                result += 'The subsample size was too high and automatically reset to the median value...\n'
+
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if NormMeth == 2:
                     if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                        id = sample.sampleid
-                        newList.append(id)
-                elif NormMeth == 4 or NormMeth == 5:
-                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
                         id = sample.sampleid
                         newList.append(id)
                 else:
@@ -119,24 +123,16 @@ def getCatUnivData(request):
                     if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
                         id = sample.sampleid
                         newList.append(id)
-        if NormMeth == 4 or 5:
+
+        elif NormMeth == 4 or NormMeth == 5:
             if size > maxSize:
                 size = medianSize
-                result += 'The desired sample size was too high and automatically reset to the median value...\n'
+                result += 'The minimum sample size was too high and automatically reset to the median value...\n'
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                if NormMeth == 2:
-                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                        id = sample.sampleid
-                        newList.append(id)
-                elif NormMeth == 4 or NormMeth == 5:
-                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                        id = sample.sampleid
-                        newList.append(id)
-                else:
-                    if total['count__sum'] is not None:
-                        id = sample.sampleid
-                        newList.append(id)
+                if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                    id = sample.sampleid
+                    newList.append(id)
 
             # If user set reads too high sample list will be blank
             if not newList:
@@ -146,7 +142,14 @@ def getCatUnivData(request):
                     if total['count__sum'] is not None and int(total['count__sum']) >= size:
                         id = sample.sampleid
                         newList.append(id)
+
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
+        numberRem = len(countList) - len(newList)
+        if numberRem > 0:
+            result += str(numberRem) + ' samples did not met the desired normalization criteria; and were not included in the analysis...\n'
+            result += str(len(newList)) + ' samples met the desired normalization criteria; and were included in the analysis...\n'
+        else:
+            result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
         # Get dict of selected meta variables
         metaString = all["meta"]
@@ -203,10 +206,10 @@ def getCatUnivData(request):
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-        base = 'Step 1 of 4: Querying database...completed'
+        base = 'Step 1 of 6: Querying database...done!'
 
         # Normalize data
-        base = 'Step 2 of 4: Normalizing data...'
+        base = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -229,15 +232,15 @@ def getCatUnivData(request):
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq...\n'
+            result += 'Data were normalized by DESeq2...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
-            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'DESeq2 cannot run estimateSizeFactors...\n'
             result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 4: Normalizing data...completed'
-        base = 'Step 3 of 4: Performing statistical test...'
+        base = 'Step 2 of 6: Normalizing data...done!'
+        base = 'Step 3 of 6: Performing statistical test...'
 
         seriesList = []
         xAxisDict = {}
@@ -292,17 +295,17 @@ def getCatUnivData(request):
                                 (t_val, p_val) = stats.ttest_ind(smp1, smp2, equal_var=False)
                                 m += 1.0
                             else:
-                                p_val = "Nan"
+                                p_val = np.nan
                             dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'mean1': np.mean(smp1), 'mean2': np.mean(smp2), 'stdev1': np.std(smp1), 'stdev2': np.std(smp2), 'p_value': p_val}
                             rows_list.append(dict1)
+                            base = 'Step 3 of 4: Performing statistical test...' + str(val1) + ' vs ' + str(val2) + ' is done!'
 
                 pvalDF = pd.DataFrame(rows_list)
                 pvalDF.sort(columns='p_value', inplace=True)
                 pvalDF.reset_index(drop=True, inplace=True)
                 pvalDF.index += 1
-                pvalDF['p_adj'] = pvalDF['p_value'] * m / pvalDF.index
+                pvalDF['p_adj'] = pvalDF.p_value * m / pvalDF.index
                 pvalDF['Sig'] = pvalDF.p_adj <= FDR
-
                 pvalDF[['mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj']] = pvalDF[['mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj']].astype(float)
                 D = pvalDF.to_string(columns=['sample1', 'sample2', 'mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj', 'Sig'])
                 if True in pvalDF['Sig'].values:
@@ -310,8 +313,9 @@ def getCatUnivData(request):
                 else:
                     p_val = 1.0
 
-            base = 'Step 3 of 4: Performing statistical test...completed'
-            base = 'Step 4 of 4: Preparing graph data...'
+            base = 'Step 3 of 6: Performing statistical test...done!'
+            base = 'Step 4 of 6: Formatting graph data for display...'
+
             if sig_only == 1:
                 if p_val <= 0.05:
                     result += '===============================================\n'
@@ -426,6 +430,9 @@ def getCatUnivData(request):
         elif DepVar == 3:
             finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
+        base = 'Step 4 of 6: Formatting graph data for display...done!'
+        base = 'Step 5 of 6: Formatting biome data...'
+
         biome = {}
         newList = ['sampleid', 'sample_name']
         newList.extend(fieldList)
@@ -464,30 +471,28 @@ def getCatUnivData(request):
         biome['columns'] = nameList
         biome['data'] = dataList
 
+        base = 'Step 5 of 6: Formatting biome data...done!'
+        base = 'Step 6 of 6: Formatting result table...'
+
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
-        base = 'Step 4 of 4: Preparing graph data...completed'
+
 
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
         finalDict['biome'] = str(biome_json)
         res = simplejson.dumps(finalDict)
 
-        try:
-            resetTracking()
-        except:
-            print("Failed to reset stuff")
+        base = 'Step 6 of 6: Formatting result table...done!'
 
-        try:
-            return HttpResponse(res, content_type='application/json')
-        except Exception:
-            print("failed to return, "+str(Exception))
+        resetTracking()
+        return HttpResponse(res, content_type='application/json')
 
 
 def getQuantUnivData(request):
     global base, time1, TimeDiff
     time1 = time.time()
-    base = 'Step 1 of 4: Querying database...'
+    base = 'Step 1 of 6: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -528,36 +533,64 @@ def getQuantUnivData(request):
         newList = []
         result = 'Data Normalization:\n'
 
-        # Limit reads to max value
-        if NormReads > maxSize:
-            NormReads = medianSize
-            result += 'The desired sample size was too high and automatically reset to the median value...\n'
-
-        for sample in qs1:
-            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            if NormMeth == 2:
-                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                    id = sample.sampleid
-                    newList.append(id)
-            elif NormMeth == 4 or NormMeth == 5:
-                if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                    id = sample.sampleid
-                    newList.append(id)
-            else:
+        if NormMeth == 1:
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if total['count__sum'] is not None:
                     id = sample.sampleid
                     newList.append(id)
 
-        # If user set reads to high sample list will be blank
-        if not newList:
-            NormReads = medianSize
-            result += 'The desired sample size was too high and automatically reset to the median value...\n'
+        elif NormMeth == 2 or NormMeth == 3:
+            if NormReads > maxSize:
+                NormReads = medianSize
+                result += 'The subsample size was too high and automatically reset to the median value...\n'
+
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                if NormMeth == 2:
+                    if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        id = sample.sampleid
+                        newList.append(id)
+                else:
+                    if total['count__sum'] is not None:
+                        id = sample.sampleid
+                        newList.append(id)
+
+            # If user set reads too high sample list will be blank
+            if not newList:
+                NormReads = medianSize
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        id = sample.sampleid
+                        newList.append(id)
+
+        elif NormMeth == 4 or NormMeth == 5:
+            if size > maxSize:
+                size = medianSize
+                result += 'The minimum sample size was too high and automatically reset to the median value...\n'
+            for sample in qs1:
+                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                if total['count__sum'] is not None and int(total['count__sum']) >= size:
                     id = sample.sampleid
                     newList.append(id)
+
+            # If user set reads too high sample list will be blank
+            if not newList:
+                size = medianSize
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                        id = sample.sampleid
+                        newList.append(id)
+
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
+        numberRem = len(countList) - len(newList)
+        if numberRem > 0:
+            result += str(numberRem) + ' samples did not met the desired normalization criteria; and were not included in the analysis...\n'
+            result += str(len(newList)) + ' samples met the desired normalization criteria; and were included in the analysis...\n'
+        else:
+            result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
         metaString = all["meta"]
         metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
@@ -606,8 +639,8 @@ def getQuantUnivData(request):
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-        base = 'Step 1 of 4: Querying database...completed'
-        base = 'Step 2 of 4: Normalizing data...'
+        base = 'Step 1 of 6: Querying database...done!'
+        base = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -630,15 +663,15 @@ def getQuantUnivData(request):
         elif NormMeth == 4:
             result += 'Data were normalized by the total number of sequence reads...\n'
         elif NormMeth == 5 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq...\n'
+            result += 'Data were normalized by DESeq2...\n'
         elif NormMeth == 5 and DESeq_error == 'yes':
-            result += 'DESeq cannot run estimateSizeFactors...\n'
+            result += 'DESeq2 cannot run estimateSizeFactors...\n'
             result += 'Analysis was run without normalization...\n'
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 4: Normalizing data...completed'
-        base = 'Step 3 of 4: Performing linear regression...'
+        base = 'Step 2 of 6: Normalizing data...done!'
+        base = 'Step 3 of 6: Performing linear regression...'
 
         seriesList = []
         xAxisDict = {}
@@ -678,8 +711,9 @@ def getQuantUnivData(request):
                 regrList.append([min(x), min_y])
                 regrList.append([max(x), max_y])
 
-            base = 'Step 3 of 4: Performing linear regression...completed'
-            base = 'Step 4 of 4: Preparing graph data...'
+            base = 'Step 3 of 6: Performing linear regression...done!'
+            base = 'Step 4 of 6: Formatting graph data for display...'
+
             if sig_only == 0:
                 seriesDict = {}
                 seriesDict['type'] = 'scatter'
@@ -744,6 +778,9 @@ def getQuantUnivData(request):
         elif DepVar == 3:
             finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
+        base = 'Step 4 of 6: Formatting graph data for display...'
+        base = 'Step 5 of 6: Formatting biome data...'
+
         biome = {}
         newList = ['sampleid', 'sample_name']
         newList.extend(fieldList)
@@ -782,6 +819,9 @@ def getQuantUnivData(request):
         biome['columns'] = nameList
         biome['data'] = dataList
 
+        base = 'Step 5 of 6: Formatting biome data...done!'
+        base = 'Step 6 of 6: Formatting result table...'
+
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
@@ -792,12 +832,10 @@ def getQuantUnivData(request):
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
         finalDict['biome'] = str(biome_json)
 
-        res = simplejson.dumps(finalDict)
+        base = 'Step 6 of 6: Formatting result table...done!'
 
-        try:
-            resetTracking()
-        except:
-            print("Failed to reset stuff")
+        res = simplejson.dumps(finalDict)
+        resetTracking()
 
         return HttpResponse(res, content_type='application/json')
 

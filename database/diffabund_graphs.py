@@ -36,7 +36,7 @@ def updateDiffAbund(request):
         time2 = time.time()
         TimeDiff = time2 - time1
         myDict = {}
-        stage = str(base) + '%.1f seconds have elapsed' % TimeDiff
+        stage = str(base) + '<br>Analysis has been running for %.1f seconds' % TimeDiff
         myDict['stage'] = stage
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
@@ -45,7 +45,7 @@ def updateDiffAbund(request):
 def getDiffAbund(request):
     global base, time1, TimeDiff
     time1 = time.time()
-    base = 'Step 1 of 4: Querying database...'
+    base = 'Step 1 of 6: Querying database...'
     # Get selected samples from cookie and query database for sample info
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
@@ -79,6 +79,12 @@ def getDiffAbund(request):
                 id = sample.sampleid
                 newList.append(id)
         qs2 = Sample.objects.all().filter(sampleid__in=newList)
+        numberRem = len(countList) - len(newList)
+        if numberRem > 0:
+            result += str(numberRem) + ' samples did not met the desired normalization criteria; and were not included in the analysis...\n'
+            result += str(len(newList)) + ' samples met the desired normalization criteria; and were included in the analysis...\n'
+        else:
+            result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
         # Get dict of selected meta variables
         metaString = all["meta"]
@@ -97,8 +103,8 @@ def getDiffAbund(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        base = 'Step 1 of 4: Querying database...complete'
-        base = 'Step 2 of 4: Normalizing data...'
+        base = 'Step 1 of 6: Querying database...done!'
+        base = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -116,11 +122,6 @@ def getDiffAbund(request):
         r("trt <- factor(metaDF$merge)")
         r.assign("count", taxaDF)
 
-        #Create filter for samples below threshold
-        #r.assign("size", size)
-        #r("total <- colSums(count)")
-        #r("col <- (total > size)")
-
         DESeq_error = ''
         if NormMeth == 1:
             r("countFilt <- count")
@@ -137,6 +138,7 @@ def getDiffAbund(request):
                 DESeq_error = 'no'
                 r("dds <- estimateDispersions(dds)")
                 r("dds <- nbinomWaldTest(dds)")
+
             elif pycds is None:
                 DESeq_error = 'yes'
                 r("sizeFactor <- rep(1, length(trtFilt))")
@@ -162,6 +164,7 @@ def getDiffAbund(request):
                 DESeq_error = 'no'
                 r("dds <- estimateDispersions(dds)")
                 r("dds <- nbinomWaldTest(dds)")
+
             elif pycds is None:
                 DESeq_error = 'yes'
                 r("sizeFactor <- rep(1, length(trtFilt))")
@@ -173,18 +176,18 @@ def getDiffAbund(request):
             result += 'Data were normalized by DESeq2...\n'
         elif NormMeth == 1 and DESeq_error == 'yes':
             result += 'DESeq2 cannot run estimateSizeFactors...\n'
-            result += 'Analysis was run without normalization...\n'
-            result += 'To try again, please increase the minimum sample size...\n'
+            result += 'Analysis was run without size normalization...\n'
+            result += 'To try again, select a different sample combination or increase the minimum sample size...\n'
         elif NormMeth == 2 and DESeq_error == 'no':
-            result += 'Data were normalized by DESeq+Filter...\n'
+            result += 'Data were normalized by DESeq2+Filter...\n'
         elif NormMeth == 2 and DESeq_error == 'yes':
             result += 'DESeq2 cannot run estimateSizeFactors...\n'
-            result += 'Analysis was run without normalization...\n'
-            result += 'To try again, please increase the minimum sample size...\n'
+            result += 'Analysis was run without size normalization...\n'
+            result += 'To try again, select a different sample combination or  increase the minimum sample size...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 4: Normalizing data...complete'
-        base = 'Step 3 of 4: Performing statistical test...'
+        base = 'Step 2 of 6: Normalizing data...done!'
+        base = 'Step 3 of 6: Performing statistical test...'
 
         mergeList = metaDF['merge'].tolist()
         mergeSet = list(set(mergeList))
@@ -224,13 +227,12 @@ def getDiffAbund(request):
                     nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
                     nbinom_res[['p-value', 'p-adjusted']].astype(float)
 
-                    if finalDF .empty:
-                        finalDF = nbinom_res
-                    else:
-                        finalDF = pd.concat([finalDF, nbinom_res])
+                    finalDF = pd.concat([finalDF, nbinom_res])
+                    base = 'Step 3 of 6: Performing statistical test...' + str(iterationName) + ' is done!'
 
-        base = 'Step 3 of 4: Performing statistical test...completed'
-        base = 'Step 4 of 4: Preparing graph data...'
+        base = 'Step 3 of 6: Performing statistical test...done!'
+        base = 'Step 4 of 6: Formatting graph data for display...'
+
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
@@ -266,6 +268,8 @@ def getDiffAbund(request):
             if shapeIterator >= listOfShapes.__len__():
                 shapeIterator = 0
 
+            base = 'Step 4 of 6: Formatting graph data for display...' + str(name) + ' is done!'
+
         xTitle = {}
         xTitle['text'] = "baseMean"
         xAxisDict['title'] = xTitle
@@ -280,20 +284,20 @@ def getDiffAbund(request):
         finalDict['xAxis'] = xAxisDict
         finalDict['yAxis'] = yAxisDict
 
+        base = 'Step 4 of 6: Formatting graph data for display...done!'
+        base = 'Step 5 of 6:  Formatting nbinomTest results for display...'
+
         finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
         finalDict['text'] = result
 
+        base = 'Step 6 of 6: Formatting results for display...done!'
+
         res = simplejson.dumps(finalDict)
-        base = 'Step 4 of 4: Preparing graph data...completed'
 
-        try:
-            resetTracking()
-        except:
-            print("Failed to reset stuff")
-
+        resetTracking()
         return HttpResponse(res, content_type='application/json')
 
 
