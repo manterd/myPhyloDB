@@ -165,14 +165,17 @@ def getCatPCoAData(request):
 
         # Create combined metadata column
         if len(fieldList) > 1:
-            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+            for index, row in metaDF.iterrows():
+                metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
         else:
             metaDF['merge'] = metaDF[fieldList[0]]
+
 
         # Sum by taxa level
         taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
         normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
+
         normDF.sort_index(inplace=True)
 
         finalDict = {}
@@ -537,7 +540,8 @@ def getQuantPCoAData(request):
 
         # Create combined metadata column
         if len(fieldList) > 1:
-            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+            for index, row in metaDF.iterrows():
+                metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
         else:
             metaDF['merge'] = metaDF[fieldList[0]]
 

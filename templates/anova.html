@@ -478,6 +478,22 @@
             $("#Google").attr("href", "http://www.google.com/search?q=" + search);
         }
 
+        function checkDupes(list) {
+            var bools = [];
+            var firsts = [];
+            for (var i=0; i<list.length; i++) {
+                var sub = list[i].split(':');
+                var found = firsts.indexOf(sub[0]);
+                if (found==-1) {
+                    firsts.push(sub[0]);
+                    bools.push(false);
+                } else {
+                    bools[found] = true;
+                }
+            }
+            return (bools.indexOf(false)==-1);
+        }
+
         function getCatGraphData() {
             startTimer();
             var array1 = [];
@@ -490,7 +506,7 @@
                 }
             }
 
-            if ((array1.length == 1) && (StatTest == 2)) {
+            if ((!checkDupes(array1)) && (StatTest == 2)) {
                 stopTimer();
                 $("#run").css("background-color", "lightgray");
                 $("#container-1").empty().append('Analysis has been cancelled!');

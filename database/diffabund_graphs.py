@@ -108,7 +108,8 @@ def getDiffAbund(request):
 
         # Create combined metadata column
         if len(fieldList) > 1:
-            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+            for index, row in metaDF.iterrows():
+                metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
         else:
             metaDF['merge'] = metaDF[fieldList[0]]
 
@@ -188,47 +189,67 @@ def getDiffAbund(request):
 
         base = 'Step 2 of 6: Normalizing data...done!'
         base = 'Step 3 of 6: Performing statistical test...'
+        try:
+            mergeList = metaDF['merge'].tolist()
+            mergeSet = list(set(mergeList))
 
-        mergeList = metaDF['merge'].tolist()
-        mergeSet = list(set(mergeList))
+            finalDF = pd.DataFrame()
+            for i, val in enumerate(mergeSet):
+                start = i + 1
+                stop = int(len(mergeSet))
+                for j in range(start, stop):
+                    if i != j:
+                        r.assign("trt1", mergeSet[i])
+                        r.assign("trt2", mergeSet[j])
+                        print r("res <- results(dds, contrast=c('trt', trt1, trt2))")
+                        print r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
+                        print r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
+                        print r("df <- data.frame(id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                        nbinom_res = r.get("df")
 
-        finalDF = pd.DataFrame()
-        for i, val in enumerate(mergeSet):
-            start = i + 1
-            stop = int(len(mergeSet))
-            for j in range(start, stop):
-                if i != j:
-                    r.assign("trt1", mergeSet[i])
-                    r.assign("trt2", mergeSet[j])
-                    r("res <- results(dds, contrast=c('trt', trt1, trt2))")
-                    r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1])")
-                    r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2])")
-                    r("df <- data.frame(id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
-                    nbinom_res = r.get("df")
+                        names = []
+                        try:
+                            for item in nbinom_res["id"]:
+                                names.append(findTaxa(item))
+                        except Exception as e:
+                            print("Failed at loop, "+str(e.args))
 
-                    names = []
-                    for item in nbinom_res["id"]:
-                        names.append(findTaxa(item))
+                        nbinom_res['Taxa Name'] = names
+                        nbinom_res.rename(columns={'id': 'Taxa ID'}, inplace=True)
+                        stuff = ['Taxa ID', 'Taxa Name', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
+                        nbinom_res = nbinom_res.reindex(columns=stuff)
 
-                    nbinom_res['Taxa Name'] = names
-                    nbinom_res.rename(columns={'id': 'Taxa ID'}, inplace=True)
-                    stuff = ['Taxa ID', 'Taxa Name', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
-                    nbinom_res = nbinom_res.reindex(columns=stuff)
-                    iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
-                    nbinom_res['Comparison'] = iterationName
+                        iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
 
-                    nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
-                    nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
-                    nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
-                    nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
-                    nbinom_res.rename(columns={' stderr ': 'StdErr'}, inplace=True)
-                    nbinom_res.rename(columns={' stat ': 'Stat'}, inplace=True)
-                    nbinom_res.rename(columns={' pval ': 'p-value'}, inplace=True)
-                    nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
-                    nbinom_res[['p-value', 'p-adjusted']].astype(float)
+                        nbinom_res['Comparison'] = iterationName
 
-                    finalDF = pd.concat([finalDF, nbinom_res])
-                    base = 'Step 3 of 6: Performing statistical test...' + str(iterationName) + ' is done!'
+
+                        nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
+
+                        nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
+
+                        nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
+
+                        nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
+
+                        nbinom_res.rename(columns={' stderr ': 'StdErr'}, inplace=True)
+
+                        nbinom_res.rename(columns={' stat ': 'Stat'}, inplace=True)
+
+                        nbinom_res.rename(columns={' pval ': 'p-value'}, inplace=True)
+
+                        nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
+
+                        nbinom_res[['p-value', 'p-adjusted']].astype(float)
+
+
+                        finalDF = pd.concat([finalDF, nbinom_res])
+
+                        base = 'Step 3 of 6: Performing statistical test...' + str(iterationName) + ' is done!'
+
+
+        except Exception as e:
+            print ("Exception! "+str(e.args))
 
         base = 'Step 3 of 6: Performing statistical test...done!'
         base = 'Step 4 of 6: Formatting graph data for display...'

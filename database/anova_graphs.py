@@ -213,7 +213,8 @@ def getCatUnivData(request):
 
         # Create combined metadata column
         if len(fieldList) > 1:
-            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+            for index, row in metaDF.iterrows():
+                metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
         else:
             metaDF['merge'] = metaDF[fieldList[0]]
 
@@ -644,7 +645,8 @@ def getQuantUnivData(request):
 
         # Create combined metadata column
         if len(fieldList) > 1:
-            metaDF['merge'] = reduce(lambda x, y: metaDF[x] + ' & ' + metaDF[y], fieldList)
+            for index, row in metaDF.iterrows():
+                metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
         else:
             metaDF['merge'] = metaDF[fieldList[0]]
 
