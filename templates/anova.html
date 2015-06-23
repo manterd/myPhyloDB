@@ -330,12 +330,15 @@
             });
         });
 
-        function updateStatus() {
+        function updateStatus(RID) {
+            //alert("Last one: "+RID);
             $.ajax({
                 url: '/statusANOVA/',
                 type: 'GET',
                 dataType: 'json',
-                data: {},
+                data: {
+                    all: RID
+                },
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
@@ -349,8 +352,9 @@
             });
         }
 
-        function startTimer() {
-            refresh = setInterval(updateStatus, 1000);
+        function startTimer(RID) {
+            //alert("Received RID: "+RID);
+            refresh = setInterval(function(){ updateStatus(RID); }, 1000);
             return refresh;
         }
 
@@ -494,8 +498,16 @@
             return (bools.indexOf(false)==-1);
         }
 
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
         function getCatGraphData() {
-            startTimer();
+            var RID = makeGUID();
+            startTimer(RID);
             var array1 = [];
             for (var i = 0; i < nodesCat.length; i++) {
                 var key1 = nodesCat[i].data.id;
@@ -536,6 +548,7 @@
                 myDict['FdrVal'] = document.getElementById("FdrVal").value;
                 myDict['NormMeth'] = NormMeth;
                 myDict['StatTest'] = StatTest;
+                myDict['RID'] = RID;
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
@@ -579,7 +592,8 @@
         }
 
         function getQuantGraphData() {
-            startTimer();
+            var RID = makeGUID();
+            startTimer(RID);
             var array1 = [];
             for (var i = 0; i < nodesQuant.length; i++) {
                 var key1 = nodesQuant[i].data.tooltip;
@@ -611,6 +625,7 @@
             myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['MinSize'] = document.getElementById("MinVal").value;
             myDict['NormMeth'] = NormMeth;
+            myDict['RID'] = RID;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({

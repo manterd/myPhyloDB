@@ -297,12 +297,14 @@
             });
         });
 
-        function updateStatus() {
+        function updateStatus(RID) {
             $.ajax({
                 url: '/statusPCoA/',
                 type: 'GET',
                 dataType: 'json',
-                data: {},
+                data: {
+                    all: RID
+                },
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
@@ -316,8 +318,8 @@
             });
         }
 
-        function startTimer() {
-            refresh = setInterval(updateStatus, 1000);
+        function startTimer(RID) {
+            refresh = setInterval(function(){updateStatus(RID);}, 1000);
             return refresh;
         }
 
@@ -415,8 +417,18 @@
             }
         }
 
+
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
+
         function getCatGraphData() {
-            startTimer();
+            var RID = makeGUID();
+            startTimer(RID);
             var array1 = [];
             for (var i = 0; i < nodesCat.length; i++) {
                 var key1 = nodesCat[i].data.id;
@@ -441,6 +453,7 @@
             myDict['perms'] = document.getElementById("perms").value;
             myDict['NormMeth'] = NormMeth;
             myDict['MinSize'] = document.getElementById("MinVal").value;
+            myDict['RID'] = RID;
             //if ((NormMeth == 2) || (NormMeth == 3)){
             //    myDict['NormVal'] = document.getElementById("NormVal").value;
             //} else {
@@ -495,7 +508,8 @@
         }
 
         function getQuantGraphData() {
-            startTimer();
+            var RID = makeGUID();
+            startTimer(RID);
             var array1 = [];
             for (var i = 0; i < nodesQuant.length; i++) {
                 var key1 = nodesQuant[i].data.tooltip;
@@ -517,6 +531,7 @@
             myDict['NormMeth'] = NormMeth;
             myDict['MinSize'] = document.getElementById("MinVal").value;
             myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['RID'] = RID;
 
             //if ((NormMeth == 2) || (NormMeth == 3)){
             //} else {

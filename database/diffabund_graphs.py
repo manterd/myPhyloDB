@@ -15,37 +15,51 @@ import math
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
 
-base = ''
-stage = ''
-time1 = time.time()
-time2 = time.time()
-TimeDiff = 0
-
-
-def resetTracking():
-    global stage, time1, time2, TimeDiff
-    stage = ''
-    time1 = time.time()
-    time2 = time.time()
-    TimeDiff = 0
+base = {}
+stage = {}
+time1 = {}
+time2 = {}
+TimeDiff = {}
 
 
 def updateDiffAbund(request):
     global base, stage, time1, time2, TimeDiff
     if request.is_ajax():
-        time2 = time.time()
-        TimeDiff = time2 - time1
+        RID = request.GET["all"]
+        time2[RID] = time.time()
+        try:
+            TimeDiff[RID] = time2[RID] - time1[RID]
+        except:
+            TimeDiff[RID] = 0
         myDict = {}
-        stage = str(base) + '<br>Analysis has been running for %.1f seconds' % TimeDiff
-        myDict['stage'] = stage
+        try:
+            stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        except:
+            stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        myDict['stage'] = stage[RID]
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
+def removeRID(request):
+    global base, stage, time1, time2, TimeDiff
+    try:
+        if request.is_ajax():
+            RID = request.GET["all"]
+            base.pop(RID, None)
+            stage.pop(RID, None)
+            time1.pop(RID, None)
+            time2.pop(RID, None)
+            TimeDiff.pop(RID, None)
+            return True
+        else:
+            return False
+    except:
+        return False
+
+
 def getDiffAbund(request):
     global base, time1, TimeDiff
-    time1 = time.time()
-    base = 'Step 1 of 6: Querying database...'
     # Get selected samples from cookie and query database for sample info
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
@@ -56,6 +70,10 @@ def getDiffAbund(request):
         # Get variables from web page
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
+
+        RID = str(all["RID"])
+        time1[RID] = time.time()
+        base[RID] = 'Step 1 of 6: Querying database...'
 
         taxaLevel = int(all["taxaLevel"])
         NormMeth = int(all["NormMeth"])
@@ -103,8 +121,8 @@ def getDiffAbund(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        base = 'Step 1 of 6: Querying database...done!'
-        base = 'Step 2 of 6: Normalizing data...'
+        base[RID] = 'Step 1 of 6: Querying database...done!'
+        base[RID] = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -187,8 +205,8 @@ def getDiffAbund(request):
             result += 'To try again, select a different sample combination or  increase the minimum sample size...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 6: Normalizing data...done!'
-        base = 'Step 3 of 6: Performing statistical test...'
+        base[RID] = 'Step 2 of 6: Normalizing data...done!'
+        base[RID] = 'Step 3 of 6: Performing statistical test...'
         try:
             mergeList = metaDF['merge'].tolist()
             mergeSet = list(set(mergeList))
@@ -201,10 +219,10 @@ def getDiffAbund(request):
                     if i != j:
                         r.assign("trt1", mergeSet[i])
                         r.assign("trt2", mergeSet[j])
-                        print r("res <- results(dds, contrast=c('trt', trt1, trt2))")
-                        print r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
-                        print r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
-                        print r("df <- data.frame(id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                        r("res <- results(dds, contrast=c('trt', trt1, trt2))")
+                        r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
+                        r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
+                        r("df <- data.frame(id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
                         nbinom_res = r.get("df")
 
                         names = []
@@ -245,14 +263,14 @@ def getDiffAbund(request):
 
                         finalDF = pd.concat([finalDF, nbinom_res])
 
-                        base = 'Step 3 of 6: Performing statistical test...' + str(iterationName) + ' is done!'
+                        base[RID] = 'Step 3 of 6: Performing statistical test...' + str(iterationName) + ' is done!'
 
 
         except Exception as e:
             print ("Exception! "+str(e.args))
 
-        base = 'Step 3 of 6: Performing statistical test...done!'
-        base = 'Step 4 of 6: Formatting graph data for display...'
+        base[RID] = 'Step 3 of 6: Performing statistical test...done!'
+        base[RID] = 'Step 4 of 6: Formatting graph data for display...'
 
         seriesList = []
         xAxisDict = {}
@@ -289,7 +307,7 @@ def getDiffAbund(request):
             if shapeIterator >= listOfShapes.__len__():
                 shapeIterator = 0
 
-            base = 'Step 4 of 6: Formatting graph data for display...' + str(name) + ' is done!'
+            base[RID] = 'Step 4 of 6: Formatting graph data for display...' + str(name) + ' is done!'
 
         xTitle = {}
         xTitle['text'] = "baseMean"
@@ -305,8 +323,8 @@ def getDiffAbund(request):
         finalDict['xAxis'] = xAxisDict
         finalDict['yAxis'] = yAxisDict
 
-        base = 'Step 4 of 6: Formatting graph data for display...done!'
-        base = 'Step 5 of 6:  Formatting nbinomTest results for display...'
+        base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
+        base[RID] = 'Step 5 of 6:  Formatting nbinomTest results for display...'
 
         finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
         res_table = finalDF.to_html(classes="table display")
@@ -314,11 +332,10 @@ def getDiffAbund(request):
         finalDict['res_table'] = str(res_table)
         finalDict['text'] = result
 
-        base = 'Step 6 of 6: Formatting results for display...done!'
+        base[RID] = 'Step 6 of 6: Formatting results for display...done!'
 
         res = simplejson.dumps(finalDict)
 
-        resetTracking()
         return HttpResponse(res, content_type='application/json')
 
 

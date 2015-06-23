@@ -16,29 +16,51 @@ from database.utils import multidict, ordered_set, taxaProfileDF, PCoA
 from pyper import *
 
 
-base = ''
-stage = ''
-time1 = time.time()
-time2 = time.time()
-TimeDiff = 0
+base = {}
+stage = {}
+time1 = {}
+time2 = {}
+TimeDiff = {}
 
 
 def statusPCoA(request):
     global base, stage, time1, time2, TimeDiff
     if request.is_ajax():
-        time2 = time.time()
-        TimeDiff = time2 - time1
+        RID = request.GET["all"]
+        time2[RID] = time.time()
+        try:
+            TimeDiff[RID] = time2[RID] - time1[RID]
+        except:
+            TimeDiff[RID] = 0
         myDict = {}
-        stage = str(base) + '<br>Analysis has been running for %.1f seconds' % TimeDiff
-        myDict['stage'] = stage
+        try:
+            stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        except:
+            stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        myDict['stage'] = stage[RID]
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
+def removeRID(request):
+    global base, stage, time1, time2, TimeDiff
+    try:
+        if request.is_ajax():
+            RID = request.GET["all"]
+            base.pop(RID, None)
+            stage.pop(RID, None)
+            time1.pop(RID, None)
+            time2.pop(RID, None)
+            TimeDiff.pop(RID, None)
+            return True
+        else:
+            return False
+    except:
+        return False
+
+
 def getCatPCoAData(request):
     global base, time1, TimeDiff
-    time1 = time.time()
-    base = 'Step 1 of 8: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -47,6 +69,10 @@ def getCatPCoAData(request):
     if request.is_ajax():
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
+
+        RID = str(all["RID"])
+        time1[RID] = time.time()
+        base[RID] = 'Step 1 of 8: Querying database...'
 
         taxaLevel = int(all["taxa"])
         distance = int(all["distance"])
@@ -160,8 +186,8 @@ def getCatPCoAData(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        base = 'Step 1 of 8: Querying database...done!'
-        base = 'Step 2 of 8: Normalizing data...'
+        base[RID] = 'Step 1 of 8: Querying database...done!'
+        base[RID] = 'Step 2 of 8: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -199,8 +225,8 @@ def getCatPCoAData(request):
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 8: Normalizing data...done!'
-        base = 'Step 3 of 8: Calculating distance matrix...'
+        base[RID] = 'Step 2 of 8: Normalizing data...done!'
+        base[RID] = 'Step 3 of 8: Calculating distance matrix...'
 
         metaDF.set_index('sampleid', inplace=True)
         metaDF.sort_index(inplace=True)
@@ -247,8 +273,8 @@ def getCatPCoAData(request):
         rowList = metaDF['sample_name'].tolist()
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
-        base = 'Step 3 of 8: Calculating distance matrix...done!'
-        base = 'Step 4 of 8: Principal coordinates analysis...'
+        base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
+        base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
         r.assign("meta", metaDF)
         r("trt <- factor(meta$merge)")
@@ -274,8 +300,8 @@ def getCatPCoAData(request):
                 bigf = 'Not enough permutations for the test to run...'
             else:
                 if test == 1:
-                    base = 'Step 4 of 8: Principal coordinates analysis...done!'
-                    base = 'Step 5 of 8: Performing perMANOVA...'
+                    base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
+                    base[RID] = 'Step 5 of 8: Performing perMANOVA...'
 
                     r("trtList <- factor(meta$merge)")
                     r.assign("perms", perms)
@@ -286,11 +312,11 @@ def getCatPCoAData(request):
                     for part in tempStuff:
                         if part != tempStuff[0]:
                             bigf += part + '\n'
-                    base = 'Step 5 of 8: Performing perMANOVA...done!'
+                    base[RID] = 'Step 5 of 8: Performing perMANOVA...done!'
 
                 elif test == 2:
-                    base = 'Step 4 of 8: Principal coordinates analysis...done!'
-                    base = 'Step 5 of 8: Performing BetaDisper...'
+                    base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
+                    base[RID] = 'Step 5 of 8: Performing BetaDisper...'
 
                     r("trtList <- factor(meta$merge)")
                     r.assign("perms", perms)
@@ -302,9 +328,9 @@ def getCatPCoAData(request):
                     for part in tempStuff:
                         if part != tempStuff[0]:
                             bigf += part + '\n'
-                    base = 'Step 5 of 8: Performing BetaDisper...done!'
+                    base[RID] = 'Step 5 of 8: Performing BetaDisper...done!'
 
-        base = 'Step 6 of 8: Formatting graph data for display...'
+        base[RID] = 'Step 6 of 8: Formatting graph data for display...'
 
         seriesList = []
         xAxisDict = {}
@@ -391,22 +417,22 @@ def getCatPCoAData(request):
         result += '\n\n\n\n'
         finalDict['text'] = result
 
-        base = 'Step 6 of 8: Formatting graph data for display...done!'
-        base = 'Step 7 of 8: Formatting PCoA table...'
+        base[RID] = 'Step 6 of 8: Formatting graph data for display...done!'
+        base[RID] = 'Step 7 of 8: Formatting PCoA table...'
 
         pcoaDF.reset_index(drop=True, inplace=True)
         res_table = pcoaDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
 
-        base = 'Step 7 of 8: Formatting PCoA table...done!'
-        base = 'Step 8 of 8: Formatting distance score table...'
+        base[RID] = 'Step 7 of 8: Formatting PCoA table...done!'
+        base[RID] = 'Step 8 of 8: Formatting distance score table...'
 
         dist_table = distDF.to_html(classes="table display")
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
 
-        base = 'Step 8 of 8: Formatting distance score table...done!'
+        base[RID] = 'Step 8 of 8: Formatting distance score table...done!'
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')
@@ -414,8 +440,6 @@ def getCatPCoAData(request):
 
 def getQuantPCoAData(request):
     global base, time1, TimeDiff
-    time1 = time.time()
-    base = 'Step 1 of 8: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -424,6 +448,10 @@ def getQuantPCoAData(request):
     if request.is_ajax():
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
+
+        RID = str(all["RID"])
+        time1[RID] = time.time()
+        base[RID] = 'Step 1 of 8: Querying database...'
 
         taxaLevel = int(all["taxa"])
         distance = int(all["distance"])
@@ -535,8 +563,8 @@ def getQuantPCoAData(request):
 
         taxaDF = taxaProfileDF(mySet)
 
-        base = 'Step 1 of 8: Querying database...done!'
-        base = 'Step 2 of 8: Normalizing data...'
+        base[RID] = 'Step 1 of 8: Querying database...done!'
+        base[RID] = 'Step 2 of 8: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -571,8 +599,8 @@ def getQuantPCoAData(request):
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 8: Normalizing data...done!'
-        base = 'Step 3 of 8: Calculating distance matrix...'
+        base[RID] = 'Step 2 of 8: Normalizing data...done!'
+        base[RID] = 'Step 3 of 8: Calculating distance matrix...'
 
         metaDF.set_index('sampleid', inplace=True)
         metaDF.sort_index(inplace=True)
@@ -619,8 +647,8 @@ def getQuantPCoAData(request):
         rowList = metaDF['sample_name'].tolist()
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
-        base = 'Step 3 of 8: Calculating distance matrix...done!'
-        base = 'Step 4 of 8: Principal coordinates analysis...'
+        base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
+        base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
         r.assign("meta", metaDF)
         r("trt <- factor(meta$merge)")
@@ -637,8 +665,8 @@ def getQuantPCoAData(request):
         r("eig <- data.frame(Stat, res$cont$importance)")
         eigDF = r.get("eig")
 
-        base = 'Step 4 of 8: Principal coordinates analysis...done!'
-        base = 'Step 5 of 8: Performing linear regression...'
+        base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
+        base[RID] = 'Step 5 of 8: Performing linear regression...'
 
         seriesList = []
         xAxisDict = {}
@@ -671,8 +699,8 @@ def getQuantPCoAData(request):
             regrList.append([min(x), min_y])
             regrList.append([max(x), max_y])
 
-            base = 'Step 5 of 8: Performing linear regression...done!'
-            base = 'Step 6 of 8: Formatting graph data for display...'
+            base[RID] = 'Step 5 of 8: Performing linear regression...done!'
+            base[RID] = 'Step 6 of 8: Formatting graph data for display...'
 
             regrDict = {}
             regrDict['type'] = 'line'
@@ -748,22 +776,22 @@ def getQuantPCoAData(request):
 
         finalDict['text'] = result
 
-        base = 'Step 6 of 8: Formatting graph data for display...done!'
-        base = 'Step 7 of 8: Formatting PCoA table...done!'
+        base[RID] = 'Step 6 of 8: Formatting graph data for display...done!'
+        base[RID] = 'Step 7 of 8: Formatting PCoA table...done!'
 
         pcoaDF.reset_index(drop=True, inplace=True)
         res_table = pcoaDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
 
-        base = 'Step 7 of 8: Formatting PCoA table...done!'
-        base = 'Step 8 of 8: Formatting distance score table...'
+        base[RID] = 'Step 7 of 8: Formatting PCoA table...done!'
+        base[RID] = 'Step 8 of 8: Formatting distance score table...'
 
         dist_table = distDF.to_html(classes="table display")
         dist_table = dist_table.replace('border="1"', 'border="0"')
         finalDict['dist_table'] = str(dist_table)
 
-        base = 'Step 8 of 8: Formatting distance score table...done!'
+        base[RID] = 'Step 8 of 8: Formatting distance score table...done!'
 
         res = simplejson.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')

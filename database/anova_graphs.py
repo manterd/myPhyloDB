@@ -15,35 +15,51 @@ from pyper import *
 import math
 
 
-base = ''
-stage = ''
-time1 = time.time()
-time2 = time.time()
-TimeDiff = 0
+base = {}
+stage = {}
+time1 = {}
+time2 = {}
+TimeDiff = {}
 
-def resetTracking():
-    global stage, time1, time2, TimeDiff
-    stage = ''
-    time1 = time.time()
-    time2 = time.time()
-    TimeDiff = 0
 
 def statusANOVA(request):
     global base, stage, time1, time2, TimeDiff
     if request.is_ajax():
-        time2 = time.time()
-        TimeDiff = time2 - time1
+        RID = request.GET["all"]
+        time2[RID] = time.time()
+        try:
+            TimeDiff[RID] = time2[RID] - time1[RID]
+        except:
+            TimeDiff[RID] = 0
         myDict = {}
-        stage = str(base) + '<br>Analysis has been running for %.1f seconds' % TimeDiff
-        myDict['stage'] = stage
+        try:
+            stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        except:
+            stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        myDict['stage'] = stage[RID]
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
+def removeRID(request):
+    global base, stage, time1, time2, TimeDiff
+    try:
+        if request.is_ajax():
+            RID = request.GET["all"]
+            base.pop(RID, None)
+            stage.pop(RID, None)
+            time1.pop(RID, None)
+            time2.pop(RID, None)
+            TimeDiff.pop(RID, None)
+            return True
+        else:
+            return False
+    except:
+        return False
+
+
 def getCatUnivData(request):
     global base, time1, TimeDiff
-    time1 = time.time()
-    base = 'Step 1 of 6: Querying database...'
 
     # Get selected samples from cookie and query database for sample info
     samples = Sample.objects.all()
@@ -55,6 +71,11 @@ def getCatUnivData(request):
         # Get variables from web page
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
+
+        RID = str(all["RID"])
+        time1[RID] = time.time()  # Moved these down here so RID is available
+        base[RID] = 'Step 1 of 6: Querying database...'
+
         selectAll = int(all["selectAll"])
         DepVar = int(all["DepVar"])
         NormMeth = int(all["NormMeth"])
@@ -63,6 +84,7 @@ def getCatUnivData(request):
         StatTest = int(all["StatTest"])
         sig_only = int(all["sig_only"])
         size = int(all["MinSize"])
+
 
         # Generate a list of sequence reads per sample
         countList = []
@@ -206,10 +228,10 @@ def getCatUnivData(request):
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-        base = 'Step 1 of 6: Querying database...done!'
+        base[RID] = 'Step 1 of 6: Querying database...done!'
 
         # Normalize data
-        base = 'Step 2 of 6: Normalizing data...'
+        base[RID] = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -240,8 +262,8 @@ def getCatUnivData(request):
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 6: Normalizing data...done!'
-        base = 'Step 3 of 6: Performing statistical test...'
+        base[RID] = 'Step 2 of 6: Normalizing data...done!'
+        base[RID] = 'Step 3 of 6: Performing statistical test...'
 
         seriesList = []
         xAxisDict = {}
@@ -299,7 +321,7 @@ def getCatUnivData(request):
                                 p_val = np.nan
                             dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'mean1': np.mean(smp1), 'mean2': np.mean(smp2), 'stdev1': np.std(smp1), 'stdev2': np.std(smp2), 'p_value': p_val}
                             rows_list.append(dict1)
-                            base = 'Step 3 of 4: Performing statistical test...' + str(val1) + ' vs ' + str(val2) + ' is done!'
+                            base[RID] = 'Step 3 of 4: Performing statistical test...' + str(val1) + ' vs ' + str(val2) + ' is done!'
 
                 pvalDF = pd.DataFrame(rows_list)
                 pvalDF.sort(columns='p_value', inplace=True)
@@ -314,8 +336,8 @@ def getCatUnivData(request):
                 else:
                     p_val = 1.0
 
-            base = 'Step 3 of 6: Performing statistical test...done!'
-            base = 'Step 4 of 6: Formatting graph data for display...'
+            base[RID] = 'Step 3 of 6: Performing statistical test...done!'
+            base[RID] = 'Step 4 of 6: Formatting graph data for display...'
 
             if sig_only == 1:
                 if p_val <= 0.05:
@@ -431,8 +453,8 @@ def getCatUnivData(request):
         elif DepVar == 3:
             finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
-        base = 'Step 4 of 6: Formatting graph data for display...done!'
-        base = 'Step 5 of 6: Formatting biome data...'
+        base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
+        base[RID] = 'Step 5 of 6: Formatting biome data...'
 
         biome = {}
         newList = ['sampleid', 'sample_name']
@@ -472,8 +494,8 @@ def getCatUnivData(request):
         biome['columns'] = nameList
         biome['data'] = dataList
 
-        base = 'Step 5 of 6: Formatting biome data...done!'
-        base = 'Step 6 of 6: Formatting result table...'
+        base[RID] = 'Step 5 of 6: Formatting biome data...done!'
+        base[RID] = 'Step 6 of 6: Formatting result table...'
 
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
@@ -484,16 +506,13 @@ def getCatUnivData(request):
         finalDict['biome'] = str(biome_json)
         res = simplejson.dumps(finalDict)
 
-        base = 'Step 6 of 6: Formatting result table...done!'
+        base[RID] = 'Step 6 of 6: Formatting result table...done!'
 
-        resetTracking()
         return HttpResponse(res, content_type='application/json')
 
 
 def getQuantUnivData(request):
     global base, time1, TimeDiff
-    time1 = time.time()
-    base = 'Step 1 of 6: Querying database...'
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
     selected = samples.values_list('sampleid')
@@ -502,6 +521,11 @@ def getQuantUnivData(request):
     if request.is_ajax():
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
+
+        RID = str(all["RID"])
+        time1[RID] = time.time()
+        base[RID] = 'Step 1 of 6: Querying database...'
+
         selectAll = int(all["selectAll"])
         DepVar = int(all["DepVar"])
         NormMeth = int(all["NormMeth"])
@@ -640,8 +664,8 @@ def getQuantUnivData(request):
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-        base = 'Step 1 of 6: Querying database...done!'
-        base = 'Step 2 of 6: Normalizing data...'
+        base[RID] = 'Step 1 of 6: Querying database...done!'
+        base[RID] = 'Step 2 of 6: Normalizing data...'
 
         # Create combined metadata column
         if len(fieldList) > 1:
@@ -672,8 +696,8 @@ def getQuantUnivData(request):
             result += 'To try again, please select fewer samples or another normalization method...\n'
         result += '===============================================\n\n\n'
 
-        base = 'Step 2 of 6: Normalizing data...done!'
-        base = 'Step 3 of 6: Performing linear regression...'
+        base[RID] = 'Step 2 of 6: Normalizing data...done!'
+        base[RID] = 'Step 3 of 6: Performing linear regression...'
 
         seriesList = []
         xAxisDict = {}
@@ -713,8 +737,8 @@ def getQuantUnivData(request):
                 regrList.append([min(x), min_y])
                 regrList.append([max(x), max_y])
 
-            base = 'Step 3 of 6: Performing linear regression...done!'
-            base = 'Step 4 of 6: Formatting graph data for display...'
+            base[RID] = 'Step 3 of 6: Performing linear regression...done!'
+            base[RID] = 'Step 4 of 6: Formatting graph data for display...'
 
             if sig_only == 0:
                 seriesDict = {}
@@ -780,8 +804,8 @@ def getQuantUnivData(request):
         elif DepVar == 3:
             finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
-        base = 'Step 4 of 6: Formatting graph data for display...'
-        base = 'Step 5 of 6: Formatting biome data...'
+        base[RID] = 'Step 4 of 6: Formatting graph data for display...'
+        base[RID] = 'Step 5 of 6: Formatting biome data...'
 
         biome = {}
         newList = ['sampleid', 'sample_name']
@@ -821,23 +845,22 @@ def getQuantUnivData(request):
         biome['columns'] = nameList
         biome['data'] = dataList
 
-        base = 'Step 5 of 6: Formatting biome data...done!'
-        base = 'Step 6 of 6: Formatting result table...'
+        base[RID] = 'Step 5 of 6: Formatting biome data...done!'
+        base[RID] = 'Step 6 of 6: Formatting result table...'
 
         res_table = finalDF.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
         finalDict['res_table'] = str(res_table)
 
         finalDict['text'] = result
-        base = 'Step 4 of 4: Preparing graph data...completed'
+        base[RID] = 'Step 4 of 4: Preparing graph data...completed'
 
         biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
         finalDict['biome'] = str(biome_json)
 
-        base = 'Step 6 of 6: Formatting result table...done!'
+        base[RID] = 'Step 6 of 6: Formatting result table...done!'
 
         res = simplejson.dumps(finalDict)
-        resetTracking()
 
         return HttpResponse(res, content_type='application/json')
 
