@@ -39,7 +39,7 @@ def upload(request):
             try:
                 project = ".".join(["project", "csv"])
                 file1 = request.FILES['docfile1']
-                pType = form1.POST['type']
+                pType = str(request.POST['type'])
                 p_uuid = projectid(file1)
             except:
                 print("Error with project file")
@@ -63,6 +63,7 @@ def upload(request):
 
             dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
             handle_uploaded_file(file1, dest, project)
+            print pType
             try:
                 parse_project(file1, dest, p_uuid, pType)
             except:
@@ -86,7 +87,7 @@ def upload(request):
             file2 = request.FILES['docfile2']
             handle_uploaded_file(file2, dest, sample)
             try:
-                parse_sample(file2, p_uuid)
+                parse_sample(file2, p_uuid, pType)
             except:
                 print("Error with sample file")
                 remove_proj(p_uuid)

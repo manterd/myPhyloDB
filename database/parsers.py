@@ -78,8 +78,7 @@ def parse_project(Document, path, p_uuid, pType):
             m.save()
     Document.close()
 
-
-def parse_sample(Document, p_uuid):
+def parse_sample(Document, p_uuid, pType):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
@@ -111,40 +110,24 @@ def parse_sample(Document, p_uuid):
 
                 sample = Sample.objects.get(sampleid=s_uuid)
 
-                wanted_keys = ['depth', 'pool_dna_extracts', 'samp_size', 'samp_collection_device', 'samp_weight_dna_ext', 'sieving', 'storage_cond']
-                collectDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = Collect(projectid=project, sampleid=sample, **collectDict)
-                m.save()
+                if pType == "soil":
 
-                wanted_keys = ['annual_season_precpt', 'annual_season_temp']
-                climateDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = Climate(projectid=project, sampleid=sample, **climateDict)
-                m.save()
+                    wanted_keys = ['depth', 'pool_dna_extracts', 'samp_size', 'samp_collection_device', 'samp_weight_dna_ext', 'sieving', 'storage_cond', 'annual_season_precpt', 'annual_season_temp', 'bulk_density', 'drainage_class', 'fao_class', 'horizon', 'local_class', 'porosity', 'profile_position', 'slope_aspect', 'slope_gradient', 'soil_type', 'texture_class', 'water_content_soil', 'pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B', 'agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage', 'rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
+                    soilDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
+                    m = Soil(projectid=project, sampleid=sample, **soilDict)
+                    m.save()
 
-                wanted_keys = ['bulk_density', 'drainage_class', 'fao_class', 'horizon', 'local_class', 'porosity', 'profile_position', 'slope_aspect', 'slope_gradient', 'soil_type', 'texture_class', 'water_content_soil']
-                soil_classDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = Soil_class(projectid=project, sampleid=sample, **soil_classDict)
-                m.save()
+                if pType == "human_gut":
 
-                wanted_keys = ['pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B']
-                soil_nutrDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = Soil_nutrient(projectid=project, sampleid=sample, **soil_nutrDict)
-                m.save()
-
-                wanted_keys = ['agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage']
-                mgtDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = Management(projectid=project, sampleid=sample, **mgtDict)
-                m.save()
-
-                wanted_keys = ['rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
-                microbeDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = Microbial(projectid=project, sampleid=sample, **microbeDict)
-                m.save()
+                    wanted_keys = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'grastointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'sap_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']  # place gut keys here
+                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
+                    m = Human_Gut(projectid=project, sampleid=sample, **gutDict)
+                    m.save()
 
                 wanted_keys = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6', 'usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
                 userDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
                 m = User(projectid=project, sampleid=sample, **userDict)
-                m.save()
+                m.save()  # Keeping user independent for now
     Document.close()
 
 
