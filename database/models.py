@@ -3,6 +3,9 @@ from django_extensions.db.fields import UUIDField
 
 
 class Project(models.Model):
+
+    projectType = models.CharField(max_length=45, blank=False)  # Mandatory field
+
     projectid = UUIDField(primary_key=True)
     path = models.CharField(max_length=90)
     project_name = models.TextField(blank=True)
@@ -42,10 +45,59 @@ class Sample(models.Model):
     def __unicode__(self):
         return unicode(self.sample_name)
 
+# add class for Soil, contains normal classes in here
+# add classes for other packages, and their subclasses
 
-class Collect(models.Model):
+class Human_Gut(models.Model):
+
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
+
+    # Put human_gut variables here
+    age = models.CharField(max_length=15, blank=True)  # float unit
+    body_mass_index = models.CharField(max_length=45, blank=True)  # float unit
+    body_product = models.CharField(max_length=45, blank=True)  # text
+    chem_administration = models.CharField(max_length=45, blank=True)  # term; timestamp
+    diet = models.CharField(max_length=45, blank=True)  # text
+    disease = models.CharField(max_length=45, blank=True)  # term
+    ethnicity = models.CharField(max_length=45, blank=True)  # integer|text
+    family_relationship = models.CharField(max_length=45, blank=True)  # text; text
+    gastrointest_disord = models.CharField(max_length=45, blank=True)  # text
+    genotype = models.CharField(max_length=45, blank=True)  # text
+    height = models.CharField(max_length=45, blank=True)  # float unit
+    host_body_temp = models.CharField(max_length=45, blank=True)  # float unit
+    host_subject_id = models.CharField(max_length=45, blank=True)  # text
+    ihmc_medication_code = models.CharField(max_length=45, blank=True)  # integer
+    last_meal = models.CharField(max_length=45, blank=True)  # text; period
+    liver_disord = models.CharField(max_length=45, blank=True)  # text
+    medic_hist_perform = models.CharField(max_length=45, blank=True)  # boolean
+    nose_throat_disord = models.CharField(max_length=45, blank=True)  # text
+    occupation = models.CharField(max_length=45, blank=True)  # integer
+    organism_count = models.CharField(max_length=45, blank=True)  # text; float unit
+    oxy_stat_samp = models.CharField(max_length=45, blank=True)  # [, 'aerobic', 'anaerobic']
+    perturbation = models.CharField(max_length=45, blank=True)  # text; interval
+    phenotype = models.CharField(max_length=45, blank=True)  # term
+    pulse = models.CharField(max_length=45, blank=True)  # float unit
+    rel_to_oxygen = models.CharField(max_length=45, blank=True)  # [, 'aerobe', 'anaerobe', 'facultative', 'microaerophilic', 'microanerobe', 'obligate aerobe', 'obligate anaerobe']
+    samp_collect_device = models.CharField(max_length=45, blank=True)  # text
+    samp_mat_process = models.CharField(max_length=45, blank=True)  # text|term
+    samp_salinity = models.CharField(max_length=45, blank=True)  # float unit
+    samp_size = models.CharField(max_length=45, blank=True)  # float unit
+    samp_store_dur = models.CharField(max_length=45, blank=True)  # interval
+    samp_store_loc = models.CharField(max_length=45, blank=True)  # text
+    samp_store_temp = models.CharField(max_length=45, blank=True)  # float unit
+    sex = models.CharField(max_length=45, blank=True)  # [, 'male', 'female', 'neuter', 'hermaphrodite', 'not determined']
+    special_diet = models.CharField(max_length=45, blank=True)  # [, 'low carb', 'reduced calorie', 'vegetarian', 'other(to be specified)']
+    temp = models.CharField(max_length=45, blank=True)  # float unit
+    tissue = models.CharField(max_length=45, blank=True)  # not specified, probably text
+    tot_mass = models.CharField(max_length=45, blank=True)  # float unit
+    user_defined = models.CharField(max_length=45, blank=True)  # Perhaps merge this with the other user defined section, put it under common
+
+class Soil(models.Model):
+
+    sampleid = models.ForeignKey(Sample)
+    projectid = models.ForeignKey(Project)
+
     depth = models.CharField(max_length=45, blank=True)
     pool_dna_extracts = models.CharField(max_length=45, blank=True)
     samp_size = models.CharField(max_length=45, blank=True)
@@ -54,23 +106,9 @@ class Collect(models.Model):
     sieving = models.CharField(max_length=45, blank=True)
     storage_cond = models.CharField(max_length=45, blank=True)
 
-    def natural_key(self):
-        return self.sampleid
-
-
-class Climate(models.Model):
-    sampleid = models.ForeignKey(Sample)
-    projectid = models.ForeignKey(Project)
     annual_season_precpt = models.CharField(max_length=45, blank=True)
     annual_season_temp = models.CharField(max_length=45, blank=True)
 
-    def natural_key(self):
-        return self.sampleid
-
-
-class Soil_class(models.Model):
-    sampleid = models.ForeignKey(Sample)
-    projectid = models.ForeignKey(Project)
     bulk_density = models.CharField(max_length=45, blank=True)
     drainage_class = models.CharField(max_length=45, blank=True)
     fao_class = models.CharField(max_length=45, blank=True)
@@ -84,13 +122,6 @@ class Soil_class(models.Model):
     texture_class = models.CharField(max_length=45, blank=True)
     water_content_soil = models.CharField(max_length=45, blank=True)
 
-    def natural_key(self):
-        return self.sampleid
-
-
-class Soil_nutrient(models.Model):
-    sampleid = models.ForeignKey(Sample)
-    projectid = models.ForeignKey(Project)
     pH = models.CharField(max_length=45, blank=True)
     EC = models.CharField(max_length=45, blank=True)
     tot_C = models.CharField(max_length=45, blank=True)
@@ -110,13 +141,6 @@ class Soil_nutrient(models.Model):
     Na = models.CharField(max_length=45, blank=True)
     B = models.CharField(max_length=45, blank=True)
 
-    def natural_key(self):
-        return self.sampleid
-
-
-class Management(models.Model):
-    sampleid = models.ForeignKey(Sample)
-    projectid = models.ForeignKey(Project)
     agrochem_amendments = models.CharField(max_length=45, blank=True)
     agrochem_amendments_desc = models.TextField(blank=True)
     biological_amendments = models.CharField(max_length=45, blank=True)
@@ -133,20 +157,10 @@ class Management(models.Model):
     previous_land_use = models.TextField(blank=True)
     tillage = models.TextField(blank=True)
 
-    def natural_key(self):
-        return self.sampleid
-
-
-class Microbial(models.Model):
-    sampleid = models.ForeignKey(Sample)
-    projectid = models.ForeignKey(Project)
     rRNA_copies = models.CharField(max_length=45, blank=True)
     microbial_biomass_C = models.CharField(max_length=45, blank=True)
     microbial_biomass_N = models.CharField(max_length=45, blank=True)
     microbial_respiration = models.CharField(max_length=45, blank=True)
-
-    def natural_key(self):
-        return self.sampleid
 
 
 class User(models.Model):

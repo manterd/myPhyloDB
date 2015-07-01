@@ -11,7 +11,10 @@ PrivilegesRequired=lowest
 OutputBaseFilename=myPhyloDB_1.0_Win_x64_install
 
 [Files]
-Source: "..\..\..\dist\myPhyloDB\*"; DestDir: "{app}";
+Source: "..\..\..\dist\myPhyloDB\*.pyd"; DestDir: "{app}";
+Source: "..\..\..\dist\myPhyloDB\*.dll"; DestDir: "{app}";
+Source: "..\..\..\dist\myPhyloDB\*.manifest"; DestDir: "{app}";
+Source: "..\..\..\dist\myPhyloDB\*.exe"; DestDir: "{app}";
 Source: "..\..\..\dist\myPhyloDB\dbMicrobe"; DestDir: "{app}"; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "..\..\..\dist\myPhyloDB\_MEI\*"; DestDir: "{app}\_MEI"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\django\*"; DestDir: "{app}\django"; Flags: recursesubdirs
@@ -27,7 +30,7 @@ Source: "..\..\..\dist\myPhyloDB\pytz\*"; DestDir: "{app}\pytz"; Flags: recurses
 Source: "..\..\..\dist\myPhyloDB\sample_files\*"; DestDir: "{app}\sample_files"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\sphinx\*"; DestDir: "{app}\sphinx"; Flags: recursesubdirs
 Source: "..\..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs
-Source: "..\..\..\dist\myPhyloDB\zmq\*"; DestDir: "{app}\zmq"; Flags: recursesubdirs
+Source: "..\..\..\dist\myPhyloDB\zmq\*"; DestDir: "{app}\zmq"; Flags: recursesubdirs       
 Source: "..\..\..\dist\myPhyloDB\R-Portable\*"; DestDir: "{app}\R-Portable"; Flags: recursesubdirs
 
 [Icons]

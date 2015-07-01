@@ -39,6 +39,7 @@ def upload(request):
             try:
                 project = ".".join(["project", "csv"])
                 file1 = request.FILES['docfile1']
+                pType = form1.POST['type']
                 p_uuid = projectid(file1)
             except:
                 print("Error with project file")
@@ -63,10 +64,13 @@ def upload(request):
             dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
             handle_uploaded_file(file1, dest, project)
             try:
-                parse_project(file1, dest, p_uuid)
+                parse_project(file1, dest, p_uuid, pType)
             except:
                 print("Error with project file")
-                remove_proj(p_uuid)
+                try:
+                    remove_proj(p_uuid)
+                except:
+                    print("Couldn't delete project")
                 projects = Project.objects.all().order_by('project_name')
                 return render_to_response(
                     'upload.html',
@@ -135,6 +139,8 @@ def upload(request):
                          'error': "There was an error parsing your Shared file"},
                         context_instance=RequestContext(request)
                     )
+            else:
+                print("Form2 failed")
 
             if form3.is_valid():
                 mothurdest = 'mothur/temp'
@@ -203,6 +209,10 @@ def upload(request):
                          'error': "There was an error parsing your Profile (post-Mothur)"},
                         context_instance=RequestContext(request)
                     )
+            else:
+                print("Form3 failed")
+        else:
+            print("Form1 failed")
 
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)

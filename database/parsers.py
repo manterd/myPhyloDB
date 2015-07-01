@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import simplejson
 from django.http import HttpResponse
-from models import Project, Sample, Collect, Climate, Soil_class, Soil_nutrient, Management, Microbial, User
+from models import Project, Sample, Soil, Human_Gut, User
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from uuid import uuid4
 import numpy as np
@@ -63,7 +63,7 @@ def projectid(Document):
                 return uuid4().hex
 
 
-def parse_project(Document, path, p_uuid):
+def parse_project(Document, path, p_uuid, pType):
     global stage, perc
     stage = "Step 1 of 5: Parsing project file..."
     perc = 0
@@ -74,7 +74,7 @@ def parse_project(Document, path, p_uuid):
             perc = 100
             row_dict = dict((k, v) for k, v in row.iteritems() if v != '')
             row_dict.pop('project_id')
-            m = Project(projectid=p_uuid, path=path, **row_dict)
+            m = Project(projectType=pType, projectid=p_uuid, path=path, **row_dict)
             m.save()
     Document.close()
 
