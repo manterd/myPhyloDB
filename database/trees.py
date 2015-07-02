@@ -59,9 +59,8 @@ def getProjectTreeChildren(request):
 def getSampleCatTree(request):
     myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'tooltip': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    collect = {'title': 'Sample Collection', 'id': 'collect', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    soil_class = {'title': 'Soil Classification', 'id': 'soil_class', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    management = {'title': 'Management', 'id': 'management', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    soil = {'title': 'Soil', 'id': 'soil', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    human_gut = {'title': 'Human Gut', 'id': 'human_gut', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     user = {'title': 'User-defined', 'id': 'user', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
 
     list = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'material']
@@ -72,17 +71,22 @@ def getSampleCatTree(request):
     list = ['depth', 'pool_dna_extracts', 'samp_collection_device', 'sieving', 'storage_cond']
     for i in range(len(list)):
         myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
-        collect['children'].append(myNode)
+        soil['children'].append(myNode)
 
     list = ['drainage_class', 'fao_class', 'horizon', 'local_class', 'profile_position', 'slope_aspect', 'soil_type', 'texture_class']
     for i in range(len(list)):
         myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
-        soil_class['children'].append(myNode)
+        soil['children'].append(myNode)
 
     list = ['agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage']
     for i in range(len(list)):
         myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
-        management['children'].append(myNode)
+        soil['children'].append(myNode)
+
+    list = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'grastointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'sap_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']
+    for i in range(len(list)):
+        myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+        human_gut['children'].append(myNode)
 
     list = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6']
     for i in range(len(list)):
@@ -90,9 +94,8 @@ def getSampleCatTree(request):
         user['children'].append(myNode)
 
     myTree['children'].append(mimark)
-    myTree['children'].append(collect)
-    myTree['children'].append(soil_class)
-    myTree['children'].append(management)
+    myTree['children'].append(soil)
+    myTree['children'].append(human_gut)
     myTree['children'].append(user)
 
     # Convert result list to a JSON string
@@ -124,9 +127,8 @@ def getSampleCatTreeChildren(request):
     if request.is_ajax():
         field = request.GET["field"]
         mimark = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city',  'geo_loc_farm', 'geo_loc_plot', 'material']
-        collect = ['depth', 'pool_dna_extracts', 'samp_collection_device', 'sieving', 'storage_cond']
-        soil_class = ['drainage_class', 'fao_class', 'horizon', 'local_class', 'profile_position', 'slope_aspect', 'soil_type', 'texture_class']
-        management = ['agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage']
+        soil = ['depth', 'pool_dna_extracts', 'samp_size', 'samp_collection_device', 'samp_weight_dna_ext', 'sieving', 'storage_cond', 'annual_season_precpt', 'annual_season_temp', 'bulk_density', 'drainage_class', 'fao_class', 'horizon', 'local_class', 'porosity', 'profile_position', 'slope_aspect', 'slope_gradient', 'soil_type', 'texture_class', 'water_content_soil', 'pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B', 'agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage', 'rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
+        human_gut = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'grastointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'sap_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']
         user = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6']
 
         myNode = []
@@ -157,8 +159,8 @@ def getSampleCatTreeChildren(request):
                     myNode1['children'].append(myNode2)
                 myNode.append(myNode1)
 
-        elif field in collect:
-            table_field = 'collect__' + field
+        elif field in soil:
+            table_field = 'soil__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
             values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
@@ -185,36 +187,8 @@ def getSampleCatTreeChildren(request):
                     myNode1['children'].append(myNode2)
                 myNode.append(myNode1)
 
-        elif field in soil_class:
-            table_field = 'soil_class__' + field
-            exclude_list = []
-            exclude_list.append(Q(**{table_field: 'null'}))
-            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
-            for j in range(len(values)):
-                myNode1 = {
-                    'title': values[j],
-                    'id': field,
-                    'tooltip': 'Value',
-                    'isFolder': True,
-                    'children': []
-                }
-                args_list = []
-                args_list.append(Q(**{table_field: values[j]}))
-                items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
-                for item in items:
-                    reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
-                    myNode2 = {
-                        'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                        'id': item.sampleid,
-                        'tooltip': 'Project: ' + item.projectid.project_name,
-                        'hideCheckbox': True,
-                        'isFolder': False
-                    }
-                    myNode1['children'].append(myNode2)
-                myNode.append(myNode1)
-
-        elif field in management:
-            table_field = 'management__' + field
+        elif field in human_gut:
+            table_field = 'human_gut__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
             values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
