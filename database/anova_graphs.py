@@ -525,7 +525,6 @@ def getQuantUnivData(request):
         RID = str(all["RID"])
         time1[RID] = time.time()
         base[RID] = 'Step 1 of 6: Querying database...'
-
         selectAll = int(all["selectAll"])
         DepVar = int(all["DepVar"])
         NormMeth = int(all["NormMeth"])
@@ -619,19 +618,15 @@ def getQuantUnivData(request):
 
         metaString = all["meta"]
         metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
-
         fieldList = []
         for key in metaDict:
             fieldList.append(metaDict[key])
-
         metaDF = quantUnivMetaDF(qs2, metaDict)
-        metaDF.dropna(subset=fieldList, inplace=True)
+        metaDF.dropna(subset=fieldList, inplace=True)  # TODO
         metaDF.sort(columns='sampleid', inplace=True)
-
         myList = metaDF['sampleid'].tolist()
         mySet = list(ordered_set(myList))
         taxaDF = taxaProfileDF(mySet)
-
         taxaString = all["taxa"]
 
         taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
@@ -663,7 +658,6 @@ def getQuantUnivData(request):
             taxaDict = {}
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
-
         base[RID] = 'Step 1 of 6: Querying database...done!'
         base[RID] = 'Step 2 of 6: Normalizing data...'
 

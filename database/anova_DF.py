@@ -131,10 +131,10 @@ def quantUnivMetaDF(qs1, metaDict):
             else:
                 metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
 
-        elif key == 'collect':
+        elif key == 'soil':
             field_list.append('sampleid')
             field_list.append('sample_name')
-            field = 'collect__' + str(value)
+            field = 'soil__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
             exclude_list = []
@@ -147,58 +147,10 @@ def quantUnivMetaDF(qs1, metaDict):
             else:
                 metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
 
-        elif key == 'climate':
+        elif key == 'human_gut':
             field_list.append('sampleid')
             field_list.append('sample_name')
-            field = 'climate__' + str(value)
-            field_list.append(field)
-            final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
-            tempDF.rename(columns={field: value}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
-
-        elif key == 'soil_class':
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'soil_class__' + str(value)
-            field_list.append(field)
-            final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
-            tempDF.rename(columns={field: value}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
-
-        elif key == 'soil_nutrient':
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'soil_nutrient__' + str(value)
-            field_list.append(field)
-            final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
-            tempDF.rename(columns={field: value}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
-
-        elif key == 'microbial':
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'microbial__' + str(value)
+            field = 'human_gut__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
             exclude_list = []

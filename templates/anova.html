@@ -331,7 +331,6 @@
         });
 
         function updateStatus(RID) {
-            //alert("Last one: "+RID);
             $.ajax({
                 url: '/statusANOVA/',
                 type: 'GET',
@@ -353,7 +352,6 @@
         }
 
         function startTimer(RID) {
-            //alert("Received RID: "+RID);
             refresh = setInterval(function(){ updateStatus(RID); }, 1000);
             return refresh;
         }

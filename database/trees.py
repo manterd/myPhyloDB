@@ -105,7 +105,7 @@ def getSampleCatTree(request):
     response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
-    return HttpResponse(response_dict, content_type='application/json')
+        return HttpResponse(response_dict, content_type='application/json')
 
     response_dict = {}
     response_dict.update({'children': myTree})
@@ -252,44 +252,26 @@ def getSampleQuantTree(request):
     samples = Sample.objects.all()
     samples.query = pickle.loads(request.session['selected_samples'])
 
-    myTree = {'title': 'Meta Data: Quantitative', 'tooltip': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
-    mimark = {'title': 'MIMARKs', 'tooltip': 'MIMARKs', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    collect = {'title': 'Sample Collection', 'tooltip': 'Sample Collection', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    climate = {'title': 'Climate', 'tooltip': 'Climate', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    soil_class = {'title': 'Soil Classification', 'tooltip': 'Soil Classification', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    soil_nutrient = {'title': 'Soil pH / Nutrients', 'tooltip': 'Soil Nutrient', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    microbial = {'title': 'Microbial Biomass', 'tooltip': 'Microbial Biomass', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    user = {'title': 'User-defined', 'tooltip': 'User_defined', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'tooltip': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
+    mimark = {'title': 'MIMARKs', 'id': 'mimark', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    soil = {'title': 'Soil', 'id': 'soil', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    human_gut = {'title': 'Human Gut', 'id': 'human_gut', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    user = {'title': 'User-defined', 'id': 'user', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
 
     list = ['latitude', 'longitude', 'elevation']
     for i in range(len(list)):
         myNode = {'title': list[i], 'tooltip': 'mimark', 'isFolder': True, 'isLazy': True, 'children': []}
         mimark['children'].append(myNode)
 
-    list = ['samp_size', 'samp_weight_dna_ext']
+    list = ['samp_size', 'samp_weight_dna_ext', 'annual_season_precpt', 'annual_season_temp', 'bulk_density', 'porosity', 'slope_gradient', 'water_content_soil', 'pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B', 'rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
     for i in range(len(list)):
-        myNode = {'title': list[i], 'tooltip': 'collect', 'isFolder': True, 'isLazy': True, 'children': []}
-        collect['children'].append(myNode)
+        myNode = {'title': list[i], 'tooltip': 'soil', 'isFolder': True, 'isLazy': True, 'children': []}
+        soil['children'].append(myNode)
 
-    list = ['annual_season_precpt', 'annual_season_temp']
+    list = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'grastointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'sap_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']
     for i in range(len(list)):
-        myNode = {'title': list[i], 'tooltip': 'climate', 'isFolder': True, 'isLazy': True, 'children': []}
-        climate['children'].append(myNode)
-
-    list = ['bulk_density', 'porosity', 'slope_gradient', 'water_content_soil']
-    for i in range(len(list)):
-        myNode = {'title': list[i], 'tooltip': 'soil_class', 'isFolder': True, 'isLazy': True, 'children': []}
-        soil_class['children'].append(myNode)
-
-    list = ['pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B']
-    for i in range(len(list)):
-        myNode = {'title': list[i], 'tooltip': 'soil_nutrient', 'isFolder': True, 'isLazy': True, 'children': []}
-        soil_nutrient['children'].append(myNode)
-
-    list = ['rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
-    for i in range(len(list)):
-        myNode = {'title': list[i], 'tooltip': 'microbial', 'isFolder': True, 'isLazy': True, 'children': []}
-        microbial['children'].append(myNode)
+        myNode = {'title': list[i], 'tooltip': 'human_gut', 'isFolder': True, 'isLazy': True, 'children': []}
+        human_gut['children'].append(myNode)
 
     list = ['usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
     for i in range(len(list)):
@@ -297,11 +279,8 @@ def getSampleQuantTree(request):
         user['children'].append(myNode)
 
     myTree['children'].append(mimark)
-    myTree['children'].append(collect)
-    myTree['children'].append(climate)
-    myTree['children'].append(soil_class)
-    myTree['children'].append(soil_nutrient)
-    myTree['children'].append(microbial)
+    myTree['children'].append(soil)
+    myTree['children'].append(human_gut)
     myTree['children'].append(user)
 
     # Convert result list to a JSON string
@@ -311,7 +290,7 @@ def getSampleQuantTree(request):
     response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
-    return HttpResponse(response_dict, content_type='application/json')
+        return HttpResponse(response_dict, content_type='application/json')
 
     response_dict = {}
     response_dict.update({'children': myTree})
@@ -333,11 +312,8 @@ def getSampleQuantTreeChildren(request):
     if request.is_ajax():
         field = request.GET["field"]
         mimark = ['latitude', 'longitude', 'elevation']
-        collect = ['samp_size', 'samp_weight_dna_ext']
-        climate = ['annual_season_precpt', 'annual_season_temp']
-        soil_class = ['bulk_density', 'porosity', 'slope_gradient', 'water_content_soil']
-        soil_nutrient = ['pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B']
-        microbial = ['rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
+        soil = ['samp_size', 'samp_weight_dna_ext', 'rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration', 'pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B', 'bulk_density', 'porosity', 'slope_gradient', 'water_content_soil', 'annual_season_precpt', 'annual_season_temp']
+        human_gut = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'grastointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'sap_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']
         user = ['usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
 
         myNode = []
@@ -356,8 +332,8 @@ def getSampleQuantTreeChildren(request):
                 }
                 myNode.append(myNode1)
 
-        elif field in collect:
-            table_field = 'collect__' + field
+        elif field in soil:
+            table_field = 'soil__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
@@ -372,56 +348,8 @@ def getSampleQuantTreeChildren(request):
                 }
                 myNode.append(myNode1)
 
-        elif field in climate:
-            table_field = 'climate__' + field
-            exclude_list = []
-            exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
-            for item in items:
-                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
-                myNode1 = {
-                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                    'id': item.sampleid,
-                    'tooltip': 'Project: ' + item.projectid.project_name,
-                    'hideCheckbox': True,
-                    'isFolder': False
-                }
-                myNode.append(myNode1)
-
-        elif field in soil_class:
-            table_field = 'soil_class__' + field
-            exclude_list = []
-            exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
-            for item in items:
-                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
-                myNode1 = {
-                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                    'id': item.sampleid,
-                    'tooltip': 'Project: ' + item.projectid.project_name,
-                    'hideCheckbox': True,
-                    'isFolder': False
-                }
-                myNode.append(myNode1)
-
-        elif field in soil_nutrient:
-            table_field = 'soil_nutrient__' + field
-            exclude_list = []
-            exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
-            for item in items:
-                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
-                myNode1 = {
-                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                    'id': item.sampleid,
-                    'tooltip': 'Project: ' + item.projectid.project_name,
-                    'hideCheckbox': True,
-                    'isFolder': False
-                }
-                myNode.append(myNode1)
-
-        elif field in microbial:
-            table_field = 'microbial__' + field
+        elif field in human_gut:
+            table_field = 'human_gut__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
             items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
@@ -502,7 +430,7 @@ def getTaxaTree(request):
     response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
-    return HttpResponse(response_dict, content_type='application/json')
+        return HttpResponse(response_dict, content_type='application/json')
 
     response_dict = {}
     response_dict.update({'children': myTree})
