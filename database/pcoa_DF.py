@@ -14,6 +14,7 @@ def catPCoAMetaDF(qs1, metaDict):
     sampleTableList = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'material']
     soilTableList = ['depth', 'pool_dna_extracts', 'samp_collection_device', 'sieving', 'storage_cond', 'drainage_class', 'fao_class', 'horizon', 'local_class', 'profile_position', 'slope_aspect', 'soil_type', 'texture_class', 'agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage']
     human_gutTableList = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'grastointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'sap_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']
+    microbialTableList = ['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'glucosidase_act', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'methane', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'perturbation', 'petroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'potassium', 'pressure', 'redox_potential', 'rel_to_oxygen', 'salinity', 'samp_collect_device', 'samp_mat_process', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'silicate', 'sodium', 'sulfate', 'sulfide', 'temp', 'tot_carb', 'tot_nitro', 'tot_org_carb', 'turbidity', 'water_content', 'user_defined']
     usrTableList = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6']
 
     metaDF = pd.DataFrame()
@@ -64,6 +65,26 @@ def catPCoAMetaDF(qs1, metaDict):
                 tempDF.drop('sample_name', axis=1, inplace=True)
                 metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
 
+        elif key in microbialTableList:
+            field_list.append('sampleid')
+            field_list.append('sample_name')
+            field = 'microbial__' + str(key)
+            field_list.append(field)
+            if type(value) is unicode:
+                args_list.append(Q(**{field: value}))
+            else:
+                for item in value:
+                    args_list.append(Q(**{field: item}))
+            exclude_list = []
+            exclude_list.append(Q(**{field: 'null'}))
+            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list)).exclude(reduce(operator.or_, exclude_list))
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            tempDF.rename(columns={field: key}, inplace=True)
+            if metaDF.empty:
+                metaDF = tempDF
+            else:
+                tempDF.drop('sample_name', axis=1, inplace=True)
+                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
 
         elif key in human_gutTableList:
             field_list.append('sampleid')

@@ -137,6 +137,11 @@
                 updateGutTable(selKeys);
                 $("#humgut").show();
             }
+            if (pTypes.indexOf("microbial")>-1)
+            {
+                updateMicrobialTable(selKeys);
+                $("#microbial").show();
+            }
 
 
             updateUsrTable(selKeys);
@@ -204,7 +209,7 @@
         }
 
         function updateGutTable(selKeys){
-           var table = $('#gutTable').DataTable();
+           var table = $('#human_gutTable').DataTable();
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
@@ -252,6 +257,88 @@
                                     "{{ Human_Gut.tissue }}",
                                     "{{ Human_Gut.tot_mass }}",
                                     "{{ Human_Gut.user_defined }}"
+                                 ]).draw();
+                            }
+                        {% endfor %}
+                    {% endfor %}
+            });
+        }
+
+        function updateMicrobialTable(selKeys){
+           var table = $('#microbialTable').DataTable();
+            table.rows().remove().draw();
+            $.each(selKeys, function (index, value) {
+                    {% for project in projects %}
+                        {% for Microbial in project.Microbial_set.all %}
+                            var id = "{{ Microbial.sampleid_id }}";
+                            if (id == value) {
+                                 table.row.add([
+                                    "{{ project.project_name }}",
+                                    "{{ Microbial.sampleid.sample_name }}",
+                                    "{{ Microbial.alkalinity }}",
+                                    "{{ Microbial.alkyl_diethers }}",
+                                    "{{ Microbial.altitude }}",
+                                    "{{ Microbial.aminopept_act }}",
+                                    "{{ Microbial.ammonium }}",
+                                    "{{ Microbial.bacteria_carb_prod }}",
+                                    "{{ Microbial.biomass }}",
+                                    "{{ Microbial.bishomohopanol }}",
+                                    "{{ Microbial.bromide }}",
+                                    "{{ Microbial.calcium }}",
+                                    "{{ Microbial.carb_nitro_ratio }}",
+                                    "{{ Microbial.chem_administration }}",
+                                    "{{ Microbial.chloride }}",
+                                    "{{ Microbial.chlorophyll }}",
+                                    "{{ Microbial.diether_lipids }}",
+                                    "{{ Microbial.diss_carb_dioxide }}",
+                                    "{{ Microbial.diss_hydrogen }}",
+                                    "{{ Microbial.diss_inorg_carb }}",
+                                    "{{ Microbial.diss_org_carb }}",
+                                    "{{ Microbial.diss_org_nitro }}",
+                                    "{{ Microbial.diss_oxygen }}",
+                                    "{{ Microbial.glucosidase_act }}",
+                                    "{{ Microbial.magnesium }}",
+                                    "{{ Microbial.mean_frict_vel }}",
+                                    "{{ Microbial.mean_peak_frict_vel }}",
+                                    "{{ Microbial.methane }}",
+                                    "{{ Microbial.n_alkanes }}",
+                                    "{{ Microbial.nitrate }}",
+                                    "{{ Microbial.nitrite }}",
+                                    "{{ Microbial.nitro }}",
+                                    "{{ Microbial.org_carb }}",
+                                    "{{ Microbial.org_matter }}",
+                                    "{{ Microbial.org_nitro }}",
+                                    "{{ Microbial.organism_count }}",
+                                    "{{ Microbial.oxy_stat_samp }}",
+                                    "{{ Microbial.part_org_carb }}",
+                                    "{{ Microbial.perturbation }}",
+                                    "{{ Microbial.petroleum_hydrocarb }}",
+                                    "{{ Microbial.ph }}",
+                                    "{{ Microbial.phaeopigments }}",
+                                    "{{ Microbial.phosphate }}",
+                                    "{{ Microbial.phosplipid_fatt_acid }}",
+                                    "{{ Microbial.potassium }}",
+                                    "{{ Microbial.pressure }}",
+                                    "{{ Microbial.redox_potential }}",
+                                    "{{ Microbial.rel_to_oxygen }}",
+                                    "{{ Microbial.salinity }}",
+                                    "{{ Microbial.samp_collect_device }}",
+                                    "{{ Microbial.samp_mat_process }}",
+                                    "{{ Microbial.samp_size }}",
+                                    "{{ Microbial.samp_store_dur }}",
+                                    "{{ Microbial.samp_store_loc }}",
+                                    "{{ Microbial.samp_store_temp }}",
+                                    "{{ Microbial.silicate }}",
+                                    "{{ Microbial.sodium }}",
+                                    "{{ Microbial.sulfate }}",
+                                    "{{ Microbial.sulfide }}",
+                                    "{{ Microbial.temp }}",
+                                    "{{ Microbial.tot_carb }}",
+                                    "{{ Microbial.tot_nitro }}",
+                                    "{{ Microbial.tot_org_carb }}",
+                                    "{{ Microbial.turbidity }}",
+                                    "{{ Microbial.water_content }}",
+                                    "{{ Microbial.user_defined }}"
                                  ]).draw();
                             }
                         {% endfor %}
@@ -488,7 +575,8 @@
                 <li><a href="#tabs-6" style="font-size: 14px; display: none" id="ph">Soil pH/Nutr</a></li>
                 <li><a href="#tabs-7" style="font-size: 14px; display: none" id="manage">Management</a></li>
                 <li><a href="#tabs-8" style="font-size: 14px; display: none" id="micro">Microbial Biomass</a></li>
-                <li><a href="#tabs-9" style="font-size: 14px; display: none" id="humgut">Human Gut</a></li>
+                <li><a href="#tabs-10" style="font-size: 14px; display: none" id="humgut">Human Gut</a></li>
+                <li><a href="#tabs-11" style="font-size: 14px; display: none" id="microbial">Microbial</a></li>
                 <li><a href="#tabs-9" style="font-size: 14px" id="usr">User-defined</a></li>
             </ul>
 
@@ -658,6 +746,134 @@
                             <th>Microbial  Biomass C</th>
                             <th>Microbial Biomass N</th>
                             <th>Microbial Respiration</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div id="tabs-10">
+                <table id="human_gutTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Sample Name</th>
+                            <th>rRNA Copies</th>
+                            <th>Microbial  Biomass C</th>
+                            <th>Microbial Biomass N</th>
+                            <th>Microbial Respiration</th>
+                            <th>age</th>
+                            <th>body_mass_index</th>
+                            <th>body_product</th>
+                            <th>chem_administration</th>
+                            <th>diet</th>
+                            <th>disease</th>
+                            <th>ethnicity</th>
+                            <th>family_relationship</th>
+                            <th>gastrointest_disord</th>
+                            <th>genotype</th>
+                            <th>height</th>
+                            <th>host_body_temp</th>
+                            <th>host_subject_id</th>
+                            <th>ihmc_medication_code</th>
+                            <th>last_meal</th>
+                            <th>liver_disord</th>
+                            <th>medic_hist_perform</th>
+                            <th>nose_throat_disord</th>
+                            <th>occupation</th>
+                            <th>organism_count</th>
+                            <th>oxy_stat_samp</th>
+                            <th>perturbation</th>
+                            <th>phenotype</th>
+                            <th>pulse</th>
+                            <th>rel_to_oxygen</th>
+                            <th>samp_collect_device</th>
+                            <th>samp_mat_process</th>
+                            <th>samp_salinity</th>
+                            <th>samp_size</th>
+                            <th>samp_store_dur</th>
+                            <th>samp_store_loc</th>
+                            <th>samp_store_temp</th>
+                            <th>sex</th>
+                            <th>special_diet</th>
+                            <th>temp</th>
+                            <th>tissue</th>
+                            <th>tot_mass</th>
+                            <th>user_defined</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div id="tabs-11">
+                <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Sample Name</th>
+                            <th>1 alkalinity</th>
+                            <th>2 alkyl_diethers</th>
+                            <th>3 altitude</th>
+                            <th>4 aminopept_act</th>
+                            <th>5 ammonium</th>
+                            <th>6 bacteria_carb_prod</th>
+                            <th>7 biomass</th>
+                            <th>8 bishomohopanol</th>
+                            <th>9 bromide</th>
+                            <th>10 calcium</th>
+                            <th>11 carb_nitro_ratio</th>
+                            <th>12 chem_administration</th>
+                            <th>13 chloride</th>
+                            <th>14 chlorophyll</th>
+                            <th>15 diether_lipids</th>
+                            <th>16 diss_carb_dioxide</th>
+                            <th>17 diss_hydrogen</th>
+                            <th>18 diss_inorg_carb</th>
+                            <th>19 diss_org_carb</th>
+                            <th>20 diss_org_nitro</th>
+                            <th>21 diss_oxygen</th>
+                            <th>22 glucosidase_act</th>
+                            <th>23 magnesium</th>
+                            <th>24 mean_frict_vel</th>
+                            <th>25 mean_peak_frict_vel</th>
+                            <th>26 methane</th>
+                            <th>27 n_alkanes</th>
+                            <th>28 nitrate</th>
+                            <th>29 nitrite</th>
+                            <th>30 nitro</th>
+                            <th>31 org_carb</th>
+                            <th>32 org_matter</th>
+                            <th>33 org_nitro</th>
+                            <th>34 organism_count</th>
+                            <th>35 oxy_stat_samp</th>
+                            <th>36 part_org_carb</th>
+                            <th>37 perturbation</th>
+                            <th>38 petroleum_hydrocarb</th>
+                            <th>39 ph</th>
+                            <th>40 phaeopigments</th>
+                            <th>41 phosphate</th>
+                            <th>42 phosplipid_fatt_acid</th>
+                            <th>43 potassium</th>
+                            <th>44 pressure</th>
+                            <th>45 redox_potential</th>
+                            <th>46 rel_to_oxygen</th>
+                            <th>47 salinity</th>
+                            <th>48 samp_collect_device</th>
+                            <th>49 samp_mat_process</th>
+                            <th>50 samp_size</th>
+                            <th>51 samp_store_dur</th>
+                            <th>52 samp_store_loc</th>
+                            <th>53 samp_store_temp</th>
+                            <th>54 silicate</th>
+                            <th>55 sodium</th>
+                            <th>56 sulfate</th>
+                            <th>57 sulfide</th>
+                            <th>58 temp</th>
+                            <th>59 tot_carb</th>
+                            <th>60 tot_nitro</th>
+                            <th>61 tot_org_carb</th>
+                            <th>62 turbidity</th>
+                            <th>63 water_content</th>
+                            <th>64 user_defined</th>
                         </tr>
                     </thead>
                 </table>
