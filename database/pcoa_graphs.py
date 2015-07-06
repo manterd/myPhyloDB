@@ -42,7 +42,7 @@ def statusPCoA(request):
         return HttpResponse(json_data, content_type='application/json')
 
 
-def removeRID(request):
+def removeRIDPCOA(request):
     global base, stage, time1, time2, TimeDiff
     try:
         if request.is_ajax():

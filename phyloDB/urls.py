@@ -57,6 +57,10 @@ urlpatterns = patterns('',
 
     url('getDiffAbund', 'database.diffabund_graphs.getDiffAbund', name='getDiffAbund'),
 
+    url('removeRIDANOVA', 'database.anova_graphs.removeRIDANOVA', name='removeRIDANOVA'),
+    url('removeRIDDIFF', 'database.diffabund_graphs.removeRIDDIFF', name='removeRIDDIFF'),
+    url('removeRIDPCOA', 'database.pcoa_graphs.removeRIDPCOA', name='removeRIDPCOA'),
+
 )
 
 

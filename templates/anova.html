@@ -356,8 +356,19 @@
             return refresh;
         }
 
-        function stopTimer() {
+        function stopTimer(RID) {
             clearInterval(refresh);
+            /*$.ajax({
+                    url: '/removeRIDANOVA/',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        all: RID
+                    },
+                    success: function(data) {
+                        alert("RID removed successfully: "+ data );
+                    }
+                });*/
         }
 
         function chooseDisplay() {
@@ -517,7 +528,7 @@
             }
 
             if ((!checkDupes(array1)) && (StatTest == 2)) {
-                stopTimer();
+                stopTimer(RID);
                 $("#run").css("background-color", "lightgray");
                 $("#container-1").empty().append('Analysis has been cancelled!');
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
@@ -634,7 +645,7 @@
                     all: jsonDict
                 },
                 success: function(data) {
-                    stopTimer(refresh);
+                    stopTimer(RID);
                     var xAxis = data['xAxis'];
                     var series = data['series'];
                     var yAxis = data['yAxis'];
