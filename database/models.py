@@ -48,6 +48,7 @@ class Sample(models.Model):
 # add class for Soil, contains normal classes in here
 # add classes for other packages, and their subclasses
 
+
 class Human_Gut(models.Model):
 
     sampleid = models.ForeignKey(Sample)
@@ -163,6 +164,7 @@ class Microbial(models.Model):
     turbidity = models.CharField(max_length=15, blank=True)
     water_content = models.CharField(max_length=15, blank=True)
     user_defined = models.CharField(max_length=15, blank=True)
+
 
 class Human_Associated(models.Model):
     age = models.CharField(max_length=15, blank=True)

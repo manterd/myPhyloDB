@@ -78,6 +78,7 @@ def parse_project(Document, path, p_uuid, pType):
             m.save()
     Document.close()
 
+
 def parse_sample(Document, p_uuid, pType):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
