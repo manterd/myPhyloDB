@@ -131,6 +131,12 @@ def parse_sample(Document, p_uuid, pType):
                     m = Microbial(projectid=project, sampleid=sample, **gutDict)
                     m.save()
 
+                if pType == "human_associated":
+                    wanted_keys = ['age', 'amniotic_fluid_color', 'blood_blood_disord', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'diet_last_six_month', 'disease', 'drug_usage', 'ethnicity', 'family_relationship', 'fetal_health_stat', 'genotype', 'gestation_state', 'height', 'hiv_stat', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'kidney_disord', 'last_meal', 'maternal_health_stat', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'perturbation', 'pet_farm_animal', 'phenotype', 'pulmonary_disord', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_sotre_dur', 'samp_store_loc', 'samp_store_temp', 'sex', 'smoker', 'study_complt_stat', 'temp', 'tissue', 'tot_mass', 'travel_out_six_month', 'twin_sibling', 'urine_collect_meth', 'urogenit_tract_disor', 'weight_lostt_3_month', 'user_defined']
+                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
+                    m = Microbial(projectid=project, sampleid=sample, **gutDict)
+                    m.save()
+
                 wanted_keys = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6', 'usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
                 userDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
                 m = User(projectid=project, sampleid=sample, **userDict)
