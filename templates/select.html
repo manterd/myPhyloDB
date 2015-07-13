@@ -105,6 +105,10 @@
             $("#manage").hide();
             $("#micro").hide();
             $("#humgut").hide();
+            $("#soil").hide();
+            $("#humasso").hide();
+            $("#air").hide();
+            $("#water").hide();
 
             var pTypes = new Array(0);
             {% for project in projects %}
@@ -119,28 +123,45 @@
 
             if (pTypes.indexOf("soil")>-1)
             {
-                updateCollectTable(selKeys);
-                updateClimateTable(selKeys);
-                updateSoilClassTable(selKeys);
-                updateSoilNutrTable(selKeys);
-                updateMgtTable(selKeys);
-                updateMicrobeTable(selKeys);
-                $("#collect").show();
-                $("#climate").show();
-                $("#class").show();
-                $("#ph").show();
-                $("#manage").show();
-                $("#micro").show();
+                //updateCollectTable(selKeys);
+                //updateClimateTable(selKeys);
+                //updateSoilClassTable(selKeys);
+                //updateSoilNutrTable(selKeys);
+                //updateMgtTable(selKeys);
+                //updateMicrobeTable(selKeys);
+                updateSoilTable(selKeys);
+                //$("#collect").show();
+                //$("#climate").show();
+                //$("#class").show();
+                //$("#ph").show();
+                //$("#manage").show();
+                //$("#micro").show();
+                $("#soil").show();
             }
             if (pTypes.indexOf("human_gut")>-1)
             {
                 updateGutTable(selKeys);
                 $("#humgut").show();
             }
+            if (pTypes.indexOf("human_associated")>-1)
+            {
+                updateGutTable(selKeys);
+                $("#humasso").show();
+            }
             if (pTypes.indexOf("microbial")>-1)
             {
                 updateMicrobialTable(selKeys);
                 $("#microbial").show();
+            }
+            if (pTypes.indexOf("water")>-1)
+            {
+                updateWaterTable(selKeys);
+                $("#water").show();
+            }
+            if (pTypes.indexOf("air")>-1)
+            {
+                updateAirTable(selKeys);
+                $("#air").show();
             }
 
 
@@ -208,12 +229,63 @@
             });
         }
 
+        function updateWaterTable(selKeys) {
+            var table = $('#waterTable').DataTable();
+            table.rows().remove().draw();
+            $.each(selKeys, function (index, value) {
+                    {% for project in projects %}
+                        {% for Water in project.Water_set.all %}
+                            var id = "{{ Water.sampleid_id }}";
+                            if (id == value) {
+                                 table.row.add([
+
+                                 ]).draw();
+                            }
+                        {% endfor %}
+                    {% endfor %}
+            });
+        }
+
+        function updateAirTable(selKeys) {
+            var table = $('#airTable').DataTable();
+            table.rows().remove().draw();
+            $.each(selKeys, function (index, value) {
+                    {% for project in projects %}
+                        {% for Air in project.Air_set.all %}
+                            var id = "{{ Air.sampleid_id }}";
+                            if (id == value) {
+                                 table.row.add([
+
+                                 ]).draw();
+                            }
+                        {% endfor %}
+                    {% endfor %}
+            });
+        }
+
+        function updateAssociatedTable(selKeys) {
+            var table = $('#humassoTable').DataTable();
+            table.rows().remove().draw();
+            $.each(selKeys, function (index, value) {
+                    {% for project in projects %}
+                        {% for Human_Associated in project.Human_Associated_set.all %}
+                            var id = "{{ Air.sampleid_id }}";
+                            if (id == value) {
+                                 table.row.add([
+
+                                 ]).draw();
+                            }
+                        {% endfor %}
+                    {% endfor %}
+            });
+        }
+
         function updateGutTable(selKeys){
            var table = $('#human_gutTable').DataTable();
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for Human_gut in project.Human_gut_set.all %}
+                        {% for Human_Gut in project.Human_Gut_set.all %}
                             var id = "{{ Human_gut.sampleid_id }}";
                             if (id == value) {
                                  table.row.add([
@@ -345,7 +417,85 @@
                     {% endfor %}
             });
         }
-
+        function updateSoilTable(selKeys){
+            var table = $('#soilTable').DataTable();
+            table.rows().remove().draw();
+            $.each(selKeys, function (index, value) {
+                    {% for project in projects %}
+                        {% for Soil in project.microbial_set.all %}
+                            var id = "{{ Soil.sampleid_id }}";
+                            if (id == value) {
+                                 table.row.add([
+                                    "{{ project.project_name }}",
+                                    "{{ Soil.sampleid.sample_name }}",
+                                    "{{ Soil.rRNA_copies }}",
+                                    "{{ Soil.microbial_biomass_C }}",
+                                    "{{ Soil.microbial_biomass_N }}",
+                                    "{{ Soil.microbial_respiration }}",
+                                    "{{ Soil.depth }}",
+                                    "{{ Soil.pool_dna_extracts }}",
+                                    "{{ Soil.samp_size }}",
+                                    "{{ Soil.samp_collection_device }}",
+                                    "{{ Soil.samp_weight_dna_ext }}",
+                                    "{{ Soil.sieving }}",
+                                    "{{ Soil.storage_cond }}",
+                                    "{{ Soil.annual_season_precpt }}",
+                                    "{{ Soil.annual_season_temp }}",
+                                    "{{ Soil.bulk_density }}",
+                                    "{{ Soil.drainage_class }}",
+                                    "{{ Soil.fao_class }}",
+                                    "{{ Soil.horizon }}",
+                                    "{{ Soil.local_class }}",
+                                    "{{ Soil.porosity }}",
+                                    "{{ Soil.profile_position }}",
+                                    "{{ Soil.slope_aspect }}",
+                                    "{{ Soil.slope_gradient }}",
+                                    "{{ Soil.soil_type }}",
+                                    "{{ Soil.texture_class }}",
+                                    "{{ Soil.water_content_soil }}",
+                                    "{{ Soil.pH }}",
+                                    "{{ Soil.EC }}",
+                                    "{{ Soil.tot_C }}",
+                                    "{{ Soil.tot_OM }}",
+                                    "{{ Soil.tot_N }}",
+                                    "{{ Soil.NO3_N }}",
+                                    "{{ Soil.NH4_N }}",
+                                    "{{ Soil.P }}",
+                                    "{{ Soil.K }}",
+                                    "{{ Soil.S }}",
+                                    "{{ Soil.Zn }}",
+                                    "{{ Soil.Fe }}",
+                                    "{{ Soil.Cu }}",
+                                    "{{ Soil.Mn }}",
+                                    "{{ Soil.Ca }}",
+                                    "{{ Soil.Mg }}",
+                                    "{{ Soil.Na }}",
+                                    "{{ Soil.B }}",
+                                    "{{ Soil.agrochem_amendments }}",
+                                    "{{ Soil.agrochem_amendments_desc }}",
+                                    "{{ Soil.biological_amendments }}",
+                                    "{{ Soil.biological_amendments_desc }}",
+                                    "{{ Soil.cover_crop }}",
+                                    "{{ Soil.crop_rotation }}",
+                                    "{{ Soil.cur_land_use }}",
+                                    "{{ Soil.cur_vegetation }}",
+                                    "{{ Soil.cur_crop }}",
+                                    "{{ Soil.cur_cultivar }}",
+                                    "{{ Soil.organic }}",
+                                    "{{ Soil.previous_land_use }}",
+                                    "{{ Soil.soil_amendments }}",
+                                    "{{ Soil.soil_amendments_desc }}",
+                                    "{{ Soil.tillage }}",
+                                    "{{ Soil.rRNA_copies }}",
+                                    "{{ Soil.microbial_biomass_C }}",
+                                    "{{ Soil.microbial_biomass_N }}",
+                                    "{{ Soil.microbial_respiration }}"
+                                 ]).draw();
+                            }
+                        {% endfor %}
+                    {% endfor %}
+            });
+        }
         function updateCollectTable(selKeys) {
             var table = $('#collectTable').DataTable();
             table.rows().remove().draw();
@@ -569,6 +719,7 @@
             <ul>
                 <li><a href="#tabs-1" style="font-size: 14px">Project</a></li>
                 <li><a href="#tabs-2" style="font-size: 14px">MIMARKs</a></li>
+                <li><a href="#tabs-soil" style="font-size: 14px; display: none" id="soil">Soil</a></li>
                 <li><a href="#tabs-3" style="font-size: 14px; display: none" id="collect">Collection</a></li>
                 <li><a href="#tabs-4" style="font-size: 14px; display: none" id="climate">Climate</a></li>
                 <li><a href="#tabs-5" style="font-size: 14px; display: none" id="class">Soil Class</a></li>
@@ -622,6 +773,75 @@
                             <th>Latitude</th>
                             <th>Longitude</th>
                             <th>Elevation</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div id="tabs-soil">
+                <table id="soilTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Sample Name</th>
+                            <th>Depth</th>
+                            <th>Pool DNA Extracts</th>
+                            <th>Sample Size</th>
+                            <th>Collection Device</th>
+                            <th>Sample Weight DNA Extract</th>
+                            <th>Sieving</th>
+                            <th>Storage Conditions</th>
+                            <th>Annual Precip</th>
+                            <th>Annual Temp</th>
+                            <th>Bulk Density</th>
+                            <th>Drainage Class</th>
+                            <th>FAO Class</th>
+                            <th>Horizon</th>
+                            <th>Local Class</th>
+                            <th>Porosity</th>
+                            <th>Profile Position</th>
+                            <th>Slope Aspect</th>
+                            <th>Slope Gradient</th>
+                            <th>Soil Type</th>
+                            <th>Texture Class</th>
+                            <th>Water Content Soil</th>
+                            <th>pH</th>
+                            <th>EC</th>
+                            <th>tot_C</th>
+                            <th>tot_OM</th>
+                            <th>tot_N</th>
+                            <th>NO3_N</th>
+                            <th>NH4_N</th>
+                            <th>P</th>
+                            <th>K</th>
+                            <th>S</th>
+                            <th>Zn</th>
+                            <th>Fe</th>
+                            <th>Cu</th>
+                            <th>Mn</th>
+                            <th>Ca</th>
+                            <th>Mg</th>
+                            <th>Na</th>
+                            <th>B</th>
+                            <th>Agrochem Amendments</th>
+                            <th>Agrochem Amendments Desc</th>
+                            <th>Biological Amendments</th>
+                            <th>Biological Amendments Desc</th>
+                            <th>Cover Crop</th>
+                            <th>Crop Rotation</th>
+                            <th>Cur Land Use</th>
+                            <th>Cur Vegetation</th>
+                            <th>Cur Crop</th>
+                            <th>Cur Cultivar</th>
+                            <th>Organic</th>
+                            <th>Previous Land Use</th>
+                            <th>Soil Amendments</th>
+                            <th>Soil Amendments Desc</th>
+                            <th>Tillage</th>
+                            <th>rRNA Copies</th>
+                            <th>Microbial  Biomass C</th>
+                            <th>Microbial Biomass N</th>
+                            <th>Microbial Respiration</th>
                         </tr>
                     </thead>
                 </table>
