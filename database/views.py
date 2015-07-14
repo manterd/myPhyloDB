@@ -210,10 +210,6 @@ def upload(request):
                          'error': "There was an error parsing your Profile (post-Mothur)"},
                         context_instance=RequestContext(request)
                     )
-            else:
-                print("Form3 failed")
-        else:
-            print("Form1 failed")
 
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)

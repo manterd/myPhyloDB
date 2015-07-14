@@ -234,7 +234,7 @@
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for Water in project.Water_set.all %}
+                        {% for Water in project.water_set.all %}
                             var id = "{{ Water.sampleid_id }}";
                             if (id == value) {
                                  table.row.add([
@@ -335,7 +335,7 @@
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for Air in project.Air_set.all %}
+                        {% for Air in project.air_set.all %}
                             var id = "{{ Air.sampleid_id }}";
                             if (id == value) {
                                  table.row.add([
@@ -382,7 +382,7 @@
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for Human_Associated in project.Human_Associated_set.all %}
+                        {% for Human_Associated in project.human_associated_set.all %}
                             var id = "{{ Human_Associated.sampleid_id }}";
                             if (id == value) {
                                  table.row.add([
@@ -453,7 +453,7 @@
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for Human_Gut in project.Human_Gut_set.all %}
+                        {% for Human_Gut in project.human_gut_set.all %}
                             var id = "{{ Human_gut.sampleid_id }}";
                             if (id == value) {
                                  table.row.add([
@@ -509,7 +509,7 @@
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for Microbial in project.Microbial_set.all %}
+                        {% for Microbial in project.microbial_set.all %}
                             var id = "{{ Microbial.sampleid_id }}";
                             if (id == value) {
                                  table.row.add([
@@ -590,7 +590,7 @@
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for Soil in project.microbial_set.all %}
+                        {% for Soil in project.soil_set.all %}
                             var id = "{{ Soil.sampleid_id }}";
                             if (id == value) {
                                  table.row.add([
@@ -669,7 +669,7 @@
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for Soil in project.Soil_set.all %}
+                        {% for Soil in project.soil_set.all %}
                             var id = "{{ Soil.sampleid_id }}";
                             if (id == value) {
                                  table.row.add([
