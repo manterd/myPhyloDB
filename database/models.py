@@ -167,6 +167,10 @@ class Microbial(models.Model):
 
 
 class Human_Associated(models.Model):
+
+    sampleid = models.ForeignKey(Sample)
+    projectid = models.ForeignKey(Project)
+
     age = models.CharField(max_length=15, blank=True)
     amniotic_fluid_color = models.CharField(max_length=15, blank=True)
     blood_blood_disord = models.CharField(max_length=15, blank=True)
@@ -292,6 +296,10 @@ class Soil(models.Model):
 
 
 class Air(models.Model):
+
+    sampleid = models.ForeignKey(Sample)
+    projectid = models.ForeignKey(Project)
+
     barometric_press = models.CharField(max_length=45, blank=True)
     carb_dioxide = models.CharField(max_length=45, blank=True)
     carb_monoxide = models.CharField(max_length=45, blank=True)
@@ -323,6 +331,9 @@ class Air(models.Model):
     user_defined = models.CharField(max_length=45, blank=True)
 
 class Water(models.Model):
+
+     sampleid = models.ForeignKey(Sample)
+     projectid = models.ForeignKey(Project)
 
      alkalinity = models.CharField(max_length=45, blank=True)
      alkyl_diethers = models.CharField(max_length=45, blank=True)
