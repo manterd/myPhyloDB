@@ -4,7 +4,7 @@ import re
 import simplejson
 from django.http import HttpResponse
 from models import Project, Sample, Soil, Human_Gut, Microbial, User, Human_Associated, Air, Water
-from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
+from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile, OTU_03, OTU_01
 from uuid import uuid4
 import numpy as np
 from numpy import *
@@ -176,7 +176,7 @@ def parse_taxonomy(Document, arg):
         if row:
             step += 1.0
             perc = int(step / total * 100)
-            subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', '', row[2])
+            subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|0.03__|0.01__)', '', row[2])
             taxon = subbed.split(';')
 
             if not Kingdom.objects.filter(kingdomName=taxon[0]).exists():
@@ -220,6 +220,14 @@ def parse_taxonomy(Document, arg):
                 record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
                 record.save()
 
+            if not OTU_03.objects.filter(otuid3=taxon[7]).exists():
+                record = OTU_03(otuid=taxon[7])
+                record.save()
+
+            if not OTU_01.objects.filter(otuid1=taxon[8]).exists():
+                record = OTU_01(otuid=taxon[8])
+                record.save()
+
 
 def parse_profile(file3, file4, p_uuid):
     global stage, perc
@@ -247,7 +255,7 @@ def parse_profile(file3, file4, p_uuid):
     file4.close()
 
     df3 = df1.join(df2, how='outer')
-    df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', value='', regex=True, inplace=True)
+    df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|0.03__|0.01__)', value='', regex=True, inplace=True)
     df3.reset_index(drop=True, inplace=True)
     del df1, df2
 
@@ -269,6 +277,8 @@ def parse_profile(file3, file4, p_uuid):
         f = taxaList[4]
         g = taxaList[5]
         s = taxaList[6]
+        otu3 = taxaList[7]
+        otu1 = taxaList[8]
         t_kingdom = Kingdom.objects.get(kingdomName=k)
         t_phyla = Phyla.objects.get(kingdomid_id=t_kingdom, phylaName=p)
         t_class = Class.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, className=c)
@@ -277,18 +287,21 @@ def parse_profile(file3, file4, p_uuid):
         t_genus = Genus.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusName=g)
         t_species = Species.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesName=s)
 
+        t_otu3 = OTU_03.objects.get(otuid3=otu3)
+        t_otu1 = OTU_01.objects.get(otuid1=otu1)
+
         for name in sampleList:
             count = int(row[str(name)])
             if count > 0:
                 project = Project.objects.get(projectid=p_uuid)
                 sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
 
-                if Profile.objects.filter(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species).exists():
-                    t = Profile.objects.get(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species)
+                if Profile.objects.filter(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species, otuid3=t_otu3, otuid1=t_otu1).exists():
+                    t = Profile.objects.get(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species, otuid3=t_otu3, otuid1=t_otu1)
                     old = t.count
                     new = old + int(count)
                     t.count = new
                     t.save()
                 else:
-                    record = Profile(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
+                    record = Profile(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid3=t_otu3, otuid1=t_otu1, count=count)
                     record.save()

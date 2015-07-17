@@ -494,6 +494,11 @@ class Species(models.Model):
     speciesid = UUIDField(primary_key=True)
     speciesName = models.CharField(max_length=90, blank=True)
 
+class OTU_01(models.Model):
+    otuid1 = UUIDField(primary_key=True)
+
+class OTU_03(models.Model):
+    otuid3 = UUIDField(primary_key=True)
 
 class Profile(models.Model):
     projectid = models.ForeignKey(Project)
@@ -505,6 +510,8 @@ class Profile(models.Model):
     familyid = models.ForeignKey(Family)
     genusid = models.ForeignKey(Genus)
     speciesid = models.ForeignKey(Species)
+    otuid1 = models.ForeignKey(OTU_01)
+    otuid3 = models.ForeignKey(OTU_03)
     count = models.IntegerField()
 
 

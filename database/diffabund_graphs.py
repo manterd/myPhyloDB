@@ -12,7 +12,7 @@ import numpy as np
 import datetime
 from pyper import *
 import math
-from models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_01, OTU_03
 
 
 base = {}
@@ -228,7 +228,7 @@ def getDiffAbund(request):
                         names = []
                         try:
                             for item in nbinom_res["id"]:
-                                names.append(findTaxa(item))
+                                names.append(findTaxa(item))  # potential breakpoint with new OTU data!!!! FIX???
                         except Exception as e:
                             print("Failed at loop, "+str(e.args))
 

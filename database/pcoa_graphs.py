@@ -370,6 +370,10 @@ def getCatPCoAData(request):
             result = result + 'Taxa level: Genus' + '\n'
         elif taxaLevel == 6:
             result = result + 'Taxa level: Species' + '\n'
+        elif taxaLevel == 7:
+            result = result + 'Taxa level: OTU_03' + '\n'
+        elif taxaLevel == 8:
+            result = result + 'Taxa level: OTU_01' + '\n'
 
         indVar = ' x '.join(fieldList)
 
@@ -732,8 +736,12 @@ def getQuantPCoAData(request):
             result = result + 'Taxa level: Family' + '\n'
         elif taxaLevel == 5:
             result = result + 'Taxa level: Genus' + '\n'
-        elif taxaLevel == 67:
+        elif taxaLevel == 6:
             result = result + 'Taxa level: Species' + '\n'
+        elif taxaLevel == 7:
+            result = result + 'Taxa level: OTU_03' + '\n'
+        elif taxaLevel == 8:
+            result = result + 'Taxa level: OTU_01' + '\n'
 
         result = result + 'Independent Variable: ' + str(fieldList[0]) + '\n\n'
 

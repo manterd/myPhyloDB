@@ -300,6 +300,10 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
         taxaID = 'genusid'
     elif taxaLevel == 6:
         taxaID = 'speciesid'
+    elif taxaLevel == 7:
+        taxaID = 'otuid3'
+    elif taxaLevel == 8:
+        taxaID = 'otuid1'
 
     normDF = pd.DataFrame()
     DESeq_error = ''

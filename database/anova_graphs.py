@@ -227,6 +227,14 @@ def getCatUnivData(request):
             taxaDict = {}
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
+        elif selectAll == 8:
+            taxaDict = {}
+            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('otuid3', flat='True').distinct()
+            taxaDict['OTU_0.03'] = qs3
+        elif selectAll == 9:
+            taxaDict = {}
+            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('otuid1', flat='True').distinct()
+            taxaDict['OTU_0.01'] = qs3
 
         base[RID] = 'Step 1 of 6: Querying database...done!'
 
@@ -658,6 +666,14 @@ def getQuantUnivData(request):
             taxaDict = {}
             qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
+        elif selectAll == 8:
+            taxaDict = {}
+            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('otuid3', flat='True').distinct()
+            taxaDict['OTU_0.03'] = qs3
+        elif selectAll == 9:
+            taxaDict = {}
+            qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('otuid1', flat='True').distinct()
+            taxaDict['OTU_0.01'] = qs3
         base[RID] = 'Step 1 of 6: Querying database...done!'
         base[RID] = 'Step 2 of 6: Normalizing data...'
 
