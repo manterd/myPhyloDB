@@ -84,6 +84,8 @@ def parse_sample(Document, p_uuid, pType):
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
 
+    sampleidlist = []
+
     f = csv.reader(Document, delimiter=',')
     f.next()
     total = 0.0
@@ -109,6 +111,7 @@ def parse_sample(Document, p_uuid, pType):
                 m = Sample(projectid=project, sampleid=s_uuid, **sampleDict)
                 m.save()
 
+                sampleidlist.append(s_uuid)
                 sample = Sample.objects.get(sampleid=s_uuid)
 
                 if pType == "soil":
@@ -151,7 +154,21 @@ def parse_sample(Document, p_uuid, pType):
                 userDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
                 m = User(projectid=project, sampleid=sample, **userDict)
                 m.save()  # Keeping user independent for now
+
     Document.close()
+    # mess with file here?
+    try:
+        f = csv.reader(Document, delimiter=',')
+        output = csv.writer(Document, delimiter=',')
+        itera = 0
+        for row in f:
+            if str(row[0]) == "null":
+                row[0] = str(sampleidlist[itera])
+                itera += 1
+            output.writerow(row)
+        Document.close()
+    except Exception as e:
+        print(e)
 
 
 def parse_taxonomy(Document, arg):

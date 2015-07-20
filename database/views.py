@@ -85,7 +85,6 @@ def upload(request):
 
             sample = ".".join(["sample", "csv"])
             file2 = request.FILES['docfile2']
-            handle_uploaded_file(file2, dest, sample)
             try:
                 parse_sample(file2, p_uuid, pType)
             except:
@@ -101,6 +100,7 @@ def upload(request):
                      'error': "There was an error parsing your Sample file"},
                     context_instance=RequestContext(request)
                 )
+            handle_uploaded_file(file2, dest, sample)
 
             if form2.is_valid():
                 taxonomy = ".".join(["mothur", "taxonomy"])
@@ -110,7 +110,7 @@ def upload(request):
                     parse_taxonomy(file3, "1")
                 except:
                     print("Error with taxonomy file")
-                    remove_proj(p_uuid)
+                    #remove_proj(p_uuid)
                     projects = Project.objects.all().order_by('project_name')
                     return render_to_response(
                         'upload.html',
@@ -397,3 +397,13 @@ def batch2(request):
     response['Content-Disposition'] = 'attachment; filename="Example2.mothur_linux.batch"'
     response['Content-Length'] = os.path.getsize(filename)
     return response
+
+def reprocess(request):
+    # populate tree with projects and their reference files (in a different function)
+    # user selects projects to be reprocessed along with new reference file
+    # pull up all projects specified from tree
+    # remove old data from said projects
+    # rerun mothur with new reference file and loaded raw data
+    # rerun parser for taxa and shared(?) from mothur output
+    # output new processed data to old directories, change project reference to new file
+    return

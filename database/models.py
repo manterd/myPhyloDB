@@ -6,6 +6,9 @@ class Project(models.Model):
 
     projectType = models.CharField(max_length=45, blank=False)  # Mandatory field
 
+    processed_by = models.CharField(max_length=90, blank=True)
+    # File used for processing raw data, if blank, data was processed before upload
+
     projectid = UUIDField(primary_key=True)
     path = models.CharField(max_length=90)
     project_name = models.TextField(blank=True)
