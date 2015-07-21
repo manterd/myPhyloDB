@@ -86,7 +86,7 @@ def upload(request):
             sample = ".".join(["sample", "csv"])
             file2 = request.FILES['docfile2']
             try:
-                parse_sample(file2, p_uuid, pType)
+                parse_sample(file2, p_uuid, dest, pType)
             except:
                 print("Error with sample file")
                 remove_proj(p_uuid)
@@ -100,7 +100,7 @@ def upload(request):
                      'error': "There was an error parsing your Sample file"},
                     context_instance=RequestContext(request)
                 )
-            handle_uploaded_file(file2, dest, sample)
+            #handle_uploaded_file(file2a, dest, sample)
 
             if form2.is_valid():
                 taxonomy = ".".join(["mothur", "taxonomy"])

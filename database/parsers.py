@@ -78,8 +78,23 @@ def parse_project(Document, path, p_uuid, pType):
             m.save()
     Document.close()
 
+    try:
+        f = csv.reader(Document, delimiter=',')
+        with open('% s/project.csv' % path, 'w') as csvfile:
+            spamwriter = csv.writer(csvfile, delimiter=',')
+            itera = 0
+            for stuff in f:
+                if str(stuff[0]) == "null":
+                    stuff[0] = str(p_uuid)
+                    itera += 1
+                print "stuff:", stuff
+                spamwriter.writerow(stuff)
+        csvfile.close()
+    except Exception as e:
+        print(e)
 
-def parse_sample(Document, p_uuid, pType):
+
+def parse_sample(Document, p_uuid, dest, pType):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
@@ -159,13 +174,15 @@ def parse_sample(Document, p_uuid, pType):
     # mess with file here?
     try:
         f = csv.reader(Document, delimiter=',')
-        output = csv.writer(Document, delimiter=',')
-        itera = 0
-        for row in f:
-            if str(row[0]) == "null":
-                row[0] = str(sampleidlist[itera])
-                itera += 1
-            output.writerow(row)
+        with open('% s/sample.csv' % dest, 'w') as csvfile:
+            spamwriter = csv.writer(csvfile, delimiter=',')
+            itera = 0
+            for stuff in f:
+                if str(stuff[0]) == "null":
+                    stuff[0] = str(sampleidlist[itera])
+                    itera += 1
+                print "stuff:", stuff
+                spamwriter.writerow(stuff)
         Document.close()
     except Exception as e:
         print(e)
