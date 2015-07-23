@@ -179,9 +179,9 @@ def upload(request):
                 try:
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3, "no")
-                except:
-                    print("Error with post-mothur taxonomy file")
-                    remove_proj(p_uuid)
+                except Exception as e:
+                    print("Error with post-mothur taxonomy file: "+str(e))
+                    #remove_proj(p_uuid)
                     projects = Project.objects.all().order_by('project_name')
                     return render_to_response(
                         'upload.html',
@@ -401,9 +401,13 @@ def batch2(request):
 def reprocess(request):
     # populate tree with projects and their reference files (in a different function)
     # user selects projects to be reprocessed along with new reference file
-    # pull up all projects specified from tree
+    # pull up all projects/samples specified from tree
     # remove old data from said projects
     # rerun mothur with new reference file and loaded raw data
     # rerun parser for taxa and shared(?) from mothur output
     # output new processed data to old directories, change project reference to new file
+    return
+
+def popRepoTree(request):
+    # populate reprocessing tree with projects by finding all reference files used, as the main category, with projects contained within and samplies within that
     return

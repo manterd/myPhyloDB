@@ -255,11 +255,11 @@ def parse_taxonomy(Document, arg):
                 record.save()
 
             if not OTU_03.objects.filter(otuid3=taxon[7]).exists():
-                record = OTU_03(otuid=taxon[7])
+                record = OTU_03(otuid3=taxon[7])
                 record.save()
 
             if not OTU_01.objects.filter(otuid1=taxon[8]).exists():
-                record = OTU_01(otuid=taxon[8])
+                record = OTU_01(otuid1=taxon[8])
                 record.save()
 
 

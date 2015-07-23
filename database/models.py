@@ -497,11 +497,14 @@ class Species(models.Model):
     speciesid = UUIDField(primary_key=True)
     speciesName = models.CharField(max_length=90, blank=True)
 
+
 class OTU_01(models.Model):
     otuid1 = UUIDField(primary_key=True)
 
+
 class OTU_03(models.Model):
     otuid3 = UUIDField(primary_key=True)
+
 
 class Profile(models.Model):
     projectid = models.ForeignKey(Project)
