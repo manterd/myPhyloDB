@@ -481,7 +481,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
             elif key == 'OTU_0.01':
                 qs1 = OTU_01.objects.filter(otuid1=taxaList).values('otuid1')
                 namesDF = pd.DataFrame.from_records(qs1, columns=['otuid1'])
-                namesDF.rename(columns={'otuid1': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                namesDF.rename(columns={'otuid1': 'taxa_id'}, inplace=True)
             elif key == 'OTU_0.03':
                 qs1 = OTU_03.objects.filter(otuid3=taxaList).values('otuid3')
                 namesDF = pd.DataFrame.from_records(qs1, columns=['otuid3'])
@@ -546,7 +546,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
         DF1 = DF1.merge(namesDF, on='taxa_id', how='outer')
         otupres = False
         for key in taxaDict:
-            if key == 'OTU_0.01' or 'OTU_0.03':
+            if (key == 'OTU_0.01') or (key == 'OTU_0.03'):
                 otupres = True
         if otupres:
             DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'abund', 'rich', 'diversity']]

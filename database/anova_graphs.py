@@ -673,7 +673,7 @@ def getQuantUnivData(request):
         for key in metaDict:
             fieldList.append(metaDict[key])
         metaDF = quantUnivMetaDF(qs2, metaDict)
-        metaDF.dropna(subset=fieldList, inplace=True)  # TODO
+        metaDF.dropna(subset=fieldList, inplace=True)
         metaDF.sort(columns='sampleid', inplace=True)
         myList = metaDF['sampleid'].tolist()
         mySet = list(ordered_set(myList))
