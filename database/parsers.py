@@ -3,8 +3,8 @@ import pandas as pd
 import re
 import simplejson
 from django.http import HttpResponse
-from models import Project, Sample, Soil, Human_Gut, Microbial, User, Human_Associated, Air, Water
-from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile, OTU_03, OTU_01
+from models import Project, Reference, Sample, Soil, Human_Gut, Microbial, User, Human_Associated, Air, Water
+from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from uuid import uuid4
 import numpy as np
 from numpy import *
@@ -28,14 +28,14 @@ def mothur(dest):
     else:
         subprocess.call('mothur/mothur-linux/mothur mothur/temp/mothur.batch', shell=True)
 
-    shutil.move('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
-    shutil.move('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
-    shutil.move('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
-    shutil.move('mothur/temp/final.fasta', '% s/final.fasta' % dest)
-    shutil.move('mothur/temp/final.names', '% s/final.names' % dest)
-    shutil.move('mothur/temp/final.groups', '% s/final.groups' % dest)
-    shutil.move('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
-    shutil.move('mothur/temp/final.shared', '% s/mothur.shared' % dest)
+    shutil.copy('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
+    shutil.copy('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
+    shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
+    shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
+    shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
+    shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
+    shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
+    shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
 
     shutil.rmtree('mothur/temp')
 
@@ -76,25 +76,55 @@ def parse_project(Document, path, p_uuid, pType):
             row_dict.pop('project_id')
             m = Project(projectType=pType, projectid=p_uuid, path=path, **row_dict)
             m.save()
-    Document.close()
 
     try:
         f = csv.reader(Document, delimiter=',')
-        with open('% s/project.csv' % path, 'w') as csvfile:
+        if not os.path.exists(path):
+            os.makedirs(path)
+        with open('% s/project.csv' % path, 'wb') as csvfile:
             spamwriter = csv.writer(csvfile, delimiter=',')
             itera = 0
             for stuff in f:
                 if str(stuff[0]) == "null":
                     stuff[0] = str(p_uuid)
                     itera += 1
-                print "stuff:", stuff
                 spamwriter.writerow(stuff)
-        csvfile.close()
     except Exception as e:
         print(e)
 
 
-def parse_sample(Document, p_uuid, dest, pType):
+def parse_reference(p_uuid, path, file7, raw):
+    refid = uuid4().hex
+    project = Project.objects.get(projectid=p_uuid)
+
+    if raw:
+        align_ref = ''
+        template_ref = ''
+        taxonomy_ref = ''
+        for row in file7:
+            if "align.seqs" in row:
+                for item in row.split(','):
+                    if "reference=" in item:
+                        string = item.split('=')
+                        align_ref = string[1].replace('mothur/reference/', '')
+            if "classify.seqs" in row:
+                for item in row.split(','):
+                    if "template=" in item:
+                        string = item.split('=')
+                        template_ref = string[1].replace('mothur/reference/', '')
+                    if "taxonomy=" in item:
+                        string = item.split('=')
+                        taxonomy_ref = string[1].replace('mothur/reference/', '')
+    else:
+        align_ref = 'null'
+        template_ref = 'null'
+        taxonomy_ref = 'null'
+
+    m = Reference(refid=refid, projectid=project, path=path, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref)
+    m.save()
+
+
+def parse_sample(Document, p_uuid, path, pType):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
@@ -170,25 +200,23 @@ def parse_sample(Document, p_uuid, dest, pType):
                 m = User(projectid=project, sampleid=sample, **userDict)
                 m.save()  # Keeping user independent for now
 
-    Document.close()
-    # mess with file here?
     try:
         f = csv.reader(Document, delimiter=',')
-        with open('% s/sample.csv' % dest, 'w') as csvfile:
+        if not os.path.exists(path):
+            os.makedirs(path)
+        with open('% s/sample.csv' % path, 'wb') as csvfile:
             spamwriter = csv.writer(csvfile, delimiter=',')
             itera = 0
             for stuff in f:
                 if str(stuff[0]) == "null":
                     stuff[0] = str(sampleidlist[itera])
                     itera += 1
-                print "stuff:", stuff
                 spamwriter.writerow(stuff)
-        Document.close()
     except Exception as e:
         print(e)
 
 
-def parse_taxonomy(Document, arg):
+def parse_taxonomy(Document):
     global stage, perc
     stage = "Step 4 of 5: Parsing taxonomy file..."
     perc = 0
@@ -199,11 +227,7 @@ def parse_taxonomy(Document, arg):
     for row in f:
         if row:
             total += 1.0
-
-    if arg == "1":
-        f = csv.reader(Document, delimiter='\t')
-    else:
-        Document.seek(0)
+    Document.seek(0)
     f.next()
     step = 0.0
     for row in f:
@@ -211,6 +235,7 @@ def parse_taxonomy(Document, arg):
             step += 1.0
             perc = int(step / total * 100)
             subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|0.03__|0.01__)', '', row[2])
+            subbed = subbed[:-1]
             taxon = subbed.split(';')
 
             if not Kingdom.objects.filter(kingdomName=taxon[0]).exists():
@@ -254,14 +279,6 @@ def parse_taxonomy(Document, arg):
                 record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
                 record.save()
 
-            if not OTU_03.objects.filter(otuid3=taxon[7]).exists():
-                record = OTU_03(otuid3=taxon[7])
-                record.save()
-
-            if not OTU_01.objects.filter(otuid1=taxon[8]).exists():
-                record = OTU_01(otuid1=taxon[8])
-                record.save()
-
 
 def parse_profile(file3, file4, p_uuid):
     global stage, perc
@@ -303,6 +320,7 @@ def parse_profile(file3, file4, p_uuid):
         step += 1.0
         perc = int(step / total * 100)
         taxon = str(row['Taxonomy'])
+        taxon = taxon[:-1]
         taxaList = taxon.split(';')
         k = taxaList[0]
         p = taxaList[1]
@@ -311,8 +329,7 @@ def parse_profile(file3, file4, p_uuid):
         f = taxaList[4]
         g = taxaList[5]
         s = taxaList[6]
-        otu3 = taxaList[7]
-        otu1 = taxaList[8]
+
         t_kingdom = Kingdom.objects.get(kingdomName=k)
         t_phyla = Phyla.objects.get(kingdomid_id=t_kingdom, phylaName=p)
         t_class = Class.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, className=c)
@@ -321,21 +338,18 @@ def parse_profile(file3, file4, p_uuid):
         t_genus = Genus.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusName=g)
         t_species = Species.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesName=s)
 
-        t_otu3 = OTU_03.objects.get(otuid3=otu3)
-        t_otu1 = OTU_01.objects.get(otuid1=otu1)
-
         for name in sampleList:
             count = int(row[str(name)])
             if count > 0:
                 project = Project.objects.get(projectid=p_uuid)
                 sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
 
-                if Profile.objects.filter(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species, otuid3=t_otu3, otuid1=t_otu1).exists():
-                    t = Profile.objects.get(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species, otuid3=t_otu3, otuid1=t_otu1)
+                if Profile.objects.filter(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species).exists():
+                    t = Profile.objects.get(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species)
                     old = t.count
                     new = old + int(count)
                     t.count = new
                     t.save()
                 else:
-                    record = Profile(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid3=t_otu3, otuid1=t_otu1, count=count)
+                    record = Profile(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
                     record.save()

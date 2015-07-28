@@ -58,9 +58,9 @@ def multidict(ordered_pairs):
 
 
 def taxaProfileDF(mySet):
-    qs1 = Profile.objects.filter(sampleid__in=mySet).values('sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'otuid3', 'otuid1', 'count')
-    df = pd.DataFrame.from_records(qs1, columns=['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'otuid3', 'otuid1', 'count'])
-    df.set_index(['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'otuid3', 'otuid1'], drop=True, inplace=True)
+    qs1 = Profile.objects.filter(sampleid__in=mySet).values('sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'count')
+    df = pd.DataFrame.from_records(qs1, columns=['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'count'])
+    df.set_index(['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid'], drop=True, inplace=True)
     df2 = df.unstack(['sampleid']).fillna(0).stack(['sampleid'])
     df3 = df2.unstack(['sampleid'])
     taxaDF = df3['count']

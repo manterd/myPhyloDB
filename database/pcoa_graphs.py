@@ -6,13 +6,11 @@ import numpy as np
 from numpy import *
 import pandas as pd
 import pickle
-from stats.amova import amova
-from stats.homova import homova
-from stats.distance import MorisitaHorn, wOdum
+from stats.distance import wOdum
 from scipy import stats
 from scipy.spatial.distance import *
 import simplejson
-from database.utils import multidict, ordered_set, taxaProfileDF, PCoA
+from database.utils import multidict, ordered_set, taxaProfileDF
 from pyper import *
 
 
@@ -370,10 +368,6 @@ def getCatPCoAData(request):
             result = result + 'Taxa level: Genus' + '\n'
         elif taxaLevel == 6:
             result = result + 'Taxa level: Species' + '\n'
-        elif taxaLevel == 7:
-            result = result + 'Taxa level: OTU_03' + '\n'
-        elif taxaLevel == 8:
-            result = result + 'Taxa level: OTU_01' + '\n'
 
         indVar = ' x '.join(fieldList)
 
@@ -736,12 +730,8 @@ def getQuantPCoAData(request):
             result = result + 'Taxa level: Family' + '\n'
         elif taxaLevel == 5:
             result = result + 'Taxa level: Genus' + '\n'
-        elif taxaLevel == 6:
+        elif taxaLevel == 67:
             result = result + 'Taxa level: Species' + '\n'
-        elif taxaLevel == 7:
-            result = result + 'Taxa level: OTU_03' + '\n'
-        elif taxaLevel == 8:
-            result = result + 'Taxa level: OTU_01' + '\n'
 
         result = result + 'Independent Variable: ' + str(fieldList[0]) + '\n\n'
 

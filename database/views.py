@@ -1,4 +1,5 @@
 import datetime
+import csv
 import os
 import pandas as pd
 import pickle
@@ -9,7 +10,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from forms import UploadForm1, UploadForm2, UploadForm3
 from models import Project, Sample, Species
-from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
+from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
@@ -37,12 +38,11 @@ def upload(request):
 
         if form1.is_valid():
             try:
-                project = ".".join(["project", "csv"])
                 file1 = request.FILES['docfile1']
                 pType = str(request.POST['type'])
                 p_uuid = projectid(file1)
-            except:
-                print("Error with project file")
+            except Exception as e:
+                print("Error with project file: " + str(e))
                 projects = Project.objects.all().order_by('project_name')
                 return render_to_response(
                     'upload.html',
@@ -60,18 +60,16 @@ def upload(request):
             second = datetime.datetime.now().second
             timestamp = ".".join([str(hour), str(minute), str(second)])
             datetimestamp = "_".join([str(date), str(timestamp)])
-
             dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
-            handle_uploaded_file(file1, dest, project)
-            print pType
+
             try:
                 parse_project(file1, dest, p_uuid, pType)
-            except:
-                print("Error with project file")
+            except Exception as e:
+                print("Error with project file: " + str(e))
                 try:
                     remove_proj(p_uuid)
-                except:
-                    print("Couldn't delete project")
+                except Exception as e:
+                    print("Couldn't delete project: " + str(e))
                 projects = Project.objects.all().order_by('project_name')
                 return render_to_response(
                     'upload.html',
@@ -83,12 +81,11 @@ def upload(request):
                     context_instance=RequestContext(request)
                 )
 
-            sample = ".".join(["sample", "csv"])
             file2 = request.FILES['docfile2']
             try:
                 parse_sample(file2, p_uuid, dest, pType)
-            except:
-                print("Error with sample file")
+            except Exception as e:
+                print("Error with sample file: " + str(e))
                 remove_proj(p_uuid)
                 projects = Project.objects.all().order_by('project_name')
                 return render_to_response(
@@ -100,17 +97,22 @@ def upload(request):
                      'error': "There was an error parsing your Sample file"},
                     context_instance=RequestContext(request)
                 )
-            #handle_uploaded_file(file2a, dest, sample)
 
             if form2.is_valid():
+                file7 = 'blank'
+                raw = False
+                parse_reference(p_uuid, dest, file7, raw)
+
                 taxonomy = ".".join(["mothur", "taxonomy"])
                 file3 = request.FILES['docfile3']
                 handle_uploaded_file(file3, dest, taxonomy)
+
                 try:
-                    parse_taxonomy(file3, "1")
-                except:
-                    print("Error with taxonomy file")
-                    #remove_proj(p_uuid)
+                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                        parse_taxonomy(file3)
+                except Exception as e:
+                    print("Error with taxonomy file: " + str(e))
+                    remove_proj(p_uuid)
                     projects = Project.objects.all().order_by('project_name')
                     return render_to_response(
                         'upload.html',
@@ -125,10 +127,13 @@ def upload(request):
                 shared = ".".join(["mothur", "shared"])
                 file4 = request.FILES['docfile4']
                 handle_uploaded_file(file4, dest, shared)
+
                 try:
-                    parse_profile(file3, file4, p_uuid)
-                except:
-                    print("Error with shared file")
+                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/mothur.shared' % dest, 'rb') as file4:
+                            parse_profile(file3, file4, p_uuid)
+                except Exception as e:
+                    print("Error with shared file: " + str(e))
                     remove_proj(p_uuid)
                     projects = Project.objects.all().order_by('project_name')
                     return render_to_response(
@@ -140,10 +145,8 @@ def upload(request):
                          'error': "There was an error parsing your Shared file"},
                         context_instance=RequestContext(request)
                     )
-            else:
-                print("Form2 failed")
 
-            if form3.is_valid():
+            elif form3.is_valid():
                 mothurdest = 'mothur/temp'
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
@@ -160,10 +163,13 @@ def upload(request):
                 file7 = request.FILES['docfile7']
                 handle_uploaded_file(file7, mothurdest, batch)
 
+                raw = True
+                parse_reference(p_uuid, dest, file7, raw)
+
                 try:
                     mothur(dest)
-                except:
-                    print("Encountered error with Mothur")
+                except Exception as e:
+                    print("Encountered error with Mothur: " + str(e))
                     remove_proj(p_uuid)
                     projects = Project.objects.all().order_by('project_name')
                     return render_to_response(
@@ -178,10 +184,10 @@ def upload(request):
 
                 try:
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                        parse_taxonomy(file3, "no")
+                        parse_taxonomy(file3)
                 except Exception as e:
-                    print("Error with post-mothur taxonomy file: "+str(e))
-                    #remove_proj(p_uuid)
+                    print("Error with post-mothur taxonomy file: " + str(e))
+                    remove_proj(p_uuid)
                     projects = Project.objects.all().order_by('project_name')
                     return render_to_response(
                         'upload.html',
@@ -197,8 +203,8 @@ def upload(request):
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                         with open('% s/mothur.shared' % dest, 'rb') as file4:
                             parse_profile(file3, file4, p_uuid)
-                except:
-                    print("Error with parsing post-mothur profile")
+                except Exception as e:
+                    print("Error with parsing post-mothur profile: " + str(e))
                     remove_proj(p_uuid)
                     projects = Project.objects.all().order_by('project_name')
                     return render_to_response(
@@ -210,6 +216,9 @@ def upload(request):
                          'error': "There was an error parsing your Profile (post-Mothur)"},
                         context_instance=RequestContext(request)
                     )
+
+            else:
+                print ('Please check that all necessary files have been selected.')
 
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)
@@ -240,15 +249,15 @@ def select(request):
 
 def taxa(request):
     qs1 = Species.objects.values('kingdomid__kingdomName', 'kingdomid', 'phylaid__phylaName', 'phylaid', 'classid__className', 'classid', 'orderid__orderName', 'orderid', 'familyid__familyName', 'familyid', 'genusid__genusName', 'genusid', 'speciesName', 'speciesid')
-    speciesDF = pd.DataFrame.from_records(qs1)
-    speciesDF.rename(columns={'kingdomid__kingdomName': 'Kingdom Name', 'kingdomid': 'Kingdom ID'}, inplace=True)
-    speciesDF.rename(columns={'phylaid__phylaName': 'Phylum Name', 'phylaid': 'Phylum ID'}, inplace=True)
-    speciesDF.rename(columns={'classid__className': 'Class Name', 'classid': 'Class ID'}, inplace=True)
-    speciesDF.rename(columns={'orderid__orderName': 'Order Name', 'orderid': 'Order ID'}, inplace=True)
-    speciesDF.rename(columns={'familyid__familyName': 'Family Name', 'familyid': 'Family ID'}, inplace=True)
-    speciesDF.rename(columns={'genusid__genusName': 'Genus Name', 'genusid': 'Genus ID'}, inplace=True)
-    speciesDF.rename(columns={'speciesName': 'Species Name', 'speciesid': 'Species ID'}, inplace=True)
-    table = speciesDF.to_html(classes="table display", columns=['Kingdom Name', 'Kingdom ID', 'Phylum Name', 'Phylum ID', 'Class Name', 'Class ID', 'Order Name', 'Order ID', 'Family Name', 'Family ID', 'Genus Name', 'Genus ID', 'Species Name', 'Species ID'])
+    df = pd.DataFrame.from_records(qs1)
+    df.rename(columns={'kingdomid__kingdomName': 'Kingdom Name', 'kingdomid': 'Kingdom ID'}, inplace=True)
+    df.rename(columns={'phylaid__phylaName': 'Phylum Name', 'phylaid': 'Phylum ID'}, inplace=True)
+    df.rename(columns={'classid__className': 'Class Name', 'classid': 'Class ID'}, inplace=True)
+    df.rename(columns={'orderid__orderName': 'Order Name', 'orderid': 'Order ID'}, inplace=True)
+    df.rename(columns={'familyid__familyName': 'Family Name', 'familyid': 'Family ID'}, inplace=True)
+    df.rename(columns={'genusid__genusName': 'Genus Name', 'genusid': 'Genus ID'}, inplace=True)
+    df.rename(columns={'speciesName': 'Species Name', 'speciesid': 'Species ID'}, inplace=True)
+    table = df.to_html(classes="table display", columns=['Kingdom Name', 'Kingdom ID', 'Phylum Name', 'Phylum ID', 'Class Name', 'Class ID', 'Order Name', 'Order ID', 'Family Name', 'Family ID', 'Genus Name', 'Genus ID', 'Species Name', 'Species ID'])
     table = table.replace('border="1"', 'border="0"')
 
     return render_to_response(
@@ -398,6 +407,61 @@ def batch2(request):
     response['Content-Length'] = os.path.getsize(filename)
     return response
 
+
+def soil(request):
+    filename = "sample_files/Soil.sample.csv"
+    wrapper = FileWrapper(file(filename))
+    response = HttpResponse(wrapper, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="Soil.sample"'
+    response['Content-Length'] = os.path.getsize(filename)
+    return response
+
+
+def human_assoc(request):
+    filename = "sample_files/Human_assoc.sample.csv"
+    wrapper = FileWrapper(file(filename))
+    response = HttpResponse(wrapper, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="Human_assoc.sample.csv"'
+    response['Content-Length'] = os.path.getsize(filename)
+    return response
+
+
+def human_gut(request):
+    filename = "sample_files/Human_gut.sample.csv"
+    wrapper = FileWrapper(file(filename))
+    response = HttpResponse(wrapper, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="Human_gut.sample.csv"'
+    response['Content-Length'] = os.path.getsize(filename)
+    return response
+
+
+def air(request):
+    filename = "sample_files/Air.sample.csv"
+    wrapper = FileWrapper(file(filename))
+    response = HttpResponse(wrapper, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="Air.sample.csv"'
+    response['Content-Length'] = os.path.getsize(filename)
+    return response
+
+
+def water(request):
+    filename = "sample_files/Water.sample.csv"
+    wrapper = FileWrapper(file(filename))
+    response = HttpResponse(wrapper, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="Water.sample.csv"'
+    response['Content-Length'] = os.path.getsize(filename)
+    return response
+
+
+def microbial(request):
+    filename = "sample_files/Microbial.sample.csv"
+    wrapper = FileWrapper(file(filename))
+    response = HttpResponse(wrapper, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="Microbial.sample.csv"'
+    response['Content-Length'] = os.path.getsize(filename)
+    return response
+
+
 def reprocess(request):
     # populate tree with projects and their reference files (in a different function)
     # user selects projects to be reprocessed along with new reference file
@@ -407,6 +471,7 @@ def reprocess(request):
     # rerun parser for taxa and shared(?) from mothur output
     # output new processed data to old directories, change project reference to new file
     return
+
 
 def popRepoTree(request):
     # populate reprocessing tree with projects by finding all reference files used, as the main category, with projects contained within and samplies within that

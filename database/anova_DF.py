@@ -2,7 +2,7 @@ import multiprocessing as mp
 import numpy as np
 import operator
 import pandas as pd
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_01, OTU_03
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 from django.db.models import Q
 from numpy import *
 from numpy.random import mtrand
@@ -336,7 +336,7 @@ def quantUnivMetaDF(qs1, metaDict):
 
 def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
     df2 = df.reset_index()
-    taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'otuid1', 'otuid3']
+    taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
     countDF = pd.DataFrame()
     DESeq_error = 'no'
@@ -438,16 +438,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
                 qs1 = Species.objects.filter(speciesid=taxaList).values('speciesid', 'speciesName')
                 namesDF = pd.DataFrame.from_records(qs1, columns=['speciesid', 'speciesName'])
                 namesDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
-
-            elif key == 'OTU_0.01':
-                qs1 = OTU_01.objects.filter(otuid1=taxaList).values('otuid1')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['otuid1'])
-                namesDF.rename(columns={'otuid1': 'taxa_id'}, inplace=True)
-            elif key == 'OTU_0.03':
-                qs1 = OTU_03.objects.filter(otuid3=taxaList).values('otuid3')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['otuid3'])
-                namesDF.rename(columns={'otuid3': 'taxa_id'}, inplace=True)
-
         else:
             if key == 'Kingdom':
                 qs1 = Kingdom.objects.filter(kingdomid__in=taxaList).values('kingdomid', 'kingdomName')
@@ -478,15 +468,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
                 namesDF = pd.DataFrame.from_records(qs1, columns=['speciesid', 'speciesName'])
                 namesDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
 
-            elif key == 'OTU_0.01':
-                qs1 = OTU_01.objects.filter(otuid1=taxaList).values('otuid1')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['otuid1'])
-                namesDF.rename(columns={'otuid1': 'taxa_id'}, inplace=True)
-            elif key == 'OTU_0.03':
-                qs1 = OTU_03.objects.filter(otuid3=taxaList).values('otuid3')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['otuid3'])
-                namesDF.rename(columns={'otuid3': 'taxa_id'}, inplace=True)
-
         if key == 'Kingdom':
             rank = 'Kingdom'
             field = 'kingdomid'
@@ -509,13 +490,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
             rank = 'Species'
             field = 'speciesid'
 
-        elif key == 'OTU_0.01':
-            rank = 'OTU_0.01'
-            field = 'otuid1'
-        elif key == 'OTU_0.03':
-            rank = 'OTU_0.03'
-            field = 'otuid3'
-
         for i in mySet:
             if meth == 4:
                 groupAbund = relabundDF.groupby(field)[i].sum()
@@ -523,6 +497,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
                 groupAbund = countDF.groupby(field)[i].sum()
             groupRich = binaryDF.groupby(field)[i].sum()
             groupDiversity = diversityDF.groupby(field)[i].sum()
+
             if isinstance(taxaList, unicode):
                 myDict = {}
                 myDict['sampleid'] = i
@@ -544,14 +519,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
                     rowsList.append(myDict)
         DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'rank', 'taxa_id', 'abund', 'rich', 'diversity'])
         DF1 = DF1.merge(namesDF, on='taxa_id', how='outer')
-        otupres = False
-        for key in taxaDict:
-            if (key == 'OTU_0.01') or (key == 'OTU_0.03'):
-                otupres = True
-        if otupres:
-            DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'abund', 'rich', 'diversity']]
-        else:
-            DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+        DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
 
         if normDF.empty:
             normDF = DF1

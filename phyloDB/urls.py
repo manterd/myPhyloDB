@@ -50,6 +50,13 @@ urlpatterns = patterns('',
     url(r'^batch1', 'database.views.batch1', name='batch1'),
     url(r'^batch2', 'database.views.batch2', name='batch2'),
 
+    url(r'^soil', 'database.views.soil', name='soil'),
+    url(r'^human_assoc', 'database.views.human_assoc', name='human_assoc'),
+    url(r'^human_gut', 'database.views.human_gut', name='human_gut'),
+    url(r'^air', 'database.views.air', name='air'),
+    url(r'^water', 'database.views.water', name='water'),
+    url(r'^microbial', 'database.views.microbial', name='microbial'),
+
     url(r'^statusANOVA', 'database.anova_graphs.statusANOVA', name='statusANOVA'),
     url(r'^statusPCoA', 'database.pcoa_graphs.statusPCoA', name='statusPCoA'),
     url(r'^status', 'database.parsers.status', name='status'),

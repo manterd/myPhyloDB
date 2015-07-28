@@ -3,12 +3,7 @@ from django_extensions.db.fields import UUIDField
 
 
 class Project(models.Model):
-
     projectType = models.CharField(max_length=45, blank=False)  # Mandatory field
-
-    processed_by = models.CharField(max_length=90, blank=True)
-    # File used for processing raw data, if blank, data was processed before upload
-
     projectid = UUIDField(primary_key=True)
     path = models.CharField(max_length=90)
     project_name = models.TextField(blank=True)
@@ -20,6 +15,15 @@ class Project(models.Model):
     pi_affiliation = models.CharField(max_length=45, blank=True)
     pi_email = models.EmailField(blank=True)
     pi_phone = models.CharField(max_length=15, blank=True)
+
+
+class Reference(models.Model):
+    refid = UUIDField(primary_key=True)
+    projectid = models.ForeignKey(Project)
+    path = models.CharField(max_length=90)
+    alignDB = models.CharField(max_length=90, blank=True)
+    templateDB = models.CharField(max_length=90, blank=True)
+    taxonomyDB = models.CharField(max_length=90, blank=True)
 
 
 class Sample(models.Model):
@@ -48,16 +52,11 @@ class Sample(models.Model):
     def __unicode__(self):
         return unicode(self.sample_name)
 
-# add class for Soil, contains normal classes in here
-# add classes for other packages, and their subclasses
-
 
 class Human_Gut(models.Model):
-
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
 
-    # Put human_gut variables here
     age = models.CharField(max_length=15, blank=True)  # float unit
     body_mass_index = models.CharField(max_length=45, blank=True)  # float unit
     body_product = models.CharField(max_length=45, blank=True)  # text
@@ -99,7 +98,6 @@ class Human_Gut(models.Model):
 
 
 class Microbial(models.Model):
-
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
 
@@ -170,7 +168,6 @@ class Microbial(models.Model):
 
 
 class Human_Associated(models.Model):
-
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
 
@@ -228,8 +225,8 @@ class Human_Associated(models.Model):
     weight_loss_3_month = models.CharField(max_length=15, blank=True)
     user_defined = models.CharField(max_length=15, blank=True)
 
-class Soil(models.Model):
 
+class Soil(models.Model):
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
 
@@ -299,7 +296,6 @@ class Soil(models.Model):
 
 
 class Air(models.Model):
-
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
 
@@ -333,8 +329,8 @@ class Air(models.Model):
     wind_speed = models.CharField(max_length=45, blank=True)
     user_defined = models.CharField(max_length=45, blank=True)
 
-class Water(models.Model):
 
+class Water(models.Model):
      sampleid = models.ForeignKey(Sample)
      projectid = models.ForeignKey(Project)
 
@@ -422,6 +418,7 @@ class Water(models.Model):
      water_current = models.CharField(max_length=45, blank=True)
      user_defined = models.CharField(max_length=45, blank=True)
 
+
 class User(models.Model):
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
@@ -498,14 +495,6 @@ class Species(models.Model):
     speciesName = models.CharField(max_length=90, blank=True)
 
 
-class OTU_01(models.Model):
-    otuid1 = UUIDField(primary_key=True)
-
-
-class OTU_03(models.Model):
-    otuid3 = UUIDField(primary_key=True)
-
-
 class Profile(models.Model):
     projectid = models.ForeignKey(Project)
     sampleid = models.ForeignKey(Sample)
@@ -516,8 +505,6 @@ class Profile(models.Model):
     familyid = models.ForeignKey(Family)
     genusid = models.ForeignKey(Genus)
     speciesid = models.ForeignKey(Species)
-    otuid1 = models.ForeignKey(OTU_01)
-    otuid3 = models.ForeignKey(OTU_03)
     count = models.IntegerField()
 
 
