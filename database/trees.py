@@ -890,4 +890,50 @@ def getTaxaTreeChildren(request):
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
 
+def makeReproTree(request):
+    myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
+    # Tree should only include projects which were uploaded via form 3 (ie, raw data mothur analysis)
+
+    projects = Project.objects.all()
+
+    for project in projects:
+        myNode = {
+            'title': project.project_name,
+            'tooltip': project.project_desc,
+            'id': project.projectid,
+            'isFolder': False
+        }
+        myTree['children'].append(myNode)
+
+    # Convert result list to a JSON string
+    res = simplejson.dumps(myTree, encoding="Latin-1")
+
+    # Support for the JSONP protocol.
+    response_dict = {}
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+    response_dict = {}
+    response_dict.update({'children': myTree})
+    return HttpResponse(response_dict, content_type='application/javascript')
+
+def popReproTree(request):
+    if request.is_ajax():
+        projectid = request.GET["id"]
+        samples = Sample.objects.filter(projectid=projectid)
+
+        nodes = []
+        for sample in samples:
+            reads = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+            myNode = {
+                'title': 'Sample: ' + sample.sample_name + '; Reads: ' + str(reads['count__sum']),
+                'tooltip': sample.title,
+                'id': sample.sampleid,
+                'isFolder': False
+            }
+            nodes.append(myNode)
+
+        res = simplejson.dumps(nodes, encoding="Latin-1")
+        return HttpResponse(res, content_type='application/json')

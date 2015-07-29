@@ -8,7 +8,7 @@ from django.core.servers.basehttp import FileWrapper
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from forms import UploadForm1, UploadForm2, UploadForm3
+from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4
 from models import Project, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
@@ -22,6 +22,9 @@ def home(request):
 
 def logout_view(request):
     logout(request)
+
+def database(request):
+    return render_to_response('database.html')
 
 
 @login_required(login_url='/myPhyloDB/login/')
@@ -461,18 +464,66 @@ def microbial(request):
     response['Content-Length'] = os.path.getsize(filename)
     return response
 
+def database(request):
+    return render_to_response(
+                        'database.html',
+                        {
+                         'form4': UploadForm4
+                        },
+                        context_instance=RequestContext(request))
+
 
 def reprocess(request):
-    # populate tree with projects and their reference files (in a different function)
-    # user selects projects to be reprocessed along with new reference file
-    # pull up all projects/samples specified from tree
-    # remove old data from said projects
-    # rerun mothur with new reference file and loaded raw data
-    # rerun parser for taxa and shared(?) from mothur output
-    # output new processed data to old directories, change project reference to new file
-    return
+
+    # get projects by ID
+    idstring = request.META['QUERY_STRING']
+    print("IDS!" + str(idstring))  # all=  %5B%5D  vs  %5B%22b90b39a0ab784e77b29d2ce09082140d%22%5D
+    # Strip all=%5B%22 and %22%5D, use as pid (check multiples)
+
+    print("Files:")
+    form4 = UploadForm4(request.POST, request.FILES)
+    if form4.is_valid():
+        alignFile = request.FILES['docfile8']
+        templateFile = request.FILES['docfile9']
+        taxonomyFile = request.FILES['docfile10']
+        mothurdest = 'mothur/temp'
+        if not os.path.exists(mothurdest):
+            os.makedirs(mothurdest)
+
+        handle_uploaded_file(alignFile, mothurdest, 'test.alignDB')
+        handle_uploaded_file(templateFile, mothurdest, 'test.template')
+        handle_uploaded_file(taxonomyFile, mothurdest, 'test.taxonomy')
+
+        # For each project:
+        #   Move batch, oligos, and sff files from selected projects to temp directory
+        #   Edit batch file to correspond with new files
+        #   Rerun mothur in temp directory
+        #   Move mothur results into this projects folder
+        #   Clear out project specific files from temp directory
+        #   Parse resulting taxa and shared files into old project and samples
+
+        mothur(mothurdest)
+
+        # load old files based on which projects are selected
+
+        # run mothur with old data and new files (for now using old batch)
+
+        # modify mothur batch file with new file data (in case the user forgets to do the same)
+
+        # pull up all projects/samples specified from tree
+        # remove old data from said projects
+        # rerun mothur with new reference file and loaded raw data
+        # rerun parser for taxa and shared(?) from mothur output
+        # output new processed data to old directories, change project reference to new file
+    return render_to_response(
+        'database.html',
+        {'form4': UploadForm4},
+        context_instance=RequestContext(request)
+    )
 
 
-def popRepoTree(request):
-    # populate reprocessing tree with projects by finding all reference files used, as the main category, with projects contained within and samplies within that
+def addMetaData(request):
+    # load samples based on id or project id
+    # load new sample data
+    # overwrite old sample data, delete?
     return

@@ -3,7 +3,7 @@ from django_extensions.db.fields import UUIDField
 
 
 class Project(models.Model):
-    projectType = models.CharField(max_length=45, blank=False)  # Mandatory field
+    projectType = models.CharField(max_length=45, blank=False)
     projectid = UUIDField(primary_key=True)
     path = models.CharField(max_length=90)
     project_name = models.TextField(blank=True)

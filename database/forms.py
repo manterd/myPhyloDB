@@ -1,7 +1,6 @@
 from django import forms
 
 
-
 class UploadForm1(forms.Form):
     docfile1 = forms.FileField(label='Select meta_Project.csv file:')
     docfile2 = forms.FileField(label='Select meta_Sample.csv file:')
@@ -17,4 +16,10 @@ class UploadForm3(forms.Form):
     docfile5 = forms.FileField(label='Select sff file:')
     docfile6 = forms.FileField(label='Select Oligos file:')
     docfile7 = forms.FileField(label='Select Mothur batch file:')
+
+
+class UploadForm4(forms.Form):
+    docfile8 = forms.FileField(label='Select alignment file (e.g., silva.seed_v119.align):')
+    docfile9 = forms.FileField(label='Select template file (e.g., gg_13_5_99.fasta):')
+    docfile10 = forms.FileField(label='Select taxonomy file (e.g., gg_13_5_99.pds.tax):')
 

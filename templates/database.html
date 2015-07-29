@@ -1,10 +1,121 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title></title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
+{% block pagetitle %}
+    <title xmlns="http://www.w3.org/1999/html">Manage Data</title>
+{% endblock pagetitle %}
+{% block javascript %}
+<script>
+var selKeys = "";
 
-</body>
-</html>
+        $(function () {
+            $("#tabs").tabs({
+                "activate": function(event, ui) {
+                    var table = $.fn.dataTable.fnTables(true);
+                    if ( table.length > 0 ) {
+                        $(table).dataTable().fnAdjustColumnSizing();
+                        var oTableTools = TableTools.fnGetInstance(table[0]);
+                        if (oTableTools != null && oTableTools.fnResizeRequired()) {
+                            oTableTools.fnResizeButtons();
+                        }
+                    }
+                }
+            });
+
+            $(".display").dataTable({
+                "jQueryUI": true,
+                "sDom": 'T<"clear">lfrtip',
+                "oTableTools": {
+                    "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                },
+                "bSort": true,
+                "scrollX": true
+            });
+
+            $("#tree").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/makeReproTree/",
+                    dataType: "jsonp",
+                    data: {}
+                },
+                onSelect: function (flag, node) {
+                   if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            node.select(false);
+                            node.select(true);
+                        });
+                    }
+                }
+            });
+
+            $("#drawtable").click(function () {
+                selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                    return node.data.id;
+                });
+                updateNodes(selKeys);
+            });
+
+            $("#clearMeta").click(function(){
+                $("#tree").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                updateNodes();
+            });
+
+            $("#submit").click(function () {
+                selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                    return node.data.id;
+                });
+                var jsonDict = JSON.stringify(selKeys);
+                $.ajax({
+                    type: 'GET',
+                    url: '/reprocess/',
+                    dataType: 'json',
+                    data: {all: jsonDict},
+                    success: function(data) {
+                        alert("Success!");
+                        alert(data);
+                    }
+                });
+            });
+        });
+</script>
+{% endblock javascript %}
+{% block my_content %}
+<br>
+    <table border="2" cellspacing="0" cellpadding="5">
+        <tr>
+            <th>Select projects and/or samples for reprocessing:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree"></div>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <form action="{% url 'reprocess' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
+            <tr>
+                <th colspan="2">Select files to reprocess with:</th>
+            </tr>
+            <tr>
+                <td>{{ form4.docfile8.label_tag }}</td>
+                <td>{{ form4.docfile8 }}</td>
+            </tr>
+            <tr>
+                <td>{{ form4.docfile9.label_tag }}</td>
+                <td>{{ form4.docfile9 }}</td>
+            </tr>
+            <tr>
+                <td>{{ form4.docfile10.label_tag }}</td>
+                <td>{{ form4.docfile10 }}</td>
+            </tr>
+        </table>
+        <br>
+        <input id="submit" type="submit" value="Reprocess selected projects"/>
+    </form>
+    <br><br><br>
+{% endblock my_content %}
