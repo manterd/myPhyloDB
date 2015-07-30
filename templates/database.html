@@ -1,36 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block pagetitle %}
-    <title xmlns="http://www.w3.org/1999/html">Manage Data</title>
+    <title xmlns="http://www.w3.org/1999/html">Reprocess Data</title>
 {% endblock pagetitle %}
 {% block javascript %}
 <script>
-var selKeys = "";
+var selNodes = "";
 
         $(function () {
-            $("#tabs").tabs({
-                "activate": function(event, ui) {
-                    var table = $.fn.dataTable.fnTables(true);
-                    if ( table.length > 0 ) {
-                        $(table).dataTable().fnAdjustColumnSizing();
-                        var oTableTools = TableTools.fnGetInstance(table[0]);
-                        if (oTableTools != null && oTableTools.fnResizeRequired()) {
-                            oTableTools.fnResizeButtons();
-                        }
-                    }
-                }
-            });
-
-            $(".display").dataTable({
-                "jQueryUI": true,
-                "sDom": 'T<"clear">lfrtip',
-                "oTableTools": {
-                    "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
-                },
-                "bSort": true,
-                "scrollX": true
-            });
-
             $("#tree").dynatree({
                 checkbox: true,
                 selectMode: 3,
@@ -39,35 +16,35 @@ var selKeys = "";
                     dataType: "jsonp",
                     data: {}
                 },
-                onSelect: function (flag, node) {
-                   if (flag && node.childList == undefined) {
-                        node.reloadChildren(function () {
-                            node.select(false);
-                            node.select(true);
-                        });
-                    }
+                onSelect: function (select, node) {
+                    selNodes = node.tree.getSelectedNodes();
                 }
-            });
-
-            $("#drawtable").click(function () {
-                selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
-                    return node.data.id;
-                });
-                updateNodes(selKeys);
             });
 
             $("#clearMeta").click(function(){
                 $("#tree").dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
-                updateNodes();
             });
 
-            $("#submit").click(function () {
-                selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+            $("#reprocess").click(function () {
+
+                var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
                     return node.data.id;
                 });
-                var jsonDict = JSON.stringify(selKeys);
+
+                var myDict = {};
+                myDict['ids'] = selKeys;
+
+                if (("{{ alignDB }}" != '') && ("{{ taxonomyDB }}" != '')  && ("{{ templateDB }}" != '')) {
+                    myDict['alignDB'] = "{{ alignDB }}";
+                    myDict['taxonomyDB'] = "{{ taxonomyDB }}";
+                    myDict['templateDB'] = "{{ templateDB }}";
+                } else {
+                    alert("Please upload your new reference databases first!")
+                }
+                var jsonDict = JSON.stringify(myDict);
+
                 $.ajax({
                     type: 'GET',
                     url: '/reprocess/',
@@ -84,22 +61,12 @@ var selKeys = "";
 {% endblock javascript %}
 {% block my_content %}
 <br>
-    <table border="2" cellspacing="0" cellpadding="5">
-        <tr>
-            <th>Select projects and/or samples for reprocessing:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
-        </tr>
-        <tr>
-            <td style="padding-right: 10px; vertical-align: top">
-                <div id="tree"></div>
-            </td>
-        </tr>
-    </table>
-    <br>
-    <form action="{% url 'reprocess' %}" method="post" enctype="multipart/form-data">
+
+    <form action="{% url 'database' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
             <tr>
-                <th colspan="2">Select files to reprocess with:</th>
+                <th colspan="2">Upload new reference database files:</th>
             </tr>
             <tr>
                 <td>{{ form4.docfile8.label_tag }}</td>
@@ -115,7 +82,20 @@ var selKeys = "";
             </tr>
         </table>
         <br>
-        <input id="submit" type="submit" value="Reprocess selected projects"/>
+        <input id="submit" type="submit" value="Upload"/>
     </form>
+    <br>
+    <table border="2" cellspacing="0" cellpadding="5">
+        <tr>
+            <th>Select projects for reprocessing:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree"></div>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <input id="reprocess" type="button" value="Reprocess"/>
     <br><br><br>
 {% endblock my_content %}

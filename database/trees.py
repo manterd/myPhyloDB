@@ -3,7 +3,7 @@ import operator
 import simplejson
 from django.http import HttpResponse
 from django.db.models import Q, Sum
-from models import Project, Sample
+from models import Project, Sample, Reference
 from models import Kingdom, Class, Order, Family, Genus, Species, Profile
 
 
@@ -890,20 +890,37 @@ def getTaxaTreeChildren(request):
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
 
+
 def makeReproTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
-
-    # Tree should only include projects which were uploaded via form 3 (ie, raw data mothur analysis)
-
-    projects = Project.objects.all()
+    projects = Reference.objects.all()
 
     for project in projects:
         myNode = {
-            'title': project.project_name,
-            'tooltip': project.project_desc,
-            'id': project.projectid,
+            'title': project.projectid.project_name,
+            'tooltip': project.projectid.project_desc,
+            'id': project.projectid.projectid,
+            'isFolder': True,
+            'children': []
+        }
+        myNode1={
+            'title': project.alignDB,
+            'hideCheckbox': True,
             'isFolder': False
         }
+        myNode['children'].append(myNode1)
+        myNode2={
+            'title': project.templateDB,
+            'hideCheckbox': True,
+            'isFolder': False
+        }
+        myNode['children'].append(myNode2)
+        myNode3={
+            'title': project.taxonomyDB,
+            'hideCheckbox': True,
+            'isFolder': False
+        }
+        myNode['children'].append(myNode3)
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
@@ -918,22 +935,3 @@ def makeReproTree(request):
     response_dict = {}
     response_dict.update({'children': myTree})
     return HttpResponse(response_dict, content_type='application/javascript')
-
-def popReproTree(request):
-    if request.is_ajax():
-        projectid = request.GET["id"]
-        samples = Sample.objects.filter(projectid=projectid)
-
-        nodes = []
-        for sample in samples:
-            reads = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            myNode = {
-                'title': 'Sample: ' + sample.sample_name + '; Reads: ' + str(reads['count__sum']),
-                'tooltip': sample.title,
-                'id': sample.sampleid,
-                'isFolder': False
-            }
-            nodes.append(myNode)
-
-        res = simplejson.dumps(nodes, encoding="Latin-1")
-        return HttpResponse(res, content_type='application/json')

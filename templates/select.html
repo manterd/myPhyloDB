@@ -98,72 +98,48 @@
             updateProjectTable(selKeys);
             updateSampleTable(selKeys);
 
-            $("#collect").hide();
-            $("#climate").hide();
-            $("#class").hide();
-            $("#ph").hide();
-            $("#manage").hide();
-            $("#micro").hide();
-            $("#humgut").hide();
-            $("#soil").hide();
-            $("#humasso").hide();
-            $("#air").hide();
-            $("#water").hide();
-
             var pTypes = new Array(0);
             {% for project in projects %}
                 var element = "{{ project.projectType }}";  // Currently looks at all uploaded projects rather than selected ones, theoretically still practical
                 pTypes.push(element);
             {% endfor %}
 
-            for (var c = 0; c < pTypes.length; c++)
-            {
-                alert("pType: " + pTypes[c]);
-            }
-
-            if (pTypes.indexOf("soil")>-1)
-            {
-                //updateCollectTable(selKeys);
-                //updateClimateTable(selKeys);
-                //updateSoilClassTable(selKeys);
-                //updateSoilNutrTable(selKeys);
-                //updateMgtTable(selKeys);
-                //updateMicrobeTable(selKeys);
+            if (pTypes.indexOf("soil")>-1) {
                 updateSoilTable(selKeys);
-                //$("#collect").show();
-                //$("#climate").show();
-                //$("#class").show();
-                //$("#ph").show();
-                //$("#manage").show();
-                //$("#micro").show();
                 $("#soil").show();
+            } else {
+                $("#soil").hide();
             }
-            if (pTypes.indexOf("human_gut")>-1)
-            {
+            if (pTypes.indexOf("human_gut")>-1) {
                 updateGutTable(selKeys);
                 $("#humgut").show();
+            } else {
+                $("#humgut").hide();
             }
-            if (pTypes.indexOf("human_associated")>-1)
-            {
+            if (pTypes.indexOf("human_associated")>-1) {
                 updateGutTable(selKeys);
                 $("#humasso").show();
+            } else {
+                $("#humasso").hide();
             }
-            if (pTypes.indexOf("microbial")>-1)
-            {
+            if (pTypes.indexOf("microbial")>-1) {
                 updateMicrobialTable(selKeys);
                 $("#microbial").show();
+            } else {
+                $("#microbial").hide();
             }
-            if (pTypes.indexOf("water")>-1)
-            {
+            if (pTypes.indexOf("water")>-1) {
                 updateWaterTable(selKeys);
                 $("#water").show();
+            } else {
+                $("#water").hide();
             }
-            if (pTypes.indexOf("air")>-1)
-            {
+            if (pTypes.indexOf("air")>-1) {
                 updateAirTable(selKeys);
                 $("#air").show();
+            } else {
+                $("#air").hide();
             }
-
 
             updateUsrTable(selKeys);
         }
@@ -654,171 +630,6 @@
                                     "{{ Soil.soil_amendments }}",
                                     "{{ Soil.soil_amendments_desc }}",
                                     "{{ Soil.tillage }}",
-                                    "{{ Soil.rRNA_copies }}",
-                                    "{{ Soil.microbial_biomass_C }}",
-                                    "{{ Soil.microbial_biomass_N }}",
-                                    "{{ Soil.microbial_respiration }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
-        function updateCollectTable(selKeys) {
-            var table = $('#collectTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Soil in project.soil_set.all %}
-                            var id = "{{ Soil.sampleid_id }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Soil.sampleid.sample_name }}",
-                                    "{{ Soil.depth }}",
-                                    "{{ Soil.pool_dna_extracts }}",
-                                    "{{ Soil.samp_size }}",
-                                    "{{ Soil.samp_collection_device }}",
-                                    "{{ Soil.samp_weight_dna_ext }}",
-                                    "{{ Soil.sieving }}",
-                                    "{{ Soil.storage_cond }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
-
-        function updateClimateTable(selKeys) {
-            var table = $('#climateTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Soil in project.climate_set.all %}
-                            var id = "{{ Soil.sampleid_id }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Soil.sampleid.sample_name }}",
-                                    "{{ Soil.annual_season_precpt }}",
-                                    "{{ Soil.annual_season_temp }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
-
-        function updateSoilClassTable(selKeys) {
-            var table = $('#soil_classTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Soil in project.soil_class_set.all %}
-                            var id = "{{ Soil.sampleid_id }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Soil.sampleid.sample_name }}",
-                                    "{{ Soil.bulk_density }}",
-                                    "{{ Soil.drainage_class }}",
-                                    "{{ Soil.fao_class }}",
-                                    "{{ Soil.horizon }}",
-                                    "{{ Soil.local_class }}",
-                                    "{{ Soil.porosity }}",
-                                    "{{ Soil.profile_position }}",
-                                    "{{ Soil.slope_aspect }}",
-                                    "{{ Soil.slope_gradient }}",
-                                    "{{ Soil.soil_type }}",
-                                    "{{ Soil.texture_class }}",
-                                    "{{ Soil.water_content_soil }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
-
-        function updateSoilNutrTable(selKeys) {
-            var table = $('#soil_nutrTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Soil in project.soil_nutrient_set.all %}
-                            var id = "{{ Soil.sampleid_id }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Soil.sampleid.sample_name }}",
-                                    "{{ Soil.pH }}",
-                                    "{{ Soil.EC }}",
-                                    "{{ Soil.tot_C }}",
-                                    "{{ Soil.tot_OM }}",
-                                    "{{ Soil.tot_N }}",
-                                    "{{ Soil.NO3_N }}",
-                                    "{{ Soil.NH4_N }}",
-                                    "{{ Soil.P }}",
-                                    "{{ Soil.K }}",
-                                    "{{ Soil.S }}",
-                                    "{{ Soil.Zn }}",
-                                    "{{ Soil.Fe }}",
-                                    "{{ Soil.Cu }}",
-                                    "{{ Soil.Mn }}",
-                                    "{{ Soil.Ca }}",
-                                    "{{ Soil.Mg }}",
-                                    "{{ Soil.Na }}",
-                                    "{{ Soil.B }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
-
-        function updateMgtTable(selKeys) {
-            var table = $('#mgtTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Soil in project.management_set.all %}
-                            var id = "{{ Soil.sampleid_id }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Soil.sampleid.sample_name }}",
-                                    "{{ Soil.agrochem_amendments }}",
-                                    "{{ Soil.agrochem_amendments_desc }}",
-                                    "{{ Soil.biological_amendments }}",
-                                    "{{ Soil.biological_amendments_desc }}",
-                                    "{{ Soil.cover_crop }}",
-                                    "{{ Soil.crop_rotation }}",
-                                    "{{ Soil.cur_land_use }}",
-                                    "{{ Soil.cur_vegetation }}",
-                                    "{{ Soil.cur_crop }}",
-                                    "{{ Soil.cur_cultivar }}",
-                                    "{{ Soil.organic }}",
-                                    "{{ Soil.previous_land_use }}",
-                                    "{{ Soil.soil_amendments }}",
-                                    "{{ Soil.soil_amendments_desc }}",
-                                    "{{ Soil.tillage }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
-
-        function updateMicrobeTable(selKeys) {
-            var table = $('#microbeTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Soil in project.microbial_set.all %}
-                            var id = "{{ Soil.sampleid_id }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Soil.sampleid.sample_name }}",
                                     "{{ Soil.rRNA_copies }}",
                                     "{{ Soil.microbial_biomass_C }}",
                                     "{{ Soil.microbial_biomass_N }}",
