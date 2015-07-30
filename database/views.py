@@ -1,5 +1,6 @@
 import datetime
 import csv
+import shutil
 import os
 import pandas as pd
 import pickle
@@ -465,24 +466,29 @@ def microbial(request):
 def database(request):
     form4 = UploadForm4(request.POST, request.FILES)
 
-    if form4.is_valid():
+    try:
         alignFile = request.FILES['docfile8']
-        templateFile = request.FILES['docfile9']
-        taxonomyFile = request.FILES['docfile10']
-
         alignDB = request.FILES['docfile8'].name
+        handle_uploaded_file(alignFile, 'mothur/reference/align', alignDB)
+    except:
+        junk = 'kkjlj'
+
+    try:
+        templateFile = request.FILES['docfile9']
         templateDB = request.FILES['docfile9'].name
+        handle_uploaded_file(templateFile, 'mothur/reference/template', templateDB)
+    except:
+        junk = 'kkjlj'
+    try:
+        taxonomyFile = request.FILES['docfile10']
         taxonomyDB = request.FILES['docfile10'].name
+        handle_uploaded_file(taxonomyFile, 'mothur/reference/taxonomy', taxonomyDB)
+    except:
+        junk = 'kkjlj'
 
-        dest = 'mothur/reference'
-        handle_uploaded_file(alignFile, dest, alignDB)
-        handle_uploaded_file(templateFile, dest, templateDB)
-        handle_uploaded_file(taxonomyFile, dest, taxonomyDB)
-    else:
-        alignDB = ''
-        templateDB = ''
-        taxonomyDB = ''
-
+    alignDB = os.listdir('mothur/reference/align')
+    templateDB = os.listdir('mothur/reference/template')
+    taxonomyDB = os.listdir('mothur/reference/taxonomy')
 
     return render_to_response(
         'database.html',
@@ -508,18 +514,35 @@ def reprocess(request):
         print 'ids: ', ids
         alignDB = all['alignDB']
         print 'alignDB', alignDB
-        taxonomyDB = all['taxonomyDB']
-        print 'taxonomyDB', taxonomyDB
         templateDB = all['templateDB']
         print 'templateDB', templateDB
+        taxonomyDB = all['taxonomyDB']
+        print 'taxonomyDB', taxonomyDB
 
         ### get project list
+        Projects = []
+        for id in ids:
+            Projects.append(Project.objects.get(projectid=id))
+        print "Projects: ", Projects
+
         ### rewrite mothur batch
+
         ### write appropriate files to mothur/temp
+        try:
+            #use prints to verify file names if necessary
+            #print("Trying: mothur/reference/align/" + str(alignDB).split(';')[1][0:len(str(alignDB).split(';')[1])-4])
+            shutil.copy("mothur/reference/align/"+str(alignDB).split(';')[1][0:len(str(alignDB).split(';')[1])-4], mothurdest)
+
+            #print("Trying: mothur/reference/template/" + str(templateDB).split(';')[1][0:len(str(templateDB).split(';')[1])-4])
+            shutil.copy("mothur/reference/template/"+str(templateDB).split(';')[1][0:len(str(templateDB).split(';')[1])-4], mothurdest)
+
+            #print("Trying: mothur/reference/taxonomy/" + str(taxonomyDB).split(';')[1][0:len(str(taxonomyDB).split(';')[1])-4])
+            shutil.copy("mothur/reference/taxonomy/"+str(taxonomyDB).split(';')[1][0:len(str(taxonomyDB).split(';')[1])-4], mothurdest)
+        except:
+            print("Failed to copy files")
         ### reprocess
         ### remove old project from database
         ### add reprocessed project to database
-
 
 
 def addMetaData(request):

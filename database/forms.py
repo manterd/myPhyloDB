@@ -22,4 +22,6 @@ class UploadForm4(forms.Form):
     docfile8 = forms.FileField(label='Select alignment file (e.g., silva.seed_v119.align):')
     docfile9 = forms.FileField(label='Select template file (e.g., gg_13_5_99.fasta):')
     docfile10 = forms.FileField(label='Select taxonomy file (e.g., gg_13_5_99.pds.tax):')
-
+    alignFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))  # replace file with actual loaded files
+    templateFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
+    taxonomyFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))

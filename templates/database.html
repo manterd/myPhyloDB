@@ -6,7 +6,7 @@
 {% block javascript %}
 <script>
 var selNodes = "";
-
+var align = "", template = "", taxonomy = "";
         $(function () {
             $("#tree").dynatree({
                 checkbox: true,
@@ -27,6 +27,16 @@ var selNodes = "";
                 });
             });
 
+            $("#align").change(function () {
+                align = $(this).val();
+            });
+            $("#template").change(function () {
+                template = $(this).val();
+            });
+            $("#taxonomy").change(function () {
+                taxonomy = $(this).val();
+            });
+
             $("#reprocess").click(function () {
 
                 var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
@@ -35,6 +45,10 @@ var selNodes = "";
 
                 var myDict = {};
                 myDict['ids'] = selKeys;
+                myDict['align'] = align;
+                myDict['template'] = template;
+                myDict['taxonomy'] = taxonomy;//Pass values from select tables down to python
+
 
                 if (("{{ alignDB }}" != '') && ("{{ taxonomyDB }}" != '')  && ("{{ templateDB }}" != '')) {
                     myDict['alignDB'] = "{{ alignDB }}";
@@ -95,6 +109,23 @@ var selNodes = "";
             </td>
         </tr>
     </table>
+    <br>
+    <select id="align"> Choose align file:
+    {% for DB in alignDB %}
+        <option>{{ DB }}</option>
+    {% endfor %}
+    </select>
+    <select id="template"> Choose template file:
+    {% for DB in templateDB %}
+        <option>{{ DB }}</option>
+    {% endfor %}
+    </select>
+    <select id="taxonomy"> Choose taxonomy file:
+    {% for DB in taxonomyDB %}
+        <option>{{ DB }}</option>
+    {% endfor %}
+    </select>
+    <br>
     <br>
     <input id="reprocess" type="button" value="Reprocess"/>
     <br><br><br>
