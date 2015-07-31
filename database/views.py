@@ -520,6 +520,7 @@ def reprocess(request):
         new_template = 'template=mothur/reference/template/' + str(all['templateDB'])
         print 'new_template:', new_template
 
+
         projects = Reference.objects.all().filter(projectid_id__in=ids)
         for project in projects:
             print "ID:", project.projectid.projectid
@@ -537,10 +538,57 @@ def reprocess(request):
             print 'orig_tax_tag:', orig_tax_tag
             orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
             print 'orig_template:', orig_template
+
             ### Works to here!!!!!!!!!!!!!!!!!!
 
             ### TODO rewrite mothur batch
             ### open old mothur.batch
+            try:
+                method = ""
+                foundTax = False
+                foundTemp = False
+                foundAlign = False
+                foundMethod = False
+                with open("% s/mothur.batch" % dest, 'r+') as bat:
+                    print("Opened batch!")
+                    for line in bat:
+                        if ("reference=" in line) and (not foundAlign):
+                            pos = line.find("reference=")
+                            alignsec = line[pos+10:]
+                            align = alignsec.split(',')[0]
+                            line = line.replace("reference="+str(align), str(new_align))
+                            foundAlign = True
+                        if ("template=" in line) and (not foundTemp):
+                            pos = line.find("template=")
+                            templatesec = line[pos+9:]
+                            template = templatesec.split(',')[0]
+                            line = line.replace("template="+str(template), str(new_template))
+                            foundTemp = True
+                        if ("taxonomy=" in line) and (not foundTax):
+                            pos = line.find("taxonomy=")
+                            taxsec = line[pos+9:]
+                            taxonomy = taxsec.split(',')[0]
+                            line = line.replace("taxonomy="+str(taxonomy), str(new_taxonomy))
+                            foundTax = True
+                        if (str(method) in line) and foundMethod:
+                            bits = line.split('.')
+                            num = 0
+                            spot = 0
+                            for word in bits:
+                                if word == method:
+                                    spot = num
+                                else:
+                                    num += 1
+                            print("Should be spot "+str(int((spot-1)))+", "+str(bits[spot-1]))  # TODO problem with having more than one method usage per line
+                            print(line)
+                        if "method=" in line:
+                            pos = line.find("method=")
+                            methodsec = line[pos+7:]
+                            method = methodsec.split(',')[0]
+                            foundMethod = True
+
+            except Exception as e:
+                print("Error with batch file: ", e)
             ### replace orig with new...
                 ### tax_tag may be problematic (e.g., '.pds.') could be found within filename (rare but possible)
             ### write new_mothur.batch
