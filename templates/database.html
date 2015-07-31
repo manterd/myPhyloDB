@@ -4,9 +4,15 @@
     <title xmlns="http://www.w3.org/1999/html">Reprocess Data</title>
 {% endblock pagetitle %}
 {% block javascript %}
-<script>
-var selNodes = "";
-var align = "", template = "", taxonomy = "";
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
+
+    <script>
+        var selNodes = "";
         $(function () {
             $("#tree").dynatree({
                 checkbox: true,
@@ -27,16 +33,6 @@ var align = "", template = "", taxonomy = "";
                 });
             });
 
-            $("#align").change(function () {
-                align = $(this).val();
-            });
-            $("#template").change(function () {
-                template = $(this).val();
-            });
-            $("#taxonomy").change(function () {
-                taxonomy = $(this).val();
-            });
-
             $("#reprocess").click(function () {
 
                 var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
@@ -45,18 +41,9 @@ var align = "", template = "", taxonomy = "";
 
                 var myDict = {};
                 myDict['ids'] = selKeys;
-                myDict['align'] = align;
-                myDict['template'] = template;
-                myDict['taxonomy'] = taxonomy;//Pass values from select tables down to python
-
-
-                if (("{{ alignDB }}" != '') && ("{{ taxonomyDB }}" != '')  && ("{{ templateDB }}" != '')) {
-                    myDict['alignDB'] = "{{ alignDB }}";
-                    myDict['taxonomyDB'] = "{{ taxonomyDB }}";
-                    myDict['templateDB'] = "{{ templateDB }}";
-                } else {
-                    alert("Please upload your new reference databases first!")
-                }
+                myDict['alignDB'] = $("#align").val();
+                myDict['templateDB'] = $("#template").val();
+                myDict['taxonomyDB'] = $("#taxonomy").val();
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
@@ -71,11 +58,10 @@ var align = "", template = "", taxonomy = "";
                 });
             });
         });
-</script>
+    </script>
 {% endblock javascript %}
 {% block my_content %}
-<br>
-
+    <br>
     <form action="{% url 'database' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
@@ -99,7 +85,7 @@ var align = "", template = "", taxonomy = "";
         <input id="submit" type="submit" value="Upload"/>
     </form>
     <br>
-    <table border="2" cellspacing="0" cellpadding="5">
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
             <th>Select projects for reprocessing:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
         </tr>
@@ -109,24 +95,39 @@ var align = "", template = "", taxonomy = "";
             </td>
         </tr>
     </table>
-    <br>
-    <select id="align"> Choose align file:
-    {% for DB in alignDB %}
-        <option>{{ DB }}</option>
-    {% endfor %}
-    </select>
-    <select id="template"> Choose template file:
-    {% for DB in templateDB %}
-        <option>{{ DB }}</option>
-    {% endfor %}
-    </select>
-    <select id="taxonomy"> Choose taxonomy file:
-    {% for DB in taxonomyDB %}
-        <option>{{ DB }}</option>
-    {% endfor %}
-    </select>
-    <br>
-    <br>
+    <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+        <tr>
+            <td bgcolor="white">
+                <select id="align">
+                    {% for DB in alignDB %}
+                        <option>{{ DB }}</option>
+                    {% endfor %}
+                </select>
+                &nbsp<-- Choose align file:
+            </td>
+        </tr>
+        <tr>
+            <td bgcolor="white">
+                <select id="template">
+                    {% for DB in templateDB %}
+                        <option value="{{ DB }}">{{ DB }}</option>
+                    {% endfor %}
+                </select>
+                &nbsp<-- Choose template file:
+            </td>
+        </tr>
+        <tr>
+            <td bgcolor="white">
+                <select id="taxonomy">
+                    {% for DB in taxonomyDB %}
+                        <option>{{ DB }}</option>
+                    {% endfor %}
+                </select>
+                &nbsp<-- Choose taxonomy file:
+            </td>
+        </tr>
+    </table>
+    <br><br>
     <input id="reprocess" type="button" value="Reprocess"/>
     <br><br><br>
 {% endblock my_content %}

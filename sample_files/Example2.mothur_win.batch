@@ -38,7 +38,7 @@ summary.seqs(fasta=temp.shhh.trim.unique.fasta, name=temp.shhh.trim.unique.names
 
 ### Align seqs to silva reference alignment ###
 ## Tunable parameters [flip, threshold, processors]
-align.seqs(candidate=temp.shhh.trim.unique.fasta, reference=mothur/reference/silva.seed_v119.align, flip=T, threshold=50, processors=2)
+align.seqs(candidate=temp.shhh.trim.unique.fasta, reference=mothur/reference/align/silva.seed_v119.align, flip=T, threshold=50, processors=2)
 
 
 ### Put sequences in same genetic space ###

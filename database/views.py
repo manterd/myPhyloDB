@@ -471,20 +471,21 @@ def database(request):
         alignDB = request.FILES['docfile8'].name
         handle_uploaded_file(alignFile, 'mothur/reference/align', alignDB)
     except:
-        junk = 'kkjlj'
+        placeholder = ''
 
     try:
         templateFile = request.FILES['docfile9']
         templateDB = request.FILES['docfile9'].name
         handle_uploaded_file(templateFile, 'mothur/reference/template', templateDB)
     except:
-        junk = 'kkjlj'
+        placeholder = ''
+
     try:
         taxonomyFile = request.FILES['docfile10']
         taxonomyDB = request.FILES['docfile10'].name
         handle_uploaded_file(taxonomyFile, 'mothur/reference/taxonomy', taxonomyDB)
     except:
-        junk = 'kkjlj'
+        placeholder = ''
 
     alignDB = os.listdir('mothur/reference/align')
     templateDB = os.listdir('mothur/reference/template')
@@ -499,9 +500,7 @@ def database(request):
         context_instance=RequestContext(request)
     )
 
-#### could make this easier by
-# store each type in own folder (mothur/reference/align)
-# add a list box to the reprocess page
+
 def reprocess(request):
     if request.is_ajax():
         mothurdest = 'mothur/temp'
@@ -511,38 +510,43 @@ def reprocess(request):
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
         ids = all["ids"]
-        print 'ids: ', ids
-        alignDB = all['alignDB']
-        print 'alignDB', alignDB
-        templateDB = all['templateDB']
-        print 'templateDB', templateDB
-        taxonomyDB = all['taxonomyDB']
-        print 'taxonomyDB', taxonomyDB
+        print 'ids:', ids
+        new_align = 'reference=mothur/reference/align/' + str(all['alignDB'])
+        print 'new_align:', new_align
+        new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(all['taxonomyDB'])
+        print 'new_taxonomy:', new_taxonomy
+        new_tax_tag = "." + str(new_taxonomy.split('.')[-2:-1][0]) + "."
+        print 'new_tax_tag:', new_tax_tag
+        new_template = 'template=mothur/reference/template/' + str(all['templateDB'])
+        print 'new_template:', new_template
 
-        ### get project list
-        Projects = []
-        for id in ids:
-            Projects.append(Project.objects.get(projectid=id))
-        print "Projects: ", Projects
+        projects = Reference.objects.all().filter(projectid_id__in=ids)
+        for project in projects:
+            print "ID:", project.projectid.projectid
+            dest = project.projectid.path
+            print 'Path:', dest
+            shutil.copy("% s/mothur.sff" % dest, "mothur/temp/temp.sff")
+            shutil.copy("% s/mothur.oligos" % dest, "mothur/temp/temp.oligos")
+            print 'done'
 
-        ### rewrite mothur batch
+            orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
+            print 'orig_align:', orig_align
+            orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
+            print 'orig_taxonomy:', orig_taxonomy
+            orig_tax_tag = "." + str(orig_taxonomy.split('.')[-2:-1][0]) + "."
+            print 'orig_tax_tag:', orig_tax_tag
+            orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
+            print 'orig_template:', orig_template
+            ### Works to here!!!!!!!!!!!!!!!!!!
 
-        ### write appropriate files to mothur/temp
-        try:
-            #use prints to verify file names if necessary
-            #print("Trying: mothur/reference/align/" + str(alignDB).split(';')[1][0:len(str(alignDB).split(';')[1])-4])
-            shutil.copy("mothur/reference/align/"+str(alignDB).split(';')[1][0:len(str(alignDB).split(';')[1])-4], mothurdest)
-
-            #print("Trying: mothur/reference/template/" + str(templateDB).split(';')[1][0:len(str(templateDB).split(';')[1])-4])
-            shutil.copy("mothur/reference/template/"+str(templateDB).split(';')[1][0:len(str(templateDB).split(';')[1])-4], mothurdest)
-
-            #print("Trying: mothur/reference/taxonomy/" + str(taxonomyDB).split(';')[1][0:len(str(taxonomyDB).split(';')[1])-4])
-            shutil.copy("mothur/reference/taxonomy/"+str(taxonomyDB).split(';')[1][0:len(str(taxonomyDB).split(';')[1])-4], mothurdest)
-        except:
-            print("Failed to copy files")
-        ### reprocess
-        ### remove old project from database
-        ### add reprocessed project to database
+            ### TODO rewrite mothur batch
+            ### open old mothur.batch
+            ### replace orig with new...
+                ### tax_tag may be problematic (e.g., '.pds.') could be found within filename (rare but possible)
+            ### write new_mothur.batch
+            shutil.copy("% s/new_mothur.batch" % dest, "mothur/temp/mothur.batch")
+            ### remove old project from database (utils/remove_list)
+            ### reprocess & parse newly analyzed project
 
 
 def addMetaData(request):
