@@ -2,6 +2,7 @@ import datetime
 import csv
 import shutil
 import os
+import re
 import pandas as pd
 import pickle
 import simplejson
@@ -15,6 +16,9 @@ from parsers import mothur, projectid, parse_project, parse_reference, parse_sam
 from utils import handle_uploaded_file, remove_list, remove_proj
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+
+
+rep_project = ''
 
 
 def home(request):
@@ -463,9 +467,8 @@ def microbial(request):
     return response
 
 
+@login_required(login_url='/myPhyloDB/login/')
 def database(request):
-    form4 = UploadForm4(request.POST, request.FILES)
-
     try:
         alignFile = request.FILES['docfile8']
         alignDB = request.FILES['docfile8'].name
@@ -487,9 +490,17 @@ def database(request):
     except:
         placeholder = ''
 
-    alignDB = os.listdir('mothur/reference/align')
-    templateDB = os.listdir('mothur/reference/template')
-    taxonomyDB = os.listdir('mothur/reference/taxonomy')
+    purge('mothur/reference/align', '.8mer')
+    purge('mothur/reference/taxonomy', 'numNonZero')
+    purge('mothur/reference/taxonomy', '.8mer.prob')
+    purge('mothur/reference/taxonomy', '.tree.sum')
+    purge('mothur/reference/taxonomy', '.tree.train')
+    purge('mothur/reference/template', '.8mer')
+    purge('mothur/reference/template', '.summary')
+
+    alignDB = os.listdir('mothur/reference/align/')
+    templateDB = os.listdir('mothur/reference/template/')
+    taxonomyDB = os.listdir('mothur/reference/taxonomy/')
 
     return render_to_response(
         'database.html',
@@ -501,7 +512,15 @@ def database(request):
     )
 
 
+def purge(dir, pattern):
+    for f in os.listdir(dir):
+        if re.search(pattern, f):
+            os.remove(os.path.join(dir, f))
+
+
 def reprocess(request):
+    global rep_project
+
     if request.is_ajax():
         mothurdest = 'mothur/temp'
         if not os.path.exists(mothurdest):
@@ -510,91 +529,81 @@ def reprocess(request):
         allJson = request.GET["all"]
         all = simplejson.loads(allJson)
         ids = all["ids"]
-        print 'ids:', ids
         new_align = 'reference=mothur/reference/align/' + str(all['alignDB'])
-        print 'new_align:', new_align
         new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(all['taxonomyDB'])
-        print 'new_taxonomy:', new_taxonomy
-        new_tax_tag = "." + str(new_taxonomy.split('.')[-2:-1][0]) + "."
-        print 'new_tax_tag:', new_tax_tag
+        new_tax = str(all['taxonomyDB'])
+        new_tax_tag = str(new_tax.split('.')[-2:-1][0])
         new_template = 'template=mothur/reference/template/' + str(all['templateDB'])
-        print 'new_template:', new_template
-
 
         projects = Reference.objects.all().filter(projectid_id__in=ids)
         for project in projects:
-            print "ID:", project.projectid.projectid
+            rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
             dest = project.projectid.path
-            print 'Path:', dest
             shutil.copy("% s/mothur.sff" % dest, "mothur/temp/temp.sff")
             shutil.copy("% s/mothur.oligos" % dest, "mothur/temp/temp.oligos")
-            print 'done'
 
             orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
-            print 'orig_align:', orig_align
             orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
-            print 'orig_taxonomy:', orig_taxonomy
-            orig_tax_tag = "." + str(orig_taxonomy.split('.')[-2:-1][0]) + "."
-            print 'orig_tax_tag:', orig_tax_tag
+            orig_tax = str(project.taxonomyDB)
+            orig_tax_tag = str(orig_tax.split('.')[-2:-1][0])
             orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
-            print 'orig_template:', orig_template
 
-            ### Works to here!!!!!!!!!!!!!!!!!!
-
-            ### TODO rewrite mothur batch
-            ### open old mothur.batch
             try:
-                method = ""
-                foundTax = False
-                foundTemp = False
-                foundAlign = False
-                foundMethod = False
                 with open("% s/mothur.batch" % dest, 'r+') as bat:
-                    print("Opened batch!")
-                    for line in bat:
-                        if ("reference=" in line) and (not foundAlign):
-                            pos = line.find("reference=")
-                            alignsec = line[pos+10:]
-                            align = alignsec.split(',')[0]
-                            line = line.replace("reference="+str(align), str(new_align))
-                            foundAlign = True
-                        if ("template=" in line) and (not foundTemp):
-                            pos = line.find("template=")
-                            templatesec = line[pos+9:]
-                            template = templatesec.split(',')[0]
-                            line = line.replace("template="+str(template), str(new_template))
-                            foundTemp = True
-                        if ("taxonomy=" in line) and (not foundTax):
-                            pos = line.find("taxonomy=")
-                            taxsec = line[pos+9:]
-                            taxonomy = taxsec.split(',')[0]
-                            line = line.replace("taxonomy="+str(taxonomy), str(new_taxonomy))
-                            foundTax = True
-                        if (str(method) in line) and foundMethod:
-                            bits = line.split('.')
-                            num = 0
-                            spot = 0
-                            for word in bits:
-                                if word == method:
-                                    spot = num
-                                else:
-                                    num += 1
-                            print("Should be spot "+str(int((spot-1)))+", "+str(bits[spot-1]))  # TODO problem with having more than one method usage per line
-                            print(line)
-                        if "method=" in line:
-                            pos = line.find("method=")
-                            methodsec = line[pos+7:]
-                            method = methodsec.split(',')[0]
-                            foundMethod = True
-
+                    with open("mothur/temp/mothur.batch", 'wb+') as destination:
+                        method = 'wang'
+                        foundClassify = False
+                        orig_tag_meth = ''
+                        new_tag_meth = ''
+                        for line in bat:
+                            if "align.seqs" in line:
+                                line = line.replace(str(orig_align), str(new_align))
+                            if "classify.seqs" in line:
+                                line = line.replace(str(orig_template), str(new_template))
+                                line = line.replace(str(orig_taxonomy), str(new_taxonomy))
+                                cmds = line.split(',')
+                                for item in cmds:
+                                    if "method=" in item:
+                                        method = item.split('=')[1]
+                                orig_tag_meth = str(orig_tax_tag) + "." + str(method)
+                                new_tag_meth = str(new_tax_tag) + "." + str(method)
+                                foundClassify = True
+                            if (str(orig_tag_meth) in line) and foundClassify:
+                                line = line.replace(str(orig_tag_meth), str(new_tag_meth))
+                            destination.write(line)
             except Exception as e:
                 print("Error with batch file: ", e)
-            ### replace orig with new...
-                ### tax_tag may be problematic (e.g., '.pds.') could be found within filename (rare but possible)
-            ### write new_mothur.batch
-            shutil.copy("% s/new_mothur.batch" % dest, "mothur/temp/mothur.batch")
-            ### remove old project from database (utils/remove_list)
-            ### reprocess & parse newly analyzed project
+
+            p_uuid = project.projectid.projectid
+            dest = project.path
+            pType = project.projectid.projectType
+
+            shutil.copy('% s/project.csv' % dest, 'mothur/temp/project.csv')
+            shutil.copy('% s/sample.csv' % dest, 'mothur/temp/sample.csv')
+
+            with open('mothur/temp/project.csv') as file1:
+                with open('mothur/temp/sample.csv') as file2:
+                    remove_proj(p_uuid)
+                    parse_project(file1, dest, p_uuid, pType)
+                    parse_sample(file2, p_uuid, dest, pType)
+            print 'Parsed Project and Sample Files'
+
+            with open('mothur/temp/mothur.batch') as file7:
+                raw = True
+                parse_reference(p_uuid, dest, file7, raw)
+                print 'Parsed Reference'
+
+            mothur(dest)
+            print 'Mothur is done'
+
+            with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                parse_taxonomy(file3)
+            print 'Parsed Taxonomy'
+
+            with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                with open('% s/mothur.shared' % dest, 'rb') as file4:
+                    parse_profile(file3, file4, p_uuid)
+            print 'Parsed Profile'
 
 
 def addMetaData(request):

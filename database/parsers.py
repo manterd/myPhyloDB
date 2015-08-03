@@ -12,6 +12,7 @@ import subprocess
 import glob
 import os
 import shutil
+import views
 
 
 stage = ''
@@ -48,6 +49,7 @@ def status(request):
         dict = {}
         dict['stage'] = stage
         dict['perc'] = perc
+        dict['project'] = views.rep_project
         json_data = simplejson.dumps(dict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
@@ -106,15 +108,15 @@ def parse_reference(p_uuid, path, file7, raw):
                 for item in row.split(','):
                     if "reference=" in item:
                         string = item.split('=')
-                        align_ref = string[1].replace('mothur/reference/', '')
+                        align_ref = string[1].replace('mothur/reference/align/', '')
             if "classify.seqs" in row:
                 for item in row.split(','):
                     if "template=" in item:
                         string = item.split('=')
-                        template_ref = string[1].replace('mothur/reference/', '')
+                        template_ref = string[1].replace('mothur/reference/template/', '')
                     if "taxonomy=" in item:
                         string = item.split('=')
-                        taxonomy_ref = string[1].replace('mothur/reference/', '')
+                        taxonomy_ref = string[1].replace('mothur/reference/taxonomy/', '')
     else:
         align_ref = 'null'
         template_ref = 'null'
@@ -234,7 +236,7 @@ def parse_taxonomy(Document):
         if row:
             step += 1.0
             perc = int(step / total * 100)
-            subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|0.03__|0.01__)', '', row[2])
+            subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', '', row[2])
             subbed = subbed[:-1]
             taxon = subbed.split(';')
 
@@ -273,11 +275,18 @@ def parse_taxonomy(Document):
                 record = Genus(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
                 record.save()
 
-            g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
-            if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
-                sid = uuid4().hex
-                record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
-                record.save()
+            if taxon[6]:
+                g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
+                if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
+                    sid = uuid4().hex
+                    record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
+                    record.save()
+            else:
+                g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
+                if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName='unclassified').exists():
+                    sid = uuid4().hex
+                    record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName='unclassified')
+                    record.save()
 
 
 def parse_profile(file3, file4, p_uuid):
@@ -306,7 +315,7 @@ def parse_profile(file3, file4, p_uuid):
     file4.close()
 
     df3 = df1.join(df2, how='outer')
-    df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|0.03__|0.01__)', value='', regex=True, inplace=True)
+    df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', value='', regex=True, inplace=True)
     df3.reset_index(drop=True, inplace=True)
     del df1, df2
 

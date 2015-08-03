@@ -9,8 +9,22 @@
             display: inline-block;
             vertical-align: top;
         }
-    </style>
+        #progressBar {
+                width: 200px;
+                height: 22px;
+                border: 1px solid #111;
+                background-color: #292929;
+        }
 
+        #progressBar div {
+                height: 100%;
+                color: #fff;
+                text-align: right;
+                line-height: 22px;
+                width: 0;
+                background-color: #0099ff;
+        }
+    </style>
     <script>
         var selNodes = "";
         $(function () {
@@ -39,6 +53,10 @@
                     return node.data.id;
                 });
 
+                $("#stage").show();
+                $("#progressBar").show();
+                setInterval(updateStatus, 1000);
+
                 var myDict = {};
                 myDict['ids'] = selKeys;
                 myDict['alignDB'] = $("#align").val();
@@ -50,14 +68,37 @@
                     type: 'GET',
                     url: '/reprocess/',
                     dataType: 'json',
-                    data: {all: jsonDict},
-                    success: function(data) {
-                        alert("Success!");
-                        alert(data);
-                    }
+                    data: {all: jsonDict}
                 });
             });
         });
+
+        function updateStatus(){
+            $.ajax({
+                url: '/status/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    var perc = obj['perc'];
+                    var project = obj['project'];
+                    updateStage(project, stage);
+                    progressBar(perc, $("#progressBar"));
+                }
+            });
+        }
+
+        function updateStage(project, stage) {
+            $("#project").empty().append(project);
+            $("#stage").empty().append(stage);
+        }
+
+        function progressBar(percent, $element) {
+           var progressBarWidth = percent * $element.width() / 100;
+            $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
+        }
     </script>
 {% endblock javascript %}
 {% block my_content %}
@@ -128,6 +169,11 @@
         </tr>
     </table>
     <br><br>
+    <div id="project" style="display: none"></div>
+    <br>
+    <div id="stage" style="display: none"></div>
+    <div id="progressBar" style="display: none"><div></div></div>
+    <br>
     <input id="reprocess" type="button" value="Reprocess"/>
     <br><br><br>
 {% endblock my_content %}

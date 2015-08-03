@@ -65,7 +65,6 @@ def getSampleCatTree(request):
     typeList = []
     for p in projectType:
         typeList.append(p.projectType)
-    # typeList.append('water') Test trees with this
 
     myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'tooltip': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
@@ -905,18 +904,21 @@ def makeReproTree(request):
         }
         myNode1={
             'title': project.alignDB,
+            'tooltip': 'Current align file...',
             'hideCheckbox': True,
             'isFolder': False
         }
         myNode['children'].append(myNode1)
         myNode2={
             'title': project.templateDB,
+            'tooltip': 'Current template file...',
             'hideCheckbox': True,
             'isFolder': False
         }
         myNode['children'].append(myNode2)
         myNode3={
             'title': project.taxonomyDB,
+            'tooltip': 'Current taxonomy file...',
             'hideCheckbox': True,
             'isFolder': False
         }

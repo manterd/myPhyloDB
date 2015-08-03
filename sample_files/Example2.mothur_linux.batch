@@ -38,7 +38,7 @@ summary.seqs(fasta=temp.shhh.trim.unique.fasta, name=temp.shhh.trim.unique.names
 
 ### Align seqs to silva reference alignment ###
 ## Tunable parameters [flip, threshold, processors]
-align.seqs(candidate=temp.shhh.trim.unique.fasta, reference=mothur/reference/silva.seed_v119.align, flip=T, threshold=50, processors=2)
+align.seqs(candidate=temp.shhh.trim.unique.fasta, reference=mothur/reference/align/silva.seed_v119.align, flip=T, threshold=50, processors=2)
 
 
 ### Put sequences in same genetic space ###
@@ -70,29 +70,29 @@ summary.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fast
 
 ### Remove contaminants ###
 ## Tunable parameters [numwanted, taxon, processors]
-classify.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, template=mothur/reference/gg_13_5_99.dkm.fasta, taxonomy=mothur/reference/gg_13_5_99.dkm.tax, method=knn, numwanted=1, processors=2)
-remove.lineage(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, taxonomy=temp.shhh.trim.unique.good.filter.unique.precluster.pick.dkm.knn.taxonomy, taxon=unknown)
+classify.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, template=mothur/reference/template/gg_13_5_99.fasta, taxonomy=mothur/reference/taxonomy/gg_13_5_99.pds.tax, method=wang, processors=2)
+remove.lineage(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, taxonomy=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.taxonomy, taxon=unknown)
 summary.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.names)
 
 
 ### Phylotype ###
 ## Tunable parameters [none]
-phylotype(taxonomy=temp.shhh.trim.unique.good.filter.unique.precluster.pick.dkm.knn.pick.taxonomy, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.names, label=1)
+phylotype(taxonomy=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.names, label=1)
 
 
 ### Make shared ###
 ## Tunable parameters [none]
-make.shared(list=temp.shhh.trim.unique.good.filter.unique.precluster.pick.dkm.knn.pick.tx.list, group=temp.shhh.good.pick.pick.groups)
+make.shared(list=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.list, group=temp.shhh.good.pick.pick.groups)
 
 
 ### Classify OTU ###
 ## Tunable parameters [none]
-classify.otu(taxonomy=temp.shhh.trim.unique.good.filter.unique.precluster.pick.dkm.knn.pick.taxonomy, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.names, group=temp.shhh.good.pick.pick.groups, list=temp.shhh.trim.unique.good.filter.unique.precluster.pick.dkm.knn.pick.tx.list)
+classify.otu(taxonomy=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.names, group=temp.shhh.good.pick.pick.groups, list=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.list)
 
 
 ### Final output files MUST be copied to the following output files
 system(cp mothur/temp/temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.fasta mothur/temp/final.fasta)
 system(cp mothur/temp/temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.names mothur/temp/final.names)
 system(cp mothur/temp/temp.shhh.good.pick.pick.groups mothur/temp/final.groups)
-system(cp mothur/temp/temp.shhh.trim.unique.good.filter.unique.precluster.pick.dkm.knn.pick.tx.1.cons.taxonomy mothur/temp/final.taxonomy)
-system(cp mothur/temp/temp.shhh.trim.unique.good.filter.unique.precluster.pick.dkm.knn.pick.tx.shared mothur/temp/final.shared)
+system(cp mothur/temp/temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.1.cons.taxonomy mothur/temp/final.taxonomy)
+system(cp mothur/temp/temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.shared mothur/temp/final.shared)
