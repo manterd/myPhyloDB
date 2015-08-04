@@ -11,25 +11,34 @@
         </tr>
         <tr>
             <td>
-                <p style="padding-left: 25px;">A user-friendly web-interface for accessing and analyzing taxonomic
-                    data from multiple projects and/or sequencing runs.
-                    <br>A more detailed reference manual can be found <a href="{% url "instructions" %}" download>here</a>.<br><br>
-                    The goal of myPhyloDB is to allow for easy comparisons and statistical analysis of microbial (i.e., fungi
-                    or bacteria) taxonomic abundance across projects, soil types, and management scenarios.<br><br>
-                    Data may be obtained from any sequencing platform; however,
-                    currently only <a href="http://www.mothur.org" target="_blank">mothur</a>-formatted files are supported.
-                </p>
+                <ul>
+                    <li>A user-friendly web-interface for accessing and analyzing taxonomic
+                    data from multiple projects and/or sequencing runs.</li>
+                    <li>A more detailed reference manual can be found <a href="{% url "instructions" %}" download>here</a>.</li>
+                    <li>The goal of myPhyloDB is to allow for easy comparisons and statistical analysis of microbial (i.e., fungi
+                    or bacteria) taxonomic abundance across projects, environments, and management scenarios.  </li>
+                    <li>myPhyloDB accepts <a href="http://www.mothur.org" target="_blank">Mothur</a> pre-analyzed data from any its
+                    supported sequencing platforms.  In addition, raw 454 pyrosequencing files may be uploaded and analyzed using
+                    a user-customizable Mothur pipeline.</li>
+                </ul>
             </td>
         </tr>
     </table>
     <br>
     <table style="width: 950px;" border="1">
         <tr>
-            <th style="text-align: left"><strong><em>Database:</em></strong></th>
+            <th style="text-align: left"><strong><em>myPhyloDB's Unique Features:</em></strong></th>
         </tr>
         <tr>
             <td>
-                <p style="padding-left: 25px;">myPhyloDB stores sample information, taxonomic data and counts from multiple projects in a single SQL database.</p>
+                <ul>
+                    <li>myPhyloDB stores sample information, taxonomic data and counts from multiple projects in a single SQL database, <br>
+                    which is suitable for a wide variety of project types (e.g., soil, human-associated, human gut, air, water, microbial).</li>
+                    <li>myPhyloDB can perform a variety of normalization procedures to ensure equal sampling efforts across all selected projects/samples.</li>
+                    <li>Adding/editing samples, metadata, and/or sequencing reads are all automated with myPhyloDB's graphical interface. </li>
+                    <li>All of the necessary back-end programs (e.g., Mothur, R, Python) are embedded within myPhyloDB. No additional<br>
+                    software, or compatibility issues, to worry about. </li>
+                </ul>
             </td>
         </tr>
     </table>
@@ -52,7 +61,7 @@
                     Example 2. Soil project with raw 454 Pyrosequencing Files
                     <li><a href="{% url "project_file2" %}" download>Project File</a>: General project information.</li>
                     <li><a href="{% url "sample_file2" %}" download>Sample File</a>: Meta data for each sample including Mimark compliant sample information, edaphic (soil) factors, and management options.</li>
-                    <li><a href="{% url "sff" %}" download>Standard Flowgram (sff) File</a>: Raw 454 pyroseguencing sff file.</li>
+                    <li><a href="{% url "sff" %}" download>Standard Flowgram (sff) File</a>: Raw 454 pyrosequencing sff file.</li>
                     <li><a href="{% url "oligos" %}" download>Oligos File</a>: File with barcode/primer and sample info as described <a href="http://www.mothur.org/wiki/Oligos_File" target="_blank">here</a>.</li>
                     <li><a href="{% url "batch1" %}" download>Mothur Windows Batch File</a>: Batch file for pre-processing as described <a href="http://www.mothur.org/wiki/454_SOP" target="_blank">here</a>.</li>
                     <li><a href="{% url "batch2" %}" download>Mothur Linux Batch File</a>: Batch file for pre-processing as described <a href="http://www.mothur.org/wiki/454_SOP" target="_blank">here</a>.</li>
@@ -76,10 +85,10 @@
         <tr>
             <td>
                 <p style="padding-left: 25px;">Samples can be selected from any project currently stored in the user's database.
-                    Once selected, taxonomy alpha-diversity (e.g., raw counts, relative abundance, species richness, or Shannon's diversity)
+                    Once selected, taxonomy alpha-diversity (e.g., relative abundance, species richness, or Shannon's diversity)
                     can be compared graphically and statistically (ANOVA) for any meta variable contained in the
                     database.  Beta-diversity (e.g., Bray-Curtis distance) can also be graphically (PCoA, Principal Coordinates Analysis)
-                    and statistically (AMOVA, HOMOVA) compared for any meta variable and taxonomic level contained in the database.
+                    and statistically (perMANOVA, betaDisper) compared for any meta variable and taxonomic level contained in the database.
                 </p>
             </td>
         </tr>

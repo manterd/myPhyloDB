@@ -70,7 +70,7 @@ summary.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fast
 
 ### Remove contaminants ###
 ## Tunable parameters [numwanted, taxon, processors]
-classify.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, template=mothur/reference/template/gg_13_5_99.fasta, taxonomy=mothur/reference/taxonomy/gg_13_5_99.pds.tax, method=wang, processors=2)
+classify.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, template=mothur/reference/template/trainset14_032015.pds.fasta, taxonomy=mothur/reference/taxonomy/trainset14_032015.pds.tax, method=wang, processors=2)
 remove.lineage(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, taxonomy=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.taxonomy, taxon=unknown)
 summary.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.names)
 
