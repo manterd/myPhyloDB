@@ -117,13 +117,9 @@ def parse_reference(p_uuid, path, file7, raw):
                     if "taxonomy=" in item:
                         string = item.split('=')
                         taxonomy_ref = string[1].replace('mothur/reference/taxonomy/', '')
-    else:
-        align_ref = 'null'
-        template_ref = 'null'
-        taxonomy_ref = 'null'
 
-    m = Reference(refid=refid, projectid=project, path=path, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref)
-    m.save()
+        m = Reference(refid=refid, projectid=project, path=path, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref)
+        m.save()
 
 
 def parse_sample(Document, p_uuid, path, pType):

@@ -28,7 +28,7 @@ class UploadForm4(forms.Form):
     taxonomyFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
 
 
-projectList = [[x.projectid, x.project_name] for x in Project.objects.all()]
+projectList = [[x.projectid, 'Project: ' + str(x.project_name)+' (UUID: ' + str(x.projectid) + ')'] for x in Project.objects.all()]
 
 
 class UploadForm5(forms.Form):

@@ -6,12 +6,6 @@
 
 
 {% block javascript %}
-    <style>
-        .inlineTable {
-            display: inline-block;
-            vertical-align: top;
-        }
-    </style>
 {% endblock javascript %}
 
 {% block my_content %}
@@ -38,6 +32,8 @@
         <br>
         <input id="submit" type="submit" value="Update"/>
     </form>
+    <br>
+    <div>{{ state }}</div>
     <br><br>
 {% endblock my_content %}
 

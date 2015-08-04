@@ -515,14 +515,45 @@ def database(request):
 @login_required(login_url='/myPhyloDB/login/')
 def update(request):
     form5 = UploadForm5(request.POST, request.FILES)
+    state = ''
 
     if form5.is_valid():
-        print 'project file:', request.FILES['docfile11'].name
-        print 'sample file:', request.FILES['docfile12'].name
-        print 'selected project id:', form5.cleaned_data['project']
+        file1 = request.FILES['docfile11']
+        file2 = request.FILES['docfile12']
+        p_uuid = form5.cleaned_data['project']
 
+        items = Project.objects.filter(projectid=p_uuid).values_list('path', 'projectType', 'project_name')
+        dest = items[0][0]
+        pType = items[0][1]
+        name = items[0][2]
+
+        try:
+            parse_project(file1, dest, p_uuid, pType)
+        except Exception as e:
+            state = "Error with project file: " + str(e)
+            return render_to_response(
+                'update.html',
+                {'form5': UploadForm5,
+                 'state': state},
+                context_instance=RequestContext(request)
+            )
+
+        try:
+            parse_sample(file2, p_uuid, dest, pType)
+        except Exception as e:
+            state = "Error with sample file: " + str(e)
+            return render_to_response(
+                'update.html',
+                {'form5': UploadForm5,
+                 'state': state},
+                context_instance=RequestContext(request)
+            )
+
+        state = str(name) + ' is finished parsing!'
+        
     return render_to_response(
         'update.html',
-        {'form5': UploadForm5},
+        {'form5': UploadForm5,
+         'state': state},
         context_instance=RequestContext(request)
     )
