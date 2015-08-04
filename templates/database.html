@@ -9,6 +9,7 @@
             display: inline-block;
             vertical-align: top;
         }
+
         #progressBar {
                 width: 200px;
                 height: 22px;
@@ -48,11 +49,11 @@
             });
 
             $("#reprocess").click(function () {
-
                 var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
                     return node.data.id;
                 });
 
+                $("#project").show();
                 $("#stage").show();
                 $("#progressBar").show();
                 setInterval(updateStatus, 1000);
@@ -68,7 +69,10 @@
                     type: 'GET',
                     url: '/reprocess/',
                     dataType: 'json',
-                    data: {all: jsonDict}
+                    data: {all: jsonDict},
+                    success: function() {
+                        window.location.reload(true);
+                    }
                 });
             });
         });
@@ -170,7 +174,6 @@
     </table>
     <br><br>
     <div id="project" style="display: none"></div>
-    <br>
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
     <br>

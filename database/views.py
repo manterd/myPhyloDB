@@ -10,10 +10,10 @@ from django.core.servers.basehttp import FileWrapper
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4
+from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4, UploadForm5
 from models import Project, Sample, Species, Reference
 from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
-from utils import handle_uploaded_file, remove_list, remove_proj
+from utils import handle_uploaded_file, remove_list, remove_proj, purge
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 
@@ -512,102 +512,16 @@ def database(request):
     )
 
 
-def purge(dir, pattern):
-    for f in os.listdir(dir):
-        if re.search(pattern, f):
-            os.remove(os.path.join(dir, f))
+@login_required(login_url='/myPhyloDB/login/')
+def update(request):
+    form5 = UploadForm5(request.POST, request.FILES)
 
+    if form5.is_valid():
+        print 'project:', request.FILES['docfile11'].name
+        print 'sample:', request.FILES['docfile12'].name
 
-def reprocess(request):
-    global rep_project
-
-    if request.is_ajax():
-        mothurdest = 'mothur/temp'
-        if not os.path.exists(mothurdest):
-            os.makedirs(mothurdest)
-
-        allJson = request.GET["all"]
-        all = simplejson.loads(allJson)
-        ids = all["ids"]
-        new_align = 'reference=mothur/reference/align/' + str(all['alignDB'])
-        new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(all['taxonomyDB'])
-        new_tax = str(all['taxonomyDB'])
-        new_tax_tag = str(new_tax.split('.')[-2:-1][0])
-        new_template = 'template=mothur/reference/template/' + str(all['templateDB'])
-
-        projects = Reference.objects.all().filter(projectid_id__in=ids)
-        for project in projects:
-            rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
-            dest = project.projectid.path
-            shutil.copy("% s/mothur.sff" % dest, "mothur/temp/temp.sff")
-            shutil.copy("% s/mothur.oligos" % dest, "mothur/temp/temp.oligos")
-
-            orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
-            orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
-            orig_tax = str(project.taxonomyDB)
-            orig_tax_tag = str(orig_tax.split('.')[-2:-1][0])
-            orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
-
-            try:
-                with open("% s/mothur.batch" % dest, 'r+') as bat:
-                    with open("mothur/temp/mothur.batch", 'wb+') as destination:
-                        method = 'wang'
-                        foundClassify = False
-                        orig_tag_meth = ''
-                        new_tag_meth = ''
-                        for line in bat:
-                            if "align.seqs" in line:
-                                line = line.replace(str(orig_align), str(new_align))
-                            if "classify.seqs" in line:
-                                line = line.replace(str(orig_template), str(new_template))
-                                line = line.replace(str(orig_taxonomy), str(new_taxonomy))
-                                cmds = line.split(',')
-                                for item in cmds:
-                                    if "method=" in item:
-                                        method = item.split('=')[1]
-                                orig_tag_meth = str(orig_tax_tag) + "." + str(method)
-                                new_tag_meth = str(new_tax_tag) + "." + str(method)
-                                foundClassify = True
-                            if (str(orig_tag_meth) in line) and foundClassify:
-                                line = line.replace(str(orig_tag_meth), str(new_tag_meth))
-                            destination.write(line)
-            except Exception as e:
-                print("Error with batch file: ", e)
-
-            p_uuid = project.projectid.projectid
-            dest = project.path
-            pType = project.projectid.projectType
-
-            shutil.copy('% s/project.csv' % dest, 'mothur/temp/project.csv')
-            shutil.copy('% s/sample.csv' % dest, 'mothur/temp/sample.csv')
-
-            with open('mothur/temp/project.csv') as file1:
-                with open('mothur/temp/sample.csv') as file2:
-                    remove_proj(p_uuid)
-                    parse_project(file1, dest, p_uuid, pType)
-                    parse_sample(file2, p_uuid, dest, pType)
-            print 'Parsed Project and Sample Files'
-
-            with open('mothur/temp/mothur.batch') as file7:
-                raw = True
-                parse_reference(p_uuid, dest, file7, raw)
-                print 'Parsed Reference'
-
-            mothur(dest)
-            print 'Mothur is done'
-
-            with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                parse_taxonomy(file3)
-            print 'Parsed Taxonomy'
-
-            with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                with open('% s/mothur.shared' % dest, 'rb') as file4:
-                    parse_profile(file3, file4, p_uuid)
-            print 'Parsed Profile'
-
-
-def addMetaData(request):
-    # load samples based on id or project id
-    # load new sample data
-    # overwrite old sample data, delete?
-    return
+    return render_to_response(
+        'update.html',
+        {'form5': UploadForm5},
+        context_instance=RequestContext(request)
+    )

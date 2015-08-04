@@ -25,3 +25,8 @@ class UploadForm4(forms.Form):
     alignFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))  # replace file with actual loaded files
     templateFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
     taxonomyFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
+
+
+class UploadForm5(forms.Form):
+    docfile11 = forms.FileField(label='Select meta_Project.csv file:')
+    docfile12 = forms.FileField(label='Select meta_Sample.csv file:')

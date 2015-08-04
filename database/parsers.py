@@ -5,6 +5,7 @@ import simplejson
 from django.http import HttpResponse
 from models import Project, Reference, Sample, Soil, Human_Gut, Microbial, User, Human_Associated, Air, Water
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
+from utils import remove_proj
 from uuid import uuid4
 import numpy as np
 from numpy import *
@@ -12,11 +13,11 @@ import subprocess
 import glob
 import os
 import shutil
-import views
-
+from forms import UploadForm5
 
 stage = ''
 perc = 0
+rep_project = ''
 
 
 def mothur(dest):
@@ -49,7 +50,7 @@ def status(request):
         dict = {}
         dict['stage'] = stage
         dict['perc'] = perc
-        dict['project'] = views.rep_project
+        dict['project'] = rep_project
         json_data = simplejson.dumps(dict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
@@ -80,16 +81,15 @@ def parse_project(Document, path, p_uuid, pType):
             m.save()
 
     try:
+        Document.seek(0)
         f = csv.reader(Document, delimiter=',')
         if not os.path.exists(path):
             os.makedirs(path)
-        with open('% s/project.csv' % path, 'wb') as csvfile:
+        with open('% s/project.csv' % path, 'wb+') as csvfile:
             spamwriter = csv.writer(csvfile, delimiter=',')
-            itera = 0
             for stuff in f:
                 if str(stuff[0]) == "null":
                     stuff[0] = str(p_uuid)
-                    itera += 1
                 spamwriter.writerow(stuff)
     except Exception as e:
         print(e)
@@ -140,6 +140,7 @@ def parse_sample(Document, p_uuid, path, pType):
         if row:
             total += 1.0
 
+    Document.seek(0)
     f = csv.DictReader(Document, delimiter=',')
     step = 0.0
     for row in f:
@@ -203,10 +204,11 @@ def parse_sample(Document, p_uuid, path, pType):
                 m.save()  # Keeping user independent for now
 
     try:
+        Document.seek(0)
         f = csv.reader(Document, delimiter=',')
         if not os.path.exists(path):
             os.makedirs(path)
-        with open('% s/sample.csv' % path, 'wb') as csvfile:
+        with open('% s/sample.csv' % path, 'wb+') as csvfile:
             spamwriter = csv.writer(csvfile, delimiter=',')
             itera = 0
             for stuff in f:
@@ -275,13 +277,13 @@ def parse_taxonomy(Document):
                 record = Genus(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
                 record.save()
 
-            if taxon[6]:
+            try:
                 g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                 if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
                     sid = uuid4().hex
                     record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
                     record.save()
-            else:
+            except:
                 g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                 if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName='unclassified').exists():
                     sid = uuid4().hex
@@ -337,7 +339,10 @@ def parse_profile(file3, file4, p_uuid):
         o = taxaList[3]
         f = taxaList[4]
         g = taxaList[5]
-        s = taxaList[6]
+        try:
+            s = taxaList[6]
+        except:
+            s = 'unclassified'
 
         t_kingdom = Kingdom.objects.get(kingdomName=k)
         t_phyla = Phyla.objects.get(kingdomid_id=t_kingdom, phylaName=p)
@@ -362,3 +367,109 @@ def parse_profile(file3, file4, p_uuid):
                 else:
                     record = Profile(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
                     record.save()
+
+
+def reprocess(request):
+    global rep_project
+
+    if request.is_ajax():
+        mothurdest = 'mothur/temp'
+        if not os.path.exists(mothurdest):
+            os.makedirs(mothurdest)
+
+        allJson = request.GET["all"]
+        all = simplejson.loads(allJson)
+        ids = all["ids"]
+        new_align = 'reference=mothur/reference/align/' + str(all['alignDB'])
+        new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(all['taxonomyDB'])
+        new_tax = str(all['taxonomyDB'])
+        new_tax_tag = str(new_tax.split('.')[-2:-1][0])
+        new_template = 'template=mothur/reference/template/' + str(all['templateDB'])
+
+        projects = Reference.objects.all().filter(projectid_id__in=ids)
+        for project in projects:
+            rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
+            dest = project.projectid.path
+            shutil.copy('% s/mothur.sff' % dest, '% s/temp.sff' % mothurdest)
+            shutil.copy('% s/mothur.oligos' % dest, '% s/temp.oligos' % mothurdest)
+
+            orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
+            orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
+            orig_tax = str(project.taxonomyDB)
+            orig_tax_tag = str(orig_tax.split('.')[-2:-1][0])
+            orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
+
+            try:
+                with open("% s/mothur.batch" % dest, 'r+') as bat:
+                    with open("% s/mothur.batch" % mothurdest, 'wb+') as destination:
+                        method = 'wang'
+                        foundClassify = False
+                        orig_tag_meth = ''
+                        new_tag_meth = ''
+                        for line in bat:
+                            if "align.seqs" in line:
+                                line = line.replace(str(orig_align), str(new_align))
+                            if "classify.seqs" in line:
+                                line = line.replace(str(orig_template), str(new_template))
+                                line = line.replace(str(orig_taxonomy), str(new_taxonomy))
+                                cmds = line.split(',')
+                                for item in cmds:
+                                    if "method=" in item:
+                                        method = item.split('=')[1]
+                                orig_tag_meth = str(orig_tax_tag) + "." + str(method)
+                                new_tag_meth = str(new_tax_tag) + "." + str(method)
+                                foundClassify = True
+                            if (str(orig_tag_meth) in line) and foundClassify:
+                                line = line.replace(str(orig_tag_meth), str(new_tag_meth))
+                            destination.write(line)
+            except Exception as e:
+                print("Error with batch file: ", e)
+
+            p_uuid = project.projectid.projectid
+            dest = project.path
+            pType = project.projectid.projectType
+
+            shutil.copy('% s/project.csv' % dest, '% s/project.csv' % mothurdest)
+            shutil.copy('% s/sample.csv' % dest, '% s/sample.csv' % mothurdest)
+
+            remove_proj(p_uuid)
+
+            if not os.path.exists(dest):
+                os.makedirs(dest)
+
+            with open('mothur/temp/project.csv', 'rb') as file1:
+                parse_project(file1, dest, p_uuid, pType)
+
+            with open('mothur/temp/sample.csv', 'rb') as file2:
+                parse_sample(file2, p_uuid, dest, pType)
+
+            with open('mothur/temp/mothur.batch', 'rb') as file7:
+                raw = True
+                parse_reference(p_uuid, dest, file7, raw)
+
+            mothur(dest)
+
+            with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                parse_taxonomy(file3)
+
+            with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                with open('% s/mothur.shared' % dest, 'rb') as file4:
+                    parse_profile(file3, file4, p_uuid)
+
+
+def addMetaData(request):
+    if request.is_ajax():
+        allJson = request.GET["all"]
+        all = simplejson.loads(allJson)
+        ids = all["ids"]
+        print 'ids:', ids
+
+    ### this doesn't work...
+    try:
+        file1 = UploadForm5.request.FILES['docfile11']
+        f = csv.reader(file1, delimiter=',')
+        for row in f:
+            print row
+    except:
+        print 'no project file'
+

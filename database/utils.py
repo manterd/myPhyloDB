@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import re
 import shutil
 from collections import defaultdict
 from models import Project, Profile
@@ -39,11 +40,11 @@ def remove_list(request):
         Project.objects.get(projectid=item).delete()
 
 
-def remove_proj(puid):
-    q = Project.objects.get(projectid=puid)
+def remove_proj(p_uuid):
+    q = Project.objects.get(projectid=p_uuid)
     path = "/".join(['uploads', str(q.projectid)])
     shutil.rmtree(path)
-    Project.objects.get(projectid=puid).delete()
+    Project.objects.get(projectid=p_uuid).delete()
 
 
 def multidict(ordered_pairs):
@@ -99,3 +100,8 @@ def scores(eigvals, eigvecs):
     proportion_explained = eigvals / eigvals.sum()
     return eigvals, coordinates, proportion_explained
 
+
+def purge(dir, pattern):
+    for f in os.listdir(dir):
+        if re.search(pattern, f):
+            os.remove(os.path.join(dir, f))

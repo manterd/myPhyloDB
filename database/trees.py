@@ -937,3 +937,31 @@ def makeReproTree(request):
     response_dict = {}
     response_dict.update({'children': myTree})
     return HttpResponse(response_dict, content_type='application/javascript')
+
+
+def updateTree(request):
+    myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    projects = Project.objects.all()
+
+    for project in projects:
+        myNode = {
+            'title': project.project_name,
+            'tooltip': project.project_desc,
+            'id': project.projectid,
+            'isFolder': True,
+            'children': []
+        }
+        myTree['children'].append(myNode)
+
+    # Convert result list to a JSON string
+    res = simplejson.dumps(myTree, encoding="Latin-1")
+
+    # Support for the JSONP protocol.
+    response_dict = {}
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+    response_dict = {}
+    response_dict.update({'children': myTree})
+    return HttpResponse(response_dict, content_type='application/javascript')

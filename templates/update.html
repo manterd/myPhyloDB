@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block pagetitle %}
+    <title>Update</title>
+{% endblock pagetitle %}
+
+
+{% block javascript %}
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
+    <script>
+        var selNodes = "";
+        $(function () {
+            $("#tree").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/updateTree/",
+                    dataType: "jsonp",
+                    data: {}
+                },
+                onSelect: function (select, node) {
+                    selNodes = node.tree.getSelectedNodes();
+                }
+            });
+
+            $("#clearMeta").click(function () {
+                $("#tree").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+
+            $("#submit").click(function() {
+                var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                    return node.data.id;
+                });
+                parser(selKeys);
+            });
+        });
+
+        function parser(selKeys){
+            var myDict = {};
+            myDict['ids'] = selKeys;
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                url: '/addMetaData/',
+                type: 'GET',
+                dataType: 'json',
+                data: {all: jsonDict},
+                success: function (data) {
+                    alert('success');
+                }
+            });
+        }
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <th>Select project for updating:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree"></div>
+            </td>
+        </tr>
+    </table>
+    <br><br>
+    <form action="{% url 'update' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
+            <tr>
+                <th colspan="2">Upload new reference database files:</th>
+            </tr>
+            <tr>
+                <td>{{ form5.docfile11.label_tag }}</td>
+                <td>{{ form5.docfile11 }}</td>
+            </tr>
+            <tr>
+                <td>{{ form5.docfile12.label_tag }}</td>
+                <td>{{ form5.docfile12 }}</td>
+            </tr>
+        </table>
+        <br>
+        <input id="submit" type="submit" value="Update"/>
+    </form>
+    <br><br>
+
+{% endblock my_content %}
+

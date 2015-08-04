@@ -16,15 +16,18 @@ urlpatterns = patterns('',
     url(r'^myPhyloDB/PCoA/$', 'database.views.PCoA', name='pcoa'),
     url(r'^myPhyloDB/users/$', 'database.views.users', name='users'),
     url(r'^myPhyloDB/database/$', 'database.views.database', name='database'),
-
-    url(r'^reprocess/$', 'database.views.reprocess', name='reprocess'),
+    url(r'^myPhyloDB/update/$', 'database.views.update', name='update'),
 
     url(r'^saveCookie/$', 'database.views.saveCookie', name='saveCookie'),
     url(r'^getCookie/$', 'database.views.getCookie', name='getCookie'),
 
+    url(r'^reprocess/$', 'database.parsers.reprocess', name='reprocess'),
+    url(r'^addMetaData/$', 'database.parsers.addMetaData', name='addMetaData'),
+
     url(r'^getProjectTree/$', 'database.trees.getProjectTree', name='getProjectTree'),
     url(r'^getProjectTreeChildren/$', 'database.trees.getProjectTreeChildren', name='getProjectTreeChildren'),
     url(r'^makeReproTree/$', 'database.trees.makeReproTree', name='makeReproTree'),
+    url(r'^updateTree/$', 'database.trees.updateTree', name='updateTree'),
 
     url(r'^getSampleCatTree/$', 'database.trees.getSampleCatTree', name='getSampleCatTree'),
     url(r'^getSampleCatTreeChildren/$', 'database.trees.getSampleCatTreeChildren', name='getSampleCatTreeChildren'),
