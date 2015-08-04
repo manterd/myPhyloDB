@@ -1,4 +1,5 @@
 from django import forms
+from models import Project
 
 
 class UploadForm1(forms.Form):
@@ -27,6 +28,10 @@ class UploadForm4(forms.Form):
     taxonomyFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
 
 
+projectList = [[x.projectid, x.project_name] for x in Project.objects.all()]
+
+
 class UploadForm5(forms.Form):
     docfile11 = forms.FileField(label='Select meta_Project.csv file:')
     docfile12 = forms.FileField(label='Select meta_Sample.csv file:')
+    project = forms.ChoiceField(choices=projectList, widget=forms.Select())

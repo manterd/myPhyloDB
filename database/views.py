@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4, UploadForm5
-from models import Project, Sample, Species, Reference
+from models import Project, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj, purge
 from django.contrib.auth.decorators import login_required
@@ -517,8 +517,9 @@ def update(request):
     form5 = UploadForm5(request.POST, request.FILES)
 
     if form5.is_valid():
-        print 'project:', request.FILES['docfile11'].name
-        print 'sample:', request.FILES['docfile12'].name
+        print 'project file:', request.FILES['docfile11'].name
+        print 'sample file:', request.FILES['docfile12'].name
+        print 'selected project id:', form5.cleaned_data['project']
 
     return render_to_response(
         'update.html',

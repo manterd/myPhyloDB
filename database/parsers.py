@@ -455,21 +455,3 @@ def reprocess(request):
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 with open('% s/mothur.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid)
-
-
-def addMetaData(request):
-    if request.is_ajax():
-        allJson = request.GET["all"]
-        all = simplejson.loads(allJson)
-        ids = all["ids"]
-        print 'ids:', ids
-
-    ### this doesn't work...
-    try:
-        file1 = UploadForm5.request.FILES['docfile11']
-        f = csv.reader(file1, delimiter=',')
-        for row in f:
-            print row
-    except:
-        print 'no project file'
-

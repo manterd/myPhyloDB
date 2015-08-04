@@ -22,7 +22,6 @@ urlpatterns = patterns('',
     url(r'^getCookie/$', 'database.views.getCookie', name='getCookie'),
 
     url(r'^reprocess/$', 'database.parsers.reprocess', name='reprocess'),
-    url(r'^addMetaData/$', 'database.parsers.addMetaData', name='addMetaData'),
 
     url(r'^getProjectTree/$', 'database.trees.getProjectTree', name='getProjectTree'),
     url(r'^getProjectTreeChildren/$', 'database.trees.getProjectTreeChildren', name='getProjectTreeChildren'),

@@ -109,6 +109,7 @@
     <br>
     <form action="{% url 'database' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
+        <h2>Add New Reference Files</h2>
         <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
             <tr>
                 <th colspan="2">Upload new reference database files:</th>
@@ -129,10 +130,11 @@
         <br>
         <input id="submit" type="submit" value="Upload"/>
     </form>
-    <br>
+    <br><br><br>
+    <h2>Reprocess Project(s)</h2>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
-            <th>Select projects for reprocessing:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            <th>Select project(s) for reprocessing:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
         </tr>
         <tr>
             <td style="padding-right: 10px; vertical-align: top">
