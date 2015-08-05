@@ -521,11 +521,11 @@ def update(request):
         file1 = request.FILES['docfile11']
         file2 = request.FILES['docfile12']
         p_uuid = form5.cleaned_data['project']
+        pType = form5.cleaned_data['type']
 
-        items = Project.objects.filter(projectid=p_uuid).values_list('path', 'projectType', 'project_name')
+        items = Project.objects.filter(projectid=p_uuid).values_list('path', 'project_name')
         dest = items[0][0]
-        pType = items[0][1]
-        name = items[0][2]
+        name = items[0][1]
 
         try:
             parse_project(file1, dest, p_uuid, pType)

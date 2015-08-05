@@ -99,10 +99,16 @@
             updateSampleTable(selKeys);
 
             var pTypes = new Array(0);
-            {% for project in projects %}
-                var element = "{{ project.projectType }}";  // Currently looks at all uploaded projects rather than selected ones, theoretically still practical
-                pTypes.push(element);
-            {% endfor %}
+
+            $.each(selKeys, function (index, value) {       // update so that only selected projects are shown
+                {% for project in projects %}
+                    var id = "{{ project.projectid }}";
+                    if (id == value) {
+                        var element = "{{ project.projectType }}";
+                        pTypes.push(element);
+                    }
+                {% endfor %}
+            });
 
             if (pTypes.indexOf("soil")>-1) {
                 updateSoilTable(selKeys);
@@ -211,7 +217,7 @@
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Water in project.water_set.all %}
-                            var id = "{{ Water.sampleid_id }}";
+                            var id = "{{ Water.sampleid.sampleid }}";
                             if (id == value) {
                                  table.row.add([
                                      "{{ project.project_name }}",
@@ -312,7 +318,7 @@
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Air in project.air_set.all %}
-                            var id = "{{ Air.sampleid_id }}";
+                            var id = "{{ Air.sampleid.sampleid }}";
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
@@ -359,7 +365,7 @@
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Human_Associated in project.human_associated_set.all %}
-                            var id = "{{ Human_Associated.sampleid_id }}";
+                            var id = "{{ Human_Associated.sampleid.sampleid }}";
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
@@ -430,7 +436,7 @@
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Human_Gut in project.human_gut_set.all %}
-                            var id = "{{ Human_gut.sampleid_id }}";
+                            var id = "{{ Human_gut.sampleid.sampleid }}";
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
@@ -486,7 +492,7 @@
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Microbial in project.microbial_set.all %}
-                            var id = "{{ Microbial.sampleid_id }}";
+                            var id = "{{ Microbial.sampleid.sampleid }}";
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
@@ -567,7 +573,7 @@
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Soil in project.soil_set.all %}
-                            var id = "{{ Soil.sampleid_id }}";
+                            var id = "{{ Soil.sampleid.sampleid }}";
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
@@ -647,7 +653,7 @@
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for User in project.user_set.all %}
-                            var id = "{{ User.sampleid_id }}";
+                            var id = "{{ User.sampleid.sampleid }}";
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
@@ -687,10 +693,10 @@
     </table>
 
     <br>
-    <input id="submit" type="button" value="Save Selection!"/>
+    <input id="submit" type="button" value="Save Selection(s)!"/>
     <br><br><br>
     <h2>Project/Sample information for selected samples</h2>
-    <input id="drawtable" type="button" value="Show Selection in DataTable!"/>
+    <input id="drawtable" type="button" value="Show Selection(s) in DataTable!"/>
     <br><br>
 
     <div id="demo" style="width: 1000px">
@@ -698,19 +704,19 @@
             <ul>
                 <li><a href="#tabs-1" style="font-size: 14px">Project</a></li>
                 <li><a href="#tabs-2" style="font-size: 14px">MIMARKs</a></li>
-                <li><a href="#tabs-9" style="font-size: 14px" id="usr">User-defined</a></li>
                 <li><a href="#tabs-soil" style="font-size: 14px; display: none" id="soil">Soil</a></li>
-                <li><a href="#tabs-3" style="font-size: 14px; display: none" id="collect">Collection</a></li>
+                <!--<li><a href="#tabs-3" style="font-size: 14px; display: none" id="collect">Collection</a></li>
                 <li><a href="#tabs-4" style="font-size: 14px; display: none" id="climate">Climate</a></li>
                 <li><a href="#tabs-5" style="font-size: 14px; display: none" id="class">Soil Class</a></li>
                 <li><a href="#tabs-6" style="font-size: 14px; display: none" id="ph">Soil pH/Nutr</a></li>
                 <li><a href="#tabs-7" style="font-size: 14px; display: none" id="manage">Management</a></li>
-                <li><a href="#tabs-8" style="font-size: 14px; display: none" id="micro">Microbial Biomass</a></li>
+                <li><a href="#tabs-8" style="font-size: 14px; display: none" id="micro">Microbial Biomass</a></li>-->
                 <li><a href="#tabs-10" style="font-size: 14px; display: none" id="humgut">Human Gut</a></li>
                 <li><a href="#tabs-air" style="font-size: 14px; display: none" id="air">Air</a></li>
                 <li><a href="#tabs-water" style="font-size: 14px; display: none" id="water">Water</a></li>
                 <li><a href="#tabs-humasso" style="font-size: 14px; display: none" id="humasso">Human Associated</a></li>
                 <li><a href="#tabs-11" style="font-size: 14px; display: none" id="microbial">Microbial</a></li>
+                <li><a href="#tabs-9" style="font-size: 14px" id="usr">User-defined</a></li>
             </ul>
 
             <div id="tabs-1">
@@ -829,7 +835,7 @@
                 </table>
             </div>
 
-            <div id="tabs-3">
+            <!--<div id="tabs-3">
                 <table id="collectTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
@@ -951,7 +957,7 @@
                         </tr>
                     </thead>
                 </table>
-            </div>
+            </div> -->
 
             <div id="tabs-10">
                 <table id="human_gutTable" cellpadding="0" cellspacing="0" border="0" class="display">
@@ -1012,70 +1018,70 @@
                         <tr>
                             <th>Project Name</th>
                             <th>Sample Name</th>
-                            <th>1 alkalinity</th>
-                            <th>2 alkyl_diethers</th>
-                            <th>3 altitude</th>
-                            <th>4 aminopept_act</th>
-                            <th>5 ammonium</th>
-                            <th>6 bacteria_carb_prod</th>
-                            <th>7 biomass</th>
-                            <th>8 bishomohopanol</th>
-                            <th>9 bromide</th>
-                            <th>10 calcium</th>
-                            <th>11 carb_nitro_ratio</th>
-                            <th>12 chem_administration</th>
-                            <th>13 chloride</th>
-                            <th>14 chlorophyll</th>
-                            <th>15 diether_lipids</th>
-                            <th>16 diss_carb_dioxide</th>
-                            <th>17 diss_hydrogen</th>
-                            <th>18 diss_inorg_carb</th>
-                            <th>19 diss_org_carb</th>
-                            <th>20 diss_org_nitro</th>
-                            <th>21 diss_oxygen</th>
-                            <th>22 glucosidase_act</th>
-                            <th>23 magnesium</th>
-                            <th>24 mean_frict_vel</th>
-                            <th>25 mean_peak_frict_vel</th>
-                            <th>26 methane</th>
-                            <th>27 n_alkanes</th>
-                            <th>28 nitrate</th>
-                            <th>29 nitrite</th>
-                            <th>30 nitro</th>
-                            <th>31 org_carb</th>
-                            <th>32 org_matter</th>
-                            <th>33 org_nitro</th>
-                            <th>34 organism_count</th>
-                            <th>35 oxy_stat_samp</th>
-                            <th>36 part_org_carb</th>
-                            <th>37 perturbation</th>
-                            <th>38 petroleum_hydrocarb</th>
-                            <th>39 ph</th>
-                            <th>40 phaeopigments</th>
-                            <th>41 phosphate</th>
-                            <th>42 phosplipid_fatt_acid</th>
-                            <th>43 potassium</th>
-                            <th>44 pressure</th>
-                            <th>45 redox_potential</th>
-                            <th>46 rel_to_oxygen</th>
-                            <th>47 salinity</th>
-                            <th>48 samp_collect_device</th>
-                            <th>49 samp_mat_process</th>
-                            <th>50 samp_size</th>
-                            <th>51 samp_store_dur</th>
-                            <th>52 samp_store_loc</th>
-                            <th>53 samp_store_temp</th>
-                            <th>54 silicate</th>
-                            <th>55 sodium</th>
-                            <th>56 sulfate</th>
-                            <th>57 sulfide</th>
-                            <th>58 temp</th>
-                            <th>59 tot_carb</th>
-                            <th>60 tot_nitro</th>
-                            <th>61 tot_org_carb</th>
-                            <th>62 turbidity</th>
-                            <th>63 water_content</th>
-                            <th>64 user_defined</th>
+                            <th>alkalinity</th>
+                            <th>alkyl_diethers</th>
+                            <th>altitude</th>
+                            <th>aminopept_act</th>
+                            <th>ammonium</th>
+                            <th>bacteria_carb_prod</th>
+                            <th>biomass</th>
+                            <th>bishomohopanol</th>
+                            <th>bromide</th>
+                            <th>calcium</th>
+                            <th>carb_nitro_ratio</th>
+                            <th>chem_administration</th>
+                            <th>chloride</th>
+                            <th>chlorophyll</th>
+                            <th>diether_lipids</th>
+                            <th>diss_carb_dioxide</th>
+                            <th>diss_hydrogen</th>
+                            <th>diss_inorg_carb</th>
+                            <th>diss_org_carb</th>
+                            <th>diss_org_nitro</th>
+                            <th>diss_oxygen</th>
+                            <th>glucosidase_act</th>
+                            <th>magnesium</th>
+                            <th>mean_frict_vel</th>
+                            <th>mean_peak_frict_vel</th>
+                            <th>methane</th>
+                            <th>n_alkanes</th>
+                            <th>nitrate</th>
+                            <th>nitrite</th>
+                            <th>nitro</th>
+                            <th>org_carb</th>
+                            <th>org_matter</th>
+                            <th>org_nitro</th>
+                            <th>organism_count</th>
+                            <th>oxy_stat_samp</th>
+                            <th>part_org_carb</th>
+                            <th>perturbation</th>
+                            <th>petroleum_hydrocarb</th>
+                            <th>ph</th>
+                            <th>phaeopigments</th>
+                            <th>phosphate</th>
+                            <th>phosplipid_fatt_acid</th>
+                            <th>potassium</th>
+                            <th>pressure</th>
+                            <th>redox_potential</th>
+                            <th>rel_to_oxygen</th>
+                            <th>salinity</th>
+                            <th>samp_collect_device</th>
+                            <th>samp_mat_process</th>
+                            <th>samp_size</th>
+                            <th>samp_store_dur</th>
+                            <th>samp_store_loc</th>
+                            <th>samp_store_temp</th>
+                            <th>silicate</th>
+                            <th>sodium</th>
+                            <th>sulfate</th>
+                            <th>sulfide</th>
+                            <th>temp</th>
+                            <th>tot_carb</th>
+                            <th>tot_nitro</th>
+                            <th>tot_org_carb</th>
+                            <th>turbidity</th>
+                            <th>water_content</th>
+                            <th>user_defined</th>
                         </tr>
                     </thead>
                 </table>

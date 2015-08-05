@@ -14,7 +14,24 @@
         {% csrf_token %}
 
         <h2>Select a Project for Updating:</h2>
-        <div>{{ form5.project }}</div>
+        <table border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td bgcolor="white">
+                    <div>{{ form5.project }}</div>
+                </td>
+                <td bgcolor="white">
+                    <-- Choose a Project
+                </td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <div>{{ form5.type }}</div>
+                </td>
+                <td bgcolor="white">
+                    <-- Choose a Project Type
+                </td>
+            </tr>
+        </table>
         <br>
         <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
             <tr>
@@ -30,7 +47,7 @@
             </tr>
         </table>
         <br>
-        <input id="submit" type="submit" value="Update"/>
+        <input id="submit" type="submit" value="Update!"/>
     </form>
     <br>
     <div>{{ state }}</div>
