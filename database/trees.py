@@ -78,58 +78,58 @@ def getSampleCatTree(request):
 
     list = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'material']
     for i in range(len(list)):
-        myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+        myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'mimark', 'isLazy': True, 'children': []}
         mimark['children'].append(myNode)
 
     if 'soil' in typeList:
         list = ['depth', 'pool_dna_extracts', 'samp_collection_device', 'sieving', 'storage_cond']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
             soil['children'].append(myNode)
 
         list = ['drainage_class', 'fao_class', 'horizon', 'local_class', 'profile_position', 'slope_aspect', 'soil_type', 'texture_class']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
             soil['children'].append(myNode)
 
         list = ['agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
             soil['children'].append(myNode)
 
     if 'human_gut' in typeList:
         list = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'gastrointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'human_gut', 'isLazy': True, 'children': []}
             human_gut['children'].append(myNode)
 
     if 'human_associated' in typeList:
         list = ['age', 'amniotic_fluid_color', 'blood_blood_disord', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'diet_last_six_month', 'disease', 'drug_usage', 'ethnicity', 'family_relationship', 'fetal_health_stat', 'genotype', 'gestation_state', 'height', 'hiv_stat', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'kidney_disord', 'last_meal', 'maternal_health_stat', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'perturbation', 'pet_farm_animal', 'phenotype', 'pulmonary_disord', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_sotre_dur', 'samp_store_loc', 'samp_store_temp', 'sex', 'smoker', 'study_complt_stat', 'temp', 'tissue', 'tot_mass', 'travel_out_six_month', 'twin_sibling', 'urine_collect_meth', 'urogenit_tract_disor', 'weight_lostt_3_month', 'user_defined']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
             human_associated['children'].append(myNode)
 
     if 'microbial' in typeList:
         list = ['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'glucosidase_act', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'methane', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'perturbation', 'petroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'potassium', 'pressure', 'redox_potential', 'rel_to_oxygen', 'salinity', 'samp_collect_device', 'samp_mat_process', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'silicate', 'sodium', 'sulfate', 'sulfide', 'temp', 'tot_carb', 'tot_nitro', 'tot_org_carb', 'turbidity', 'water_content', 'user_defined']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'microbial', 'isLazy': True, 'children': []}
             microbial['children'].append(myNode)
 
     if 'air' in typeList:
         list = ['barometric_press', 'carb_dioxide', 'carb_monoxide', 'chem_administration', 'elev', 'humidity', 'methane', 'organism_count', 'oxy_stat_samp', 'oxygen', 'perturbation', 'pollutants', 'rel_to_oxygen', 'resp_part_matter', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_sotre_temp', 'solar_irradiance', 'temp', 'ventilation_rate', 'ventiliation_type', 'volatile_org_comp', 'wind_direction', 'wind_speed', 'user_defined']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'air', 'isLazy': True, 'children': []}
             air['children'].append(myNode)
 
     if 'water' in typeList:
         list = ['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'atmospheric_data', 'bac_prod', 'bac_resp', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'conduc', 'density', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_inorg_nitro', 'diss_inorg_phosp', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'down_par', 'elev', 'fluor', 'glucosidase_act', 'light_intensity', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'part_org_nitro', 'perturbation', 'pretroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'photon_flux', 'potassium', 'pressure', 'primary_prod', 'redox_potential', 'rel_to_oxygen', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'samp_vol_we_dna_ext', 'silicate', 'sodium', 'soluble_react_phosp', 'source_material_id', 'sulfate', 'sulfide', 'suspen_part_matter', 'temp', 'tidal_stage', 'tot_depth_water_col', 'tot_diss_nitro', 'tot_inorg_nitro', 'tot_nitro', 'tot_part_carb', 'tot_phosp', 'water_current', 'user_defined']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'water', 'isLazy': True, 'children': []}
             water['children'].append(myNode)
 
     list = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6']
     for i in range(len(list)):
-        myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+        myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'user', 'isLazy': True, 'children': []}
         user['children'].append(myNode)
 
     myTree['children'].append(mimark)
@@ -430,7 +430,7 @@ def getSampleQuantTree(request):
     for p in projectType:
         typeList.append(p.projectType)
 
-    myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'tooltip': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
+    myTree = {'title': 'Meta Data: Quantitative', 'id': 'root', 'tooltip': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     soil = {'title': 'Soil', 'id': 'soil', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     human_gut = {'title': 'Human Gut', 'id': 'human_gut', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
@@ -460,25 +460,25 @@ def getSampleQuantTree(request):
     if 'human_associated' in typeList:
         list = ['age', 'body_mass_index', 'chem_administration', 'height', 'host_body_temp', 'last_meal', 'organism_count', 'perturbation', 'pulse', 'samp_salinity', 'samp_size', 'samp_sotre_dur', 'samp_store_temp', 'temp', 'tot_mass', 'weight_loss_3_month', 'user_defined']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
             human_associated['children'].append(myNode)
 
     if 'air' in typeList:
         list = ['barometric_press', 'carb_dioxide', 'carb_monoxide', 'chem_administration', 'elev', 'humidity', 'methane', 'organism_count', 'oxy_stat_samp', 'oxygen', 'perturbation', 'pollutants', 'rel_to_oxygen', 'resp_part_matter', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_sotre_temp', 'solar_irradiance', 'temp', 'ventilation_rate', 'ventiliation_type', 'volatile_org_comp', 'wind_direction', 'wind_speed', 'user_defined']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'air', 'isLazy': True, 'children': []}
             air['children'].append(myNode)
 
     if 'water' in typeList:
         list = [['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'atmospheric_data', 'bac_prod', 'bac_resp', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'conduc', 'density', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_inorg_nitro', 'diss_inorg_phosp', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'down_par', 'elev', 'fluor', 'glucosidase_act', 'light_intensity', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'part_org_nitro', 'perturbation', 'pretroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'photon_flux', 'potassium', 'pressure', 'primary_prod', 'redox_potential', 'rel_to_oxygen', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'samp_vol_we_dna_ext', 'silicate', 'sodium', 'soluble_react_phosp', 'source_material_id', 'sulfate', 'sulfide', 'suspen_part_matter', 'temp', 'tidal_stage', 'tot_depth_water_col', 'tot_diss_nitro', 'tot_inorg_nitro', 'tot_nitro', 'tot_part_carb', 'tot_phosp', 'water_current', 'user_defined']]
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'water', 'isLazy': True, 'children': []}
             water['children'].append(myNode)
 
     if 'microbial' in typeList:
         list = ['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'glucosidase_act', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'methane', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'perturbation', 'petroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'potassium', 'pressure', 'redox_potential', 'rel_to_oxygen', 'salinity', 'samp_collect_device', 'samp_mat_process', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'silicate', 'sodium', 'sulfate', 'sulfide', 'temp', 'tot_carb', 'tot_nitro', 'tot_org_carb', 'turbidity', 'water_content', 'user_defined']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'Field', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'microbial', 'isLazy': True, 'children': []}
             microbial['children'].append(myNode)
 
     list = ['usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
@@ -542,17 +542,32 @@ def getSampleQuantTreeChildren(request):
         if field in mimark:
             exclude_list = []
             exclude_list.append(Q(**{field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
-            for item in items:
-                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
-                myNode1 = {
-                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                    'id': item.sampleid,
-                    'tooltip': 'Project: ' + item.projectid.project_name,
-                    'hideCheckbox': True,
-                    'isFolder': False
-                }
-                myNode.append(myNode1)
+            values = Sample.objects.values_list(field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(field)
+            if not all(x is None for x in values):
+                for j in range(len(values)):
+                    myNode1 = {
+                        'title': values[j],
+                        'id': field,
+                        'tooltip': 'Value',
+                        'hideCheckbox': True,
+                        'isFolder': True,
+                        'children': []
+                    }
+                    args_list = []
+                    args_list.append(Q(**{field: values[j]}))
+                    items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+                    for item in items:
+                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
+                        myNode2 = {
+                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
+                            'id': item.sampleid,
+                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'hideCheckbox': True,
+                            'isFolder': False
+                        }
+                        myNode1['children'].append(myNode2)
+                    myNode.append(myNode1)
+
 
         elif field in soil:
             table_field = 'soil__' + field
@@ -566,6 +581,7 @@ def getSampleQuantTreeChildren(request):
                         'title': values[j],
                         'id': field,
                         'tooltip': 'Value',
+                        'hideCheckbox': True,
                         'isFolder': True,
                         'children': []
                     }
@@ -596,6 +612,7 @@ def getSampleQuantTreeChildren(request):
                         'title': values[j],
                         'id': field,
                         'tooltip': 'Value',
+                        'hideCheckbox': True,
                         'isFolder': True,
                         'children': []
                     }
@@ -626,6 +643,7 @@ def getSampleQuantTreeChildren(request):
                         'title': values[j],
                         'id': field,
                         'tooltip': 'Value',
+                        'hideCheckbox': True,
                         'isFolder': True,
                         'children': []
                     }
@@ -656,6 +674,7 @@ def getSampleQuantTreeChildren(request):
                         'title': values[j],
                         'id': field,
                         'tooltip': 'Value',
+                        'hideCheckbox': True,
                         'isFolder': True,
                         'children': []
                     }
@@ -686,6 +705,7 @@ def getSampleQuantTreeChildren(request):
                         'title': values[j],
                         'id': field,
                         'tooltip': 'Value',
+                        'hideCheckbox': True,
                         'isFolder': True,
                         'children': []
                     }
@@ -716,6 +736,7 @@ def getSampleQuantTreeChildren(request):
                         'title': values[j],
                         'id': field,
                         'tooltip': 'Value',
+                        'hideCheckbox': True,
                         'isFolder': True,
                         'children': []
                     }
@@ -738,17 +759,32 @@ def getSampleQuantTreeChildren(request):
             table_field = 'user__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
-            items = Sample.objects.filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
-            for item in items:
-                reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
-                myNode1 = {
-                    'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                    'id': item.sampleid,
-                    'tooltip': 'Project: ' + item.projectid.project_name,
-                    'hideCheckbox': True,
-                    'isFolder': False
-                }
-                myNode.append(myNode1)
+            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).distinct().order_by(table_field)
+            if not all(x is None for x in values):
+                for j in range(len(values)):
+                    myNode1 = {
+                        'title': values[j],
+                        'id': field,
+                        'tooltip': 'Value',
+                        'hideCheckbox': True,
+                        'isFolder': True,
+                        'children': []
+                    }
+                    args_list = []
+                    args_list.append(Q(**{table_field: values[j]}))
+                    items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).exclude(reduce(operator.or_, exclude_list)).order_by('sample_name')
+                    for item in items:
+                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
+                        myNode2 = {
+                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
+                            'id': item.sampleid,
+                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'hideCheckbox': True,
+                            'isFolder': False
+                        }
+                        myNode1['children'].append(myNode2)
+                    myNode.append(myNode1)
+
 
         res = simplejson.dumps(myNode, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
