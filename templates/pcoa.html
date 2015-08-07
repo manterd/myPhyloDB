@@ -476,6 +476,10 @@
                     var xAxis = obj['xAxis'];
                     var series = obj['series'];
                     var yAxis = obj['yAxis'];
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                    }
                     linechart1(xAxis, yAxis, series);
 
                     var text = obj['text'];
@@ -554,6 +558,10 @@
                     var xAxis = obj['xAxis'];
                     var series = obj['series'];
                     var yAxis = obj['yAxis'];
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                    }
                     linechart2(xAxis, yAxis, series);
 
                     var text = obj['text'];

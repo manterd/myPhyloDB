@@ -562,6 +562,10 @@
                         var series = data['series'];
                         var yAxis = data['yAxis'];
                         var empty = data['empty'];
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                        }
                         if (empty == 0) {
                             alert('No significant tests!');
                         }
