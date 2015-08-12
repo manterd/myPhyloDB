@@ -275,14 +275,15 @@ def getCatPCoAData(request):
             base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
             base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
+
             r.assign("meta", metaDF)
             r("trt <- factor(meta$merge)")
             r("ord <- capscale(mat~trt)")
-            r("res <- summary(ord)")
+            r("res <- summary(ord)")  # TODO "Error in cbind(x$CCA$v, x$CA$v) : number of rows of matrices must match (see arg 2)"
             r("id <- rownames(meta)")
             r("pcoa <- data.frame(id, meta$sample_name, meta$merge, res$sites)")
             pcoaDF = r.get("pcoa")
-            pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
+            pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)  # TODO fix, nonetype has no attribute 'rename'
             pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
             pcoaDF.rename(columns={'meta.merge': 'Treatment'}, inplace=True)
 
