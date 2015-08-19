@@ -221,7 +221,7 @@
                             if (id == value) {
                                  table.row.add([
                                      "{{ project.project_name }}",
-                                     "{{ sample.sampleid }}",
+                                     "{{ Water.sampleid.sample_name }}",
                                      "{{ Water.alkalinity }}",
                                      "{{ Water.alkyl_diethers }}",
                                      "{{ Water.altitude }}",
@@ -322,7 +322,7 @@
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
-                                    "{{ sample.sampleid }}",
+                                    "{{ Air.sampleid.sample_name }}",
                                     "{{ Air.barometric_press }}",
                                     "{{ Air.carb_dioxide }}",
                                     "{{ Air.carb_monoxide }}",
@@ -369,7 +369,7 @@
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
-                                    "{{ sample.sampleid }}",
+                                    "{{ Human_Associated.sampleid.sample_name }}",
                                     "{{ Human_Associated.age }}",
                                     "{{ Human_Associated.amniotic_fluid_color }}",
                                     "{{ Human_Associated.blood_blood_disord }}",
@@ -440,7 +440,7 @@
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
-                                    "{{ sample.sampleid }}",
+                                    "{{ Human_Gut.sampleid.sample_name }}",
                                     "{{ Human_Gut.age }}",
                                     "{{ Human_Gut.body_mass_index }}",
                                     "{{ Human_Gut.body_product }}",
@@ -496,7 +496,7 @@
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
-                                    "{{ sample.sampleid }}",
+                                    "{{ Microbial.sampleid.sample_name }}",
                                     "{{ Microbial.alkalinity }}",
                                     "{{ Microbial.alkyl_diethers }}",
                                     "{{ Microbial.altitude }}",
@@ -577,11 +577,7 @@
                             if (id == value) {
                                  table.row.add([
                                     "{{ project.project_name }}",
-                                    "{{ sample.sampleid }}",
-                                    "{{ Soil.rRNA_copies }}",
-                                    "{{ Soil.microbial_biomass_C }}",
-                                    "{{ Soil.microbial_biomass_N }}",
-                                    "{{ Soil.microbial_respiration }}",
+                                    "{{ Soil.sampleid.sample_name }}",
                                     "{{ Soil.depth }}",
                                     "{{ Soil.pool_dna_extracts }}",
                                     "{{ Soil.samp_size }}",
@@ -705,12 +701,6 @@
                 <li><a href="#tabs-1" style="font-size: 14px">Project</a></li>
                 <li><a href="#tabs-2" style="font-size: 14px">MIMARKs</a></li>
                 <li><a href="#tabs-soil" style="font-size: 14px; display: none" id="soil">Soil</a></li>
-                <!--<li><a href="#tabs-3" style="font-size: 14px; display: none" id="collect">Collection</a></li>
-                <li><a href="#tabs-4" style="font-size: 14px; display: none" id="climate">Climate</a></li>
-                <li><a href="#tabs-5" style="font-size: 14px; display: none" id="class">Soil Class</a></li>
-                <li><a href="#tabs-6" style="font-size: 14px; display: none" id="ph">Soil pH/Nutr</a></li>
-                <li><a href="#tabs-7" style="font-size: 14px; display: none" id="manage">Management</a></li>
-                <li><a href="#tabs-8" style="font-size: 14px; display: none" id="micro">Microbial Biomass</a></li>-->
                 <li><a href="#tabs-10" style="font-size: 14px; display: none" id="humgut">Human Gut</a></li>
                 <li><a href="#tabs-air" style="font-size: 14px; display: none" id="air">Air</a></li>
                 <li><a href="#tabs-water" style="font-size: 14px; display: none" id="water">Water</a></li>
@@ -723,17 +713,17 @@
                 <table id="projectTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>Project Name</th>
-                            <th>Project ID</th>
-                            <th>Sample Name</th>
-                            <th>Project Description</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>PI: Last_name</th>
-                            <th>PI: First_name</th>
-                            <th>PI: Affiliation</th>
-                            <th>PI: E-mail</th>
-                            <th>PI: Phone</th>
+                            <th>project_name</th>
+                            <th>project_id</th>
+                            <th>sample_name</th>
+                            <th>project_desc</th>
+                            <th>start_date</th>
+                            <th>end_date</th>
+                            <th>pi_last</th>
+                            <th>pi_first</th>
+                            <th>pi_affiliation</th>
+                            <th>pi_email</th>
+                            <th>pi_phone</th>
                         </tr>
                     </thead>
                 </table>
@@ -743,24 +733,24 @@
                 <table id="sampleTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>Project Name</th>
-                            <th>Sample ID</th>
-                            <th>Sample Name</th>
-                            <th>Organism</th>
-                            <th>Title</th>
-                            <th>Seq Method</th>
-                            <th>Collection Date</th>
-                            <th>Biome</th>
-                            <th>Feature</th>
-                            <th>Country</th>
-                            <th>State</th>
-                            <th>City</th>
-                            <th>Farm/Site</th>
-                            <th>Plot</th>
-                            <th>Material</th>
-                            <th>Latitude</th>
-                            <th>Longitude</th>
-                            <th>Elevation</th>
+                            <th>project_name</th>
+                            <th>sample_id</th>
+                            <th>sample_name</th>
+                            <th>organism</th>
+                            <th>title</th>
+                            <th>seq_method</th>
+                            <th>collection_date</th>
+                            <th>biome</th>
+                            <th>feature</th>
+                            <th>geo_loc_country</th>
+                            <th>geo_loc_state</th>
+                            <th>geo_loc_city</th>
+                            <th>geo_loc_farm</th>
+                            <th>geo_loc_plot</th>
+                            <th>material</th>
+                            <th>latitude</th>
+                            <th>longitude</th>
+                            <th>elevation</th>
                         </tr>
                     </thead>
                 </table>
@@ -770,29 +760,29 @@
                 <table id="soilTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>Depth</th>
-                            <th>Pool DNA Extracts</th>
-                            <th>Sample Size</th>
-                            <th>Collection Device</th>
-                            <th>Sample Weight DNA Extract</th>
-                            <th>Sieving</th>
-                            <th>Storage Conditions</th>
-                            <th>Annual Precip</th>
-                            <th>Annual Temp</th>
-                            <th>Bulk Density</th>
-                            <th>Drainage Class</th>
-                            <th>FAO Class</th>
-                            <th>Horizon</th>
-                            <th>Local Class</th>
-                            <th>Porosity</th>
-                            <th>Profile Position</th>
-                            <th>Slope Aspect</th>
-                            <th>Slope Gradient</th>
-                            <th>Soil Type</th>
-                            <th>Texture Class</th>
-                            <th>Water Content Soil</th>
+                            <th>project_name</th>
+                            <th>sample_name</th>
+                            <th>depth</th>
+                            <th>pool_dna_extracts</th>
+                            <th>sample_size</th>
+                            <th>collection_device</th>
+                            <th>samp_weight_dna_ext</th>
+                            <th>sieving</th>
+                            <th>storage_conditions</th>
+                            <th>annual_season_precip</th>
+                            <th>annual_season_temp</th>
+                            <th>bulk_density</th>
+                            <th>drainage_class</th>
+                            <th>fao_class</th>
+                            <th>horizon</th>
+                            <th>local_class</th>
+                            <th>porosity</th>
+                            <th>profile_position</th>
+                            <th>slope_aspect</th>
+                            <th>slope_gradient</th>
+                            <th>soil_type</th>
+                            <th>texture_class</th>
+                            <th>water_content_soil</th>
                             <th>pH</th>
                             <th>EC</th>
                             <th>tot_C</th>
@@ -811,164 +801,36 @@
                             <th>Mg</th>
                             <th>Na</th>
                             <th>B</th>
-                            <th>Agrochem Amendments</th>
-                            <th>Agrochem Amendments Desc</th>
-                            <th>Biological Amendments</th>
-                            <th>Biological Amendments Desc</th>
-                            <th>Cover Crop</th>
-                            <th>Crop Rotation</th>
-                            <th>Cur Land Use</th>
-                            <th>Cur Vegetation</th>
-                            <th>Cur Crop</th>
-                            <th>Cur Cultivar</th>
-                            <th>Organic</th>
-                            <th>Previous Land Use</th>
-                            <th>Soil Amendments</th>
-                            <th>Soil Amendments Desc</th>
-                            <th>Tillage</th>
-                            <th>rRNA Copies</th>
-                            <th>Microbial  Biomass C</th>
-                            <th>Microbial Biomass N</th>
-                            <th>Microbial Respiration</th>
+                            <th>agrochem_amendments</th>
+                            <th>agrochem_amendments_desc</th>
+                            <th>biological_amendments</th>
+                            <th>biological_amendments_desc</th>
+                            <th>cover_crop</th>
+                            <th>crop_rotation</th>
+                            <th>cur_land_use</th>
+                            <th>cur_vegetation</th>
+                            <th>cur_crop</th>
+                            <th>cur_cultivar</th>
+                            <th>organic</th>
+                            <th>previous_land_use</th>
+                            <th>soil_amendments</th>
+                            <th>soil_amendments_desc</th>
+                            <th>tillage</th>
+                            <th>rRNA_copies</th>
+                            <th>microbial_biomass_C</th>
+                            <th>microbial_biomass_N</th>
+                            <th>microbial_respiration</th>
                         </tr>
                     </thead>
                 </table>
             </div>
-
-            <!--<div id="tabs-3">
-                <table id="collectTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>Depth</th>
-                            <th>Pool DNA Extracts</th>
-                            <th>Sample Size</th>
-                            <th>Collection Device</th>
-                            <th>Sample Weight DNA Extract</th>
-                            <th>Sieving</th>
-                            <th>Storage Conditions</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-4">
-                <table id="climateTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>Annual Precip</th>
-                            <th>Annual Temp</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-5">
-                <table id="soil_classTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>Bulk Density</th>
-                            <th>Drainage Class</th>
-                            <th>FAO Class</th>
-                            <th>Horizon</th>
-                            <th>Local Class</th>
-                            <th>Porosity</th>
-                            <th>Profile Position</th>
-                            <th>Slope Aspect</th>
-                            <th>Slope Gradient</th>
-                            <th>Soil Type</th>
-                            <th>Texture Class</th>
-                            <th>Water Content Soil</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-6">
-                <table id="soil_nutrTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>pH</th>
-                            <th>EC</th>
-                            <th>tot_C</th>
-                            <th>tot_OM</th>
-                            <th>tot_N</th>
-                            <th>NO3_N</th>
-                            <th>NH4_N</th>
-                            <th>P</th>
-                            <th>K</th>
-                            <th>S</th>
-                            <th>Zn</th>
-                            <th>Fe</th>
-                            <th>Cu</th>
-                            <th>Mn</th>
-                            <th>Ca</th>
-                            <th>Mg</th>
-                            <th>Na</th>
-                            <th>B</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-7">
-                <table id="mgtTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>Agrochem Amendments</th>
-                            <th>Agrochem Amendments Desc</th>
-                            <th>Biological Amendments</th>
-                            <th>Biological Amendments Desc</th>
-                            <th>Cover Crop</th>
-                            <th>Crop Rotation</th>
-                            <th>Cur Land Use</th>
-                            <th>Cur Vegetation</th>
-                            <th>Cur Crop</th>
-                            <th>Cur Cultivar</th>
-                            <th>Organic</th>
-                            <th>Previous Land Use</th>
-                            <th>Soil Amendments</th>
-                            <th>Soil Amendments Desc</th>
-                            <th>Tillage</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-8">
-                <table id="microbeTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>rRNA Copies</th>
-                            <th>Microbial  Biomass C</th>
-                            <th>Microbial Biomass N</th>
-                            <th>Microbial Respiration</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div> -->
 
             <div id="tabs-10">
                 <table id="human_gutTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>rRNA Copies</th>
-                            <th>Microbial  Biomass C</th>
-                            <th>Microbial Biomass N</th>
-                            <th>Microbial Respiration</th>
+                            <th>project_name</th>
+                            <th>sample_name</th>
                             <th>age</th>
                             <th>body_mass_index</th>
                             <th>body_product</th>
@@ -1016,8 +878,8 @@
                 <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
+                            <th>project_name</th>
+                            <th>sample_name</th>
                             <th>alkalinity</th>
                             <th>alkyl_diethers</th>
                             <th>altitude</th>
@@ -1091,8 +953,8 @@
                 <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
+                            <th>project_name</th>
+                            <th>sample_name</th>
                             <th>age</th>
                             <th>amniotic_fluid_color</th>
                             <th>blood_blood_disord</th>
@@ -1115,7 +977,7 @@
                             <th>ihmc_medication_code</th>
                             <th>kidney_disord</th>
                             <th>last_meal</th>
-                            <th>maternal_health_stat= models.CharField(max_length=15, blank=True)
+                            <th>maternal_health_stat</th>
                             <th>medic_hist_perform</th>
                             <th>nose_throat_disord</th>
                             <th>occupation</th>
@@ -1155,8 +1017,8 @@
                 <table id="waterTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                             <th>Project Name</th>
-                             <th>Sample Name</th>
+                             <th>project_name</th>
+                             <th>sample_name</th>
                              <th>alkalinity</th>
                              <th>alkyl_diethers</th>
                              <th>altitude</th>
@@ -1249,8 +1111,8 @@
                 <table id="airTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
+                            <th>project_name</th>
+                            <th>sample_name</th>
                             <th>barometric_press</th>
                             <th>carb_dioxide</th>
                             <th>carb_monoxide</th>
@@ -1289,20 +1151,20 @@
                 <table id="usrTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>Project Name</th>
-                            <th>Sample Name</th>
-                            <th>Usr Cat 1</th>
-                            <th>Usr Cat 2</th>
-                            <th>Usr Cat 3</th>
-                            <th>Usr Cat 4</th>
-                            <th>Usr Cat 5</th>
-                            <th>Usr Cat 6</th>
-                            <th>Usr Quant 1</th>
-                            <th>Usr Quant 2</th>
-                            <th>Usr Quant 3</th>
-                            <th>Usr Quant 4</th>
-                            <th>Usr Quant 5</th>
-                            <th>Usr Quant 6</th>
+                            <th>project_name</th>
+                            <th>sample_name</th>
+                            <th>usr_cat1</th>
+                            <th>usr_cat2</th>
+                            <th>usr_cat3</th>
+                            <th>usr_cat4</th>
+                            <th>usr_cat5</th>
+                            <th>usr_cat6</th>
+                            <th>usr_quant1</th>
+                            <th>usr_quant2</th>
+                            <th>usr_quant3</th>
+                            <th>usr_quant4</th>
+                            <th>usr_quant5</th>
+                            <th>usr_quant6</th>
                         </tr>
                     </thead>
                 </table>
