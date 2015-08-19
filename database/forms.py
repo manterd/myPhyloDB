@@ -28,11 +28,9 @@ class UploadForm4(forms.Form):
     taxonomyFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
 
 
-projectList = [[x.projectid, x.project_name] for x in Project.objects.all()]
-
-
 class UploadForm5(forms.Form):
     docfile11 = forms.FileField(label='Select meta_Project.csv file:')
     docfile12 = forms.FileField(label='Select meta_Sample.csv file:')
+    projectList = [[x.projectid, x.project_name] for x in Project.objects.all()]
     project = forms.ChoiceField(choices=projectList, widget=forms.Select())
     type = forms.ChoiceField(widget=forms.Select, choices=(('soil', 'Soil'), ('human_associated', 'Human Associated'), ('human_gut', 'Human Gut'), ('air', 'Air'), ('water', 'Water'), ('microbial', 'Microbial')))

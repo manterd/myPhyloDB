@@ -417,7 +417,7 @@ def soil(request):
     filename = "sample_files/Soil.sample.csv"
     wrapper = FileWrapper(file(filename))
     response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Soil.sample"'
+    response['Content-Disposition'] = 'attachment; filename="Soil.sample.csv"'
     response['Content-Length'] = os.path.getsize(filename)
     return response
 
