@@ -16,6 +16,9 @@ class Project(models.Model):
     pi_email = models.EmailField(blank=True)
     pi_phone = models.CharField(max_length=15, blank=True)
 
+    def __unicode__(self):
+        return unicode(self.project_name)
+
 
 class Reference(models.Model):
     refid = UUIDField(primary_key=True)

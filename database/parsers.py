@@ -365,7 +365,7 @@ def parse_profile(file3, file4, p_uuid):
                     record.save()
 
 
-def reprocess(request):
+def reanalyze(request):
     global rep_project
 
     if request.is_ajax():

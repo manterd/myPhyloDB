@@ -468,7 +468,7 @@ def microbial(request):
 
 
 @login_required(login_url='/myPhyloDB/login/')
-def database(request):
+def reprocess(request):
     try:
         alignFile = request.FILES['docfile8']
         alignDB = request.FILES['docfile8'].name
@@ -503,7 +503,7 @@ def database(request):
     taxonomyDB = os.listdir('mothur/reference/taxonomy/')
 
     return render_to_response(
-        'database.html',
+        'reprocess.html',
         {'form4': UploadForm4,
          'alignDB': alignDB,
          'templateDB': templateDB,
@@ -520,7 +520,7 @@ def update(request):
     if form5.is_valid():
         file1 = request.FILES['docfile11']
         file2 = request.FILES['docfile12']
-        p_uuid = form5.cleaned_data['project']
+        p_uuid = form5.cleaned_data['project'].pk
         pType = form5.cleaned_data['type']
 
         items = Project.objects.filter(projectid=p_uuid).values_list('path', 'project_name')
@@ -550,7 +550,7 @@ def update(request):
             )
 
         state = str(name) + ' is finished parsing!'
-        
+
     return render_to_response(
         'update.html',
         {'form5': UploadForm5,

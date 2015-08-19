@@ -297,12 +297,8 @@ def getCatUnivData(request):
                 p_val = 1.0
                 if StatTest == 1:
                     D = Anova1way()
-                    try:
-                        D.run(valList, conditions_list=trtList)
-                        p_val = float(D['p'])
-                    except:
-                        p_val = 1.0
-                        D = 'Samples sizes are either too unequal or n=1.\n'
+                    D.run(valList, conditions_list=trtList)
+                    p_val = float(D['p'])
 
                 elif StatTest == 2:
                     rows_list = []
@@ -514,7 +510,6 @@ def getCatUnivData(request):
 
     except Exception as e:
         print "Error with ANOVA CAT: ", e
-        print "RID: ", RID
         state = "Error with ANOVA CAT: " + str(e)
 
         myDict = {}
@@ -880,7 +875,6 @@ def getQuantUnivData(request):
 
     except Exception as e:
         print "Error with ANOVA QUANT: ", e
-        print "RID: ", RID
         state = "Error with ANOVA QUANT: " + str(e)
 
         myDict = {}
