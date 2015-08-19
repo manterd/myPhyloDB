@@ -598,7 +598,7 @@ Returns: transformed data for use in an ANOVA
     for j in range(k):
         if v[j] - mean(nargs[j]) > TINY:
             check = 0
-    if check <> 1:
+    if check != 1:
         raise ValueError, 'Problem in obrientransform.'
     else:
         return nargs

@@ -928,7 +928,6 @@ def getTaxaTreeChildren(request):
 def makeReproTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
     projects = Reference.objects.all()
-    print "Projects: ", projects
 
     for project in projects:
         myNode = {

@@ -31,7 +31,5 @@ class UploadForm4(forms.Form):
 class UploadForm5(forms.Form):
     docfile11 = forms.FileField(label='Select meta_Project.csv file:')
     docfile12 = forms.FileField(label='Select meta_Sample.csv file:')
-    projectList = [[x.projectid, x.project_name] for x in Project.objects.all()]
-    #project = forms.ChoiceField(choices=projectList, widget=forms.Select())
-    project = forms.ModelChoiceField(queryset=Project.objects.all(), initial=0)
+    project = forms.ModelChoiceField(queryset=Project.objects.all().order_by('project_name'))
     type = forms.ChoiceField(widget=forms.Select, choices=(('soil', 'Soil'), ('human_associated', 'Human Associated'), ('human_gut', 'Human Gut'), ('air', 'Air'), ('water', 'Water'), ('microbial', 'Microbial')))
