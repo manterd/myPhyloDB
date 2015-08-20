@@ -565,8 +565,8 @@ def getCatUnivData(request):
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
-        print "Error with ANOVA CAT: ", e
-        state = "Error with ANOVA CAT: " + str(e)
+        print "Error with ANOVA: ", e
+        state = "Error with ANOVA: " + str(e)
 
         myDict = {}
         myDict['error'] = state
@@ -930,8 +930,8 @@ def getQuantUnivData(request):
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
-        print "Error with ANOVA QUANT: ", e
-        state = "Error with ANOVA QUANT: " + str(e)
+        print "Error with Linear Regression: ", e
+        state = "Error with Linear Regression: " + str(e)
 
         myDict = {}
         myDict['error'] = state

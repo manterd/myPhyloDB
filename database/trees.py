@@ -10,7 +10,7 @@ from models import Kingdom, Class, Order, Family, Genus, Species, Profile
 def getProjectTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = Project.objects.all()
+    projects = Project.objects.all().order_by('project_name')
 
     for project in projects:
         myNode = {

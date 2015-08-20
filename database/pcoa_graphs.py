@@ -275,34 +275,34 @@ def getCatPCoAData(request):
             base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
             base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
-            r.assign("meta", metaDF)
-
-            for i in fieldList:
-                factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
-                r.assign("cmd", factor_string)
-                r("eval(parse(text=cmd))")
-
-            trtString = " + ".join(fieldList)
-            pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ")"
-            r.assign("cmd", pcoa_string)
-            r("eval(parse(text=cmd))")
-            r("res <- summary(ord)")
-            r("id <- rownames(meta)")
-            r("pcoa <- data.frame(id, meta, res$sites)")
-
-            pcoaDF = r.get("pcoa")
-            pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
-            pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
-
-            r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
-            r("eig <- data.frame(Stat, res$cont$importance)")
-            eigDF = r.get("eig")
-
             ### create trtList that merges all categorical values
             trtList = metaDF['merge'].values.tolist()
             trtLength = set(trtList).__len__()
             bigf = 'nan'
             if trtLength > 1:
+                r.assign("meta", metaDF)
+
+                for i in fieldList:
+                    factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                    r.assign("cmd", factor_string)
+                    r("eval(parse(text=cmd))")
+
+                trtString = " + ".join(fieldList)
+                pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ", scale=TRUE)"
+                r.assign("cmd", pcoa_string)
+                r("eval(parse(text=cmd))")
+                r("res <- summary(ord)")
+                r("id <- rownames(meta)")
+                r("pcoa <- data.frame(id, meta, res$sites)")
+
+                pcoaDF = r.get("pcoa")
+                pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
+                pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
+
+                r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
+                r("eig <- data.frame(Stat, res$cont$importance)")
+                eigDF = r.get("eig")
+
                 if perms <= 2:
                     bigf = 'Not enough permutations for the test to run...'
                 else:
@@ -344,6 +344,12 @@ def getCatPCoAData(request):
                                 if part != tempStuff[0]:
                                     bigf += part + '\n'
                             base[RID] = 'Step 5 of 8: Performing BetaDisper...done!'
+            else:
+                state = "Your selected variable(s) only have one treatment level, please select additional data!"
+                myDict = {}
+                myDict['error'] = state
+                res = simplejson.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
 
             base[RID] = 'Step 6 of 8: Formatting graph data for display...'
 
@@ -364,11 +370,11 @@ def getCatPCoAData(request):
                 seriesList.append(seriesDict)
 
             xTitle = {}
-            xTitle['text'] = "PCoA" + str(PC1)
+            xTitle['text'] = str(eigDF.columns.values.tolist()[PC1]) + " (" + str(eigDF.iloc[1][PC1] * 100) + "%)"
             xAxisDict['title'] = xTitle
 
             yTitle = {}
-            yTitle['text'] = "PCoA" + str(PC2)
+            yTitle['text'] = str(eigDF.columns.values.tolist()[PC2]) + " (" + str(eigDF.iloc[1][PC2] * 100) + "%)"
             yAxisDict['title'] = yTitle
 
             finalDict['series'] = seriesList
@@ -458,9 +464,8 @@ def getCatPCoAData(request):
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
-        print "Error with PCOA CAT: ", e
-        print "RID: ", RID
-        state = "Error with PCOA CAT: " + str(e)
+        print "Error with PCoA CAT: ", e
+        state = "Error with PCoA CAT: " + str(e)
 
         myDict = {}
         myDict['error'] = state
@@ -524,7 +529,6 @@ def getQuantPCoAData(request):
                     if total['count__sum'] is not None:
                         id = sample.sampleid
                         newList.append(id)
-
 
             elif NormMeth == 2 or NormMeth == 3:
                 if NormReads > maxSize:
@@ -596,13 +600,6 @@ def getQuantPCoAData(request):
 
             base[RID] = 'Step 1 of 8: Querying database...done!'
             base[RID] = 'Step 2 of 8: Normalizing data...'
-
-            # Create combined metadata column
-            if len(fieldList) > 1:
-                for index, row in metaDF.iterrows():
-                    metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
-            else:
-                metaDF['merge'] = metaDF[fieldList[0]]
 
             # Sum by taxa level
             taxaDF = taxaDF.groupby(level=taxaLevel).sum()
@@ -682,15 +679,19 @@ def getQuantPCoAData(request):
             base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
             r.assign("meta", metaDF)
-            r("trt <- factor(meta$merge)")
+
+            factor_string = "trt <- factor(meta$" + str(fieldList[0]) + ")"
+            r.assign("cmd", factor_string)
+            r("eval(parse(text=cmd))")
+
             r("ord <- capscale(dist~trt)")
             r("res <- summary(ord)")
             r("id <- rownames(meta)")
-            r("pcoa <- data.frame(id, meta$sample_name, meta$merge, res$sites)")
+            r("pcoa <- data.frame(id, meta, res$sites)")
+
             pcoaDF = r.get("pcoa")
             pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
-            pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
-            pcoaDF.rename(columns={'meta.merge': 'Treatment'}, inplace=True)
+            pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
 
             r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
             r("eig <- data.frame(Stat, res$cont$importance)")
@@ -703,7 +704,8 @@ def getQuantPCoAData(request):
             xAxisDict = {}
             yAxisDict = {}
 
-            dataList = pcoaDF.icol([PC1, 2]).values.astype(np.float).tolist()
+            CAP1 = PC1 + int(len(fieldList)) + 2
+            dataList = pcoaDF.icol([CAP1, 2]).values.astype(np.float).tolist()
 
             seriesDict = {}
             seriesDict['type'] = 'scatter'
@@ -711,9 +713,8 @@ def getQuantPCoAData(request):
             seriesDict['data'] = dataList
             seriesList.append(seriesDict)
 
-            x = pcoaDF.icol(PC1).values.astype(np.float).tolist()
+            x = pcoaDF.icol(CAP1).values.astype(np.float).tolist()
             y = pcoaDF.icol(2).values.astype(np.float).tolist()
-
             if max(x) == min(x):
                 regrDict = {'type': 'line', 'name': 'No Data', 'data': 'No Data'}
                 seriesList.append(regrDict)
@@ -740,7 +741,7 @@ def getQuantPCoAData(request):
                 seriesList.append(regrDict)
 
             xTitle = {}
-            xTitle['text'] = PC1
+            xTitle['text'] = str(eigDF.columns.values.tolist()[PC1]) + " (" + str(eigDF.iloc[1][PC1] * 100) + "%)"
             xAxisDict['title'] = xTitle
 
             yTitle = {}
@@ -829,9 +830,8 @@ def getQuantPCoAData(request):
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
-        print "Error with PCOA QUANT: ", e
-        print "RID: ", RID
-        state = "Error with PCOA QUANT: " + str(e)
+        print "Error with PCoA: ", e
+        state = "Error with PCoA: " + str(e)
 
         myDict = {}
         myDict['error'] = state

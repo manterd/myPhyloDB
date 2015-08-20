@@ -455,11 +455,7 @@
             myDict['NormMeth'] = NormMeth;
             myDict['MinSize'] = document.getElementById("MinVal").value;
             myDict['RID'] = RID;
-            //if ((NormMeth == 2) || (NormMeth == 3)){
-            //    myDict['NormVal'] = document.getElementById("NormVal").value;
-            //} else {
-            //    myDict['NormVal'] = "none"
-            //}
+
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -538,10 +534,6 @@
             myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['RID'] = RID;
 
-            //if ((NormMeth == 2) || (NormMeth == 3)){
-            //} else {
-            //    myDict['NormVal'] = "none"
-            //}
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -729,6 +721,8 @@
                     <option value="2">PC2</option>
                     <option value="3">PC3</option>
                     <option value="4">PC4</option>
+                    <option value="5">PC5</option>
+                    <option value="6">PC6</option>
                 </select>
                 &nbsp<-- Principal coordinate selected (x-axis)
             </td>
@@ -742,6 +736,8 @@
                     <option value="2" selected="selected">PC2</option>
                     <option value="3">PC3</option>
                     <option value="4">PC4</option>
+                    <option value="5">PC5</option>
+                    <option value="6">PC6</option>
                 </select>
                 &nbsp<-- Principal coordinate selected (y-axis)
             </td>
