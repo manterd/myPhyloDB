@@ -1,13 +1,7 @@
-import multiprocessing as mp
-import numpy as np
 import operator
 import pandas as pd
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 from django.db.models import Q
 from numpy import *
-from numpy.random import mtrand
-from scipy.spatial.distance import *
-import math
 from pyper import *
 
 

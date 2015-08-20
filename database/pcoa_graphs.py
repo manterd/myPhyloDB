@@ -350,16 +350,13 @@ def getCatPCoAData(request):
             seriesList = []
             xAxisDict = {}
             yAxisDict = {}
-            print 'pcoaDF\n', pcoaDF
 
             CAP1 = PC1 + int(len(fieldList)) + 2
             CAP2 = PC2 + int(len(fieldList)) + 2
-            print 'CAP1:', CAP1
 
             grouped = pcoaDF.groupby('merge')
             for name, group in grouped:
                 dataList = group.icol([CAP1, CAP2]).values.astype(np.float).tolist()
-                print 'dataList\n', dataList
                 trt = name
                 seriesDict = {}
                 seriesDict['name'] = str(trt)

@@ -6,9 +6,8 @@ from numpy import *
 from numpy.random import mtrand
 from scipy.spatial.distance import *
 import multiprocessing as mp
-import math
-import os
 from pyper import *
+
 
 def catPCoAMetaDF(qs1, metaDict):
     sampleTableList = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'material']

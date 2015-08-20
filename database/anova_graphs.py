@@ -1,20 +1,15 @@
 from anova_DF import catUnivMetaDF, quantUnivMetaDF, normalizeUniv
 from django.http import HttpResponse
 from database.models import Sample, Profile
-from django.shortcuts import render_to_response
-from django.template import RequestContext
 from django.db.models import Sum
 import pandas as pd
 import pickle
-from pyvttbl.Anova1way import Anova1way
 from scipy import stats
 import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF
 import numpy as np
 import datetime
-import pyper as pr
 from pyper import *
-import math
 
 
 base = {}
