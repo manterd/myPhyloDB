@@ -275,17 +275,24 @@ def getCatPCoAData(request):
             base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
             base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
-
             r.assign("meta", metaDF)
-            r("trt <- factor(meta$merge)")
-            r("ord <- capscale(mat~trt)")
-            r("res <- summary(ord)")  # TODO "Error in cbind(x$CCA$v, x$CA$v) : number of rows of matrices must match (see arg 2)"
+
+            for i in fieldList:
+                factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                r.assign("cmd", factor_string)
+                r("eval(parse(text=cmd))")
+
+            trtString = " + ".join(fieldList)
+            pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ")"
+            r.assign("cmd", pcoa_string)
+            r("eval(parse(text=cmd))")
+            r("res <- summary(ord)")
             r("id <- rownames(meta)")
-            r("pcoa <- data.frame(id, meta$sample_name, meta$merge, res$sites)")
+            r("pcoa <- data.frame(id, meta, res$sites)")
+
             pcoaDF = r.get("pcoa")
-            pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)  # TODO fix, nonetype has no attribute 'rename'
-            pcoaDF.rename(columns={'meta.sample_name': 'Sample Name'}, inplace=True)
-            pcoaDF.rename(columns={'meta.merge': 'Treatment'}, inplace=True)
+            pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
+            pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
 
             r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
             r("eig <- data.frame(Stat, res$cont$importance)")
@@ -303,10 +310,14 @@ def getCatPCoAData(request):
                         base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                         base[RID] = 'Step 5 of 8: Performing perMANOVA...'
 
-                        r("trtList <- factor(meta$merge)")
                         r.assign("perms", perms)
-                        r("res <- adonis(dist ~ trtList, perms=perms)")
+                        trtString = " * ".join(fieldList)
+                        amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
+                        r.assign("cmd", amova_string)
+                        r("eval(parse(text=cmd))")
+
                         bigf = r("res$aov.tab")
+
                         tempStuff = bigf.split('\n')
                         bigf = ""
                         for part in tempStuff:
@@ -317,27 +328,38 @@ def getCatPCoAData(request):
                     elif test == 2:
                         base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                         base[RID] = 'Step 5 of 8: Performing BetaDisper...'
-
-                        r("trtList <- factor(meta$merge)")
-                        r.assign("perms", perms)
-                        r("res <- betadisper(dist, trtList, perms=perms)")
-                        r("something <- anova(res)")
-                        bigf = r("something")
-                        tempStuff = bigf.split('\n')
                         bigf = ""
-                        for part in tempStuff:
-                            if part != tempStuff[0]:
-                                bigf += part + '\n'
-                        base[RID] = 'Step 5 of 8: Performing BetaDisper...done!'
+
+                        r.assign("perms", perms)
+                        for i in fieldList:
+                            beta_string = "res <- betadisper(dist, " + str(i) + ")"
+                            r.assign("cmd", beta_string)
+                            r("eval(parse(text=cmd))")
+
+                            r("something <- anova(res)")
+                            beta = r("something")
+                            tempStuff = beta.split('\n')
+                            bigf += '\n' + str(i) + ':\n'
+                            for part in tempStuff:
+                                if part != tempStuff[0]:
+                                    bigf += part + '\n'
+                            base[RID] = 'Step 5 of 8: Performing BetaDisper...done!'
 
             base[RID] = 'Step 6 of 8: Formatting graph data for display...'
 
             seriesList = []
             xAxisDict = {}
             yAxisDict = {}
-            grouped = pcoaDF.groupby('Treatment')
+            print 'pcoaDF\n', pcoaDF
+
+            CAP1 = PC1 + int(len(fieldList)) + 2
+            CAP2 = PC2 + int(len(fieldList)) + 2
+            print 'CAP1:', CAP1
+
+            grouped = pcoaDF.groupby('merge')
             for name, group in grouped:
-                dataList = group.icol([PC1, PC2]).values.astype(np.float).tolist()
+                dataList = group.icol([CAP1, CAP2]).values.astype(np.float).tolist()
+                print 'dataList\n', dataList
                 trt = name
                 seriesDict = {}
                 seriesDict['name'] = str(trt)
@@ -345,11 +367,11 @@ def getCatPCoAData(request):
                 seriesList.append(seriesDict)
 
             xTitle = {}
-            xTitle['text'] = 'PCoA' + str(PC1-2)
+            xTitle['text'] = "PCoA" + str(PC1)
             xAxisDict['title'] = xTitle
 
             yTitle = {}
-            yTitle['text'] = 'PCoA' + str(PC2-2)
+            yTitle['text'] = "PCoA" + str(PC2)
             yAxisDict['title'] = yTitle
 
             finalDict['series'] = seriesList

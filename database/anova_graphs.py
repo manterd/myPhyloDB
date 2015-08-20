@@ -303,32 +303,62 @@ def getCatUnivData(request):
                     D = ""
                     p_val = 1.0
                     if StatTest == 1:
-                        #D = Anova1way()
-                        #D.run(valList, conditions_list=trtList)
-                        #p_val = float(D['p'])
-
                         r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                         r.assign("df", group1)
-                        r("df")
+                        trtString = " * ".join(fieldList)
+
                         if DepVar == 1:
-                            print r("fit <- aov(abund ~ merge, data=df)")
-                            print r("summary(fit)")
+                            anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
+                            r.assign("cmd", anova_string)
+                            r("eval(parse(text=cmd))")
                         elif DepVar == 2:
-                            print r("fit <- aov(rich ~ merge, data=df)")
-                            print r("fit")
+                            anova_string = "fit <- aov(rich ~ " + str(trtString) + ", data=df)"
+                            r.assign("cmd", anova_string)
+                            r("eval(parse(text=cmd))")
                         elif DepVar == 3:
-                            print r("fit <- aov(diversity ~ merge, data=df)")
-                            print r("fit")
+                            anova_string = "fit <- aov(diversity ~ " + str(trtString) + ", data=df)"
+                            r.assign("cmd", anova_string)
+                            r("eval(parse(text=cmd))")
 
-                        pulled = r.get("fit")
-                        print r("tukey <- TukeyHSD(x=fit, 'merge', conf.level=0.95)")
-                        tukey = r.get("tukey")
-                        print r("pvals <- summary(fit)[[1]][[\"Pr(>F)\"]]")
-                        pvals = r.get("pvals")
+                        aov = r("summary(fit)")
+                        pString = r("summary(fit)[[1]][['Pr(>F)']]")
+                        tempStuff = pString.split(' ')
+                        pList = []
+                        for part in tempStuff:
+                            try:
+                                pList.append(float(part))
+                            except:
+                                placeholder = ''
+                        p_val = min(pList)
 
+                        tempStuff = aov.split('\n')
+                        for part in tempStuff:
+                            if part != tempStuff[0]:
+                                D += part + '\n'
+
+                        fList = []
+                        for part in tempStuff:
+                            if part != tempStuff[0] and part != tempStuff[1]:
+                                part = part.replace('\r', '')
+                                part1 = part.split(' ')
+                                if part1[0] == 'Residuals':
+                                    break
+                                fList.append(part1[0])
+
+                        D += '\nTukey Honest Significant Differences:\n'
+                        r("tukey <- TukeyHSD(fit, ordered=TRUE)")
+                        for i in fList:
+                            D += str(i) + '\n'
+                            hsd_string = "table <- tukey$" + str(i)
+                            r.assign("cmd", hsd_string)
+                            r("eval(parse(text=cmd))")
+                            table = r("table")
+                            tempStuff = table.split('\n')
+                            for part in tempStuff:
+                                if part != tempStuff[0]:
+                                    D += part + '\n'
 
                     elif StatTest == 2:
-                        print("Checking 2")
                         rows_list = []
                         m = 0.0
                         for i, val1 in enumerate(trtList):
@@ -347,7 +377,6 @@ def getCatUnivData(request):
                                     dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'mean1': np.mean(smp1), 'mean2': np.mean(smp2), 'stdev1': np.std(smp1), 'stdev2': np.std(smp2), 'p_value': p_val}
                                     rows_list.append(dict1)
                                     base[RID] = 'Step 3 of 4: Performing statistical test...' + str(val1) + ' vs ' + str(val2) + ' is done!'
-                        print("Check 2")
 
                         pvalDF = pd.DataFrame(rows_list)
                         pvalDF.sort(columns='p_value', inplace=True)
@@ -361,7 +390,6 @@ def getCatUnivData(request):
                             p_val = 0.0
                         else:
                             p_val = 1.0
-                    print("3")
                     base[RID] = 'Step 3 of 6: Performing statistical test...done!'
                 except Exception as e:
                     print("Error performing statistical test (ANOVA CAT): ", e)
@@ -381,8 +409,8 @@ def getCatUnivData(request):
                             elif DepVar == 3:
                                 result = result + 'Dependent Variable: Species Diversity' + '\n'
 
-                            indVar = ' x '.join(fieldList)
-                            result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
+                            #indVar = ' x '.join(fieldList)
+                            #result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
 
                             result = result + str(D) + '\n'
                             result += '===============================================\n'
@@ -403,9 +431,9 @@ def getCatUnivData(request):
                             seriesDict['data'] = dataList
                             seriesList.append(seriesDict)
 
-                            xTitle = {}
-                            xTitle['text'] = indVar
-                            xAxisDict['title'] = xTitle
+                            #xTitle = {}
+                            #xTitle['text'] = indVar
+                            #xAxisDict['title'] = xTitle
                             xAxisDict['categories'] = trtList
 
                             yTitle = {}
@@ -429,9 +457,6 @@ def getCatUnivData(request):
                         elif DepVar == 3:
                             result = result + 'Dependent Variable: Species Diversity' + '\n'
 
-                        indVar = ' x '.join(fieldList)
-                        result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
-
                         result = result + str(D) + '\n'
                         result += '===============================================\n'
                         result += '\n\n\n\n'
@@ -451,9 +476,9 @@ def getCatUnivData(request):
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
 
-                        xTitle = {}
-                        xTitle['text'] = indVar
-                        xAxisDict['title'] = xTitle
+                        #xTitle = {}
+                        #xTitle['text'] = indVar
+                        #xAxisDict['title'] = xTitle
                         xAxisDict['categories'] = trtList
 
                         yTitle = {}
