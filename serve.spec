@@ -87,6 +87,7 @@ a.datas += extra_datas('R-Portable')
 a.datas += extra_datas('sample_files')
 a.datas += extra_datas('templates')
 a.datas += extra_datas('templates/admin')
+a.datas += extra_datas('uploads')
 
 pyz = PYZ(a.pure)
 
