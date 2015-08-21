@@ -298,7 +298,7 @@ def getCatUnivData(request):
                     D = ""
                     p_val = 1.0
                     if StatTest == 1:
-                        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                        r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                         r.assign("df", group1)
                         trtString = " * ".join(fieldList)
 
@@ -404,8 +404,7 @@ def getCatUnivData(request):
                             elif DepVar == 3:
                                 result = result + 'Dependent Variable: Species Diversity' + '\n'
 
-                            #indVar = ' x '.join(fieldList)
-                            #result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
+                            result = result + '\nANOVA table:\n'
 
                             result = result + str(D) + '\n'
                             result += '===============================================\n'
@@ -452,6 +451,8 @@ def getCatUnivData(request):
                         elif DepVar == 3:
                             result = result + 'Dependent Variable: Species Diversity' + '\n'
 
+                        result = result + '\nANOVA table:\n'
+
                         result = result + str(D) + '\n'
                         result += '===============================================\n'
                         result += '\n\n\n\n'
@@ -487,7 +488,7 @@ def getCatUnivData(request):
                 except Exception as e:
                     print("Error with formatting (ANOVA CAT): ", e)
             try:
-                finalDict['series'] = seriesList  # ME
+                finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
                 finalDict['text'] = result

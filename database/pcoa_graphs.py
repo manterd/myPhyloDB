@@ -230,7 +230,7 @@ def getCatPCoAData(request):
             metaDF.set_index('sampleid', inplace=True)
             metaDF.sort_index(inplace=True)
 
-            r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
             r.assign("data", normDF)
             r("library(vegan)")
 
@@ -281,14 +281,8 @@ def getCatPCoAData(request):
             bigf = 'nan'
             if trtLength > 1:
                 r.assign("meta", metaDF)
-
-                for i in fieldList:
-                    factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
-                    r.assign("cmd", factor_string)
-                    r("eval(parse(text=cmd))")
-
                 trtString = " + ".join(fieldList)
-                pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ", scale=TRUE)"
+                pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ", meta)"
                 r.assign("cmd", pcoa_string)
                 r("eval(parse(text=cmd))")
                 r("res <- summary(ord)")
@@ -310,6 +304,11 @@ def getCatPCoAData(request):
                         base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                         base[RID] = 'Step 5 of 8: Performing perMANOVA...'
 
+                        for i in fieldList:
+                            factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                            r.assign("cmd", factor_string)
+                            r("eval(parse(text=cmd))")
+
                         r.assign("perms", perms)
                         trtString = " * ".join(fieldList)
                         amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
@@ -329,6 +328,11 @@ def getCatPCoAData(request):
                         base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                         base[RID] = 'Step 5 of 8: Performing BetaDisper...'
                         bigf = ""
+
+                        for i in fieldList:
+                            factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                            r.assign("cmd", factor_string)
+                            r("eval(parse(text=cmd))")
 
                         r.assign("perms", perms)
                         for i in fieldList:
@@ -430,7 +434,10 @@ def getCatPCoAData(request):
             elif distance == 15:
                 result = result + 'Distance score: wOdum' + '\n'
             result += '===============================================\n'
-            result = result + 'Test results' + '\n'
+            if test == 1:
+                result = result + 'perMANOVA results:' + '\n'
+            else:
+                result = result + 'betaDisper results:' + '\n'
             if trtLength == 1:
                 result = result + 'test cannot be run...' + '\n'
             else:
@@ -633,7 +640,7 @@ def getQuantPCoAData(request):
             metaDF.set_index('sampleid', inplace=True)
             metaDF.sort_index(inplace=True)
 
-            r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
             r.assign("data", normDF)
             r("library(vegan)")
 
