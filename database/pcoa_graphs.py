@@ -230,7 +230,11 @@ def getCatPCoAData(request):
             metaDF.set_index('sampleid', inplace=True)
             metaDF.sort_index(inplace=True)
 
-            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            if os.name == 'nt':
+                r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            else:
+                r = R(RCMD="R/R-Linux/bin/R")
+
             r.assign("data", normDF)
             r("library(vegan)")
 
@@ -640,7 +644,11 @@ def getQuantPCoAData(request):
             metaDF.set_index('sampleid', inplace=True)
             metaDF.sort_index(inplace=True)
 
-            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            if os.name == 'nt':
+                r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            else:
+                r = R(RCMD="R/R-Linux/bin/R")
+
             r.assign("data", normDF)
             r("library(vegan)")
 

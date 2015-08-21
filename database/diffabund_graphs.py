@@ -137,7 +137,10 @@ def getDiffAbund(request):
 
             # Normalization
             finalDict = {}
-            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            if os.name == 'nt':
+                r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+            else:
+                r = R(RCMD="R/R-Linux/bin/R")
             r.assign("metaDF", metaDF)
             r("trt <- factor(metaDF$merge)")
             r.assign("count", taxaDF)

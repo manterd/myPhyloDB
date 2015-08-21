@@ -298,7 +298,10 @@ def getCatUnivData(request):
                     D = ""
                     p_val = 1.0
                     if StatTest == 1:
-                        r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                        if os.name == 'nt':
+                            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                        else:
+                            r = R(RCMD="R/R-Linux/bin/R")
                         r.assign("df", group1)
                         trtString = " * ".join(fieldList)
 

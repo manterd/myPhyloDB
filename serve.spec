@@ -1,7 +1,7 @@
 # -*- mode: python -*-
 a = Analysis(['serve.py'],
-             pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
-             #pathex=['/home/manterd/PycharmProjects/myPhyloDB'],
+             #pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
+             pathex=['/home/manterd/PycharmProjects/myPhyloDB'],
              hiddenimports=[
                 'scipy.special._ufuncs_cxx',
                 'django.templatetags.future',
