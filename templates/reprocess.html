@@ -72,6 +72,8 @@
                     data: {all: jsonDict},
                     success: function() {
                         window.location.reload(true);
+                        $("#stage").hide();
+                        $("#progressBar").hide();
                     }
                 });
             });
