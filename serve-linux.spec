@@ -1,5 +1,5 @@
 # -*- mode: python -*-
-a = Analysis(['serve.py'],
+a = Analysis(['serve-linux.py'],
              pathex=['/home/manterd/PycharmProjects/myPhyloDB'],
              hiddenimports=[
                 'scipy.special._ufuncs_cxx',

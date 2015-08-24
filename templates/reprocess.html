@@ -28,6 +28,9 @@
     </style>
     <script>
         var selNodes = "";
+        var selKeys = "";
+        var refresh = 0;
+
         $(function () {
             $("#tree").dynatree({
                 checkbox: true,
@@ -49,35 +52,40 @@
             });
 
             $("#reprocess").click(function () {
-                var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
                     return node.data.id;
                 });
 
                 $("#project").show();
                 $("#stage").show();
                 $("#progressBar").show();
-                setInterval(updateStatus, 1000);
-
-                var myDict = {};
-                myDict['ids'] = selKeys;
-                myDict['alignDB'] = $("#align").val();
-                myDict['templateDB'] = $("#template").val();
-                myDict['taxonomyDB'] = $("#taxonomy").val();
-                var jsonDict = JSON.stringify(myDict);
-
-                $.ajax({
-                    type: 'GET',
-                    url: '/reanalyze/',
-                    dataType: 'json',
-                    data: {all: jsonDict},
-                    success: function() {
-                        $("#stage").hide();
-                        $("#progressBar").hide();
-                        location.reload(true);
-                    }
-                });
+                refresh = setInterval(updateStatus, 1000);
+                analyze(selKeys);
             });
         });
+
+        function analyze(selKeys){
+            var myDict = {};
+            myDict['ids'] = selKeys;
+            myDict['alignDB'] = $("#align").val();
+            myDict['templateDB'] = $("#template").val();
+            myDict['taxonomyDB'] = $("#taxonomy").val();
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                type: 'GET',
+                url: '/reanalyze/',
+                dataType: 'json',
+                data: {all: jsonDict},
+                success: function() {
+                    clearInterval(refresh);
+                    $("#project").hide();
+                    $("#stage").hide();
+                    $("#progressBar").hide();
+                    $("#tree").dynatree("getTree").reload();
+                }
+            });
+        }
 
         function updateStatus(){
             $.ajax({

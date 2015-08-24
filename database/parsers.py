@@ -451,3 +451,8 @@ def reanalyze(request):
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 with open('% s/mothur.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid)
+
+        return HttpResponse(
+            simplejson.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )

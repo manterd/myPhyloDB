@@ -498,9 +498,9 @@ def reprocess(request):
     purge('mothur/reference/template', '.8mer')
     purge('mothur/reference/template', '.summary')
 
-    alignDB = os.listdir('mothur/reference/align/')
-    templateDB = os.listdir('mothur/reference/template/')
-    taxonomyDB = os.listdir('mothur/reference/taxonomy/')
+    alignDB = sorted(os.listdir('mothur/reference/align/'))
+    templateDB = sorted(os.listdir('mothur/reference/template/'))
+    taxonomyDB = sorted(os.listdir('mothur/reference/taxonomy/'))
 
     return render_to_response(
         'reprocess.html',

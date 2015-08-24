@@ -1,5 +1,5 @@
 # -*- mode: python -*-
-a = Analysis(['serve.py'],
+a = Analysis(['serve-win.py'],
              pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
              hiddenimports=[
                 'scipy.special._ufuncs_cxx',
