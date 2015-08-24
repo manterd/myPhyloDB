@@ -1,4 +1,4 @@
-#! usr/bin/sh
+#!/bin/sh
 
 echo "Installing myPhyloDB vers. 1.0\n"
 echo "Checking if myPhyloDB exists...\n"
@@ -27,7 +27,7 @@ if [ $response = y ]
     else
 	if [ -d "$HOME/myPhyloDB" ]
 	    then
-	        rm -rf $HOME/myPhyloDB	
+		rm -rf $HOME/myPhyloDB
 	fi
 	tar -zxf myPhyloDB.tar.gz -C $HOME
 fi

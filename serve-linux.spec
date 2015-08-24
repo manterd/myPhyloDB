@@ -1,6 +1,5 @@
 # -*- mode: python -*-
 a = Analysis(['serve.py'],
-             #pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
              pathex=['/home/manterd/PycharmProjects/myPhyloDB'],
              hiddenimports=[
                 'scipy.special._ufuncs_cxx',
@@ -22,8 +21,6 @@ a = Analysis(['serve.py'],
              runtime_hooks=None)
 
 
-
-
 def Datafiles(*filenames, **kw):
     import os
 
@@ -40,7 +37,9 @@ def Datafiles(*filenames, **kw):
         for filename in filenames
         if os.path.isfile(filename))
 
+
 db = Datafiles('dbMicrobe')
+
 
 def extra_datas(mydir):
     def rec_glob(p, files):
@@ -80,12 +79,9 @@ a.datas += extra_datas('media/tabletools/swf')
 a.datas += extra_datas('mothur/mothur-linux')
 a.datas += extra_datas('mothur/mothur-linux/lookupFiles')
 a.datas += extra_datas('mothur/mothur-linux/uchime_src')
-a.datas += extra_datas('mothur/mothur-win')
-a.datas += extra_datas('mothur/mothur-win/lookupFiles')
 a.datas += extra_datas('mothur/reference/align')
 a.datas += extra_datas('mothur/reference/taxonomy')
 a.datas += extra_datas('mothur/reference/template')
-a.datas += extra_datas('R/R-Portable')
 a.datas += extra_datas('R/R-Linux')
 a.datas += extra_datas('sample_files')
 a.datas += extra_datas('templates')
