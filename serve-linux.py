@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import os
 import os.path
+import sys
+import signal
+
 import cherrypy
 from cherrypy.process import plugins
 from django.core.handlers.wsgi import WSGIHandler
@@ -28,12 +31,14 @@ class Server(object):
 
     def run(self):
         engine = cherrypy.engine
+
         if hasattr(engine, "signal_handler"):
             engine.signal_handler.subscribe()
         if hasattr(engine, "console_control_handler"):
             engine.console_control_handler.subscribe()
+
         cherrypy.engine.subscribe('engine.start', Server.browse(self), priority=90)
-        cherrypy.log.screen = None
+
         engine.start()
         engine.block()
 
@@ -57,6 +62,14 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 
         static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
         cherrypy.tree.mount(static_handler, '/media')
+
+
+def signal_handler(signal, frame):
+    print 'Exiting...'
+    cherrypy.engine.exit()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 if __name__ == '__main__':
