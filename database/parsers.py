@@ -428,10 +428,19 @@ def reanalyze(request):
             shutil.copy('% s/project.csv' % dest, '% s/project.csv' % mothurdest)
             shutil.copy('% s/sample.csv' % dest, '% s/sample.csv' % mothurdest)
 
-            remove_proj(p_uuid)
-
             if not os.path.exists(dest):
                 os.makedirs(dest)
+
+            try:
+                mothur(dest)
+            except Exception as e:
+                print("Error with mothur: " + str(e))
+                return HttpResponse(
+                    simplejson.dumps({"error": "yes"}),
+                    content_type="application/json"
+                )
+
+            remove_proj(p_uuid)
 
             with open('mothur/temp/project.csv', 'rb') as file1:
                 parse_project(file1, dest, p_uuid, pType)
@@ -443,8 +452,6 @@ def reanalyze(request):
                 raw = True
                 parse_reference(p_uuid, dest, file7, raw)
 
-            mothur(dest)
-
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
@@ -453,6 +460,6 @@ def reanalyze(request):
                     parse_profile(file3, file4, p_uuid)
 
         return HttpResponse(
-            simplejson.dumps({"nothing to see": "this isn't happening"}),
+            simplejson.dumps({"error": "no"}),
             content_type="application/json"
         )

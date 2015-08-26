@@ -77,12 +77,18 @@
                 url: '/reanalyze/',
                 dataType: 'json',
                 data: {all: jsonDict},
-                success: function() {
+                success: function(data) {
                     clearInterval(refresh);
                     $("#project").hide();
                     $("#stage").hide();
                     $("#progressBar").hide();
                     $("#tree").dynatree("getTree").reload();
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var error = obj['error'];
+                    if (error == "yes") {
+                        alert("myPhyloDB encountered an error, please check your terminal!");
+                    }
                 }
             });
         }
