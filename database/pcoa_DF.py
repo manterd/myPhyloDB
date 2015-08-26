@@ -332,7 +332,10 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
             normDF[i] = df2[i].div(df2[i].sum(), axis=0)
 
     elif meth == 5:
-        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R")
         df3 = df2.drop(taxaID, axis=1)
         r.assign("count", df3)
         r.assign("metaDF", metaDF)
@@ -363,7 +366,10 @@ def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF):
             normDF[taxaID] = indList
 
     elif meth == 6:
-        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R")
         df3 = df2.drop(taxaID, axis=1)
         r.assign("count", df3)
         r.assign("metaDF", metaDF)

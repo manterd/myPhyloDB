@@ -32,9 +32,6 @@ class Server(object):
     def browse(self):
         webbrowser.open_new("http://127.0.0.1:8000/myPhyloDB/home")
 
-    def start(self):
-        cherrypy.tree.graft(HTTPLogger(WSGIHandler()))
-
     def run(self):
         engine = cherrypy.engine
 
@@ -66,6 +63,8 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         staticpath = os.path.split(staticpath)[0]
         staticpath = os.path.join(staticpath, 'media')
 
+        cherrypy.tree.graft(HTTPLogger(WSGIHandler()))
+        
         static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
         cherrypy.tree.mount(static_handler, '/media')
 

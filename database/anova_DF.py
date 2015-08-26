@@ -365,7 +365,10 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
 
     elif meth == 5:
         countDF = df2[taxaID].reset_index(drop=True)
-        r = R(RCMD="R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R")
         df3 = df2.drop(taxaID, axis=1)
         r.assign("count", df3)
         r.assign("metaDF", metaDF)
