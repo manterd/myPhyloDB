@@ -100,7 +100,7 @@
 
             var pTypes = new Array(0);
 
-            $.each(selKeys, function (index, value) {       // update so that only selected projects are shown
+            $.each(selKeys, function (index, value) {
                 {% for project in projects %}
                     var id = "{{ project.projectid }}";
                     if (id == value) {
@@ -123,7 +123,7 @@
                 $("#humgut").hide();
             }
             if (pTypes.indexOf("human_associated")>-1) {
-                updateGutTable(selKeys);
+                updateAssociatedTable(selKeys);
                 $("#humasso").show();
             } else {
                 $("#humasso").hide();

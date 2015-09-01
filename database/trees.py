@@ -176,6 +176,7 @@ def getSampleCatTreeChildren(request):
 
     if request.is_ajax():
         field = request.GET["field"]
+        pType = request.GET["pType"]
         mimark = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city',  'geo_loc_farm', 'geo_loc_plot', 'material']
         soil = ['depth', 'pool_dna_extracts', 'samp_size', 'samp_collection_device', 'samp_weight_dna_ext', 'sieving', 'storage_cond', 'annual_season_precpt', 'annual_season_temp', 'bulk_density', 'drainage_class', 'fao_class', 'horizon', 'local_class', 'porosity', 'profile_position', 'slope_aspect', 'slope_gradient', 'soil_type', 'texture_class', 'water_content_soil', 'pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B', 'agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage', 'rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
         air = ['barometric_press', 'carb_dioxide', 'carb_monoxide', 'chem_administration', 'elev', 'humidity', 'methane', 'organism_count', 'oxy_stat_samp', 'oxygen', 'perturbation', 'pollutants', 'rel_to_oxygen', 'resp_part_matter', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_sotre_temp', 'solar_irradiance', 'temp', 'ventilation_rate', 'ventiliation_type', 'volatile_org_comp', 'wind_direction', 'wind_speed', 'user_defined']
@@ -213,7 +214,7 @@ def getSampleCatTreeChildren(request):
                     myNode1['children'].append(myNode2)
                 myNode.append(myNode1)
 
-        elif field in soil:
+        elif field in soil and pType == 'soil':
             table_field = 'soil__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -242,7 +243,7 @@ def getSampleCatTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in air:
+        elif field in air and pType == 'air':
             table_field = 'air__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -271,7 +272,7 @@ def getSampleCatTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in water:
+        elif field in water and pType == 'water':
             table_field = 'water__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -300,7 +301,7 @@ def getSampleCatTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in human_gut:
+        elif field in human_gut and pType == 'human_gut':
             table_field = 'human_gut__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -329,7 +330,7 @@ def getSampleCatTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in human_associated:
+        elif field in human_associated and pType == 'human_associated':
             table_field = 'human_associated__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -358,7 +359,7 @@ def getSampleCatTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in microbial:
+        elif field in microbial and pType == 'microbial':
             table_field = 'microbial__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -529,6 +530,7 @@ def getSampleQuantTreeChildren(request):
 
     if request.is_ajax():
         field = request.GET["field"]
+        pType = request.GET["pType"]
         mimark = ['latitude', 'longitude', 'elevation']
         soil = ['samp_size', 'samp_weight_dna_ext', 'rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration', 'pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B', 'bulk_density', 'porosity', 'slope_gradient', 'water_content_soil', 'annual_season_precpt', 'annual_season_temp']
         air = ['barometric_press', 'carb_dioxide', 'carb_monoxide', 'chem_administration', 'elev', 'humidity', 'methane', 'organism_count', 'oxy_stat_samp', 'oxygen', 'perturbation', 'pollutants', 'rel_to_oxygen', 'resp_part_matter', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_sotre_temp', 'solar_irradiance', 'temp', 'ventilation_rate', 'ventiliation_type', 'volatile_org_comp', 'wind_direction', 'wind_speed', 'user_defined']
@@ -568,8 +570,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-
-        elif field in soil:
+        elif field in soil and pType == 'soil':
             table_field = 'soil__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -600,7 +601,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in water:
+        elif field in water and pType == 'water':
             table_field = 'water__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -631,7 +632,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in air:
+        elif field in air and pType == 'air':
             table_field = 'air__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -662,7 +663,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in human_gut:
+        elif field in human_gut and pType == 'human_gut':
             table_field = 'human_gut__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -693,7 +694,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in human_associated:
+        elif field in human_associated and pType == 'human_associated':
             table_field = 'human_associated__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))
@@ -724,7 +725,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in microbial:
+        elif field in microbial and pType == 'microbial':
             table_field = 'microbial__' + field
             exclude_list = []
             exclude_list.append(Q(**{table_field: 'null'}))

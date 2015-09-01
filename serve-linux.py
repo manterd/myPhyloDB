@@ -3,13 +3,10 @@ import os
 import os.path
 import sys
 import signal
-import logging
 
 import cherrypy
 from cherrypy.process import plugins
-from cherrypy import _cplogging, _cperror
 from django.core.handlers.wsgi import WSGIHandler
-from django.http import HttpResponseServerError
 import webbrowser
 import multiprocessing as mp
 
@@ -63,50 +60,8 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         staticpath = os.path.split(staticpath)[0]
         staticpath = os.path.join(staticpath, 'media')
 
-        cherrypy.tree.graft(HTTPLogger(WSGIHandler()))
-        
         static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
         cherrypy.tree.mount(static_handler, '/media')
-
-
-class HTTPLogger(_cplogging.LogManager):
-    def __init__(self, app):
-        _cplogging.LogManager.__init__(self, id(self), cherrypy.log.logger_root)
-        self.app = app
-
-    def __call__(self, environ, start_response):
-        try:
-            response = self.app(environ, start_response)
-            self.access(environ, response)
-            return response
-        except:
-            self.error(traceback=True)
-            return HttpResponseServerError(_cperror.format_exc())
-
-    def access(self, environ, response):
-        atoms = {'h': environ.get('REMOTE_ADDR', ''),
-                 'l': '-',
-                 'u': "-",
-                 't': self.time(),
-                 'r': "%s %s %s" % (environ['REQUEST_METHOD'], environ['REQUEST_URI'], environ['SERVER_PROTOCOL']),
-                 's': response.status_code,
-                 'b': str(len(response.content)),
-                 'f': environ.get('HTTP_REFERER', ''),
-                 'a': environ.get('HTTP_USER_AGENT', ''),
-                 }
-        for k, v in atoms.items():
-            if isinstance(v, unicode):
-                v = v.encode('utf8')
-            elif not isinstance(v, str):
-                v = str(v)
-
-            v = repr(v)[1:-1]
-            atoms[k] = v.replace('"', '\\"')
-
-        try:
-            self.access_log.log(logging.INFO, self.access_log_format % atoms)
-        except:
-            self.error(traceback=True)
 
 
 def signal_handler(signal, frame):
@@ -114,9 +69,8 @@ def signal_handler(signal, frame):
     cherrypy.engine.exit()
     sys.exit(0)
 
+
 signal.signal(signal.SIGINT, signal_handler)
-
-
 if __name__ == '__main__':
     mp.freeze_support()
     Server().run()

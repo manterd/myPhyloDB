@@ -197,7 +197,7 @@ def parse_sample(Document, p_uuid, path, pType):
                 wanted_keys = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6', 'usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
                 userDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
                 m = User(projectid=project, sampleid=sample, **userDict)
-                m.save()  # Keeping user independent for now
+                m.save()
 
     try:
         Document.seek(0)
