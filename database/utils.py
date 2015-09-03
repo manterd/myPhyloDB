@@ -42,8 +42,7 @@ def remove_list(request):
 
 def remove_proj(p_uuid):
     q = Project.objects.get(projectid=p_uuid)
-    path = "/".join(['uploads', str(q.projectid)])
-    shutil.rmtree(path)
+    shutil.rmtree(str(q.path))
     Project.objects.get(projectid=p_uuid).delete()
 
 

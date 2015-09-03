@@ -5,7 +5,7 @@ import simplejson
 from django.http import HttpResponse
 from models import Project, Reference, Sample, Soil, Human_Gut, Microbial, User, Human_Associated, Air, Water
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
-from utils import remove_proj
+from utils import remove_proj, purge
 from uuid import uuid4
 import numpy as np
 from numpy import *
@@ -40,6 +40,14 @@ def mothur(dest):
     shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
 
     shutil.rmtree('mothur/temp')
+
+    purge('mothur/reference/align', '.8mer')
+    purge('mothur/reference/taxonomy', 'numNonZero')
+    purge('mothur/reference/taxonomy', '.8mer.prob')
+    purge('mothur/reference/taxonomy', '.tree.sum')
+    purge('mothur/reference/taxonomy', '.tree.train')
+    purge('mothur/reference/template', '.8mer')
+    purge('mothur/reference/template', '.summary')
 
     for fl in glob.glob("*.logfile"):
         os.remove(fl)
@@ -428,8 +436,13 @@ def reanalyze(request):
             shutil.copy('% s/project.csv' % dest, '% s/project.csv' % mothurdest)
             shutil.copy('% s/sample.csv' % dest, '% s/sample.csv' % mothurdest)
 
+            remove_proj(p_uuid)
+
             if not os.path.exists(dest):
                 os.makedirs(dest)
+
+            shutil.copy('% s/project.csv' % mothurdest, '% s/project.csv' % dest)
+            shutil.copy('% s/sample.csv' % mothurdest, '% s/sample.csv' % dest)
 
             try:
                 mothur(dest)
@@ -440,15 +453,13 @@ def reanalyze(request):
                     content_type="application/json"
                 )
 
-            remove_proj(p_uuid)
-
-            with open('mothur/temp/project.csv', 'rb') as file1:
+            with open('% s/project.csv' % dest, 'rb') as file1:
                 parse_project(file1, dest, p_uuid, pType)
 
-            with open('mothur/temp/sample.csv', 'rb') as file2:
+            with open('% s/sample.csv' % dest, 'rb') as file2:
                 parse_sample(file2, p_uuid, dest, pType)
 
-            with open('mothur/temp/mothur.batch', 'rb') as file7:
+            with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
                 parse_reference(p_uuid, dest, file7, raw)
 

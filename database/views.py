@@ -13,7 +13,7 @@ from django.template import RequestContext
 from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4, UploadForm5
 from models import Project, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
-from utils import handle_uploaded_file, remove_list, remove_proj, purge
+from utils import handle_uploaded_file, remove_list, remove_proj
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 
@@ -489,14 +489,6 @@ def reprocess(request):
         handle_uploaded_file(taxonomyFile, 'mothur/reference/taxonomy', taxonomyDB)
     except:
         placeholder = ''
-
-    purge('mothur/reference/align', '.8mer')
-    purge('mothur/reference/taxonomy', 'numNonZero')
-    purge('mothur/reference/taxonomy', '.8mer.prob')
-    purge('mothur/reference/taxonomy', '.tree.sum')
-    purge('mothur/reference/taxonomy', '.tree.train')
-    purge('mothur/reference/template', '.8mer')
-    purge('mothur/reference/template', '.summary')
 
     alignDB = sorted(os.listdir('mothur/reference/align/'))
     templateDB = sorted(os.listdir('mothur/reference/template/'))
