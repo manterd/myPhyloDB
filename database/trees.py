@@ -926,39 +926,96 @@ def getTaxaTreeChildren(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def makeReproTree(request):
-    myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
-    projects = Reference.objects.all()
+def makeUpdateTree(request):
+    myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    raw = Reference.objects.filter(raw=True).values_list('projectid')
+    projects = Project.objects.all().filter(projectid__in=raw)
 
     for project in projects:
         myNode = {
-            'title': project.projectid.project_name,
-            'tooltip': project.projectid.project_desc,
-            'id': project.projectid.projectid,
+            'title': "Project: " + str(project.project_name),
+            'tooltip': project.project_desc,
+            'isFolder': True,
+            'hideCheckbox': True,
+            'children': []
+        }
+
+        refids = project.reference_set.all()
+        for ref in refids:
+            myNode1={
+                'title': "Path: " + str(ref.path),
+                'tooltip': ref.projectid.project_desc,
+                'id': ref.refid,
+                'isFolder': True,
+                'children': []
+            }
+
+            myNode['children'].append(myNode1)
+
+        myTree['children'].append(myNode)
+
+    # Convert result list to a JSON string
+    res = simplejson.dumps(myTree, encoding="Latin-1")
+
+    # Support for the JSONP protocol.
+    response_dict = {}
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+    response_dict = {}
+    response_dict.update({'children': myTree})
+    return HttpResponse(response_dict, content_type='application/javascript')
+
+
+def makeReproTree(request):
+    myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    raw = Reference.objects.filter(raw=True).values_list('projectid')
+    projects = Project.objects.all().filter(projectid__in=raw)
+
+    for project in projects:
+        myNode = {
+            'title': "Project: " + str(project.project_name),
+            'tooltip': project.project_desc,
             'isFolder': True,
             'children': []
         }
-        myNode1={
-            'title': project.alignDB,
-            'tooltip': 'Current align file...',
-            'hideCheckbox': True,
-            'isFolder': False
-        }
-        myNode['children'].append(myNode1)
-        myNode2={
-            'title': project.templateDB,
-            'tooltip': 'Current template file...',
-            'hideCheckbox': True,
-            'isFolder': False
-        }
-        myNode['children'].append(myNode2)
-        myNode3={
-            'title': project.taxonomyDB,
-            'tooltip': 'Current taxonomy file...',
-            'hideCheckbox': True,
-            'isFolder': False
-        }
-        myNode['children'].append(myNode3)
+
+        refids = project.reference_set.all()
+        for ref in refids:
+            myNode1={
+                'title': "Path: " + str(ref.path),
+                'tooltip': ref.projectid.project_desc,
+                'id': ref.refid,
+                'isFolder': True,
+                'children': []
+            }
+
+            myNode2={
+                'title': ref.alignDB,
+                'tooltip': 'Current align file...',
+                'hideCheckbox': True,
+                'isFolder': False
+            }
+            myNode1['children'].append(myNode2)
+
+            myNode3={
+                'title': ref.templateDB,
+                'tooltip': 'Current template file...',
+                'hideCheckbox': True,
+                'isFolder': False
+            }
+            myNode1['children'].append(myNode3)
+
+            myNode4={
+                'title': ref.taxonomyDB,
+                'tooltip': 'Current taxonomy file...',
+                'hideCheckbox': True,
+                'isFolder': False
+            }
+            myNode1['children'].append(myNode4)
+            myNode['children'].append(myNode1)
+
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string

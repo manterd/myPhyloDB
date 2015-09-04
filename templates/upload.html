@@ -159,15 +159,16 @@
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
 
-    <h2>List of previously uploaded projects:</h2>
+    <h2>List of previous uploads:</h2>
     <form method="post" action="{% url 'upload' %}">
         {% csrf_token %}
         <table>
             <td>
                 {% if projects %}
                     {% for project in projects %}
-                        <input name="chkbx" type="checkbox" value="{{ project.projectid }}"/>
-                        Project: {{ project.project_name }} (UUID: {{ project.projectid }})<br>
+                        <input name="chkbx" type="checkbox" value="{{ project.path }}"/>
+                        Project: {{ project.projectid.project_name }}<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Path: {{ project.path }})<br>
                         <br>
                     {% endfor %}
                 {% else %}

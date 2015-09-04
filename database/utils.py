@@ -4,7 +4,7 @@ import os
 import re
 import shutil
 from collections import defaultdict
-from models import Project, Profile
+from models import Project, Reference, Profile
 
 
 def ordered_set(seq, idfun=None):
@@ -34,16 +34,25 @@ def handle_uploaded_file(f, path, name):
 def remove_list(request):
     items = request.POST.getlist('chkbx')
     for item in items:
-        q = Project.objects.get(projectid=item)
-        path = "/".join(['uploads', str(q.projectid)])
+        shutil.rmtree(item)
+        p_uuid = Reference.objects.get(path=item).projectid.projectid
+        Reference.objects.get(path=item).delete()
+
+        if not Reference.objects.filter(projectid_id=p_uuid).exists():
+            Project.objects.get(projectid=p_uuid).delete()
+            path = "/".join(["uploads", str(p_uuid)])
+            shutil.rmtree(path)
+
+
+def remove_proj(path):
+    shutil.rmtree(path)
+    p_uuid = Reference.objects.get(path=path).projectid.projectid
+    Reference.objects.get(path=path).delete()
+
+    if not Reference.objects.filter(projectid_id=p_uuid).exists():
+        Project.objects.get(projectid=p_uuid).delete()
+        path = "/".join(["uploads", str(p_uuid)])
         shutil.rmtree(path)
-        Project.objects.get(projectid=item).delete()
-
-
-def remove_proj(p_uuid):
-    q = Project.objects.get(projectid=p_uuid)
-    shutil.rmtree(str(q.path))
-    Project.objects.get(projectid=p_uuid).delete()
 
 
 def multidict(ordered_pairs):

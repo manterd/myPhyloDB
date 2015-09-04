@@ -6,33 +6,55 @@
 
 
 {% block javascript %}
+    <script>
+        var selNodes = "";
+        var selKeys = "";
+        $(function () {
+            $("#tree").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/makeUpdateTree/",
+                    dataType: "jsonp",
+                    data: {}
+                },
+                onSelect: function (select, node) {
+                    selNodes = node.tree.getSelectedNodes();
+                    selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                        return node.data.id;
+                    });
+                    $('#ids').val(selKeys);
+                }
+            });
+
+            $("#clearMeta").click(function () {
+                $("#tree").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+        });
+
+    </script>
 {% endblock javascript %}
 
 {% block my_content %}
 
+    <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
+            <tr>
+                <th>Select project path to update:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            </tr>        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree"></div>
+            </td>
+        </tr>
+    </table>
+    <br><br>
+
     <form action="{% url 'update' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <h2>Select a Project for Updating:</h2>
-        <table border="0" cellspacing="0" cellpadding="5">
-            <tr>
-                <td bgcolor="white">
-                    <div>{{ form5.project }}</div>
-                </td>
-                <td bgcolor="white">
-                    <-- Choose a Project
-                </td>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <div>{{ form5.type }}</div>
-                </td>
-                <td bgcolor="white">
-                    <-- Choose a Project Type
-                </td>
-            </tr>
-        </table>
-        <br>
+        <label><textarea id="ids" name="refid" style="display:none"></textarea></label>
+
         <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
             <tr>
                 <th colspan="2">Upload new meta files:</th>

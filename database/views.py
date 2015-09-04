@@ -11,11 +11,12 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4, UploadForm5
-from models import Project, Sample, Species
+from models import Project, Reference, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+from uuid import uuid4
 
 
 rep_project = ''
@@ -48,7 +49,7 @@ def upload(request):
                 p_uuid = projectid(file1)
             except Exception as e:
                 print("Error with project file: " + str(e))
-                projects = Project.objects.all().order_by('project_name')
+                projects = Reference.objects.all().order_by('path')
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -66,16 +67,38 @@ def upload(request):
             timestamp = ".".join([str(hour), str(minute), str(second)])
             datetimestamp = "_".join([str(date), str(timestamp)])
             dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
+            refid = uuid4().hex
 
             try:
                 parse_project(file1, dest, p_uuid, pType)
             except Exception as e:
                 print("Error with project file: " + str(e))
                 try:
-                    remove_proj(p_uuid)
+                    remove_proj(dest)
                 except Exception as e:
                     print("Couldn't delete project: " + str(e))
-                projects = Project.objects.all().order_by('project_name')
+                projects = Reference.objects.all().order_by('path')
+                return render_to_response(
+                    'upload.html',
+                    {'projects': projects,
+                     'form1': UploadForm1,
+                     'form2': UploadForm2,
+                     'form3': UploadForm3,
+                     'error': "There was an error parsing your Project file"},
+                    context_instance=RequestContext(request)
+                )
+
+            try:
+                file7 = 'blank'
+                raw = False
+                parse_reference(p_uuid, refid, dest, file7, raw)
+            except Exception as e:
+                print("Error with project file: " + str(e))
+                try:
+                    remove_proj(dest)
+                except Exception as e:
+                    print("Couldn't delete project: " + str(e))
+                projects = Reference.objects.all().order_by('path')
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -88,11 +111,11 @@ def upload(request):
 
             file2 = request.FILES['docfile2']
             try:
-                parse_sample(file2, p_uuid, dest, pType)
+                parse_sample(file2, p_uuid, refid, dest, pType)
             except Exception as e:
                 print("Error with sample file: " + str(e))
-                remove_proj(p_uuid)
-                projects = Project.objects.all().order_by('project_name')
+                remove_proj(dest)
+                projects = Reference.objects.all().order_by('path')
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -104,10 +127,6 @@ def upload(request):
                 )
 
             if form2.is_valid():
-                file7 = 'blank'
-                raw = False
-                parse_reference(p_uuid, dest, file7, raw)
-
                 taxonomy = ".".join(["mothur", "taxonomy"])
                 file3 = request.FILES['docfile3']
                 handle_uploaded_file(file3, dest, taxonomy)
@@ -117,8 +136,8 @@ def upload(request):
                         parse_taxonomy(file3)
                 except Exception as e:
                     print("Error with taxonomy file: " + str(e))
-                    remove_proj(p_uuid)
-                    projects = Project.objects.all().order_by('project_name')
+                    remove_proj(dest)
+                    projects = Reference.objects.all().order_by('path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -136,11 +155,11 @@ def upload(request):
                 try:
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                         with open('% s/mothur.shared' % dest, 'rb') as file4:
-                            parse_profile(file3, file4, p_uuid)
+                            parse_profile(file3, file4, p_uuid, refid)
                 except Exception as e:
                     print("Error with shared file: " + str(e))
-                    remove_proj(p_uuid)
-                    projects = Project.objects.all().order_by('project_name')
+                    remove_proj(dest)
+                    projects = Reference.objects.all().order_by('path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -169,14 +188,14 @@ def upload(request):
                 handle_uploaded_file(file7, mothurdest, batch)
 
                 raw = True
-                parse_reference(p_uuid, dest, file7, raw)
+                parse_reference(p_uuid, refid, dest, file7, raw)
 
                 try:
                     mothur(dest)
                 except Exception as e:
                     print("Encountered error with Mothur: " + str(e))
-                    remove_proj(p_uuid)
-                    projects = Project.objects.all().order_by('project_name')
+                    remove_proj(dest)
+                    projects = Reference.objects.all().order_by('path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -192,8 +211,8 @@ def upload(request):
                         parse_taxonomy(file3)
                 except Exception as e:
                     print("Error with post-mothur taxonomy file: " + str(e))
-                    remove_proj(p_uuid)
-                    projects = Project.objects.all().order_by('project_name')
+                    remove_proj(dest)
+                    projects = Reference.objects.all().order_by('path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -207,11 +226,11 @@ def upload(request):
                 try:
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                         with open('% s/mothur.shared' % dest, 'rb') as file4:
-                            parse_profile(file3, file4, p_uuid)
+                            parse_profile(file3, file4, p_uuid, refid)
                 except Exception as e:
                     print("Error with parsing post-mothur profile: " + str(e))
-                    remove_proj(p_uuid)
-                    projects = Project.objects.all().order_by('project_name')
+                    remove_proj(dest)
+                    projects = Reference.objects.all().order_by('path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -228,7 +247,7 @@ def upload(request):
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)
 
-    projects = Project.objects.all().order_by('project_name')
+    projects = Reference.objects.all().order_by('path')
     return render_to_response(
         'upload.html',
         {'projects': projects,
@@ -510,14 +529,14 @@ def update(request):
     state = ''
 
     if form5.is_valid():
+        refid = request.POST['refid']
         file1 = request.FILES['docfile11']
         file2 = request.FILES['docfile12']
-        p_uuid = form5.cleaned_data['project'].pk
-        pType = form5.cleaned_data['type']
 
-        items = Project.objects.filter(projectid=p_uuid).values_list('path', 'project_name')
-        dest = items[0][0]
-        name = items[0][1]
+        project = Reference.objects.get(refid=refid)
+        p_uuid = project.projectid.projectid
+        pType = project.projectid.projectType
+        dest = project.path
 
         try:
             parse_project(file1, dest, p_uuid, pType)
@@ -541,7 +560,7 @@ def update(request):
                 context_instance=RequestContext(request)
             )
 
-        state = str(name) + ' is finished parsing!'
+        state = 'Path: ' + str(dest) + ' is finished parsing!'
 
     return render_to_response(
         'update.html',

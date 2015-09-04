@@ -54,7 +54,6 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         import HTMLParser
         import Cookie
         import django.contrib.sessions.serializers
-        #import Tkinter
 
         cherrypy.tree.graft(WSGIHandler())
         staticpath = os.path.abspath(self.base_dir)

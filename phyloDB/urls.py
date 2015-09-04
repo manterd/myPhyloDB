@@ -25,6 +25,7 @@ urlpatterns = patterns('',
 
     url(r'^getProjectTree/$', 'database.trees.getProjectTree', name='getProjectTree'),
     url(r'^getProjectTreeChildren/$', 'database.trees.getProjectTreeChildren', name='getProjectTreeChildren'),
+    url(r'^makeUpdateTree/$', 'database.trees.makeUpdateTree', name='makeUpdateTree'),
     url(r'^makeReproTree/$', 'database.trees.makeReproTree', name='makeReproTree'),
 
     url(r'^getSampleCatTree/$', 'database.trees.getSampleCatTree', name='getSampleCatTree'),

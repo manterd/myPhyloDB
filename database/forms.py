@@ -1,5 +1,5 @@
 from django import forms
-from models import Project
+from models import Reference
 
 
 class UploadForm1(forms.Form):
@@ -31,5 +31,3 @@ class UploadForm4(forms.Form):
 class UploadForm5(forms.Form):
     docfile11 = forms.FileField(label='Select meta_Project.csv file:')
     docfile12 = forms.FileField(label='Select meta_Sample.csv file:')
-    project = forms.ModelChoiceField(queryset=Project.objects.all().order_by('project_name'))
-    type = forms.ChoiceField(widget=forms.Select, choices=(('soil', 'Soil'), ('human_associated', 'Human Associated'), ('human_gut', 'Human Gut'), ('air', 'Air'), ('water', 'Water'), ('microbial', 'Microbial')))
