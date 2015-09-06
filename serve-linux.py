@@ -56,12 +56,24 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         import django.contrib.sessions.serializers
 
         cherrypy.tree.graft(WSGIHandler())
+
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]
         staticpath = os.path.join(staticpath, 'media')
-
         static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
         cherrypy.tree.mount(static_handler, '/media')
+
+        staticpath = os.path.abspath(self.base_dir)
+        staticpath = os.path.split(staticpath)[0]
+        staticpath = os.path.join(staticpath, 'sample_files')
+        static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
+        cherrypy.tree.mount(static_handler, '/sample_files')
+
+        staticpath = os.path.abspath(self.base_dir)
+        staticpath = os.path.split(staticpath)[0]
+        staticpath = os.path.join(staticpath, 'instructions')
+        static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
+        cherrypy.tree.mount(static_handler, '/instructions')
 
 
 def signal_handler(signal, frame):

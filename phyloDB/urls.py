@@ -42,27 +42,6 @@ urlpatterns = patterns('',
     url(r'^getCatPCoAData', 'database.pcoa_graphs.getCatPCoAData', name='getCatPCoAData'),
     url(r'^getQuantPCoAData', 'database.pcoa_graphs.getQuantPCoAData', name='getQuantPCoAData'),
 
-    url(r'^instructions', 'database.views.instructions', name='instructions'),
-
-    url(r'^project_file1', 'database.views.project_file1', name='project_file1'),
-    url(r'^sample_file1', 'database.views.sample_file1', name='sample_file1'),
-    url(r'^shared_file', 'database.views.shared_file', name='shared_file'),
-    url(r'^taxonomy_file', 'database.views.taxonomy_file', name='taxonomy_file'),
-
-    url(r'^project_file2', 'database.views.project_file2', name='project_file2'),
-    url(r'^sample_file2', 'database.views.sample_file2', name='sample_file2'),
-    url(r'^sff', 'database.views.sff', name='sff'),
-    url(r'^oligos', 'database.views.oligos', name='oligos'),
-    url(r'^batch1', 'database.views.batch1', name='batch1'),
-    url(r'^batch2', 'database.views.batch2', name='batch2'),
-
-    url(r'^soil', 'database.views.soil', name='soil'),
-    url(r'^human_assoc', 'database.views.human_assoc', name='human_assoc'),
-    url(r'^human_gut', 'database.views.human_gut', name='human_gut'),
-    url(r'^air', 'database.views.air', name='air'),
-    url(r'^water', 'database.views.water', name='water'),
-    url(r'^microbial', 'database.views.microbial', name='microbial'),
-
     url(r'^statusANOVA', 'database.anova_graphs.statusANOVA', name='statusANOVA'),
     url(r'^statusPCoA', 'database.pcoa_graphs.statusPCoA', name='statusPCoA'),
     url(r'^status', 'database.parsers.status', name='status'),

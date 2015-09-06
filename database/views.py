@@ -7,7 +7,7 @@ import pandas as pd
 import pickle
 import simplejson
 from django.core.servers.basehttp import FileWrapper
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4, UploadForm5
@@ -49,7 +49,7 @@ def upload(request):
                 p_uuid = projectid(file1)
             except Exception as e:
                 print("Error with project file: " + str(e))
-                projects = Reference.objects.all().order_by('path')
+                projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -77,7 +77,7 @@ def upload(request):
                     remove_proj(dest)
                 except Exception as e:
                     print("Couldn't delete project: " + str(e))
-                projects = Reference.objects.all().order_by('path')
+                projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -98,7 +98,7 @@ def upload(request):
                     remove_proj(dest)
                 except Exception as e:
                     print("Couldn't delete project: " + str(e))
-                projects = Reference.objects.all().order_by('path')
+                projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -115,7 +115,7 @@ def upload(request):
             except Exception as e:
                 print("Error with sample file: " + str(e))
                 remove_proj(dest)
-                projects = Reference.objects.all().order_by('path')
+                projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -137,7 +137,7 @@ def upload(request):
                 except Exception as e:
                     print("Error with taxonomy file: " + str(e))
                     remove_proj(dest)
-                    projects = Reference.objects.all().order_by('path')
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -159,7 +159,7 @@ def upload(request):
                 except Exception as e:
                     print("Error with shared file: " + str(e))
                     remove_proj(dest)
-                    projects = Reference.objects.all().order_by('path')
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -195,7 +195,7 @@ def upload(request):
                 except Exception as e:
                     print("Encountered error with Mothur: " + str(e))
                     remove_proj(dest)
-                    projects = Reference.objects.all().order_by('path')
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -212,7 +212,7 @@ def upload(request):
                 except Exception as e:
                     print("Error with post-mothur taxonomy file: " + str(e))
                     remove_proj(dest)
-                    projects = Reference.objects.all().order_by('path')
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -230,7 +230,7 @@ def upload(request):
                 except Exception as e:
                     print("Error with parsing post-mothur profile: " + str(e))
                     remove_proj(dest)
-                    projects = Reference.objects.all().order_by('path')
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -247,7 +247,7 @@ def upload(request):
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)
 
-    projects = Reference.objects.all().order_by('path')
+    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
     return render_to_response(
         'upload.html',
         {'projects': projects,
@@ -331,159 +331,6 @@ def getCookie(request):
         return HttpResponse('yes', content_type='application/text')
     except:
         return HttpResponse('no', content_type='application/text')
-
-
-def instructions(request):
-    filename = "instructions/Manual.pdf"
-    wrapper = FileWrapper(file(filename, 'rb'))
-    response = HttpResponse(wrapper, content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="Manual.pdf"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def project_file1(request):
-    filename = "sample_files/Example1.project.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="Example1.project.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def sample_file1(request):
-    filename = "sample_files/Example1.sample.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="Example1.sample.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def shared_file(request):
-    filename = "sample_files/final.pds.wang.tx.shared"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="final.shared"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def taxonomy_file(request):
-    filename = "sample_files/final.pds.wang.tx.1.cons.taxonomy"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="final.taxonomy"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def project_file2(request):
-    filename = "sample_files/Example2.project.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="Example2.project.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def sample_file2(request):
-    filename = "sample_files/Example2.sample.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="Example2.sample.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def sff(request):
-    filename = "sample_files/Example2.sff"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Example2.sff"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def oligos(request):
-    filename = "sample_files/Example2.oligos"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Example2.oligos"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def batch1(request):
-    filename = "sample_files/Example2.mothur_win.batch"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Example2.mothur_win.batch"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def batch2(request):
-    filename = "sample_files/Example2.mothur_linux.batch"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Example2.mothur_linux.batch"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def soil(request):
-    filename = "sample_files/Soil.sample.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Soil.sample.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def human_assoc(request):
-    filename = "sample_files/Human_assoc.sample.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Human_assoc.sample.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def human_gut(request):
-    filename = "sample_files/Human_gut.sample.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Human_gut.sample.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def air(request):
-    filename = "sample_files/Air.sample.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Air.sample.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def water(request):
-    filename = "sample_files/Water.sample.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Water.sample.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
-
-
-def microbial(request):
-    filename = "sample_files/Microbial.sample.csv"
-    wrapper = FileWrapper(file(filename))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename="Microbial.sample.csv"'
-    response['Content-Length'] = os.path.getsize(filename)
-    return response
 
 
 @login_required(login_url='/myPhyloDB/login/')
