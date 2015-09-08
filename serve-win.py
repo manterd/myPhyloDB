@@ -21,6 +21,7 @@ class Server(object):
             'server.thread_pool': 10,
             'checker.on': False,
             'engine.autoreload.on': False,
+            'server.max_request_body_size': 5368709120,
         }
 
         cherrypy.config.update(conf)

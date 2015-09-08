@@ -10,7 +10,7 @@ from django.core.servers.basehttp import FileWrapper
 from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4, UploadForm5
+from forms import UploadForm1, UploadForm2, UploadForm3, UploadForm4, UploadForm5, UploadForm6
 from models import Project, Reference, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
@@ -41,6 +41,7 @@ def upload(request):
         form1 = UploadForm1(request.POST, request.FILES)
         form2 = UploadForm2(request.POST, request.FILES)
         form3 = UploadForm3(request.POST, request.FILES)
+        form6 = UploadForm6(request.POST, request.FILES)
 
         if form1.is_valid():
             try:
@@ -56,6 +57,7 @@ def upload(request):
                      'form1': UploadForm1,
                      'form2': UploadForm2,
                      'form3': UploadForm3,
+                     'form6': UploadForm6,
                      'error': "There was an error parsing your Project file"},
                     context_instance=RequestContext(request)
                 )
@@ -84,6 +86,7 @@ def upload(request):
                      'form1': UploadForm1,
                      'form2': UploadForm2,
                      'form3': UploadForm3,
+                     'form6': UploadForm6,
                      'error': "There was an error parsing your Project file"},
                     context_instance=RequestContext(request)
                 )
@@ -105,6 +108,7 @@ def upload(request):
                      'form1': UploadForm1,
                      'form2': UploadForm2,
                      'form3': UploadForm3,
+                     'form6': UploadForm6,
                      'error': "There was an error parsing your Project file"},
                     context_instance=RequestContext(request)
                 )
@@ -122,6 +126,7 @@ def upload(request):
                      'form1': UploadForm1,
                      'form2': UploadForm2,
                      'form3': UploadForm3,
+                     'form6': UploadForm6,
                      'error': "There was an error parsing your Sample file"},
                     context_instance=RequestContext(request)
                 )
@@ -144,6 +149,7 @@ def upload(request):
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'form3': UploadForm3,
+                         'form6': UploadForm6,
                          'error': "There was an error parsing your Taxonomy file"},
                         context_instance=RequestContext(request)
                     )
@@ -166,6 +172,7 @@ def upload(request):
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'form3': UploadForm3,
+                         'form6': UploadForm6,
                          'error': "There was an error parsing your Shared file"},
                         context_instance=RequestContext(request)
                     )
@@ -202,6 +209,7 @@ def upload(request):
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'form3': UploadForm3,
+                         'form6': UploadForm6,
                          'error': "There was an error with Mothur"},
                         context_instance=RequestContext(request)
                     )
@@ -219,6 +227,7 @@ def upload(request):
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'form3': UploadForm3,
+                         'form6': UploadForm6,
                          'error': "There was an error parsing your Taxonomy file (post-Mothur)"},
                         context_instance=RequestContext(request)
                     )
@@ -237,9 +246,93 @@ def upload(request):
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'form3': UploadForm3,
+                         'form6': UploadForm6,
                          'error': "There was an error parsing your Profile (post-Mothur)"},
                         context_instance=RequestContext(request)
                     )
+
+            elif form6.is_valid():
+                file_list = request.FILES.getlist('files')
+
+                for each in file_list:
+                    print each
+
+                mothurdest = 'mothur/temp'
+                if not os.path.exists(mothurdest):
+                    os.makedirs(mothurdest)
+
+                fastaq = 'temp.files'
+                file8 = request.FILES['docfile13']
+                handle_uploaded_file(file8, mothurdest, fastaq)
+
+                file_list = request.FILES.getlist('files')
+                print 'file_list:', file_list
+                #for afile in file_list:
+                #    print 'afile:', afile
+                #    fname = afile.name
+                #    print 'fname:', fname
+                #    handle_uploaded_file(afile, mothurdest, fname)
+
+                #batch = 'mothur.batch'
+                #file9 = request.FILES['docfile14']
+                #handle_uploaded_file(file9, mothurdest, batch)
+
+                #raw = True
+                #parse_reference(p_uuid, refid, dest, file7, raw)
+
+                #try:
+                #    mothur(dest)
+                #except Exception as e:
+                #    print("Encountered error with Mothur: " + str(e))
+                #    remove_proj(dest)
+                #    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                #    return render_to_response(
+                #        'upload.html',
+                #        {'projects': projects,
+                #         'form1': UploadForm1,
+                #         'form2': UploadForm2,
+                #         'form3': UploadForm3,
+                #         'form6': UploadForm6,
+                #         'error': "There was an error with Mothur"},
+                #        context_instance=RequestContext(request)
+                #    )
+
+                #try:
+                #    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                #        parse_taxonomy(file3)
+                #except Exception as e:
+                #    print("Error with post-mothur taxonomy file: " + str(e))
+                #    remove_proj(dest)
+                #    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                #    return render_to_response(
+                #        'upload.html',
+                #        {'projects': projects,
+                #         'form1': UploadForm1,
+                #         'form2': UploadForm2,
+                #         'form3': UploadForm3,
+                #         'form6': UploadForm6,
+                #         'error': "There was an error parsing your Taxonomy file (post-Mothur)"},
+                #        context_instance=RequestContext(request)
+                #    )
+
+                #try:
+                #    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                #        with open('% s/mothur.shared' % dest, 'rb') as file4:
+                #            parse_profile(file3, file4, p_uuid, refid)
+                #except Exception as e:
+                #    print("Error with parsing post-mothur profile: " + str(e))
+                #    remove_proj(dest)
+                #    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                #    return render_to_response(
+                #        'upload.html',
+                #        {'projects': projects,
+                #         'form1': UploadForm1,
+                #         'form2': UploadForm2,
+                #         'form3': UploadForm3,
+                #         'form6': UploadForm6,
+                #         'error': "There was an error parsing your Profile (post-Mothur)"},
+                #        context_instance=RequestContext(request)
+                #    )
 
             else:
                 print ('Please check that all necessary files have been selected.')
@@ -254,6 +347,7 @@ def upload(request):
          'form1': UploadForm1,
          'form2': UploadForm2,
          'form3': UploadForm3,
+         'form6': UploadForm6,
          'error': ""},
         context_instance=RequestContext(request)
     )

@@ -1,5 +1,5 @@
 from django import forms
-from models import Reference
+from utils import MultiFileField
 
 
 class UploadForm1(forms.Form):
@@ -17,6 +17,12 @@ class UploadForm3(forms.Form):
     docfile5 = forms.FileField(label='Select sff file:')
     docfile6 = forms.FileField(label='Select Oligos file:')
     docfile7 = forms.FileField(label='Select Mothur batch file:')
+
+
+class UploadForm6(forms.Form):
+    docfile13 = forms.FileField(label='Select 3-column contig file:')
+    files = MultiFileField()
+    docfile15 = forms.FileField(label='Select Mothur batch file:')
 
 
 class UploadForm4(forms.Form):
