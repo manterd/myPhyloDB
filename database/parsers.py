@@ -26,9 +26,9 @@ def mothur(dest):
     perc = 0
 
     if os.name == 'nt':
-        subprocess.call('mothur/mothur-win/mothur.exe mothur/temp/mothur.batch')
+        subprocess.call('cd mothur/temp; mothur/mothur-win/mothur.exe mothur/temp/mothur.batch')
     else:
-        subprocess.call('mothur/mothur-linux/mothur mothur/temp/mothur.batch', shell=True)
+        subprocess.call('cd mothur/temp; mothur/mothur-linux/mothur mothur/temp/mothur.batch', shell=True)
 
     shutil.copy('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
     shutil.copy('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
@@ -39,6 +39,9 @@ def mothur(dest):
     shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
     shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
 
+    for afile in glob.glob(r'*.logfile'):
+        shutil.copy(afile, dest)
+
     shutil.rmtree('mothur/temp')
 
     purge('mothur/reference/align', '.8mer')
@@ -48,9 +51,6 @@ def mothur(dest):
     purge('mothur/reference/taxonomy', '.tree.train')
     purge('mothur/reference/template', '.8mer')
     purge('mothur/reference/template', '.summary')
-
-    for fl in glob.glob("*.logfile"):
-        os.remove(fl)
 
 
 def status(request):
