@@ -25,6 +25,7 @@
 
     <script type="text/javascript">
 
+        var source = 'mothur';
         $(function () {
             var test = '{{ error }}';
             if (test != "") {
@@ -36,6 +37,25 @@
                 $("#progressBar").show();
                 setInterval(updateStatus, 1000);
             });
+
+            $("#id_source").change(function() {
+                source = $("#id_source").val();
+                if (source == "mothur") {
+                    $("#mothur").show();
+                    $("#454").hide();
+                    $("#miseq").hide();
+                }
+                if (source == "454") {
+                    $("#mothur").hide();
+                    $("#454").show();
+                    $("#miseq").hide();
+                }
+                if (source == "miseq") {
+                    $("#mothur").hide();
+                    $("#454").hide();
+                    $("#miseq").show();
+                }
+            })
         });
 
         function updateStatus() {
@@ -66,22 +86,33 @@
 {% endblock %}
 {% block my_content %}
 
-    <h2>Upload any new data files:</h2>
+    <h2>Upload new data files:</h2>
 
     <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-
         <table width="100%" border="0" cellspacing="0" cellpadding="5">
             <tr>
-                <td colspan="2">1.) Choose your metadata files:</td>
+                <td colspan="2">1.) Select project type:</td>
+            </tr>
+            <tr>
+                <td>
+                    <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
+                        <tr>
+                            <td>Available Project Types:&nbsp;{{ form1.type }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td colspan="2">2.) Select metadata files:</td>
             </tr>
             <tr>
                 <td colspan="2">
-                    <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
-                        <tr>
-                            <th colspan="2">Metadata Files:</th>
-                        </tr>
+                    <table width="100%" border="2" cellspacing="0" cellpadding="1">
                         <tr>
                             <td>{{ form1.docfile1.label_tag }}</td>
                             <td>{{ form1.docfile1 }}</td>
@@ -95,23 +126,30 @@
             </tr>
         </table>
         <br>
-        Select data type:
-        {{ form1.type }}
-        <br>
-        <br>
+
         <table width="100%" border="0" cellspacing="0" cellpadding="5">
             <tr>
-                <td colspan="2">2.) Choose one of the following:</td>
+                <td>3.) Select data format:</td>
             </tr>
             <tr>
-                <td colspan="2"></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <table id="mothur" width="100%" border="2" cellspacing="0" cellpadding="1">
+                <td>
+                    <table width="100%" border="2" cellspacing="0" cellpadding="1">
                         <tr>
-                            <th colspan="2">Pre-processed Mothur Files:</th>
+                            <td>Available Data Formats:&nbsp;{{ form2.source }}</td>
                         </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td>4.) Select sequencing files:</td>
+            </tr>
+            <tr>
+                <td>
+                    <table id="mothur" width="100%" border="2" cellspacing="0" cellpadding="1">
                         <tr>
                             <td>{{ form2.docfile3.label_tag }}</td>
                             <td>{{ form2.docfile3 }}</td>
@@ -121,58 +159,38 @@
                             <td>{{ form2.docfile4 }}</td>
                         </tr>
                     </table>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2"></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <table id="mothur" width="100%" border="2" cellspacing="0" cellpadding="1">
+                    <table id="454" width="100%" border="2" cellspacing="0" cellpadding="1" style="display:none">
                         <tr>
-                            <th colspan="2">Raw 454 Data Files:</th>
+                            <td>{{ form2.docfile5.label_tag }}</td>
+                            <td>{{ form2.docfile5 }}</td>
                         </tr>
                         <tr>
-                            <td>{{ form3.docfile5.label_tag }}</td>
-                            <td>{{ form3.docfile5 }}</td>
+                            <td>{{ form2.docfile6.label_tag }}</td>
+                            <td>{{ form2.docfile6 }}</td>
                         </tr>
                         <tr>
-                            <td>{{ form3.docfile6.label_tag }}</td>
-                            <td>{{ form3.docfile6 }}</td>
-                        </tr>
-                        <tr>
-                            <td>{{ form3.docfile7.label_tag }}</td>
-                            <td>{{ form3.docfile7 }}</td>
+                            <td>{{ form2.docfile7.label_tag }}</td>
+                            <td>{{ form2.docfile7 }}</td>
                         </tr>
                     </table>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2"></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <table id="mothur" width="100%" border="2" cellspacing="0" cellpadding="1">
+                    <table id="miseq" width="100%" border="2" cellspacing="0" cellpadding="1" style="display:none">
                         <tr>
-                            <th colspan="2">Raw Illumina/MiSeq Data Files:</th>
-                        </tr>
-                        <tr>
-                            <td>{{ form6.docfile13.label_tag }}</td>
-                            <td>{{ form6.docfile13 }}</td>
+                            <td>{{ form2.docfile13.label_tag }}</td>
+                            <td>{{ form2.docfile13 }}</td>
                         </tr>
                         <tr>
                             <td>Select fastaq files (barcode/primers removed):</td>
                             <td><input type="file" name="files" multiple></td>
                         </tr>
                         <tr>
-                            <td>{{ form6.docfile15.label_tag }}</td>
-                            <td>{{ form6.docfile15 }}</td>
+                            <td>{{ form2.docfile15.label_tag }}</td>
+                            <td>{{ form2.docfile15 }}</td>
                         </tr>
                     </table>
                 </td>
             </tr>
         </table>
-
+        <br>
         <input id='Upload' name='Upload' type="submit" value="Upload Files"/>
     </form>
 
