@@ -56,7 +56,7 @@ def mothur(dest, source):
         shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
         shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
 
-        for afile in glob.glob(r'mothur/temp/*.fastaq'):
+        for afile in glob.glob(r'mothur/temp/*.fastq'):
             shutil.copy(afile, dest)
 
         shutil.rmtree('mothur/temp')
