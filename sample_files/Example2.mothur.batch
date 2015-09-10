@@ -63,6 +63,7 @@ summary.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.fasta, name=temp.shh
 ### Precluster ###
 ## Tunable parameters [diffs]
 pre.cluster(fasta=temp.shhh.trim.unique.good.filter.unique.fasta, name=temp.shhh.trim.unique.good.filter.names, group=temp.shhh.good.groups, diffs=2)
+summary.seqs(fasta=shhh.trim.unique.good.filter.unique.precluster.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.names, processors=6)
 
 
 ### Remove chimeras ###

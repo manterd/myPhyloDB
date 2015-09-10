@@ -58,7 +58,6 @@ summary.seqs(fasta=temp.trim.contigs.good.unique.good.filter.unique.fasta, name=
 ## Tunable parameters [diffs, processors]
 pre.cluster(fasta=temp.trim.contigs.good.unique.good.filter.unique.fasta, name=temp.trim.contigs.good.unique.good.filter.names, group=temp.contigs.good.good.groups, diffs=2, processors=6)
 summary.seqs(fasta=temp.trim.contigs.good.unique.good.filter.unique.precluster.fasta, name=temp.trim.contigs.good.unique.good.filter.unique.precluster.names, processors=6)
-system(rm *.map)
 
 
 ### Remove chimeras ###

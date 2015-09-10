@@ -76,7 +76,7 @@ def getSampleCatTree(request):
     microbial = {'title': 'Microbial', 'id': 'microbial', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     user = {'title': 'User-defined', 'id': 'user', 'tooltip': 'Category', 'isFolder': True,  'hideCheckbox': True, 'children': []}
 
-    list = ['sample_name', 'organism', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'material']
+    list = ['sample_name', 'organism', 'seq_platform', 'seq_gene', 'seq_gene_region', 'seq_for_primer', 'seq_rev_primer', 'collection_date', 'biome', 'feature', 'geo_loc_name', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'material']
     for i in range(len(list)):
         myNode = {'title': list[i], 'isFolder': True, 'tooltip': 'mimark', 'isLazy': True, 'children': []}
         mimark['children'].append(myNode)

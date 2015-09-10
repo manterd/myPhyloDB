@@ -26,9 +26,15 @@ def mothur(dest, source):
     perc = 0
 
     if os.name == 'nt':
-        subprocess.call('mothur/mothur-win/mothur.exe mothur/temp/mothur.batch')
+        try:
+            os.system('"mothur\\mothur-win\\mothur.exe mothur\\temp\\mothur.batch"')
+        except Exception as e:
+            print "Mothur failed: " + str(e)
     else:
-        subprocess.call('mothur/mothur-linux/mothur mothur/temp/mothur.batch', shell=True)
+        try:
+            os.system('"mothur/mothur-linux/mothur mothur/temp/mothur.batch"')
+        except Exception as e:
+            print "Mothur failed: " + str(e)
 
     if source == '454':
         shutil.copy('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
@@ -66,7 +72,7 @@ def mothur(dest, source):
 
     for afile in glob.glob(r'*.logfile'):
         shutil.move(afile, dest)
-        #os.remove(afile)
+
 
 def status(request):
     if request.is_ajax():
