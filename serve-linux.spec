@@ -39,7 +39,7 @@ def Datafiles(*filenames, **kw):
 
 
 db = Datafiles('dbMicrobe')
-
+cfg = Datafiles('server.cfg')
 
 def extra_datas(mydir):
     def rec_glob(p, files):
@@ -60,7 +60,7 @@ def extra_datas(mydir):
 a.datas += extra_datas('instructions')
 a.datas += extra_datas('media')
 a.datas += extra_datas('mothur/mothur-linux')
-a.datas += extra_datas('mothur/reference
+a.datas += extra_datas('mothur/reference')
 a.datas += extra_datas('R/R-Linux')
 a.datas += extra_datas('sample_files')
 a.datas += extra_datas('templates')
@@ -83,6 +83,7 @@ coll = COLLECT(exe,
                a.zipfiles,
                a.datas,
                db,
+               cfg,
                strip=None,
                upx=True,
                name='myPhyloDB'

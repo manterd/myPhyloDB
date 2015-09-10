@@ -15,6 +15,7 @@ Source: "..\..\dist\myPhyloDB\*.pyd"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\*.dll"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\*.manifest"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\*.exe"; DestDir: "{app}"; Components: Main
+Source: "..\..\dist\myPhyloDB\server.cfg"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\dbMicrobe"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
 Source: "..\..\dist\myPhyloDB\_MEI\*"; DestDir: "{app}\_MEI"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\django\*"; DestDir: "{app}\django"; Flags: recursesubdirs; Components: Main

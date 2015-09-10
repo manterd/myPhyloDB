@@ -928,7 +928,7 @@ def getTaxaTreeChildren(request):
 
 def makeUpdateTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
-    raw = Reference.objects.filter(raw=True).values_list('projectid')
+    raw = Reference.objects.values_list('projectid')
     projects = Project.objects.all().filter(projectid__in=raw).order_by('project_name')
 
     for project in projects:

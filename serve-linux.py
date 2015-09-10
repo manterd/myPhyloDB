@@ -15,16 +15,7 @@ class Server(object):
     def __init__(self):
         self.base_dir = os.path.join(os.path.abspath(os.getcwd()), "phyloDB")
 
-        conf = {
-            'server.socket_host': "0.0.0.0",
-            'server.socket_port': 8000,
-            'server.thread_pool': 10,
-            'checker.on': False,
-            'engine.autoreload.on': False,
-            'server.max_request_body_size': 5368709120,
-        }
-
-        cherrypy.config.update(conf)
+        cherrypy.config.update("server.cfg")
         DjangoAppPlugin(cherrypy.engine, self.base_dir).subscribe()
 
     def browse(self):

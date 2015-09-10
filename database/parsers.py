@@ -9,7 +9,6 @@ from utils import remove_proj, purge
 from uuid import uuid4
 import numpy as np
 from numpy import *
-import subprocess
 import glob
 import os
 import shutil
@@ -32,7 +31,7 @@ def mothur(dest, source):
             print "Mothur failed: " + str(e)
     else:
         try:
-            os.system('"mothur/mothur-linux/mothur mothur/temp/mothur.batch"')
+            os.system("mothur\/mothur-linux\/mothur mothur\/temp\/mothur.batch")
         except Exception as e:
             print "Mothur failed: " + str(e)
 
@@ -49,7 +48,7 @@ def mothur(dest, source):
         shutil.rmtree('mothur/temp')
 
     if source == 'miseq':
-        shutil.copy('mothur/temp/temp.files', '% s/temp.files' % dest)
+        shutil.copy('mothur/temp/temp.files', '% s/final.files' % dest)
         shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
         shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
         shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
@@ -149,7 +148,7 @@ def parse_reference(p_uuid, refid, path, file7, raw, source):
         m = Reference(refid=refid, projectid=project, path=path, source=source, raw=True, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref)
         m.save()
     else:
-        m = Reference(refid=refid, projectid=project, path=path, raw=False, alignDB='null', templateDB='null', taxonomyDB='null')
+        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=False, alignDB='null', templateDB='null', taxonomyDB='null')
         m.save()
 
 
@@ -182,7 +181,7 @@ def parse_sample(Document, p_uuid, refid, path, pType):
 
                 project = Project.objects.get(projectid=p_uuid)
                 ref = Reference.objects.get(refid=refid)
-                wanted_keys = ['sample_name', 'organism', 'title', 'seq_method', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'latitude', 'longitude', 'material', 'elevation']
+                wanted_keys = ['sample_name', 'organism', 'title', 'seq_platform', 'seq_gene', 'seq_gene_region', 'seq_for_primer', 'seq_rev_primer', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'latitude', 'longitude', 'material', 'elevation']
                 sampleDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
                 m = Sample(projectid=project, refid=ref, sampleid=s_uuid, **sampleDict)
                 m.save()
@@ -420,8 +419,15 @@ def reanalyze(request):
         for project in projects:
             rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
             dest = project.path
-            shutil.copy('% s/mothur.sff' % dest, '% s/temp.sff' % mothurdest)
-            shutil.copy('% s/mothur.oligos' % dest, '% s/temp.oligos' % mothurdest)
+            source = project.source
+
+            if source == '454':
+                shutil.copy('% s/mothur.sff' % dest, '% s/temp.sff' % mothurdest)
+                shutil.copy('% s/mothur.oligos' % dest, '% s/temp.oligos' % mothurdest)
+            if source == 'miseq':
+                shutil.copy('% s/final.files' % dest, '% s/temp.files' % mothurdest)
+                for afile in glob.glob(r'% s/*.fastaq' % dest):
+                    shutil.copy(afile, mothurdest)
 
             orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
             orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
@@ -457,7 +463,6 @@ def reanalyze(request):
 
             p_uuid = project.projectid.projectid
             refid = project.refid
-            source = project.source
             dest = project.path
             pType = project.projectid.projectType
 
