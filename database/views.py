@@ -1,13 +1,11 @@
 import datetime
-import csv
+import glob
 import shutil
 import os
-import re
 import pandas as pd
 import pickle
 import simplejson
-from django.core.servers.basehttp import FileWrapper
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5
@@ -86,9 +84,19 @@ def upload(request):
                 )
 
             try:
-                file7 = 'blank'
-                raw = False
-                parse_reference(p_uuid, refid, dest, file7, raw)
+                if source == 'mothur':
+                    file7 = 'blank'
+                    raw = False
+                    parse_reference(p_uuid, refid, dest, file7, raw, source)
+                elif source == '454':
+                    file7 = request.FILES['docfile7']
+                    raw = True
+                    parse_reference(p_uuid, refid, dest, file7, raw, source)
+                elif source == 'miseq':
+                    file15 = request.FILES['docfile15']
+                    raw = True
+                    parse_reference(p_uuid, refid, dest, file15, raw, source)
+
             except Exception as e:
                 print("Error with project file: " + str(e))
                 try:
@@ -165,6 +173,7 @@ def upload(request):
 
             elif source == '454':
                 mothurdest = 'mothur/temp'
+
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
@@ -180,11 +189,9 @@ def upload(request):
                 file7 = request.FILES['docfile7']
                 handle_uploaded_file(file7, mothurdest, batch)
 
-                raw = True
-                parse_reference(p_uuid, refid, dest, file7, raw)
-
                 try:
-                    mothur(dest)
+                    mothur(dest, source)
+
                 except Exception as e:
                     print("Encountered error with Mothur: " + str(e))
                     remove_proj(dest)
@@ -237,8 +244,8 @@ def upload(request):
                     os.makedirs(mothurdest)
 
                 fastaq = 'temp.files'
-                file8 = request.FILES['docfile13']
-                handle_uploaded_file(file8, mothurdest, fastaq)
+                file13 = request.FILES['docfile13']
+                handle_uploaded_file(file13, mothurdest, fastaq)
 
                 file_list = request.FILES.getlist('files')
                 for each in file_list:
@@ -246,14 +253,11 @@ def upload(request):
                     handle_uploaded_file(file, mothurdest, each)
 
                 batch = 'mothur.batch'
-                file9 = request.FILES['docfile15']
-                handle_uploaded_file(file9, mothurdest, batch)
-
-                raw = True
-                parse_reference(p_uuid, refid, dest, file7, raw)
+                file15 = request.FILES['docfile15']
+                handle_uploaded_file(file15, mothurdest, batch)
 
                 try:
-                    mothur(dest)
+                    mothur(dest, source)
                 except Exception as e:
                     print("Encountered error with Mothur: " + str(e))
                     remove_proj(dest)
@@ -455,7 +459,7 @@ def update(request):
             )
 
         try:
-            parse_sample(file2, p_uuid, dest, pType)
+            parse_sample(file2, p_uuid, refid, dest, pType)
         except Exception as e:
             state = "Error with sample file: " + str(e)
             return render_to_response(

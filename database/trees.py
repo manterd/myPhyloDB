@@ -929,7 +929,7 @@ def getTaxaTreeChildren(request):
 def makeUpdateTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
     raw = Reference.objects.filter(raw=True).values_list('projectid')
-    projects = Project.objects.all().filter(projectid__in=raw)
+    projects = Project.objects.all().filter(projectid__in=raw).order_by('project_name')
 
     for project in projects:
         myNode = {
@@ -940,7 +940,7 @@ def makeUpdateTree(request):
             'children': []
         }
 
-        refids = project.reference_set.all()
+        refids = project.reference_set.all().order_by('path')
         for ref in refids:
             myNode1={
                 'title': "Path: " + str(ref.path),
@@ -971,7 +971,7 @@ def makeUpdateTree(request):
 def makeReproTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
     raw = Reference.objects.filter(raw=True).values_list('projectid')
-    projects = Project.objects.all().filter(projectid__in=raw)
+    projects = Project.objects.all().filter(projectid__in=raw).order_by('project_name')
 
     for project in projects:
         myNode = {
@@ -981,7 +981,7 @@ def makeReproTree(request):
             'children': []
         }
 
-        refids = project.reference_set.all()
+        refids = project.reference_set.all().order_by('path')
         for ref in refids:
             myNode1={
                 'title': "Path: " + str(ref.path),

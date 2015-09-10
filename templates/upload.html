@@ -86,7 +86,7 @@
 {% endblock %}
 {% block my_content %}
 
-    <h2>Upload any new data files:</h2>
+    <h2>Upload new data files:</h2>
 
     <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -108,7 +108,7 @@
         <br>
         <table width="100%" border="0" cellspacing="0" cellpadding="5">
             <tr>
-                <td colspan="2">2.) Upload your metadata files:</td>
+                <td colspan="2">2.) Select metadata files:</td>
             </tr>
             <tr>
                 <td colspan="2">
@@ -129,7 +129,7 @@
 
         <table width="100%" border="0" cellspacing="0" cellpadding="5">
             <tr>
-                <td>3.) Choose one of the following data formats:</td>
+                <td>3.) Select sequence data format:</td>
             </tr>
             <tr>
                 <td>
@@ -145,7 +145,7 @@
 
         <table width="100%" border="0" cellspacing="0" cellpadding="5">
             <tr>
-                <td>4.) Upload your sequence files:</td>
+                <td>4.) Select sequencing files:</td>
             </tr>
             <tr>
                 <td>
@@ -215,6 +215,6 @@
                 {% endif %}
             </td>
         </table>
-        <p><input name="clickMe" type="submit" value="Remove selected projects"/></p>
+        <p><input name="clickMe" type="submit" value="Remove selected"/></p>
     </form>
 {% endblock my_content %}

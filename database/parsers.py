@@ -20,29 +20,41 @@ perc = 0
 rep_project = ''
 
 
-def mothur(dest):
+def mothur(dest, source):
     global stage, perc
     stage = "Step 3 of 5: Running mothur...please check your host terminal for progress!"
     perc = 0
 
     if os.name == 'nt':
-        subprocess.call('cd mothur/temp; mothur/mothur-win/mothur.exe mothur/temp/mothur.batch')
+        subprocess.call('mothur/mothur-win/mothur.exe mothur/temp/mothur.batch')
     else:
-        subprocess.call('cd mothur/temp; mothur/mothur-linux/mothur mothur/temp/mothur.batch', shell=True)
+        subprocess.call('mothur/mothur-linux/mothur mothur/temp/mothur.batch', shell=True)
 
-    shutil.copy('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
-    shutil.copy('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
-    shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
-    shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
-    shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
-    shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
-    shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
-    shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
+    if source == '454':
+        shutil.copy('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
+        shutil.copy('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
+        shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
+        shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
+        shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
+        shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
+        shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
+        shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
 
-    for afile in glob.glob(r'*.logfile'):
-        shutil.copy(afile, dest)
+        shutil.rmtree('mothur/temp')
 
-    shutil.rmtree('mothur/temp')
+    if source == 'miseq':
+        shutil.copy('mothur/temp/temp.files', '% s/temp.files' % dest)
+        shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
+        shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
+        shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
+        shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
+        shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
+        shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
+
+        for afile in glob.glob(r'mothur/temp/*.fastaq'):
+            shutil.copy(afile, dest)
+
+        shutil.rmtree('mothur/temp')
 
     purge('mothur/reference/align', '.8mer')
     purge('mothur/reference/taxonomy', 'numNonZero')
@@ -52,6 +64,9 @@ def mothur(dest):
     purge('mothur/reference/template', '.8mer')
     purge('mothur/reference/template', '.summary')
 
+    for afile in glob.glob(r'*.logfile'):
+        shutil.move(afile, dest)
+        #os.remove(afile)
 
 def status(request):
     if request.is_ajax():
@@ -103,7 +118,7 @@ def parse_project(Document, path, p_uuid, pType):
         print(e)
 
 
-def parse_reference(p_uuid, refid, path, file7, raw):
+def parse_reference(p_uuid, refid, path, file7, raw, source):
     project = Project.objects.get(projectid=p_uuid)
 
     if raw:
@@ -125,7 +140,7 @@ def parse_reference(p_uuid, refid, path, file7, raw):
                         string = item.split('=')
                         taxonomy_ref = string[1].replace('mothur/reference/taxonomy/', '')
 
-        m = Reference(refid=refid, projectid=project, path=path, raw=True, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref)
+        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=True, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref)
         m.save()
     else:
         m = Reference(refid=refid, projectid=project, path=path, raw=False, alignDB='null', templateDB='null', taxonomyDB='null')
@@ -435,6 +450,8 @@ def reanalyze(request):
                 print("Error with batch file: ", e)
 
             p_uuid = project.projectid.projectid
+            refid = project.refid
+            source = project.source
             dest = project.path
             pType = project.projectid.projectType
 
@@ -450,7 +467,7 @@ def reanalyze(request):
             shutil.copy('% s/sample.csv' % mothurdest, '% s/sample.csv' % dest)
 
             try:
-                mothur(dest)
+                mothur(dest, source)
             except Exception as e:
                 print("Error with mothur: " + str(e))
                 return HttpResponse(
@@ -462,18 +479,18 @@ def reanalyze(request):
                 parse_project(file1, dest, p_uuid, pType)
 
             with open('% s/sample.csv' % dest, 'rb') as file2:
-                parse_sample(file2, p_uuid, dest, pType)
+                parse_sample(file2, p_uuid, refid, dest, pType)
 
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
-                parse_reference(p_uuid, dest, file7, raw)
+                parse_reference(p_uuid, refid, dest, file7, raw, source)
 
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 with open('% s/mothur.shared' % dest, 'rb') as file4:
-                    parse_profile(file3, file4, p_uuid)
+                    parse_profile(file3, file4, p_uuid, refid)
 
         return HttpResponse(
             simplejson.dumps({"error": "no"}),

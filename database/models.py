@@ -24,6 +24,7 @@ class Reference(models.Model):
     raw = models.BooleanField()
     projectid = models.ForeignKey(Project)
     path = models.CharField(max_length=90)
+    source = models.CharField(max_length=90)
     alignDB = models.CharField(max_length=90, blank=True)
     templateDB = models.CharField(max_length=90, blank=True)
     taxonomyDB = models.CharField(max_length=90, blank=True)
