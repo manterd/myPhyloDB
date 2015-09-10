@@ -426,7 +426,7 @@ def reanalyze(request):
                 shutil.copy('% s/mothur.oligos' % dest, '% s/temp.oligos' % mothurdest)
             if source == 'miseq':
                 shutil.copy('% s/final.files' % dest, '% s/temp.files' % mothurdest)
-                for afile in glob.glob(r'% s/*.fastaq' % dest):
+                for afile in glob.glob(r'% s/*.fastq' % dest):
                     shutil.copy(afile, mothurdest)
 
             orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)

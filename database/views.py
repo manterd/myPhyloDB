@@ -243,9 +243,9 @@ def upload(request):
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
-                fastaq = 'temp.files'
+                fastq = 'temp.files'
                 file13 = request.FILES['docfile13']
-                handle_uploaded_file(file13, mothurdest, fastaq)
+                handle_uploaded_file(file13, mothurdest, fastq)
 
                 file_list = request.FILES.getlist('files')
                 for each in file_list:
