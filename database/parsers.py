@@ -489,12 +489,12 @@ def reanalyze(request):
             with open('% s/project.csv' % dest, 'rb') as file1:
                 parse_project(file1, dest, p_uuid, pType)
 
-            with open('% s/sample.csv' % dest, 'rb') as file2:
-                parse_sample(file2, p_uuid, refid, dest, pType)
-
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
                 parse_reference(p_uuid, refid, dest, file7, raw, source)
+
+            with open('% s/sample.csv' % dest, 'rb') as file2:
+                parse_sample(file2, p_uuid, refid, dest, pType)
 
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)

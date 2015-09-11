@@ -3,7 +3,7 @@
 Version=1.0
 Type=Application
 Name=PhyloDB
-Icon=database_2_48.png
+Icon=myPhyloDB_Logo.png
 Exec=gnome-terminal -x bash -c "cd $HOME/myPhyloDB; ./myPhyloDB.exe; exec $SHELL"
 Name[en_US]=myPhyloDB
 X-GNOME-Autostart-enabled=true

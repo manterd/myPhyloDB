@@ -33,7 +33,7 @@ if [ $response = y ]
 fi
 
 mkdir -p $HOME/.icons
-cp $HOME/myPhyloDB/media/images/database_2_48.png $HOME/.icons/database_2_48.png
+cp $HOME/myPhyloDB/media/images/myPhyloDB_Logo.png $HOME/.icons/myPhyloDB_Logo.png
 cp myPhyloDB.desktop $HOME/Desktop/myPhyloDB.desktop
 chmod +x $HOME/Desktop/myPhyloDB.desktop
 

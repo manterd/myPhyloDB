@@ -38,7 +38,7 @@ Source: "..\..\dist\myPhyloDB\R\R-Portable\*"; DestDir: "{app}\R\R-Portable"; Fl
 Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Uploads
 
 [Icons]
-Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\media\images\database_2_48.ico"
+Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\media\images\myPhyloDB_Logo.ico"
 Name: "{group}\Manual"; Filename: "{app}\instructions\Manual.pdf"
 Name: "{group}\Uninstall"; Filename: "{uninstallexe}"
 
