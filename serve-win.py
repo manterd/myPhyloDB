@@ -19,7 +19,14 @@ class Server(object):
         DjangoAppPlugin(cherrypy.engine, self.base_dir).subscribe()
 
     def browse(self):
-        webbrowser.open_new("http://127.0.0.1:8000/myPhyloDB/home")
+        url = ''
+        f = open("server.cfg")
+        lines = f.readlines()
+        for line in lines:
+            if "server.socket_port: " in line:
+                port = line.split(' ')[1]
+                url = "http://127.0.0.1:" + str(port) + "/myPhyloDB/home/"
+        webbrowser.open_new(url)
 
     def run(self):
         engine = cherrypy.engine
