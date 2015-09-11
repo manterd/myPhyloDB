@@ -1,4 +1,4 @@
-![myPhyloDB Logo](media/images/myPhyloDB_Logo.png)  # myPhyloDB
+# myPhyloDB ![myPhyloDB Logo](media/images/myPhyloDB_Logo.png
 
 * A user-friendly web-interface for accessing and analyzing taxonomic data from multiple projects and/or sequencing runs.
 * A more detailed reference manual can be found here.
