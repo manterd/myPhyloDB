@@ -21,17 +21,17 @@ summary.seqs(fasta=temp.fasta)
 
 ### Separate each flowgram by primer/barcode
 ## Tunable parameters [pdiffs, bdiffs, minflows, maxflows, processors]
-trim.flows(flow=temp.flow, oligos=temp.oligos, pdiffs=2, bdiffs=1, minflows=360, maxflows=720, processors=2)
+trim.flows(flow=temp.flow, oligos=temp.oligos, pdiffs=2, bdiffs=1, minflows=360, maxflows=720, processors=6)
 
 
 ### Mothur's implementation of Pyronoise
 ## Tunable parameters [processors]
-shhh.flows(file=temp.flow.files, processors=2)
+shhh.flows(file=temp.flow.files, processors=6)
 
 
 ### Remove primer/barcode ####
 ## Tunable parameters [pdiffs, bdiffs, maxhomop, minlength, flip, processors]
-trim.seqs(fasta=temp.shhh.fasta, name=temp.shhh.names, oligos=temp.oligos, pdiffs=2, bdiffs=1, maxhomop=8, minlength=200, flip=T, processors=2)
+trim.seqs(fasta=temp.shhh.fasta, name=temp.shhh.names, oligos=temp.oligos, pdiffs=2, bdiffs=1, maxhomop=8, minlength=200, flip=T, processors=6)
 
 
 ### Remove duplicates from fasta file ###
@@ -42,16 +42,16 @@ summary.seqs(fasta=temp.shhh.trim.unique.fasta, name=temp.shhh.trim.unique.names
 
 ### Align seqs to silva reference alignment ###
 ## Tunable parameters [flip, threshold, processors]
-align.seqs(candidate=temp.shhh.trim.unique.fasta, reference=mothur/reference/align/silva.seed_v119.align, flip=T, threshold=50, processors=2)
+align.seqs(candidate=temp.shhh.trim.unique.fasta, reference=mothur/reference/align/silva.seed_v119.align, flip=T, threshold=50, processors=6)
 
 
 ### Put sequences in same genetic space ###
 ## Tunable parameters [start, end, optimize, criteria, processors]
-screen.seqs(fasta=temp.shhh.trim.unique.align, name=temp.shhh.trim.unique.names, group=temp.shhh.groups, optimize=start-end, criteria=95, processors=2)
+screen.seqs(fasta=temp.shhh.trim.unique.align, name=temp.shhh.trim.unique.names, group=temp.shhh.groups, optimize=start-end, criteria=95, processors=6)
 
 
 ### Filter positions with no sequence data ###
-filter.seqs(fasta=temp.shhh.trim.unique.good.align, vertical=T, trump=., processors=2)
+filter.seqs(fasta=temp.shhh.trim.unique.good.align, vertical=T, trump=., processors=6)
 
 
 ### Remove duplicates from fasta file ###
@@ -63,7 +63,7 @@ summary.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.fasta, name=temp.shh
 ### Precluster ###
 ## Tunable parameters [diffs]
 pre.cluster(fasta=temp.shhh.trim.unique.good.filter.unique.fasta, name=temp.shhh.trim.unique.good.filter.names, group=temp.shhh.good.groups, diffs=2)
-summary.seqs(fasta=shhh.trim.unique.good.filter.unique.precluster.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.names, processors=2)
+summary.seqs(fasta=shhh.trim.unique.good.filter.unique.precluster.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.names, processors=6)
 
 
 ### Remove chimeras ###
@@ -75,7 +75,7 @@ summary.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fast
 
 ### Remove contaminants ###
 ## Tunable parameters [method, taxon, processors]
-classify.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, template=mothur/reference/template/gg_13_5_99.fasta, taxonomy=mothur/reference/taxonomy/gg_13_5_99.pds.tax, method=wang, processors=2)
+classify.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, template=mothur/reference/template/gg_13_5_99.fasta, taxonomy=mothur/reference/taxonomy/gg_13_5_99.pds.tax, method=wang, processors=6)
 remove.lineage(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.names, group=temp.shhh.good.pick.groups, taxonomy=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pds.wang.taxonomy, taxon=unknown)
 summary.seqs(fasta=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.fasta, name=temp.shhh.trim.unique.good.filter.unique.precluster.pick.pick.names)
 

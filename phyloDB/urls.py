@@ -1,20 +1,30 @@
 from django.conf.urls import *
 from django.contrib import admin
 from registration.backends.simple.views import RegistrationView
+#from registration.backends.default.views import RegistrationView, ActivationView
 
 
 class MyRegistrationView(RegistrationView):
     def get_success_url(self, request=None, user=None):
-        return '/myPhyloDB/select/'
+        return '/myPhyloDB/home/'
+
+
+#class MyActivationView(ActivationView):
+#    def get_success_url(self, request, user):
+#        return '/myPhyloDB/activate/'
+
 
 admin.autodiscover()
 
 urlpatterns = patterns('',
     (r'^admin/', include(admin.site.urls)),
     (r'^logout/$', 'django.contrib.auth.views.logout'),
-    (r'^accounts/$', include('registration.backends.simple.urls')),
+    (r'^accounts/$', include('registration.backends.default.urls')),
+    url(r'^myPhyloDB/register/$', MyRegistrationView.as_view(), name='registration_register'),
 
-    url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
+#    (r'^accounts/$', include('registration.backends.simple.urls')),
+#    url(r'^myPhyloDB/register/$', MyRegistrationView.as_view(), name='registration_register'),
+#    url(r'^myPhyloDB/activate/(?P<activation_key>\w+)$', MyActivationView.as_view(), name='registration_activate'),
 
     url(r'^myPhyloDB/login/$', 'database.views.login_user', name='login_user'),
     url(r'^myPhyloDB/logout/$', 'database.views.logout_user', name='logout_user'),

@@ -48,14 +48,18 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         self.base_dir = base_dir
 
     def start(self):
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "phyloDB.settings")
+
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'phyloDB.settings'
         import django
         import django.test
         import HTMLParser
         import Cookie
         import django.contrib.sessions.serializers
-
         django.setup()
+
+        from local_cfg import update
+        update()
+
         cherrypy.tree.graft(WSGIHandler())
 
         staticpath = os.path.abspath(self.base_dir)

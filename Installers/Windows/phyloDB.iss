@@ -1,6 +1,6 @@
 [Setup]
 AppName=myPhyloDB
-AppVersion=1.0
+AppVersion=1.1
 DefaultDirName={code:DefDirRoot}\myPhyloDB
 DefaultGroupName=myPhyloDB
 Compression=lzma2
@@ -8,7 +8,7 @@ SolidCompression=yes
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=lowest
-OutputBaseFilename=myPhyloDB_1.0_Win_x64_install
+OutputBaseFilename=myPhyloDB_v.1.1_Win_x64_install
 
 [Files]
 Source: "..\..\dist\myPhyloDB\*.pyd"; DestDir: "{app}"; Components: Main
@@ -16,6 +16,7 @@ Source: "..\..\dist\myPhyloDB\*.dll"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\*.manifest"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\*.exe"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\server.cfg"; DestDir: "{app}"; Components: Main
+Source: "..\..\dist\myPhyloDB\local_cfg.py"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\dbMicrobe"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
 Source: "..\..\dist\myPhyloDB\_MEI\*"; DestDir: "{app}\_MEI"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\django\*"; DestDir: "{app}\django"; Flags: recursesubdirs; Components: Main
