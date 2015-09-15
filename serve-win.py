@@ -49,12 +49,20 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 
     def start(self):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "phyloDB.settings")
+        import django
         import django.test
         import HTMLParser
         import Cookie
         import django.contrib.sessions.serializers
 
+        django.setup()
         cherrypy.tree.graft(WSGIHandler())
+
+        staticpath = os.path.abspath(self.base_dir)
+        staticpath = os.path.split(staticpath)[0]
+        staticpath = os.path.join(staticpath, 'templates')
+        static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
+        cherrypy.tree.mount(static_handler, '/templates')
 
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]

@@ -5,6 +5,18 @@
     <title>Univariate-ANOVA</title>
 {% endblock pagetitle%}
 
+{% block user %}
+    {% if user.is_active %}
+        <p style="text-align: center;">
+            Welcome, {{ user.username }}.<br>
+        </p>
+    {% else %}
+        <p style="text-align: center;">
+            Welcome, new user.<br>
+        </p>
+    {% endif %}
+{% endblock user %}
+
 {% block menu_item %}
     <p><input id="run" type="submit" value="Run Analysis!"/></p>
 {% endblock menu_item %}

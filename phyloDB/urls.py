@@ -4,9 +4,13 @@ admin.autodiscover()
 
 
 urlpatterns = patterns('',
-    (r'^myPhyloDB/admin/', include(admin.site.urls)),
-    (r'^myPhyloDB/login/$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
-    url(r'^myPhyloDB/logout/$', 'django.contrib.auth.views.logout', name='logout'),
+    (r'^admin/', include(admin.site.urls)),
+    (r'^logout/$', 'django.contrib.auth.views.logout'),
+
+    url(r'^myPhyloDB/login/$', 'database.views.login_user', name='login_user'),
+    url(r'^myPhyloDB/logout/$', 'database.views.logout_user', name='logout_user'),
+
+
     url(r'^myPhyloDB/home/$', 'database.views.home', name='home'),
     url(r'^myPhyloDB/upload/$', 'database.views.upload', name='upload'),
     url(r'^myPhyloDB/select/$', 'database.views.select', name='select'),
@@ -14,7 +18,7 @@ urlpatterns = patterns('',
     url(r'^myPhyloDB/ANOVA/$', 'database.views.ANOVA', name='anova'),
     url(r'^myPhyloDB/DiffAbund/$', 'database.views.DiffAbund', name='DiffAbund'),
     url(r'^myPhyloDB/PCoA/$', 'database.views.PCoA', name='pcoa'),
-    url(r'^myPhyloDB/users/$', 'database.views.users', name='users'),
+    #url(r'^myPhyloDB/users/$', 'database.views.users', name='users'),
     url(r'^myPhyloDB/reprocess/$', 'database.views.reprocess', name='reprocess'),
     url(r'^myPhyloDB/update/$', 'database.views.update', name='update'),
 

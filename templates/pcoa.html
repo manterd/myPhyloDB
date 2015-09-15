@@ -5,6 +5,18 @@
     <title>Multivariate-PCoA</title>
 {% endblock pagetitle %}
 
+{% block user %}
+    {% if user.is_active %}
+        <p style="text-align: center;">
+            Welcome, {{ user.username }}.<br>
+        </p>
+    {% else %}
+        <p style="text-align: center;">
+            Welcome, new user.<br>
+        </p>
+    {% endif %}
+{% endblock user %}
+
 {% block menu_item %}
     <input id="run" name="run" type="submit" value="Run Analysis!"/>
 {% endblock menu_item %}

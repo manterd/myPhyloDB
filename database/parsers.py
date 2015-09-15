@@ -12,6 +12,7 @@ from numpy import *
 import glob
 import os
 import shutil
+from django.contrib.auth.models import User as Users
 
 
 stage = ''
@@ -116,15 +117,16 @@ def parse_project(Document, path, p_uuid, pType):
         with open('% s/project.csv' % path, 'wb+') as csvfile:
             spamwriter = csv.writer(csvfile, delimiter=',')
             for stuff in f:
-                if str(stuff[0]) == "null":
-                    stuff[0] = str(p_uuid)
+                if str(stuff[1]) == "null":
+                    stuff[1] = str(p_uuid)
                 spamwriter.writerow(stuff)
     except Exception as e:
         print(e)
 
 
-def parse_reference(p_uuid, refid, path, file7, raw, source):
+def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
     project = Project.objects.get(projectid=p_uuid)
+    author = Users.objects.get(id=userid)
 
     if raw:
         align_ref = ''
@@ -145,10 +147,10 @@ def parse_reference(p_uuid, refid, path, file7, raw, source):
                         string = item.split('=')
                         taxonomy_ref = string[1].replace('mothur/reference/taxonomy/', '')
 
-        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=True, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref)
+        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=True, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
         m.save()
     else:
-        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=False, alignDB='null', templateDB='null', taxonomyDB='null')
+        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=False, alignDB='null', templateDB='null', taxonomyDB='null', author=author)
         m.save()
 
 

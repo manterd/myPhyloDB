@@ -1,8 +1,10 @@
 from django.db import models
 from django_extensions.db.fields import UUIDField
+from django.contrib.auth.models import User as Users
 
 
 class Project(models.Model):
+    status = models.CharField(max_length=45, blank=False)
     projectid = UUIDField(primary_key=True)
     projectType = models.CharField(max_length=45, blank=False)
     project_name = models.TextField(blank=True)
@@ -28,6 +30,10 @@ class Reference(models.Model):
     alignDB = models.CharField(max_length=90, blank=True)
     templateDB = models.CharField(max_length=90, blank=True)
     taxonomyDB = models.CharField(max_length=90, blank=True)
+    author = models.ForeignKey(Users, related_name='entries')
+
+    class Meta:
+        verbose_name_plural = 'entries'
 
     def __unicode__(self):
         return unicode(self.path)

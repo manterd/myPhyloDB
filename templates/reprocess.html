@@ -1,8 +1,22 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block pagetitle %}
     <title xmlns="http://www.w3.org/1999/html">Reprocess Data</title>
 {% endblock pagetitle %}
+
+{% block user %}
+    {% if user.is_active %}
+        <p style="text-align: center;">
+            Welcome, {{ user.username }}.<br>
+        </p>
+    {% else %}
+        <p style="text-align: center;">
+            Welcome, new user.<br>
+        </p>
+    {% endif %}
+{% endblock user %}
+
 {% block javascript %}
     <style>
         .inlineTable {
