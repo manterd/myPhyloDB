@@ -1,15 +1,23 @@
 from django.conf.urls import *
 from django.contrib import admin
-admin.autodiscover()
+from registration.backends.simple.views import RegistrationView
 
+
+class MyRegistrationView(RegistrationView):
+    def get_success_url(self, request=None, user=None):
+        return '/myPhyloDB/select/'
+
+admin.autodiscover()
 
 urlpatterns = patterns('',
     (r'^admin/', include(admin.site.urls)),
     (r'^logout/$', 'django.contrib.auth.views.logout'),
+    (r'^accounts/$', include('registration.backends.simple.urls')),
+
+    url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
 
     url(r'^myPhyloDB/login/$', 'database.views.login_user', name='login_user'),
     url(r'^myPhyloDB/logout/$', 'database.views.logout_user', name='logout_user'),
-
 
     url(r'^myPhyloDB/home/$', 'database.views.home', name='home'),
     url(r'^myPhyloDB/upload/$', 'database.views.upload', name='upload'),
@@ -23,8 +31,6 @@ urlpatterns = patterns('',
 
     url(r'^saveCookie/$', 'database.views.saveCookie', name='saveCookie'),
     url(r'^getCookie/$', 'database.views.getCookie', name='getCookie'),
-
-
 
     url(r'^getProjectTree/$', 'database.trees.getProjectTree', name='getProjectTree'),
     url(r'^getProjectTreeChildren/$', 'database.trees.getProjectTreeChildren', name='getProjectTreeChildren'),
