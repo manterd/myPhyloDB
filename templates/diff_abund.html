@@ -7,13 +7,9 @@
 
 {% block user %}
     {% if user.is_active %}
-        <p style="text-align: center;">
-            Welcome, {{ user.username }}.<br>
-        </p>
+        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
     {% else %}
-        <p style="text-align: center;">
-            Welcome, new user.<br>
-        </p>
+        <p>User logged in as:<br>&nbsp;guest</p>
     {% endif %}
 {% endblock user %}
 

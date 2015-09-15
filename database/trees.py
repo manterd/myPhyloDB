@@ -10,12 +10,14 @@ from models import Kingdom, Class, Order, Family, Genus, Species, Profile
 def getProjectTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
+    projects = Project.objects.none()
     if request.user.is_superuser:
-        path_list = Reference.objects.values_list('projectid_id')
-    else:
+        projects = Project.objects.all()
+    if request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-
-    projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        projects = Project.objects.all().filter( Q(status='public') )
 
     for project in projects:
         myNode = {
@@ -935,11 +937,12 @@ def getTaxaTreeChildren(request):
 def makeUpdateTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
+    projects = Project.objects.none()
     if request.user.is_superuser:
-        projects = Project.objects.all().order_by('project_name')
-    else:
-        raw = Reference.objects.filter(Q(author=request.user)).values_list('projectid')
-        projects = Project.objects.all().filter( Q(projectid__in=raw) | Q(status='public') ).order_by('project_name')
+        projects = Project.objects.all()
+    if request.user.is_authenticated():
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) )
 
     for project in projects:
         myNode = {
@@ -981,13 +984,12 @@ def makeUpdateTree(request):
 def makeReproTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
+    projects = Project.objects.none()
     if request.user.is_superuser:
-        all_raw = Reference.objects.filter(raw=True).values_list('projectid')
-        projects = Project.objects.all().filter(projectid__in=all_raw).order_by('project_name')
-    else:
-        usr_raw = Reference.objects.filter(Q(author=request.user) & Q(raw=True)).values_list('projectid')
-        all_raw = Reference.objects.filter(raw=True).values_list('projectid')
-        projects = Project.objects.all().filter( Q(projectid__in=usr_raw) | ( Q(status='public') & Q(projectid__in=all_raw) ) ).order_by('project_name')
+        projects = Project.objects.all()
+    if request.user.is_authenticated():
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) )
 
     for project in projects:
         myNode = {

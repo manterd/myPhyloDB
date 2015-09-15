@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from uuid import uuid4
 from django.db.models import Q
-
+from django.contrib.auth.models import User as Users
 
 rep_project = ''
 
@@ -29,8 +29,6 @@ def logout_user(request):
 
 
 def login_user(request):
-    username = ''
-    password = ''
     if request.POST:
         username = request.POST['username']
         password = request.POST['password']
@@ -43,13 +41,10 @@ def login_user(request):
     return render_to_response('login.html', context_instance=RequestContext(request))
 
 
-#@login_required(login_url='/myPhyloDB/login/')
-#def users(request):
-#    return render_to_response('users.html')
-
-
 @login_required(login_url='/myPhyloDB/login/')
 def upload(request):
+    projects = Reference.objects.none()
+
     if request.method == 'POST' and 'Upload' in request.POST:
         form1 = UploadForm1(request.POST, request.FILES)
         source = str(request.POST['source'])
@@ -62,10 +57,11 @@ def upload(request):
                 p_uuid = projectid(file1)
             except Exception as e:
                 print("Error with project file: " + str(e))
+
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                else:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                elif request.user.is_authenticated():
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -88,14 +84,12 @@ def upload(request):
                 parse_project(file1, dest, p_uuid, pType)
             except Exception as e:
                 print("Error with project file: " + str(e))
-                try:
-                    remove_proj(dest)
-                except Exception as e:
-                    print("Couldn't delete project: " + str(e))
+                remove_proj(dest)
+
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                else:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                elif request.user.is_authenticated():
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -121,14 +115,12 @@ def upload(request):
 
             except Exception as e:
                 print("Error with project file: " + str(e))
-                try:
-                    remove_proj(dest)
-                except Exception as e:
-                    print("Couldn't delete project: " + str(e))
+                remove_proj(dest)
+
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                else:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                elif request.user.is_authenticated():
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -144,10 +136,11 @@ def upload(request):
             except Exception as e:
                 print("Error with sample file: " + str(e))
                 remove_proj(dest)
+
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                else:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                elif request.user.is_authenticated():
+                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                 return render_to_response(
                     'upload.html',
                     {'projects': projects,
@@ -168,10 +161,11 @@ def upload(request):
                 except Exception as e:
                     print("Error with taxonomy file: " + str(e))
                     remove_proj(dest)
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    else:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -192,10 +186,11 @@ def upload(request):
                 except Exception as e:
                     print("Error with shared file: " + str(e))
                     remove_proj(dest)
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    else:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -229,10 +224,11 @@ def upload(request):
                 except Exception as e:
                     print("Encountered error with Mothur: " + str(e))
                     remove_proj(dest)
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    else:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -248,10 +244,11 @@ def upload(request):
                 except Exception as e:
                     print("Error with post-mothur taxonomy file: " + str(e))
                     remove_proj(dest)
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    else:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -268,10 +265,11 @@ def upload(request):
                 except Exception as e:
                     print("Error with parsing post-mothur profile: " + str(e))
                     remove_proj(dest)
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    else:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -304,10 +302,11 @@ def upload(request):
                 except Exception as e:
                     print("Encountered error with Mothur: " + str(e))
                     remove_proj(dest)
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    else:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -323,10 +322,11 @@ def upload(request):
                 except Exception as e:
                     print("Error with post-mothur taxonomy file: " + str(e))
                     remove_proj(dest)
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    else:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -343,10 +343,11 @@ def upload(request):
                 except Exception as e:
                     print("Error with parsing post-mothur profile: " + str(e))
                     remove_proj(dest)
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    else:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
                     return render_to_response(
                         'upload.html',
                         {'projects': projects,
@@ -364,8 +365,8 @@ def upload(request):
 
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-    else:
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(Q(author=request.user))
+    elif request.user.is_authenticated():
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
 
     return render_to_response(
         'upload.html',
@@ -377,22 +378,23 @@ def upload(request):
     )
 
 
-#@login_required(login_url='/myPhyloDB/login/')
 def select(request):
-
+    projects = Project.objects.none()
     if request.user.is_superuser:
-        path_list = Reference.objects.values_list('projectid_id')
-    else:
+        projects = Project.objects.all()
+    if request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        projects = Project.objects.all().filter( Q(status='public') )
 
-    #TODO: Need to add an option for quests
-
-    projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
+    refs = Reference.objects.filter(projectid__in=projects)
     samples = Sample.objects.filter(projectid__in=projects)
 
     return render_to_response(
         'select.html',
         {'projects': projects,
+         'refs': refs,
          'samples': samples},
         context_instance=RequestContext(request)
     )
@@ -418,7 +420,6 @@ def taxa(request):
     )
 
 
-#@login_required(login_url='/myPhyloDB/login/')
 def ANOVA(request):
     return render_to_response(
         'anova.html',
@@ -426,7 +427,6 @@ def ANOVA(request):
     )
 
 
-#@login_required(login_url='/myPhyloDB/login/')
 def DiffAbund(request):
     return render_to_response(
         'diff_abund.html',
@@ -434,7 +434,6 @@ def DiffAbund(request):
     )
 
 
-#@login_required(login_url='/myPhyloDB/login/')
 def PCoA(request):
     return render_to_response(
         'pcoa.html',

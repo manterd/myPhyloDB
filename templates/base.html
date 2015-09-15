@@ -78,7 +78,6 @@
 
     <div id="Menu" style="background-color: white; height: 450px">
         {% block user %}{% endblock user %}
-
         <div class="menuTitle">
            Menu
         </div>
@@ -92,7 +91,10 @@
             {% else %}
                 <a class="Offmouse" href="{% url "login_user" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Login as a registered user.">Login</li></a>
             {% endif %}
-            <a class="Offmouse" href="/admin/" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add/remove users">Manage Users</li></a>
+
+            {% if user.is_staff %}
+                <a class="Offmouse" href="/admin/" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add/remove users">Manage Users</li></a>
+            {% endif %}
             <br>
 
             <div>

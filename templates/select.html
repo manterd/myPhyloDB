@@ -7,13 +7,9 @@
 
 {% block user %}
     {% if user.is_active %}
-        <p style="text-align: center;">
-            Welcome, {{ user.username }}.<br>
-        </p>
+        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
     {% else %}
-        <p style="text-align: center;">
-            Welcome, new user.<br>
-        </p>
+        <p>User logged in as:<br>&nbsp;guest</p>
     {% endif %}
 {% endblock user %}
 
@@ -181,7 +177,14 @@
                                 "{{ project.pi_first }}",
                                 "{{ project.pi_affiliation }}",
                                 "{{ project.pi_email }}",
-                                "{{ project.pi_phone }}"
+                                "{{ project.pi_phone }}",
+                                "{{ project.status }}",
+                                {% for ref in refs %}
+                                    {% if ref.refid == sample.refid.refid %}
+                                        "{{ ref.author }}",
+                                        "{{ ref.path }}"
+                                    {% endif %}
+                                {% endfor %}
                              ]).draw();
                         }
                     {% endfor %}
@@ -740,6 +743,9 @@
                             <th>pi_affiliation</th>
                             <th>pi_email</th>
                             <th>pi_phone</th>
+                            <th>status</th>
+                            <th>uploaded_by</th>
+                            <th>full_path</th>
                         </tr>
                     </thead>
                 </table>
