@@ -1,0 +1,2 @@
+status,project_id,project_name,project_desc,start_date,end_date,pi_last,pi_first,pi_affiliation,pi_email,pi_phone
+public,cd469c94c3134585b43a110c1ae81e32,Example 1,Mothur pre-processed soil data for myPhyloDB,01/01/2015,01/01/2015,Manter,Daniel,USDA,daniel.manter@ars.usda.gov,970-492-7255
