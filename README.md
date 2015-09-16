@@ -10,14 +10,17 @@
 
 # Source code
 **Dependencies:**
+* CherryPy 3.6.0
 * Django 1.6.5
-* Django-extensions
-* R
-* PypeR
-* CherryPy
-* simplejson
-* Scipy
-* Numpy
-* Pandas
-* [Mothur Taxonomy Outline] (http://www.mothur.org/wiki/Taxonomy_outline)
+* Django-extensions 1.4.4
+* PypeR 1.1.2
+* numPy 1.8.1
+* pandas 0.14.0
+* scipy 0.14.0
+* simplejson 3.5.2
+
+**Additional Requirements:**
+* R (installed in 'R/R-linux')
+* [Mothur] (http://www.mothur.org) (installed in 'mothur/mothur-linux')
+* [Mothur Taxonomy Outline] (http://www.mothur.org/wiki/Taxonomy_outline) (installed in 'mothur/reference')
 

@@ -1,25 +1,17 @@
 # -*- mode: python -*-
 a = Analysis(['serve-win.py'],
              pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
-             hiddenimports=[
-                'scipy.special._ufuncs_cxx',
-                'django.templatetags.future',
-                'django.templatetags.i18n',
-                'django.templatetags.__init__',
-                'django.templatetags.cache',
-                'django.templatetags.l10n',
-                'django.templatetags.static',
-                'django.templatetags.tz',
-                'django.contrib.admin.templatetags.log',
-                'django.contrib.admin.templatetags.__init__',
-                'django.contrib.admin.templatetags.admin_list',
-                'django.contrib.admin.templatetags.admin_modify',
-                'django.contrib.admin.templatetags.admin_static',
-                'django.contrib.admin.templatetags.admin_urls',
-            ],
-             hookspath=None,
-             runtime_hooks=None)
-
+             hiddenimports=[],
+             hookspath=[],
+             excludes=[
+                '_gtkagg', '_tkagg', '_agg2', '_cairo', '_cocoaagg', '_fltkagg',
+                '_gtk', '_gtkcairo', 'backend_qt', 'backend_qt4', 'backend_qtagg'
+                'backend_cairo','backend_cocoagg', 'Tkconstants', 'Tkinter', 'tcl',
+                '_imagingtk', 'PIL._imagingtk', 'ImageTk', 'PIL.ImageTk', 'TixTk',
+                'ipython', 'matplotlib', 'alabaster', 'babel', 'sphinx', 'PIL.Image'
+                ],
+             runtime_hooks=None
+             )
 
 def Datafiles(*filenames, **kw):
     import os
@@ -39,8 +31,6 @@ def Datafiles(*filenames, **kw):
 
 
 db = Datafiles('dbMicrobe')
-server_cfg = Datafiles('server.cfg')
-local_cfg = Datafiles('local_cfg.py')
 
 def extra_datas(mydir):
     def rec_glob(p, files):
@@ -58,6 +48,7 @@ def extra_datas(mydir):
 
     return extra_datas
 
+a.datas += extra_datas('config')
 a.datas += extra_datas('instructions')
 a.datas += extra_datas('media')
 a.datas += extra_datas('mothur/mothur-win')
@@ -84,8 +75,6 @@ coll = COLLECT(exe,
                a.zipfiles,
                a.datas,
                db,
-               server_cfg,
-               local_cfg,
                strip=None,
                upx=True,
                name='myPhyloDB'

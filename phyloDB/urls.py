@@ -6,7 +6,7 @@ from registration.backends.simple.views import RegistrationView
 
 class MyRegistrationView(RegistrationView):
     def get_success_url(self, request=None, user=None):
-        return '/myPhyloDB/home/'
+        return '/myPhyloDB/select/'
 
 
 #class MyActivationView(ActivationView):
