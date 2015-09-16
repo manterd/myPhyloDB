@@ -5,7 +5,7 @@
 {% endblock pagetitle %}
 
 {% block user %}
-    {% if user.is_active %}
+    {% if user.is_authenticated %}
         <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
     {% else %}
         <p>User logged in as:<br>&nbsp;guest</p>

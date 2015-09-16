@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "Installing myPhyloDB vers. 1.0\n"
+echo "Installing myPhyloDB vers. 1.0.1\n"
 echo "Checking if myPhyloDB exists...\n"
 
 if [ -d "$HOME/myPhyloDB" ]
@@ -38,4 +38,4 @@ cp myPhyloDB.desktop $HOME/Desktop/myPhyloDB.desktop
 chmod +x $HOME/Desktop/myPhyloDB.desktop
 
 echo ""
-echo "myPhyloDB installation is finished!"
+echo "myPhyloDB v.1.0.1 installation is finished!"

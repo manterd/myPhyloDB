@@ -100,10 +100,12 @@
             <div>
                 <hr><p><em><strong>Data Mgt</strong></em></p><hr>
             </div>
+            {% if user.is_authenticated %}
+                <a class="Offmouse" href="{% url "upload" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add new projects/samples here.">[Upload]</li></a>
+                <a class="Offmouse" href="{% url "reprocess" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Reprocess uploaded projects with new reference files.">[Reprocess]</li></a>
+                <a class="Offmouse" href="{% url "update" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update/edit metadata for uploaded projects.">[Update]</li></a>
+            {% endif %}
 
-            <a class="Offmouse" href="{% url "upload" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add new projects/samples here.">[Upload]</li></a>
-            <a class="Offmouse" href="{% url "reprocess" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Reprocess uploaded projects with new reference files.">[Reprocess]</li></a>
-            <a class="Offmouse" href="{% url "update" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update/edit metadata for uploaded projects.">[Update]</li></a>
             <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Select projects/samples for analysis.">Select Data</li></a>
             <br>
 
@@ -127,7 +129,7 @@
             <p id="link3" style="display: none;"><strong>Multivariate</strong></p>
             <div id="link4" style="display: none;" >
                 <a class="Offmouse" href="{% url "DiffAbund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Differential Abundance analysis">Diff Abund</li></a>
-                <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Principal Component Analysis">PCoA</li></a>
+                <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Principal Coordinates Analysis">PCoA</li></a>
             </div>
             <br>
 

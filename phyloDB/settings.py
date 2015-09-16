@@ -57,12 +57,13 @@ DATABASES = {
 }
 
 # Internationalization
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'America/Denver'
+USE_L10N = False
 
 USE_I18N = False
-USE_L10N = True
+LANGUAGE_CODE = 'en-us'
+
 USE_TZ = True
+TIME_ZONE = 'America/Denver'
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/media/'

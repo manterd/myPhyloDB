@@ -15,12 +15,12 @@ class Server(object):
     def __init__(self):
         self.base_dir = os.path.join(os.path.abspath(os.getcwd()), "phyloDB")
 
-        cherrypy.config.update("server.cfg")
+        cherrypy.config.update("config/server.cfg")
         DjangoAppPlugin(cherrypy.engine, self.base_dir).subscribe()
 
     def browse(self):
         url = ''
-        f = open("server.cfg")
+        f = open("config/server.cfg")
         lines = f.readlines()
         for line in lines:
             if "server.socket_port: " in line:
@@ -48,16 +48,14 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         self.base_dir = base_dir
 
     def start(self):
-
         os.environ['DJANGO_SETTINGS_MODULE'] = 'phyloDB.settings'
-        import django
+
         import django.test
         import HTMLParser
         import Cookie
         import django.contrib.sessions.serializers
-        django.setup()
 
-        from local_cfg import update
+        from config.local_cfg import update
         update()
 
         cherrypy.tree.graft(WSGIHandler())
