@@ -54,6 +54,7 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         import HTMLParser
         import Cookie
         import django.contrib.sessions.serializers
+        import django.core.mail.backends.smtp
 
         from config.local_cfg import update
         update()

@@ -10,7 +10,6 @@ SECRET_KEY = '99pbnftb@8#l5$$43)c=c$^y!j4-kz-0t6!zgcp2#k30#q7&g8'
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
-    'django.contrib.sites',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -26,10 +25,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    #'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'django.middleware.security.SecurityMiddleware',
 )
 
 ROOT_URLCONF = 'phyloDB.urls'
@@ -41,7 +38,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 TEMPLATE_DIRS = (
-    os.path.join(BASE_DIR,  'templates'),
+    os.path.join(BASE_DIR, 'templates'),
 )
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -62,10 +59,11 @@ USE_L10N = False
 USE_I18N = False
 LANGUAGE_CODE = 'en-us'
 
-USE_TZ = True
+USE_TZ = False
 TIME_ZONE = 'America/Denver'
 
 # Static files (CSS, JavaScript, Images)
+STATIC_ROOT = BASE_DIR
 STATIC_URL = '/media/'
 
 STATICFILES_DIRS = (

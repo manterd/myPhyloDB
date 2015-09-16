@@ -1,14 +1,34 @@
 # -*- mode: python -*-
 a = Analysis(['serve-win.py'],
              pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
-             hiddenimports=[],
-             hookspath=[],
+             hiddenimports=[
+                'registration.admin',
+                'registration.forms',
+                'registration.urls',
+                'django.views.defaults',
+                'django.template.defaulttags',
+                'django.template.defaultfilters',
+                'django.template.loader_tags',
+                'django.templatetags.future',
+                'django.templatetags.i18n',
+                'django.templatetags.__init__',
+                'django.templatetags.cache',
+                'django.templatetags.l10n',
+                'django.templatetags.static',
+                'django.templatetags.tz',
+                'django.contrib.admin.templatetags.log',
+                'django.contrib.admin.templatetags.__init__',
+                'django.contrib.admin.templatetags.admin_list',
+                'django.contrib.admin.templatetags.admin_modify',
+                'django.contrib.admin.templatetags.admin_static',
+                'django.contrib.admin.templatetags.admin_urls',
+                ],
+             hookspath=None,
              excludes=[
                 '_gtkagg', '_tkagg', '_agg2', '_cairo', '_cocoaagg', '_fltkagg',
                 '_gtk', '_gtkcairo', 'backend_qt', 'backend_qt4', 'backend_qtagg'
                 'backend_cairo','backend_cocoagg', 'Tkconstants', 'Tkinter', 'tcl',
-                '_imagingtk', 'PIL._imagingtk', 'ImageTk', 'PIL.ImageTk', 'TixTk',
-                'ipython', 'matplotlib', 'alabaster', 'babel', 'sphinx', 'PIL.Image'
+                '_imagingtk', 'PIL._imagingtk', 'ImageTk', 'PIL.ImageTk', 'TixTk'
                 ],
              runtime_hooks=None
              )

@@ -18,7 +18,6 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     (r'^admin/', include(admin.site.urls)),
-    (r'^logout/$', 'django.contrib.auth.views.logout'),
     (r'^accounts/$', include('registration.backends.default.urls')),
     url(r'^myPhyloDB/register/$', MyRegistrationView.as_view(), name='registration_register'),
 
