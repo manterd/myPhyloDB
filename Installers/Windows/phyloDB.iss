@@ -18,24 +18,18 @@ Source: "..\..\dist\myPhyloDB\*.exe"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\dbMicrobe"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
 Source: "..\..\dist\myPhyloDB\config\*"; DestDir: "{app}\config"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\django\*"; DestDir: "{app}\django"; Flags: recursesubdirs; Components: Main
-Source: "..\..\dist\myPhyloDB\docutils\*"; DestDir: "{app}\docutils"; Flags: recursesubdirs; Components: Main
-Source: "..\..\dist\myPhyloDB\eggs\*"; DestDir: "{app}\eggs"; Flags: recursesubdirs; Components: Main
-Source: "..\..\dist\myPhyloDB\idlelib\*"; DestDir: "{app}\idlelib"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\include\*"; DestDir: "{app}\include"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\instructions\*"; DestDir: "{app}\instructions"; Flags: recursesubdirs; Components: Manual
-Source: "..\..\dist\myPhyloDB\ipython\*"; DestDir: "{app}\ipython"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\media\*"; DestDir: "{app}\media"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\mothur-win\*"; DestDir: "{app}\mothur\mothur-win"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\reference\align\*"; DestDir: "{app}\mothur\reference\align"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\reference\taxonomy\*"; DestDir: "{app}\mothur\reference\taxonomy"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\reference\template\*"; DestDir: "{app}\mothur\reference\template"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\pytz\*"; DestDir: "{app}\pytz"; Flags: recursesubdirs; Components: Main
-Source: "..\..\dist\myPhyloDB\r\r-Portable\*"; DestDir: "{app}\r\r-Portable"; Flags: recursesubdirs; Components: Main
-Source: "..\..\dist\myPhyloDB\requests\*"; DestDir: "{app}\requests"; Flags: recursesubdirs; Components: Main
+Source: "..\..\dist\myPhyloDB\R\R-Portable\*"; DestDir: "{app}\R\R-Portable"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\sample_files\*"; DestDir: "{app}\sample_files"; Flags: recursesubdirs; Components: Samples
 Source: "..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Uploads
-Source: "..\..\dist\myPhyloDB\zmq\*"; DestDir: "{app}\zmq"; Flags: recursesubdirs; Components: Main
 
 [Icons]
 Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\media\images\myPhyloDB_Logo.ico"
