@@ -13,7 +13,7 @@ def getProjectTree(request):
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all()
-    if request.user.is_authenticated():
+    elif request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
     if not request.user.is_superuser and not request.user.is_authenticated():
@@ -940,7 +940,7 @@ def makeUpdateTree(request):
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all()
-    if request.user.is_authenticated():
+    elif request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) )
 
@@ -987,7 +987,7 @@ def makeReproTree(request):
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all()
-    if request.user.is_authenticated():
+    elif request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) )
 
