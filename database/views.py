@@ -23,24 +23,6 @@ def home(request):
     return render_to_response('home.html')
 
 
-def logout_user(request):
-    logout(request)
-    return render_to_response('home.html')
-
-
-def login_user(request):
-    if request.POST:
-        username = request.POST['username']
-        password = request.POST['password']
-
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            if user.is_active:
-                login(request, user)
-                return HttpResponseRedirect('/myPhyloDB/select/')
-    return render_to_response('login.html', context_instance=RequestContext(request))
-
-
 @login_required(login_url='/myPhyloDB/login/')
 def upload(request):
     projects = Reference.objects.none()
