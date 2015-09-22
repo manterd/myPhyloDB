@@ -14,7 +14,7 @@ import os
 import shutil
 from django.contrib.auth.models import User as Users
 import xlrd
-import pandas as pd
+from xlutils.copy import copy
 
 
 stage = ''
@@ -103,15 +103,13 @@ def parse_project(Document, p_uuid):
     stage = "Step 1 of 5: Parsing project file..."
     perc = 0
 
-    Document.seek(0)
     df = pd.read_excel(Document, skiprows=4, sheetname='Project')
-    rowList = df.to_dict(outtype='records')
-    for row in rowList:
-        for key in row.keys():
-            if key == 'projectid':
-                row[key] = p_uuid
-        m = Project(**row)
-        m.save()
+    rowDict = df.to_dict(outtype='records')[0]
+    for key in rowDict.keys():
+        if key == 'projectid':
+            rowDict[key] = p_uuid
+    m = Project(**rowDict)
+    m.save()
 
 
 def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
@@ -144,7 +142,7 @@ def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
         m.save()
 
 
-def parse_sample(Document, p_uuid, refid, path, pType):
+def parse_sample(Document, p_uuid, refid, pType):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
@@ -153,15 +151,9 @@ def parse_sample(Document, p_uuid, refid, path, pType):
     project = Project.objects.get(projectid=p_uuid)
     ref = Reference.objects.get(refid=refid)
 
-    Document.seek(0)
-    f = xlrd.open_workbook(file_contents=Document.read())
-    sheet = f.sheet_by_name('MIMARKs')
-    total = sheet.nrows - 6
-
-    Document.seek(0)
     df1 = pd.read_excel(Document, skiprows=5, sheetname='MIMARKs')
+    total, ncols = df1.shape
 
-    Document.seek(0)
     if pType == 'air':
         df2 = pd.read_excel(Document, skiprows=5, sheetname='Air')
     elif pType == 'human gut':
@@ -177,11 +169,11 @@ def parse_sample(Document, p_uuid, refid, path, pType):
     else:
         df2 = pd.DataFrame()
 
-    Document.seek(0)
     df3 = pd.read_excel(Document, skiprows=5, sheetname='User')
 
     s_uuid = ''
-    for i in xrange(0, total-1, 1):
+    idList = []
+    for i in xrange(total):
         step += 1.0
         perc = int(step / total * 100)
 
@@ -190,20 +182,54 @@ def parse_sample(Document, p_uuid, refid, path, pType):
         if not Sample.objects.filter(sampleid=index).exists():
             s_uuid = uuid4().hex
             row['sampleid'] = s_uuid
+            idList.append(s_uuid)
             m = Sample(projectid=project, refid=ref, **row)
             m.save()
         else:
+            idList.append(index)
             m = Sample(projectid=project, refid=ref, **row)
             m.save()
 
         sample = Sample.objects.get(sampleid=s_uuid)
-        if pType == "soil":
+
+        if pType == "air":
             row = df2.iloc[[i]].to_dict(outtype='records')[0]
             row.pop('sampleid')
             row.pop('sample_name')
-            print 'row:', row
+            m = Air(projectid=project, refid=ref, sampleid=sample, **row)
+            m.save()
+        elif pType == "human associated":
+            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            row.pop('sampleid')
+            row.pop('sample_name')
+            m = Human_Associated(projectid=project, refid=ref, sampleid=sample, **row)
+            m.save()
+        elif pType == "human gut":
+            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            row.pop('sampleid')
+            row.pop('sample_name')
+            m = Human_Gut(projectid=project, refid=ref, sampleid=sample, **row)
+            m.save()
+        elif pType == "microbial":
+            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            row.pop('sampleid')
+            row.pop('sample_name')
+            m = Microbial(projectid=project, refid=ref, sampleid=sample, **row)
+            m.save()
+        elif pType == "soil":
+            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            row.pop('sampleid')
+            row.pop('sample_name')
             m = Soil(projectid=project, refid=ref, sampleid=sample, **row)
             m.save()
+        elif pType == "water":
+            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            row.pop('sampleid')
+            row.pop('sample_name')
+            m = Water(projectid=project, refid=ref, sampleid=sample, **row)
+            m.save()
+        else:
+            placeholder = ''
 
         row = df3.iloc[[i]].to_dict(outtype='records')[0]
         row.pop('sampleid')
@@ -211,11 +237,64 @@ def parse_sample(Document, p_uuid, refid, path, pType):
         m = User(projectid=project, refid=ref, sampleid=sample, **row)
         m.save()
 
+    rb = xlrd.open_workbook(Document, formatting_info=True)
+    nSheets = rb.nsheets
+    wb = copy(rb)
+
+    for each in xrange(nSheets):
+        ws = wb.get_sheet(each)
+        if ws.name == 'Project':
+            ws.write(5, 2, p_uuid)
+
+        if ws.name == 'MIMARKs':
+            for i in xrange(total):
+                j = i + 6
+                ws.write(j, 0, idList[i])
+
+        if pType == 'air':
+            if ws.name == 'Air':
+                for i in xrange(total):
+                    j = i + 6
+                    ws.write(j, 0, idList[i])
+        elif pType == 'human gut':
+            if ws.name == 'Human Gut':
+                for i in xrange(total):
+                    j = i + 6
+                    ws.write(j, 0, idList[i])
+        elif pType == 'human associated':
+            if ws.name == 'Human Associated':
+                for i in xrange(total):
+                    j = i + 6
+                    ws.write(j, 0, idList[i])
+        elif pType == 'microbial':
+            if ws.name == 'Microbial':
+                for i in xrange(total):
+                    j = i + 6
+                    ws.write(j, 0, idList[i])
+        elif pType == 'soil':
+            if ws.name == 'Soil':
+                for i in xrange(total):
+                    j = i + 6
+                    ws.write(j, 0, idList[i])
+        elif pType == 'water':
+            if ws.name == 'Water':
+                for i in xrange(total):
+                    j = i + 6
+                    ws.write(j, 0, idList[i])
+        else:
+            placeholder = ''
+
+        if ws.name == 'User':
+            for i in xrange(total):
+                j = i + 6
+                ws.write(j, 0, idList[i])
+
+        wb.save(Document)
+
         ### PARSER WORKS TO HERE
-        #TODO: Set models so that all fields (except ids & names) can be left blank in .xlsx and converted to Null (or None)
-        #TODO: Designate the ones that can be left blank
-        #TODO: ANOVA & PCoA need to check for Null, None, or NAN based on data type
-        #TODO: Need to save updated .xlsx with appropriate project and sample IDS to the uploads folder
+        #TODO: Set models so that all fields (except ids & names) can be left blank in .xls and converted to Null, None, or NaN
+        #TODO: Need to designate in .xls the ones that can be left blank
+        #TODO: ANOVA & PCoA need to check for Null, None, or NaN based on data type
 
 
 def parse_taxonomy(Document):

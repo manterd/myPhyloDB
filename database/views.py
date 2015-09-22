@@ -60,9 +60,12 @@ def upload(request):
             datetimestamp = "_".join([str(date), str(timestamp)])
             dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
             refid = uuid4().hex
+            metaName = 'final_meta.xls'
+            metaFile = '/'.join([dest, metaName])
 
             try:
-                parse_project(file1, p_uuid)
+                handle_uploaded_file(file1, dest, metaName)
+                parse_project(metaFile, p_uuid)
 
             except Exception as e:
                 print("Error with project file: " + str(e))
@@ -83,9 +86,8 @@ def upload(request):
 
             try:
                 if source == 'mothur':
-                    file7 = 'blank'
                     raw = False
-                    parse_reference(p_uuid, refid, dest, file7, raw, source, userID)
+                    parse_reference(p_uuid, refid, dest, 'blank', raw, source, userID)
                 elif source == '454':
                     file7 = request.FILES['docfile7']
                     raw = True
@@ -113,7 +115,7 @@ def upload(request):
                 )
 
             try:
-                parse_sample(file1, p_uuid, refid, dest, pType)
+                parse_sample(metaFile, p_uuid, refid, pType)
             except Exception as e:
                 print("Error with sample file: " + str(e))
                 remove_proj(dest)

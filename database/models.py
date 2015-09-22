@@ -1,6 +1,7 @@
 from django.db import models
 from django_extensions.db.fields import UUIDField
 from django.contrib.auth.models import User as Users
+import numpy as np
 
 
 class Project(models.Model):
@@ -77,44 +78,44 @@ class Human_Gut(models.Model):
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
-    age = models.CharField(max_length=15, blank=True)  # float unit
-    body_mass_index = models.CharField(max_length=45, blank=True)  # float unit
-    body_product = models.CharField(max_length=45, blank=True)  # text
-    chem_administration = models.CharField(max_length=45, blank=True)  # term; timestamp
-    diet = models.CharField(max_length=45, blank=True)  # text
-    disease = models.CharField(max_length=45, blank=True)  # term
-    ethnicity = models.CharField(max_length=45, blank=True)  # integer|text
-    family_relationship = models.CharField(max_length=45, blank=True)  # text; text
-    gastrointest_disord = models.CharField(max_length=45, blank=True)  # text
-    genotype = models.CharField(max_length=45, blank=True)  # text
-    height = models.CharField(max_length=45, blank=True)  # float unit
-    host_body_temp = models.CharField(max_length=45, blank=True)  # float unit
-    host_subject_id = models.CharField(max_length=45, blank=True)  # text
-    ihmc_medication_code = models.CharField(max_length=45, blank=True)  # integer
-    last_meal = models.CharField(max_length=45, blank=True)  # text; period
-    liver_disord = models.CharField(max_length=45, blank=True)  # text
-    medic_hist_perform = models.CharField(max_length=45, blank=True)  # boolean
-    nose_throat_disord = models.CharField(max_length=45, blank=True)  # text
-    occupation = models.CharField(max_length=45, blank=True)  # integer
-    organism_count = models.CharField(max_length=45, blank=True)  # text; float unit
-    oxy_stat_samp = models.CharField(max_length=45, blank=True)  # [, 'aerobic', 'anaerobic']
-    perturbation = models.CharField(max_length=45, blank=True)  # text; interval
-    phenotype = models.CharField(max_length=45, blank=True)  # term
-    pulse = models.CharField(max_length=45, blank=True)  # float unit
-    rel_to_oxygen = models.CharField(max_length=45, blank=True)  # [, 'aerobe', 'anaerobe', 'facultative', 'microaerophilic', 'microanerobe', 'obligate aerobe', 'obligate anaerobe']
-    samp_collect_device = models.CharField(max_length=45, blank=True)  # text
-    samp_mat_process = models.CharField(max_length=45, blank=True)  # text|term
-    samp_salinity = models.CharField(max_length=45, blank=True)  # float unit
-    samp_size = models.CharField(max_length=45, blank=True)  # float unit
-    samp_store_dur = models.CharField(max_length=45, blank=True)  # interval
-    samp_store_loc = models.CharField(max_length=45, blank=True)  # text
-    samp_store_temp = models.CharField(max_length=45, blank=True)  # float unit
-    sex = models.CharField(max_length=45, blank=True)  # [, 'male', 'female', 'neuter', 'hermaphrodite', 'not determined']
-    special_diet = models.CharField(max_length=45, blank=True)  # [, 'low carb', 'reduced calorie', 'vegetarian', 'other(to be specified)']
-    temp = models.CharField(max_length=45, blank=True)  # float unit
-    tissue = models.CharField(max_length=45, blank=True)  # not specified, probably text
-    tot_mass = models.CharField(max_length=45, blank=True)  # float unit
-    user_defined = models.CharField(max_length=45, blank=True)  # Perhaps merge this with the other user defined section, put it under common
+    age = models.CharField(max_length=15, blank=True, default=np.nan)  # float unit
+    body_mass_index = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    body_product = models.CharField(max_length=45, blank=True, default=None)  # text
+    chem_administration = models.CharField(max_length=45, blank=True, default=None)  # term; timestamp
+    diet = models.CharField(max_length=45, blank=True, default=None)  # text
+    disease = models.CharField(max_length=45, blank=True, default=None)  # term
+    ethnicity = models.CharField(max_length=45, blank=True, default=None)  # integer|text
+    family_relationship = models.CharField(max_length=45, blank=True, default=None)  # text; text
+    gastrointest_disord = models.CharField(max_length=45, blank=True, default=None)  # text
+    genotype = models.CharField(max_length=45, blank=True, default=None)  # text
+    height = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    host_body_temp = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    host_subject_id = models.CharField(max_length=45, blank=True, default=None)  # text
+    ihmc_medication_code = models.CharField(max_length=45, blank=True, default=None)  # integer
+    last_meal = models.CharField(max_length=45, blank=True, default=None)  # text; period
+    liver_disord = models.CharField(max_length=45, blank=True, default=None)  # text
+    medic_hist_perform = models.CharField(max_length=45, blank=True, default=None)  # boolean
+    nose_throat_disord = models.CharField(max_length=45, blank=True, default=None)  # text
+    occupation = models.CharField(max_length=45, blank=True, default=None)  # integer
+    organism_count = models.CharField(max_length=45, blank=True, default=np.nan)  # text; float unit
+    oxy_stat_samp = models.CharField(max_length=45, blank=True, default=None)  # [, 'aerobic', 'anaerobic']
+    perturbation = models.CharField(max_length=45, blank=True, default=None)  # text; interval
+    phenotype = models.CharField(max_length=45, blank=True, default=None)  # term
+    pulse = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    rel_to_oxygen = models.CharField(max_length=45, blank=True, default=None)  # [, 'aerobe', 'anaerobe', 'facultative', 'microaerophilic', 'microanerobe', 'obligate aerobe', 'obligate anaerobe']
+    samp_collect_device = models.CharField(max_length=45, blank=True, default=None)  # text
+    samp_mat_process = models.CharField(max_length=45, blank=True, default=None)  # text|term
+    samp_salinity = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    samp_size = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    samp_store_dur = models.CharField(max_length=45, blank=True, default=None)  # interval
+    samp_store_loc = models.CharField(max_length=45, blank=True, default=None)  # text
+    samp_store_temp = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    sex = models.CharField(max_length=45, blank=True, default=None)  # [, 'male', 'female', 'neuter', 'hermaphrodite', 'not determined']
+    special_diet = models.CharField(max_length=45, blank=True, default=None)  # [, 'low carb', 'reduced calorie', 'vegetarian', 'other(to be specified)']
+    temp = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    tissue = models.CharField(max_length=45, blank=True, default=None)  # not specified, probably text
+    tot_mass = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
+    user_defined = models.CharField(max_length=45, blank=True, default=None)  # Perhaps merge this with the other user defined section, put it under common
 
 
 class Microbial(models.Model):
