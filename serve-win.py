@@ -50,6 +50,9 @@ class DjangoAppPlugin(plugins.SimplePlugin):
     def start(self):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "phyloDB.settings")
 
+        from config.local_cfg import update
+        update()
+
         import django
         import django.test
         import HTMLParser
@@ -57,9 +60,6 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         import django.contrib.sessions.serializers
         import django.core.mail.backends.smtp
         django.setup()
-
-        from config.local_cfg import update
-        update()
 
         cherrypy.tree.graft(WSGIHandler())
 

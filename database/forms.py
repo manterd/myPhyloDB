@@ -4,8 +4,8 @@ from utils import MultiFileField
 
 class UploadForm1(forms.Form):
     docfile1 = forms.FileField(label='Select meta_Project.csv file:')
-    docfile2 = forms.FileField(label='Select meta_Sample.csv file:')
-    type = forms.ChoiceField(widget=forms.Select, choices=(('soil', 'Soil'), ('human_associated', 'Human Associated'), ('human_gut', 'Human Gut'), ('air', 'Air'), ('water', 'Water'), ('microbial', 'Microbial')))
+    #docfile2 = forms.FileField(label='Select meta_Sample.csv file:')
+    #type = forms.ChoiceField(widget=forms.Select, choices=(('soil', 'Soil'), ('human_associated', 'Human Associated'), ('human_gut', 'Human Gut'), ('air', 'Air'), ('water', 'Water'), ('microbial', 'Microbial')))
 
 
 class UploadForm2(forms.Form):

@@ -35,8 +35,7 @@ def upload(request):
         if form1.is_valid():
             try:
                 file1 = request.FILES['docfile1']
-                pType = str(request.POST['type'])
-                p_uuid = projectid(file1)
+                p_uuid, pType = projectid(file1)
             except Exception as e:
                 print("Error with project file: " + str(e))
 
@@ -63,7 +62,8 @@ def upload(request):
             refid = uuid4().hex
 
             try:
-                parse_project(file1, dest, p_uuid, pType)
+                parse_project(file1, p_uuid)
+
             except Exception as e:
                 print("Error with project file: " + str(e))
                 remove_proj(dest)
@@ -112,9 +112,8 @@ def upload(request):
                     context_instance=RequestContext(request)
                 )
 
-            file2 = request.FILES['docfile2']
             try:
-                parse_sample(file2, p_uuid, refid, dest, pType)
+                parse_sample(file1, p_uuid, refid, dest, pType)
             except Exception as e:
                 print("Error with sample file: " + str(e))
                 remove_proj(dest)

@@ -13,6 +13,8 @@ import glob
 import os
 import shutil
 from django.contrib.auth.models import User as Users
+import xlrd
+import pandas as pd
 
 
 stage = ''
@@ -85,43 +87,31 @@ def status(request):
 
 
 def projectid(Document):
-    f = csv.DictReader(Document, delimiter=',')
-    for row in f:
-        if row:
-            index = row['project_id']
-            if Project.objects.filter(projectid=index).exists():
-                return index
-            else:
-                return uuid4().hex
+    f = xlrd.open_workbook(file_contents=Document.read())
+    sheet = f.sheet_by_name('Project')
+    pType = sheet.cell_value(rowx=5, colx=1)
+    projectid = sheet.cell_value(rowx=5, colx=2)
+
+    if projectid == 'null':
+        return uuid4().hex, pType
+    else:
+        return projectid, pType
 
 
-def parse_project(Document, path, p_uuid, pType):
+def parse_project(Document, p_uuid):
     global stage, perc
     stage = "Step 1 of 5: Parsing project file..."
     perc = 0
 
-    f = csv.DictReader(Document, delimiter=',')
-    for row in f:
-        if row:
-            perc = 100
-            row_dict = dict((k, v) for k, v in row.iteritems() if v != '')
-            row_dict.pop('project_id')
-            m = Project(projectType=pType, projectid=p_uuid, **row_dict)
-            m.save()
-
-    try:
-        Document.seek(0)
-        f = csv.reader(Document, delimiter=',')
-        if not os.path.exists(path):
-            os.makedirs(path)
-        with open('% s/project.csv' % path, 'wb+') as csvfile:
-            spamwriter = csv.writer(csvfile, delimiter=',')
-            for stuff in f:
-                if str(stuff[1]) == "null":
-                    stuff[1] = str(p_uuid)
-                spamwriter.writerow(stuff)
-    except Exception as e:
-        print(e)
+    Document.seek(0)
+    df = pd.read_excel(Document, skiprows=4, sheetname='Project')
+    rowList = df.to_dict(outtype='records')
+    for row in rowList:
+        for key in row.keys():
+            if key == 'projectid':
+                row[key] = p_uuid
+        m = Project(**row)
+        m.save()
 
 
 def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
@@ -158,95 +148,74 @@ def parse_sample(Document, p_uuid, refid, path, pType):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
+    step = 0
 
-    sampleidlist = []
-
-    f = csv.reader(Document, delimiter=',')
-    f.next()
-    total = 0.0
-    for row in f:
-        if row:
-            total += 1.0
+    project = Project.objects.get(projectid=p_uuid)
+    ref = Reference.objects.get(refid=refid)
 
     Document.seek(0)
-    f = csv.DictReader(Document, delimiter=',')
-    step = 0.0
-    for row in f:
-        if row:
-            row_dict = dict((k, v) for k, v in row.iteritems() if v != '')
-            step += 1.0
-            perc = int(step / total * 100)
-            index = row_dict['sample_id']
-            if not Sample.objects.filter(sampleid=index).exists():
-                s_uuid = uuid4().hex
-                row_dict.pop('sample_id')
+    f = xlrd.open_workbook(file_contents=Document.read())
+    sheet = f.sheet_by_name('MIMARKs')
+    total = sheet.nrows - 6
 
-                project = Project.objects.get(projectid=p_uuid)
-                ref = Reference.objects.get(refid=refid)
-                wanted_keys = ['sample_name', 'organism', 'material', 'title', 'seq_platform', 'seq_gene', 'seq_gene_region', 'seq_for_primer', 'seq_rev_primer', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'latitude', 'longitude', 'elevation', 'annual_season_precpt', 'annual_season_temp']
-                sampleDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = Sample(projectid=project, refid=ref, sampleid=s_uuid, **sampleDict)
-                m.save()
+    Document.seek(0)
+    df1 = pd.read_excel(Document, skiprows=5, sheetname='MIMARKs')
 
-                sampleidlist.append(s_uuid)
-                sample = Sample.objects.get(sampleid=s_uuid)
+    Document.seek(0)
+    if pType == 'air':
+        df2 = pd.read_excel(Document, skiprows=5, sheetname='Air')
+    elif pType == 'human gut':
+        df2 = pd.read_excel(Document, skiprows=5, sheetname='Human Gut')
+    elif pType == 'human associated':
+        df2 = pd.read_excel(Document, skiprows=5, sheetname='Human Associated')
+    elif pType == 'microbial':
+        df2 = pd.read_excel(Document, skiprows=5, sheetname='Microbial')
+    elif pType == 'soil':
+        df2 = pd.read_excel(Document, skiprows=5, sheetname='Soil')
+    elif pType == 'water':
+        df2 = pd.read_excel(Document, skiprows=5, sheetname='Water')
+    else:
+        df2 = pd.DataFrame()
 
-                if pType == "soil":
-                    wanted_keys = ['samp_collection_device', 'samp_size', 'samp_depth', 'sieve_size', 'storage_cond', 'samp_weight_dna_ext', 'pool_dna_extracts', 'fao_class', 'local_class', 'texture_class', 'porosity', 'profile_position', 'slope_aspect', 'slope_gradient', 'bulk_density', 'drainage_class', 'water_content_soil', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'crop_rotation', 'cover_crop', 'fert_amendment_class', 'fert_placement', 'fert_type', 'fert_tot_amount', 'fert_N_tot_amount', 'fert_P_tot_amount', 'fert_K_tot_amount', 'irrigation_type', 'irrigation_tot_amount', 'residue_removal', 'residue_growth_stage', 'residue_removal_percent', 'tillage_event', 'tillage_event_depth', 'amend1_class', 'amend1_active_ingredient', 'amend1_tot_amount', 'amend2_class', 'amend2_active_ingredient', 'amend2_tot_amount', 'amend3_class', 'amend3_active_ingredient', 'amend3_tot_amount', 'rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration', 'soil_pH', 'soil_EC', 'soil_C', 'soil_OM', 'soil_N', 'soil_NO3_N', 'soil_NH4_N', 'soil_P', 'soil_K', 'soil_S', 'soil_Zn', 'soil_Fe', 'soil_Cu', 'soil_Mn', 'soil_Ca', 'soil_Mg', 'soil_Na', 'soil_B', 'plant_C', 'plant_N', 'plant_P', 'plant_K', 'plant_Ca', 'plant_Mg', 'plant_S', 'plant_Na', 'plant_Cl', 'plant_Al', 'plant_B', 'plant_Cu', 'plant_Fe', 'plant_Mn', 'plant_Zn', 'crop_tot_biomass_fw', 'crop_tot_biomass_dw', 'crop_tot_above_biomass_fw', 'crop_tot_above_biomass_dw', 'crop_tot_below_biomass_fw', 'crop_tot_below_biomass_dw', 'harv_fraction', 'harv_fresh_weight', 'harv_dry_weight', 'ghg_chamber_placement', 'ghg_N2O', 'ghg_CO2', 'ghg_NH4']
-                    soilDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Soil(projectid=project, refid=ref, sampleid=sample, **soilDict)
-                    m.save()
+    Document.seek(0)
+    df3 = pd.read_excel(Document, skiprows=5, sheetname='User')
 
-                if pType == "human_gut":
-                    wanted_keys = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'gastrointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Human_Gut(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+    s_uuid = ''
+    for i in xrange(0, total-1, 1):
+        step += 1.0
+        perc = int(step / total * 100)
 
-                if pType == "microbial":
-                    wanted_keys = ['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'glucosidase_act', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'methane', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'perturbation', 'petroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'potassium', 'pressure', 'redox_potential', 'rel_to_oxygen', 'salinity', 'samp_collect_device', 'samp_mat_process', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'silicate', 'sodium', 'sulfate', 'sulfide', 'temp', 'tot_carb', 'tot_nitro', 'tot_org_carb', 'turbidity', 'water_content', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Microbial(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+        row = df1.iloc[[i]].to_dict(outtype='records')[0]
+        index = row['sampleid']
+        if not Sample.objects.filter(sampleid=index).exists():
+            s_uuid = uuid4().hex
+            row['sampleid'] = s_uuid
+            m = Sample(projectid=project, refid=ref, **row)
+            m.save()
+        else:
+            m = Sample(projectid=project, refid=ref, **row)
+            m.save()
 
-                if pType == "human_associated":
-                    wanted_keys = ['age', 'amniotic_fluid_color', 'blood_blood_disord', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'diet_last_six_month', 'disease', 'drug_usage', 'ethnicity', 'family_relationship', 'fetal_health_stat', 'genotype', 'gestation_state', 'height', 'hiv_stat', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'kidney_disord', 'last_meal', 'maternal_health_stat', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'perturbation', 'pet_farm_animal', 'phenotype', 'pulmonary_disord', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'sex', 'smoker', 'study_complt_stat', 'temp', 'tissue', 'tot_mass', 'travel_out_six_month', 'twin_sibling', 'urine_collect_meth', 'urogenit_tract_disor', 'weight_loss_3_month', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Human_Associated(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+        sample = Sample.objects.get(sampleid=s_uuid)
+        if pType == "soil":
+            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            row.pop('sampleid')
+            row.pop('sample_name')
+            print 'row:', row
+            m = Soil(projectid=project, refid=ref, sampleid=sample, **row)
+            m.save()
 
-                if pType == "air":
-                    wanted_keys = ['barometric_press', 'carb_dioxide', 'carb_monoxide', 'chem_administration', 'elev', 'humidity', 'methane', 'organism_count', 'oxy_stat_samp', 'oxygen', 'perturbation', 'pollutants', 'rel_to_oxygen', 'resp_part_matter', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'solar_irradiance', 'temp', 'ventilation_rate', 'ventilation_type', 'volatile_org_comp', 'wind_direction', 'wind_speed', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Air(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+        row = df3.iloc[[i]].to_dict(outtype='records')[0]
+        row.pop('sampleid')
+        row.pop('sample_name')
+        m = User(projectid=project, refid=ref, sampleid=sample, **row)
+        m.save()
 
-                if pType == "water":
-                    wanted_keys = ['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'atmospheric_data', 'bac_prod', 'bac_resp', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'conduc', 'density', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_inorg_nitro', 'diss_inorg_phosp', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'down_par', 'elev', 'fluor', 'glucosidase_act', 'light_intensity', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'part_org_nitro', 'perturbation', 'petroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'photon_flux', 'potassium', 'pressure', 'primary_prod', 'redox_potential', 'rel_to_oxygen', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'samp_vol_we_dna_ext', 'silicate', 'sodium', 'soluble_react_phosp', 'source_material_id', 'sulfate', 'sulfide', 'suspend_part_matter', 'temp', 'tidal_stage', 'tot_depth_water_col', 'tot_diss_nitro', 'tot_inorg_nitro', 'tot_nitro', 'tot_part_carb', 'tot_phosp', 'water_current', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Water(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
-
-                wanted_keys = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6', 'usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
-                userDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = User(projectid=project, refid=ref, sampleid=sample, **userDict)
-                m.save()
-
-    try:
-        Document.seek(0)
-        f = csv.reader(Document, delimiter=',')
-        if not os.path.exists(path):
-            os.makedirs(path)
-        with open('% s/sample.csv' % path, 'wb+') as csvfile:
-            spamwriter = csv.writer(csvfile, delimiter=',')
-            itera = 0
-            for stuff in f:
-                if str(stuff[0]) == "null":
-                    stuff[0] = str(sampleidlist[itera])
-                    itera += 1
-                spamwriter.writerow(stuff)
-    except Exception as e:
-        print(e)
+        ### PARSER WORKS TO HERE
+        #TODO: Set models so that all fields (except ids & names) can be left blank in .xlsx and converted to Null (or None)
+        #TODO: Designate the ones that can be left blank
+        #TODO: ANOVA & PCoA need to check for Null, None, or NAN based on data type
+        #TODO: Need to save updated .xlsx with appropriate project and sample IDS to the uploads folder
 
 
 def parse_taxonomy(Document):
