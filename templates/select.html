@@ -124,12 +124,6 @@
             } else {
                 $("#soil").hide();
             }
-            if (pTypes.indexOf("human_gut")>-1) {
-                updateGutTable(selKeys);
-                $("#humgut").show();
-            } else {
-                $("#humgut").hide();
-            }
             if (pTypes.indexOf("human_associated")>-1) {
                 updateAssociatedTable(selKeys);
                 $("#humasso").show();
@@ -391,115 +385,55 @@
                                  table.row.add([
                                     "{{ project.project_name }}",
                                     "{{ Human_Associated.sampleid.sample_name }}",
-                                    "{{ Human_Associated.age }}",
-                                    "{{ Human_Associated.amniotic_fluid_color }}",
-                                    "{{ Human_Associated.blood_blood_disord }}",
-                                    "{{ Human_Associated.body_mass_index }}",
-                                    "{{ Human_Associated.body_product }}",
-                                    "{{ Human_Associated.chem_administration }}",
-                                    "{{ Human_Associated.diet }}",
-                                    "{{ Human_Associated.diet_last_six_month }}",
-                                    "{{ Human_Associated.disease }}",
-                                    "{{ Human_Associated.drug_usage }}",
-                                    "{{ Human_Associated.ethnicity }}",
-                                    "{{ Human_Associated.family_relationship }}",
-                                    "{{ Human_Associated.fetal_health_stat }}",
-                                    "{{ Human_Associated.genotype }}",
-                                    "{{ Human_Associated.gestation_state }}",
-                                    "{{ Human_Associated.height }}",
-                                    "{{ Human_Associated.hiv_stat }}",
-                                    "{{ Human_Associated.host_body_temp }}",
-                                    "{{ Human_Associated.host_subject_id }}",
-                                    "{{ Human_Associated.ihmc_medication_code }}",
-                                    "{{ Human_Associated.kidney_disord }}",
-                                    "{{ Human_Associated.last_meal }}",
-                                    "{{ Human_Associated.maternal_health_stat }}",
-                                    "{{ Human_Associated.medic_hist_perform }}",
-                                    "{{ Human_Associated.nose_throat_disord }}",
-                                    "{{ Human_Associated.occupation }}",
-                                    "{{ Human_Associated.organism_count }}",
-                                    "{{ Human_Associated.oxy_stat_samp }}",
-                                    "{{ Human_Associated.perturbation }}",
-                                    "{{ Human_Associated.pet_farm_animal }}",
-                                    "{{ Human_Associated.phenotype }}",
-                                    "{{ Human_Associated.pulmonary_disord }}",
-                                    "{{ Human_Associated.pulse }}",
-                                    "{{ Human_Associated.rel_to_oxygen }}",
                                     "{{ Human_Associated.samp_collect_device }}",
-                                    "{{ Human_Associated.samp_mat_proecess }}",
-                                    "{{ Human_Associated.samp_salinity }}",
+                                    "{{ Human_Associated.samp_mat_process }}",
                                     "{{ Human_Associated.samp_size }}",
-                                    "{{ Human_Associated.samp_store_dur }}",
-                                    "{{ Human_Associated.samp_store_loc }}",
                                     "{{ Human_Associated.samp_store_temp }}",
-                                    "{{ Human_Associated.sex }}",
+                                    "{{ Human_Associated.samp_store_dur }}",
+                                    "{{ Human_Associated.samp_type }}",
+                                    "{{ Human_Associated.samp_location }}",
+                                    "{{ Human_Associated.samp_temp }}",
+                                    "{{ Human_Associated.samp_ph }}",
+                                    "{{ Human_Associated.samp_oxy_stat }}",
+                                    "{{ Human_Associated.samp_salinity }}",
+                                    "{{ Human_Associated.host_subject_id }}",
+                                    "{{ Human_Associated.host_age }}",
+                                    "{{ Human_Associated.host_pulse }}",
+                                    "{{ Human_Associated.host_gender }}",
+                                    "{{ Human_Associated.host_ethnicity }}",
+                                    "{{ Human_Associated.host_height }}",
+                                    "{{ Human_Associated.host_weight }}",
+                                    "{{ Human_Associated.host_bmi }}",
+                                    "{{ Human_Associated.host_weight_loss_3_month }}",
+                                    "{{ Human_Associated.host_body_temp }}",
+                                    "{{ Human_Associated.host_occupation }}",
+                                    "{{ Human_Associated.pet_farm_animal }}",
                                     "{{ Human_Associated.smoker }}",
-                                    "{{ Human_Associated.study_complt_stat }}",
-                                    "{{ Human_Associated.temp }}",
-                                    "{{ Human_Associated.tissue }}",
-                                    "{{ Human_Associated.tot_mass }}",
-                                    "{{ Human_Associated.travel_out_six_month }}",
-                                    "{{ Human_Associated.twin_sibling }}",
-                                    "{{ Human_Associated.urine_collect_meth }}",
-                                    "{{ Human_Associated.urogenit_tract_disor }}",
-                                    "{{ Human_Associated.weight_loss_3_month }}",
-                                    "{{ Human_Associated.user_defined }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
-
-        function updateGutTable(selKeys){
-           var table = $('#human_gutTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Human_Gut in project.human_gut_set.all %}
-                            var id = "{{ Human_gut.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Human_Gut.sampleid.sample_name }}",
-                                    "{{ Human_Gut.age }}",
-                                    "{{ Human_Gut.body_mass_index }}",
-                                    "{{ Human_Gut.body_product }}",
-                                    "{{ Human_Gut.chem_administration }}",
-                                    "{{ Human_Gut.diet }}",
-                                    "{{ Human_Gut.disease }}",
-                                    "{{ Human_Gut.ethnicity }}",
-                                    "{{ Human_Gut.family_relationship }}",
-                                    "{{ Human_Gut.gastrointest_disord }}",
-                                    "{{ Human_Gut.genotype }}",
-                                    "{{ Human_Gut.height }}",
-                                    "{{ Human_Gut.host_body_temp }}",
-                                    "{{ Human_Gut.host_subject_id }}",
-                                    "{{ Human_Gut.ihmc_medication_code }}",
-                                    "{{ Human_Gut.last_meal }}",
-                                    "{{ Human_Gut.liver_disord }}",
-                                    "{{ Human_Gut.medic_hist_perform }}",
-                                    "{{ Human_Gut.nose_throat_disord }}",
-                                    "{{ Human_Gut.occupation }}",
-                                    "{{ Human_Gut.organism_count }}",
-                                    "{{ Human_Gut.oxy_stat_samp }}",
-                                    "{{ Human_Gut.perturbation }}",
-                                    "{{ Human_Gut.phenotype }}",
-                                    "{{ Human_Gut.pulse }}",
-                                    "{{ Human_Gut.rel_to_oxygen }}",
-                                    "{{ Human_Gut.samp_collect_device }}",
-                                    "{{ Human_Gut.samp_mat_process }}",
-                                    "{{ Human_Gut.samp_salinity }}",
-                                    "{{ Human_Gut.samp_size }}",
-                                    "{{ Human_Gut.samp_store_dur }}",
-                                    "{{ Human_Gut.samp_store_loc }}",
-                                    "{{ Human_Gut.samp_store_temp }}",
-                                    "{{ Human_Gut.sex }}",
-                                    "{{ Human_Gut.special_diet }}",
-                                    "{{ Human_Gut.temp }}",
-                                    "{{ Human_Gut.tissue }}",
-                                    "{{ Human_Gut.tot_mass }}",
-                                    "{{ Human_Gut.user_defined }}"
+                                    "{{ Human_Associated.diet_type }}",
+                                    "{{ Human_Associated.diet_duration }}",
+                                    "{{ Human_Associated.diet_frequency }}",
+                                    "{{ Human_Associated.diet_last_six_month }}",
+                                    "{{ Human_Associated.last_meal }}",
+                                    "{{ Human_Associated.medic_hist_perform }}",
+                                    "{{ Human_Associated.disease_type }}",
+                                    "{{ Human_Associated.disease_location }}",
+                                    "{{ Human_Associated.disease_duration }}",
+                                    "{{ Human_Associated.organism_count }}",
+                                    "{{ Human_Associated.tumor_location }}",
+                                    "{{ Human_Associated.tumor_mass }}",
+                                    "{{ Human_Associated.tumor_stage }}",
+                                    "{{ Human_Associated.drug_usage }}",
+                                    "{{ Human_Associated.drug_type }}",
+                                    "{{ Human_Associated.drug_duration }}",
+                                    "{{ Human_Associated.drug_frequency }}",
+                                    "{{ Human_Associated.perturbation }}",
+                                    "{{ Human_Associated.pert_type }}",
+                                    "{{ Human_Associated.pert_duration }}",
+                                    "{{ Human_Associated.pert_frequency }}",
+                                    "{{ Human_Associated.fetal_health_stat }}",
+                                    "{{ Human_Associated.amniotic_fluid_color }}",
+                                    "{{ Human_Associated.gestation_stat }}",
+                                    "{{ Human_Associated.maternal_health_stat }}"
                                  ]).draw();
                             }
                         {% endfor %}
@@ -759,7 +693,6 @@
                 <li><a href="#tabs-1" style="font-size: 14px">Project</a></li>
                 <li><a href="#tabs-2" style="font-size: 14px">MIMARKs</a></li>
                 <li><a href="#tabs-soil" style="font-size: 14px; display: none" id="soil">Soil</a></li>
-                <li><a href="#tabs-10" style="font-size: 14px; display: none" id="humgut">Human Gut</a></li>
                 <li><a href="#tabs-air" style="font-size: 14px; display: none" id="air">Air</a></li>
                 <li><a href="#tabs-water" style="font-size: 14px; display: none" id="water">Water</a></li>
                 <li><a href="#tabs-humasso" style="font-size: 14px; display: none" id="humasso">Human Associated</a></li>
@@ -929,55 +862,6 @@
                 </table>
             </div>
 
-            <div id="tabs-10">
-                <table id="human_gutTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>project_name</th>
-                            <th>sample_name</th>
-                            <th>age</th>
-                            <th>body_mass_index</th>
-                            <th>body_product</th>
-                            <th>chem_administration</th>
-                            <th>diet</th>
-                            <th>disease</th>
-                            <th>ethnicity</th>
-                            <th>family_relationship</th>
-                            <th>gastrointest_disord</th>
-                            <th>genotype</th>
-                            <th>height</th>
-                            <th>host_body_temp</th>
-                            <th>host_subject_id</th>
-                            <th>ihmc_medication_code</th>
-                            <th>last_meal</th>
-                            <th>liver_disord</th>
-                            <th>medic_hist_perform</th>
-                            <th>nose_throat_disord</th>
-                            <th>occupation</th>
-                            <th>organism_count</th>
-                            <th>oxy_stat_samp</th>
-                            <th>perturbation</th>
-                            <th>phenotype</th>
-                            <th>pulse</th>
-                            <th>rel_to_oxygen</th>
-                            <th>samp_collect_device</th>
-                            <th>samp_mat_process</th>
-                            <th>samp_salinity</th>
-                            <th>samp_size</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_store_loc</th>
-                            <th>samp_store_temp</th>
-                            <th>sex</th>
-                            <th>special_diet</th>
-                            <th>temp</th>
-                            <th>tissue</th>
-                            <th>tot_mass</th>
-                            <th>user_defined</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
             <div id="tabs-11">
                 <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
@@ -1059,59 +943,55 @@
                         <tr>
                             <th>project_name</th>
                             <th>sample_name</th>
-                            <th>age</th>
-                            <th>amniotic_fluid_color</th>
-                            <th>blood_blood_disord</th>
-                            <th>body_mass_index</th>
-                            <th>body_product</th>
-                            <th>chem_administration</th>
-                            <th>diet</th>
-                            <th>diet_last_six_month</th>
-                            <th>disease</th>
-                            <th>drug_usage</th>
-                            <th>ethnicity</th>
-                            <th>family_relationship</th>
-                            <th>fetal_health_stat</th>
-                            <th>genotype</th>
-                            <th>gestation_state</th>
-                            <th>height</th>
-                            <th>hiv_stat</th>
-                            <th>host_body_temp</th>
-                            <th>host_subject_id</th>
-                            <th>ihmc_medication_code</th>
-                            <th>kidney_disord</th>
-                            <th>last_meal</th>
-                            <th>maternal_health_stat</th>
-                            <th>medic_hist_perform</th>
-                            <th>nose_throat_disord</th>
-                            <th>occupation</th>
-                            <th>organism_count</th>
-                            <th>oxy_stat_samp</th>
-                            <th>perturbation</th>
-                            <th>pet_farm_animal</th>
-                            <th>phenotype</th>
-                            <th>pulmonary_disord</th>
-                            <th>pulse</th>
-                            <th>rel_to_oxygen</th>
                             <th>samp_collect_device</th>
-                            <th>samp_mat_proecess</th>
-                            <th>samp_salinity</th>
+                            <th>samp_mat_process</th>
                             <th>samp_size</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_store_loc</th>
                             <th>samp_store_temp</th>
-                            <th>sex</th>
+                            <th>samp_store_dur</th>
+                            <th>samp_type</th>
+                            <th>samp_location</th>
+                            <th>samp_temp</th>
+                            <th>samp_ph</th>
+                            <th>samp_oxy_stat</th>
+                            <th>samp_salinity</th>
+                            <th>host_subject_id</th>
+                            <th>host_age</th>
+                            <th>host_pulse</th>
+                            <th>host_gender</th>
+                            <th>host_ethnicity</th>
+                            <th>host_height</th>
+                            <th>host_weight</th>
+                            <th>host_bmi</th>
+                            <th>host_weight_loss_3_month</th>
+                            <th>host_body_temp</th>
+                            <th>host_occupation</th>
+                            <th>pet_farm_animal</th>
                             <th>smoker</th>
-                            <th>study_complt_stat</th>
-                            <th>temp</th>
-                            <th>tissue</th>
-                            <th>tot_mass</th>
-                            <th>travel_out_six_month</th>
-                            <th>twin_sibling</th>
-                            <th>urine_collect_meth</th>
-                            <th>urogenit_tract_disor</th>
-                            <th>weight_loss_3_month</th>
-                            <th>user_defined</th>
+                            <th>diet_type</th>
+                            <th>diet_duration</th>
+                            <th>diet_frequency</th>
+                            <th>diet_last_six_month</th>
+                            <th>last_meal</th>
+                            <th>medic_hist_perform</th>
+                            <th>disease_type</th>
+                            <th>disease_location</th>
+                            <th>disease_duration</th>
+                            <th>organism_count</th>
+                            <th>tumor_location</th>
+                            <th>tumor_mass</th>
+                            <th>tumor_stage</th>
+                            <th>drug_usage</th>
+                            <th>drug_type</th>
+                            <th>drug_duration</th>
+                            <th>drug_frequency</th>
+                            <th>perturbation</th>
+                            <th>pert_type</th>
+                            <th>pert_duration</th>
+                            <th>pert_frequency</th>
+                            <th>fetal_health_stat</th>
+                            <th>amniotic_fluid_color</th>
+                            <th>gestation_stat</th>
+                            <th>maternal_health_stat</th>
                         </tr>
                     </thead>
                 </table>

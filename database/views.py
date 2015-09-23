@@ -11,10 +11,9 @@ from models import Project, Reference, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login, logout
 from uuid import uuid4
 from django.db.models import Q
-from django.contrib.auth.models import User as Users
+
 
 rep_project = ''
 

@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import simplejson
 from django.http import HttpResponse
-from models import Project, Reference, Sample, Soil, Human_Gut, Microbial, User, Human_Associated, Air, Water
+from models import Project, Reference, Sample, Soil, Microbial, User, Human_Associated, Air, Water
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import remove_proj, purge
 from uuid import uuid4
@@ -92,7 +92,7 @@ def projectid(Document):
     pType = sheet.cell_value(rowx=5, colx=1)
     projectid = sheet.cell_value(rowx=5, colx=2)
 
-    if projectid == 'null':
+    if projectid == '':
         return uuid4().hex, pType
     else:
         return projectid, pType
@@ -156,8 +156,6 @@ def parse_sample(Document, p_uuid, refid, pType):
 
     if pType == 'air':
         df2 = pd.read_excel(Document, skiprows=5, sheetname='Air')
-    elif pType == 'human gut':
-        df2 = pd.read_excel(Document, skiprows=5, sheetname='Human Gut')
     elif pType == 'human associated':
         df2 = pd.read_excel(Document, skiprows=5, sheetname='Human Associated')
     elif pType == 'microbial':
@@ -204,12 +202,6 @@ def parse_sample(Document, p_uuid, refid, pType):
             row.pop('sample_name')
             m = Human_Associated(projectid=project, refid=ref, sampleid=sample, **row)
             m.save()
-        elif pType == "human gut":
-            row = df2.iloc[[i]].to_dict(outtype='records')[0]
-            row.pop('sampleid')
-            row.pop('sample_name')
-            m = Human_Gut(projectid=project, refid=ref, sampleid=sample, **row)
-            m.save()
         elif pType == "microbial":
             row = df2.iloc[[i]].to_dict(outtype='records')[0]
             row.pop('sampleid')
@@ -253,11 +245,6 @@ def parse_sample(Document, p_uuid, refid, pType):
 
         if pType == 'air':
             if ws.name == 'Air':
-                for i in xrange(total):
-                    j = i + 6
-                    ws.write(j, 0, idList[i])
-        elif pType == 'human gut':
-            if ws.name == 'Human Gut':
                 for i in xrange(total):
                     j = i + 6
                     ws.write(j, 0, idList[i])

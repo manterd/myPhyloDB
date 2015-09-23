@@ -1,7 +1,6 @@
 from django.db import models
 from django_extensions.db.fields import UUIDField
 from django.contrib.auth.models import User as Users
-import numpy as np
 
 
 class Project(models.Model):
@@ -10,8 +9,8 @@ class Project(models.Model):
     projectid = UUIDField(primary_key=True)
     project_name = models.TextField(blank=True)
     project_desc = models.TextField(blank=True)
-    start_date = models.DateTimeField(max_length=15, blank=True)
-    end_date = models.DateTimeField(max_length=15, blank=True)
+    start_date = models.DateField(max_length=15, blank=True)
+    end_date = models.DateField(max_length=15, blank=True)
     pi_last = models.TextField(blank=True)
     pi_first = models.TextField(blank=True)
     pi_affiliation = models.CharField(max_length=45, blank=True)
@@ -53,7 +52,7 @@ class Sample(models.Model):
     seq_gene_region = models.CharField(max_length=45, blank=True)
     seq_for_primer = models.CharField(max_length=45, blank=True)
     seq_rev_primer = models.CharField(max_length=45, blank=True)
-    collection_date = models.DateTimeField(max_length=15, blank=True)
+    collection_date = models.DateField(max_length=15, blank=True)
     biome = models.CharField(max_length=45, blank=True)
     feature = models.CharField(max_length=45, blank=True)
     geo_loc_country = models.CharField(max_length=45, blank=True)
@@ -63,9 +62,9 @@ class Sample(models.Model):
     geo_loc_plot = models.CharField(max_length=45, blank=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
-    annual_season_precpt = models.CharField(max_length=45, blank=True)
-    annual_season_temp = models.CharField(max_length=45, blank=True)
-    elevation = models.CharField(max_length=45, blank=True)
+    annual_season_precpt = models.FloatField(blank=True, null=True)
+    annual_season_temp = models.FloatField(blank=True, null=True)
+    elevation = models.FloatField(blank=True, null=True)
 
     def natural_key(self):
         return self.sampleid
@@ -74,48 +73,102 @@ class Sample(models.Model):
         return unicode(self.sample_name)
 
 
-class Human_Gut(models.Model):
+class Air(models.Model):
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
-    age = models.CharField(max_length=15, blank=True, default=np.nan)  # float unit
-    body_mass_index = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    body_product = models.CharField(max_length=45, blank=True, default=None)  # text
-    chem_administration = models.CharField(max_length=45, blank=True, default=None)  # term; timestamp
-    diet = models.CharField(max_length=45, blank=True, default=None)  # text
-    disease = models.CharField(max_length=45, blank=True, default=None)  # term
-    ethnicity = models.CharField(max_length=45, blank=True, default=None)  # integer|text
-    family_relationship = models.CharField(max_length=45, blank=True, default=None)  # text; text
-    gastrointest_disord = models.CharField(max_length=45, blank=True, default=None)  # text
-    genotype = models.CharField(max_length=45, blank=True, default=None)  # text
-    height = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    host_body_temp = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    host_subject_id = models.CharField(max_length=45, blank=True, default=None)  # text
-    ihmc_medication_code = models.CharField(max_length=45, blank=True, default=None)  # integer
-    last_meal = models.CharField(max_length=45, blank=True, default=None)  # text; period
-    liver_disord = models.CharField(max_length=45, blank=True, default=None)  # text
-    medic_hist_perform = models.CharField(max_length=45, blank=True, default=None)  # boolean
-    nose_throat_disord = models.CharField(max_length=45, blank=True, default=None)  # text
-    occupation = models.CharField(max_length=45, blank=True, default=None)  # integer
-    organism_count = models.CharField(max_length=45, blank=True, default=np.nan)  # text; float unit
-    oxy_stat_samp = models.CharField(max_length=45, blank=True, default=None)  # [, 'aerobic', 'anaerobic']
-    perturbation = models.CharField(max_length=45, blank=True, default=None)  # text; interval
-    phenotype = models.CharField(max_length=45, blank=True, default=None)  # term
-    pulse = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    rel_to_oxygen = models.CharField(max_length=45, blank=True, default=None)  # [, 'aerobe', 'anaerobe', 'facultative', 'microaerophilic', 'microanerobe', 'obligate aerobe', 'obligate anaerobe']
-    samp_collect_device = models.CharField(max_length=45, blank=True, default=None)  # text
-    samp_mat_process = models.CharField(max_length=45, blank=True, default=None)  # text|term
-    samp_salinity = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    samp_size = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    samp_store_dur = models.CharField(max_length=45, blank=True, default=None)  # interval
-    samp_store_loc = models.CharField(max_length=45, blank=True, default=None)  # text
-    samp_store_temp = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    sex = models.CharField(max_length=45, blank=True, default=None)  # [, 'male', 'female', 'neuter', 'hermaphrodite', 'not determined']
-    special_diet = models.CharField(max_length=45, blank=True, default=None)  # [, 'low carb', 'reduced calorie', 'vegetarian', 'other(to be specified)']
-    temp = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    tissue = models.CharField(max_length=45, blank=True, default=None)  # not specified, probably text
-    tot_mass = models.CharField(max_length=45, blank=True, default=np.nan)  # float unit
-    user_defined = models.CharField(max_length=45, blank=True, default=None)  # Perhaps merge this with the other user defined section, put it under common
+    barometric_press = models.CharField(max_length=45, blank=True)
+    carb_dioxide = models.CharField(max_length=45, blank=True)
+    carb_monoxide = models.CharField(max_length=45, blank=True)
+    chem_administration = models.CharField(max_length=45, blank=True)
+    elev = models.CharField(max_length=45, blank=True)
+    humidity = models.CharField(max_length=45, blank=True)
+    methane = models.CharField(max_length=45, blank=True)
+    organism_count = models.CharField(max_length=45, blank=True)
+    oxy_stat_samp = models.CharField(max_length=45, blank=True)
+    oxygen = models.CharField(max_length=45, blank=True)
+    perturbation = models.CharField(max_length=45, blank=True)
+    pollutants = models.CharField(max_length=45, blank=True)
+    rel_to_oxygen = models.CharField(max_length=45, blank=True)
+    resp_part_matter = models.CharField(max_length=45, blank=True)
+    samp_collect_device = models.CharField(max_length=45, blank=True)
+    samp_mat_process = models.CharField(max_length=45, blank=True)
+    samp_salinity = models.CharField(max_length=45, blank=True)
+    samp_size = models.CharField(max_length=45, blank=True)
+    samp_store_dur = models.CharField(max_length=45, blank=True)
+    samp_store_loc = models.CharField(max_length=45, blank=True)
+    samp_store_temp = models.CharField(max_length=45, blank=True)
+    solar_irradiance = models.CharField(max_length=45, blank=True)
+    temp = models.CharField(max_length=45, blank=True)
+    ventilation_rate = models.CharField(max_length=45, blank=True)
+    ventilation_type = models.CharField(max_length=45, blank=True)
+    volatile_org_comp = models.CharField(max_length=45, blank=True)
+    wind_direction = models.CharField(max_length=45, blank=True)
+    wind_speed = models.CharField(max_length=45, blank=True)
+    user_defined = models.CharField(max_length=45, blank=True)
+
+
+class Human_Associated(models.Model):
+    sampleid = models.ForeignKey(Sample)
+    projectid = models.ForeignKey(Project)
+    refid = models.ForeignKey(Reference)
+
+    samp_collect_device = models.CharField(max_length=45, blank=True)
+    samp_mat_process = models.CharField(max_length=45, blank=True)
+    samp_size = models.FloatField(blank=True, null=True)
+    samp_store_temp = models.FloatField(blank=True, null=True)
+    samp_store_dur = models.FloatField(blank=True, null=True)
+
+    samp_type = models.CharField(max_length=45, blank=True)
+    samp_location = models.CharField(max_length=45, blank=True)
+    samp_temp = models.FloatField(blank=True, null=True)
+    samp_ph = models.FloatField(blank=True, null=True)
+    samp_oxy_stat = models.CharField(max_length=45, blank=True)
+    samp_salinity = models.FloatField(blank=True, null=True)
+
+    host_subject_id = models.CharField(max_length=45, blank=True)
+    host_age = models.FloatField(blank=True, null=True)
+    host_pulse = models.FloatField(blank=True, null=True)
+    host_gender = models.CharField(max_length=45, blank=True)
+    host_ethnicity = models.CharField(max_length=45, blank=True)
+    host_height = models.FloatField(blank=True, null=True)
+    host_weight = models.FloatField(blank=True, null=True)
+    host_bmi = models.FloatField(blank=True, null=True)
+    host_weight_loss_3_month = models.FloatField(blank=True, null=True)
+    host_body_temp = models.FloatField(blank=True, null=True)
+    host_occupation = models.CharField(max_length=45, blank=True)
+    pet_farm_animal = models.CharField(max_length=45, blank=True)
+    smoker = models.CharField(max_length=45, blank=True)
+
+    diet_type = models.CharField(max_length=45, blank=True)
+    diet_duration = models.FloatField(blank=True, null=True)
+    diet_frequency = models.CharField(max_length=45, blank=True)
+    diet_last_six_month = models.CharField(max_length=45, blank=True)
+    last_meal = models.DateField(blank=True)
+
+    medic_hist_perform = models.DateField(blank=True)
+    disease_type = models.CharField(max_length=45, blank=True)
+    disease_location = models.CharField(max_length=45, blank=True)
+    disease_duration = models.FloatField(blank=True, null=True)
+    organism_count = models.FloatField(blank=True, null=True)
+    tumor_location = models.CharField(max_length=45, blank=True)
+    tumor_mass = models.FloatField(blank=True, null=True)
+    tumor_stage = models.CharField(max_length=45, blank=True)
+
+    drug_usage = models.CharField(max_length=45, blank=True)
+    durg_type = models.CharField(max_length=45, blank=True)
+    drug_duration = models.FloatField(blank=True, null=True)
+    drug_frequency = models.CharField(max_length=45, blank=True)
+
+    perturbation = models.CharField(max_length=45, blank=True)
+    pert_type = models.CharField(max_length=45, blank=True)
+    pert_duration = models.FloatField(blank=True, null=True)
+    pert_frequency = models.CharField(max_length=45, blank=True)
+
+    fetal_health_stat = models.CharField(max_length=45, blank=True)
+    amniotic_fluid_color = models.CharField(max_length=45, blank=True)
+    gestation_stat = models.CharField(max_length=45, blank=True)
+    maternal_health_stat = models.CharField(max_length=45, blank=True)
 
 
 class Microbial(models.Model):
@@ -188,88 +241,29 @@ class Microbial(models.Model):
     user_defined = models.CharField(max_length=15, blank=True)
 
 
-class Human_Associated(models.Model):
-    sampleid = models.ForeignKey(Sample)
-    projectid = models.ForeignKey(Project)
-    refid = models.ForeignKey(Reference)
-    age = models.CharField(max_length=15, blank=True)
-    amniotic_fluid_color = models.CharField(max_length=15, blank=True)
-    blood_blood_disord = models.CharField(max_length=15, blank=True)
-    body_mass_index = models.CharField(max_length=15, blank=True)
-    body_product = models.CharField(max_length=15, blank=True)
-    chem_administration = models.CharField(max_length=15, blank=True)
-    diet = models.CharField(max_length=15, blank=True)
-    diet_last_six_month = models.CharField(max_length=15, blank=True)
-    disease = models.CharField(max_length=15, blank=True)
-    drug_usage = models.CharField(max_length=15, blank=True)
-    ethnicity = models.CharField(max_length=15, blank=True)
-    family_relationship = models.CharField(max_length=15, blank=True)
-    fetal_health_stat = models.CharField(max_length=15, blank=True)
-    genotype = models.CharField(max_length=15, blank=True)
-    gestation_state = models.CharField(max_length=15, blank=True)
-    height = models.CharField(max_length=15, blank=True)
-    hiv_stat = models.CharField(max_length=15, blank=True)
-    host_body_temp = models.CharField(max_length=15, blank=True)
-    host_subject_id = models.CharField(max_length=15, blank=True)
-    ihmc_medication_code = models.CharField(max_length=15, blank=True)
-    kidney_disord = models.CharField(max_length=15, blank=True)
-    last_meal = models.CharField(max_length=15, blank=True)
-    maternal_health_stat= models.CharField(max_length=15, blank=True)
-    medic_hist_perform = models.CharField(max_length=15, blank=True)
-    nose_throat_disord = models.CharField(max_length=15, blank=True)
-    occupation = models.CharField(max_length=15, blank=True)
-    organism_count = models.CharField(max_length=15, blank=True)
-    oxy_stat_samp = models.CharField(max_length=15, blank=True)
-    perturbation = models.CharField(max_length=15, blank=True)
-    pet_farm_animal = models.CharField(max_length=15, blank=True)
-    phenotype = models.CharField(max_length=15, blank=True)
-    pulmonary_disord = models.CharField(max_length=15, blank=True)
-    pulse = models.CharField(max_length=15, blank=True)
-    rel_to_oxygen = models.CharField(max_length=15, blank=True)
-    samp_collect_device = models.CharField(max_length=15, blank=True)
-    samp_mat_process = models.CharField(max_length=15, blank=True)
-    samp_salinity = models.CharField(max_length=15, blank=True)
-    samp_size = models.CharField(max_length=15, blank=True)
-    samp_store_dur = models.CharField(max_length=15, blank=True)
-    samp_store_loc = models.CharField(max_length=15, blank=True)
-    samp_store_temp = models.CharField(max_length=15, blank=True)
-    sex = models.CharField(max_length=15, blank=True)
-    smoker = models.CharField(max_length=15, blank=True)
-    study_complt_stat = models.CharField(max_length=15, blank=True)
-    temp = models.CharField(max_length=15, blank=True)
-    tissue = models.CharField(max_length=15, blank=True)
-    tot_mass = models.CharField(max_length=15, blank=True)
-    travel_out_six_month = models.CharField(max_length=15, blank=True)
-    twin_sibling = models.CharField(max_length=15, blank=True)
-    urine_collect_meth = models.CharField(max_length=15, blank=True)
-    urogenit_tract_disor = models.CharField(max_length=15, blank=True)
-    weight_loss_3_month = models.CharField(max_length=15, blank=True)
-    user_defined = models.CharField(max_length=15, blank=True)
-
-
 class Soil(models.Model):
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
 
-    samp_collection_device = models.TextField(blank=True)
-    samp_size = models.CharField(max_length=45, blank=True)
+    samp_collection_device = models.CharField(max_length=45, blank=True)
+    samp_size = models.FloatField(blank=True, null=True)
     samp_depth = models.CharField(max_length=45, blank=True)
-    sieve_size = models.CharField(max_length=45, blank=True)
-    storage_cond = models.CharField(max_length=45, blank=True)
-    samp_weight_dna_ext = models.CharField(max_length=45, blank=True)
-    pool_dna_extracts = models.CharField(max_length=45, blank=True)
+    sieve_size = models.FloatField(blank=True, null=True)
+    storage_cond = models.FloatField(blank=True, null=True)
+    samp_weight_dna_ext = models.FloatField(blank=True, null=True)
+    pool_dna_extracts = models.IntegerField(blank=True, null=True)
 
     fao_class = models.CharField(max_length=45, blank=True)
     local_class = models.CharField(max_length=45, blank=True)
     texture_class = models.CharField(max_length=45, blank=True)
-    porosity = models.CharField(max_length=45, blank=True)
+    porosity = models.FloatField(blank=True, null=True)
     profile_position = models.CharField(max_length=45, blank=True)
     slope_aspect = models.CharField(max_length=45, blank=True)
-    slope_gradient = models.CharField(max_length=45, blank=True)
-    bulk_density = models.CharField(max_length=45, blank=True)
+    slope_gradient = models.FloatField(blank=True, null=True)
+    bulk_density = models.FloatField(blank=True, null=True)
     drainage_class = models.CharField(max_length=45, blank=True)
-    water_content_soil = models.CharField(max_length=45, blank=True)
+    water_content_soil = models.FloatField(blank=True, null=True)
 
     cur_land_use = models.TextField(blank=True)
     cur_vegetation = models.TextField(blank=True)
@@ -281,119 +275,85 @@ class Soil(models.Model):
     fert_amendment_class = models.TextField(blank=True)
     fert_placement = models.TextField(blank=True)
     fert_type = models.TextField(blank=True)
-    fert_tot_amount = models.TextField(blank=True)
-    fert_N_tot_amount = models.TextField(blank=True)
-    fert_P_tot_amount = models.TextField(blank=True)
-    fert_K_tot_amount = models.TextField(blank=True)
+    fert_tot_amount = models.FloatField(blank=True, null=True)
+    fert_N_tot_amount = models.FloatField(blank=True, null=True)
+    fert_P_tot_amount = models.FloatField(blank=True, null=True)
+    fert_K_tot_amount = models.FloatField(blank=True, null=True)
 
     irrigation_type = models.TextField(blank=True)
-    irrigation_tot_amount = models.TextField(blank=True)
+    irrigation_tot_amount = models.FloatField(blank=True, null=True)
 
     residue_removal = models.TextField(blank=True)
     residue_growth_stage = models.TextField(blank=True)
-    residue_removal_percent = models.TextField(blank=True)
+    residue_removal_percent = models.FloatField(blank=True, null=True)
 
     tillage_event = models.TextField(blank=True)
-    tillage_event_depth = models.TextField(blank=True)
+    tillage_event_depth = models.FloatField(blank=True, null=True)
 
     amend1_class = models.TextField(blank=True)
     amend1_active_ingredient = models.TextField(blank=True)
-    amend1_tot_amount = models.TextField(blank=True)
+    amend1_tot_amount = models.FloatField(blank=True, null=True)
     amend2_class = models.TextField(blank=True)
     amend2_active_ingredient = models.TextField(blank=True)
-    amend2_tot_amount = models.TextField(blank=True)
+    amend2_tot_amount = models.FloatField(blank=True, null=True)
     amend3_class = models.TextField(blank=True)
     amend3_active_ingredient = models.TextField(blank=True)
-    amend3_tot_amount = models.TextField(blank=True)
+    amend3_tot_amount = models.FloatField(blank=True, null=True)
 
-    rRNA_copies = models.CharField(max_length=45, blank=True)
-    microbial_biomass_C = models.CharField(max_length=45, blank=True)
-    microbial_biomass_N = models.CharField(max_length=45, blank=True)
-    microbial_respiration = models.CharField(max_length=45, blank=True)
+    rRNA_copies = models.FloatField(blank=True, null=True)
+    microbial_biomass_C = models.FloatField(blank=True, null=True)
+    microbial_biomass_N = models.FloatField(blank=True, null=True)
+    microbial_respiration = models.FloatField(blank=True, null=True)
 
-    soil_pH = models.CharField(max_length=45, blank=True)
-    soil_EC = models.CharField(max_length=45, blank=True)
-    soil_C = models.CharField(max_length=45, blank=True)
-    soil_OM = models.CharField(max_length=45, blank=True)
-    soil_N = models.CharField(max_length=45, blank=True)
-    soil_NO3_N = models.CharField(max_length=45, blank=True)
-    soil_NH4_N = models.CharField(max_length=45, blank=True)
-    soil_P = models.CharField(max_length=45, blank=True)
-    soil_K = models.CharField(max_length=45, blank=True)
-    soil_S = models.CharField(max_length=45, blank=True)
-    soil_Zn = models.CharField(max_length=45, blank=True)
-    soil_Fe = models.CharField(max_length=45, blank=True)
-    soil_Cu = models.CharField(max_length=45, blank=True)
-    soil_Mn = models.CharField(max_length=45, blank=True)
-    soil_Ca = models.CharField(max_length=45, blank=True)
-    soil_Mg = models.CharField(max_length=45, blank=True)
-    soil_Na = models.CharField(max_length=45, blank=True)
-    soil_B = models.CharField(max_length=45, blank=True)
+    soil_pH = models.FloatField(blank=True, null=True)
+    soil_EC = models.FloatField(blank=True, null=True)
+    soil_C = models.FloatField(blank=True, null=True)
+    soil_OM = models.FloatField(blank=True, null=True)
+    soil_N = models.FloatField(blank=True, null=True)
+    soil_NO3_N = models.FloatField(blank=True, null=True)
+    soil_NH4_N = models.FloatField(blank=True, null=True)
+    soil_P = models.FloatField(blank=True, null=True)
+    soil_K = models.FloatField(blank=True, null=True)
+    soil_S = models.FloatField(blank=True, null=True)
+    soil_Zn = models.FloatField(blank=True, null=True)
+    soil_Fe = models.FloatField(blank=True, null=True)
+    soil_Cu = models.FloatField(blank=True, null=True)
+    soil_Mn = models.FloatField(blank=True, null=True)
+    soil_Ca = models.FloatField(blank=True, null=True)
+    soil_Mg = models.FloatField(blank=True, null=True)
+    soil_Na = models.FloatField(blank=True, null=True)
+    soil_B = models.FloatField(blank=True, null=True)
 
-    plant_C = models.CharField(max_length=45, blank=True)
-    plant_N = models.CharField(max_length=45, blank=True)
-    plant_P = models.CharField(max_length=45, blank=True)
-    plant_K = models.CharField(max_length=45, blank=True)
-    plant_Ca = models.CharField(max_length=45, blank=True)
-    plant_Mg = models.CharField(max_length=45, blank=True)
-    plant_S = models.CharField(max_length=45, blank=True)
-    plant_Na = models.CharField(max_length=45, blank=True)
-    plant_Cl = models.CharField(max_length=45, blank=True)
-    plant_Al = models.CharField(max_length=45, blank=True)
-    plant_B = models.CharField(max_length=45, blank=True)
-    plant_Cu = models.CharField(max_length=45, blank=True)
-    plant_Fe = models.CharField(max_length=45, blank=True)
-    plant_Mn = models.CharField(max_length=45, blank=True)
-    plant_Zn = models.CharField(max_length=45, blank=True)
+    plant_C = models.FloatField(blank=True, null=True)
+    plant_N = models.FloatField(blank=True, null=True)
+    plant_P = models.FloatField(blank=True, null=True)
+    plant_K = models.FloatField(blank=True, null=True)
+    plant_Ca = models.FloatField(blank=True, null=True)
+    plant_Mg = models.FloatField(blank=True, null=True)
+    plant_S = models.FloatField(blank=True, null=True)
+    plant_Na = models.FloatField(blank=True, null=True)
+    plant_Cl = models.FloatField(blank=True, null=True)
+    plant_Al = models.FloatField(blank=True, null=True)
+    plant_B = models.FloatField(blank=True, null=True)
+    plant_Cu = models.FloatField(blank=True, null=True)
+    plant_Fe = models.FloatField(blank=True, null=True)
+    plant_Mn = models.FloatField(blank=True, null=True)
+    plant_Zn = models.FloatField(blank=True, null=True)
 
-    crop_tot_biomass_fw = models.CharField(max_length=45, blank=True)
-    crop_tot_biomass_dw = models.CharField(max_length=45, blank=True)
-    crop_tot_above_biomass_fw = models.CharField(max_length=45, blank=True)
-    crop_tot_above_biomass_dw = models.CharField(max_length=45, blank=True)
-    crop_tot_below_biomass_fw = models.CharField(max_length=45, blank=True)
-    crop_tot_below_biomass_dw = models.CharField(max_length=45, blank=True)
+    crop_tot_biomass_fw = models.FloatField(blank=True, null=True)
+    crop_tot_biomass_dw = models.FloatField(blank=True, null=True)
+    crop_tot_above_biomass_fw = models.FloatField(blank=True, null=True)
+    crop_tot_above_biomass_dw = models.FloatField(blank=True, null=True)
+    crop_tot_below_biomass_fw = models.FloatField(blank=True, null=True)
+    crop_tot_below_biomass_dw = models.FloatField(blank=True, null=True)
     harv_fraction = models.CharField(max_length=45, blank=True)
-    harv_fresh_weight = models.CharField(max_length=45, blank=True)
-    harv_dry_weight = models.CharField(max_length=45, blank=True)
+    harv_fresh_weight = models.FloatField(blank=True, null=True)
+    harv_dry_weight = models.FloatField(blank=True, null=True)
     ghg_chamber_placement = models.CharField(max_length=45, blank=True)
-    ghg_N2O = models.CharField(max_length=45, blank=True)
-    ghg_CO2 = models.CharField(max_length=45, blank=True)
-    ghg_NH4 = models.CharField(max_length=45, blank=True)
+    ghg_N2O = models.FloatField(blank=True, null=True)
+    ghg_CO2 = models.FloatField(blank=True, null=True)
+    ghg_NH4 = models.FloatField(blank=True, null=True)
 
-
-class Air(models.Model):
-    sampleid = models.ForeignKey(Sample)
-    projectid = models.ForeignKey(Project)
-    refid = models.ForeignKey(Reference)
-    barometric_press = models.CharField(max_length=45, blank=True)
-    carb_dioxide = models.CharField(max_length=45, blank=True)
-    carb_monoxide = models.CharField(max_length=45, blank=True)
-    chem_administration = models.CharField(max_length=45, blank=True)
-    elev = models.CharField(max_length=45, blank=True)
-    humidity = models.CharField(max_length=45, blank=True)
-    methane = models.CharField(max_length=45, blank=True)
-    organism_count = models.CharField(max_length=45, blank=True)
-    oxy_stat_samp = models.CharField(max_length=45, blank=True)
-    oxygen = models.CharField(max_length=45, blank=True)
-    perturbation = models.CharField(max_length=45, blank=True)
-    pollutants = models.CharField(max_length=45, blank=True)
-    rel_to_oxygen = models.CharField(max_length=45, blank=True)
-    resp_part_matter = models.CharField(max_length=45, blank=True)
-    samp_collect_device = models.CharField(max_length=45, blank=True)
-    samp_mat_process = models.CharField(max_length=45, blank=True)
-    samp_salinity = models.CharField(max_length=45, blank=True)
-    samp_size = models.CharField(max_length=45, blank=True)
-    samp_store_dur = models.CharField(max_length=45, blank=True)
-    samp_store_loc = models.CharField(max_length=45, blank=True)
-    samp_store_temp = models.CharField(max_length=45, blank=True)
-    solar_irradiance = models.CharField(max_length=45, blank=True)
-    temp = models.CharField(max_length=45, blank=True)
-    ventilation_rate = models.CharField(max_length=45, blank=True)
-    ventilation_type = models.CharField(max_length=45, blank=True)
-    volatile_org_comp = models.CharField(max_length=45, blank=True)
-    wind_direction = models.CharField(max_length=45, blank=True)
-    wind_speed = models.CharField(max_length=45, blank=True)
-    user_defined = models.CharField(max_length=45, blank=True)
 
 
 class Water(models.Model):
