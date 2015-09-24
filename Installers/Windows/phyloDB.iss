@@ -1,6 +1,6 @@
 [Setup]
 AppName=myPhyloDB
-AppVersion=1.0.1
+AppVersion=1.1
 DefaultDirName={code:DefDirRoot}\myPhyloDB
 DefaultGroupName=myPhyloDB
 Compression=lzma2
@@ -8,7 +8,7 @@ SolidCompression=yes
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=lowest
-OutputBaseFilename=myPhyloDB_v.1.0.1_Win_x64_install
+OutputBaseFilename=myPhyloDB_v.1.1_Win_x64_install
 
 [Files]
 Source: "..\..\dist\myPhyloDB\*.pyd"; DestDir: "{app}"; Components: Main
