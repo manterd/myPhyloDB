@@ -445,7 +445,7 @@ class Water(models.Model):
     user_defined = models.CharField(max_length=45, blank=True)
 
 
-class User(models.Model):
+class UserDefined(models.Model):
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
@@ -455,12 +455,12 @@ class User(models.Model):
     usr_cat4 = models.TextField(blank=True)
     usr_cat5 = models.TextField(blank=True)
     usr_cat6 = models.TextField(blank=True)
-    usr_quant1 = models.CharField(max_length=45, blank=True)
-    usr_quant2 = models.CharField(max_length=45, blank=True)
-    usr_quant3 = models.CharField(max_length=45, blank=True)
-    usr_quant4 = models.CharField(max_length=45, blank=True)
-    usr_quant5 = models.CharField(max_length=45, blank=True)
-    usr_quant6 = models.CharField(max_length=45, blank=True)
+    usr_quant1 = models.FloatField(blank=True, null=True)
+    usr_quant2 = models.FloatField(blank=True, null=True)
+    usr_quant3 = models.FloatField(blank=True, null=True)
+    usr_quant4 = models.FloatField(blank=True, null=True)
+    usr_quant5 = models.FloatField(blank=True, null=True)
+    usr_quant6 = models.FloatField(blank=True, null=True)
 
     def natural_key(self):
         return self.sampleid

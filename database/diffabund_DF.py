@@ -1,6 +1,7 @@
 import operator
 import pandas as pd
 from django.db.models import Q
+import numpy as np
 from numpy import *
 from pyper import *
 
@@ -31,10 +32,8 @@ def catDiffAbundDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             if metaDF.empty:
                 metaDF = tempDF
             else:
@@ -51,10 +50,8 @@ def catDiffAbundDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -72,10 +69,8 @@ def catDiffAbundDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -93,10 +88,8 @@ def catDiffAbundDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -115,10 +108,8 @@ def catDiffAbundDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -136,10 +127,8 @@ def catDiffAbundDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -150,17 +139,15 @@ def catDiffAbundDF(qs1, metaDict):
         elif key in usrTableList:
             field_list.append('sampleid')
             field_list.append('sample_name')
-            field = 'user__' + str(key)
+            field = 'userdefined__' + str(key)
             field_list.append(field)
             if type(value) is unicode:
                 args_list.append(Q(**{field: value}))
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF

@@ -640,7 +640,7 @@
             table.rows().remove().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
-                        {% for User in project.user_set.all %}
+                        {% for User in project.userdefined_set.all %}
                             var id = "{{ User.sampleid.sampleid }}";
                             if (id == value) {
                                  table.row.add([

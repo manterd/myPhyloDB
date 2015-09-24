@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import simplejson
 from django.http import HttpResponse
-from models import Project, Reference, Sample, Soil, Microbial, User, Human_Associated, Air, Water
+from models import Project, Reference, Sample, Soil, Microbial, UserDefined, Human_Associated, Air, Water
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import remove_proj, purge
 from uuid import uuid4
@@ -12,7 +12,7 @@ from numpy import *
 import glob
 import os
 import shutil
-from django.contrib.auth.models import User as Users
+from django.contrib.auth.models import User
 import xlrd
 from xlutils.copy import copy
 
@@ -89,13 +89,14 @@ def status(request):
 def projectid(Document):
     f = xlrd.open_workbook(file_contents=Document.read())
     sheet = f.sheet_by_name('Project')
-    pType = sheet.cell_value(rowx=5, colx=1)
-    projectid = sheet.cell_value(rowx=5, colx=2)
+    pType = sheet.cell_value(rowx=5, colx=2)
+    projectid = sheet.cell_value(rowx=5, colx=3)
+    num_samp = int(sheet.cell_value(rowx=5, colx=0))
 
     if projectid == '':
-        return uuid4().hex, pType
+        return uuid4().hex, pType, num_samp
     else:
-        return projectid, pType
+        return projectid, pType, num_samp
 
 
 def parse_project(Document, p_uuid):
@@ -105,6 +106,7 @@ def parse_project(Document, p_uuid):
 
     df = pd.read_excel(Document, skiprows=4, sheetname='Project')
     rowDict = df.to_dict(outtype='records')[0]
+    rowDict.pop('num_samp')
     for key in rowDict.keys():
         if key == 'projectid':
             rowDict[key] = p_uuid
@@ -114,7 +116,7 @@ def parse_project(Document, p_uuid):
 
 def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
     project = Project.objects.get(projectid=p_uuid)
-    author = Users.objects.get(id=userid)
+    author = User.objects.get(id=userid)
 
     if raw:
         align_ref = ''
@@ -142,7 +144,7 @@ def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
         m.save()
 
 
-def parse_sample(Document, p_uuid, refid, pType):
+def parse_sample(Document, p_uuid, refid, pType, total):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
@@ -152,8 +154,6 @@ def parse_sample(Document, p_uuid, refid, pType):
     ref = Reference.objects.get(refid=refid)
 
     df1 = pd.read_excel(Document, skiprows=5, sheetname='MIMARKs')
-    total, ncols = df1.shape
-
     if pType == 'air':
         df2 = pd.read_excel(Document, skiprows=5, sheetname='Air')
     elif pType == 'human associated':
@@ -173,10 +173,11 @@ def parse_sample(Document, p_uuid, refid, pType):
     idList = []
     for i in xrange(total):
         step += 1.0
-        perc = int(step / total * 100)
+        perc = int((step / total/2) * 100)
 
         row = df1.iloc[[i]].to_dict(outtype='records')[0]
         index = row['sampleid']
+
         if not Sample.objects.filter(sampleid=index).exists():
             s_uuid = uuid4().hex
             row['sampleid'] = s_uuid
@@ -226,7 +227,7 @@ def parse_sample(Document, p_uuid, refid, pType):
         row = df3.iloc[[i]].to_dict(outtype='records')[0]
         row.pop('sampleid')
         row.pop('sample_name')
-        m = User(projectid=project, refid=ref, sampleid=sample, **row)
+        m = UserDefined(projectid=project, refid=ref, sampleid=sample, **row)
         m.save()
 
     rb = xlrd.open_workbook(Document, formatting_info=True)
@@ -277,11 +278,7 @@ def parse_sample(Document, p_uuid, refid, pType):
                 ws.write(j, 0, idList[i])
 
         wb.save(Document)
-
-        ### PARSER WORKS TO HERE
-        #TODO: Set models so that all fields (except ids & names) can be left blank in .xls and converted to Null, None, or NaN
-        #TODO: Need to designate in .xls the ones that can be left blank
-        #TODO: ANOVA & PCoA need to check for Null, None, or NaN based on data type
+        perc += 50/nSheets
 
 
 def parse_taxonomy(Document):
@@ -503,16 +500,14 @@ def reanalyze(request):
             dest = project.path
             pType = project.projectid.projectType
 
-            shutil.copy('% s/project.csv' % dest, '% s/project.csv' % mothurdest)
-            shutil.copy('% s/sample.csv' % dest, '% s/sample.csv' % mothurdest)
+            shutil.copy('% s/final_meta.csv' % dest, '% s/final_meta.csv' % mothurdest)
 
             remove_proj(dest)
 
             if not os.path.exists(dest):
                 os.makedirs(dest)
 
-            shutil.copy('% s/project.csv' % mothurdest, '% s/project.csv' % dest)
-            shutil.copy('% s/sample.csv' % mothurdest, '% s/sample.csv' % dest)
+            shutil.copy('% s/final_meta.csv' % mothurdest, '% s/final_meta.csv' % dest)
 
             try:
                 mothur(dest, source)
@@ -523,15 +518,19 @@ def reanalyze(request):
                     content_type="application/json"
                 )
 
-            with open('% s/project.csv' % dest, 'rb') as file1:
-                parse_project(file1, dest, p_uuid, pType)
+            metaName = 'final_meta.xls'
+            metaFile = '/'.join([dest, metaName])
+            parse_project(metaFile, p_uuid)
 
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
-                parse_reference(p_uuid, refid, dest, file7, raw, source)
+                userID = str(request.user.id)
+                parse_reference(p_uuid, refid, dest, file7, raw, source, userID)
 
-            with open('% s/sample.csv' % dest, 'rb') as file2:
-                parse_sample(file2, p_uuid, refid, dest, pType)
+            f = xlrd.open_workbook(file_contents=metaFile)
+            sheet = f.sheet_by_name('Project')
+            num_samp = int(sheet.cell_value(rowx=5, colx=0))
+            parse_sample(metaFile, p_uuid, refid, pType, num_samp)
 
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)

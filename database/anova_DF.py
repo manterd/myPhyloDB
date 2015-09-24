@@ -37,10 +37,9 @@ def catUnivMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
+            print tempDF
             if metaDF.empty:
                 metaDF = tempDF
             else:
@@ -57,10 +56,8 @@ def catUnivMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -78,10 +75,8 @@ def catUnivMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -99,10 +94,8 @@ def catUnivMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -120,10 +113,8 @@ def catUnivMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -141,10 +132,8 @@ def catUnivMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -162,10 +151,8 @@ def catUnivMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -188,10 +175,8 @@ def quantUnivMetaDF(qs1, metaDict):
             field_list.append('sample_name')
             field_list.append(value)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{value: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             if metaDF.empty:
                 metaDF = tempDF
             else:
@@ -203,10 +188,8 @@ def quantUnivMetaDF(qs1, metaDict):
             field = 'soil__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: value}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -219,10 +202,8 @@ def quantUnivMetaDF(qs1, metaDict):
             field = 'air__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: value}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -235,10 +216,8 @@ def quantUnivMetaDF(qs1, metaDict):
             field = 'water__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: value}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -251,10 +230,8 @@ def quantUnivMetaDF(qs1, metaDict):
             field = 'human_associated__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: value}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -267,10 +244,8 @@ def quantUnivMetaDF(qs1, metaDict):
             field = 'microbial__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: value}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -283,10 +258,8 @@ def quantUnivMetaDF(qs1, metaDict):
             field = 'user__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: value}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF

@@ -35,10 +35,8 @@ def catPCoAMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list)).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list))
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             if metaDF.empty:
                 metaDF = tempDF
             else:
@@ -55,10 +53,8 @@ def catPCoAMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list)).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list))
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -76,10 +72,8 @@ def catPCoAMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list)).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list))
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -97,10 +91,8 @@ def catPCoAMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list)).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list))
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -118,10 +110,8 @@ def catPCoAMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list)).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list))
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -139,10 +129,8 @@ def catPCoAMetaDF(qs1, metaDict):
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list)).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list))
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -153,17 +141,15 @@ def catPCoAMetaDF(qs1, metaDict):
         elif key in usrTableList:
             field_list.append('sampleid')
             field_list.append('sample_name')
-            field = 'user__' + str(key)
+            field = 'userdefined__' + str(key)
             field_list.append(field)
             if type(value) is unicode:
                 args_list.append(Q(**{field: value}))
             else:
                 for item in value:
                     args_list.append(Q(**{field: item}))
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list)).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list).filter(reduce(operator.or_, args_list))
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: key}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -186,10 +172,8 @@ def quantPCoAMetaDF(qs1, metaDict):
             field_list.append('sample_name')
             field_list.append(value)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{value: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             if metaDF.empty:
                 metaDF = tempDF
                 metaDF[value] = metaDF[value].astype(float)
@@ -198,6 +182,22 @@ def quantPCoAMetaDF(qs1, metaDict):
                 metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
                 metaDF[value] = metaDF[value].astype(float)
 
+        elif key == 'air':
+            field_list.append('sampleid')
+            field_list.append('sample_name')
+            field = 'air__' + str(value)
+            field_list.append(field)
+            final_fieldList.append(value)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
+            tempDF.rename(columns={field: value}, inplace=True)
+            if metaDF.empty:
+                metaDF = tempDF
+                metaDF[value] = metaDF[value].astype(float)
+            else:
+                tempDF.drop('sample_name', axis=1, inplace=True)
+                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
+                metaDF[value] = metaDF[value].astype(float)
 
         elif key == 'soil':
             field_list.append('sampleid')
@@ -205,10 +205,59 @@ def quantPCoAMetaDF(qs1, metaDict):
             field = 'soil__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
+            tempDF.rename(columns={field: value}, inplace=True)
+            if metaDF.empty:
+                metaDF = tempDF
+                metaDF[value] = metaDF[value].astype(float)
+            else:
+                tempDF.drop('sample_name', axis=1, inplace=True)
+                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
+                metaDF[value] = metaDF[value].astype(float)
+
+        elif key == 'human_associated':
+            field_list.append('sampleid')
+            field_list.append('sample_name')
+            field = 'human_associated__' + str(value)
+            field_list.append(field)
+            final_fieldList.append(value)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
+            tempDF.rename(columns={field: value}, inplace=True)
+            if metaDF.empty:
+                metaDF = tempDF
+                metaDF[value] = metaDF[value].astype(float)
+            else:
+                tempDF.drop('sample_name', axis=1, inplace=True)
+                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
+                metaDF[value] = metaDF[value].astype(float)
+
+        elif key == 'microbial':
+            field_list.append('sampleid')
+            field_list.append('sample_name')
+            field = 'microbial' + str(value)
+            field_list.append(field)
+            final_fieldList.append(value)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
+            tempDF.rename(columns={field: value}, inplace=True)
+            if metaDF.empty:
+                metaDF = tempDF
+                metaDF[value] = metaDF[value].astype(float)
+            else:
+                tempDF.drop('sample_name', axis=1, inplace=True)
+                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
+                metaDF[value] = metaDF[value].astype(float)
+
+        elif key == 'water':
+            field_list.append('sampleid')
+            field_list.append('sample_name')
+            field = 'water__' + str(value)
+            field_list.append(field)
+            final_fieldList.append(value)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: value}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF
@@ -221,13 +270,11 @@ def quantPCoAMetaDF(qs1, metaDict):
         elif key == 'user':
             field_list.append('sampleid')
             field_list.append('sample_name')
-            field = 'user__' + str(value)
+            field = 'userdefined__' + str(value)
             field_list.append(field)
             final_fieldList.append(value)
-            exclude_list = []
-            exclude_list.append(Q(**{field: 'null'}))
-            qs2 = qs1.values(*field_list).exclude(reduce(operator.or_, exclude_list))
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list)
+            qs2 = qs1.values(*field_list)
+            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
             tempDF.rename(columns={field: value}, inplace=True)
             if metaDF.empty:
                 metaDF = tempDF

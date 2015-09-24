@@ -13,6 +13,7 @@ from utils import handle_uploaded_file, remove_list, remove_proj
 from django.contrib.auth.decorators import login_required
 from uuid import uuid4
 from django.db.models import Q
+import xlrd
 
 
 rep_project = ''
@@ -34,7 +35,7 @@ def upload(request):
         if form1.is_valid():
             try:
                 file1 = request.FILES['docfile1']
-                p_uuid, pType = projectid(file1)
+                p_uuid, pType, num_samp = projectid(file1)
             except Exception as e:
                 print("Error with project file: " + str(e))
 
@@ -114,7 +115,7 @@ def upload(request):
                 )
 
             try:
-                parse_sample(metaFile, p_uuid, refid, pType)
+                parse_sample(metaFile, p_uuid, refid, pType, num_samp)
             except Exception as e:
                 print("Error with sample file: " + str(e))
                 remove_proj(dest)
@@ -489,7 +490,6 @@ def update(request):
     if form5.is_valid():
         refid = request.POST['refid']
         file1 = request.FILES['docfile11']
-        file2 = request.FILES['docfile12']
 
         project = Reference.objects.get(refid=refid)
         p_uuid = project.projectid.projectid
@@ -497,7 +497,10 @@ def update(request):
         dest = project.path
 
         try:
-            parse_project(file1, dest, p_uuid, pType)
+            metaName = 'final_meta.xls'
+            metaFile = '/'.join([dest, metaName])
+            handle_uploaded_file(file1, dest, metaName)
+            parse_project(metaFile, p_uuid)
         except Exception as e:
             state = "Error with project file: " + str(e)
             return render_to_response(
@@ -508,7 +511,10 @@ def update(request):
             )
 
         try:
-            parse_sample(file2, p_uuid, refid, dest, pType)
+            f = xlrd.open_workbook(file_contents=metaFile)
+            sheet = f.sheet_by_name('Project')
+            num_samp = int(sheet.cell_value(rowx=5, colx=0))
+            parse_sample(metaFile, p_uuid, refid, pType, num_samp)
         except Exception as e:
             state = "Error with sample file: " + str(e)
             return render_to_response(
