@@ -511,7 +511,7 @@ def update(request):
             )
 
         try:
-            f = xlrd.open_workbook(file_contents=metaFile)
+            f = xlrd.open_workbook(metaFile)
             sheet = f.sheet_by_name('Project')
             num_samp = int(sheet.cell_value(rowx=5, colx=0))
             parse_sample(metaFile, p_uuid, refid, pType, num_samp)

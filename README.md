@@ -11,7 +11,7 @@
 # Source code
 **Dependencies:**
 * CherryPy 3.6.0
-* Django 1.6.5
+* Django 1.8.4
 * Django-extensions 1.4.4
 * Django-registration-redux 1.2
 * PypeR 1.1.2

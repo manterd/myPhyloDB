@@ -1,6 +1,7 @@
 from django.db import models
 from django_extensions.db.fields import UUIDField
 from django.contrib.auth.models import User as Users
+import time
 
 
 class Project(models.Model):
@@ -9,8 +10,8 @@ class Project(models.Model):
     projectid = UUIDField(primary_key=True)
     project_name = models.TextField(blank=True)
     project_desc = models.TextField(blank=True)
-    start_date = models.DateField(max_length=15, blank=True)
-    end_date = models.DateField(max_length=15, blank=True)
+    start_date = models.CharField(max_length=15, blank=True)
+    end_date = models.CharField(max_length=15, blank=True)
     pi_last = models.TextField(blank=True)
     pi_first = models.TextField(blank=True)
     pi_affiliation = models.CharField(max_length=45, blank=True)
@@ -52,7 +53,7 @@ class Sample(models.Model):
     seq_gene_region = models.CharField(max_length=45, blank=True)
     seq_for_primer = models.CharField(max_length=45, blank=True)
     seq_rev_primer = models.CharField(max_length=45, blank=True)
-    collection_date = models.DateField(max_length=15, blank=True)
+    collection_date = models.CharField(max_length=15, blank=True)
     biome = models.CharField(max_length=45, blank=True)
     feature = models.CharField(max_length=45, blank=True)
     geo_loc_country = models.CharField(max_length=45, blank=True)
@@ -144,9 +145,9 @@ class Human_Associated(models.Model):
     diet_duration = models.FloatField(blank=True, null=True)
     diet_frequency = models.CharField(max_length=45, blank=True)
     diet_last_six_month = models.CharField(max_length=45, blank=True)
-    last_meal = models.DateField(blank=True)
+    last_meal = models.CharField(max_length=15, blank=True)
 
-    medic_hist_perform = models.DateField(blank=True)
+    medic_hist_perform = models.CharField(max_length=15, blank=True)
     disease_type = models.CharField(max_length=45, blank=True)
     disease_location = models.CharField(max_length=45, blank=True)
     disease_duration = models.FloatField(blank=True, null=True)

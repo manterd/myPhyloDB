@@ -39,7 +39,7 @@ def catUnivMetaDF(qs1, metaDict):
                     args_list.append(Q(**{field: item}))
             qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
             tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-            print tempDF
+
             if metaDF.empty:
                 metaDF = tempDF
             else:

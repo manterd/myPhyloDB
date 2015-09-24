@@ -15,6 +15,8 @@ import shutil
 from django.contrib.auth.models import User
 import xlrd
 from xlutils.copy import copy
+import xlwt
+from xlwt import Style
 
 
 stage = ''
@@ -110,6 +112,7 @@ def parse_project(Document, p_uuid):
     for key in rowDict.keys():
         if key == 'projectid':
             rowDict[key] = p_uuid
+
     m = Project(**rowDict)
     m.save()
 
@@ -169,23 +172,22 @@ def parse_sample(Document, p_uuid, refid, pType, total):
 
     df3 = pd.read_excel(Document, skiprows=5, sheetname='User')
 
-    s_uuid = ''
     idList = []
     for i in xrange(total):
         step += 1.0
         perc = int((step / total/2) * 100)
 
         row = df1.iloc[[i]].to_dict(outtype='records')[0]
-        index = row['sampleid']
+        s_uuid = row['sampleid']
 
-        if not Sample.objects.filter(sampleid=index).exists():
+        if not Sample.objects.filter(sampleid=s_uuid).exists():
             s_uuid = uuid4().hex
             row['sampleid'] = s_uuid
             idList.append(s_uuid)
             m = Sample(projectid=project, refid=ref, **row)
             m.save()
         else:
-            idList.append(index)
+            idList.append(s_uuid)
             m = Sample(projectid=project, refid=ref, **row)
             m.save()
 
@@ -234,48 +236,70 @@ def parse_sample(Document, p_uuid, refid, pType, total):
     nSheets = rb.nsheets
     wb = copy(rb)
 
+    style = xlwt.XFStyle()
+
+    # border
+    borders = xlwt.Borders()
+    borders.bottom = xlwt.Borders.THIN
+    borders.top = xlwt.Borders.THIN
+    borders.left = xlwt.Borders.THIN
+    borders.right = xlwt.Borders.THIN
+    style.borders = borders
+
+    # font
+    font = xlwt.Font()
+    font.name = 'Calibri'
+    font.height = 11 * 20
+    style.font = font
+
+    # background color
+    pattern = xlwt.Pattern()
+    pattern.pattern = xlwt.Pattern.SOLID_PATTERN
+    pattern.pattern_fore_colour = xlwt.Style.colour_map['gray25']
+    style.pattern = pattern
+
     for each in xrange(nSheets):
         ws = wb.get_sheet(each)
         if ws.name == 'Project':
-            ws.write(5, 2, p_uuid)
+            ws.write(5, 2, p_uuid, style)
 
         if ws.name == 'MIMARKs':
             for i in xrange(total):
                 j = i + 6
-                ws.write(j, 0, idList[i])
+                ws.write(j, 0, idList[i], style)
 
         if pType == 'air':
             if ws.name == 'Air':
                 for i in xrange(total):
                     j = i + 6
-                    ws.write(j, 0, idList[i])
+                    ws.write(j, 0, idList[i], style)
         elif pType == 'human associated':
             if ws.name == 'Human Associated':
                 for i in xrange(total):
                     j = i + 6
-                    ws.write(j, 0, idList[i])
+                    ws.write(j, 0, idList[i], style)
         elif pType == 'microbial':
             if ws.name == 'Microbial':
                 for i in xrange(total):
                     j = i + 6
-                    ws.write(j, 0, idList[i])
+                    ws.write(j, 0, idList[i], style)
         elif pType == 'soil':
             if ws.name == 'Soil':
                 for i in xrange(total):
                     j = i + 6
-                    ws.write(j, 0, idList[i])
+                    ws.write(j, 0, idList[i], style)
         elif pType == 'water':
             if ws.name == 'Water':
                 for i in xrange(total):
                     j = i + 6
-                    ws.write(j, 0, idList[i])
+                    ws.write(j, 0, idList[i], style)
         else:
             placeholder = ''
 
         if ws.name == 'User':
             for i in xrange(total):
                 j = i + 6
-                ws.write(j, 0, idList[i])
+                ws.write(j, 0, idList[i], style)
 
         wb.save(Document)
         perc += 50/nSheets
