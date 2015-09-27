@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import simplejson
 from django.http import HttpResponse
-from models import Project, Reference, Sample, Soil, Microbial, UserDefined, Human_Associated, Air, Water
+from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import remove_proj, purge
 from uuid import uuid4
@@ -92,6 +92,7 @@ def projectid(Document):
     f = xlrd.open_workbook(file_contents=Document.read())
     sheet = f.sheet_by_name('Project')
     pType = sheet.cell_value(rowx=5, colx=2)
+
     projectid = sheet.cell_value(rowx=5, colx=3)
     num_samp = int(sheet.cell_value(rowx=5, colx=0))
 
@@ -157,16 +158,10 @@ def parse_sample(Document, p_uuid, refid, pType, total):
     ref = Reference.objects.get(refid=refid)
 
     df1 = pd.read_excel(Document, skiprows=5, sheetname='MIMARKs')
-    if pType == 'air':
-        df2 = pd.read_excel(Document, skiprows=5, sheetname='Air')
-    elif pType == 'human associated':
+    if pType == 'human associated':
         df2 = pd.read_excel(Document, skiprows=5, sheetname='Human Associated')
-    elif pType == 'microbial':
-        df2 = pd.read_excel(Document, skiprows=5, sheetname='Microbial')
     elif pType == 'soil':
         df2 = pd.read_excel(Document, skiprows=5, sheetname='Soil')
-    elif pType == 'water':
-        df2 = pd.read_excel(Document, skiprows=5, sheetname='Water')
     else:
         df2 = pd.DataFrame()
 
@@ -179,6 +174,9 @@ def parse_sample(Document, p_uuid, refid, pType, total):
 
         row = df1.iloc[[i]].to_dict(outtype='records')[0]
         s_uuid = row['sampleid']
+        row.pop('seq_method')
+        row.pop('geo_loc_name')
+        row.pop('lat_lon')
 
         if not Sample.objects.filter(sampleid=s_uuid).exists():
             s_uuid = uuid4().hex
@@ -193,35 +191,17 @@ def parse_sample(Document, p_uuid, refid, pType, total):
 
         sample = Sample.objects.get(sampleid=s_uuid)
 
-        if pType == "air":
-            row = df2.iloc[[i]].to_dict(outtype='records')[0]
-            row.pop('sampleid')
-            row.pop('sample_name')
-            m = Air(projectid=project, refid=ref, sampleid=sample, **row)
-            m.save()
-        elif pType == "human associated":
+        if pType == "human associated":
             row = df2.iloc[[i]].to_dict(outtype='records')[0]
             row.pop('sampleid')
             row.pop('sample_name')
             m = Human_Associated(projectid=project, refid=ref, sampleid=sample, **row)
-            m.save()
-        elif pType == "microbial":
-            row = df2.iloc[[i]].to_dict(outtype='records')[0]
-            row.pop('sampleid')
-            row.pop('sample_name')
-            m = Microbial(projectid=project, refid=ref, sampleid=sample, **row)
             m.save()
         elif pType == "soil":
             row = df2.iloc[[i]].to_dict(outtype='records')[0]
             row.pop('sampleid')
             row.pop('sample_name')
             m = Soil(projectid=project, refid=ref, sampleid=sample, **row)
-            m.save()
-        elif pType == "water":
-            row = df2.iloc[[i]].to_dict(outtype='records')[0]
-            row.pop('sampleid')
-            row.pop('sample_name')
-            m = Water(projectid=project, refid=ref, sampleid=sample, **row)
             m.save()
         else:
             placeholder = ''
@@ -268,28 +248,13 @@ def parse_sample(Document, p_uuid, refid, pType, total):
                 j = i + 6
                 ws.write(j, 0, idList[i], style)
 
-        if pType == 'air':
-            if ws.name == 'Air':
-                for i in xrange(total):
-                    j = i + 6
-                    ws.write(j, 0, idList[i], style)
-        elif pType == 'human associated':
+        if pType == 'human associated':
             if ws.name == 'Human Associated':
-                for i in xrange(total):
-                    j = i + 6
-                    ws.write(j, 0, idList[i], style)
-        elif pType == 'microbial':
-            if ws.name == 'Microbial':
                 for i in xrange(total):
                     j = i + 6
                     ws.write(j, 0, idList[i], style)
         elif pType == 'soil':
             if ws.name == 'Soil':
-                for i in xrange(total):
-                    j = i + 6
-                    ws.write(j, 0, idList[i], style)
-        elif pType == 'water':
-            if ws.name == 'Water':
                 for i in xrange(total):
                     j = i + 6
                     ws.write(j, 0, idList[i], style)

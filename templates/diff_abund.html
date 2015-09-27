@@ -258,14 +258,31 @@
             var RID = makeGUID();
             startTimer(RID);
             var array1 = [];
+            var Parent = '';
+            var key = '';
+            var value = '';
+            var next = '';
             for (var i = 0; i < nodesCat.length; i++) {
-                var key1 = nodesCat[i].data.id;
-                var value1 = nodesCat[i].data.title;
                 if (nodesCat[i].getLevel() == 4) {
-                    var next1 = '"' + key1 + '" : "' + value1 + '"';
-                    array1.push(next1);
+                    Parent = nodesCat[i].getParent();
+                    if ((Parent.data.id == 'mimark') || (Parent.data.id == 'user')) {
+                        key = nodesCat[i].data.id;
+                        value = nodesCat[i].data.title;
+                        next = '"' + key + '" : "' + value + '"';
+                        array1.push(next);
+                    }
+                }
+                else if (nodesCat[i].getLevel() == 5) {
+                    Parent = nodesCat[i].getParent();
+                    if ((Parent.data.id == 'human_associated') || (Parent.data.id == 'soil')) {
+                        key = nodesCat[i].data.id;
+                        value = nodesCat[i].data.title;
+                        next = '"' + key + '" : "' + value + '"';
+                        array1.push(next);
+                    }
                 }
             }
+
             if (checkDupes(array1)) {
                 var meta = "{" + array1.join(",") + "}";
 

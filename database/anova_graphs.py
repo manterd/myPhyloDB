@@ -58,7 +58,7 @@ def removeRIDANOVA(request):
 def getCatUnivData(request):
     try:
         try:
-            global base, time1, TimeDiff
+            global base, stage, time1, TimeDiff
 
             # Get selected samples from cookie and query database for sample info
             samples = Sample.objects.all()
@@ -374,7 +374,6 @@ def getCatUnivData(request):
                                         p_val = np.nan
                                     dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'mean1': np.mean(smp1), 'mean2': np.mean(smp2), 'stdev1': np.std(smp1), 'stdev2': np.std(smp2), 'p_value': p_val}
                                     rows_list.append(dict1)
-                                    base[RID] = 'Step 3 of 4: Performing statistical test...' + str(val1) + ' vs ' + str(val2) + ' is done!'
 
                         pvalDF = pd.DataFrame(rows_list)
                         pvalDF.sort(columns='p_value', inplace=True)

@@ -130,25 +130,6 @@
             } else {
                 $("#humasso").hide();
             }
-            if (pTypes.indexOf("microbial")>-1) {
-                updateMicrobialTable(selKeys);
-                $("#microbial").show();
-            } else {
-                $("#microbial").hide();
-            }
-            if (pTypes.indexOf("water")>-1) {
-                updateWaterTable(selKeys);
-                $("#water").show();
-            } else {
-                $("#water").hide();
-            }
-            if (pTypes.indexOf("air")>-1) {
-                updateAirTable(selKeys);
-                $("#air").show();
-            } else {
-                $("#air").hide();
-            }
-
             updateUsrTable(selKeys);
         }
 
@@ -199,16 +180,17 @@
                                 "{{ sample.sampleid }}",
                                 "{{ sample.sample_name }}",
                                 "{{ sample.organism }}",
-                                "{{ sample.material }}",
-                                "{{ sample.title }}",
+                                "{{ sample.collection_date }}",
+                                "{{ sample.depth }}",
+                                "{{ sample.elev }}",
                                 "{{ sample.seq_platform }}",
                                 "{{ sample.seq_gene }}",
                                 "{{ sample.seq_gene_region }}",
                                 "{{ sample.seq_for_primer }}",
                                 "{{ sample.seq_rev_primer }}",
-                                "{{ sample.collection_date }}",
-                                "{{ sample.biome }}",
-                                "{{ sample.feature }}",
+                                "{{ sample.env_biome }}",
+                                "{{ sample.env_feature }}",
+                                "{{ sample.env_material }}",
                                 "{{ sample.geo_loc_country }}",
                                 "{{ sample.geo_loc_state }}",
                                 "{{ sample.geo_loc_city }}",
@@ -216,161 +198,12 @@
                                 "{{ sample.geo_loc_plot }}",
                                 "{{ sample.latitude }}",
                                 "{{ sample.longitude }}",
-                                "{{ sample.elevation }}",
                                 "{{ sample.annual_season_precpt }}",
                                 "{{ sample.annual_season_temp }}"
                              ]).draw();
                         }
                     {% endfor %}
                 {% endfor %}
-            });
-        }
-
-        function updateWaterTable(selKeys) {
-            var table = $('#waterTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Water in project.water_set.all %}
-                            var id = "{{ Water.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table.row.add([
-                                     "{{ project.project_name }}",
-                                     "{{ Water.sampleid.sample_name }}",
-                                     "{{ Water.alkalinity }}",
-                                     "{{ Water.alkyl_diethers }}",
-                                     "{{ Water.altitude }}",
-                                     "{{ Water.aminopept_act }}",
-                                     "{{ Water.ammonium }}",
-                                     "{{ Water.atmospheric_data }}",
-                                     "{{ Water.bac_prod }}",
-                                     "{{ Water.bac_resp }}",
-                                     "{{ Water.bacteria_carb_prod }}",
-                                     "{{ Water.biomass }}",
-                                     "{{ Water.bishomohopanol }}",
-                                     "{{ Water.bromide }}",
-                                     "{{ Water.calcium }}",
-                                     "{{ Water.carb_nitro_ratio }}",
-                                     "{{ Water.chem_administration }}",
-                                     "{{ Water.chloride }}",
-                                     "{{ Water.chlorophyll }}",
-                                     "{{ Water.conduc }}",
-                                     "{{ Water.density }}",
-                                     "{{ Water.diether_lipids }}",
-                                     "{{ Water.diss_carb_dioxide }}",
-                                     "{{ Water.diss_hydrogen }}",
-                                     "{{ Water.diss_inorg_carb }}",
-                                     "{{ Water.diss_inorg_nitro }}",
-                                     "{{ Water.diss_inorg_phosp }}",
-                                     "{{ Water.diss_org_carb }}",
-                                     "{{ Water.diss_org_nitro }}",
-                                     "{{ Water.diss_oxygen }}",
-                                     "{{ Water.down_par }}",
-                                     "{{ Water.elev }}",
-                                     "{{ Water.fluor }}",
-                                     "{{ Water.glucosidase_act }}",
-                                     "{{ Water.light_intensity }}",
-                                     "{{ Water.magnesium }}",
-                                     "{{ Water.mean_frict_vel }}",
-                                     "{{ Water.mean_peak_frict_vel }}",
-                                     "{{ Water.n_alkanes }}",
-                                     "{{ Water.nitrate }}",
-                                     "{{ Water.nitrite }}",
-                                     "{{ Water.nitro }}",
-                                     "{{ Water.org_carb }}",
-                                     "{{ Water.org_matter }}",
-                                     "{{ Water.org_nitro }}",
-                                     "{{ Water.organism_count }}",
-                                     "{{ Water.oxy_stat_samp }}",
-                                     "{{ Water.part_org_carb }}",
-                                     "{{ Water.part_org_nitro }}",
-                                     "{{ Water.perturbation }}",
-                                     "{{ Water.petroleum_hydrocarb }}",
-                                     "{{ Water.ph }}",
-                                     "{{ Water.phaeopigments }}",
-                                     "{{ Water.phosphate }}",
-                                     "{{ Water.phosplipid_fatt_acid }}",
-                                     "{{ Water.photon_flux }}",
-                                     "{{ Water.potassium }}",
-                                     "{{ Water.pressure }}",
-                                     "{{ Water.primary_prod }}",
-                                     "{{ Water.redox_potential }}",
-                                     "{{ Water.rel_to_oxygen }}",
-                                     "{{ Water.samp_mat_process }}",
-                                     "{{ Water.samp_salinity }}",
-                                     "{{ Water.samp_size }}",
-                                     "{{ Water.samp_store_dur }}",
-                                     "{{ Water.samp_store_loc }}",
-                                     "{{ Water.samp_store_temp }}",
-                                     "{{ Water.samp_vold_we_dna_ext }}",
-                                     "{{ Water.silicate }}",
-                                     "{{ Water.sodium }}",
-                                     "{{ Water.soluble_react_phosp }}",
-                                     "{{ Water.source_material_id }}",
-                                     "{{ Water.sulfate }}",
-                                     "{{ Water.sulfide }}",
-                                     "{{ Water.suspend_part_matter }}",
-                                     "{{ Water.temp }}",
-                                     "{{ Water.tidal_stage }}",
-                                     "{{ Water.tot_depth_water_col }}",
-                                     "{{ Water.tot_diss_nitro }}",
-                                     "{{ Water.tot_inorg_nitro }}",
-                                     "{{ Water.tot_nitro }}",
-                                     "{{ Water.tot_part_carb }}",
-                                     "{{ Water.tot_phosp }}",
-                                     "{{ Water.water_current }}",
-                                     "{{ Water.user_defined }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
-
-        function updateAirTable(selKeys) {
-            var table = $('#airTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Air in project.air_set.all %}
-                            var id = "{{ Air.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Air.sampleid.sample_name }}",
-                                    "{{ Air.barometric_press }}",
-                                    "{{ Air.carb_dioxide }}",
-                                    "{{ Air.carb_monoxide }}",
-                                    "{{ Air.chem_administration }}",
-                                    "{{ Air.elev }}",
-                                    "{{ Air.humidity }}",
-                                    "{{ Air.methane }}",
-                                    "{{ Air.organism_count }}",
-                                    "{{ Air.oxy_stat_samp }}",
-                                    "{{ Air.oxygen }}",
-                                    "{{ Air.perturbation }}",
-                                    "{{ Air.pollutants }}",
-                                    "{{ Air.rel_to_oxygen }}",
-                                    "{{ Air.resp_part_matter }}",
-                                    "{{ Air.samp_collect_device }}",
-                                    "{{ Air.samp_mat_process }}",
-                                    "{{ Air.samp_salinity }}",
-                                    "{{ Air.samp_size }}",
-                                    "{{ Air.samp_store_dur }}",
-                                    "{{ Air.samp_store_loc }}",
-                                    "{{ Air.samp_store_temp }}",
-                                    "{{ Air.solar_irradiance }}",
-                                    "{{ Air.temp }}",
-                                    "{{ Air.ventilation_rate }}",
-                                    "{{ Air.ventilation_type }}",
-                                    "{{ Air.volatile_org_comp }}",
-                                    "{{ Air.wind_direction }}",
-                                    "{{ Air.wind_speed }}",
-                                    "{{ Air.user_defined }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
             });
         }
 
@@ -441,87 +274,6 @@
             });
         }
 
-        function updateMicrobialTable(selKeys){
-           var table = $('#microbialTable').DataTable();
-            table.rows().remove().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Microbial in project.microbial_set.all %}
-                            var id = "{{ Microbial.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Microbial.sampleid.sample_name }}",
-                                    "{{ Microbial.alkalinity }}",
-                                    "{{ Microbial.alkyl_diethers }}",
-                                    "{{ Microbial.altitude }}",
-                                    "{{ Microbial.aminopept_act }}",
-                                    "{{ Microbial.ammonium }}",
-                                    "{{ Microbial.bacteria_carb_prod }}",
-                                    "{{ Microbial.biomass }}",
-                                    "{{ Microbial.bishomohopanol }}",
-                                    "{{ Microbial.bromide }}",
-                                    "{{ Microbial.calcium }}",
-                                    "{{ Microbial.carb_nitro_ratio }}",
-                                    "{{ Microbial.chem_administration }}",
-                                    "{{ Microbial.chloride }}",
-                                    "{{ Microbial.chlorophyll }}",
-                                    "{{ Microbial.diether_lipids }}",
-                                    "{{ Microbial.diss_carb_dioxide }}",
-                                    "{{ Microbial.diss_hydrogen }}",
-                                    "{{ Microbial.diss_inorg_carb }}",
-                                    "{{ Microbial.diss_org_carb }}",
-                                    "{{ Microbial.diss_org_nitro }}",
-                                    "{{ Microbial.diss_oxygen }}",
-                                    "{{ Microbial.glucosidase_act }}",
-                                    "{{ Microbial.magnesium }}",
-                                    "{{ Microbial.mean_frict_vel }}",
-                                    "{{ Microbial.mean_peak_frict_vel }}",
-                                    "{{ Microbial.methane }}",
-                                    "{{ Microbial.n_alkanes }}",
-                                    "{{ Microbial.nitrate }}",
-                                    "{{ Microbial.nitrite }}",
-                                    "{{ Microbial.nitro }}",
-                                    "{{ Microbial.org_carb }}",
-                                    "{{ Microbial.org_matter }}",
-                                    "{{ Microbial.org_nitro }}",
-                                    "{{ Microbial.organism_count }}",
-                                    "{{ Microbial.oxy_stat_samp }}",
-                                    "{{ Microbial.part_org_carb }}",
-                                    "{{ Microbial.perturbation }}",
-                                    "{{ Microbial.petroleum_hydrocarb }}",
-                                    "{{ Microbial.ph }}",
-                                    "{{ Microbial.phaeopigments }}",
-                                    "{{ Microbial.phosphate }}",
-                                    "{{ Microbial.phosplipid_fatt_acid }}",
-                                    "{{ Microbial.potassium }}",
-                                    "{{ Microbial.pressure }}",
-                                    "{{ Microbial.redox_potential }}",
-                                    "{{ Microbial.rel_to_oxygen }}",
-                                    "{{ Microbial.salinity }}",
-                                    "{{ Microbial.samp_collect_device }}",
-                                    "{{ Microbial.samp_mat_process }}",
-                                    "{{ Microbial.samp_size }}",
-                                    "{{ Microbial.samp_store_dur }}",
-                                    "{{ Microbial.samp_store_loc }}",
-                                    "{{ Microbial.samp_store_temp }}",
-                                    "{{ Microbial.silicate }}",
-                                    "{{ Microbial.sodium }}",
-                                    "{{ Microbial.sulfate }}",
-                                    "{{ Microbial.sulfide }}",
-                                    "{{ Microbial.temp }}",
-                                    "{{ Microbial.tot_carb }}",
-                                    "{{ Microbial.tot_nitro }}",
-                                    "{{ Microbial.tot_org_carb }}",
-                                    "{{ Microbial.turbidity }}",
-                                    "{{ Microbial.water_content }}",
-                                    "{{ Microbial.user_defined }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-            });
-        }
         function updateSoilTable(selKeys){
             var table = $('#soilTable').DataTable();
             table.rows().remove().draw();
@@ -536,6 +288,7 @@
                                     "{{ Soil.samp_collection_device }}",
                                     "{{ Soil.samp_size }}",
                                     "{{ Soil.samp_depth }}",
+                                    "{{ Soil.samp_prep }}",
                                     "{{ Soil.sieve_size }}",
                                     "{{ Soil.storage_cond }}",
                                     "{{ Soil.samp_weight_dna_ext }}",
@@ -692,11 +445,8 @@
             <ul>
                 <li><a href="#tabs-1" style="font-size: 14px">Project</a></li>
                 <li><a href="#tabs-2" style="font-size: 14px">MIMARKs</a></li>
-                <li><a href="#tabs-soil" style="font-size: 14px; display: none" id="soil">Soil</a></li>
-                <li><a href="#tabs-air" style="font-size: 14px; display: none" id="air">Air</a></li>
-                <li><a href="#tabs-water" style="font-size: 14px; display: none" id="water">Water</a></li>
                 <li><a href="#tabs-humasso" style="font-size: 14px; display: none" id="humasso">Human Associated</a></li>
-                <li><a href="#tabs-11" style="font-size: 14px; display: none" id="microbial">Microbial</a></li>
+                <li><a href="#tabs-soil" style="font-size: 14px; display: none" id="soil">Soil</a></li>
                 <li><a href="#tabs-9" style="font-size: 14px" id="usr">User-defined</a></li>
             </ul>
 
@@ -731,16 +481,17 @@
                             <th>sample_id</th>
                             <th>sample_name</th>
                             <th>organism</th>
-                             <th>material</th>
-                            <th>title</th>
+                            <th>collection_date</th>
+                            <th>depth</th>
+                            <th>elev</th>
                             <th>seq_platform</th>
                             <th>seq_gene</th>
                             <th>seq_gene_region</th>
                             <th>seq_for_primer</th>
                             <th>seq_rev_primer</th>
-                            <th>collection_date</th>
-                            <th>biome</th>
-                            <th>feature</th>
+                            <th>env_biome</th>
+                            <th>env_feature</th>
+                            <th>env_material</th>
                             <th>geo_loc_country</th>
                             <th>geo_loc_state</th>
                             <th>geo_loc_city</th>
@@ -748,9 +499,68 @@
                             <th>geo_loc_plot</th>
                             <th>latitude</th>
                             <th>longitude</th>
-                            <th>elevation</th>
                             <th>annual_season_precpt</th>
                             <th>annual_season_temp</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div id="tabs-humasso">
+                <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                    <thead>
+                        <tr>
+                            <th>project_name</th>
+                            <th>sample_name</th>
+                            <th>samp_collect_device</th>
+                            <th>samp_mat_process</th>
+                            <th>samp_size</th>
+                            <th>samp_store_temp</th>
+                            <th>samp_store_dur</th>
+                            <th>samp_type</th>
+                            <th>samp_location</th>
+                            <th>samp_temp</th>
+                            <th>samp_ph</th>
+                            <th>samp_oxy_stat</th>
+                            <th>samp_salinity</th>
+                            <th>host_subject_id</th>
+                            <th>host_age</th>
+                            <th>host_pulse</th>
+                            <th>host_gender</th>
+                            <th>host_ethnicity</th>
+                            <th>host_height</th>
+                            <th>host_weight</th>
+                            <th>host_bmi</th>
+                            <th>host_weight_loss_3_month</th>
+                            <th>host_body_temp</th>
+                            <th>host_occupation</th>
+                            <th>pet_farm_animal</th>
+                            <th>smoker</th>
+                            <th>diet_type</th>
+                            <th>diet_duration</th>
+                            <th>diet_frequency</th>
+                            <th>diet_last_six_month</th>
+                            <th>last_meal</th>
+                            <th>medic_hist_perform</th>
+                            <th>disease_type</th>
+                            <th>disease_location</th>
+                            <th>disease_duration</th>
+                            <th>organism_count</th>
+                            <th>tumor_location</th>
+                            <th>tumor_mass</th>
+                            <th>tumor_stage</th>
+                            <th>drug_usage</th>
+                            <th>drug_type</th>
+                            <th>drug_duration</th>
+                            <th>drug_frequency</th>
+                            <th>perturbation</th>
+                            <th>pert_type</th>
+                            <th>pert_duration</th>
+                            <th>pert_frequency</th>
+                            <th>fetal_health_stat</th>
+                            <th>amniotic_fluid_color</th>
+                            <th>gestation_stat</th>
+                            <th>maternal_health_stat</th>
                         </tr>
                     </thead>
                 </table>
@@ -765,6 +575,7 @@
                             <th>samp_collection_device</th>
                             <th>samp_size</th>
                             <th>samp_depth</th>
+                            <th>samp_prep</th>
                             <th>sieve_size</th>
                             <th>storage_cond</th>
                             <th>samp_weight_dna_ext</th>
@@ -857,275 +668,6 @@
                             <th>ghg_N2O</th>
                             <th>ghg_CO2</th>
                             <th>ghg_NH4</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-11">
-                <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>project_name</th>
-                            <th>sample_name</th>
-                            <th>alkalinity</th>
-                            <th>alkyl_diethers</th>
-                            <th>altitude</th>
-                            <th>aminopept_act</th>
-                            <th>ammonium</th>
-                            <th>bacteria_carb_prod</th>
-                            <th>biomass</th>
-                            <th>bishomohopanol</th>
-                            <th>bromide</th>
-                            <th>calcium</th>
-                            <th>carb_nitro_ratio</th>
-                            <th>chem_administration</th>
-                            <th>chloride</th>
-                            <th>chlorophyll</th>
-                            <th>diether_lipids</th>
-                            <th>diss_carb_dioxide</th>
-                            <th>diss_hydrogen</th>
-                            <th>diss_inorg_carb</th>
-                            <th>diss_org_carb</th>
-                            <th>diss_org_nitro</th>
-                            <th>diss_oxygen</th>
-                            <th>glucosidase_act</th>
-                            <th>magnesium</th>
-                            <th>mean_frict_vel</th>
-                            <th>mean_peak_frict_vel</th>
-                            <th>methane</th>
-                            <th>n_alkanes</th>
-                            <th>nitrate</th>
-                            <th>nitrite</th>
-                            <th>nitro</th>
-                            <th>org_carb</th>
-                            <th>org_matter</th>
-                            <th>org_nitro</th>
-                            <th>organism_count</th>
-                            <th>oxy_stat_samp</th>
-                            <th>part_org_carb</th>
-                            <th>perturbation</th>
-                            <th>petroleum_hydrocarb</th>
-                            <th>ph</th>
-                            <th>phaeopigments</th>
-                            <th>phosphate</th>
-                            <th>phosplipid_fatt_acid</th>
-                            <th>potassium</th>
-                            <th>pressure</th>
-                            <th>redox_potential</th>
-                            <th>rel_to_oxygen</th>
-                            <th>salinity</th>
-                            <th>samp_collect_device</th>
-                            <th>samp_mat_process</th>
-                            <th>samp_size</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_store_loc</th>
-                            <th>samp_store_temp</th>
-                            <th>silicate</th>
-                            <th>sodium</th>
-                            <th>sulfate</th>
-                            <th>sulfide</th>
-                            <th>temp</th>
-                            <th>tot_carb</th>
-                            <th>tot_nitro</th>
-                            <th>tot_org_carb</th>
-                            <th>turbidity</th>
-                            <th>water_content</th>
-                            <th>user_defined</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-humasso">
-                <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>project_name</th>
-                            <th>sample_name</th>
-                            <th>samp_collect_device</th>
-                            <th>samp_mat_process</th>
-                            <th>samp_size</th>
-                            <th>samp_store_temp</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_type</th>
-                            <th>samp_location</th>
-                            <th>samp_temp</th>
-                            <th>samp_ph</th>
-                            <th>samp_oxy_stat</th>
-                            <th>samp_salinity</th>
-                            <th>host_subject_id</th>
-                            <th>host_age</th>
-                            <th>host_pulse</th>
-                            <th>host_gender</th>
-                            <th>host_ethnicity</th>
-                            <th>host_height</th>
-                            <th>host_weight</th>
-                            <th>host_bmi</th>
-                            <th>host_weight_loss_3_month</th>
-                            <th>host_body_temp</th>
-                            <th>host_occupation</th>
-                            <th>pet_farm_animal</th>
-                            <th>smoker</th>
-                            <th>diet_type</th>
-                            <th>diet_duration</th>
-                            <th>diet_frequency</th>
-                            <th>diet_last_six_month</th>
-                            <th>last_meal</th>
-                            <th>medic_hist_perform</th>
-                            <th>disease_type</th>
-                            <th>disease_location</th>
-                            <th>disease_duration</th>
-                            <th>organism_count</th>
-                            <th>tumor_location</th>
-                            <th>tumor_mass</th>
-                            <th>tumor_stage</th>
-                            <th>drug_usage</th>
-                            <th>drug_type</th>
-                            <th>drug_duration</th>
-                            <th>drug_frequency</th>
-                            <th>perturbation</th>
-                            <th>pert_type</th>
-                            <th>pert_duration</th>
-                            <th>pert_frequency</th>
-                            <th>fetal_health_stat</th>
-                            <th>amniotic_fluid_color</th>
-                            <th>gestation_stat</th>
-                            <th>maternal_health_stat</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-water">
-                <table id="waterTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                             <th>project_name</th>
-                             <th>sample_name</th>
-                             <th>alkalinity</th>
-                             <th>alkyl_diethers</th>
-                             <th>altitude</th>
-                             <th>aminopept_act</th>
-                             <th>ammonium</th>
-                             <th>atmospheric_data</th>
-                             <th>bac_prod</th>
-                             <th>bac_resp</th>
-                             <th>bacteria_carb_prod</th>
-                             <th>biomass</th>
-                             <th>bishomohopanol</th>
-                             <th>bromide</th>
-                             <th>calcium</th>
-                             <th>carb_nitro_ratio</th>
-                             <th>chem_administration</th>
-                             <th>chloride</th>
-                             <th>chlorophyll</th>
-                             <th>conduc</th>
-                             <th>density</th>
-                             <th>diether_lipids</th>
-                             <th>diss_carb_dioxide</th>
-                             <th>diss_hydrogen</th>
-                             <th>diss_inorg_carb</th>
-                             <th>diss_inorg_nitro</th>
-                             <th>diss_inorg_phosp</th>
-                             <th>diss_org_carb</th>
-                             <th>diss_org_nitro</th>
-                             <th>diss_oxygen</th>
-                             <th>down_par</th>
-                             <th>elev</th>
-                             <th>fluor</th>
-                             <th>glucosidase_act</th>
-                             <th>light_intensity</th>
-                             <th>magnesium</th>
-                             <th>mean_frict_vel</th>
-                             <th>mean_peak_frict_vel</th>
-                             <th>n_alkanes</th>
-                             <th>nitrate</th>
-                             <th>nitrite</th>
-                             <th>nitro</th>
-                             <th>org_carb</th>
-                             <th>org_matter</th>
-                             <th>org_nitro</th>
-                             <th>organism_count</th>
-                             <th>oxy_stat_samp</th>
-                             <th>part_org_carb</th>
-                             <th>part_org_nitro</th>
-                             <th>perturbation</th>
-                             <th>petroleum_hydrocarb</th>
-                             <th>ph</th>
-                             <th>phaeopigments</th>
-                             <th>phosphate</th>
-                             <th>phosplipid_fatt_acid</th>
-                             <th>photon_flux</th>
-                             <th>potassium</th>
-                             <th>pressure</th>
-                             <th>primary_prod</th>
-                             <th>redox_potential</th>
-                             <th>rel_to_oxygen</th>
-                             <th>samp_mat_process</th>
-                             <th>samp_salinity</th>
-                             <th>samp_size</th>
-                             <th>samp_store_dur</th>
-                             <th>samp_store_loc</th>
-                             <th>samp_store_temp</th>
-                             <th>samp_vold_we_dna_ext</th>
-                             <th>silicate</th>
-                             <th>sodium</th>
-                             <th>soluble_react_phosp</th>
-                             <th>source_material_id</th>
-                             <th>sulfate</th>
-                             <th>sulfide</th>
-                             <th>suspend_part_matter</th>
-                             <th>temp</th>
-                             <th>tidal_stage</th>
-                             <th>tot_depth_water_col</th>
-                             <th>tot_diss_nitro</th>
-                             <th>tot_inorg_nitro</th>
-                             <th>tot_nitro</th>
-                             <th>vtot_part_carb</th>
-                             <th>tot_phosp</th>
-                             <th>water_current</th>
-                             <th>vuser_defined</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-
-            <div id="tabs-air">
-                <table id="airTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th>project_name</th>
-                            <th>sample_name</th>
-                            <th>barometric_press</th>
-                            <th>carb_dioxide</th>
-                            <th>carb_monoxide</th>
-                            <th>chem_administration</th>
-                            <th>elev</th>
-                            <th>humidity</th>
-                            <th>methane</th>
-                            <th>organism_count</th>
-                            <th>oxy_stat_samp</th>
-                            <th>oxygen</th>
-                            <th>perturbation</th>
-                            <th>pollutants</th>
-                            <th>rel_to_oxygen</th>
-                            <th>resp_part_matter</th>
-                            <th>samp_collect_device</th>
-                            <th>samp_mat_process</th>
-                            <th>samp_salinity</th>
-                            <th>samp_size</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_store_loc</th>
-                            <th>samp_store_temp</th>
-                            <th>solar_irradiance</th>
-                            <th>temp</th>
-                            <th>ventilation_rate</th>
-                            <th>ventilation_type</th>
-                            <th>volatile_org_comp</th>
-                            <th>wind_direction</th>
-                            <th>wind_speed</th>
-                            <th>user_defined</th>
                         </tr>
                     </thead>
                 </table>
