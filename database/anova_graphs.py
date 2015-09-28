@@ -67,6 +67,7 @@ def getCatUnivData(request):
             qs1 = Sample.objects.all().filter(sampleid__in=selected)
         except Exception as e:
             print("Error starting ANOVA: ", e)
+
         if request.is_ajax():
             try:
                 # Get variables from web page
@@ -234,13 +235,6 @@ def getCatUnivData(request):
             # Normalize data
             try:
                 base[RID] = 'Step 2 of 6: Normalizing data...'
-
-                # Create combined metadata column
-                if len(fieldList) > 1:
-                    for index, row in metaDF.iterrows():
-                        metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
-                else:
-                    metaDF['merge'] = metaDF[fieldList[0]]
 
                 normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
                 normDF.sort('sampleid')
@@ -684,24 +678,39 @@ def getQuantUnivData(request):
             else:
                 result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
-            metaString = all["meta"]
-            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
+            metaStrCat = all["metaCat"]
+            fieldListCat = []
+            if metaStrCat:
+                metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
+                for key in metaDictCat:
+                    fieldListCat.append(key)
 
+            metaStrQuant = all["metaQuant"]
+            fieldListQuant = []
+            if metaStrQuant:
+                metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
+                for key in metaDictQuant:
+                    fieldListQuant.append(key)
+
+            metaStr = all["meta"]
             fieldList = []
-            for key in metaDict:
-                fieldList.append(metaDict[key])
+            if metaStr:
+                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+                for key in metaDict:
+                    fieldList.append(key)
 
-            metaDF = quantUnivMetaDF(qs2, metaDict)
+            metaDF = catUnivMetaDF(qs2, metaDict)
             metaDF.dropna(subset=fieldList, inplace=True)
             metaDF.sort(columns='sampleid', inplace=True)
 
             myList = metaDF['sampleid'].tolist()
             mySet = list(ordered_set(myList))
+
             taxaDF = taxaProfileDF(mySet)
 
             taxaString = all["taxa"]
-
             taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+
             if selectAll == 1:
                 taxaDict = {}
                 qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('kingdomid', flat='True').distinct()
@@ -733,19 +742,12 @@ def getQuantUnivData(request):
 
             base[RID] = 'Step 1 of 6: Querying database...done!'
             base[RID] = 'Step 2 of 6: Normalizing data...'
-            # Create combined metadata column
-            if len(fieldList) > 1:
-                for index, row in metaDF.iterrows():
-                    metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
-            else:
-                metaDF['merge'] = metaDF[fieldList[0]]
-
 
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
             normDF.sort('sampleid')
 
             finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
-            finalDF[[fieldList[0], 'abund', 'rich', 'diversity']] = finalDF[[fieldList[0], 'abund', 'rich', 'diversity']].astype(float)
+            finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
             pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
 
             finalDict = {}
@@ -774,40 +776,66 @@ def getQuantUnivData(request):
                 dataList = []
                 x = []
                 y = []
-                if DepVar == 1:
-                    dataList = group1[[fieldList[0], 'abund']].values.tolist()
-                    x = group1[fieldList[0]].values.tolist()
-                    y = group1['abund'].values.tolist()
-                elif DepVar == 2:
-                    dataList = group1[[fieldList[0], 'rich']].values.tolist()
-                    x = group1[fieldList[0]].values.tolist()
-                    y = group1['rich'].values.tolist()
-                elif DepVar == 3:
-                    dataList = group1[[fieldList[0], 'diversity']].values.tolist()
-                    x = group1[fieldList[0]].values.tolist()
-                    y = group1['diversity'].values.tolist()
 
-                if max(x) == min(x):
-                    stop = 0
+                if os.name == 'nt':
+                    r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
-                    stop = 1
-                    slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-                    p_value = "%0.3f" % p_value
-                    r_square = r_value * r_value
-                    r_square = "%0.4f" % r_square
-                    min_y = slope*min(x) + intercept
-                    max_y = slope*max(x) + intercept
-                    slope = "%.3E" % slope
-                    intercept = "%.3E" % intercept
+                    r = R(RCMD="R/R-Linux/bin/R")
 
-                    regrList = []
-                    regrList.append([min(x), min_y])
-                    regrList.append([max(x), max_y])
+                r.assign("df", group1)
+                trtString = "*".join(fieldList)
+
+                D = ""
+                if DepVar == 1:
+                    anova_string = "fit <- lm(abund ~ " + str(trtString) + ", data=df)"
+                    r.assign("cmd", anova_string)
+                    r("eval(parse(text=cmd))")
+
+                elif DepVar == 2:
+                    anova_string = "fit <- lm(rich ~ " + str(trtString) + ", data=df)"
+                    r.assign("cmd", anova_string)
+                    r("eval(parse(text=cmd))")
+
+                elif DepVar == 3:
+                    anova_string = "fit <- lm(diversity ~ " + str(trtString) + ", data=df)"
+                    r.assign("cmd", anova_string)
+                    r("eval(parse(text=cmd))")
+
+                anova_string = "df$pred <- predict(fit, df)"
+                r.assign("cmd", anova_string)
+                r("eval(parse(text=cmd))")
+                aov = r("summary(fit)")
+
+                tempStuff = aov.split('\n')
+                for part in tempStuff:
+                    if part != tempStuff[0]:
+                        D += part + '\n'
+
+                r("p_vals <- summary(fit)$coefficients[,4]")
+                p_vals = r.get("p_vals")
+                p_val = min(p_vals)
+
+                ##get values for plotting from R
+                resultDF = r.get("df")
+
+                print 'resultDF\n', resultDF
+                print 'p_val:', p_val
+                print 'D\n', D
+
+                regrList = []
+                regrList.append([min(x), min_y])
+                regrList.append([max(x), max_y])
 
                 base[RID] = 'Step 3 of 6: Performing linear regression...done!'
                 base[RID] = 'Step 4 of 6: Formatting graph data for display...'
 
                 if sig_only == 0:
+                    result = result + '\nANCOVA table:\n'
+
+                    result = result + str(D) + '\n'
+                    result += '===============================================\n'
+                    result += '\n\n\n\n'
+
                     seriesDict = {}
                     seriesDict['type'] = 'scatter'
                     seriesDict['name'] = name1
@@ -827,6 +855,12 @@ def getQuantUnivData(request):
 
                 if sig_only == 1:
                     if p_value <= 0.05:
+                        result = result + '\nANCOVA table:\n'
+
+                        result = result + str(D) + '\n'
+                        result += '===============================================\n'
+                        result += '\n\n\n\n'
+
                         seriesDict = {}
                         seriesDict['type'] = 'scatter'
                         name2 = list(name1)

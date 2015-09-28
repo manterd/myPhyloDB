@@ -68,7 +68,7 @@
 
             $("#tree_metaQuant").dynatree({
                 checkbox: true,
-                selectMode: 1,
+                selectMode: 3,
                 initAjax: {
                     url: '/getSampleQuantTree/',
                     dataType: 'jsonp',
@@ -94,6 +94,17 @@
                     }
                     nodesQuant = node.tree.getSelectedNodes();
                     $("#run").css("background-color", "lightgray");
+
+                    var count = 0;
+                    $.each(nodesQuant, function(key, value) {
+                        if (value.getLevel() == 3) {
+                            count += 1;
+                        }
+                        if (count > 1) {
+                            alert("Please select only one quantitative variable!");
+                            return false;
+                        }
+                    });
                 }
             });
 
@@ -391,7 +402,7 @@
                 }
             }
             else if (button1 == 2) {
-                $("#tree_metaCat").hide();
+                $("#tree_metaCat").show();
                 $("#tree_metaQuant").show();
                 $("#container-1").hide();
                 $("#container-2").show();
@@ -476,7 +487,7 @@
                 $("#run").css("background-color", "red");
             }
             else if ((nodesQuant == "") && (nodesTaxa != "") && (button1 == 2)) {
-                $("#container-2").empty().append('Please also choose your meta variable(s)!');
+                $("#container-2").empty().append('Please select at least one quantitative variable(s)!');
                 $("#run").css("background-color", "red");
             }
         }
@@ -621,31 +632,72 @@
         function getQuantGraphData() {
             var RID = makeGUID();
             startTimer(RID);
-            var array1 = [];
+            var arrayCat = [];
+            var arrayQuant = [];
             var Parent = '';
             var key = '';
             var value = '';
             var next = '';
             for (var i = 0; i < nodesQuant.length; i++) {
                 Parent = nodesQuant[i].getParent();
-                if (nodesQuant[i].getLevel() == 3) {
+                if (nodesQuant[i].getLevel() == 4) {
                     if ((Parent.data.id == 'mimark') || (Parent.data.id == 'user')) {
                         key = nodesQuant[i].data.id;
                         value = nodesQuant[i].data.title;
                         next = '"' + key + '" : "' + value + '"';
-                        array1.push(next);
+                        arrayQuant.push(next);
                     }
                 }
-                else if (nodesQuant[i].getLevel() == 4) {
+                else if (nodesQuant[i].getLevel() == 5) {
                     if ((Parent.data.id == 'human_associated') || (Parent.data.id == 'soil')) {
                         key = nodesQuant[i].data.id;
                         value = nodesQuant[i].data.title;
                         next = '"' + key + '" : "' + value + '"';
-                        array1.push(next);
+                        arrayQuant.push(next);
                     }
                 }
             }
-            var meta = "{" + array1.join(",") + "}";
+            for (var i = 0; i < nodesCat.length; i++) {
+                if (nodesCat[i].getLevel() == 4) {
+                    Parent = nodesCat[i].getParent();
+                    if ((Parent.data.id == 'mimark') || (Parent.data.id == 'user')) {
+                        key = nodesCat[i].data.id;
+                        value = nodesCat[i].data.title;
+                        next = '"' + key + '" : "' + value + '"';
+                        arrayCat.push(next);
+                    }
+                }
+                else if (nodesCat[i].getLevel() == 5) {
+                    Parent = nodesCat[i].getParent();
+                    if ((Parent.data.id == 'human_associated') || (Parent.data.id == 'soil')) {
+                        key = nodesCat[i].data.id;
+                        value = nodesCat[i].data.title;
+                        next = '"' + key + '" : "' + value + '"';
+                        arrayCat.push(next);
+                    }
+                }
+            }
+
+            var metaCat = '';
+            if (nodesCat.length > 0) {
+                metaCat = "{" + arrayCat.join(",") + "}";
+            }
+
+            var metaQuant = '';
+            if (nodesQuant.length > 0) {
+                metaQuant = "{" + arrayQuant.join(",") + "}";
+            }
+
+            var meta = '';
+            if ((nodesCat.length > 0) && (nodesQuant.length > 0)) {
+                meta = "{" + arrayCat.join(",") + "," + arrayQuant.join(",") + "}";
+            }
+            else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
+                meta = "{" + arrayQuant.join(",") + "}";
+            }
+            else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
+                meta = "{" + arrayCat.join(",") + "}";
+            }
 
             var array2 = [];
             for (i = 0; i < nodesTaxa.length; i++) {
@@ -657,8 +709,11 @@
                 }
             }
             var taxa = "{" + array2.join(",") + "}";
+
             var myDict = {};
             myDict['meta'] = meta;
+            myDict['metaCat'] = metaCat;
+            myDict['metaQuant'] = metaQuant;
             myDict['taxa'] = taxa;
             myDict['DepVar'] = DepVar;
             myDict['sig_only'] = sig2_only;
@@ -798,8 +853,8 @@
     <span>
         Select data type:
         <select id="button1">
-            <option value="1" selected="selected">Categorical</option>
-            <option value="2" >Quantitative</option>
+            <option value="1" selected="selected">ANOVA</option>
+            <option value="2" >ANCOVA</option>
         </select>
         &nbsp &nbsp
         Select all taxa:
@@ -821,8 +876,8 @@
             </tr>
             <tr>
                 <td style="padding-right: 10px; vertical-align: top">
-                    <div id="tree_metaCat"></div>
                     <div id="tree_metaQuant" style="display: none"></div>
+                    <div id="tree_metaCat"></div>
                 </td>
             </tr>
         </table>

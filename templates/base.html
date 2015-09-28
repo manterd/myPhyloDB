@@ -34,6 +34,7 @@
     <!-- high charts -->
     <script src="{% static "highcharts/highcharts.js" %}" type="text/javascript"></script>
     <script src="{% static "highcharts/exporting.js" %}" type="text/javascript"></script>
+    <script src="{% static "highcharts/highcharts-regression.js" %}"> </script>
 
     {% block javascript %}{% endblock javascript %}
 
@@ -122,7 +123,7 @@
 
             <p id="link1" style="display: none;"><strong>Univariate</strong></p>
             <div id="link2" style="display: none;" >
-                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run ANOVA or Regression analyses." >ANOVA/Regr</li></a>
+                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run ANOVA/ANCOVA analyses." >ANOVA/ANCOVA</li></a>
             </div>
             <br>
 
