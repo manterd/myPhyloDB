@@ -818,29 +818,11 @@
                     verticalAlign: 'top',
                     layout: 'vertical',
                     x: 0,
-                    y: 20,
-                    labelFormatter: function () {
-                        if (this.type == 'scatter') {
-                            return this.name[0] + ': ' + this.name[1] + '<br/>' + 'ID: ' + this.name[2] + '<br/>'
-                        } else {
-                            return this.name[3]
-                        }
-                    }
+                    y: 20
                 },
                 xAxis: xAxis,
                 yAxis: yAxis,
                 series: series,
-                tooltip: {
-                    formatter: function () {
-                        if (this.series.type == 'scatter') {
-                            return this.series.name[0] + ':' + this.series.name[1] + '<br/>' +
-                                    'ID: ' + this.series.name[2] + '<br/>' +
-                                    '(' + this.x + ',' + this.y + ')'
-                        } else {
-                            return this.series.name[0] + ':' + this.series.name[1] + '<br/>'
-                        }
-                    }
-                },
                 credits: { enabled: false }
             };
             chart2 = new Highcharts.Chart(quantOptions);
@@ -976,7 +958,7 @@
     <div id="txt-1">
         <h2>Test Results:</h2>
         <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
-        <textarea style="width: 950px; display: none" wrap="off" id="text-2" rows="4">No data selected</textarea>
+        <textarea style="width: 950px; display: none" wrap="off" id="text-2" rows="20">No data selected</textarea>
         <br>
     </div>
 

@@ -581,7 +581,7 @@ def getSampleQuantTreeChildren(request):
                         'id': field,
                         'tooltip': 'Value',
                         'isFolder': True,
-                        'hideCheckbox': True,
+                        'hideCheckbox': False,
                         'children': []
                     }
                     args_list = []
@@ -609,7 +609,7 @@ def getSampleQuantTreeChildren(request):
                         'id': field,
                         'tooltip': 'Value',
                         'isFolder': True,
-                        'hideCheckbox': True,
+                        'hideCheckbox': False,
                         'children': []
                     }
                     args_list = []
@@ -637,7 +637,7 @@ def getSampleQuantTreeChildren(request):
                         'id': field,
                         'tooltip': 'Value',
                         'isFolder': True,
-                        'hideCheckbox': True,
+                        'hideCheckbox': False,
                         'children': []
                     }
                     args_list = []
@@ -665,7 +665,7 @@ def getSampleQuantTreeChildren(request):
                         'id': field,
                         'tooltip': 'Value',
                         'isFolder': True,
-                        'hideCheckbox': True,
+                        'hideCheckbox': False,
                         'children': []
                     }
                     args_list = []

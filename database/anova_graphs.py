@@ -680,10 +680,12 @@ def getQuantUnivData(request):
 
             metaStrCat = all["metaCat"]
             fieldListCat = []
+            valueListCat = []
             if metaStrCat:
                 metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
                 for key in metaDictCat:
                     fieldListCat.append(key)
+                    valueListCat = metaDictCat[key]
 
             metaStrQuant = all["metaQuant"]
             fieldListQuant = []
@@ -771,11 +773,16 @@ def getQuantUnivData(request):
             seriesList = []
             xAxisDict = {}
             yAxisDict = {}
+            colors = ['#000000', '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#cccc00', '#a65628', '#f781bf']
+            shapes = ['square', 'circle', 'triangle', 'triangle-down', 'diamond']
+            color_idx = 0
+            shapes_idx = 0
             grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
             for name1, group1 in grouped1:
                 dataList = []
                 x = []
                 y = []
+                y_pred = []
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -813,18 +820,73 @@ def getQuantUnivData(request):
 
                 r("p_vals <- summary(fit)$coefficients[,4]")
                 p_vals = r.get("p_vals")
-                p_val = min(p_vals)
+                p_value = min(p_vals)
 
-                ##get values for plotting from R
                 resultDF = r.get("df")
+                resultDF = resultDF.rename(columns=lambda x: x.strip())
 
-                print 'resultDF\n', resultDF
-                print 'p_val:', p_val
-                print 'D\n', D
+                if fieldListCat:
+                    grouped2 = resultDF.groupby(fieldListCat)
+                    for name2, group2 in grouped2:
+                        if DepVar == 1:
+                            dataList = group2[[fieldListQuant[0], 'abund']].values.astype(float).tolist()
+                            x = group2[fieldListQuant[0]].values.tolist()
+                        elif DepVar == 2:
+                            dataList = group2[[fieldListQuant[0], 'rich']].values.astype(float).tolist()
+                            x = group2[fieldListQuant[0]].values.tolist()
+                        elif DepVar == 3:
+                            dataList = group2[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
+                            x = group2[fieldListQuant[0]].values.tolist()
 
-                regrList = []
-                regrList.append([min(x), min_y])
-                regrList.append([max(x), max_y])
+                        if max(x) == min(x):
+                            stop = 0
+                        else:
+                            stop = 1
+                            seriesDict = {}
+                            seriesDict['regression'] = 'true'
+                            regDict = {}
+                            regDict['color'] = colors[color_idx]
+                            seriesDict['regressionSettings'] = regDict
+                            name = str(name1[1]) + ": " + str(name2)
+                            seriesDict['name'] = name
+                            seriesDict['color'] = colors[color_idx]
+                            markerDict = {}
+                            markerDict['symbol'] = shapes[shapes_idx]
+                            seriesDict['marker'] = markerDict
+                            seriesDict['data'] = dataList
+                            seriesList.append(seriesDict)
+                        color_idx += 1
+                        if color_idx >= colors.__len__:
+                            color_idx = 0
+
+                if not fieldListCat:
+                    if DepVar == 1:
+                        dataList = resultDF[[str(fieldListQuant[0]), 'abund']].values.astype(float).tolist()
+                        x = resultDF[fieldListQuant[0]].values.tolist()
+                    elif DepVar == 2:
+                        dataList = resultDF[[fieldListQuant[0], 'rich']].values.astype(float).tolist()
+                        x = resultDF[fieldListQuant[0]].values.tolist()
+                    elif DepVar == 3:
+                        dataList = resultDF[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
+                        x = resultDF[fieldListQuant[0]].values.tolist()
+
+                    if max(x) == min(x):
+                        stop = 0
+                    else:
+                        stop = 1
+                        seriesDict = {}
+                        seriesDict['regression'] = 'true'
+                        regDict = {}
+                        regDict['color'] = '#000000'
+                        seriesDict['regressionSettings'] = regDict
+                        name = name1[1]
+                        seriesDict['name'] = name
+                        seriesDict['color'] = '#000000'
+                        markerDict = {}
+                        markerDict['symbol'] = 'square'
+                        seriesDict['marker'] = markerDict
+                        seriesDict['data'] = dataList
+                        seriesList.append(seriesDict)
 
                 base[RID] = 'Step 3 of 6: Performing linear regression...done!'
                 base[RID] = 'Step 4 of 6: Formatting graph data for display...'
@@ -836,45 +898,9 @@ def getQuantUnivData(request):
                     result += '===============================================\n'
                     result += '\n\n\n\n'
 
-                    seriesDict = {}
-                    seriesDict['type'] = 'scatter'
-                    seriesDict['name'] = name1
-                    seriesDict['data'] = dataList
-                    seriesList.append(seriesDict)
-                    if stop == 0:
-                        regDict = {}
-                    elif stop == 1:
-                        regrDict = {}
-                        regrDict['type'] = 'line'
-                        name2 = list(name1)
-                        temp = 'R2: ' + str(r_square) + '; p-value: ' + str(p_value) + '<br>' + '(y = ' + str(slope) + 'x' + ' + ' + str(intercept) + ')'
-                        name2.append(temp)
-                        regrDict['name'] = name2
-                        regrDict['data'] = regrList
-                        seriesList.append(regrDict)
-
                 if sig_only == 1:
                     if p_value <= 0.05:
-                        result = result + '\nANCOVA table:\n'
-
-                        result = result + str(D) + '\n'
-                        result += '===============================================\n'
-                        result += '\n\n\n\n'
-
-                        seriesDict = {}
-                        seriesDict['type'] = 'scatter'
-                        name2 = list(name1)
-                        temp = 'R2: ' + str(r_square) + '; p-value: ' + str(p_value) + '<br>' + '(y = ' + str(slope) + 'x' + ' + ' + str(intercept) + ')'
-                        name2.append(temp)
-                        seriesDict['name'] = name2
-                        seriesDict['data'] = dataList
-                        seriesList.append(seriesDict)
-
-                        regrDict = {}
-                        regrDict['type'] = 'line'
-                        regrDict['name'] = name1
-                        regrDict['data'] = regrList
-                        seriesList.append(regrDict)
+                        junk = ''
 
                 xTitle = {}
                 xTitle['text'] = fieldList[0]
@@ -888,6 +914,10 @@ def getQuantUnivData(request):
                 elif DepVar == 3:
                     yTitle['text'] = 'Shannon Diversity'
                 yAxisDict['title'] = yTitle
+
+                shapes_idx += 1
+                if shapes_idx >= shapes.__len__:
+                    shapes_idx = 0
 
             finalDict['series'] = seriesList
             finalDict['xAxis'] = xAxisDict
