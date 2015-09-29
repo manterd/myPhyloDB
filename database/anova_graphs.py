@@ -573,6 +573,7 @@ def getCatUnivData(request):
 
 def getQuantUnivData(request):
     try:
+        myDict = {}
         global base, time1, TimeDiff
         samples = Sample.objects.all()
         samples.query = pickle.loads(request.session['selected_samples'])
@@ -833,6 +834,15 @@ def getQuantUnivData(request):
                             dataList = group2[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
                             x = group2[fieldListQuant[0]].values.tolist()
 
+                        obs = group2['abund'].loc[group2['abund'] >= 1].count()
+
+                        if obs < 2:
+                            result += '\n===============================================\n\n'
+                            result += 'Rank: ' + str(name1[0]) + '; Name: ' + str(name1[1]) + '; ID: ' + str(name1[2]) + ' has ' + str(obs) + ' observation(s),\n'
+                            result += 'and was not included in your analysis.\n'
+                            result += '\n===============================================\n\n'
+                            break
+
                         if max(x) == min(x):
                             stop = 0
                         else:
@@ -852,9 +862,9 @@ def getQuantUnivData(request):
                             seriesDict['data'] = dataList
                             seriesList.append(seriesDict)
 
-                        shapes_idx += 1
-                        if shapes_idx >= len(shapes):
-                            shapes_idx = 0
+                        colors_idx += 1
+                        if colors_idx >= len(colors):
+                            colors_idx = 0
 
                 if not fieldListCat:
                     if DepVar == 1:
@@ -866,7 +876,7 @@ def getQuantUnivData(request):
                     elif DepVar == 3:
                         dataList = resultDF[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
                         x = resultDF[fieldListQuant[0]].values.tolist()
-                    print 'dataList:', dataList
+
                     if max(x) == min(x):
                         stop = 0
                     else:
@@ -890,22 +900,38 @@ def getQuantUnivData(request):
                 base[RID] = 'Step 4 of 6: Formatting graph data for display...'
 
                 if sig_only == 0:
-                    result = result + '\nANCOVA table:\n'
-
-                    result = result + str(D) + '\n'
+                    result += 'Taxa level: ' + str(name1[0]) + '\n'
+                    result += 'Taxa name: ' + str(name1[1]) + '\n'
+                    result += 'Taxa ID: ' + str(name1[2]) + '\n'
+                    if DepVar == 1:
+                        result = result + 'Dependent Variable: Abundance' + '\n'
+                    elif DepVar == 2:
+                        result = result + 'Dependent Variable: Species Richness' + '\n'
+                    elif DepVar == 3:
+                        result = result + 'Dependent Variable: Species Diversity' + '\n'
+                    result += '\nANCOVA table:\n'
+                    result += str(D) + '\n'
                     result += '===============================================\n'
-                    result += '\n\n\n\n'
+                    result += '\n'
 
                 if sig_only == 1:
                     if p_value <= 0.05:
-                        result = result + '\nANCOVA table:\n'
-
-                        result = result + str(D) + '\n'
+                        result += 'Taxa level: ' + str(name1[0]) + '\n'
+                        result += 'Taxa name: ' + str(name1[1]) + '\n'
+                        result += 'Taxa ID: ' + str(name1[2]) + '\n'
+                        if DepVar == 1:
+                            result = result + 'Dependent Variable: Abundance' + '\n'
+                        elif DepVar == 2:
+                            result = result + 'Dependent Variable: Species Richness' + '\n'
+                        elif DepVar == 3:
+                            result = result + 'Dependent Variable: Species Diversity' + '\n'
+                        result += '\nANCOVA table:\n'
+                        result += str(D) + '\n'
                         result += '===============================================\n'
-                        result += '\n\n\n\n'
+                        result += '\n'
 
                 xTitle = {}
-                xTitle['text'] = fieldList[0]
+                xTitle['text'] = fieldListQuant[0]
                 xAxisDict['title'] = xTitle
 
                 yTitle = {}
@@ -917,9 +943,9 @@ def getQuantUnivData(request):
                     yTitle['text'] = 'Shannon Diversity'
                 yAxisDict['title'] = yTitle
 
-                colors_idx += 1
-                if colors_idx >= len(colors):
-                    colors_idx = 0
+                shapes_idx += 1
+                if shapes_idx >= len(shapes):
+                    shapes_idx = 0
 
             finalDict['series'] = seriesList
             finalDict['xAxis'] = xAxisDict
