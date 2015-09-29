@@ -282,7 +282,7 @@ def getDiffAbund(request):
 
             grouped = finalDF.groupby('Comparison')
 
-            listOfShapes = ['square', 'circle', 'triangle', 'triangle-down', 'diamond',]
+            listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
             shapeIterator = 0
 
             for name, group in grouped:
@@ -308,7 +308,7 @@ def getDiffAbund(request):
                 seriesList.append(seriesDict)
 
                 shapeIterator += 1
-                if shapeIterator >= listOfShapes.__len__():
+                if shapeIterator >= len(listOfShapes):
                     shapeIterator = 0
 
                 base[RID] = 'Step 4 of 6: Formatting graph data for display...' + str(name) + ' is done!'

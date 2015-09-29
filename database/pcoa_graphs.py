@@ -107,7 +107,79 @@ def getCatPCoAData(request):
 
             # Remove samples if below the sequence threshold set by user (rarefaction)
             newList = []
-            result = 'Data Normalization:\n'
+            result = ''
+            if taxaLevel == 0:
+                result = result + 'Taxa level: Kingdom' + '\n'
+            elif taxaLevel == 1:
+                result = result + 'Taxa level: Phyla' + '\n'
+            elif taxaLevel == 2:
+                result = result + 'Taxa level: Class' + '\n'
+            elif taxaLevel == 3:
+                result = result + 'Taxa level: Order' + '\n'
+            elif taxaLevel == 4:
+                result = result + 'Taxa level: Family' + '\n'
+            elif taxaLevel == 5:
+                result = result + 'Taxa level: Genus' + '\n'
+            elif taxaLevel == 6:
+                result = result + 'Taxa level: Species' + '\n'
+
+            if distance == 1:
+                result = result + 'Distance score: Manhattan' + '\n'
+            elif distance == 2:
+                result = result + 'Distance score: Euclidean' + '\n'
+            elif distance == 3:
+                result = result + 'Distance score: Canberra' + '\n'
+            elif distance == 4:
+                result = result + 'Distance score: Bray-Curtis' + '\n'
+            elif distance == 5:
+                result = result + 'Distance score: Kulczynski' + '\n'
+            elif distance == 6:
+                result = result + 'Distance score: Jaccard' + '\n'
+            elif distance == 7:
+                result = result + 'Distance score: Gower' + '\n'
+            elif distance == 8:
+                result = result + 'Distance score: altGower' + '\n'
+            elif distance == 9:
+                result = result + 'Distance score: Morisita' + '\n'
+            elif distance == 10:
+                result = result + 'Distance score: Horn' + '\n'
+            elif distance == 11:
+                result = result + 'Distance score: Mountford' + '\n'
+            elif distance == 12:
+                result = result + 'Distance score: Binomial' + '\n'
+            elif distance == 13:
+                result = result + 'Distance score: Chao' + '\n'
+            elif distance == 14:
+                result = result + 'Distance score: Cao' + '\n'
+            elif distance == 15:
+                result = result + 'Distance score: wOdum' + '\n'
+
+            metaStrCat = all["metaCat"]
+            fieldListCat = []
+            if metaStrCat:
+                metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
+                for key in metaDictCat:
+                    fieldListCat.append(key)
+
+            metaStrQuant = all["metaQuant"]
+            fieldListQuant = []
+            if metaStrQuant:
+                metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
+                for key in metaDictQuant:
+                    fieldListQuant.append(key)
+
+            metaStr = all["meta"]
+            fieldList = []
+            valueList = []
+            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+            for key in metaDict:
+                fieldList.append(key)
+                valueList.append(metaDict[key])
+
+            result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
+            result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
+            result += '===============================================\n'
+            result += '\nData Normalization:\n'
 
             # Limit reads to max value
             if NormMeth == 1:
@@ -169,12 +241,6 @@ def getCatPCoAData(request):
             else:
                 result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
-            metaString = all["meta"]
-            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
-
-            fieldList = []
-            for key in metaDict:
-                fieldList.append(key)
             metaDF = catPCoAMetaDF(qs2, metaDict)
             metaDF.dropna(subset=fieldList, inplace=True)
             metaDF.sort(columns='sample_name', inplace=True)
@@ -187,14 +253,6 @@ def getCatPCoAData(request):
 
             base[RID] = 'Step 1 of 8: Querying database...done!'
             base[RID] = 'Step 2 of 8: Normalizing data...'
-
-            # Create combined metadata column
-            if len(fieldList) > 1:
-                for index, row in metaDF.iterrows():
-                    metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
-            else:
-                metaDF['merge'] = metaDF[fieldList[0]]
-
 
             # Sum by taxa level
             taxaDF = taxaDF.groupby(level=taxaLevel).sum()
@@ -222,7 +280,7 @@ def getCatPCoAData(request):
                 result += 'DESeq2 cannot run estimateSizeFactors...\n'
                 result += 'Analysis was run without normalization...\n'
                 result += 'To try again, please select fewer samples or another normalization method...\n'
-            result += '===============================================\n\n\n'
+            result += '===============================================\n\n'
 
             base[RID] = 'Step 2 of 8: Normalizing data...done!'
             base[RID] = 'Step 3 of 8: Calculating distance matrix...'
@@ -279,20 +337,37 @@ def getCatPCoAData(request):
             base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
             base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
-            ### create trtList that merges all categorical values
-            trtList = metaDF['merge'].values.tolist()
-            trtLength = set(trtList).__len__()
-            bigf = 'nan'
+            trtLength = 0
+            for i in valueList:
+                if len(i) > trtLength:
+                    trtLength = len(i)
+
             if trtLength > 1:
                 r.assign("meta", metaDF)
-                trtString = " + ".join(fieldList)
+                trtString = " + ".join(fieldListCat)
                 pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ", meta)"
                 r.assign("cmd", pcoa_string)
                 r("eval(parse(text=cmd))")
+                r("summary(ord)")
+
+                envFit = ''
+                if len(fieldListQuant) > 0:
+                    trtString = " + ".join(fieldListQuant)
+                    envfit_str = "fit <- envfit(ord ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
+                    r.assign("cmd", envfit_str)
+                    r("eval(parse(text=cmd))")
+
+                    fit_out = r("fit")
+                    fit_out = fit_out.replace('try({fit})', '')
+                    fit_out = fit_out.replace('***VECTORS', '')
+                    tempStuff = fit_out.split('\n')
+                    for part in tempStuff:
+                        if part > tempStuff[1]:
+                            envFit += part + '\n'
+
                 r("res <- summary(ord)")
                 r("id <- rownames(meta)")
                 r("pcoa <- data.frame(id, meta, res$sites)")
-
                 pcoaDF = r.get("pcoa")
                 pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
                 pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
@@ -301,28 +376,31 @@ def getCatPCoAData(request):
                 r("eig <- data.frame(Stat, res$cont$importance)")
                 eigDF = r.get("eig")
 
-                if perms <= 2:
-                    bigf = 'Not enough permutations for the test to run...'
-                else:
+                bigf = ''
+                if perms <= 10:
+                    bigf = 'Please increase the number of permutations...'
+                elif len(fieldListCat) == 0:
+                    bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
+                elif perms > 10 and len(fieldListCat) > 0:
                     if test == 1:
+
                         base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                         base[RID] = 'Step 5 of 8: Performing perMANOVA...'
 
-                        for i in fieldList:
+                        for i in fieldListCat:
                             factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
                             r.assign("cmd", factor_string)
                             r("eval(parse(text=cmd))")
 
                         r.assign("perms", perms)
-                        trtString = " * ".join(fieldList)
+                        trtString = " + ".join(fieldListCat)
                         amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
                         r.assign("cmd", amova_string)
                         r("eval(parse(text=cmd))")
 
-                        bigf = r("res$aov.tab")
+                        res_aov = r("res$aov.tab")
 
-                        tempStuff = bigf.split('\n')
-                        bigf = ""
+                        tempStuff = res_aov.split('\n')
                         for part in tempStuff:
                             if part != tempStuff[0]:
                                 bigf += part + '\n'
@@ -331,7 +409,6 @@ def getCatPCoAData(request):
                     elif test == 2:
                         base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                         base[RID] = 'Step 5 of 8: Performing BetaDisper...'
-                        bigf = ""
 
                         for i in fieldList:
                             factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
@@ -339,7 +416,7 @@ def getCatPCoAData(request):
                             r("eval(parse(text=cmd))")
 
                         r.assign("perms", perms)
-                        for i in fieldList:
+                        for i in fieldListCat:
                             beta_string = "res <- betadisper(dist, " + str(i) + ")"
                             r.assign("cmd", beta_string)
                             r("eval(parse(text=cmd))")
@@ -347,7 +424,7 @@ def getCatPCoAData(request):
                             r("something <- anova(res)")
                             beta = r("something")
                             tempStuff = beta.split('\n')
-                            bigf += '\n' + str(i) + ':\n'
+                            bigf += 'group: ' + str(i) + '\n'
                             for part in tempStuff:
                                 if part != tempStuff[0]:
                                     bigf += part + '\n'
@@ -368,10 +445,18 @@ def getCatPCoAData(request):
             CAP1 = PC1 + int(len(fieldList)) + 2
             CAP2 = PC2 + int(len(fieldList)) + 2
 
-            grouped = pcoaDF.groupby('merge')
-            for name, group in grouped:
-                dataList = group.icol([CAP1, CAP2]).values.astype(np.float).tolist()
-                trt = name
+            if fieldListCat:
+                grouped = pcoaDF.groupby(fieldListCat)
+                for name, group in grouped:
+                    dataList = group.icol([CAP1, CAP2]).values.astype(float).tolist()
+                    trt = name
+                    seriesDict = {}
+                    seriesDict['name'] = str(trt)
+                    seriesDict['data'] = dataList
+                    seriesList.append(seriesDict)
+            else:
+                dataList = pcoaDF.icol([CAP1, CAP2]).values.astype(float).tolist()
+                trt = fieldListQuant[0]
                 seriesDict = {}
                 seriesDict['name'] = str(trt)
                 seriesDict['data'] = dataList
@@ -389,68 +474,27 @@ def getCatPCoAData(request):
             finalDict['xAxis'] = xAxisDict
             finalDict['yAxis'] = yAxisDict
 
-            if taxaLevel == 0:
-                result = result + 'Taxa level: Kingdom' + '\n'
-            elif taxaLevel == 1:
-                result = result + 'Taxa level: Phyla' + '\n'
-            elif taxaLevel == 2:
-                result = result + 'Taxa level: Class' + '\n'
-            elif taxaLevel == 3:
-                result = result + 'Taxa level: Order' + '\n'
-            elif taxaLevel == 4:
-                result = result + 'Taxa level: Family' + '\n'
-            elif taxaLevel == 5:
-                result = result + 'Taxa level: Genus' + '\n'
-            elif taxaLevel == 6:
-                result = result + 'Taxa level: Species' + '\n'
-
-            indVar = ' x '.join(fieldList)
-
-            result = result + 'Independent Variable: ' + str(indVar) + '\n\n'
-            if distance == 1:
-                result = result + 'Distance score: Manhattan' + '\n'
-            elif distance == 2:
-                result = result + 'Distance score: Euclidean' + '\n'
-            elif distance == 3:
-                result = result + 'Distance score: Canberra' + '\n'
-            elif distance == 4:
-                result = result + 'Distance score: Bray-Curtis' + '\n'
-            elif distance == 5:
-                result = result + 'Distance score: Kulczynski' + '\n'
-            elif distance == 6:
-                result = result + 'Distance score: Jaccard' + '\n'
-            elif distance == 7:
-                result = result + 'Distance score: Gower' + '\n'
-            elif distance == 8:
-                result = result + 'Distance score: altGower' + '\n'
-            elif distance == 9:
-                result = result + 'Distance score: Morisita' + '\n'
-            elif distance == 10:
-                result = result + 'Distance score: Horn' + '\n'
-            elif distance == 11:
-                result = result + 'Distance score: Mountford' + '\n'
-            elif distance == 12:
-                result = result + 'Distance score: Binomial' + '\n'
-            elif distance == 13:
-                result = result + 'Distance score: Chao' + '\n'
-            elif distance == 14:
-                result = result + 'Distance score: Cao' + '\n'
-            elif distance == 15:
-                result = result + 'Distance score: wOdum' + '\n'
-            result += '===============================================\n'
             if test == 1:
                 result = result + 'perMANOVA results:' + '\n'
-            else:
+            if test == 2:
                 result = result + 'betaDisper results:' + '\n'
-            if trtLength == 1:
+
+            if len(fieldListCat) == 0:
                 result = result + 'test cannot be run...' + '\n'
             else:
                 result = result + str(bigf) + '\n'
             result += '===============================================\n'
+
+            if len(fieldListCat) > 0:
+                result = result + '\nenvfit results:\n'
+                result = result + str(envFit)
+            result += '===============================================\n'
+
+            result = result + '\nEigenvalues\n'
             eigStr = eigDF.to_string()
             result = result + str(eigStr) + '\n'
-            result += '===============================================\n'
-            result += '\n\n\n\n'
+            result += '===============================================\n\n\n\n'
+
             finalDict['text'] = result
 
             base[RID] = 'Step 6 of 8: Formatting graph data for display...done!'

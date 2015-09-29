@@ -680,12 +680,10 @@ def getQuantUnivData(request):
 
             metaStrCat = all["metaCat"]
             fieldListCat = []
-            valueListCat = []
             if metaStrCat:
                 metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
                 for key in metaDictCat:
                     fieldListCat.append(key)
-                    valueListCat = metaDictCat[key]
 
             metaStrQuant = all["metaQuant"]
             fieldListQuant = []
@@ -696,10 +694,9 @@ def getQuantUnivData(request):
 
             metaStr = all["meta"]
             fieldList = []
-            if metaStr:
-                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-                for key in metaDict:
-                    fieldList.append(key)
+            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+            for key in metaDict:
+                fieldList.append(key)
 
             metaDF = catUnivMetaDF(qs2, metaDict)
             metaDF.dropna(subset=fieldList, inplace=True)
@@ -774,15 +771,13 @@ def getQuantUnivData(request):
             xAxisDict = {}
             yAxisDict = {}
             colors = ['#000000', '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#cccc00', '#a65628', '#f781bf']
-            shapes = ['square', 'circle', 'triangle', 'triangle-down', 'diamond']
-            color_idx = 0
+            shapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
+            colors_idx = 0
             shapes_idx = 0
             grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
             for name1, group1 in grouped1:
                 dataList = []
                 x = []
-                y = []
-                y_pred = []
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -843,21 +838,23 @@ def getQuantUnivData(request):
                         else:
                             stop = 1
                             seriesDict = {}
+                            seriesDict['turboThreshold'] = 0
                             seriesDict['regression'] = 'true'
                             regDict = {}
-                            regDict['color'] = colors[color_idx]
+                            regDict['color'] = colors[colors_idx]
                             seriesDict['regressionSettings'] = regDict
                             name = str(name1[1]) + ": " + str(name2)
                             seriesDict['name'] = name
-                            seriesDict['color'] = colors[color_idx]
+                            seriesDict['color'] = colors[colors_idx]
                             markerDict = {}
                             markerDict['symbol'] = shapes[shapes_idx]
                             seriesDict['marker'] = markerDict
                             seriesDict['data'] = dataList
                             seriesList.append(seriesDict)
-                        color_idx += 1
-                        if color_idx >= colors.__len__:
-                            color_idx = 0
+
+                        shapes_idx += 1
+                        if shapes_idx >= len(shapes):
+                            shapes_idx = 0
 
                 if not fieldListCat:
                     if DepVar == 1:
@@ -869,21 +866,22 @@ def getQuantUnivData(request):
                     elif DepVar == 3:
                         dataList = resultDF[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
                         x = resultDF[fieldListQuant[0]].values.tolist()
-
+                    print 'dataList:', dataList
                     if max(x) == min(x):
                         stop = 0
                     else:
                         stop = 1
                         seriesDict = {}
+                        seriesDict['turboThreshold'] = 0
                         seriesDict['regression'] = 'true'
                         regDict = {}
-                        regDict['color'] = '#000000'
+                        regDict['color'] = colors[colors_idx]
                         seriesDict['regressionSettings'] = regDict
                         name = name1[1]
                         seriesDict['name'] = name
-                        seriesDict['color'] = '#000000'
+                        seriesDict['color'] = colors[colors_idx]
                         markerDict = {}
-                        markerDict['symbol'] = 'square'
+                        markerDict['symbol'] = shapes[shapes_idx]
                         seriesDict['marker'] = markerDict
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
@@ -900,7 +898,11 @@ def getQuantUnivData(request):
 
                 if sig_only == 1:
                     if p_value <= 0.05:
-                        junk = ''
+                        result = result + '\nANCOVA table:\n'
+
+                        result = result + str(D) + '\n'
+                        result += '===============================================\n'
+                        result += '\n\n\n\n'
 
                 xTitle = {}
                 xTitle['text'] = fieldList[0]
@@ -915,9 +917,9 @@ def getQuantUnivData(request):
                     yTitle['text'] = 'Shannon Diversity'
                 yAxisDict['title'] = yTitle
 
-                shapes_idx += 1
-                if shapes_idx >= shapes.__len__:
-                    shapes_idx = 0
+                colors_idx += 1
+                if colors_idx >= len(colors):
+                    colors_idx = 0
 
             finalDict['series'] = seriesList
             finalDict['xAxis'] = xAxisDict
