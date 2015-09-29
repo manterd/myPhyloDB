@@ -142,12 +142,50 @@
                 }
             });
 
+            var $button = $("#button");
+            $button.click(function() {
+                var series1 = chart1.series[0];
+                if (series1.visible) {
+                    $(chart1.series).each(function(){
+                        //this.hide();
+                        this.setVisible(false, false);
+                    });
+                    chart1.redraw();
+                    $button.html('Show series');
+                } else {
+                    $(chart1.series).each(function(){
+                        //this.show();
+                        this.setVisible(true, false);
+                    });
+                    chart1.redraw();
+                    $button.html('Hide series');
+                }
+
+                var series2 = chart2.series[0];
+                if (series2.visible) {
+                    $(chart2.series).each(function(){
+                        //this.hide();
+                        this.setVisible(false, false);
+                    });
+                    chart2.redraw();
+                    $button.html('Show series');
+                } else {
+                    $(chart2.series).each(function(){
+                        //this.show();
+                        this.setVisible(true, false);
+                    });
+                    chart2.redraw();
+                    $button.html('Hide series');
+                }
+            });
+
             $("#run").show().click(function () {
                 chooseData();
             });
 
             $("#button1").change(function () {
                 button1 = $(this).val();
+                $button.html('Hide series');
                 chooseDisplay();
                 $('#res_table').empty();
                 $("#run").css("background-color", "lightgray");
@@ -782,7 +820,7 @@
                     x: 0,
                     y: 20,
                     labelFormatter: function () {
-                        return this.name[0] + ': ' + this.name[1] + '<br/>' + 'ID: ' + this.name[2] + '<br/>'
+                        return this.name[0] + ': ' + this.name[1] + '<br/>'
                     }
                 },
                 xAxis: xAxis,
@@ -953,7 +991,7 @@
             </td>
         </tr>
     </table>
-
+    <button id="button">Hide series</button>
 
     <div id="txt-1">
         <h2>Test Results:</h2>
@@ -971,5 +1009,4 @@
     <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
     <br>
     <br>
-
 {% endblock my_content%}
