@@ -193,7 +193,6 @@
                 $("#run").css("background-color", "lightgray");
             });
 
-
             $("#test").change(function () {
                 test = $(this).val();
                 chooseDisplay();
@@ -213,7 +212,6 @@
                     alert("Please select at least one categorical variable!");
                     return false;
                 }
-
                 chooseData();
             });
 
@@ -280,7 +278,6 @@
         }
 
         function chooseData() {
-
             if (document.getElementById("alphaVal").value < 0 || document.getElementById("alphaVal").value > 10){
                 alert("Alpha must be between 0 and 10");
                 return;
@@ -314,14 +311,12 @@
             }
         }
 
-
         function makeGUID(){
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             })
         }
-
 
         function getCatGraphData() {
             var RID = makeGUID();

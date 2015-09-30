@@ -144,38 +144,37 @@
 
             var $button = $("#button");
             $button.click(function() {
-                var series1 = chart1.series[0];
-                if (series1.visible) {
-                    $(chart1.series).each(function(){
-                        //this.hide();
-                        this.setVisible(false, false);
-                    });
-                    chart1.redraw();
-                    $button.html('Show series');
-                } else {
-                    $(chart1.series).each(function(){
-                        //this.show();
-                        this.setVisible(true, false);
-                    });
-                    chart1.redraw();
-                    $button.html('Hide series');
+                if (button1 == 1) {
+                    var series = chart1.series[0];
+                    if (series.visible) {
+                        $(chart1.series).each(function () {
+                            this.setVisible(false, false);
+                        });
+                        chart1.redraw();
+                        $button.html('Show all series');
+                    } else {
+                        $(chart1.series).each(function () {
+                            this.setVisible(true, false);
+                        });
+                        chart1.redraw();
+                        $button.html('Hide all series');
+                    }
                 }
-
-                var series2 = chart2.series[0];
-                if (series2.visible) {
-                    $(chart2.series).each(function(){
-                        //this.hide();
-                        this.setVisible(false, false);
-                    });
-                    chart2.redraw();
-                    $button.html('Show series');
-                } else {
-                    $(chart2.series).each(function(){
-                        //this.show();
-                        this.setVisible(true, false);
-                    });
-                    chart2.redraw();
-                    $button.html('Hide series');
+                if (button1 == 2) {
+                    var series = chart2.series[0];
+                    if (series.visible) {
+                        $(chart2.series).each(function(){
+                            this.setVisible(false, false);
+                        });
+                        chart2.redraw();
+                        $button.html('Show all series');
+                    } else {
+                        $(chart2.series).each(function(){
+                            this.setVisible(true, false);
+                        });
+                        chart2.redraw();
+                        $button.html('Hide all series');
+                    }
                 }
             });
 
@@ -991,7 +990,7 @@
             </td>
         </tr>
     </table>
-    <button id="button">Hide series</button>
+    <button id="button">Hide all series</button>
 
     <div id="txt-1">
         <h2>Test Results:</h2>

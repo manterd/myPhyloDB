@@ -167,12 +167,6 @@ def getCatUnivData(request):
                                 newList.append(id)
 
                 qs2 = Sample.objects.all().filter(sampleid__in=newList)
-                numberRem = len(countList) - len(newList)
-                if numberRem > 0:
-                    result += str(numberRem) + ' samples did not met the desired normalization criteria; and were not included in the analysis...\n'
-                    result += str(len(newList)) + ' samples met the desired normalization criteria; and were included in the analysis...\n'
-                else:
-                    result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
                 # Get dict of selected meta variables
                 metaString = all["meta"]
@@ -187,6 +181,16 @@ def getCatUnivData(request):
                 metaDF = catUnivMetaDF(qs2, metaDict)
                 metaDF.dropna(subset=fieldList, inplace=True)
                 metaDF.sort(columns='sampleid', inplace=True)
+                totalSamp, columns = metaDF.shape
+
+                normRem = len(countList) - len(newList)
+                selectRem = len(newList) - totalSamp
+
+                result += str(totalSamp) + ' selected samples were included in the final analysis.\n'
+                if normRem > 0:
+                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
+                if selectRem:
+                    result += str(selectRem) + ' samples were deselected by the user.\n'
 
                 # Create unique list of samples in meta dataframe (may be different than selected samples)
                 myList = metaDF['sampleid'].tolist()
@@ -305,6 +309,7 @@ def getCatUnivData(request):
                 "#2F5D9B", "#6C5E46", "#D25B88", "#5B656C", "#00B57F", "#545C46", "#866097", "#365D25",
                 "#252F99", "#00CCFF", "#674E60", "#FC009C", "#92896B"
             ]
+
             colors_idx = 0
             for name1, group1 in grouped1:
                 try:
@@ -618,7 +623,6 @@ def getCatUnivData(request):
 
 def getQuantUnivData(request):
     try:
-        myDict = {}
         global base, time1, TimeDiff
         samples = Sample.objects.all()
         samples.query = pickle.loads(request.session['selected_samples'])
@@ -639,6 +643,26 @@ def getQuantUnivData(request):
             NormVal = all["NormVal"]
             sig_only = int(all["sig_only"])
             size = int(all["MinSize"])
+
+            metaStrCat = all["metaCat"]
+            fieldListCat = []
+            if metaStrCat:
+                metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
+                for key in metaDictCat:
+                    fieldListCat.append(key)
+
+            metaStrQuant = all["metaQuant"]
+            fieldListQuant = []
+            if metaStrQuant:
+                metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
+                for key in metaDictQuant:
+                    fieldListQuant.append(key)
+
+            metaStr = all["meta"]
+            fieldList = []
+            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+            for key in metaDict:
+                fieldList.append(key)
 
             countList = []
             for sample in qs1:
@@ -717,36 +741,19 @@ def getQuantUnivData(request):
                             newList.append(id)
 
             qs2 = Sample.objects.all().filter(sampleid__in=newList)
-            numberRem = len(countList) - len(newList)
-            if numberRem > 0:
-                result += str(numberRem) + ' samples did not met the desired normalization criteria; and were not included in the analysis...\n'
-                result += str(len(newList)) + ' samples met the desired normalization criteria; and were included in the analysis...\n'
-            else:
-                result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
-
-            metaStrCat = all["metaCat"]
-            fieldListCat = []
-            if metaStrCat:
-                metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
-                for key in metaDictCat:
-                    fieldListCat.append(key)
-
-            metaStrQuant = all["metaQuant"]
-            fieldListQuant = []
-            if metaStrQuant:
-                metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
-                for key in metaDictQuant:
-                    fieldListQuant.append(key)
-
-            metaStr = all["meta"]
-            fieldList = []
-            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-            for key in metaDict:
-                fieldList.append(key)
-
             metaDF = catUnivMetaDF(qs2, metaDict)
             metaDF.dropna(subset=fieldList, inplace=True)
             metaDF.sort(columns='sampleid', inplace=True)
+            totalSamp, cols = metaDF.shape
+
+            normRem = len(countList) - len(newList)
+            selectRem = len(newList) - totalSamp
+
+            result += str(totalSamp) + ' selected samples were included in the final analysis.\n'
+            if normRem > 0:
+                result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
+            if selectRem:
+                result += str(selectRem) + ' samples were deselected by the user.\n'
 
             myList = metaDF['sampleid'].tolist()
             mySet = list(ordered_set(myList))
@@ -919,7 +926,7 @@ def getQuantUnivData(request):
                         if obs < 3:
                             result += '\n===============================================\n\n'
                             result += 'Rank: ' + str(name1[0]) + '; Name: ' + str(name1[1]) + '; ID: ' + str(name1[2]) + ' has ' + str(obs) + ' observation(s),\n'
-                            result += 'and was not included in your analysis.\n'
+                            result += 'it was removed from your analysis.\n'
                             result += '\n===============================================\n\n'
                             break
 

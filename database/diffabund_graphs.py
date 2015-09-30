@@ -98,12 +98,6 @@ def getDiffAbund(request):
                     id = sample.sampleid
                     newList.append(id)
             qs2 = Sample.objects.all().filter(sampleid__in=newList)
-            numberRem = len(countList) - len(newList)
-            if numberRem > 0:
-                result += str(numberRem) + ' samples did not met the desired normalization criteria; and were not included in the analysis...\n'
-                result += str(len(newList)) + ' samples met the desired normalization criteria; and were included in the analysis...\n'
-            else:
-                result += 'All ' + str(len(countList)) + ' selected samples were included in the analysis...\n'
 
             # Get dict of selected meta variables
             metaString = all["meta"]
@@ -115,6 +109,16 @@ def getDiffAbund(request):
                 fieldList.append(key)
             metaDF = catDiffAbundDF(qs2, metaDict)
             metaDF.dropna(subset=fieldList, inplace=True)
+            totalSamp, cols = metaDF.shape
+
+            normRem = len(countList) - len(newList)
+            selectRem = len(newList) - totalSamp
+
+            result += str(totalSamp) + ' selected samples were included in the final analysis.\n'
+            if normRem > 0:
+                result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
+            if selectRem:
+                result += str(selectRem) + ' samples were deselected by the user.\n'
 
             # Create unique list of samples in meta dataframe (may be different than selected samples)
             myList = metaDF['sampleid'].tolist()

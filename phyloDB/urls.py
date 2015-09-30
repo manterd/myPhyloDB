@@ -47,7 +47,6 @@ urlpatterns = patterns('',
     url(r'^removeRIDANOVA/$', 'database.anova_graphs.removeRIDANOVA', name='removeRIDANOVA'),
 
     url(r'^getCatPCoAData/$', 'database.pcoa_graphs.getCatPCoAData', name='getCatPCoAData'),
-    url(r'^getQuantPCoAData/$', 'database.pcoa_graphs.getQuantPCoAData', name='getQuantPCoAData'),
     url(r'^statusPCoA/$', 'database.pcoa_graphs.statusPCoA', name='statusPCoA'),
     url(r'^removeRIDPCOA/$', 'database.pcoa_graphs.removeRIDPCOA', name='removeRIDPCOA'),
 
