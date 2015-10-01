@@ -48,6 +48,10 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 
     def start(self):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "phyloDB.settings")
+        import django.test
+        import HTMLParser
+        import Cookie
+        import django.contrib.sessions.serializers
 
         from config.local_cfg import update
         update()

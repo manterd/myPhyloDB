@@ -468,9 +468,6 @@ def getCatUnivData(request):
                             seriesDict['data'] = dataList
                             seriesList.append(seriesDict)
 
-                            #xTitle = {}
-                            #xTitle['text'] = indVar
-                            #xAxisDict['title'] = xTitle
                             xAxisDict['categories'] = trtList
 
                             yTitle = {}
@@ -515,21 +512,6 @@ def getCatUnivData(request):
                         seriesDict['color'] = colors[colors_idx]
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
-
-                        catList = []
-                        for i in xrange(len(fieldList)):
-                            catList.append(grouped2.index.get_level_values(i).unique().tolist())
-
-                        #xCatList = []
-                        #for i in catList:
-                        #    dict = {}
-                        #    dict['name'] = cat
-                        #    catList = xAxisDF[i].values.tolist()
-                        #    print 'catList:', catList
-                        #    xAxisDict['categories'] = catList
-                        #    xAxisList.append(xAxisDict)
-                        #print 'xAxisList:', xAxisList
-
 
                         xAxisDict['categories'] = trtList
 
