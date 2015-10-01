@@ -79,12 +79,14 @@ class Human_Associated(models.Model):
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
 
+    # sample collection
     samp_collect_device = models.CharField(max_length=45, blank=True)
     samp_mat_process = models.CharField(max_length=45, blank=True)
     samp_size = models.FloatField(blank=True, null=True)
     samp_store_temp = models.FloatField(blank=True, null=True)
     samp_store_dur = models.FloatField(blank=True, null=True)
 
+    # sample classification
     samp_type = models.CharField(max_length=45, blank=True)
     samp_location = models.CharField(max_length=45, blank=True)
     samp_temp = models.FloatField(blank=True, null=True)

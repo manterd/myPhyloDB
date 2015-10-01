@@ -327,6 +327,12 @@ def getCatUnivData(request):
                         trtList.append(trt)
                         valList.append(list(group2.T))
 
+                    grouped3 = group1.groupby(fieldList).mean()
+
+                    catList = []
+                    for i in xrange(len(fieldList)):
+                        catList.append(grouped3.index.get_level_values(i).unique().tolist())
+
                     D = ""
                     p_val = 1.0
                     if StatTest == 1:
@@ -513,7 +519,12 @@ def getCatUnivData(request):
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
 
-                        xAxisDict['categories'] = trtList
+                        if catList.__len__() == 1:
+                            xAxisDict['categories'] = catList[0]
+                        else:
+                            finalList = []
+                            finalList.append(recLabel("", catList))
+                            xAxisDict['categories'] = finalList
 
                         yTitle = {}
                         if DepVar == 1:
@@ -618,6 +629,20 @@ def getCatUnivData(request):
         return HttpResponse(res, content_type='application/json')
 
 
+def recLabel(name, list):
+    retDict = {}
+    if list.__len__() == 1:
+        retDict['name'] = name
+        retDict['categories'] = list[0]
+        return retDict
+    subList = []
+    for stuff in list[0]:
+        subList.append(recLabel(stuff, list[1:]))
+    retDict['name'] = name
+    retDict['categories'] = subList
+    return retDict
+
+
 def getQuantUnivData(request):
     try:
         global base, time1, TimeDiff
@@ -643,10 +668,12 @@ def getQuantUnivData(request):
 
             metaStrCat = all["metaCat"]
             fieldListCat = []
+            fieldListVals = []
             if metaStrCat:
                 metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
                 for key in metaDictCat:
                     fieldListCat.append(key)
+                    fieldListVals.append(metaDictCat[key])
 
             metaStrQuant = all["metaQuant"]
             fieldListQuant = []
@@ -870,7 +897,10 @@ def getQuantUnivData(request):
                     r = R(RCMD="R/R-Linux/bin/R")
 
                 r.assign("df", group1)
-                trtString = "*".join(fieldList)
+                if len(fieldListVals) > 1:
+                    trtString = "*".join(fieldList)
+                else:
+                    trtString = fieldListQuant[0]
 
                 D = ""
                 if DepVar == 1:
@@ -891,6 +921,7 @@ def getQuantUnivData(request):
                 anova_string = "df$pred <- predict(fit, df)"
                 r.assign("cmd", anova_string)
                 r("eval(parse(text=cmd))")
+
                 aov = r("summary(fit)")
 
                 tempStuff = aov.split('\n')
@@ -900,12 +931,16 @@ def getQuantUnivData(request):
 
                 r("p_vals <- summary(fit)$coefficients[,4]")
                 p_vals = r.get("p_vals")
-                p_value = min(p_vals)
+
+                if p_vals is not None:
+                    p_value = min(p_vals)  # TODO this one
+                else:
+                    p_value = 1.0
 
                 resultDF = r.get("df")
                 resultDF = resultDF.rename(columns=lambda x: x.strip())
 
-                if fieldListCat:
+                if len(fieldListVals) > 1:
                     grouped2 = resultDF.groupby(fieldListCat)
                     for name2, group2 in grouped2:
                         obs = group2['abund'].loc[group2['abund'] > 0].count()
@@ -1035,7 +1070,7 @@ def getQuantUnivData(request):
                             if shapes_idx >= len(shapes):
                                 shapes_idx = 0
 
-                if not fieldListCat:
+                else:
                     obs = resultDF['abund'].loc[resultDF['abund'] > 0].count()
                     if obs < 3:
                         result += '\n===============================================\n\n'
@@ -1262,5 +1297,4 @@ def getQuantUnivData(request):
         myDict['error'] = state
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
-
 
