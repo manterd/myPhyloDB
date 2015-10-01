@@ -17,7 +17,6 @@ Source: "..\..\dist\myPhyloDB\*.manifest"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\*.exe"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\dbMicrobe"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
 
-Source: "..\..\dist\myPhyloDB\analyses\*"; DestDir: "{app}\analyses"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\alabaster\*"; DestDir: "{app}\alabaster"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\babel\*"; DestDir: "{app}\babel"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\config\*"; DestDir: "{app}\config"; Flags: recursesubdirs; Components: Main

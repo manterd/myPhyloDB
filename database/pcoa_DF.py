@@ -1,7 +1,7 @@
 import operator
 import pandas as pd
 from django.db.models import Q
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Sample, Human_Associated, Soil, UserDefined
+from database.models import Sample, Human_Associated, Soil, UserDefined
 import numpy as np
 from numpy import *
 from numpy.random import mtrand

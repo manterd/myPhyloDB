@@ -11,8 +11,8 @@ class MyRegistrationView(RegistrationView):
 
 
 urlpatterns = patterns('',
-    (r'^admin/', include(admin.site.urls)),
-    (r'^accounts/', include('registration.backends.simple.urls')),
+    url(r'^admin/', include(admin.site.urls)),
+    url(r'^accounts/', include('registration.backends.simple.urls')),
     url(r'^myPhyloDB/register/$', MyRegistrationView.as_view(), name='registration_register'),
 
     url(r'^myPhyloDB/home/$', 'database.views.home', name='home'),

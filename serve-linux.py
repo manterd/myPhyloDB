@@ -6,7 +6,8 @@ import signal
 
 import cherrypy
 from cherrypy.process import plugins
-from django.core.handlers.wsgi import WSGIHandler
+#from django.core.handlers.wsgi import WSGIHandler
+from django.core.wsgi import get_wsgi_application
 import webbrowser
 import multiprocessing as mp
 
@@ -48,20 +49,15 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         self.base_dir = base_dir
 
     def start(self):
+        import django
+
         os.environ['DJANGO_SETTINGS_MODULE'] = 'phyloDB.settings'
+        django.setup()
 
         from config.local_cfg import update
         update()
 
-        import django
-        import django.test
-        import HTMLParser
-        import Cookie
-        import django.contrib.sessions.serializers
-        import django.core.mail.backends.smtp
-        django.setup()
-
-        cherrypy.tree.graft(WSGIHandler())
+        cherrypy.tree.graft(get_wsgi_application())
 
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]

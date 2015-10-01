@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 a = Analysis(['serve-win.py'],
-             pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
+             pathex=['C:\\Users\\daniel.manter.NPA-VOICE\\PycharmProjects\\myPhyloDB'],
              hiddenimports=[
                 'registration.admin',
                 'registration.forms',
@@ -53,7 +53,6 @@ def Datafiles(*filenames, **kw):
         for filename in filenames
         if os.path.isfile(filename))
 
-
 db = Datafiles('dbMicrobe')
 
 def extra_datas(mydir):
@@ -72,7 +71,6 @@ def extra_datas(mydir):
 
     return extra_datas
 
-a.datas += extra_datas('config')
 a.datas += extra_datas('instructions')
 a.datas += extra_datas('media')
 a.datas += extra_datas('mothur/mothur-win')
