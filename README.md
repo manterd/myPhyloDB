@@ -6,12 +6,13 @@
 
 
 # Installers
-* Installers (coming soon...) of compiled code for Linux and Windows platforms can be found [here] (http://www.ars.usda.gov/services/software/software.htm).
+* Installers (coming soon...) for Linux and Windows stand-alone executables can be found [here] (http://www.ars.usda.gov/services/software/software.htm).
+* Executables include all dependencies, allowing myPhyloDB to be run on computers without Python, Mothur or R.
 
 # Source code
 **Dependencies:**
 * CherryPy 3.6.0
-* Django 1.8.4
+* Django 1.6.5
 * Django-extensions 1.4.4
 * Django-registration-redux 1.2
 * PypeR 1.1.2

@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 a = Analysis(['serve-win.py'],
-             pathex=['C:\\Users\\daniel.manter.NPA-VOICE\\PycharmProjects\\myPhyloDB'],
+             pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
              hiddenimports=[
                 'registration.admin',
                 'registration.forms',
@@ -71,6 +71,7 @@ def extra_datas(mydir):
 
     return extra_datas
 
+a.datas += extra_datas('config')
 a.datas += extra_datas('instructions')
 a.datas += extra_datas('media')
 a.datas += extra_datas('mothur/mothur-win')

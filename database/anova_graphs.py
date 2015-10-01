@@ -315,13 +315,10 @@ def getCatUnivData(request):
                 try:
                     trtList = []
                     valList = []
-                    grouped2 = pd.DataFrame()
-                    if DepVar == 1:
-                        grouped2 = group1.groupby(fieldList)['abund']
-                    elif DepVar == 2:
-                        grouped2 = group1.groupby(fieldList)['rich']
-                    elif DepVar == 3:
-                        grouped2 = group1.groupby(fieldList)['diversity']
+
+                    grouped2 = group1.groupby(fieldList)
+
+                    xAxisList = []
                     for name2, group2 in grouped2:
                         if isinstance(name2, unicode):
                             trt = name2
@@ -519,9 +516,21 @@ def getCatUnivData(request):
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
 
-                        #xTitle = {}
-                        #xTitle['text'] = indVar
-                        #xAxisDict['title'] = xTitle
+                        catList = []
+                        for i in xrange(len(fieldList)):
+                            catList.append(grouped2.index.get_level_values(i).unique().tolist())
+
+                        #xCatList = []
+                        #for i in catList:
+                        #    dict = {}
+                        #    dict['name'] = cat
+                        #    catList = xAxisDF[i].values.tolist()
+                        #    print 'catList:', catList
+                        #    xAxisDict['categories'] = catList
+                        #    xAxisList.append(xAxisDict)
+                        #print 'xAxisList:', xAxisList
+
+
                         xAxisDict['categories'] = trtList
 
                         yTitle = {}
