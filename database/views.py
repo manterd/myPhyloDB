@@ -424,6 +424,13 @@ def PCoA(request):
     )
 
 
+def SPLS(request):
+    return render_to_response(
+        'spls.html',
+        context_instance=RequestContext(request)
+    )
+
+
 def saveCookie(request):
     if request.is_ajax():
         allJson = request.GET["all"]

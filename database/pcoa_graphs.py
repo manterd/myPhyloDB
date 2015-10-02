@@ -235,6 +235,7 @@ def getCatPCoAData(request):
 
             qs2 = Sample.objects.all().filter(sampleid__in=newList)
             metaDF = catPCoAMetaDF(qs2, metaDict)
+
             metaDF.dropna(subset=fieldList, inplace=True)
             metaDF.sort(columns='sample_name', inplace=True)
             totalSamp, cols = metaDF.shape
