@@ -147,7 +147,8 @@
                     return false;
                 }
                 //chooseData();
-                getCatGraphData();
+                $("#run").css("background-color", "yellow");
+                getGraphData();
             });
 
             $("#clearMeta").click(function(){
@@ -219,41 +220,54 @@
             })
         }
 
-        function getCatGraphData() {
+        function getGraphData() {
             var RID = makeGUID();
             startTimer(RID);
-            var arrayQuant = [];
-            var Parent = '';
+            var arrayVals = [];
+            var arrayIDs = [];
             var key = '';
             var value = '';
-            var next = '';
+            var vals = '';
+            var id = '';
+            var ids = '';
             for (var i = 0; i < nodesQuant.length; i++) {
-                Parent = nodesQuant[i].getParent();
-                if (nodesQuant[i].getLevel() == 4) {
-                    if ((Parent.data.id == 'mimark') || (Parent.data.id == 'user')) {
-                        key = nodesQuant[i].data.id;
-                        value = nodesQuant[i].data.title;
-                        next = '"' + key + '" : "' + value + '"';
-                        arrayQuant.push(next);
+                if (nodesQuant[i].getLevel() == 5) {
+                    if ((nodesQuant[i].data.table == 'mimark') || (nodesQuant[i].data.table == 'user')) {
+                        key = nodesQuant[i].data.field;
+                        value = nodesQuant[i].data.value;
+                        id = nodesQuant[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayVals.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDs.push(ids);
                     }
                 }
-                else if (nodesQuant[i].getLevel() == 5) {
-                    if ((Parent.data.id == 'human_associated') || (Parent.data.id == 'soil')) {
-                        key = nodesQuant[i].data.id;
-                        value = nodesQuant[i].data.title;
-                        next = '"' + key + '" : "' + value + '"';
-                        arrayQuant.push(next);
+                else if (nodesQuant[i].getLevel() == 6) {
+                    if ((nodesQuant[i].data.table == 'human_associated') || (nodesQuant[i].data.table == 'soil')) {
+                        key = nodesQuant[i].data.field;
+                        value = nodesQuant[i].data.value;
+                        id = nodesQuant[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayVals.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDs.push(ids);
                     }
                 }
             }
 
             var metaQuant = '';
             if (nodesQuant.length > 0) {
-                metaQuant = "{" + arrayQuant.join(",") + "}";
+                metaQuant = "{" + arrayVals.join(",") + "}";
+            }
+
+            var metaIDs = '';
+            if (nodesQuant.length > 0) {
+                metaIDs = "{" + arrayIDs.join(",") + "}";
             }
 
             var myDict = {};
             myDict['metaQuant'] = metaQuant;
+            myDict['metaIDs'] = metaIDs;
             myDict['taxa'] = taxaLevel;
             myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['remove'] = remove;
@@ -264,7 +278,7 @@
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getCatSPLSData/',
+                url: '/getSPLSData/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -274,18 +288,46 @@
                     stopTimer(refresh);
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var xAxis = obj['xAxis'];
                     var series = obj['series'];
-                    var yAxis = obj['yAxis'];
+                    if (series == undefined) {
+                        $('#container-1').empty().append('No significant regresssions!');
+                    } else {
+                        var xAxis = obj['xAxis'];
+                        var yAxis = obj['yAxis'];
+                        heatmap(xAxis, yAxis, series);
 
-                    linechart1(xAxis, yAxis, series);
+                        var res_table = obj['res_table'];
+                        $('#res_table').empty().append(res_table).find('.table').DataTable({
+                            "jQueryUI": true,
+                            "sDom": 'T<"clear">lfrtip',
+                            "oTableTools": {
+                                "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                            },
+                            "bSort": true,
+                            "scrollX": true
+                        }).draw();
+
+                        var pred_table = obj['pred_table'];
+                        $('#pred_table').empty().append(pred_table).find('.table').DataTable({
+                            "jQueryUI": true,
+                            "sDom": 'T<"clear">lfrtip',
+                            "oTableTools": {
+                                "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                            },
+                            "bSort": true,
+                            "scrollX": true
+                        }).draw();
+                    }
+
+                    var text = obj['text'];
+                    $('#text-1').val(text);
 
                     $("#run").css("background-color", "green");
                 }
             });
         }
 
-        function linechart1(xAxis, yAxis, series) {
+        function heatmap(xAxis, yAxis, series) {
             catOptions = {
                 chart: { renderTo: 'container-1', type: 'heatmap'},
                 title: { text: null },
@@ -298,14 +340,23 @@
                     verticalAlign: 'top',
                     layout: 'vertical',
                     x: 0,
-                    y: 20
+                    y: 25
                 },
                 xAxis: xAxis,
                 yAxis: yAxis,
                 colorAxis: {
-                    min: 0,
-                    minColor: '#FFFFFF',
-                    maxColor: Highcharts.getOptions().colors[0]
+                    stops: [
+                    [0, '#c4463a'],
+                    [0.5, '#ffffff'],
+                    [1, '#3060cf']
+                    ]
+                },
+                tooltip: {
+                    formatter: function () {
+                        return 'Taxa: ' + this.series.xAxis.categories[this.point.x] +
+                            '<br>Coeff: ' + this.point.value + '<br>' +
+                                this.series.yAxis.categories[this.point.y];
+                    }
                 },
                 series: series,
                 credits: { enabled: false }
@@ -358,7 +409,7 @@
     <div id="stage"></div>
     <br><br>
 
-    <div style="float: left;">Select chart theme:
+    <!--<div style="float: left;">Select chart theme:
         <select id="theme">
             <option value="1" selected="selected">default</option>
             <option value="2">dark-blue</option>
@@ -371,7 +422,7 @@
             <option value="9">skies</option>
         </select>
         &nbsp&nbsp
-    </div>
+    </div>-->
     <table width="950px" border="2">
         <tr>
             <th colspan="3" style="padding-right: 10px;">GraphData</th>
@@ -418,7 +469,12 @@
     </div>
     <br>
 
+    <h2>sPLS Coefficients:</h2>
+    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br>
     <br>
-
+    <h2>Observed & Predicted Data:</h2>
+    <div id="pred_table" style="width: 950px; overflow-x: auto;"></div>
+    <br>
+    <br>
 {% endblock my_content%}

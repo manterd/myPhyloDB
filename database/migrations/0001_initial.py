@@ -10,9 +10,9 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         # Adding model 'Project'
         db.create_table(u'database_project', (
+            ('projectid', self.gf('django.db.models.fields.CharField')(max_length=36, primary_key=True)),
             ('status', self.gf('django.db.models.fields.CharField')(max_length=10)),
             ('projectType', self.gf('django.db.models.fields.CharField')(max_length=45)),
-            ('projectid', self.gf('django.db.models.fields.CharField')(max_length=36, primary_key=True)),
             ('project_name', self.gf('django.db.models.fields.TextField')(blank=True)),
             ('project_desc', self.gf('django.db.models.fields.TextField')(blank=True)),
             ('start_date', self.gf('django.db.models.fields.CharField')(max_length=15, blank=True)),

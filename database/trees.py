@@ -282,6 +282,9 @@ def getSampleCatTreeChildren(request):
                         myNode2 = {
                             'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                             'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'mimark',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False
@@ -309,6 +312,9 @@ def getSampleCatTreeChildren(request):
                         myNode2 = {
                             'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                             'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'human_associated',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False
@@ -336,6 +342,9 @@ def getSampleCatTreeChildren(request):
                         myNode2 = {
                             'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                             'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'soil',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False
@@ -363,6 +372,9 @@ def getSampleCatTreeChildren(request):
                         myNode2 = {
                             'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                             'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'user',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False
@@ -592,6 +604,9 @@ def getSampleQuantTreeChildren(request):
                         myNode2 = {
                             'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                             'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'mimark',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False
@@ -620,6 +635,9 @@ def getSampleQuantTreeChildren(request):
                         myNode2 = {
                             'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                             'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'human_associated',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False
@@ -648,6 +666,9 @@ def getSampleQuantTreeChildren(request):
                         myNode2 = {
                             'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                             'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'soil',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False
@@ -676,6 +697,9 @@ def getSampleQuantTreeChildren(request):
                         myNode2 = {
                             'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
                             'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'user',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False

@@ -104,6 +104,7 @@
 
         function updateNodes(selKeys) {
             updateProjectTable(selKeys);
+            updateReferenceTable(selKeys);
             updateSampleTable(selKeys);
 
             var pTypes = new Array(0);
@@ -141,7 +142,7 @@
                     {% for sample in project.sample_set.all %}
                         var id = "{{ sample.sampleid }}";
                         if (id == value) {
-                             table.row.add([
+                            table.row.add([
                                 "{{ project.project_name }}",
                                 "{{ project.projectid }}",
                                 "{{ sample.sample_name }}",
@@ -153,15 +154,39 @@
                                 "{{ project.pi_affiliation }}",
                                 "{{ project.pi_email }}",
                                 "{{ project.pi_phone }}",
-                                "{{ project.status }}",
-                                {% for ref in refs %}
-                                    {% if ref.refid == sample.refid.refid %}
-                                        "{{ ref.author }}",
-                                        "{{ ref.path }}"
-                                    {% endif %}
-                                {% endfor %}
-                             ]).draw();
+                                "{{ project.status }}"
+                            ]).draw();
                         }
+                    {% endfor %}
+                {% endfor %}
+            });
+        }
+
+        function updateReferenceTable(selKeys) {
+            var table = $('#referenceTable').DataTable();
+            table.rows().remove().draw();
+            $.each(selKeys, function (index, value) {
+                {% for project in projects %}
+                    {% for ref in project.reference_set.all %}
+                        {% for sample in ref.sample_set.all %}
+                            var id = "{{ sample.sampleid }}";
+                            if (id == value) {
+                                 table.row.add([
+                                    "{{ project.project_name }}",
+                                    "{{ project.projectid }}",
+                                    "{{ ref.refid }}",
+                                    "{{ sample.sample_name }}",
+                                    "{{ sample.sampleid }}",
+                                    "{{ ref.raw }}",
+                                    "{{ ref.path }}",
+                                    "{{ ref.source }}",
+                                    "{{ ref.alignDB }}",
+                                    "{{ ref.templateDB }}",
+                                    "{{ ref.taxonomyDB }}",
+                                    "{{ ref.author }}"
+                                 ]).draw();
+                            }
+                        {% endfor %}
                     {% endfor %}
                 {% endfor %}
             });
@@ -177,6 +202,7 @@
                         if (id == value) {
                              table.row.add([
                                 "{{ project.project_name }}",
+                                "{{ sample.refid.refid }}",
                                 "{{ sample.sampleid }}",
                                 "{{ sample.sample_name }}",
                                 "{{ sample.organism }}",
@@ -444,7 +470,8 @@
         <div id="tabs">
             <ul>
                 <li><a href="#tabs-1" style="font-size: 14px">Project</a></li>
-                <li><a href="#tabs-2" style="font-size: 14px">MIMARKs</a></li>
+                <li><a href="#tabs-2" style="font-size: 14px">Reference</a></li>
+                <li><a href="#tabs-3" style="font-size: 14px">MIMARKs</a></li>
                 <li><a href="#tabs-humasso" style="font-size: 14px; display: none" id="humasso">Human Associated</a></li>
                 <li><a href="#tabs-soil" style="font-size: 14px; display: none" id="soil">Soil</a></li>
                 <li><a href="#tabs-9" style="font-size: 14px" id="usr">User-defined</a></li>
@@ -465,19 +492,38 @@
                             <th>pi_affiliation</th>
                             <th>pi_email</th>
                             <th>pi_phone</th>
-                            <th>status</th>
-                            <th>uploaded_by</th>
-                            <th>full_path</th>
                         </tr>
                     </thead>
                 </table>
             </div>
 
             <div id="tabs-2">
+                <table id="referenceTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                    <thead>
+                        <tr>
+                            <th>project_name</th>
+                            <th>projectid</th>
+                            <th>refid</th>
+                            <th>sample_name</th>
+                            <th>sampleid</th>
+                            <th>raw</th>
+                            <th>path</th>
+                            <th>source</th>
+                            <th>alignDB</th>
+                            <th>templateDB</th>
+                            <th>taxonomyDB</th>
+                            <th>author</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div id="tabs-3">
                 <table id="sampleTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
                             <th>project_name</th>
+                            <th>ref_id</th>
                             <th>sample_id</th>
                             <th>sample_name</th>
                             <th>organism</th>

@@ -1,6 +1,6 @@
-from spls_DF import catSPLSMetaDF, normalizeSPLS
+from spls_DF import SPLSMetaDF, normalizeSPLS
 from django.http import HttpResponse
-from database.models import Sample, Profile
+from database.models import Sample, Profile, Kingdom, Phyla, Class, Order, Family, Genus, Species
 from django.db.models import Sum
 import numpy as np
 from numpy import *
@@ -8,6 +8,7 @@ import pandas as pd
 import pickle
 from scipy import stats
 from scipy.spatial.distance import *
+from sortedcontainers import SortedDict
 import simplejson
 from database.utils import multidict, ordered_set, taxaProfileDF
 from pyper import *
@@ -56,7 +57,7 @@ def removeRIDSPLS(request):
         return False
 
 
-def getCatSPLSAData(request):
+def getSPLSAData(request):
     try:
         global base, time1, TimeDiff
         samples = Sample.objects.all()
@@ -120,10 +121,15 @@ def getCatSPLSAData(request):
             fieldList = []
             valueList = []
             metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-            for key in metaDict:
+            for key in sorted(metaDict):
                 fieldList.append(key)
                 valueList.append(metaDict[key])
 
+            idStr = all["metaIDs"]
+            idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
+
+            result = result + 'Quantitative variables selected: ' + ", ".join(fieldList) + '\n'
+            result += '===============================================\n'
             result += '\nData Normalization:\n'
 
             # Limit reads to max value
@@ -178,36 +184,34 @@ def getCatSPLSAData(request):
                             id = sample.sampleid
                             newList.append(id)
 
-            qs2 = Sample.objects.all().filter(sampleid__in=newList)
-            metaDF = catSPLSMetaDF(qs2, metaDict)
-            print 'metaDF\n', metaDF
+            metaDF = SPLSMetaDF(idDict)
+            lenA, col = metaDF.shape
 
-            metaDF.dropna(subset=fieldList, inplace=True)
-            metaDF.sort(columns='sample_name', inplace=True)
-            totalSamp, cols = metaDF.shape
+            metaDF = metaDF.ix[newList]
+            metaDF.dropna(inplace=True)
+            lenB, col = metaDF.shape
 
-            normRem = len(countList) - len(newList)
-            selectRem = len(newList) - totalSamp
+            selectRem = len(selected) - lenA
+            normRem = lenA - lenB
 
-            result += str(totalSamp) + ' selected samples were included in the final analysis.\n'
+            result += str(lenB) + ' selected samples were included in the final analysis.\n'
             if normRem > 0:
                 result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
             if selectRem:
                 result += str(selectRem) + ' samples were deselected by the user.\n'
 
             # Create unique list of samples in meta dataframe (may be different than selected samples)
-            myList = metaDF['sampleid'].tolist()
-            mySet = list(ordered_set(myList))
+            myList = metaDF.index.values.tolist()
 
-            taxaDF = taxaProfileDF(mySet)
+            taxaDF = taxaProfileDF(myList)
+
+            base[RID] = 'Step 1 of 5: Querying database...done!'
+            base[RID] = 'Step 2 of 5: Normalizing data...'
 
             # Sum by taxa level
             taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
-            base[RID] = 'Step 1 of 8: Querying database...done!'
-            base[RID] = 'Step 2 of 8: Normalizing data...'
-
-            normDF, DESeq_error = normalizeSPLS(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
+            normDF, DESeq_error = normalizeSPLS(taxaDF, taxaLevel, myList, NormMeth, NormReads, metaDF)
             normDF.sort_index(inplace=True)
 
             finalDict = {}
@@ -231,8 +235,8 @@ def getCatSPLSAData(request):
                 result += 'To try again, please select fewer samples or another normalization method...\n'
             result += '===============================================\n\n'
 
-            base[RID] = 'Step 2 of 8: Normalizing data...done!'
-            base[RID] = 'Step 3 of 8: Calculating sPLS...'
+            base[RID] = 'Step 2 of 5: Normalizing data...done!'
+            base[RID] = 'Step 3 of 5: Calculating sPLS...'
 
             metaDF.sort_index(inplace=True)
 
@@ -241,71 +245,146 @@ def getCatSPLSAData(request):
             else:
                 r = R(RCMD="R/R-Linux/bin/R")
 
-            metaDF.set_index('sampleid', inplace=True)
-            #finalDF = metaDF.join(normDF)
-
             r.assign("X", normDF)   ### taxa abundances
             r.assign("Y", metaDF[fieldList])    ### quantitative data
 
-            #print r("X")
-            #print r("Y")
+            r.assign("names", normDF.columns.values)
+            r("colnames(X) <- names")
 
-            taxaIDs = normDF.columns.values
-            r.assign("taxaIDs", taxaIDs)
-            r("taxaIDs")
-            r("row.names(X)")
-            r("colnames(X) <- taxaIDs")
-
-            # remove predictors with zero variance
             r("library(mixOmics)")
-            r("ZeroVar <- nearZeroVar(X)")
+            r("ZeroVar <- nearZeroVar(X, freqCut=90/10, uniqueCut=25)")
             r("List <- row.names(ZeroVar$Metrics)")
             r("X_new <- X[,-which(names(X) %in% List)]")
 
+            r("X_final <- scale(X_new, center=TRUE, scale=TRUE)")
+            r("Y_final <- scale(Y, center=TRUE, scale=TRUE)")
+
             r("library(spls)")
             r("set.seed(1)")
-            r("cv <- cv.spls(X_new, Y, eta=seq(0.1, 0.9, 0.1), K=c(1:10))")
-            r("f <- spls(X_new, Y, eta=cv$eta.opt, K=cv$K.opt)")
+            r("cv <- cv.spls(X_final, Y_final, eta=seq(0.1, 0.9, 0.1), K=c(1:10), plot.it=FALSE)")
+            r("f <- spls(X_final, Y_final, eta=cv$eta.opt, K=cv$K.opt)")
 
-            r("set.seed(1)")
-            r("ci.f <- ci.spls(f)")
-            r("cf <- correct.spls(ci.f, plot.it=FALSE)")
+            r("coef.f <- coef(f)")
+            r("sum <- sum(coef.f != 0)")
+            total = r.get("sum")
 
-            ### DELETE 'Rplots.pdf'
-            r("cf.rows <- row.names(cf)")
-            cf = r.get("cf")
-            rows = r.get("cf.rows")
+            base[RID] = 'Step 3 of 5: Calculating sPLS...done!'
+            base[RID] = 'Step 4 of 5: Formatting graph data for display...'
 
-            coeffsDF = pd.DataFrame(cf,  columns=[fieldList], index=rows)
-           # print 'coeffsDF\n', coeffsDF        ## index = taxaids, cols = variables
-            coeffsDF = coeffsDF[(coeffsDF.T != 0).any()]
+            if total > 0:
+                r("pred.f <- predict(f, type='fit', fit.type='response')")
 
-            xAxisDict = {}
-            catList = coeffsDF.index.values.tolist()
-            xAxisDict['categories'] = catList
-            labelsDict = {}
-            labelsDict['rotation'] = 90
-            xAxisDict['labels'] = labelsDict
-            print 'xAxis:', xAxisDict
+                r("library(DMwR)")
+                r("pred.ns <- unscale(pred.f, Y_final)")
 
-            yAxisDict = {}
-            catList = fieldList
-            yAxisDict['categories'] = catList
-            print 'yAxis:', yAxisDict
+                r("pred.ns.rows <- row.names(pred.ns)")
+                pred = r.get("pred.ns")
+                rows = r.get("pred.ns.rows")
 
-            seriesList = []
-            seriesDict = {}
-            seriesDict['name'] = 'test'
-            dataList = coeffsDF[fieldList[0]].values.astype(np.float).tolist()
-            seriesDict['data'] = dataList
-            seriesList.append(seriesDict)
-            print 'seriesList:', seriesList
+                predList = ['pred_' + s for s in fieldList]
+                predDF = pd.DataFrame(pred,  columns=[predList], index=rows)
+                predDF.sort_index(inplace=True)
+                finalDF = pd.merge(metaDF, predDF, left_index=True, right_index=True)
 
-            finalDict['xAxis'] = xAxisDict
-            finalDict['yAxis'] = yAxisDict
-            finalDict['series'] = seriesList
+                r("coef.f.rows <- row.names(coef.f)")
+                cf = r.get("coef.f")
+                rows = r.get("coef.f.rows")
+
+                coeffsDF = pd.DataFrame(cf,  columns=[fieldList], index=rows)
+                coeffsDF = coeffsDF.loc[(coeffsDF != 0).any(axis=1)]
+                coeffsDF.sort_index(inplace=True)
+                taxIDList = coeffsDF.index.values.tolist()
+
+                namesDF = pd.DataFrame()
+                if taxaLevel == 0:
+                    taxNameList = Kingdom.objects.filter(kingdomid__in=taxIDList).values('kingdomid', 'kingdomName')
+                    namesDF = pd.DataFrame(list(taxNameList))
+                    namesDF.set_index('kingdomid', inplace=True)
+                    namesDF.rename(columns={'kingdomName': 'taxa_name'}, inplace=True)
+                elif taxaLevel == 1:
+                    taxNameList = Phyla.objects.filter(phylaid__in=taxIDList).values('phylaid', 'phylaName')
+                    namesDF = pd.DataFrame(list(taxNameList))
+                    namesDF.set_index('phylaid', inplace=True)
+                    namesDF.rename(columns={'phylaName': 'taxa_name'}, inplace=True)
+                elif taxaLevel == 2:
+                    taxNameList = Class.objects.filter(classid__in=taxIDList).values('classid', 'className')
+                    namesDF = pd.DataFrame(list(taxNameList))
+                    namesDF.set_index('classid', inplace=True)
+                    namesDF.rename(columns={'className': 'taxa_name'}, inplace=True)
+                elif taxaLevel == 3:
+                    taxNameList = Order.objects.filter(orderid__in=taxIDList).values('orderid', 'orderName')
+                    namesDF = pd.DataFrame(list(taxNameList))
+                    namesDF.set_index('orderid', inplace=True)
+                    namesDF.rename(columns={'orderName': 'taxa_name'}, inplace=True)
+                elif taxaLevel == 4:
+                    taxNameList = Family.objects.filter(familyid__in=taxIDList).values('familyid', 'familyName')
+                    namesDF = pd.DataFrame(list(taxNameList))
+                    namesDF.set_index('familyid', inplace=True)
+                    namesDF.rename(columns={'familyName': 'taxa_name'}, inplace=True)
+                elif taxaLevel == 5:
+                    taxNameList = Genus.objects.filter(genusid__in=taxIDList).values('genusid', 'genusName')
+                    namesDF = pd.DataFrame(list(taxNameList))
+                    namesDF.set_index('genusid', inplace=True)
+                    namesDF.rename(columns={'genusName': 'taxa_name'}, inplace=True)
+                elif taxaLevel == 6:
+                    taxNameList = Species.objects.filter(speciesid__in=taxIDList).values('speciesid', 'speciesName')
+                    namesDF = pd.DataFrame(list(taxNameList))
+                    namesDF.set_index('speciesid', inplace=True)
+                    namesDF.rename(columns={'speciesName': 'taxa_name'}, inplace=True)
+
+                namesDF.sort_index(inplace=True)
+                taxaNameList = namesDF['taxa_name'].values.tolist()
+
+                coeffsDF = pd.merge(namesDF, coeffsDF, left_index=True, right_index=True)
+                coeffsDF.reset_index(inplace=True)
+                res_table = coeffsDF.to_html(classes="table display")
+                res_table = res_table.replace('border="1"', 'border="0"')
+                finalDict['res_table'] = str(res_table)
+
+                finalDF.reset_index(inplace=True)
+                pred_table = finalDF.to_html(classes="table display")
+                pred_table = pred_table.replace('border="1"', 'border="0"')
+                finalDict['pred_table'] = str(pred_table)
+
+                xAxisDict = {}
+                xAxisDict['categories'] = taxaNameList
+                labelsDict = {}
+                labelsDict['rotation'] = 270
+                xAxisDict['labels'] = labelsDict
+
+                yAxisDict = {}
+                catList = fieldList
+                yAxisDict['categories'] = catList
+                yAxisDict['title'] = {'text': None}
+
+                seriesList = []
+                seriesDict = {}
+                seriesDict['borderWidth'] = '1'
+
+                row, col = coeffsDF.shape
+                dataList = []
+                for i in xrange(row):
+                    for j in xrange(len(fieldList)):
+                        val = round(coeffsDF[fieldList[j]].iloc[i], 4)
+                        tup = (i, j, val)
+                        obsList = list(tup)
+                        dataList.append(obsList)
+
+                seriesDict['data'] = dataList
+                labelDict = {}
+                labelDict['enabled'] = True
+                labelDict['color'] = 'black',
+                labelDict['syle'] = {'textShadow': 'none'}
+                seriesList.append(seriesDict)
+
+                finalDict['xAxis'] = xAxisDict
+                finalDict['yAxis'] = yAxisDict
+                finalDict['series'] = seriesList
 
             finalDict['text'] = result
+
+            base[RID] = 'Step 4 of 5: Formatting graph data for display...done!'
+            base[RID] = 'Step 5 of 5: Formatting sPLS coefficient table...'
 
             res = simplejson.dumps(finalDict)
             return HttpResponse(res, content_type='application/json')

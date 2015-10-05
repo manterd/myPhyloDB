@@ -1,4 +1,4 @@
-from pcoa_DF import catPCoAMetaDF, normalizePCoA
+from pcoa_DF import PCoAMetaDF, normalizePCoA
 from django.http import HttpResponse
 from database.models import Sample, Profile
 from django.db.models import Sum
@@ -57,7 +57,7 @@ def removeRIDPCOA(request):
         return False
 
 
-def getCatPCoAData(request):
+def getPCoAData(request):
     try:
         global base, time1, TimeDiff
         samples = Sample.objects.all()
@@ -154,27 +154,51 @@ def getCatPCoAData(request):
             elif distance == 15:
                 result = result + 'Distance score: wOdum' + '\n'
 
-            metaStrCat = all["metaCat"]
+            metaStrCat = all["metaValsCat"]
             fieldListCat = []
-            if metaStrCat:
+            valueListCat = []
+            idDictCat = {}
+            try:
                 metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
                 for key in metaDictCat:
                     fieldListCat.append(key)
+                    valueListCat.append(metaDictCat[key])
 
-            metaStrQuant = all["metaQuant"]
+                idStrCat = all["metaIDsCat"]
+                idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrCat)
+            except:
+                placeholder = ''
+
+            metaStrQuant = all["metaValsQuant"]
             fieldListQuant = []
-            if metaStrQuant:
+            valueListQuant = []
+            idDictQuant = {}
+            try:
                 metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
                 for key in metaDictQuant:
                     fieldListQuant.append(key)
+                    valueListQuant.append(metaDictQuant[key])
 
-            metaStr = all["meta"]
+                idStrQuant = all["metaIDsQuant"]
+                idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
+            except:
+                placeholder = ''
+
+            metaStr = all["metaVals"]
             fieldList = []
             valueList = []
-            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-            for key in metaDict:
-                fieldList.append(key)
-                valueList.append(metaDict[key])
+            idDict = {}
+            try:
+                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+                for key in sorted(metaDict):
+                    fieldList.append(key)
+                    valueList.append(metaDict[key])
+
+                idStr = all["metaIDs"]
+                idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
+
+            except:
+                placeholder = ''
 
             result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
             result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
@@ -233,34 +257,26 @@ def getCatPCoAData(request):
                             id = sample.sampleid
                             newList.append(id)
 
-            qs2 = Sample.objects.all().filter(sampleid__in=newList)
-            metaDF = catPCoAMetaDF(qs2, metaDict)
+            metaDF = PCoAMetaDF(idDict)
+            lenA, col = metaDF.shape
 
-            metaDF.dropna(subset=fieldList, inplace=True)
-            metaDF.sort(columns='sample_name', inplace=True)
-            totalSamp, cols = metaDF.shape
+            metaDF = metaDF.ix[newList]
+            metaDF.dropna(inplace=True)
+            lenB, col = metaDF.shape
 
-            normRem = len(countList) - len(newList)
-            selectRem = len(newList) - totalSamp
+            selectRem = len(selected) - lenA
+            normRem = lenA - lenB
 
-            result += str(totalSamp) + ' selected samples were included in the final analysis.\n'
+            result += str(lenB) + ' selected samples were included in the final analysis.\n'
             if normRem > 0:
                 result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
             if selectRem:
                 result += str(selectRem) + ' samples were deselected by the user.\n'
 
-            # Create combined metadata column
-            if len(fieldListCat) > 1:
-                for index, row in metaDF.iterrows():
-                    metaDF.ix[index, 'merge'] = " & ".join(row[fieldListCat])
-            else:
-                metaDF['merge'] = metaDF[fieldListCat[0]]
-
             # Create unique list of samples in meta dataframe (may be different than selected samples)
-            myList = metaDF['sampleid'].tolist()
-            mySet = list(ordered_set(myList))
+            myList = metaDF.index.values.tolist()
 
-            taxaDF = taxaProfileDF(mySet)
+            taxaDF = taxaProfileDF(myList)
 
             base[RID] = 'Step 1 of 8: Querying database...done!'
             base[RID] = 'Step 2 of 8: Normalizing data...'
@@ -268,8 +284,7 @@ def getCatPCoAData(request):
             # Sum by taxa level
             taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
-            normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, mySet, NormMeth, NormReads, metaDF)
-
+            normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, myList, NormMeth, NormReads, metaDF)
             normDF.sort_index(inplace=True)
 
             finalDict = {}
@@ -296,7 +311,6 @@ def getCatPCoAData(request):
             base[RID] = 'Step 2 of 8: Normalizing data...done!'
             base[RID] = 'Step 3 of 8: Calculating distance matrix...'
 
-            metaDF.set_index('sampleid', inplace=True)
             metaDF.sort_index(inplace=True)
 
             if os.name == 'nt':

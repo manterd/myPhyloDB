@@ -48,11 +48,11 @@ urlpatterns = patterns('',
     url(r'^statusANOVA/$', 'database.anova_graphs.statusANOVA', name='statusANOVA'),
     url(r'^removeRIDANOVA/$', 'database.anova_graphs.removeRIDANOVA', name='removeRIDANOVA'),
 
-    url(r'^getCatPCoAData/$', 'database.pcoa_graphs.getCatPCoAData', name='getCatPCoAData'),
+    url(r'^getPCoAData/$', 'database.pcoa_graphs.getPCoAData', name='getPCoAData'),
     url(r'^statusPCoA/$', 'database.pcoa_graphs.statusPCoA', name='statusPCoA'),
     url(r'^removeRIDPCOA/$', 'database.pcoa_graphs.removeRIDPCOA', name='removeRIDPCOA'),
 
-    url(r'^getCatSPLSData/$', 'database.spls_graphs.getCatSPLSAData', name='getCatSPLSData'),
+    url(r'^getSPLSData/$', 'database.spls_graphs.getSPLSAData', name='getSPLSData'),
     url(r'^statusSPLS/$', 'database.spls_graphs.statusSPLS', name='statusSPLS'),
     url(r'^removeRIDSPLS/$', 'database.spls_graphs.removeRIDSPLS', name='removeRIDSPLS'),
 

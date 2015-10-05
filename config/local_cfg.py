@@ -3,9 +3,9 @@ from django.conf import settings
 
 def update():
     ### general settings
-    settings.DEBUG = False
+    settings.DEBUG = True
     settings.ALLOWED_HOSTS = ['*']
-    settings.TEMPLATE_DEBUG = False
+    settings.TEMPLATE_DEBUG = True
     settings.SESSION_EXPIRE_AT_BROWSER_CLOSE = True
     settings.USE_L10N = True
     settings.USE_I18N = True

@@ -933,7 +933,7 @@ def getQuantUnivData(request):
                 p_vals = r.get("p_vals")
 
                 if p_vals is not None:
-                    p_value = min(p_vals)  # TODO this one
+                    p_value = min(p_vals)
                 else:
                     p_value = 1.0
 

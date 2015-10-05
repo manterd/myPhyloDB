@@ -96,10 +96,12 @@ def projectid(Document):
     projectid = sheet.cell_value(rowx=5, colx=3)
     num_samp = int(sheet.cell_value(rowx=5, colx=0))
 
-    if projectid == '':
-        return uuid4().hex, pType, num_samp
+    if projectid:
+        p_uuid = projectid
     else:
-        return projectid, pType, num_samp
+        p_uuid = uuid4().hex
+
+    return p_uuid, pType, num_samp
 
 
 def parse_project(Document, p_uuid):
@@ -110,23 +112,25 @@ def parse_project(Document, p_uuid):
     df = pd.read_excel(Document, skiprows=4, sheetname='Project')
     rowDict = df.to_dict(outtype='records')[0]
     rowDict.pop('num_samp')
-    for key in rowDict.keys():
-        if key == 'projectid':
-            rowDict[key] = p_uuid
 
-    m = Project(**rowDict)
-    m.save()
+    if not Project.objects.filter(projectid=p_uuid).exists():
+        for key in rowDict.keys():
+            if key == 'projectid':
+                rowDict[key] = p_uuid
+        Project.objects.create(**rowDict)
+    else:
+        rowDict.pop('projectid')
+        Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, **rowDict)
 
 
-def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
-    project = Project.objects.get(projectid=p_uuid)
+def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
     author = User.objects.get(id=userid)
 
     if raw:
         align_ref = ''
         template_ref = ''
         taxonomy_ref = ''
-        for row in file7:
+        for row in batch:
             if "align.seqs" in row:
                 for item in row.split(','):
                     if "reference=" in item:
@@ -140,22 +144,30 @@ def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
                     if "taxonomy=" in item:
                         string = item.split('=')
                         taxonomy_ref = string[1].replace('mothur/reference/taxonomy/', '')
-
-        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=True, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
-        m.save()
     else:
-        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=False, alignDB='null', templateDB='null', taxonomyDB='null', author=author)
-        m.save()
+        align_ref = 'null'
+        template_ref = 'null'
+        taxonomy_ref = 'null'
+
+    if not Reference.objects.filter(refid=refid).exists():
+        print 'ref record doesnt exist'
+        project = Project.objects.get(projectid=p_uuid)
+        Reference.objects.create(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
+        print 'created'
+    else:
+        print 'ref record exists'
+        project = Project.objects.get(projectid=p_uuid)
+        Reference.objects.filter(refid=refid).update(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
+        print 'updated'
 
 
-def parse_sample(Document, p_uuid, refid, pType, total):
+def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userID):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
     step = 0
 
     project = Project.objects.get(projectid=p_uuid)
-    ref = Reference.objects.get(refid=refid)
 
     df1 = pd.read_excel(Document, skiprows=5, sheetname='MIMARKs')
     if pType == 'human associated':
@@ -168,49 +180,93 @@ def parse_sample(Document, p_uuid, refid, pType, total):
     df3 = pd.read_excel(Document, skiprows=5, sheetname='User')
 
     idList = []
+    refid = ''
+    refDict = {}
+    newRefID = uuid4().hex
     for i in xrange(total):
         step += 1.0
         perc = int((step / total/2) * 100)
 
         row = df1.iloc[[i]].to_dict(outtype='records')[0]
+
+        pathid = row['refid']
+
+        if not isinstance(pathid, unicode):
+            refid = newRefID
+        else:
+            refid = pathid
+
         s_uuid = row['sampleid']
+        row.pop('refid')
         row.pop('seq_method')
         row.pop('geo_loc_name')
         row.pop('lat_lon')
 
+        parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
+        reference = Reference.objects.get(refid=refid)
+
         if not Sample.objects.filter(sampleid=s_uuid).exists():
+            print 'sample record doesnt exist'
             s_uuid = uuid4().hex
             row['sampleid'] = s_uuid
             idList.append(s_uuid)
-            m = Sample(projectid=project, refid=ref, **row)
-            m.save()
+            Sample.objects.create(projectid=project, refid=reference, **row)
+            print 'created'
         else:
+            print 'sample record exists'
             idList.append(s_uuid)
-            m = Sample(projectid=project, refid=ref, **row)
-            m.save()
+            Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
+            print 'updated'
 
+        refDict[s_uuid] = refid
         sample = Sample.objects.get(sampleid=s_uuid)
 
         if pType == "human associated":
             row = df2.iloc[[i]].to_dict(outtype='records')[0]
-            row.pop('sampleid')
-            row.pop('sample_name')
-            m = Human_Associated(projectid=project, refid=ref, sampleid=sample, **row)
-            m.save()
+            if not Human_Associated.objects.filter(sampleid=s_uuid).exists():
+                print 'human record doesnt exist'
+                row.pop('sampleid')
+                row.pop('sample_name')
+                Human_Associated.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+                print 'created'
+            else:
+                print 'huamn record exists'
+                row.pop('sampleid')
+                row.pop('sample_name')
+                Human_Associated.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+                print 'updated'
+
         elif pType == "soil":
             row = df2.iloc[[i]].to_dict(outtype='records')[0]
-            row.pop('sampleid')
-            row.pop('sample_name')
-            m = Soil(projectid=project, refid=ref, sampleid=sample, **row)
-            m.save()
+            if not Soil.objects.filter(sampleid=s_uuid).exists():
+                print 'soil record doesnt exist'
+                row.pop('sampleid')
+                row.pop('sample_name')
+                Soil.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+                print 'created'
+            else:
+                print 'soil record exists'
+                row.pop('sampleid')
+                row.pop('sample_name')
+                Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+                print 'updated'
         else:
             placeholder = ''
 
+        ### user not done
         row = df3.iloc[[i]].to_dict(outtype='records')[0]
-        row.pop('sampleid')
-        row.pop('sample_name')
-        m = UserDefined(projectid=project, refid=ref, sampleid=sample, **row)
-        m.save()
+        if not UserDefined.objects.filter(sampleid=s_uuid).exists():
+            print 'user record doesnt exist'
+            row.pop('sampleid')
+            row.pop('sample_name')
+            UserDefined.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+            print 'created'
+        else:
+            print 'user record exists'
+            row.pop('sampleid')
+            row.pop('sample_name')
+            UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+            print 'updated'
 
     rb = xlrd.open_workbook(Document, formatting_info=True)
     nSheets = rb.nsheets
@@ -241,12 +297,13 @@ def parse_sample(Document, p_uuid, refid, pType, total):
     for each in xrange(nSheets):
         ws = wb.get_sheet(each)
         if ws.name == 'Project':
-            ws.write(5, 2, p_uuid, style)
+            ws.write(5, 3, p_uuid, style)
 
         if ws.name == 'MIMARKs':
             for i in xrange(total):
                 j = i + 6
-                ws.write(j, 0, idList[i], style)
+                ws.write(j, 0, refid, style)
+                ws.write(j, 1, idList[i], style)
 
         if pType == 'human associated':
             if ws.name == 'Human Associated':
@@ -268,6 +325,8 @@ def parse_sample(Document, p_uuid, refid, pType, total):
 
         wb.save(Document)
         perc += 50/nSheets
+
+    return refDict
 
 
 def parse_taxonomy(Document):
@@ -294,54 +353,47 @@ def parse_taxonomy(Document):
 
             if not Kingdom.objects.filter(kingdomName=taxon[0]).exists():
                 kid = uuid4().hex
-                record = Kingdom(kingdomid=kid, kingdomName=taxon[0])
-                record.save()
+                Kingdom.objects.create(kingdomid=kid, kingdomName=taxon[0])
 
             k = Kingdom.objects.get(kingdomName=taxon[0]).kingdomid
             if not Phyla.objects.filter(kingdomid_id=k, phylaName=taxon[1]).exists():
                 pid = uuid4().hex
-                record = Phyla(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
-                record.save()
+                Phyla.objects.create(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
 
             p = Phyla.objects.get(kingdomid_id=k, phylaName=taxon[1]).phylaid
             if not Class.objects.filter(kingdomid_id=k, phylaid_id=p, className=taxon[2]).exists():
                 cid = uuid4().hex
-                record = Class(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
-                record.save()
+                Class.objects.create(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
 
             c = Class.objects.get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
             if not Order.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).exists():
                 oid = uuid4().hex
-                record = Order(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
-                record.save()
+                Order.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
 
             o = Order.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
             if not Family.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).exists():
                 fid = uuid4().hex
-                record = Family(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
-                record.save()
+                Family.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
 
             f = Family.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
             if not Genus.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).exists():
                 gid = uuid4().hex
-                record = Genus(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
-                record.save()
+                Genus.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
 
+            # try handles classifications without species (ie, RDP)
             try:
                 g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                 if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
                     sid = uuid4().hex
-                    record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
-                    record.save()
+                    Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
             except:
                 g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                 if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName='unclassified').exists():
                     sid = uuid4().hex
-                    record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName='unclassified')
-                    record.save()
+                    Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName='unclassified')
 
 
-def parse_profile(file3, file4, p_uuid, refid):
+def parse_profile(file3, file4, p_uuid, refDict):
     global stage, perc
     stage = "Step 5 of 5: Parsing shared file..."
     perc = 0
@@ -395,29 +447,40 @@ def parse_profile(file3, file4, p_uuid, refid):
             s = 'unclassified'
 
         t_kingdom = Kingdom.objects.get(kingdomName=k)
-        t_phyla = Phyla.objects.get(kingdomid_id=t_kingdom, phylaName=p)
-        t_class = Class.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, className=c)
-        t_order = Order.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderName=o)
-        t_family = Family.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyName=f)
-        t_genus = Genus.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusName=g)
-        t_species = Species.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesName=s)
+        t_phyla = Phyla.objects.get(kingdomid=t_kingdom, phylaName=p)
+        t_class = Class.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, className=c)
+        t_order = Order.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderName=o)
+        t_family = Family.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyName=f)
+        t_genus = Genus.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusName=g)
+        t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesName=s)
 
         for name in sampleList:
             count = int(row[str(name)])
             if count > 0:
-                project = Project.objects.get(projectid=p_uuid)
-                ref = Reference.objects.get(refid=refid)
-                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
 
-                if Profile.objects.filter(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species).exists():
-                    t = Profile.objects.get(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species)
+                project = Project.objects.get(projectid=p_uuid)
+                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
+                sampID = sample.sampleid
+
+                refid = ''
+                for key in refDict:
+                    if key == sampID:
+                        refid = refDict[key]
+
+                reference = Reference.objects.get(refid=refid)
+
+                if Profile.objects.filter(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species).exists():
+                    print 'profile record exists'
+                    t = Profile.objects.get(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species)
                     old = t.count
                     new = old + int(count)
                     t.count = new
                     t.save()
+                    print 'count changed from ' + str(old) + ' to ' + str(new)
                 else:
-                    record = Profile(projectid=project, refid=ref, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
-                    record.save()
+                    print 'profile record doesnt exist'
+                    Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
+                    print 'created'
 
 
 def reanalyze(request):
@@ -514,19 +577,19 @@ def reanalyze(request):
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
                 userID = str(request.user.id)
-                parse_reference(p_uuid, refid, dest, file7, raw, source, userID)
 
-            f = xlrd.open_workbook(file_contents=metaFile)
-            sheet = f.sheet_by_name('Project')
-            num_samp = int(sheet.cell_value(rowx=5, colx=0))
-            parse_sample(metaFile, p_uuid, refid, pType, num_samp)
+                f = xlrd.open_workbook(file_contents=metaFile)
+                sheet = f.sheet_by_name('Project')
+                num_samp = int(sheet.cell_value(rowx=5, colx=0))
+
+                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
 
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 with open('% s/mothur.shared' % dest, 'rb') as file4:
-                    parse_profile(file3, file4, p_uuid, refid)
+                    parse_profile(file3, file4, p_uuid, refDict)
 
         return HttpResponse(
             simplejson.dumps({"error": "no"}),

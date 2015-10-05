@@ -7,11 +7,10 @@ from django.http import *
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5
-from models import Project, Reference, Sample, Species
-from parsers import mothur, projectid, parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile
+from models import Project, Reference, Sample, Species, Soil, Profile
+from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 from django.contrib.auth.decorators import login_required
-from uuid import uuid4
 from django.db.models import Q
 import xlrd
 
@@ -26,7 +25,6 @@ def home(request):
 @login_required(login_url='/myPhyloDB/login/')
 def upload(request):
     projects = Reference.objects.none()
-
     if request.method == 'POST' and 'Upload' in request.POST:
         form1 = UploadForm1(request.POST, request.FILES)
         source = str(request.POST['source'])
@@ -37,7 +35,7 @@ def upload(request):
                 file1 = request.FILES['docfile1']
                 p_uuid, pType, num_samp = projectid(file1)
             except Exception as e:
-                print("Error with project file: " + str(e))
+                print("Error with project file: " + str(request.FILES['docfile1']) + "; Error: " + str(e))
 
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -59,7 +57,6 @@ def upload(request):
             timestamp = ".".join([str(hour), str(minute), str(second)])
             datetimestamp = "_".join([str(date), str(timestamp)])
             dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
-            refid = uuid4().hex
             metaName = 'final_meta.xls'
             metaFile = '/'.join([dest, metaName])
 
@@ -68,7 +65,7 @@ def upload(request):
                 parse_project(metaFile, p_uuid)
 
             except Exception as e:
-                print("Error with project file: " + str(e))
+                print("Error with project file: " + str(request.FILES['docfile1']) + "; Error: " + str(e))
                 remove_proj(dest)
 
                 if request.user.is_superuser:
@@ -84,40 +81,23 @@ def upload(request):
                     context_instance=RequestContext(request)
                 )
 
-            try:
-                if source == 'mothur':
-                    raw = False
-                    parse_reference(p_uuid, refid, dest, 'blank', raw, source, userID)
-                elif source == '454':
-                    file7 = request.FILES['docfile7']
-                    raw = True
-                    parse_reference(p_uuid, refid, dest, file7, raw, source, userID)
-                elif source == 'miseq':
-                    file15 = request.FILES['docfile15']
-                    raw = True
-                    parse_reference(p_uuid, refid, dest, file15, raw, source, userID)
-
-            except Exception as e:
-                print("Error with project file: " + str(e))
-                remove_proj(dest)
-
-                if request.user.is_superuser:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                elif request.user.is_authenticated():
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                return render_to_response(
-                    'upload.html',
-                    {'projects': projects,
-                     'form1': UploadForm1,
-                     'form2': UploadForm2,
-                     'error': "There was an error parsing your Project file"},
-                    context_instance=RequestContext(request)
-                )
+            if source == 'mothur':
+                raw = False
+                batch = 'blank'
+            elif source == '454':
+                raw = True
+                batch = request.FILES['docfile7']
+            elif source == 'miseq':
+                raw = True
+                batch = request.FILES['docfile15']
+            else:
+                raw = False
+                batch = ''
 
             try:
-                parse_sample(metaFile, p_uuid, refid, pType, num_samp)
+                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
             except Exception as e:
-                print("Error with sample file: " + str(e))
+                print("Error with sample file: " + str(request.FILES['docfile1']) + "; Error: " + str(e))
                 remove_proj(dest)
 
                 if request.user.is_superuser:
@@ -142,7 +122,7 @@ def upload(request):
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
                 except Exception as e:
-                    print("Error with taxonomy file: " + str(e))
+                    print("Error with taxonomy file: " + str(request.FILES['docfile3']) + "; Error: " + str(e))
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -165,9 +145,9 @@ def upload(request):
                 try:
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                         with open('% s/mothur.shared' % dest, 'rb') as file4:
-                            parse_profile(file3, file4, p_uuid, refid)
+                            parse_profile(file3, file4, p_uuid, refDict)
                 except Exception as e:
-                    print("Error with shared file: " + str(e))
+                    print("Error with shared file: " + str(request.FILES['docfile4']) + "; Error: " + str(e))
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -244,7 +224,7 @@ def upload(request):
                 try:
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                         with open('% s/mothur.shared' % dest, 'rb') as file4:
-                            parse_profile(file3, file4, p_uuid, refid)
+                            parse_profile(file3, file4, p_uuid, refDict)
                 except Exception as e:
                     print("Error with parsing post-mothur profile: " + str(e))
                     remove_proj(dest)
@@ -322,7 +302,7 @@ def upload(request):
                 try:
                     with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                         with open('% s/mothur.shared' % dest, 'rb') as file4:
-                            parse_profile(file3, file4, p_uuid, refid)
+                            parse_profile(file3, file4, p_uuid, refDict)
                 except Exception as e:
                     print("Error with parsing post-mothur profile: " + str(e))
                     remove_proj(dest)
@@ -498,10 +478,9 @@ def update(request):
         refid = request.POST['refid']
         file1 = request.FILES['docfile11']
 
-        project = Reference.objects.get(refid=refid)
-        p_uuid = project.projectid.projectid
-        pType = project.projectid.projectType
-        dest = project.path
+        ref = Reference.objects.get(refid=refid)
+        dest = ref.path
+        p_uuid, pType, num_samp = projectid(file1)
 
         try:
             metaName = 'final_meta.xls'
@@ -521,7 +500,14 @@ def update(request):
             f = xlrd.open_workbook(metaFile)
             sheet = f.sheet_by_name('Project')
             num_samp = int(sheet.cell_value(rowx=5, colx=0))
-            parse_sample(metaFile, p_uuid, refid, pType, num_samp)
+            bat = 'mothur.batch'
+            batFile = '/'.join([dest, bat])
+            reference = Reference.objects.get(refid=refid)
+            raw = reference.raw
+            source = reference.source
+            userID = str(request.user.id)
+            refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+
         except Exception as e:
             state = "Error with sample file: " + str(e)
             return render_to_response(

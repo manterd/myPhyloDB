@@ -1,13 +1,12 @@
 from django.db import models
 from django_extensions.db.fields import UUIDField
 from django.contrib.auth.models import User as Users
-import time
 
 
 class Project(models.Model):
+    projectid = UUIDField(primary_key=True)
     status = models.CharField(max_length=10, blank=False)
     projectType = models.CharField(max_length=45, blank=False)
-    projectid = UUIDField(primary_key=True)
     project_name = models.TextField(blank=True)
     project_desc = models.TextField(blank=True)
     start_date = models.CharField(max_length=15, blank=True)
@@ -17,9 +16,6 @@ class Project(models.Model):
     pi_affiliation = models.CharField(max_length=45, blank=True)
     pi_email = models.EmailField(blank=True)
     pi_phone = models.CharField(max_length=15, blank=True)
-
-    def __unicode__(self):
-        return unicode(self.project_name)
 
 
 class Reference(models.Model):
@@ -36,14 +32,12 @@ class Reference(models.Model):
     class Meta:
         verbose_name_plural = 'entries'
 
-    def __unicode__(self):
-        return unicode(self.path)
-
 
 class Sample(models.Model):
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
     sampleid = UUIDField(primary_key=True)
+
     sample_name = models.TextField(blank=False)
     organism = models.CharField(max_length=90, blank=True)
     collection_date = models.CharField(max_length=15, blank=True)
@@ -69,9 +63,6 @@ class Sample(models.Model):
 
     def natural_key(self):
         return self.sampleid
-
-    def __unicode__(self):
-        return unicode(self.sample_name)
 
 
 class Human_Associated(models.Model):
@@ -259,6 +250,7 @@ class UserDefined(models.Model):
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
+
     usr_cat1 = models.TextField(blank=True)
     usr_cat2 = models.TextField(blank=True)
     usr_cat3 = models.TextField(blank=True)
@@ -336,6 +328,7 @@ class Profile(models.Model):
     projectid = models.ForeignKey(Project)
     sampleid = models.ForeignKey(Sample)
     refid = models.ForeignKey(Reference)
+
     kingdomid = models.ForeignKey(Kingdom)
     phylaid = models.ForeignKey(Phyla)
     classid = models.ForeignKey(Class)
