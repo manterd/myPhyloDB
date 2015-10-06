@@ -6,11 +6,9 @@ import numpy as np
 from numpy import *
 import pandas as pd
 import pickle
-from scipy import stats
 from scipy.spatial.distance import *
-from sortedcontainers import SortedDict
 import simplejson
-from database.utils import multidict, ordered_set, taxaProfileDF
+from database.utils import multidict, taxaProfileDF
 from pyper import *
 
 
@@ -185,6 +183,9 @@ def getSPLSAData(request):
                             newList.append(id)
 
             metaDF = SPLSMetaDF(idDict)
+            fieldList.insert(0, 'sample_name')
+            metaDF = metaDF[fieldList]
+
             lenA, col = metaDF.shape
 
             metaDF = metaDF.ix[newList]
@@ -246,7 +247,7 @@ def getSPLSAData(request):
                 r = R(RCMD="R/R-Linux/bin/R")
 
             r.assign("X", normDF)   ### taxa abundances
-            r.assign("Y", metaDF[fieldList])    ### quantitative data
+            r.assign("Y", metaDF)    ### quantitative data
 
             r.assign("names", normDF.columns.values)
             r("colnames(X) <- names")
@@ -255,9 +256,10 @@ def getSPLSAData(request):
             r("ZeroVar <- nearZeroVar(X, freqCut=90/10, uniqueCut=25)")
             r("List <- row.names(ZeroVar$Metrics)")
             r("X_new <- X[,-which(names(X) %in% List)]")
-
             r("X_final <- scale(X_new, center=TRUE, scale=TRUE)")
-            r("Y_final <- scale(Y, center=TRUE, scale=TRUE)")
+
+            r("Y_new <- Y[,-1]")
+            r("Y_final <- scale(Y_new, center=TRUE, scale=TRUE)")
 
             r("library(spls)")
             r("set.seed(1)")
@@ -276,11 +278,12 @@ def getSPLSAData(request):
 
                 r("library(DMwR)")
                 r("pred.ns <- unscale(pred.f, Y_final)")
-
+                r("pred.ns[,sapply(pred.ns, is.numeric)] <-round(pred.ns[,sapply(pred.ns, is.numeric)],0)")
                 r("pred.ns.rows <- row.names(pred.ns)")
                 pred = r.get("pred.ns")
                 rows = r.get("pred.ns.rows")
 
+                fieldList.remove('sample_name')
                 predList = ['pred_' + s for s in fieldList]
                 predDF = pd.DataFrame(pred,  columns=[predList], index=rows)
                 predDF.sort_index(inplace=True)
@@ -349,8 +352,11 @@ def getSPLSAData(request):
                 xAxisDict = {}
                 xAxisDict['categories'] = taxaNameList
                 labelsDict = {}
-                labelsDict['rotation'] = 270
+                #labelsDict['rotation'] = 270
+                labelsDict['enabled'] = False
                 xAxisDict['labels'] = labelsDict
+                xAxisDict['title'] = {'text': None}
+                xAxisDict['tickLength'] = 0
 
                 yAxisDict = {}
                 catList = fieldList
@@ -365,7 +371,7 @@ def getSPLSAData(request):
                 dataList = []
                 for i in xrange(row):
                     for j in xrange(len(fieldList)):
-                        val = round(coeffsDF[fieldList[j]].iloc[i], 4)
+                        val = round(coeffsDF[fieldList[j]].iloc[i], 5)
                         tup = (i, j, val)
                         obsList = list(tup)
                         dataList.append(obsList)
