@@ -11,158 +11,56 @@ import math
 from pyper import *
 
 
-def catUnivMetaDF(qs1, metaDict):
+def UnivMetaDF(idDict):
     sampleTableList = Sample._meta.get_all_field_names()
     human_associatedTableList = Human_Associated._meta.get_all_field_names()
     soilTableList = Soil._meta.get_all_field_names()
     usrTableList = UserDefined._meta.get_all_field_names()
 
     metaDF = pd.DataFrame()
-    for key in metaDict:
-        value = metaDict[key]
-        args_list = []
-        field_list = []
+    idList = []
+    fieldList = []
+    for key in idDict:
+        fieldList.append(key)
+        idList.extend(idDict[key])
+
+    metaDF = pd.DataFrame()
+    index = 0
+    for key in idDict:
+        tempDF = pd.DataFrame()
+        mySet = idDict[key]
 
         if key in sampleTableList:
-            field_list.append('sampleid')
-            if key != 'sample_name':
-                field_list.append('sample_name')
-            field = str(key)
-            field_list.append(field)
-            if type(value) is unicode:
-                args_list.append(Q(**{field: value}))
-            else:
-                for item in value:
-                    args_list.append(Q(**{field: item}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                tempDF.drop('sample_name', axis=1, inplace=True)
-                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
+            fields = ['sampleid', 'sample_name', key]
+            qs2 = Sample.objects.filter(sampleid__in=mySet).values(*fields)
+            tempDF = pd.DataFrame.from_records(qs2, columns=fields).dropna()
 
         elif key in human_associatedTableList:
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'human_associated__' + str(key)
-            field_list.append(field)
-            if type(value) is unicode:
-                args_list.append(Q(**{field: value}))
-            else:
-                for item in value:
-                    args_list.append(Q(**{field: item}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-            tempDF.rename(columns={field: key}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                tempDF.drop('sample_name', axis=1, inplace=True)
-                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
+            fields = ['sampleid', 'sampleid__sample_name', key]
+            qs2 = Human_Associated.objects.filter(sampleid__in=mySet).values(*fields)
+            tempDF = pd.DataFrame.from_records(qs2, columns=fields).dropna()
+            tempDF.rename(columns={'sampleid__sample_name': 'sample_name'}, inplace=True)
 
         elif key in soilTableList:
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'soil__' + str(key)
-            field_list.append(field)
-            if type(value) is unicode:
-                args_list.append(Q(**{field: value}))
-            else:
-                for item in value:
-                    args_list.append(Q(**{field: item}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-            tempDF.rename(columns={field: key}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                tempDF.drop('sample_name', axis=1, inplace=True)
-                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
+            fields = ['sampleid', 'sampleid__sample_name', key]
+            qs2 = Soil.objects.filter(sampleid__in=mySet).values(*fields)
+            tempDF = pd.DataFrame.from_records(qs2, columns=fields).dropna()
+            tempDF.rename(columns={'sampleid__sample_name': 'sample_name'}, inplace=True)
 
         elif key in usrTableList:
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'userdefined__' + str(key)
-            field_list.append(field)
-            if type(value) is unicode:
-                args_list.append(Q(**{field: value}))
-            else:
-                for item in value:
-                    args_list.append(Q(**{field: item}))
-            qs2 = qs1.filter(reduce(operator.or_, args_list)).values(*field_list)
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-            tempDF.rename(columns={field: key}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                tempDF.drop('sample_name', axis=1, inplace=True)
-                metaDF = metaDF.merge(tempDF, on='sampleid', how='outer')
+            fields = ['sampleid', 'sampleid__sample_name', key]
+            qs2 = UserDefined.objects.filter(sampleid__in=mySet).values(*fields)
+            tempDF = pd.DataFrame.from_records(qs2, columns=fields).dropna()
+            tempDF.rename(columns={'sampleid__sample_name': 'sample_name'}, inplace=True)
 
-    return metaDF
+        tempDF.set_index('sampleid', inplace=True)
 
-
-def quantUnivMetaDF(qs1, metaDict):
-    metaDF = pd.DataFrame()
-    final_fieldList = []
-    for key in metaDict:
-        value = metaDict[key]
-        field_list = []
-
-        if key == 'mimark':
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field_list.append(value)
-            final_fieldList.append(value)
-            qs2 = qs1.values(*field_list)
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                metaDF = metaDF.merge(tempDF, on=['sampleid', 'sample_name'], how='outer')
-
-        elif key == 'human_associated':
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'human_associated__' + str(value)
-            field_list.append(field)
-            final_fieldList.append(value)
-            qs2 = qs1.values(*field_list)
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-            tempDF.rename(columns={field: value}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                metaDF = metaDF.merge(tempDF, on=['sampleid', 'sample_name'], how='outer')
-
-        elif key == 'soil':
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'soil__' + str(value)
-            field_list.append(field)
-            final_fieldList.append(value)
-            qs2 = qs1.values(*field_list)
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-            tempDF.rename(columns={field: value}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                metaDF = metaDF.merge(tempDF, on=['sampleid', 'sample_name'], how='outer')
-
-        elif key == 'user':
-            field_list.append('sampleid')
-            field_list.append('sample_name')
-            field = 'userdefined__' + str(value)
-            field_list.append(field)
-            final_fieldList.append(value)
-            qs2 = qs1.values(*field_list)
-            tempDF = pd.DataFrame.from_records(qs2, columns=field_list).dropna()
-            tempDF.rename(columns={field: value}, inplace=True)
-            if metaDF.empty:
-                metaDF = tempDF
-            else:
-                metaDF = metaDF.merge(tempDF, on=['sampleid', 'sample_name'], how='outer')
+        if index == 0:
+            metaDF = tempDF
+        else:
+            cols_to_use = tempDF.columns - metaDF.columns
+            metaDF = pd.merge(metaDF, tempDF[cols_to_use], left_index=True, right_index=True)
+        index += 1
 
     return metaDF
 

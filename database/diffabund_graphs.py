@@ -100,31 +100,43 @@ def getDiffAbund(request):
             qs2 = Sample.objects.all().filter(sampleid__in=newList)
 
             # Get dict of selected meta variables
-            metaString = all["meta"]
-            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
-
-            # Convert dict to list
+            metaStr = all["metaVals"]
             fieldList = []
-            for key in metaDict:
-                fieldList.append(key)
-            metaDF = catDiffAbundDF(qs2, metaDict)
-            metaDF.dropna(subset=fieldList, inplace=True)
-            totalSamp, cols = metaDF.shape
+            valueList = []
+            idDict = {}
+            try:
+                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+                for key in sorted(metaDict):
+                    fieldList.append(key)
+                    valueList.extend(metaDict[key])
 
-            normRem = len(countList) - len(newList)
-            selectRem = len(newList) - totalSamp
+                idStr = all["metaIDs"]
+                idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
 
-            result += str(totalSamp) + ' selected samples were included in the final analysis.\n'
+            except:
+                placeholder = ''
+
+            metaDF = catDiffAbundDF(idDict)
+
+            lenA, col = metaDF.shape
+
+            metaDF = metaDF.ix[newList]
+            metaDF.dropna(inplace=True)
+            lenB, col = metaDF.shape
+
+            selectRem = len(selected) - lenA
+            normRem = lenA - lenB
+
+            result += str(lenB) + ' selected samples were included in the final analysis.\n'
             if normRem > 0:
                 result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
             if selectRem:
                 result += str(selectRem) + ' samples were deselected by the user.\n'
 
             # Create unique list of samples in meta dataframe (may be different than selected samples)
-            myList = metaDF['sampleid'].tolist()
-            mySet = list(ordered_set(myList))
+            myList = metaDF.index.values.tolist()
 
-            taxaDF = taxaProfileDF(mySet)
+            taxaDF = taxaProfileDF(myList)
 
             base[RID] = 'Step 1 of 6: Querying database...done!'
             base[RID] = 'Step 2 of 6: Normalizing data...'
@@ -132,7 +144,7 @@ def getDiffAbund(request):
             # Create combined metadata column
             if len(fieldList) > 1:
                 for index, row in metaDF.iterrows():
-                    metaDF.ix[index, 'merge'] = " & ".join(row[fieldList])
+                    metaDF.ix[index, 'merge'] = "; ".join(row[fieldList])
             else:
                 metaDF['merge'] = metaDF[fieldList[0]]
 

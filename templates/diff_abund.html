@@ -257,37 +257,52 @@
         function getCatGraphData() {
             var RID = makeGUID();
             startTimer(RID);
-            var array1 = [];
-            var Parent = '';
+            var arrayValsCat = [];
+            var arrayIDsCat = [];
             var key = '';
             var value = '';
-            var next = '';
+            var vals = '';
+            var id = '';
+            var ids = '';
             for (var i = 0; i < nodesCat.length; i++) {
-                if (nodesCat[i].getLevel() == 4) {
-                    Parent = nodesCat[i].getParent();
-                    if ((Parent.data.id == 'mimark') || (Parent.data.id == 'user')) {
-                        key = nodesCat[i].data.id;
-                        value = nodesCat[i].data.title;
-                        next = '"' + key + '" : "' + value + '"';
-                        array1.push(next);
+                if (nodesCat[i].getLevel() == 5) {
+                    if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
+                        key = nodesCat[i].data.field;
+                        value = nodesCat[i].data.value;
+                        id = nodesCat[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayValsCat.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDsCat.push(ids);
                     }
                 }
-                else if (nodesCat[i].getLevel() == 5) {
-                    Parent = nodesCat[i].getParent();
-                    if ((Parent.data.id == 'human_associated') || (Parent.data.id == 'soil')) {
-                        key = nodesCat[i].data.id;
-                        value = nodesCat[i].data.title;
-                        next = '"' + key + '" : "' + value + '"';
-                        array1.push(next);
+                else if (nodesCat[i].getLevel() == 6) {
+                    if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil')) {
+                        key = nodesCat[i].data.field;
+                        value = nodesCat[i].data.value;
+                        id = nodesCat[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayValsCat.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDsCat.push(ids);
                     }
                 }
             }
 
-            if (checkDupes(array1)) {
-                var meta = "{" + array1.join(",") + "}";
+            if (checkDupes(arrayValsCat)) {
+                var metaValsCat = '';
+                if (nodesCat.length > 0) {
+                    metaValsCat = "{" + arrayValsCat.join(",") + "}";
+                }
+
+                var metaIDsCat = '';
+                if (nodesCat.length > 0) {
+                    metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
+                }
 
                 var myDict = {};
-                myDict['meta'] = meta;
+                myDict['metaVals'] = metaValsCat;
+                myDict['metaIDs'] = metaIDsCat;
                 myDict['sig_only'] = sig1_only;
                 myDict['taxaLevel'] = taxaLevel;
                 myDict['NormVal'] = document.getElementById("NormVal").value;

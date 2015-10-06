@@ -121,7 +121,7 @@ def getSPLSAData(request):
             metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
             for key in sorted(metaDict):
                 fieldList.append(key)
-                valueList.append(metaDict[key])
+                valueList.extend(metaDict[key])
 
             idStr = all["metaIDs"]
             idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)

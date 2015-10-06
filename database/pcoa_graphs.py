@@ -105,7 +105,6 @@ def getPCoAData(request):
             else:
                 NormReads = int(all["NormVal"])
 
-            # Remove samples if below the sequence threshold set by user (rarefaction)
             newList = []
             result = ''
             if taxaLevel == 0:
@@ -177,7 +176,7 @@ def getPCoAData(request):
                 metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
                 for key in sorted(metaDictQuant):
                     fieldListQuant.append(key)
-                    valueListQuant.append(metaDictQuant[key])
+                    valueListQuant.extend(metaDictQuant[key])
 
                 idStrQuant = all["metaIDsQuant"]
                 idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
@@ -472,7 +471,7 @@ def getPCoAData(request):
             CAP2 = PC2 + int(len(fieldList)) + 2
 
             colors = [
-                "#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",
+                "#000000", "#CCCC00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",
                 "#7A4900", "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87",
                 "#5A0007", "#809693", "#1B4400", "#4FC601", "#3B5DFF", "#4A3B53", "#FF2F80",
                 "#61615A", "#BA0900", "#6B7900", "#00C2A0", "#FFAA92", "#FF90C9", "#B903AA", "#D16100",
@@ -512,8 +511,12 @@ def getPCoAData(request):
             if fieldListCat:
                 grouped = pcoaDF.groupby(fieldListCat)
                 for name, group in grouped:
+                    print name
                     dataList = group.icol([CAP1, CAP2]).values.astype(float).tolist()
-                    trt = "; ".join(name)
+                    if len(fieldListCat) > 1:
+                        trt = "; ".join(name)
+                    else:
+                        trt = name
                     seriesDict = {}
                     seriesDict['name'] = str(trt)
                     seriesDict['data'] = dataList

@@ -1,4 +1,4 @@
-from anova_DF import catUnivMetaDF, quantUnivMetaDF, normalizeUniv
+from anova_DF import UnivMetaDF, normalizeUniv
 from django.http import HttpResponse
 from database.models import Sample, Profile
 from django.db.models import Sum
@@ -112,7 +112,57 @@ def getCatUnivData(request):
 
                 # Remove samples if below the sequence threshold set by user (rarefaction)
                 newList = []
-                result = 'Data Normalization:\n'
+                result = ''
+                metaStrCat = all["metaValsCat"]
+                fieldListCat = []
+                valueListCat = []
+                idDictCat = {}
+                try:
+                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
+                    for key in sorted(metaDictCat):
+                        fieldListCat.append(key)
+                        valueListCat.append(metaDictCat[key])
+
+                    idStrCat = all["metaIDsCat"]
+                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrCat)
+                except:
+                    placeholder = ''
+
+                metaStrQuant = all["metaValsQuant"]
+                fieldListQuant = []
+                valueListQuant = []
+                idDictQuant = {}
+                try:
+                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
+                    for key in sorted(metaDictQuant):
+                        fieldListQuant.append(key)
+                        valueListQuant.extend(metaDictQuant[key])
+
+                    idStrQuant = all["metaIDsQuant"]
+                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
+                except:
+                    placeholder = ''
+
+                metaStr = all["metaVals"]
+                fieldList = []
+                valueList = []
+                idDict = {}
+                try:
+                    metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+                    for key in sorted(metaDict):
+                        fieldList.append(key)
+                        valueList.append(metaDict[key])
+
+                    idStr = all["metaIDs"]
+                    idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
+
+                except:
+                    placeholder = ''
+
+                result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
+                result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
+                result += '===============================================\n'
+                result += '\nData Normalization:\n'
 
                 # Limit reads to max value
                 if NormMeth == 1:
@@ -166,38 +216,28 @@ def getCatUnivData(request):
                                 id = sample.sampleid
                                 newList.append(id)
 
-                qs2 = Sample.objects.all().filter(sampleid__in=newList)
+                metaDF = UnivMetaDF(idDict)
 
-                # Get dict of selected meta variables
-                metaString = all["meta"]
-                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaString)
+                lenA, col = metaDF.shape
 
-                # Convert dict to list
-                fieldList = []
-                for key in metaDict:
-                    fieldList.append(key)
+                metaDF = metaDF.ix[newList]
+                metaDF.dropna(inplace=True)
+                lenB, col = metaDF.shape
 
-                # Create dataframe of meta variables by sample
-                metaDF = catUnivMetaDF(qs2, metaDict)
-                metaDF.dropna(subset=fieldList, inplace=True)
-                metaDF.sort(columns='sampleid', inplace=True)
-                totalSamp, columns = metaDF.shape
+                selectRem = len(selected) - lenA
+                normRem = lenA - lenB
 
-                normRem = len(countList) - len(newList)
-                selectRem = len(newList) - totalSamp
-
-                result += str(totalSamp) + ' selected samples were included in the final analysis.\n'
+                result += str(lenB) + ' selected samples were included in the final analysis.\n'
                 if normRem > 0:
                     result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
                 if selectRem:
                     result += str(selectRem) + ' samples were deselected by the user.\n'
 
                 # Create unique list of samples in meta dataframe (may be different than selected samples)
-                myList = metaDF['sampleid'].tolist()
-                mySet = list(ordered_set(myList))
+                myList = metaDF.index.values.tolist()
 
                 # Create dataframe with all taxa/count data by sample
-                taxaDF = taxaProfileDF(mySet)
+                taxaDF = taxaProfileDF(myList)
 
                 # Select only the taxa of interest if user used the taxa tree
                 taxaString = all["taxa"]
@@ -206,27 +246,27 @@ def getCatUnivData(request):
                 # Select only the taxa of interest if user used the selectAll button
                 if selectAll == 1:
                     taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('kingdomid', flat='True').distinct()
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
                     taxaDict['Kingdom'] = qs3
                 elif selectAll == 2:
                     taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('phylaid', flat='True').distinct()
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
                     taxaDict['Phyla'] = qs3
                 elif selectAll == 3:
                     taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('classid', flat='True').distinct()
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
                     taxaDict['Class'] = qs3
                 elif selectAll == 4:
                     taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('orderid', flat='True').distinct()
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
                     taxaDict['Order'] = qs3
                 elif selectAll == 5:
                     taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('familyid', flat='True').distinct()
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
                     taxaDict['Family'] = qs3
                 elif selectAll == 6:
                     taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('genusid', flat='True').distinct()
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
                     taxaDict['Genus'] = qs3
                 elif selectAll == 7:
                     taxaDict = {}
@@ -236,16 +276,12 @@ def getCatUnivData(request):
                 base[RID] = 'Step 1 of 6: Querying database...done!'
             except Exception as e:
                 print("Error querying database (ANOVA CAT): ", e)
+
             # Normalize data
             try:
                 base[RID] = 'Step 2 of 6: Normalizing data...'
 
-                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
-                normDF.sort('sampleid')
-
-                finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
-                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
-                pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
+                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF)
 
                 finalDict = {}
                 if NormMeth == 1:
@@ -262,9 +298,17 @@ def getCatUnivData(request):
                     result += 'To try again, please select fewer samples or another normalization method...\n'
                 result += '===============================================\n\n\n'
 
+                normDF.set_index('sampleid', inplace=True)
+
+                finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+                pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
+
                 base[RID] = 'Step 2 of 6: Normalizing data...done!'
+
             except Exception as e:
                 print("Error with normalization (ANOVA CAT): ", e)
+
             base[RID] = 'Step 3 of 6: Performing statistical test...'
 
             seriesList = []
@@ -341,7 +385,13 @@ def getCatUnivData(request):
                         else:
                             r = R(RCMD="R/R-Linux/bin/R")
                         r.assign("df", group1)
-                        trtString = " * ".join(fieldList)
+                        trtString1 = " * ".join(fieldListCat)
+                        trtString2 = " + ".join(fieldListQuant)
+                        if trtString2 != '':
+                            trtString = str(trtString1) + " + " + str(trtString2)
+                        else:
+                            trtString = trtString1
+                        print 'trtString:', trtString
 
                         if DepVar == 1:
                             anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
@@ -371,6 +421,8 @@ def getCatUnivData(request):
                         for part in tempStuff:
                             if part != tempStuff[0]:
                                 D += part + '\n'
+
+                        print 'D\n', D
 
                         fList = []
                         for part in tempStuff:
@@ -673,7 +725,7 @@ def getQuantUnivData(request):
                 metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
                 for key in metaDictCat:
                     fieldListCat.append(key)
-                    fieldListVals.append(metaDictCat[key])
+                    fieldListVals.extend(metaDictCat[key])
 
             metaStrQuant = all["metaQuant"]
             fieldListQuant = []
@@ -904,22 +956,23 @@ def getQuantUnivData(request):
 
                 D = ""
                 if DepVar == 1:
-                    anova_string = "fit <- lm(abund ~ " + str(trtString) + ", data=df)"
+                    anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
 
                 elif DepVar == 2:
-                    anova_string = "fit <- lm(rich ~ " + str(trtString) + ", data=df)"
+                    anova_string = "fit <- aov(rich ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
 
                 elif DepVar == 3:
-                    anova_string = "fit <- lm(diversity ~ " + str(trtString) + ", data=df)"
+                    anova_string = "fit <- aov(diversity ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
 
-                anova_string = "df$pred <- predict(fit, df)"
-                r.assign("cmd", anova_string)
+                # calculate predicted scores (full model)
+                pred_string = "df$pred <- predict(fit, df)"
+                r.assign("cmd", pred_string)
                 r("eval(parse(text=cmd))")
 
                 aov = r("summary(fit)")
