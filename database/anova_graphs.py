@@ -82,8 +82,6 @@ def getCatUnivData(request):
                 DepVar = int(all["DepVar"])
                 NormMeth = int(all["NormMeth"])
                 NormVal = all["NormVal"]
-                FDR = float(all["FdrVal"])
-                StatTest = int(all["StatTest"])
                 sig_only = int(all["sig_only"])
                 size = int(all["MinSize"])
 
@@ -270,7 +268,7 @@ def getCatUnivData(request):
                     taxaDict['Genus'] = qs3
                 elif selectAll == 7:
                     taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                     taxaDict['Species'] = qs3
 
                 base[RID] = 'Step 1 of 6: Querying database...done!'
@@ -302,7 +300,6 @@ def getCatUnivData(request):
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
                 finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
-                pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
 
                 base[RID] = 'Step 2 of 6: Normalizing data...done!'
 
@@ -360,7 +357,7 @@ def getCatUnivData(request):
                     trtList = []
                     valList = []
 
-                    grouped2 = group1.groupby(fieldList)
+                    grouped2 = group1.groupby(fieldListCat)
 
                     xAxisList = []
                     for name2, group2 in grouped2:
@@ -371,112 +368,112 @@ def getCatUnivData(request):
                         trtList.append(trt)
                         valList.append(list(group2.T))
 
-                    grouped3 = group1.groupby(fieldList).mean()
+                    grouped3 = group1.groupby(fieldListCat).mean()
 
                     catList = []
-                    for i in xrange(len(fieldList)):
+                    for i in xrange(len(fieldListCat)):
                         catList.append(grouped3.index.get_level_values(i).unique().tolist())
 
                     D = ""
                     p_val = 1.0
-                    if StatTest == 1:
-                        if os.name == 'nt':
-                            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
-                        else:
-                            r = R(RCMD="R/R-Linux/bin/R")
-                        r.assign("df", group1)
-                        trtString1 = " * ".join(fieldListCat)
-                        trtString2 = " + ".join(fieldListQuant)
-                        if trtString2 != '':
-                            trtString = str(trtString1) + " + " + str(trtString2)
-                        else:
-                            trtString = trtString1
-                        print 'trtString:', trtString
 
-                        if DepVar == 1:
-                            anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
-                            r.assign("cmd", anova_string)
-                            r("eval(parse(text=cmd))")
-                        elif DepVar == 2:
-                            anova_string = "fit <- aov(rich ~ " + str(trtString) + ", data=df)"
-                            r.assign("cmd", anova_string)
-                            r("eval(parse(text=cmd))")
-                        elif DepVar == 3:
-                            anova_string = "fit <- aov(diversity ~ " + str(trtString) + ", data=df)"
-                            r.assign("cmd", anova_string)
-                            r("eval(parse(text=cmd))")
+                    if os.name == 'nt':
+                        r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                    else:
+                        r = R(RCMD="R/R-Linux/bin/R")
 
-                        aov = r("summary(fit)")
-                        pString = r("summary(fit)[[1]][['Pr(>F)']]")
-                        tempStuff = pString.split(' ')
-                        pList = []
-                        for part in tempStuff:
+                    r.assign("df", group1)
+
+                    trtString = " * ".join(fieldList)
+
+                    if DepVar == 1:
+                        anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
+                        r.assign("cmd", anova_string)
+                        r("eval(parse(text=cmd))")
+                    elif DepVar == 2:
+                        anova_string = "fit <- aov(rich ~ " + str(trtString) + ", data=df)"
+                        r.assign("cmd", anova_string)
+                        r("eval(parse(text=cmd))")
+                    elif DepVar == 3:
+                        anova_string = "fit <- aov(diversity ~ " + str(trtString) + ", data=df)"
+                        r.assign("cmd", anova_string)
+                        r("eval(parse(text=cmd))")
+
+                    aov = r("summary(fit)")
+
+                    # calculate predicted scores (full model)
+                    #pred_string = "df$pred <- predict(fit, df)"
+                    #r.assign("cmd", pred_string)
+                    #r("eval(parse(text=cmd))")
+                    #r("df[,'pred'] <- round(df[,'pred'],0)")
+                    #r("df$sampleid <- rownames(df)")
+
+                    #resultDF = r.get("df")
+                    #resultDF = resultDF.rename(columns=lambda x: x.strip())
+
+                    #resultDF.reset_index(inplace=True)
+                    #group1.reset_index(inplace=True)
+                    #finalDF.reset_index(inplace=True)
+
+                    #group1 = pd.merge(group1, resultDF[['sampleid', 'pred']], left_on='sampleid', right_on='sampleid', how='outer')
+                    #finalDF = pd.merge(finalDF, resultDF[['sampleid', 'pred']], left_on='sampleid', right_on='sampleid', how='outer')
+
+                    #group1.set_index('sampleid', inplace=True)
+                    #finalDF.set_index('sampleid', inplace=True)
+
+                    pString = r("summary(fit)[[1]][['Pr(>F)']]")
+
+                    tempStuff = pString.split(' ')
+                    pList = []
+                    for part in tempStuff:
+                        try:
+                            pList.append(float(part))
+                        except:
+                            placeholder = ''
+                    p_val = min(pList)
+
+                    tempStuff = aov.split('\n')
+                    for part in tempStuff:
+                        if part != tempStuff[0]:
+                            D += part + '\n'
+
+                    fList = []
+                    for part in tempStuff:
+                        if part != tempStuff[0] and part != tempStuff[1]:
+                            part = part.replace('\r', '')
+                            part1 = part.split(' ')
+                            if part1[0] == 'Residuals':
+                                break
+                            fList.append(part1[0])
+
+                    if len(fieldListQuant) > 0:
+                        r("library(multcomp)")
+                        r("library(lsmeans)")
+
+                        glht_string = "glht <- summary(glht(fit, linfct=lsm(pairwise ~ " + str(trtString) + ")))"
+                        r.assign("cmd", glht_string)
+                        r("eval(parse(text=cmd))")
+                        r("options(width=5000)")
+                        glht = r("glht")
+                        D += '\n' + str(glht) + '\n'
+
+                    else:
+                        D += '\nTukey Honest Significant Differences:\n'
+                        r("tukey <- TukeyHSD(fit)")
+                        for i in fList:
                             try:
-                                pList.append(float(part))
+                                D += str(i) + '\n'
+                                hsd_string = "table <- tukey$" + str(i)
+                                r.assign("cmd", hsd_string)
+                                r("eval(parse(text=cmd))")
+                                table = r("table")
+                                tempStuff = table.split('\n')
+                                for part in tempStuff:
+                                    if part != tempStuff[0]:
+                                        D += part + '\n'
                             except:
                                 placeholder = ''
-                        p_val = min(pList)
 
-                        tempStuff = aov.split('\n')
-                        for part in tempStuff:
-                            if part != tempStuff[0]:
-                                D += part + '\n'
-
-                        print 'D\n', D
-
-                        fList = []
-                        for part in tempStuff:
-                            if part != tempStuff[0] and part != tempStuff[1]:
-                                part = part.replace('\r', '')
-                                part1 = part.split(' ')
-                                if part1[0] == 'Residuals':
-                                    break
-                                fList.append(part1[0])
-
-                        D += '\nTukey Honest Significant Differences:\n'
-                        r("tukey <- TukeyHSD(fit, ordered=TRUE)")
-                        for i in fList:
-                            D += str(i) + '\n'
-                            hsd_string = "table <- tukey$" + str(i)
-                            r.assign("cmd", hsd_string)
-                            r("eval(parse(text=cmd))")
-                            table = r("table")
-                            tempStuff = table.split('\n')
-                            for part in tempStuff:
-                                if part != tempStuff[0]:
-                                    D += part + '\n'
-
-                    elif StatTest == 2:
-                        rows_list = []
-                        m = 0.0
-                        for i, val1 in enumerate(trtList):
-                            smp1 = valList[i]
-                            start = i + 1
-                            stop = int(len(trtList))
-                            for j in range(start, stop):
-                                if i != j:
-                                    val2 = trtList[j]
-                                    smp2 = valList[j]
-                                    if len(smp1) > 1 and len(smp2) > 1:
-                                        (t_val, p_val) = stats.ttest_ind(smp1, smp2, equal_var=False)
-                                        m += 1.0
-                                    else:
-                                        p_val = np.nan
-                                    dict1 = {'taxa_level': name1[0], 'taxa_name': name1[1], 'taxa_id': name1[2], 'sample1': val1, 'sample2': val2, 'mean1': np.mean(smp1), 'mean2': np.mean(smp2), 'stdev1': np.std(smp1), 'stdev2': np.std(smp2), 'p_value': p_val}
-                                    rows_list.append(dict1)
-
-                        pvalDF = pd.DataFrame(rows_list)
-                        pvalDF.sort(columns='p_value', inplace=True)
-                        pvalDF.reset_index(drop=True, inplace=True)
-                        pvalDF.index += 1
-                        pvalDF['p_adj'] = pvalDF.p_value * m / pvalDF.index
-                        pvalDF['Sig'] = pvalDF.p_adj <= FDR
-                        pvalDF[['mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj']] = pvalDF[['mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj']].astype(float)
-                        D = pvalDF.to_string(columns=['sample1', 'sample2', 'mean1', 'mean2', 'stdev1', 'stdev2', 'p_value', 'p_adj', 'Sig'])
-                        if True in pvalDF['Sig'].values:
-                            p_val = 0.0
-                        else:
-                            p_val = 1.0
                     base[RID] = 'Step 3 of 6: Performing statistical test...done!'
 
                 except Exception as e:
@@ -511,7 +508,7 @@ def getCatUnivData(request):
                             result += '\n\n\n\n'
 
                             dataList = []
-                            grouped2 = group1.groupby(fieldList).mean()
+                            grouped2 = group1.groupby(fieldListCat).mean()
 
                             if DepVar == 1:
                                 dataList.extend(list(grouped2['abund'].T))
@@ -556,7 +553,7 @@ def getCatUnivData(request):
                         result += '\n\n\n\n'
 
                         dataList = []
-                        grouped2 = group1.groupby(fieldList).mean()
+                        grouped2 = group1.groupby(fieldListCat).mean()
 
                         if DepVar == 1:
                             dataList.extend(list(grouped2['abund'].T))
@@ -603,7 +600,7 @@ def getCatUnivData(request):
                 else:
                     finalDict['empty'] = 1
 
-                finalDF.reset_index(drop=True, inplace=True)
+                finalDF.reset_index(inplace=True)
                 if DepVar == 1:
                     finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
                 elif DepVar == 2:
@@ -617,6 +614,7 @@ def getCatUnivData(request):
                 biome = {}
                 newList = ['sampleid', 'sample_name']
                 newList.extend(fieldList)
+
                 grouped = finalDF.groupby(newList, sort=False)
                 nameList = []
                 for name, group in grouped:
@@ -635,11 +633,11 @@ def getCatUnivData(request):
                     metaDict['taxonomy'] = taxonList
                     taxaList.append({"id": str(name[2]), "metadata": metaDict})
                     if DepVar == 1:
-                        dataList.append(group['abund'].tolist())
+                        dataList.append(group['abund'].values.astype(float).tolist())
                     if DepVar == 2:
-                        dataList.append(group['rich'].tolist())
+                        dataList.append(group['rich'].values.astype(float).tolist())
                     if DepVar == 3:
-                        dataList.append(group['diversity'].tolist())
+                        dataList.append(group['diversity'].values.astype(float).tolist())
 
                 biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
                 biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
@@ -718,34 +716,14 @@ def getQuantUnivData(request):
             sig_only = int(all["sig_only"])
             size = int(all["MinSize"])
 
-            metaStrCat = all["metaCat"]
-            fieldListCat = []
-            fieldListVals = []
-            if metaStrCat:
-                metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
-                for key in metaDictCat:
-                    fieldListCat.append(key)
-                    fieldListVals.extend(metaDictCat[key])
-
-            metaStrQuant = all["metaQuant"]
-            fieldListQuant = []
-            if metaStrQuant:
-                metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
-                for key in metaDictQuant:
-                    fieldListQuant.append(key)
-
-            metaStr = all["meta"]
-            fieldList = []
-            metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-            for key in metaDict:
-                fieldList.append(key)
-
+            # Generate a list of sequence reads per sample
             countList = []
             for sample in qs1:
                 total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                 if total['count__sum'] is not None:
                     countList.append(total['count__sum'])
 
+            # Calculate min/median/max of sequence reads for rarefaction
             minSize = int(min(countList))
             medianSize = int(np.median(np.array(countList)))
             maxSize = int(max(countList))
@@ -763,8 +741,59 @@ def getQuantUnivData(request):
 
             # Remove samples if below the sequence threshold set by user (rarefaction)
             newList = []
-            result = 'Data Normalization:\n'
+            result = ''
+            metaStrCat = all["metaValsCat"]
+            fieldListCat = []
+            valueListCat = []
+            idDictCat = {}
+            try:
+                metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
+                for key in sorted(metaDictCat):
+                    fieldListCat.append(key)
+                    valueListCat.append(metaDictCat[key])
 
+                idStrCat = all["metaIDsCat"]
+                idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrCat)
+            except:
+                placeholder = ''
+
+            metaStrQuant = all["metaValsQuant"]
+            fieldListQuant = []
+            valueListQuant = []
+            idDictQuant = {}
+            try:
+                metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
+                for key in sorted(metaDictQuant):
+                    fieldListQuant.append(key)
+                    valueListQuant.extend(metaDictQuant[key])
+
+                idStrQuant = all["metaIDsQuant"]
+                idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
+            except:
+                placeholder = ''
+
+            metaStr = all["metaVals"]
+            fieldList = []
+            valueList = []
+            idDict = {}
+            try:
+                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+                for key in sorted(metaDict):
+                    fieldList.append(key)
+                    valueList.append(metaDict[key])
+
+                idStr = all["metaIDs"]
+                idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
+
+            except:
+                placeholder = ''
+
+            result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
+            result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
+            result += '===============================================\n'
+            result += '\nData Normalization:\n'
+
+            # Limit reads to max value
             if NormMeth == 1:
                 for sample in qs1:
                     total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
@@ -816,67 +845,67 @@ def getQuantUnivData(request):
                             id = sample.sampleid
                             newList.append(id)
 
-            qs2 = Sample.objects.all().filter(sampleid__in=newList)
-            metaDF = catUnivMetaDF(qs2, metaDict)
-            metaDF.dropna(subset=fieldList, inplace=True)
-            metaDF.sort(columns='sampleid', inplace=True)
-            totalSamp, cols = metaDF.shape
+            metaDF = UnivMetaDF(idDict)
 
-            normRem = len(countList) - len(newList)
-            selectRem = len(newList) - totalSamp
+            lenA, col = metaDF.shape
 
-            result += str(totalSamp) + ' selected samples were included in the final analysis.\n'
+            metaDF = metaDF.ix[newList]
+            metaDF.dropna(inplace=True)
+            lenB, col = metaDF.shape
+
+            selectRem = len(selected) - lenA
+            normRem = lenA - lenB
+
+            result += str(lenB) + ' selected samples were included in the final analysis.\n'
             if normRem > 0:
                 result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
             if selectRem:
                 result += str(selectRem) + ' samples were deselected by the user.\n'
 
-            myList = metaDF['sampleid'].tolist()
-            mySet = list(ordered_set(myList))
+            # Create unique list of samples in meta dataframe (may be different than selected samples)
+            myList = metaDF.index.values.tolist()
 
-            taxaDF = taxaProfileDF(mySet)
+            # Create dataframe with all taxa/count data by sample
+            taxaDF = taxaProfileDF(myList)
 
+            # Select only the taxa of interest if user used the taxa tree
             taxaString = all["taxa"]
             taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
 
+            # Select only the taxa of interest if user used the selectAll button
             if selectAll == 1:
                 taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('kingdomid', flat='True').distinct()
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
                 taxaDict['Kingdom'] = qs3
             elif selectAll == 2:
                 taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('phylaid', flat='True').distinct()
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
                 taxaDict['Phyla'] = qs3
             elif selectAll == 3:
                 taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('classid', flat='True').distinct()
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
                 taxaDict['Class'] = qs3
             elif selectAll == 4:
                 taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('orderid', flat='True').distinct()
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
                 taxaDict['Order'] = qs3
             elif selectAll == 5:
                 taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('familyid', flat='True').distinct()
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
                 taxaDict['Family'] = qs3
             elif selectAll == 6:
                 taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('genusid', flat='True').distinct()
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
                 taxaDict['Genus'] = qs3
             elif selectAll == 7:
                 taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=mySet).values_list('speciesid', flat='True').distinct()
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                 taxaDict['Species'] = qs3
 
             base[RID] = 'Step 1 of 6: Querying database...done!'
             base[RID] = 'Step 2 of 6: Normalizing data...'
 
-            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, mySet, NormMeth, NormReads, metaDF)
-            normDF.sort('sampleid')
-
-            finalDF = metaDF.merge(normDF, on='sampleid', how='outer')
-            finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
-            pd.set_option('display.max_rows', finalDF.shape[0], 'display.max_columns', finalDF.shape[1], 'display.width', 1000)
+            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF)
 
             finalDict = {}
             if NormMeth == 1:
@@ -893,7 +922,13 @@ def getQuantUnivData(request):
                 result += 'To try again, please select fewer samples or another normalization method...\n'
             result += '===============================================\n\n\n'
 
+            normDF.set_index('sampleid', inplace=True)
+
+            finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+            finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+
             base[RID] = 'Step 2 of 6: Normalizing data...done!'
+
             base[RID] = 'Step 3 of 6: Performing linear regression...'
 
             seriesList = []
@@ -938,6 +973,7 @@ def getQuantUnivData(request):
             shapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
             colors_idx = 0
             shapes_idx = 0
+
             grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
             for name1, group1 in grouped1:
                 dataList = []
@@ -949,24 +985,24 @@ def getQuantUnivData(request):
                     r = R(RCMD="R/R-Linux/bin/R")
 
                 r.assign("df", group1)
-                if len(fieldListVals) > 1:
+                if len(fieldList) > 1:
                     trtString = "*".join(fieldList)
                 else:
                     trtString = fieldListQuant[0]
 
                 D = ""
                 if DepVar == 1:
-                    anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
+                    anova_string = "fit <- lm(abund ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
 
                 elif DepVar == 2:
-                    anova_string = "fit <- aov(rich ~ " + str(trtString) + ", data=df)"
+                    anova_string = "fit <- lm(rich ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
 
                 elif DepVar == 3:
-                    anova_string = "fit <- aov(diversity ~ " + str(trtString) + ", data=df)"
+                    anova_string = "fit <- lm(diversity ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
 
@@ -993,7 +1029,8 @@ def getQuantUnivData(request):
                 resultDF = r.get("df")
                 resultDF = resultDF.rename(columns=lambda x: x.strip())
 
-                if len(fieldListVals) > 1:
+                print len(fieldListCat)
+                if len(fieldListCat) > 0:
                     grouped2 = resultDF.groupby(fieldListCat)
                     for name2, group2 in grouped2:
                         obs = group2['abund'].loc[group2['abund'] > 0].count()
@@ -1085,7 +1122,7 @@ def getQuantUnivData(request):
                                         result = result + 'Dependent Variable: Species Richness' + '\n'
                                     elif DepVar == 3:
                                         result = result + 'Dependent Variable: Species Diversity' + '\n'
-                                    result += '\nANCOVA table:\n'
+                                    result += '\nGLM table:\n'
                                     result += str(D) + '\n'
                                     result += '===============================================\n'
                                     result += '\n'
@@ -1247,7 +1284,6 @@ def getQuantUnivData(request):
                 base[RID] = 'Step 3 of 6: Performing linear regression...done!'
                 base[RID] = 'Step 4 of 6: Formatting graph data for display...'
 
-
                 xTitle = {}
                 xTitle['text'] = fieldListQuant[0]
                 xAxisDict['title'] = xTitle
@@ -1273,7 +1309,8 @@ def getQuantUnivData(request):
             else:
                 finalDict['empty'] = 1
 
-            finalDF.reset_index(drop=True, inplace=True)
+            finalDF.reset_index(inplace=True)
+
             if DepVar == 1:
                 finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
             elif DepVar == 2:
