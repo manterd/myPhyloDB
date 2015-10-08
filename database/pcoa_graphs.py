@@ -511,7 +511,6 @@ def getPCoAData(request):
             if fieldListCat:
                 grouped = pcoaDF.groupby(fieldListCat)
                 for name, group in grouped:
-                    print name
                     dataList = group.icol([CAP1, CAP2]).values.astype(float).tolist()
                     if len(fieldListCat) > 1:
                         trt = "; ".join(name)

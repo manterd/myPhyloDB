@@ -17,6 +17,10 @@
     <link rel='stylesheet' type='text/css' href="{% static "jquery-ui/jquery-ui.css" %}">
     <script src="{% static "jquery-ui/jquery-ui.js" %}" type="text/javascript"></script>
 
+    <!-- jquery qtip2 -->
+    <link type="text/css" rel="stylesheet" href="{% static "jquery/jquery.qtip.min.css" %}" />
+    <script type="text/javascript" src="{% static "jquery/jquery.qtip.min.js" %}"></script>
+
     <!-- dynatree -->
     <script src="{% static "dynatree/jquery.cookie.js" %}" type="text/javascript"></script>
     <link rel='stylesheet' type='text/css' href="{% static "dynatree/src/skin/ui.dynatree.css" %}">
@@ -41,6 +45,20 @@
 
     <script type="text/javascript">
         $(function () {
+
+            $('[title]').qtip({
+                style: {
+                    classes: 'qtip-tipsy'
+                },
+                position: {
+                    adjust: {
+                        screen: true
+                    },
+                    my: 'top left',
+                    at: 'bottom center'
+                }
+            });
+
             $.ajax({
                 type: 'GET',
                 url: '/getCookie/',
@@ -124,7 +142,7 @@
 
             <p id="link1" style="display: none;"><strong>Univariate</strong></p>
             <div id="link2" style="display: none;" >
-                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run ANOVA/ANCOVA analyses." >ANCOVA/GLM</li></a>
+                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run ANCOVA/GLM analyses." >ANCOVA/GLM</li></a>
             </div>
             <br>
 

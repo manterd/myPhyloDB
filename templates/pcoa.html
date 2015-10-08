@@ -97,6 +97,24 @@
                 }
             });
 
+            $('#button').click(function() {
+                var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
+                var color = prompt("Please enter your desired color:", "#008800");
+                var marker = prompt("Please enter your desired symbol:", "square");
+                var series = chart1.series[index];
+                if (color != '') {
+                    series.options.color = color;
+                    series.options.states.hover.color = color;
+                }
+                if (marker != '') {
+                    series.options.marker.symbol = marker;
+                }
+                if ((color != '') || (marker != '')) {
+                    series.update(series.options);
+                    chart1.redraw();
+                }
+            });
+
             $("#normalize").change(function () {
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
@@ -688,6 +706,7 @@
             </td>
         </tr>
     </table>
+    <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
 
     <div id="txt-1">
         <h2>Test Results:</h2>
