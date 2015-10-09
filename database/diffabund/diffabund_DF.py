@@ -1,10 +1,5 @@
-import operator
 import pandas as pd
-from django.db.models import Q
 from database.models import Sample, Human_Associated, Soil, UserDefined
-import numpy as np
-from numpy import *
-from pyper import *
 
 
 def catDiffAbundDF(idDict):
@@ -27,7 +22,10 @@ def catDiffAbundDF(idDict):
         mySet = idDict[key]
 
         if key in sampleTableList:
-            fields = ['sampleid', 'sample_name', key]
+            if key == 'sample_name':
+                fields = ['sampleid', key]
+            else:
+                fields = ['sampleid', 'sample_name', key]
             qs2 = Sample.objects.filter(sampleid__in=mySet).values(*fields)
             tempDF = pd.DataFrame.from_records(qs2, columns=fields).dropna()
 

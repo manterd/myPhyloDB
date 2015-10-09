@@ -200,6 +200,11 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#Iters").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
             $("#MinVal").change(function () {
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
@@ -231,22 +236,26 @@
                 if (selTheme == 1) {
                     if (button1 == 1) {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(catOptions);
+                        chart1.redraw();
                     }
                     else if (button1 == 2) {
                         $("#container-2").empty();
-                        new Highcharts.Chart(quantOptions);
+                        chart2 = new Highcharts.Chart(quantOptions);
+                        chart2.redraw();
                     }
                 }
                 else if (selTheme == 2) {
                     $.getScript('{% static 'highcharts/themes/dark-blue.js' %}', function () {
                         if (button1 == 1) {
                             $("#container-1").empty();
-                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1.redraw();
                         }
                         else if (button1 == 2) {
                             $("#container-2").empty();
-                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2.redraw();
                         }
                     });
                 }
@@ -254,11 +263,13 @@
                     $.getScript('{% static 'highcharts/themes/dark-green.js' %}', function () {
                         if (button1 == 1) {
                             $("#container-1").empty();
-                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1.redraw();
                         }
                         else if (button1 == 2) {
                             $("#container-2").empty();
-                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2.redraw();
                         }
                     });
                 }
@@ -266,11 +277,13 @@
                     $.getScript('{% static 'highcharts/themes/dark-unica.js' %}', function () {
                         if (button1 == 1) {
                             $("#container-1").empty();
-                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1.redraw();
                         }
                         else if (button1 == 2) {
                             $("#container-2").empty();
-                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2.redraw();
                         }
                     });
                 }
@@ -278,11 +291,13 @@
                     $.getScript('{% static 'highcharts/themes/gray.js' %}', function () {
                         if (button1 == 1) {
                             $("#container-1").empty();
-                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1.redraw();
                         }
                         else if (button1 == 2) {
                             $("#container-2").empty();
-                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2.redraw();
                         }
                     });
                 }
@@ -290,11 +305,13 @@
                     $.getScript('{% static 'highcharts/themes/grid.js' %}', function () {
                         if (button1 == 1) {
                             $("#container-1").empty();
-                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1.redraw();
                         }
                         else if (button1 == 2) {
                             $("#container-2").empty();
-                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2.redraw();
                         }
                     });
                 }
@@ -302,11 +319,13 @@
                     $.getScript('{% static 'highcharts/themes/grid-light.js' %}', function () {
                         if (button1 == 1) {
                             $("#container-1").empty();
-                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1.redraw();
                         }
                         else if (button1 == 2) {
                             $("#container-2").empty();
-                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2.redraw();
                         }
                     });
                 }
@@ -314,11 +333,13 @@
                     $.getScript('{% static 'highcharts/themes/sand-signika.js' %}', function () {
                         if (button1 == 1) {
                             $("#container-1").empty();
-                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1.redraw();
                         }
                         else if (button1 == 2) {
                             $("#container-2").empty();
-                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2.redraw();
                         }
                     });
                 }
@@ -326,11 +347,13 @@
                     $.getScript('{% static 'highcharts/themes/skies.js' %}', function () {
                         if (button1 == 1) {
                             $("#container-1").empty();
-                            new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                            chart1.redraw();
                         }
                         else if (button1 == 2) {
                             $("#container-2").empty();
-                            new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                            chart2.redraw();
                         }
                     });
                 }
@@ -424,11 +447,15 @@
             if ((NormMeth == 2) || (NormMeth == 3)) {
                 $("#NormRow").show();
                 $("#NormRow-off").hide();
+                $("#IterRow").show();
+                $("#IterRow-off").hide();
             } else {
                 $("#NormRow").hide();
                 $("#NormRow-off").show();
+                $("#IterRow").hide();
+                $("#IterRow-off").show();
             }
-           if ((NormMeth == 4) || (NormMeth == 5) || (NormMeth == 6)) {
+            if ((NormMeth == 4) || (NormMeth == 5) || (NormMeth == 6)) {
                 $("#MinRow").show();
                 $("#MinRow-off").hide();
             } else {
@@ -655,6 +682,7 @@
                 myDict['taxa'] = taxa;
                 myDict['DepVar'] = DepVar;
                 myDict['NormVal'] = document.getElementById("NormVal").value;
+                myDict['Iters'] = document.getElementById("Iters").value;
                 myDict['MinSize'] = document.getElementById("MinVal").value;
                 myDict['sig_only'] = sig1_only;
                 myDict['selectAll'] = selectAll;
@@ -832,6 +860,7 @@
             myDict['sig_only'] = sig2_only;
             myDict['selectAll'] = selectAll;
             myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['Iters'] = document.getElementById("Iters").value;
             myDict['MinSize'] = document.getElementById("MinVal").value;
             myDict['NormMeth'] = NormMeth;
             myDict['RID'] = RID;
@@ -902,6 +931,9 @@
                 xAxis: xAxis,
                 yAxis: yAxis,
                 series: series,
+                scrollbar: {
+                    enabled: true
+                },
                 tooltip: {
                     formatter: function () {
                         return this.series.name[0] + ':' + this.series.name[1] + '<br/>' +
@@ -937,6 +969,9 @@
                 xAxis: xAxis,
                 yAxis: yAxis,
                 series: series,
+                scrollbar: {
+                    enabled: true
+                },
                 credits: { enabled: false }
             };
             chart2 = new Highcharts.Chart(quantOptions);
@@ -1048,6 +1083,15 @@
             <td id="MinRow" style="display: none; text-align: center">
                 Minimum sample size:
                 <input style="background-color: white"  type="text" id="MinVal" value="1000"/>
+            </td>
+            <td id="FdrRow-off"></td>
+        </tr>
+        <tr>
+            <td id="IterRow-off"></td>
+            <td id="MinRow-off"></td>
+            <td id="IterRow" style="display: none; text-align: center">
+                Iterations:
+                <input style="background-color: white" type="text" id="Iters" value="1"/>
             </td>
             <td id="FdrRow-off"></td>
         </tr>

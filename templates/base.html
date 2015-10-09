@@ -48,7 +48,7 @@
 
             $('[title]').qtip({
                 style: {
-                    classes: 'qtip-tipsy'
+                    classes: 'qtip-jtools'
                 },
                 position: {
                     adjust: {
@@ -105,10 +105,11 @@
         <div class="menuItems">
             <hr><p><em><strong>General Info</strong></em></p><hr>
 
-            <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
             {% if user.is_active %}
+                <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
                 <a class="Offmouse" href="/accounts/logout/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Logout current user">Logout</li></a>
             {% else %}
+                <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
                 <a class="Offmouse" href="/accounts/login/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Login as a registered user.">Login</li></a>
             {% endif %}
 

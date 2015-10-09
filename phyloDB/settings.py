@@ -19,6 +19,10 @@ INSTALLED_APPS = (
     'phyloDB',
     'config',
     'database',
+    'database.anova',
+    'database.diffabund',
+    'database.pcoa',
+    'database.spls',
     'stats',
 )
 

@@ -1,15 +1,15 @@
-from spls_DF import SPLSMetaDF, normalizeSPLS
 from django.http import HttpResponse
-from database.models import Sample, Profile, Kingdom, Phyla, Class, Order, Family, Genus, Species
 from django.db.models import Sum
 import numpy as np
-from numpy import *
 import pandas as pd
 import pickle
+from pyper import *
 from scipy.spatial.distance import *
 import simplejson
+
+from database.spls.spls_DF import SPLSMetaDF, normalizeSPLS
+from database.models import Sample, Profile, Kingdom, Phyla, Class, Order, Family, Genus, Species
 from database.utils import multidict, taxaProfileDF
-from pyper import *
 
 
 base = {}
@@ -73,6 +73,7 @@ def getSPLSAData(request):
 
             taxaLevel = int(all["taxa"])
             NormMeth = int(all["NormMeth"])
+            Iters = int(all["Iters"])
             NormVal = all["NormVal"]
             size = int(all["MinSize"])
 
@@ -212,7 +213,7 @@ def getSPLSAData(request):
             # Sum by taxa level
             taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
-            normDF, DESeq_error = normalizeSPLS(taxaDF, taxaLevel, myList, NormMeth, NormReads, metaDF)
+            normDF, DESeq_error = normalizeSPLS(taxaDF, taxaLevel, myList, NormMeth, NormReads, metaDF, Iters)
             normDF.sort_index(inplace=True)
 
             finalDict = {}
@@ -345,6 +346,7 @@ def getSPLSAData(request):
                 finalDict['res_table'] = str(res_table)
 
                 finalDF.reset_index(inplace=True)
+                finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
                 pred_table = finalDF.to_html(classes="table display")
                 pred_table = pred_table.replace('border="1"', 'border="0"')
                 finalDict['pred_table'] = str(pred_table)
@@ -352,8 +354,8 @@ def getSPLSAData(request):
                 xAxisDict = {}
                 xAxisDict['categories'] = taxaNameList
                 labelsDict = {}
-                #labelsDict['rotation'] = 270
-                labelsDict['enabled'] = False
+                labelsDict['rotation'] = 270
+                labelsDict['enabled'] = True
                 xAxisDict['labels'] = labelsDict
                 xAxisDict['title'] = {'text': None}
                 xAxisDict['tickLength'] = 0

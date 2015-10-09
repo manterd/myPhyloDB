@@ -1,14 +1,13 @@
-import multiprocessing as mp
-import numpy as np
-import operator
-import pandas as pd
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Sample, Human_Associated, Soil, UserDefined
-from django.db.models import Q
-from numpy import *
-from numpy.random import mtrand
-from scipy.spatial.distance import *
 import math
+import multiprocessing as mp
+from numpy import *
+import numpy as np
+from numpy.random import mtrand
+import pandas as pd
 from pyper import *
+from scipy.spatial.distance import *
+
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Sample, Human_Associated, Soil, UserDefined
 
 
 def UnivMetaDF(idDict):
@@ -17,7 +16,6 @@ def UnivMetaDF(idDict):
     soilTableList = Soil._meta.get_all_field_names()
     usrTableList = UserDefined._meta.get_all_field_names()
 
-    metaDF = pd.DataFrame()
     idList = []
     fieldList = []
     for key in idDict:
@@ -31,7 +29,10 @@ def UnivMetaDF(idDict):
         mySet = idDict[key]
 
         if key in sampleTableList:
-            fields = ['sampleid', 'sample_name', key]
+            if key == 'sample_name':
+                fields = ['sampleid', key]
+            else:
+                fields = ['sampleid', 'sample_name', key]
             qs2 = Sample.objects.filter(sampleid__in=mySet).values(*fields)
             tempDF = pd.DataFrame.from_records(qs2, columns=fields).dropna()
 
@@ -65,7 +66,7 @@ def UnivMetaDF(idDict):
     return metaDF
 
 
-def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
+def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters):
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
@@ -81,7 +82,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
             d = manager.dict()
 
             numcore = mp.cpu_count()-1 or 1
-            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, mySet, df, meth, d)) for x in range(numcore)]
+            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d)) for x in range(numcore)]
 
             for p in processes:
                 p.start()
@@ -89,7 +90,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
                 p.join()
 
             for key, value in d.items():
-                countDF[key] = value
+                countDF[key] = value/iters
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
@@ -262,7 +263,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF):
     return normDF, DESeq_error
 
 
-def weightedProb(x, cores, reads, mySet, df, meth, d):
+def weightedProb(x, cores, reads, iters, mySet, df, meth, d):
     high = mySet.__len__()
     set = mySet[x:high:cores]
 
@@ -277,7 +278,7 @@ def weightedProb(x, cores, reads, mySet, df, meth, d):
             prob = sample / sample.sum()
 
         temp = np.zeros(cols)
-        for n in range(reads):
+        for n in range(reads*iters):
             sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
             temp2 = np.zeros(cols)
             np.put(temp2, sub, 1)

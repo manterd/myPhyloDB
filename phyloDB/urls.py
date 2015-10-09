@@ -43,22 +43,22 @@ urlpatterns = patterns('',
     url(r'^makeUpdateTree/$', 'database.trees.makeUpdateTree', name='makeUpdateTree'),
     url(r'^makeReproTree/$', 'database.trees.makeReproTree', name='makeReproTree'),
 
-    url(r'^getCatUnivData/$', 'database.anova_graphs.getCatUnivData', name='getCatUnivData'),
-    url(r'^getQuantUnivData/$', 'database.anova_graphs.getQuantUnivData', name='getQuantUnivData'),
-    url(r'^statusANOVA/$', 'database.anova_graphs.statusANOVA', name='statusANOVA'),
-    url(r'^removeRIDANOVA/$', 'database.anova_graphs.removeRIDANOVA', name='removeRIDANOVA'),
+    url(r'^getCatUnivData/$', 'database.anova.anova_graphs.getCatUnivData', name='getCatUnivData'),
+    url(r'^getQuantUnivData/$', 'database.anova.anova_graphs.getQuantUnivData', name='getQuantUnivData'),
+    url(r'^statusANOVA/$', 'database.anova.anova_graphs.statusANOVA', name='statusANOVA'),
+    url(r'^removeRIDANOVA/$', 'database.anova.anova_graphs.removeRIDANOVA', name='removeRIDANOVA'),
 
-    url(r'^getPCoAData/$', 'database.pcoa_graphs.getPCoAData', name='getPCoAData'),
-    url(r'^statusPCoA/$', 'database.pcoa_graphs.statusPCoA', name='statusPCoA'),
-    url(r'^removeRIDPCOA/$', 'database.pcoa_graphs.removeRIDPCOA', name='removeRIDPCOA'),
+    url(r'^getPCoAData/$', 'database.pcoa.pcoa_graphs.getPCoAData', name='getPCoAData'),
+    url(r'^statusPCoA/$', 'database.pcoa.pcoa_graphs.statusPCoA', name='statusPCoA'),
+    url(r'^removeRIDPCOA/$', 'database.pcoa.pcoa_graphs.removeRIDPCOA', name='removeRIDPCOA'),
 
-    url(r'^getSPLSData/$', 'database.spls_graphs.getSPLSAData', name='getSPLSData'),
-    url(r'^statusSPLS/$', 'database.spls_graphs.statusSPLS', name='statusSPLS'),
-    url(r'^removeRIDSPLS/$', 'database.spls_graphs.removeRIDSPLS', name='removeRIDSPLS'),
+    url(r'^getSPLSData/$', 'database.spls.spls_graphs.getSPLSAData', name='getSPLSData'),
+    url(r'^statusSPLS/$', 'database.spls.spls_graphs.statusSPLS', name='statusSPLS'),
+    url(r'^removeRIDSPLS/$', 'database.spls.spls_graphs.removeRIDSPLS', name='removeRIDSPLS'),
 
-    url(r'^updateDiffAbund/$', 'database.diffabund_graphs.updateDiffAbund', name='updateDiffAbund'),
-    url(r'^getDiffAbund/$', 'database.diffabund_graphs.getDiffAbund', name='getDiffAbund'),
-    url(r'^removeRIDDIFF/$', 'database.diffabund_graphs.removeRIDDIFF', name='removeRIDDIFF'),
+    url(r'^updateDiffAbund/$', 'database.diffabund.diffabund_graphs.updateDiffAbund', name='updateDiffAbund'),
+    url(r'^getDiffAbund/$', 'database.diffabund.diffabund_graphs.getDiffAbund', name='getDiffAbund'),
+    url(r'^removeRIDDIFF/$', 'database.diffabund.diffabund_graphs.removeRIDDIFF', name='removeRIDDIFF'),
 )
 
 

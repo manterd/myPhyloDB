@@ -1,21 +1,18 @@
-import operator
 import pandas as pd
 from database.models import Sample, Human_Associated, Soil, UserDefined
 import numpy as np
-from numpy import *
 from numpy.random import mtrand
 from scipy.spatial.distance import *
 import multiprocessing as mp
 from pyper import *
 
 
-def SPLSMetaDF(idDict):
+def PCoAMetaDF(idDict):
     sampleTableList = Sample._meta.get_all_field_names()
     human_associatedTableList = Human_Associated._meta.get_all_field_names()
     soilTableList = Soil._meta.get_all_field_names()
     usrTableList = UserDefined._meta.get_all_field_names()
 
-    metaDF = pd.DataFrame()
     idList = []
     fieldList = []
     for key in idDict:
@@ -29,7 +26,10 @@ def SPLSMetaDF(idDict):
         mySet = idDict[key]
 
         if key in sampleTableList:
-            fields = ['sampleid', 'sample_name', key]
+            if key == 'sample_name':
+                fields = ['sampleid', key]
+            else:
+                fields = ['sampleid', 'sample_name', key]
             qs2 = Sample.objects.filter(sampleid__in=mySet).values(*fields)
             tempDF = pd.DataFrame.from_records(qs2, columns=fields).dropna()
 
@@ -63,7 +63,7 @@ def SPLSMetaDF(idDict):
     return metaDF
 
 
-def normalizeSPLS(df, taxaLevel, mySet, meth, reads, metaDF):
+def normalizePCoA(df, taxaLevel, mySet, meth, reads, metaDF, iters):
     df2 = df.reset_index()
 
     taxaID = ''
@@ -95,7 +95,7 @@ def normalizeSPLS(df, taxaLevel, mySet, meth, reads, metaDF):
             d = manager.dict()
 
             numcore = mp.cpu_count()-1 or 1
-            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, mySet, df, meth, d)) for x in range(numcore)]
+            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d)) for x in range(numcore)]
 
             for p in processes:
                 p.start()
@@ -103,7 +103,7 @@ def normalizeSPLS(df, taxaLevel, mySet, meth, reads, metaDF):
                 p.join()
 
             for key, value in d.items():
-                normDF[key] = value
+                normDF[key] = value/iters
 
         elif reads < 0:
             normDF[taxaID] = df2.reset_index(drop=True)
@@ -188,13 +188,13 @@ def normalizeSPLS(df, taxaLevel, mySet, meth, reads, metaDF):
     return finalDF, DESeq_error
 
 
-def weightedProb(x, cores, reads, mySet, df, meth, d):
+def weightedProb(x, cores, reads, iters, mySet, df, meth, d):
     high = mySet.__len__()
     set = mySet[x:high:cores]
 
     for i in set:
-        arr = asarray(df[i])
-        cols = shape(arr)
+        arr = np.asarray(df[i])
+        cols = np.shape(arr)
         sample = arr.astype(dtype=np.float64)
 
         if meth == 3:
@@ -203,7 +203,7 @@ def weightedProb(x, cores, reads, mySet, df, meth, d):
             prob = sample / sample.sum()
 
         temp = np.zeros(cols)
-        for n in range(reads):
+        for n in range(reads*iters):
             sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
             temp2 = np.zeros(cols)
             np.put(temp2, sub, 1)

@@ -1,15 +1,16 @@
-from anova_DF import UnivMetaDF, normalizeUniv
+import datetime
 from django.http import HttpResponse
-from database.models import Sample, Profile
 from django.db.models import Sum
+import numpy as np
 import pandas as pd
 import pickle
+from pyper import *
 from scipy import stats
 import simplejson
-from database.utils import multidict, ordered_set, taxaProfileDF
-import numpy as np
-import datetime
-from pyper import *
+
+from database.anova.anova_DF import UnivMetaDF, normalizeUniv
+from database.models import Sample, Profile
+from database.utils import multidict, taxaProfileDF
 
 
 base = {}
@@ -81,6 +82,7 @@ def getCatUnivData(request):
                 selectAll = int(all["selectAll"])
                 DepVar = int(all["DepVar"])
                 NormMeth = int(all["NormMeth"])
+                Iters = int(all["Iters"])
                 NormVal = all["NormVal"]
                 sig_only = int(all["sig_only"])
                 size = int(all["MinSize"])
@@ -279,7 +281,7 @@ def getCatUnivData(request):
             try:
                 base[RID] = 'Step 2 of 6: Normalizing data...'
 
-                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF)
+                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
                 finalDict = {}
                 if NormMeth == 1:
@@ -359,7 +361,6 @@ def getCatUnivData(request):
 
                     grouped2 = group1.groupby(fieldListCat)
 
-                    xAxisList = []
                     for name2, group2 in grouped2:
                         if isinstance(name2, unicode):
                             trt = name2
@@ -400,26 +401,6 @@ def getCatUnivData(request):
                         r("eval(parse(text=cmd))")
 
                     aov = r("summary(fit)")
-
-                    # calculate predicted scores (full model)
-                    #pred_string = "df$pred <- predict(fit, df)"
-                    #r.assign("cmd", pred_string)
-                    #r("eval(parse(text=cmd))")
-                    #r("df[,'pred'] <- round(df[,'pred'],0)")
-                    #r("df$sampleid <- rownames(df)")
-
-                    #resultDF = r.get("df")
-                    #resultDF = resultDF.rename(columns=lambda x: x.strip())
-
-                    #resultDF.reset_index(inplace=True)
-                    #group1.reset_index(inplace=True)
-                    #finalDF.reset_index(inplace=True)
-
-                    #group1 = pd.merge(group1, resultDF[['sampleid', 'pred']], left_on='sampleid', right_on='sampleid', how='outer')
-                    #finalDF = pd.merge(finalDF, resultDF[['sampleid', 'pred']], left_on='sampleid', right_on='sampleid', how='outer')
-
-                    #group1.set_index('sampleid', inplace=True)
-                    #finalDF.set_index('sampleid', inplace=True)
 
                     pString = r("summary(fit)[[1]][['Pr(>F)']]")
 
@@ -601,6 +582,8 @@ def getCatUnivData(request):
                     finalDict['empty'] = 1
 
                 finalDF.reset_index(inplace=True)
+                finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
+
                 if DepVar == 1:
                     finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
                 elif DepVar == 2:
@@ -713,6 +696,7 @@ def getQuantUnivData(request):
             DepVar = int(all["DepVar"])
             NormMeth = int(all["NormMeth"])
             NormVal = all["NormVal"]
+            Iters = int(all["Iters"])
             sig_only = int(all["sig_only"])
             size = int(all["MinSize"])
 
@@ -905,7 +889,7 @@ def getQuantUnivData(request):
             base[RID] = 'Step 1 of 6: Querying database...done!'
             base[RID] = 'Step 2 of 6: Normalizing data...'
 
-            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF)
+            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
             finalDict = {}
             if NormMeth == 1:
@@ -1029,7 +1013,6 @@ def getQuantUnivData(request):
                 resultDF = r.get("df")
                 resultDF = resultDF.rename(columns=lambda x: x.strip())
 
-                print len(fieldListCat)
                 if len(fieldListCat) > 0:
                     grouped2 = resultDF.groupby(fieldListCat)
                     for name2, group2 in grouped2:
@@ -1310,6 +1293,7 @@ def getQuantUnivData(request):
                 finalDict['empty'] = 1
 
             finalDF.reset_index(inplace=True)
+            finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
             if DepVar == 1:
                 finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)

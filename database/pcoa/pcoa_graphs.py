@@ -1,17 +1,16 @@
-from pcoa_DF import PCoAMetaDF, normalizePCoA
 from django.http import HttpResponse
-from database.models import Sample, Profile
 from django.db.models import Sum
 import numpy as np
-from numpy import *
 import pandas as pd
 import pickle
-from stats.distance import wOdum
-from scipy import stats
+from pyper import *
 from scipy.spatial.distance import *
 import simplejson
-from database.utils import multidict, ordered_set, taxaProfileDF
-from pyper import *
+
+from database.pcoa.pcoa_DF import PCoAMetaDF, normalizePCoA
+from database.models import Sample, Profile
+from stats.distance import wOdum
+from database.utils import multidict, taxaProfileDF
 
 
 base = {}
@@ -81,6 +80,7 @@ def getPCoAData(request):
             alpha = float(all["alpha"])
             perms = int(all["perms"])
             NormMeth = int(all["NormMeth"])
+            Iters = int(all["Iters"])
             NormVal = all["NormVal"]
             size = int(all["MinSize"])
 
@@ -284,7 +284,7 @@ def getPCoAData(request):
             # Sum by taxa level
             taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
-            normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, myList, NormMeth, NormReads, metaDF)
+            normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, myList, NormMeth, NormReads, metaDF, Iters)
             normDF.sort_index(inplace=True)
 
             finalDict = {}
@@ -350,7 +350,7 @@ def getPCoAData(request):
             elif distance == 14:
                 r("dist <- vegdist(data, method='cao')")
             elif distance == 15:
-                datamtx = asarray(normDF)
+                datamtx = np.asarray(normDF)
                 dists = wOdum(datamtx, alpha)
                 r.assign("dist", dists)
 

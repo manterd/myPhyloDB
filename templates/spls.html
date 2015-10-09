@@ -29,7 +29,7 @@
         var NormMeth = 1, selTheme = 0;
         var nodesQuant = "", taxaLevel = 6;
         var chart1 = {};
-        var quantOptions = {};
+        var catOptions = {};
         var remove = 0;
         var refresh = 0;
 
@@ -70,55 +70,6 @@
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#theme").change(function () {
-                selTheme = $(this).val();
-
-                if (selTheme == 1) {
-                    $("#container-1").empty();
-                    new Highcharts.Chart(catOptions);
-                }
-                else if (selTheme == 2) {
-                    $.getScript('{% static 'highcharts/themes/dark-blue.js' %}', function () {
-                        new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    });
-                }
-                else if (selTheme == 3) {
-                    $.getScript('{% static 'highcharts/themes/dark-green.js' %}', function () {
-                        new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    });
-                }
-                else if (selTheme == 4) {
-                    $.getScript('{% static 'highcharts/themes/dark-unica.js' %}', function () {
-                        new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    });
-                }
-                else if (selTheme == 5) {
-                    $.getScript('{% static 'highcharts/themes/gray.js' %}', function () {
-                        new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    });
-                }
-                else if (selTheme == 6) {
-                    $.getScript('{% static 'highcharts/themes/grid.js' %}', function () {
-                        new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    });
-                }
-                else if (selTheme == 7) {
-                    $.getScript('{% static 'highcharts/themes/grid-light.js' %}', function () {
-                        new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    });
-                }
-                else if (selTheme == 8) {
-                    $.getScript('{% static 'highcharts/themes/sand-signika.js' %}', function () {
-                        new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    });
-                }
-                else if (selTheme == 9) {
-                    $.getScript('{% static 'highcharts/themes/skies.js' %}', function () {
-                        new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    });
-                }
-            });
-
             $("#selectall").change(function () {
                 taxaLevel = $(this).val();
                 chooseDisplay();
@@ -132,6 +83,11 @@
             });
 
             $("#NormVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#Iters").change(function () {
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
@@ -197,19 +153,29 @@
         }
 
         function chooseDisplay() {
+            if (NormMeth==1) {
+                $("#NormRow").hide();
+                $("#NormRow-off").show();
+                $("#MinRow").hide();
+                $("#MinRow-off").show();
+                $("#IterRow").hide();
+                $("#IterRow-off").show();
+            }
             if ((NormMeth == 2) || (NormMeth == 3)) {
                 $("#NormRow").show();
                 $("#NormRow-off").hide();
-            } else {
+                $("#MinRow").hide();
+                $("#MinRow-off").show();
+                $("#IterRow").show();
+                $("#IterRow-off").hide();
+            }
+            if ((NormMeth == 4) || (NormMeth == 5) || (NormMeth == 6)) {
                 $("#NormRow").hide();
                 $("#NormRow-off").show();
-            }
-           if ((NormMeth == 4) || (NormMeth == 5) || (NormMeth == 6)) {
                 $("#MinRow").show();
-                $("#NormRow-off").hide();
-            } else {
-                $("#MinRow").hide();
-                $("#NormRow-off").show();
+                $("#MinRow-off").hide();
+                $("#IterRow").hide();
+                $("#IterRow-off").show();
             }
         }
 
@@ -270,6 +236,7 @@
             myDict['metaIDs'] = metaIDs;
             myDict['taxa'] = taxaLevel;
             myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['Iters'] = document.getElementById("Iters").value;
             myDict['remove'] = remove;
             myDict['NormMeth'] = NormMeth;
             myDict['MinSize'] = document.getElementById("MinVal").value;
@@ -328,8 +295,15 @@
         }
 
         function heatmap(xAxis, yAxis, series) {
+            alert("X:" + xAxis.categories.length);
+            alert("Y:" + yAxis.categories.length);
             catOptions = {
-                chart: { renderTo: 'container-1', type: 'heatmap'},
+                chart: {
+                    renderTo: 'container-1',
+                    type: 'heatmap',
+                    height: parseFloat(yAxis.categories.length)*36+160,
+                    width: parseFloat(xAxis.categories.length)*16+200
+                },
                 title: { text: null },
                 legend: {
                     itemStyle: {
@@ -409,20 +383,6 @@
     <div id="stage"></div>
     <br><br>
 
-    <!--<div style="float: left;">Select chart theme:
-        <select id="theme">
-            <option value="1" selected="selected">default</option>
-            <option value="2">dark-blue</option>
-            <option value="3">dark-green</option>
-            <option value="4">dark-unica</option>
-            <option value="5">gray</option>
-            <option value="6">grid</option>
-            <option value="7">grid-light</option>
-            <option value="8">sand-signika</option>
-            <option value="9">skies</option>
-        </select>
-        &nbsp&nbsp
-    </div>-->
     <table width="950px" border="2">
         <tr>
             <th colspan="3" style="padding-right: 10px;">GraphData</th>
@@ -444,20 +404,29 @@
         </tr>
         <tr>
             <td></td>
-            <td id="NormRow" style="display: none; text-align: center">
-                Subsample size:
-                <input type="text" id="NormVal" value="median"/>
-            </td>
             <td id="MinRow" style="display: none; text-align: center">
                 Minimum sample size:
                 <input type="text" id="MinVal" value="1000"/>
             </td>
             <td id="NormRow-off"></td>
+            <td id="NormRow" style="display: none; text-align: center">
+                Subsample size:
+                <input type="text" id="NormVal" value="median"/>
+            </td>
+            <td id="MinRow-off"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td id="IterRow-off"></td>
+            <td id="IterRow" style="display: none; text-align: center">
+                Iterations:
+                <input style="background-color: white" type="text" id="Iters" value="1"/>
+            </td>
             <td></td>
         </tr>
         <tr>
             <td colspan="3">
-                <div id="container-1" style="height: 400px;">No Data has been selected!</div>
+                <div id="container-1" style="height: 400px; width:950px; overflow-x: auto">No Data has been selected!</div>
             </td>
         </tr>
     </table>

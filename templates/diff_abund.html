@@ -117,54 +117,63 @@
 
                 if (selTheme == 1) {
                     $("#container-1").empty();
-                    new Highcharts.Chart(catOptions);
+                    chart1 = new Highcharts.Chart(catOptions);
+                    chart1.redraw();
                 }
                 else if (selTheme == 2) {
                     $.getScript('{% static 'highcharts/themes/dark-blue.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 3) {
                     $.getScript('{% static 'highcharts/themes/dark-green.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 4) {
                     $.getScript('{% static 'highcharts/themes/dark-unica.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 5) {
                     $.getScript('{% static 'highcharts/themes/gray.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 6) {
                     $.getScript('{% static 'highcharts/themes/grid.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 7) {
                     $.getScript('{% static 'highcharts/themes/grid-light.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 8) {
                     $.getScript('{% static 'highcharts/themes/sand-signika.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 9) {
                     $.getScript('{% static 'highcharts/themes/skies.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
             });
@@ -448,7 +457,20 @@
         </table>
     </div>
     <br><br>
-
+    <div style="float: right;">Select chart theme:
+        <select id="theme">
+            <option value="1" selected="selected">default</option>
+            <option value="2">dark-blue</option>
+            <option value="3">dark-green</option>
+            <option value="4">dark-unica</option>
+            <option value="5">gray</option>
+            <option value="6">grid</option>
+            <option value="7">grid-light</option>
+            <option value="8">sand-signika</option>
+            <option value="9">skies</option>
+        </select>
+        &nbsp&nbsp
+    </div>
     <table width="950px" border="2">
         <tr>
             <th colspan="3" style="padding-right: 10px;">GraphData</th>

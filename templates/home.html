@@ -4,6 +4,12 @@
     <title>Home</title>
 {% endblock pagetitle %}
 
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
 {% block my_content %}
 
     <table style="width: 950px;" border="1">
@@ -19,7 +25,7 @@
                             <li>Projects may be designated as public or private.</li>
                             <li>Increase user control over project modification.</li>
                             <li>New Excel template files now handle all metadata entry and upload.</li>
-                            <li>Simple linear regression has been replaced by ANCOVA.</li>
+                            <li>One-way ANOVA and simple linear regression has been replaced by ANCOVA/GLM.</li>
                         </ol>
                     </li>
                     <li>Bug fixes:
@@ -41,10 +47,10 @@
                 <ul>
                     <li>A user-friendly web-interface for accessing and analyzing taxonomic
                     data from multiple projects and/or sequencing runs.</li>
-                    <li>A more detailed reference manual can be found <a href="/instructions/Manual.pdf" download>here</a>.</li>
+                    <li>A more detailed reference manual can be found <a href="/instructions/Manual.pdf" download title="Manual.pdf">here</a>.</li>
                     <li>The goal of myPhyloDB is to allow for easy comparisons and statistical analysis of microbial (i.e., fungi
                     or bacteria) taxonomic abundance across projects, environments, and management scenarios.  </li>
-                    <li>myPhyloDB accepts <a href="http://www.mothur.org" target="_blank">Mothur</a> pre-analyzed data from any of its
+                    <li>myPhyloDB accepts <a href="http://www.mothur.org" target="_blank" title="http://www.mothur.org">Mothur</a> pre-analyzed data from any of its
                     supported sequencing platforms.  In addition, raw 454 and Illumina/MiSeq files may be uploaded and analyzed using
                     a user customizable Mothur pipeline.</li>
                 </ul>
@@ -81,27 +87,27 @@
                     Example files can be downloaded using the following links:</p>
                 <ul>
                     Example 1. Soil project with pre-analyzed Files
-                    <li><a href="/sample_files/Example1.Soil.meta.xls" download>Metadata File</a>: Meta data Excel file.</li>
-                    <li><a href="/sample_files/Example1.shared" download>Shared File</a>: Species (or operational taxonomic unit, OTU) table based on the mothur-format as described <a href="http://www.mothur.org/wiki/Make.shared" target="_blank">here</a>.</li>
-                    <li><a href="/sample_files/Example1.taxonomy" download>Taxonomy File</a>: Consensus taxonomy file as described <a href="http://www.mothur.org/wiki/Classify.otu" target="_blank">here</a>.</li>
+                    <li><a href="/sample_files/Example1.Soil.meta.xls" download title="Click to download file">Metadata File</a>: Meta data Excel file.</li>
+                    <li><a href="/sample_files/Example1.shared" download title="Click to download file">Shared File</a>: Species (or operational taxonomic unit, OTU) table based on the mothur-format as described <a href="http://www.mothur.org/wiki/Make.shared" target="_blank" title="http://www.mothur.org/wiki/Make.shared">here</a>.</li>
+                    <li><a href="/sample_files/Example1.taxonomy" download title="Click to download file">Taxonomy File</a>: Consensus taxonomy file as described <a href="http://www.mothur.org/wiki/Classify.otu" target="_blank" title="http://www.mothur.org/wiki/Classify.otu">here</a>.</li>
                     <br>
                     Example 2. Soil project with raw 454 Pyrosequencing Files
-                    <li><a href="/sample_files/Example2.Soil.meta.xls" download>Metadata File</a>:Meta data Excel file.</li>
-                    <li><a href="/sample_files/Example2.sff" download>Standard Flowgram (sff) File</a>: Raw 454 pyrosequencing sff file.</li>
-                    <li><a href="/sample_files/Example2.oligos" download>Oligos File</a>: File with barcode/primer and sample info as described <a href="http://www.mothur.org/wiki/Oligos_File" target="_blank">here</a>.</li>
-                    <li><a href="/sample_files/Example2.mothur.batch" download>Mothur Batch File</a>: Batch file for pre-processing as described <a href="http://www.mothur.org/wiki/454_SOP" target="_blank">here</a>.</li>
+                    <li><a href="/sample_files/Example2.Soil.meta.xls" download title="Click to download file">Metadata File</a>:Meta data Excel file.</li>
+                    <li><a href="/sample_files/Example2.sff" download title="Click to download file">Standard Flowgram (sff) File</a>: Raw 454 pyrosequencing sff file.</li>
+                    <li><a href="/sample_files/Example2.oligos" download title="Click to download file">Oligos File</a>: File with barcode/primer and sample info as described <a href="http://www.mothur.org/wiki/Oligos_File" target="_blank" title="http://www.mothur.org/wiki/Oligos_File">here</a>.</li>
+                    <li><a href="/sample_files/Example2.mothur.batch" download title="Click to download file">Mothur Batch File</a>: Batch file for pre-processing as described <a href="http://www.mothur.org/wiki/454_SOP" target="_blank" title="http://www.mothur.org/wiki/454_SOP">here</a>.</li>
                     <br>
                     Example 3. Soil project with raw Illumina/MiSeq Files
-                    <li><a href="/sample_files/Example3.Soil.meta.xls" download>Metadata File</a>: Meta data Excel file.</li>
-                    <li><a href="/sample_files/Example3.Stages.files" download>Three-column Contig File</a>: File with group and forward/reverse fastq file names as described <a href="http://www.mothur.org/wiki/Make.contigs" target="_blank">here</a>.</li>
-                    <li><a href="/sample_files/Example3.Stages_0_rep1_F.fastq" download>Forward Fastq File</a>: Example raw MiSeq forward fastq file with barcodes/primers removed.</li>
-                    <li><a href="/sample_files/Example3.Stages_0_rep1_R.fastq" download>Reverse Fastq File</a>: Example raw MiSeq reverse fastq file with barcodes/primers removed.</li>
-                    <li><a href="/sample_files/Example3.mothur.batch" download>Mothur Batch File</a>: Batch file for pre-processing as described <a href="http://http://www.mothur.org/wiki/MiSeq_SOP" target="_blank">here</a>.</li>
+                    <li><a href="/sample_files/Example3.Soil.meta.xls" download title="Click to download file">Metadata File</a>: Meta data Excel file.</li>
+                    <li><a href="/sample_files/Example3.Stages.files" download title="Click to download file">Three-column Contig File</a>: File with group and forward/reverse fastq file names as described <a href="http://www.mothur.org/wiki/Make.contigs" target="_blank" title="http://www.mothur.org/wiki/Make.contigs">here</a>.</li>
+                    <li><a href="/sample_files/Example3.Stages_0_rep1_F.fastq" download title="Click to download file">Forward Fastq File</a>: Example raw MiSeq forward fastq file with barcodes/primers removed.</li>
+                    <li><a href="/sample_files/Example3.Stages_0_rep1_R.fastq" download title="Click to download file">Reverse Fastq File</a>: Example raw MiSeq reverse fastq file with barcodes/primers removed.</li>
+                    <li><a href="/sample_files/Example3.mothur.batch" download title="Click to download file">Mothur Batch File</a>: Batch file for pre-processing as described <a href="http://www.mothur.org/wiki/MiSeq_SOP" target="_blank" title="http://www.mothur.org/wiki/MiSeq_SOP">here</a>.</li>
                     <br>
                     Blank Excel metadata file for each supported project types
-                    <li><a href="/sample_files/myPhyloDB.Soil.meta.xls" download>Soil projects</a></li>
-                    <li><a href="/sample_files/myPhyloDB.HumanAssoc.meta.xls" download>Human-associated projects</a></li>
-                    <li><a href="/sample_files/myPhyloDB.Air.meta.xls" download>Air projects</a></li>
+                    <li><a href="/sample_files/myPhyloDB.Soil.meta.xls" download title="Click to download file">Soil projects</a></li>
+                    <li><a href="/sample_files/myPhyloDB.HumanAssoc.meta.xls" download title="Click to download file">Human-associated projects</a></li>
+                    <li><a href="/sample_files/myPhyloDB.Air.meta.xls" download title="Click to download file">Air projects</a></li>
                 </ul>
             </td>
         </tr>

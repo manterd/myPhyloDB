@@ -1,18 +1,15 @@
-from diffabund_DF import catDiffAbundDF
 from django.http import HttpResponse
-from database.models import Sample, Profile
 from django.db.models import Sum
 import pandas as pd
 import pickle
-from scipy import stats
 import simplejson
-from database.utils import multidict, ordered_set, taxaProfileDF
-from numpy import *
 import numpy as np
-import datetime
 from pyper import *
-import math
-from models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+
+from database.diffabund.diffabund_DF import catDiffAbundDF
+from database.models import Sample, Profile
+from database.utils import multidict, taxaProfileDF
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
 
 base = {}
