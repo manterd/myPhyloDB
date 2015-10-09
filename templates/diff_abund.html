@@ -390,7 +390,37 @@
 
         function scatter(xAxis, yAxis, series) {
            catOptions = {
-                chart: { renderTo: 'container-1', type: 'scatter', zoomType: 'xy' },
+                chart: {
+                    renderTo: 'container-1',
+                    type: 'scatter',
+                    zoomType: 'xy',
+                    events: {
+                        load: function () {
+                            var chart = this,
+                                    legend = chart.legend;
+                            for (var i = 0, len=legend.allItems.length; i< len; i++) {
+                                (function(i) {
+                                    var item = legend.allItems[i].legendItem;
+                                    var color = chart.series[i].color;
+                                    var symbol = chart.series[i].symbol;
+                                    item.on('mouseover', function (e) {
+                                        $(this).qtip({
+                                            content: {
+                                                text: 'Index: ' + i + '<br>' + 'Color: ' + color + '<br>' + 'Symbol: ' + symbol
+                                            },
+                                            style: {
+                                                classes: 'qtip-jtools'
+                                            },
+                                            show: {
+                                                ready: true
+                                            }
+                                        });
+                                    });
+                                })(i);
+                            }
+                        }
+                    }
+                },
                 colors: ['rgba(0,0,0,.5)', 'rgba(255,0,0,.5)'],
                 title: { text: null },
                 legend: {
@@ -531,15 +561,5 @@
     <h2>nbinomTest Results:</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br><br>
-
-    <!--<br>
-    <h2>Raw Data (Tabular):</h2>
-    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
-
-    <br>
-    <h2>Raw Data (Biom Format):</h2>
-    <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
-    <br>
-    <br>-->
 
 {% endblock my_content%}

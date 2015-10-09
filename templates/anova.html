@@ -153,7 +153,8 @@
                         series.update(series.options);
                         chart1.redraw();
                     }
-                } else if (button1 == 2) {
+                }
+                if (button1 == 2) {
                     var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
                     var color = prompt("Please enter your desired color:", "#008800");
                     var marker = prompt("Please enter your desired symbol:", "square");
@@ -912,7 +913,35 @@
 
         function barchart(xAxis, yAxis, series) {
            catOptions = {
-                chart: { renderTo: 'container-1', type: 'column' },
+                chart: {
+                    renderTo: 'container-1',
+                    type: 'column',
+                    events: {
+                        load: function () {
+                            var chart = this,
+                                    legend = chart.legend;
+                            for (var i = 0, len=legend.allItems.length; i< len; i++) {
+                                (function(i) {
+                                    var item = legend.allItems[i].legendItem;
+                                    var color = chart.series[i].color;
+                                    item.on('mouseover', function (e) {
+                                        $(this).qtip({
+                                            content: {
+                                                text: 'Index: ' + i + '<br>' + 'Color: ' + color
+                                            },
+                                            style: {
+                                                classes: 'qtip-jtools'
+                                            },
+                                            show: {
+                                                ready: true
+                                            }
+                                        });
+                                    });
+                                })(i);
+                            }
+                        }
+                    }
+                },
                 title: { text: null },
                 legend: {
                     itemStyle: {
@@ -953,7 +982,53 @@
 
         function linechart(xAxis, yAxis, series) {
             quantOptions = {
-                chart: { renderTo: 'container-2', type: 'scatter', zoomType: 'xy'},
+                chart: {
+                    renderTo: 'container-2',
+                    type: 'scatter',
+                    zoomType: 'xy',
+                    events: {
+                        load: function () {
+                            var chart = this,
+                                    legend = chart.legend;
+                            for (var i = 0, len=legend.allItems.length; i< len; i++) {
+                                (function(i) {
+                                    var item = legend.allItems[i].legendItem;
+                                    var color = chart.series[i].color;
+                                    var symbol = chart.series[i].symbol;
+                                    var type = chart.series[i].type;
+                                    item.on('mouseover', function (e) {
+                                        if (type == 'scatter') {
+                                            $(this).qtip({
+                                                content: {
+                                                    text: 'Index: ' + i + '<br>' + 'Color: ' + color + '<br>' + 'Symbol: ' + symbol
+                                                },
+                                                style: {
+                                                    classes: 'qtip-jtools'
+                                                },
+                                                show: {
+                                                    ready: true
+                                                }
+                                            });
+                                        }
+                                        if (type == 'line') {
+                                            $(this).qtip({
+                                                content: {
+                                                    text: 'Index: ' + i + '<br>' + 'Color: ' + color
+                                                },
+                                                style: {
+                                                    classes: 'qtip-jtools'
+                                                },
+                                                show: {
+                                                    ready: true
+                                                }
+                                            });
+                                        }
+                                    });
+                                })(i);
+                            }
+                        }
+                    }
+                },
                 title: { text: null },
                 legend: {
                     itemStyle: {

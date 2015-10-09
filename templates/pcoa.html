@@ -545,23 +545,6 @@
             });
         }
 
-        function showToolTip(item, i) {
-            $(item).qtip({
-                content: {
-                    text: 'Index:' + i
-                },
-                style: {
-                    classes: 'qtip-jtools'
-                },
-                position: {
-                    target: 'mouse'
-                },
-                show: {
-                    event: 'mouseover'
-                }
-            });
-        }
-
         function linechart1(xAxis, yAxis, series) {
             catOptions = {
                 chart: {
@@ -575,21 +558,18 @@
                             for (var i = 0, len=legend.allItems.length; i< len; i++) {
                                 (function(i) {
                                     var item = legend.allItems[i].legendItem;
+                                    var color = chart.series[i].color;
+                                    var symbol = chart.series[i].symbol;
                                     item.on('mouseover', function (e) {
-                                        console.log('mouseover' + i);
-                                        //showToolTip(item, i);
                                         $(this).qtip({
                                             content: {
-                                                text: 'Index:' + i
+                                                text: 'Index: ' + i + '<br>' + 'Color: ' + color + '<br>' + 'Symbol: ' + symbol
                                             },
                                             style: {
                                                 classes: 'qtip-jtools'
                                             },
-                                            position: {
-                                                target: 'mouse'
-                                            },
                                             show: {
-                                                event: 'mouseover'
+                                                ready: true
                                             }
                                         });
                                     });

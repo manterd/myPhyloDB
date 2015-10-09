@@ -295,13 +295,11 @@
         }
 
         function heatmap(xAxis, yAxis, series) {
-            alert("X:" + xAxis.categories.length);
-            alert("Y:" + yAxis.categories.length);
             catOptions = {
                 chart: {
                     renderTo: 'container-1',
                     type: 'heatmap',
-                    height: parseFloat(yAxis.categories.length)*36+160,
+                    height: parseFloat(yAxis.categories.length)*20+250,
                     width: parseFloat(xAxis.categories.length)*16+200
                 },
                 title: { text: null },
