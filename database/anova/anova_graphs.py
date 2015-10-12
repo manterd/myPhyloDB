@@ -1043,6 +1043,8 @@ def getQuantUnivData(request):
                             max_y = float(slp*max(x) + inter)
                             slope = "%0.3f" % slp
                             intercept = "%0.3f" % inter
+                            r_sq = r_value * r_value
+                            r_square = "%0.3f" % r_sq
 
                             if sig_only == 0:
                                 result += 'Taxa level: ' + str(name1[0]) + '\n'
@@ -1078,7 +1080,7 @@ def getQuantUnivData(request):
 
                                 regrDict = {}
                                 regrDict['type'] = 'line'
-                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept)
+                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
                                 regrDict['data'] = regrList
                                 regrDict['color'] = colors[colors_idx]
 
@@ -1129,7 +1131,7 @@ def getQuantUnivData(request):
 
                                     regrDict = {}
                                     regrDict['type'] = 'line'
-                                    regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept)
+                                    regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
                                     regrDict['data'] = regrList
                                     regrDict['color'] = colors[colors_idx]
 
@@ -1169,6 +1171,8 @@ def getQuantUnivData(request):
                         max_y = float(slp*max(x) + inter)
                         slope = "%0.3f" % slp
                         intercept = "%0.3f" % inter
+                        r_sq = r_value * r_value
+                        r_square = "%0.3f" % r_sq
 
                         if sig_only == 0:
                             result += 'Taxa level: ' + str(name1[0]) + '\n'
@@ -1204,7 +1208,7 @@ def getQuantUnivData(request):
 
                             regrDict = {}
                             regrDict['type'] = 'line'
-                            regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept)
+                            regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
                             regrDict['data'] = regrList
                             regrDict['color'] = colors[colors_idx]
 
@@ -1254,7 +1258,7 @@ def getQuantUnivData(request):
 
                                 regrDict = {}
                                 regrDict['type'] = 'line'
-                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept)
+                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
                                 regrDict['data'] = regrList
                                 regrDict['color'] = colors[colors_idx]
 
@@ -1302,7 +1306,7 @@ def getQuantUnivData(request):
             elif DepVar == 3:
                 finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
-            base[RID] = 'Step 4 of 6: Formatting graph data for display...'
+            base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
             base[RID] = 'Step 5 of 6: Formatting biome data...'
 
             biome = {}

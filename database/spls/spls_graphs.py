@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pickle
 from pyper import *
+from scipy import stats
 from scipy.spatial.distance import *
 import simplejson
 
@@ -289,6 +290,23 @@ def getSPLSAData(request):
                 predDF = pd.DataFrame(pred,  columns=[predList], index=rows)
                 predDF.sort_index(inplace=True)
                 finalDF = pd.merge(metaDF, predDF, left_index=True, right_index=True)
+
+                result += 'sPLS Model Fit (y = mx + b):\n'
+                result += 'y = predicted\n'
+                result += 'x = observed\n\n'
+
+                for i in xrange(len(fieldList)):
+                    x = finalDF[fieldList[i]].astype(float).values.tolist()
+                    y = finalDF[predList[i]].astype(float).values.tolist()
+
+                    slp, inter, r_value, p, se = stats.linregress(x, y)
+                    r_sq = r_value * r_value
+
+                    result += 'Variable: ' + str(fieldList[i]) + '\n'
+                    result += 'Slope (m): ' + str(slp) + '\n'
+                    result += 'Intercept (b): ' + str(inter) + '\n'
+                    result += 'R2: ' + str(r_sq) + '\n'
+                    result += 'Std Error: ' + str(se) + '\n\n\n'
 
                 r("coef.f.rows <- row.names(coef.f)")
                 cf = r.get("coef.f")
