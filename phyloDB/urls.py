@@ -44,10 +44,9 @@ urlpatterns = patterns('',
     url(r'^makeUpdateTree/$', 'database.trees.makeUpdateTree', name='makeUpdateTree'),
     url(r'^makeReproTree/$', 'database.trees.makeReproTree', name='makeReproTree'),
 
-    url(r'^getExCatData/$', 'database.export.getExCatData', name='getExCatData'),
-    url(r'^getExQuantData/$', 'database.export.getExQuantData', name='getExQuantData'),
-    url(r'^statusANOVA/$', 'database.export.statusExport', name='statusExport'),
-    url(r'^statusANOVA/$', 'database.export.removeRIDExport', name='removeRIDExport'),
+    url(r'^getExCatData/$', 'database.export.export_graphs.getExCatData', name='getExCatData'),
+    url(r'^statusANOVA/$', 'database.export.export_graphs.statusExport', name='statusExport'),
+    url(r'^statusANOVA/$', 'database.export.export_graphs.removeRIDExport', name='removeRIDExport'),
 
     url(r'^getCatUnivData/$', 'database.anova.anova_graphs.getCatUnivData', name='getCatUnivData'),
     url(r'^getQuantUnivData/$', 'database.anova.anova_graphs.getQuantUnivData', name='getQuantUnivData'),

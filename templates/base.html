@@ -128,8 +128,10 @@
             {% endif %}
 
             <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Select projects/samples for analysis.">Select Data</li></a>
-            <a class="Offmouse" href="{% url "export" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Norm/Export</li></a>
-            <br>
+            <div id="link2" style="display: none;" >
+                <a class="Offmouse" href="{% url "export" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Export Data</li></a>
+            </div>
+                <br>
 
             <div>
                 <hr><p><em><strong>Taxonomy</strong></em></p><hr>

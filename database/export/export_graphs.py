@@ -1,4 +1,3 @@
-__author__ = 'KorsaM'
 import datetime
 from django.http import HttpResponse
 from django.db.models import Sum
@@ -9,7 +8,7 @@ from pyper import *
 from scipy import stats
 import simplejson
 
-from database.anova.anova_DF import UnivMetaDF, normalizeUniv
+from database.export.export_DF import UnivMetaDF, normalizeUniv
 from database.models import Sample, Profile
 from database.utils import multidict, taxaProfileDF
 
@@ -68,7 +67,7 @@ def getExCatData(request):
             selected = samples.values_list('sampleid')
             qs1 = Sample.objects.all().filter(sampleid__in=selected)
         except Exception as e:
-            print("Error starting ANOVA: ", e)
+            print("Error starting EXPORT: ", e)
 
         if request.is_ajax():
             try:
@@ -81,11 +80,9 @@ def getExCatData(request):
                 base[RID] = 'Step 1 of 6: Querying database...'
 
                 selectAll = int(all["selectAll"])
-                DepVar = int(all["DepVar"])
                 NormMeth = int(all["NormMeth"])
                 Iters = int(all["Iters"])
                 NormVal = all["NormVal"]
-                sig_only = int(all["sig_only"])
                 size = int(all["MinSize"])
 
                 # Generate a list of sequence reads per sample
@@ -307,267 +304,73 @@ def getExCatData(request):
                 base[RID] = 'Step 2 of 6: Normalizing data...done!'
 
             except Exception as e:
-                print("Error with normalization (ANOVA CAT): ", e)
+                print("Error with normalization (EXPORT CAT): ", e)
+
+            try:
+                base[RID] = 'Step 5 of 6: Formatting biome data...'
+
+                biome = {}
+                newList = ['sampleid', 'sample_name']
+                newList.extend(fieldList)
+
+                grouped = finalDF.groupby(newList, sort=False)
+                nameList = []
+                for name, group in grouped:
+                    metaDict = {}
+                    for i in xrange(1, len(newList)):
+                        metaDict[str(newList[i])] = str(name[i])
+                    nameList.append({"id": str(name[0]), "metadata": metaDict})
+
+                grouped = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'], sort=False)
+                taxaList = []
+                dataList = []
+                for name, group in grouped:
+                    metaDict ={}
+                    taxonList = []
+                    taxonList.append(str(name[1]))
+                    metaDict['taxonomy'] = taxonList
+                    taxaList.append({"id": str(name[2]), "metadata": metaDict})
+                    dataList.append(group['abund'].values.astype(float).tolist())
+
+                biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
+                biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
+                biome['type'] = 'OTU table'
+                biome['generated_by'] = 'myPhyloDB'
+                biome['date'] = str(datetime.datetime.now())
+                biome['matrix_type'] = 'dense'
+                biome['matrix_element_type'] = 'float'
+                biome['rows'] = taxaList
+                biome['columns'] = nameList
+                biome['data'] = dataList
+
+                base[RID] = 'Step 5 of 6: Formatting biome data...done!'
+
+            except Exception as e:
+                print("Error finishing formatting (EXPORT CAT): ", e)
+
+            base[RID] = 'Step 6 of 6: Formatting result table...'
+
+            res_table = finalDF.to_html(classes="table display")
+            res_table = res_table.replace('border="1"', 'border="0"')
+            finalDict['res_table'] = str(res_table)
 
 
-            # Done with normalization, send data back
+            biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
+            finalDict['error'] = 'none'
+            finalDict['biome'] = str(biome_json)
+            res = simplejson.dumps(finalDict)
+
+            base[RID] = 'Step 6 of 6: Formatting result table...done!'
+
+            return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
-        print "Error with ANOVA: ", e
-        state = "Error with ANOVA: " + str(e)
+        print "Error with EXPORT: ", e
+        state = "Error with EXPORT: " + str(e)
 
         myDict = {}
         myDict['error'] = state
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
-
-
-def getExQuantData(request):
-    try:
-        global base, time1, TimeDiff
-        samples = Sample.objects.all()
-        samples.query = pickle.loads(request.session['selected_samples'])
-        selected = samples.values_list('sampleid')
-        qs1 = Sample.objects.all().filter(sampleid__in=selected)
-
-        if request.is_ajax():
-            allJson = request.GET["all"]
-            all = simplejson.loads(allJson)
-
-            RID = str(all["RID"])
-            time1[RID] = time.time()
-            base[RID] = 'Step 1 of 6: Querying database...'
-
-            selectAll = int(all["selectAll"])
-            DepVar = int(all["DepVar"])
-            NormMeth = int(all["NormMeth"])
-            NormVal = all["NormVal"]
-            Iters = int(all["Iters"])
-            sig_only = int(all["sig_only"])
-            size = int(all["MinSize"])
-
-            # Generate a list of sequence reads per sample
-            countList = []
-            for sample in qs1:
-                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                if total['count__sum'] is not None:
-                    countList.append(total['count__sum'])
-
-            # Calculate min/median/max of sequence reads for rarefaction
-            minSize = int(min(countList))
-            medianSize = int(np.median(np.array(countList)))
-            maxSize = int(max(countList))
-
-            if NormVal == "min":
-                NormReads = minSize
-            elif NormVal == "median":
-                NormReads = medianSize
-            elif NormVal == "max":
-                NormReads = maxSize
-            elif NormVal == "none":
-                NormReads = -1
-            else:
-                NormReads = int(all["NormVal"])
-
-            # Remove samples if below the sequence threshold set by user (rarefaction)
-            newList = []
-            result = ''
-            metaStrCat = all["metaValsCat"]
-            fieldListCat = []
-            valueListCat = []
-            idDictCat = {}
-            try:
-                metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
-                for key in sorted(metaDictCat):
-                    fieldListCat.append(key)
-                    valueListCat.append(metaDictCat[key])
-
-                idStrCat = all["metaIDsCat"]
-                idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrCat)
-            except:
-                placeholder = ''
-
-            metaStrQuant = all["metaValsQuant"]
-            fieldListQuant = []
-            valueListQuant = []
-            idDictQuant = {}
-            try:
-                metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
-                for key in sorted(metaDictQuant):
-                    fieldListQuant.append(key)
-                    valueListQuant.extend(metaDictQuant[key])
-
-                idStrQuant = all["metaIDsQuant"]
-                idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
-            except:
-                placeholder = ''
-
-            metaStr = all["metaVals"]
-            fieldList = []
-            valueList = []
-            idDict = {}
-            try:
-                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-                for key in sorted(metaDict):
-                    fieldList.append(key)
-                    valueList.append(metaDict[key])
-
-                idStr = all["metaIDs"]
-                idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
-
-            except:
-                placeholder = ''
-
-            result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
-            result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
-            result += '===============================================\n'
-            result += '\nData Normalization:\n'
-
-            # Limit reads to max value
-            if NormMeth == 1:
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None:
-                        id = sample.sampleid
-                        newList.append(id)
-
-            elif NormMeth == 2 or NormMeth == 3:
-                if NormReads > maxSize:
-                    NormReads = medianSize
-                    result += 'The subsample size was too high and automatically reset to the median value...\n'
-
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if NormMeth == 2:
-                        if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                            id = sample.sampleid
-                            newList.append(id)
-                    else:
-                        if total['count__sum'] is not None:
-                            id = sample.sampleid
-                            newList.append(id)
-
-                # If user set reads too high sample list will be blank
-                if not newList:
-                    NormReads = medianSize
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                            id = sample.sampleid
-                            newList.append(id)
-
-            elif NormMeth == 4 or NormMeth == 5:
-                if size > maxSize:
-                    size = medianSize
-                    result += 'The minimum sample size was too high and automatically reset to the median value...\n'
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                        id = sample.sampleid
-                        newList.append(id)
-
-                # If user set reads too high sample list will be blank
-                if not newList:
-                    size = medianSize
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                            id = sample.sampleid
-                            newList.append(id)
-
-            metaDF = UnivMetaDF(idDict)
-
-            lenA, col = metaDF.shape
-
-            metaDF = metaDF.ix[newList]
-            metaDF.dropna(inplace=True)
-            lenB, col = metaDF.shape
-
-            selectRem = len(selected) - lenA
-            normRem = lenA - lenB
-
-            result += str(lenB) + ' selected samples were included in the final analysis.\n'
-            if normRem > 0:
-                result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
-            if selectRem:
-                result += str(selectRem) + ' samples were deselected by the user.\n'
-
-            # Create unique list of samples in meta dataframe (may be different than selected samples)
-            myList = metaDF.index.values.tolist()
-
-            # Create dataframe with all taxa/count data by sample
-            taxaDF = taxaProfileDF(myList)
-
-            # Select only the taxa of interest if user used the taxa tree
-            taxaString = all["taxa"]
-            taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-
-            # Select only the taxa of interest if user used the selectAll button
-            if selectAll == 1:
-                taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
-                taxaDict['Kingdom'] = qs3
-            elif selectAll == 2:
-                taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
-                taxaDict['Phyla'] = qs3
-            elif selectAll == 3:
-                taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
-                taxaDict['Class'] = qs3
-            elif selectAll == 4:
-                taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
-                taxaDict['Order'] = qs3
-            elif selectAll == 5:
-                taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
-                taxaDict['Family'] = qs3
-            elif selectAll == 6:
-                taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
-                taxaDict['Genus'] = qs3
-            elif selectAll == 7:
-                taxaDict = {}
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
-                taxaDict['Species'] = qs3
-
-            base[RID] = 'Step 1 of 6: Querying database...done!'
-            base[RID] = 'Step 2 of 6: Normalizing data...'
-
-            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
-
-            finalDict = {}
-            if NormMeth == 1:
-                result += 'No normalization was performed...\n'
-            elif NormMeth == 2 or NormMeth == 3:
-                result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-            elif NormMeth == 4:
-                result += 'Data were normalized by the total number of sequence reads...\n'
-            elif NormMeth == 5 and DESeq_error == 'no':
-                result += 'Data were normalized by DESeq2...\n'
-            elif NormMeth == 5 and DESeq_error == 'yes':
-                result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                result += 'Analysis was run without normalization...\n'
-                result += 'To try again, please select fewer samples or another normalization method...\n'
-            result += '===============================================\n\n\n'
-
-            normDF.set_index('sampleid', inplace=True)
-
-            finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-            finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
-
-            base[RID] = 'Step 2 of 6: Normalizing data...done!'
-            # Done normalizing, export!
-
-    except Exception as e:
-        print "Error with Linear Regression: ", e
-        state = "Error with Linear Regression: " + str(e)
-
-        myDict = {}
-        myDict['error'] = state
-        res = simplejson.dumps(myDict)
-        return HttpResponse(res, content_type='application/json')
-
 
 
