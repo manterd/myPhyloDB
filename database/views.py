@@ -385,6 +385,11 @@ def taxa(request):
         context_instance=RequestContext(request)
     )
 
+def export(request):
+    return render_to_response(
+        'export.html',
+        context_instance=RequestContext(request)
+    )
 
 def ANOVA(request):
     return render_to_response(
