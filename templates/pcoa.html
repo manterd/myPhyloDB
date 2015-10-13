@@ -113,6 +113,20 @@
                     series.update(series.options);
                     chart1.redraw();
                 }
+                var item = series.legendItem;
+                item.on('mouseover', function (e) {
+                    $(this).qtip({
+                        content: {
+                            text: 'Index: ' + index + '<br>' + 'Color: ' + color + '<br>' + 'Symbol: ' + marker
+                        },
+                        style: {
+                            classes: 'qtip-jtools'
+                        },
+                        show: {
+                            ready: true
+                        }
+                    });
+                });
             });
 
             $("#normalize").change(function () {

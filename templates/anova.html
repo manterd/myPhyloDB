@@ -153,11 +153,33 @@
                         series.update(series.options);
                         chart1.redraw();
                     }
+                    var item = series.legendItem;
+                    item.on('mouseover', function (e) {
+                        $(this).qtip({
+                            content: {
+                                text: 'Index: ' + index + '<br>' + 'Color: ' + color
+                            },
+                            style: {
+                                classes: 'qtip-jtools'
+                            },
+                            show: {
+                                ready: true
+                            }
+                        });
+                    });
                 }
                 if (button1 == 2) {
                     var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
                     var color = prompt("Please enter your desired color:", "#008800");
-                    var marker = prompt("Please enter your desired symbol:", "square");
+                    var line = 0;
+                    if (index%2==0)
+                    {
+                        var marker = prompt("Please enter your desired symbol:", "square");
+                    }
+                    else
+                    {
+                        line = 1;
+                    }
                     var series = chart2.series[index];
                     if (color != '') {
                         series.options.color = color;
@@ -170,6 +192,38 @@
                         series.update(series.options);
                         chart2.redraw();
                     }
+                    var item = series.legendItem;
+                    item.on('mouseover', function (e) {
+                        if (line==0)
+                        {
+                           $(this).qtip({
+                            content: {
+                                text: 'Index: ' + index + '<br>' + 'Color: ' + color + '<br>' + 'Symbol: ' + marker
+                            },
+                            style: {
+                                classes: 'qtip-jtools'
+                            },
+                            show: {
+                                ready: true
+                            }
+                            });
+                        }
+                        else
+                        {
+                            $(this).qtip({
+                            content: {
+                                text: 'Index: ' + index + '<br>' + 'Color: ' + color
+                            },
+                            style: {
+                                classes: 'qtip-jtools'
+                            },
+                            show: {
+                                ready: true
+                            }
+                            });
+                        }
+
+                    });
                 }
             });
 
