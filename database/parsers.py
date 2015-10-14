@@ -3,7 +3,7 @@ import pandas as pd
 import re
 import simplejson
 from django.http import HttpResponse
-from models import Project, Reference, Sample, Soil, Human_Gut, Microbial, User, Human_Associated, Air, Water
+from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import remove_proj, purge
 from uuid import uuid4
@@ -12,7 +12,11 @@ from numpy import *
 import glob
 import os
 import shutil
-from django.contrib.auth.models import User as Users
+from django.contrib.auth.models import User
+import xlrd
+from xlutils.copy import copy
+import xlwt
+from xlwt import Style
 
 
 stage = ''
@@ -85,54 +89,48 @@ def status(request):
 
 
 def projectid(Document):
-    f = csv.DictReader(Document, delimiter=',')
-    for row in f:
-        if row:
-            index = row['project_id']
-            if Project.objects.filter(projectid=index).exists():
-                return index
-            else:
-                return uuid4().hex
+    f = xlrd.open_workbook(file_contents=Document.read())
+    sheet = f.sheet_by_name('Project')
+    pType = sheet.cell_value(rowx=5, colx=2)
+
+    projectid = sheet.cell_value(rowx=5, colx=3)
+    num_samp = int(sheet.cell_value(rowx=5, colx=0))
+
+    if projectid:
+        p_uuid = projectid
+    else:
+        p_uuid = uuid4().hex
+
+    return p_uuid, pType, num_samp
 
 
-def parse_project(Document, path, p_uuid, pType):
+def parse_project(Document, p_uuid):
     global stage, perc
     stage = "Step 1 of 5: Parsing project file..."
     perc = 0
 
-    f = csv.DictReader(Document, delimiter=',')
-    for row in f:
-        if row:
-            perc = 100
-            row_dict = dict((k, v) for k, v in row.iteritems() if v != '')
-            row_dict.pop('project_id')
-            m = Project(projectType=pType, projectid=p_uuid, **row_dict)
-            m.save()
+    df = pd.read_excel(Document, skiprows=4, sheetname='Project')
+    rowDict = df.to_dict(outtype='records')[0]
+    rowDict.pop('num_samp')
 
-    try:
-        Document.seek(0)
-        f = csv.reader(Document, delimiter=',')
-        if not os.path.exists(path):
-            os.makedirs(path)
-        with open('% s/project.csv' % path, 'wb+') as csvfile:
-            spamwriter = csv.writer(csvfile, delimiter=',')
-            for stuff in f:
-                if str(stuff[1]) == "null":
-                    stuff[1] = str(p_uuid)
-                spamwriter.writerow(stuff)
-    except Exception as e:
-        print(e)
+    if not Project.objects.filter(projectid=p_uuid).exists():
+        for key in rowDict.keys():
+            if key == 'projectid':
+                rowDict[key] = p_uuid
+        Project.objects.create(**rowDict)
+    else:
+        rowDict.pop('projectid')
+        Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, **rowDict)
 
 
-def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
-    project = Project.objects.get(projectid=p_uuid)
-    author = Users.objects.get(id=userid)
+def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
+    author = User.objects.get(id=userid)
 
     if raw:
         align_ref = ''
         template_ref = ''
         taxonomy_ref = ''
-        for row in file7:
+        for row in batch:
             if "align.seqs" in row:
                 for item in row.split(','):
                     if "reference=" in item:
@@ -146,107 +144,189 @@ def parse_reference(p_uuid, refid, path, file7, raw, source, userid):
                     if "taxonomy=" in item:
                         string = item.split('=')
                         taxonomy_ref = string[1].replace('mothur/reference/taxonomy/', '')
-
-        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=True, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
-        m.save()
     else:
-        m = Reference(refid=refid, projectid=project, path=path, source=source, raw=False, alignDB='null', templateDB='null', taxonomyDB='null', author=author)
-        m.save()
+        align_ref = 'null'
+        template_ref = 'null'
+        taxonomy_ref = 'null'
+
+    if not Reference.objects.filter(refid=refid).exists():
+        print 'ref record doesnt exist'
+        project = Project.objects.get(projectid=p_uuid)
+        Reference.objects.create(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
+        print 'created'
+    else:
+        print 'ref record exists'
+        project = Project.objects.get(projectid=p_uuid)
+        Reference.objects.filter(refid=refid).update(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
+        print 'updated'
 
 
-def parse_sample(Document, p_uuid, refid, path, pType):
+def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userID):
     global stage, perc
     stage = "Step 2 of 5: Parsing sample file..."
     perc = 0
+    step = 0
 
-    sampleidlist = []
+    project = Project.objects.get(projectid=p_uuid)
 
-    f = csv.reader(Document, delimiter=',')
-    f.next()
-    total = 0.0
-    for row in f:
-        if row:
-            total += 1.0
+    df1 = pd.read_excel(Document, skiprows=5, sheetname='MIMARKs')
+    if pType == 'human associated':
+        df2 = pd.read_excel(Document, skiprows=5, sheetname='Human Associated')
+    elif pType == 'soil':
+        df2 = pd.read_excel(Document, skiprows=5, sheetname='Soil')
+    else:
+        df2 = pd.DataFrame()
 
-    Document.seek(0)
-    f = csv.DictReader(Document, delimiter=',')
-    step = 0.0
-    for row in f:
-        if row:
-            row_dict = dict((k, v) for k, v in row.iteritems() if v != '')
-            step += 1.0
-            perc = int(step / total * 100)
-            index = row_dict['sample_id']
-            if not Sample.objects.filter(sampleid=index).exists():
-                s_uuid = uuid4().hex
-                row_dict.pop('sample_id')
+    df3 = pd.read_excel(Document, skiprows=5, sheetname='User')
 
-                project = Project.objects.get(projectid=p_uuid)
-                ref = Reference.objects.get(refid=refid)
-                wanted_keys = ['sample_name', 'organism', 'title', 'seq_platform', 'seq_gene', 'seq_gene_region', 'seq_for_primer', 'seq_rev_primer', 'collection_date', 'biome', 'feature', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot', 'latitude', 'longitude', 'material', 'elevation']
-                sampleDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = Sample(projectid=project, refid=ref, sampleid=s_uuid, **sampleDict)
-                m.save()
+    idList = []
+    refid = ''
+    refDict = {}
+    newRefID = uuid4().hex
+    for i in xrange(total):
+        step += 1.0
+        perc = int((step / total/2) * 100)
 
-                sampleidlist.append(s_uuid)
-                sample = Sample.objects.get(sampleid=s_uuid)
+        row = df1.iloc[[i]].to_dict(outtype='records')[0]
 
-                if pType == "soil":
-                    wanted_keys = ['depth', 'pool_dna_extracts', 'samp_size', 'samp_collection_device', 'samp_weight_dna_ext', 'sieving', 'storage_cond', 'annual_season_precpt', 'annual_season_temp', 'bulk_density', 'drainage_class', 'fao_class', 'horizon', 'local_class', 'porosity', 'profile_position', 'slope_aspect', 'slope_gradient', 'soil_type', 'texture_class', 'water_content_soil', 'pH', 'EC', 'tot_C', 'tot_OM', 'tot_N', 'NO3_N', 'NH4_N', 'P', 'K', 'S', 'Zn', 'Fe', 'Cu', 'Mn', 'Ca', 'Mg', 'Na', 'B', 'agrochem_amendments', 'agrochem_amendments_desc', 'biological_amendments', 'biological_amendments_desc', 'cover_crop', 'crop_rotation', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'organic', 'previous_land_use', 'soil_amendments', 'soil_amendments_desc', 'tillage', 'rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
-                    soilDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Soil(projectid=project, refid=ref, sampleid=sample, **soilDict)
-                    m.save()
+        pathid = row['refid']
 
-                if pType == "human_gut":
-                    wanted_keys = ['age', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'disease', 'ethnicity', 'family_relationship', 'gastrointest_disord', 'genotype', 'height', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'last_meal', 'liver_disord', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'organism_count', 'oxy_stat_samp', 'perturbation', 'phenotype', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_loc', 'samp_store_temp', 'sex', 'special_diet', 'temp', 'tissue', 'tot_mass', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Human_Gut(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+        if not isinstance(pathid, unicode):
+            refid = newRefID
+        else:
+            refid = pathid
 
-                if pType == "microbial":
-                    wanted_keys = ['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'glucosidase_act', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'methane', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'perturbation', 'petroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'potassium', 'pressure', 'redox_potential', 'rel_to_oxygen', 'salinity', 'samp_collect_device', 'samp_mat_process', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'silicate', 'sodium', 'sulfate', 'sulfide', 'temp', 'tot_carb', 'tot_nitro', 'tot_org_carb', 'turbidity', 'water_content', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Microbial(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+        s_uuid = row['sampleid']
+        row.pop('refid')
+        row.pop('seq_method')
+        row.pop('geo_loc_name')
+        row.pop('lat_lon')
 
-                if pType == "human_associated":
-                    wanted_keys = ['age', 'amniotic_fluid_color', 'blood_blood_disord', 'body_mass_index', 'body_product', 'chem_administration', 'diet', 'diet_last_six_month', 'disease', 'drug_usage', 'ethnicity', 'family_relationship', 'fetal_health_stat', 'genotype', 'gestation_state', 'height', 'hiv_stat', 'host_body_temp', 'host_subject_id', 'ihmc_medication_code', 'kidney_disord', 'last_meal', 'maternal_health_stat', 'medic_hist_perform', 'nose_throat_disord', 'occupation', 'perturbation', 'pet_farm_animal', 'phenotype', 'pulmonary_disord', 'pulse', 'rel_to_oxygen', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'sex', 'smoker', 'study_complt_stat', 'temp', 'tissue', 'tot_mass', 'travel_out_six_month', 'twin_sibling', 'urine_collect_meth', 'urogenit_tract_disor', 'weight_loss_3_month', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Human_Associated(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+        parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
+        reference = Reference.objects.get(refid=refid)
 
-                if pType == "air":
-                    wanted_keys = ['barometric_press', 'carb_dioxide', 'carb_monoxide', 'chem_administration', 'elev', 'humidity', 'methane', 'organism_count', 'oxy_stat_samp', 'oxygen', 'perturbation', 'pollutants', 'rel_to_oxygen', 'resp_part_matter', 'samp_collect_device', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'solar_irradiance', 'temp', 'ventilation_rate', 'ventilation_type', 'volatile_org_comp', 'wind_direction', 'wind_speed', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Air(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+        if not Sample.objects.filter(sampleid=s_uuid).exists():
+            print 'sample record doesnt exist'
+            s_uuid = uuid4().hex
+            row['sampleid'] = s_uuid
+            idList.append(s_uuid)
+            Sample.objects.create(projectid=project, refid=reference, **row)
+            print 'created'
+        else:
+            print 'sample record exists'
+            idList.append(s_uuid)
+            Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
+            print 'updated'
 
-                if pType == "water":
-                    wanted_keys = ['alkalinity', 'alkyl_diethers', 'altitude', 'aminopept_act', 'ammonium', 'atmospheric_data', 'bac_prod', 'bac_resp', 'bacteria_carb_prod', 'biomass', 'bishomohopanol', 'bromide', 'calcium', 'carb_nitro_ratio', 'chem_administration', 'chloride', 'chlorophyll', 'conduc', 'density', 'diether_lipids', 'diss_carb_dioxide', 'diss_hydrogen', 'diss_inorg_carb', 'diss_inorg_nitro', 'diss_inorg_phosp', 'diss_org_carb', 'diss_org_nitro', 'diss_oxygen', 'down_par', 'elev', 'fluor', 'glucosidase_act', 'light_intensity', 'magnesium', 'mean_frict_vel', 'mean_peak_frict_vel', 'n_alkanes', 'nitrate', 'nitrite', 'nitro', 'org_carb', 'org_matter', 'org_nitro', 'organism_count', 'oxy_stat_samp', 'part_org_carb', 'part_org_nitro', 'perturbation', 'petroleum_hydrocarb', 'ph', 'phaeopigments', 'phosphate', 'phosplipid_fatt_acid', 'photon_flux', 'potassium', 'pressure', 'primary_prod', 'redox_potential', 'rel_to_oxygen', 'samp_mat_process', 'samp_salinity', 'samp_size', 'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'samp_vol_we_dna_ext', 'silicate', 'sodium', 'soluble_react_phosp', 'source_material_id', 'sulfate', 'sulfide', 'suspend_part_matter', 'temp', 'tidal_stage', 'tot_depth_water_col', 'tot_diss_nitro', 'tot_inorg_nitro', 'tot_nitro', 'tot_part_carb', 'tot_phosp', 'water_current', 'user_defined']
-                    gutDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                    m = Water(projectid=project, refid=ref, sampleid=sample, **gutDict)
-                    m.save()
+        refDict[s_uuid] = refid
+        sample = Sample.objects.get(sampleid=s_uuid)
 
-                wanted_keys = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6', 'usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
-                userDict = {x: row_dict[x] for x in wanted_keys if x in row_dict}
-                m = User(projectid=project, refid=ref, sampleid=sample, **userDict)
-                m.save()
+        if pType == "human associated":
+            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            if not Human_Associated.objects.filter(sampleid=s_uuid).exists():
+                print 'human record doesnt exist'
+                row.pop('sampleid')
+                row.pop('sample_name')
+                Human_Associated.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+                print 'created'
+            else:
+                print 'huamn record exists'
+                row.pop('sampleid')
+                row.pop('sample_name')
+                Human_Associated.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+                print 'updated'
 
-    try:
-        Document.seek(0)
-        f = csv.reader(Document, delimiter=',')
-        if not os.path.exists(path):
-            os.makedirs(path)
-        with open('% s/sample.csv' % path, 'wb+') as csvfile:
-            spamwriter = csv.writer(csvfile, delimiter=',')
-            itera = 0
-            for stuff in f:
-                if str(stuff[0]) == "null":
-                    stuff[0] = str(sampleidlist[itera])
-                    itera += 1
-                spamwriter.writerow(stuff)
-    except Exception as e:
-        print(e)
+        elif pType == "soil":
+            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            if not Soil.objects.filter(sampleid=s_uuid).exists():
+                print 'soil record doesnt exist'
+                row.pop('sampleid')
+                row.pop('sample_name')
+                Soil.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+                print 'created'
+            else:
+                print 'soil record exists'
+                row.pop('sampleid')
+                row.pop('sample_name')
+                Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+                print 'updated'
+        else:
+            placeholder = ''
+
+        ### user not done
+        row = df3.iloc[[i]].to_dict(outtype='records')[0]
+        if not UserDefined.objects.filter(sampleid=s_uuid).exists():
+            print 'user record doesnt exist'
+            row.pop('sampleid')
+            row.pop('sample_name')
+            UserDefined.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+            print 'created'
+        else:
+            print 'user record exists'
+            row.pop('sampleid')
+            row.pop('sample_name')
+            UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+            print 'updated'
+
+    rb = xlrd.open_workbook(Document, formatting_info=True)
+    nSheets = rb.nsheets
+    wb = copy(rb)
+
+    style = xlwt.XFStyle()
+
+    # border
+    borders = xlwt.Borders()
+    borders.bottom = xlwt.Borders.THIN
+    borders.top = xlwt.Borders.THIN
+    borders.left = xlwt.Borders.THIN
+    borders.right = xlwt.Borders.THIN
+    style.borders = borders
+
+    # font
+    font = xlwt.Font()
+    font.name = 'Calibri'
+    font.height = 11 * 20
+    style.font = font
+
+    # background color
+    pattern = xlwt.Pattern()
+    pattern.pattern = xlwt.Pattern.SOLID_PATTERN
+    pattern.pattern_fore_colour = xlwt.Style.colour_map['gray25']
+    style.pattern = pattern
+
+    for each in xrange(nSheets):
+        ws = wb.get_sheet(each)
+        if ws.name == 'Project':
+            ws.write(5, 3, p_uuid, style)
+
+        if ws.name == 'MIMARKs':
+            for i in xrange(total):
+                j = i + 6
+                ws.write(j, 0, refid, style)
+                ws.write(j, 1, idList[i], style)
+
+        if pType == 'human associated':
+            if ws.name == 'Human Associated':
+                for i in xrange(total):
+                    j = i + 6
+                    ws.write(j, 0, idList[i], style)
+        elif pType == 'soil':
+            if ws.name == 'Soil':
+                for i in xrange(total):
+                    j = i + 6
+                    ws.write(j, 0, idList[i], style)
+        else:
+            placeholder = ''
+
+        if ws.name == 'User':
+            for i in xrange(total):
+                j = i + 6
+                ws.write(j, 0, idList[i], style)
+
+        wb.save(Document)
+        perc += 50/nSheets
+
+    return refDict
 
 
 def parse_taxonomy(Document):
@@ -273,54 +353,47 @@ def parse_taxonomy(Document):
 
             if not Kingdom.objects.filter(kingdomName=taxon[0]).exists():
                 kid = uuid4().hex
-                record = Kingdom(kingdomid=kid, kingdomName=taxon[0])
-                record.save()
+                Kingdom.objects.create(kingdomid=kid, kingdomName=taxon[0])
 
             k = Kingdom.objects.get(kingdomName=taxon[0]).kingdomid
             if not Phyla.objects.filter(kingdomid_id=k, phylaName=taxon[1]).exists():
                 pid = uuid4().hex
-                record = Phyla(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
-                record.save()
+                Phyla.objects.create(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
 
             p = Phyla.objects.get(kingdomid_id=k, phylaName=taxon[1]).phylaid
             if not Class.objects.filter(kingdomid_id=k, phylaid_id=p, className=taxon[2]).exists():
                 cid = uuid4().hex
-                record = Class(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
-                record.save()
+                Class.objects.create(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
 
             c = Class.objects.get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
             if not Order.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).exists():
                 oid = uuid4().hex
-                record = Order(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
-                record.save()
+                Order.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
 
             o = Order.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
             if not Family.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).exists():
                 fid = uuid4().hex
-                record = Family(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
-                record.save()
+                Family.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
 
             f = Family.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
             if not Genus.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).exists():
                 gid = uuid4().hex
-                record = Genus(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
-                record.save()
+                Genus.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
 
+            # try handles classifications without species (ie, RDP)
             try:
                 g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                 if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
                     sid = uuid4().hex
-                    record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
-                    record.save()
+                    Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
             except:
                 g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                 if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName='unclassified').exists():
                     sid = uuid4().hex
-                    record = Species(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName='unclassified')
-                    record.save()
+                    Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName='unclassified')
 
 
-def parse_profile(file3, file4, p_uuid, refid):
+def parse_profile(file3, file4, p_uuid, refDict):
     global stage, perc
     stage = "Step 5 of 5: Parsing shared file..."
     perc = 0
@@ -374,29 +447,40 @@ def parse_profile(file3, file4, p_uuid, refid):
             s = 'unclassified'
 
         t_kingdom = Kingdom.objects.get(kingdomName=k)
-        t_phyla = Phyla.objects.get(kingdomid_id=t_kingdom, phylaName=p)
-        t_class = Class.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, className=c)
-        t_order = Order.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderName=o)
-        t_family = Family.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyName=f)
-        t_genus = Genus.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusName=g)
-        t_species = Species.objects.get(kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesName=s)
+        t_phyla = Phyla.objects.get(kingdomid=t_kingdom, phylaName=p)
+        t_class = Class.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, className=c)
+        t_order = Order.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderName=o)
+        t_family = Family.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyName=f)
+        t_genus = Genus.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusName=g)
+        t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesName=s)
 
         for name in sampleList:
             count = int(row[str(name)])
             if count > 0:
-                project = Project.objects.get(projectid=p_uuid)
-                ref = Reference.objects.get(refid=refid)
-                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
 
-                if Profile.objects.filter(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species).exists():
-                    t = Profile.objects.get(sampleid_id=sample, kingdomid_id=t_kingdom, phylaid_id=t_phyla, classid_id=t_class, orderid_id=t_order, familyid_id=t_family, genusid_id=t_genus, speciesid_id=t_species)
+                project = Project.objects.get(projectid=p_uuid)
+                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
+                sampID = sample.sampleid
+
+                refid = ''
+                for key in refDict:
+                    if key == sampID:
+                        refid = refDict[key]
+
+                reference = Reference.objects.get(refid=refid)
+
+                if Profile.objects.filter(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species).exists():
+                    print 'profile record exists'
+                    t = Profile.objects.get(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species)
                     old = t.count
                     new = old + int(count)
                     t.count = new
                     t.save()
+                    print 'count changed from ' + str(old) + ' to ' + str(new)
                 else:
-                    record = Profile(projectid=project, refid=ref, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
-                    record.save()
+                    print 'profile record doesnt exist'
+                    Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
+                    print 'created'
 
 
 def reanalyze(request):
@@ -468,16 +552,14 @@ def reanalyze(request):
             dest = project.path
             pType = project.projectid.projectType
 
-            shutil.copy('% s/project.csv' % dest, '% s/project.csv' % mothurdest)
-            shutil.copy('% s/sample.csv' % dest, '% s/sample.csv' % mothurdest)
+            shutil.copy('% s/final_meta.csv' % dest, '% s/final_meta.csv' % mothurdest)
 
             remove_proj(dest)
 
             if not os.path.exists(dest):
                 os.makedirs(dest)
 
-            shutil.copy('% s/project.csv' % mothurdest, '% s/project.csv' % dest)
-            shutil.copy('% s/sample.csv' % mothurdest, '% s/sample.csv' % dest)
+            shutil.copy('% s/final_meta.csv' % mothurdest, '% s/final_meta.csv' % dest)
 
             try:
                 mothur(dest, source)
@@ -488,22 +570,26 @@ def reanalyze(request):
                     content_type="application/json"
                 )
 
-            with open('% s/project.csv' % dest, 'rb') as file1:
-                parse_project(file1, dest, p_uuid, pType)
+            metaName = 'final_meta.xls'
+            metaFile = '/'.join([dest, metaName])
+            parse_project(metaFile, p_uuid)
 
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
-                parse_reference(p_uuid, refid, dest, file7, raw, source)
+                userID = str(request.user.id)
 
-            with open('% s/sample.csv' % dest, 'rb') as file2:
-                parse_sample(file2, p_uuid, refid, dest, pType)
+                f = xlrd.open_workbook(file_contents=metaFile)
+                sheet = f.sheet_by_name('Project')
+                num_samp = int(sheet.cell_value(rowx=5, colx=0))
+
+                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
 
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
             with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
                 with open('% s/mothur.shared' % dest, 'rb') as file4:
-                    parse_profile(file3, file4, p_uuid, refid)
+                    parse_profile(file3, file4, p_uuid, refDict)
 
         return HttpResponse(
             simplejson.dumps({"error": "no"}),

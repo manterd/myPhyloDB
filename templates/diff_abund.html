@@ -66,6 +66,24 @@
                 }
             });
 
+            $('#button').click(function() {
+                var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
+                var color = prompt("Please enter your desired color:", "#008800");
+                var marker = prompt("Please enter your desired symbol:", "square");
+                var series = chart1.series[index];
+                if (color != '') {
+                    series.options.color = color;
+                    series.options.states.hover.color = color;
+                }
+                if (marker != '') {
+                    series.options.marker.symbol = marker;
+                }
+                if ((color != '') || (marker != '')) {
+                    series.update(series.options);
+                    chart1.redraw();
+                }
+            });
+
             $("#run").show().click(function () {
                 chooseData();
             });
@@ -99,54 +117,63 @@
 
                 if (selTheme == 1) {
                     $("#container-1").empty();
-                    new Highcharts.Chart(catOptions);
+                    chart1 = new Highcharts.Chart(catOptions);
+                    chart1.redraw();
                 }
                 else if (selTheme == 2) {
                     $.getScript('{% static 'highcharts/themes/dark-blue.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 3) {
                     $.getScript('{% static 'highcharts/themes/dark-green.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 4) {
                     $.getScript('{% static 'highcharts/themes/dark-unica.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 5) {
                     $.getScript('{% static 'highcharts/themes/gray.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 6) {
                     $.getScript('{% static 'highcharts/themes/grid.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 7) {
                     $.getScript('{% static 'highcharts/themes/grid-light.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 8) {
                     $.getScript('{% static 'highcharts/themes/sand-signika.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
                 else if (selTheme == 9) {
                     $.getScript('{% static 'highcharts/themes/skies.js' %}', function () {
                         $("#container-1").empty();
-                        new Highcharts.Chart(catOptions);
+                        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                        chart1.redraw();
                     });
                 }
             });
@@ -257,20 +284,52 @@
         function getCatGraphData() {
             var RID = makeGUID();
             startTimer(RID);
-            var array1 = [];
+            var arrayValsCat = [];
+            var arrayIDsCat = [];
+            var key = '';
+            var value = '';
+            var vals = '';
+            var id = '';
+            var ids = '';
             for (var i = 0; i < nodesCat.length; i++) {
-                var key1 = nodesCat[i].data.id;
-                var value1 = nodesCat[i].data.title;
-                if (nodesCat[i].getLevel() == 4) {
-                    var next1 = '"' + key1 + '" : "' + value1 + '"';
-                    array1.push(next1);
+                if (nodesCat[i].getLevel() == 5) {
+                    if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
+                        key = nodesCat[i].data.field;
+                        value = nodesCat[i].data.value;
+                        id = nodesCat[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayValsCat.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDsCat.push(ids);
+                    }
+                }
+                else if (nodesCat[i].getLevel() == 6) {
+                    if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil')) {
+                        key = nodesCat[i].data.field;
+                        value = nodesCat[i].data.value;
+                        id = nodesCat[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayValsCat.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDsCat.push(ids);
+                    }
                 }
             }
-            if (checkDupes(array1)) {
-                var meta = "{" + array1.join(",") + "}";
+
+            if (checkDupes(arrayValsCat)) {
+                var metaValsCat = '';
+                if (nodesCat.length > 0) {
+                    metaValsCat = "{" + arrayValsCat.join(",") + "}";
+                }
+
+                var metaIDsCat = '';
+                if (nodesCat.length > 0) {
+                    metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
+                }
 
                 var myDict = {};
-                myDict['meta'] = meta;
+                myDict['metaVals'] = metaValsCat;
+                myDict['metaIDs'] = metaIDsCat;
                 myDict['sig_only'] = sig1_only;
                 myDict['taxaLevel'] = taxaLevel;
                 myDict['NormVal'] = document.getElementById("NormVal").value;
@@ -331,7 +390,37 @@
 
         function scatter(xAxis, yAxis, series) {
            catOptions = {
-                chart: { renderTo: 'container-1', type: 'scatter', zoomType: 'xy' },
+                chart: {
+                    renderTo: 'container-1',
+                    type: 'scatter',
+                    zoomType: 'xy',
+                    events: {
+                        load: function () {
+                            var chart = this,
+                                    legend = chart.legend;
+                            for (var i = 0, len=legend.allItems.length; i< len; i++) {
+                                (function(i) {
+                                    var item = legend.allItems[i].legendItem;
+                                    var color = chart.series[i].color;
+                                    var symbol = chart.series[i].symbol;
+                                    item.on('mouseover', function (e) {
+                                        $(this).qtip({
+                                            content: {
+                                                text: 'Index: ' + i + '<br>' + 'Color: ' + color + '<br>' + 'Symbol: ' + symbol
+                                            },
+                                            style: {
+                                                classes: 'qtip-jtools'
+                                            },
+                                            show: {
+                                                ready: true
+                                            }
+                                        });
+                                    });
+                                })(i);
+                            }
+                        }
+                    }
+                },
                 colors: ['rgba(0,0,0,.5)', 'rgba(255,0,0,.5)'],
                 title: { text: null },
                 legend: {
@@ -398,7 +487,20 @@
         </table>
     </div>
     <br><br>
-
+    <div style="float: right;">Select chart theme:
+        <select id="theme">
+            <option value="1" selected="selected">default</option>
+            <option value="2">dark-blue</option>
+            <option value="3">dark-green</option>
+            <option value="4">dark-unica</option>
+            <option value="5">gray</option>
+            <option value="6">grid</option>
+            <option value="7">grid-light</option>
+            <option value="8">sand-signika</option>
+            <option value="9">skies</option>
+        </select>
+        &nbsp&nbsp
+    </div>
     <table width="950px" border="2">
         <tr>
             <th colspan="3" style="padding-right: 10px;">GraphData</th>
@@ -448,6 +550,7 @@
             </td>
         </tr>
     </table>
+    <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
 
     <div id="txt-1">
         <h2>Normalization Results:</h2>
@@ -458,15 +561,5 @@
     <h2>nbinomTest Results:</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br><br>
-
-    <!--<br>
-    <h2>Raw Data (Tabular):</h2>
-    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
-
-    <br>
-    <h2>Raw Data (Biom Format):</h2>
-    <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
-    <br>
-    <br>-->
 
 {% endblock my_content%}

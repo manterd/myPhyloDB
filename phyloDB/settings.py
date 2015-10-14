@@ -15,9 +15,15 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'registration',
-    'database',
-    'stats',
+    'south',
+    'phyloDB',
     'config',
+    'database',
+    'database.anova',
+    'database.diffabund',
+    'database.pcoa',
+    'database.spls',
+    'stats',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -54,12 +60,12 @@ DATABASES = {
 }
 
 # Internationalization
-USE_L10N = False
+USE_L10N = True
 
-USE_I18N = False
+USE_I18N = True
 LANGUAGE_CODE = 'en-us'
 
-USE_TZ = False
+USE_TZ = True
 TIME_ZONE = 'America/Denver'
 
 # Static files (CSS, JavaScript, Images)

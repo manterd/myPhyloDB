@@ -22,6 +22,10 @@ a = Analysis(['serve-win.py'],
                 'django.contrib.admin.templatetags.admin_modify',
                 'django.contrib.admin.templatetags.admin_static',
                 'django.contrib.admin.templatetags.admin_urls',
+                'scipy.special._ufuncs_cxx',
+                'scipy.linalg',
+                'scipy.linalg.cython_blas',
+                'scipy.linalg.cython_lapack',
                 ],
              hookspath=None,
              excludes=[
@@ -48,7 +52,6 @@ def Datafiles(*filenames, **kw):
         datafile(filename, strip_path=strip_path)
         for filename in filenames
         if os.path.isfile(filename))
-
 
 db = Datafiles('dbMicrobe')
 

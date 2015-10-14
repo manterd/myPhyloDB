@@ -135,7 +135,7 @@ class MultiFileField(forms.FileField):
     default_error_messages = {
         'min_num': u"Ensure at least %(min_num)s files are uploaded (received %(num_files)s).",
         'max_num': u"Ensure at most %(max_num)s files are uploaded (received %(num_files)s).",
-        'file_size' : u"File: %(uploaded_file_name)s, exceeded maximum upload size."
+        'file_size': u"File: %(uploaded_file_name)s, exceeded maximum upload size."
     }
 
     def __init__(self, *args, **kwargs):

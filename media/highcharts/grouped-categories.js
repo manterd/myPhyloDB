@@ -1,7 +1,7 @@
 /**
- * Grouped Categories v1.0.3 (2014-03-14)
+ * Grouped Categories v1.0.9 (2015-09-02)
  *
- * (c) 2012-2013 Black Label
+ * (c) 2012-2015 Black Label
  *
  * License: Creative Commons Attribution (CC)
  */
@@ -12,6 +12,7 @@ var UNDEFINED = void 0,
     mathMin   = Math.min,
     mathMax   = Math.max,
     merge     = HC.merge,
+    pick      = HC.pick,
 
     // cache prototypes
     axisProto  = HC.Axis.prototype,
@@ -28,7 +29,7 @@ var UNDEFINED = void 0,
 
 
 function Category(obj, parent) {
-	this.userOptions = deepClone(obj);
+  this.userOptions = deepClone(obj);
   this.name = obj.name || obj;
   this.parent = parent;
 
@@ -51,11 +52,6 @@ Category.prototype.toString = function () {
 // Highcharts methods
 function defined(obj) {
   return obj !== UNDEFINED && obj !== null;
-}
-
-// calls parseInt with radix = 10, adds 0.5 to avoid blur
-function pInt(n) {
-  return parseInt(n, 10) - 0.5;
 }
 
 // returns sum of an array
@@ -107,12 +103,20 @@ function addLeaf(out, cat, parent) {
 }
 
 // Pushes part of grid to path
-function addGridPart(path, d) {
+function addGridPart(path, d, width) {
+  // Based on crispLine from HC (#65)
+  if (d[0] === d[2]) {
+    d[0] = d[2] = mathRound(d[0]) - (width % 2 / 2);
+  }
+  if (d[1] === d[3]) {
+    d[1] = d[3] = mathRound(d[1]) + (width % 2 / 2);
+  }
+    
   path.push(
     'M',
-    pInt(d[0]), pInt(d[1]),
+      d[0], d[1],
     'L',
-    pInt(d[2]), pInt(d[3])
+      d[2], d[3]
   );
 }
 
@@ -187,9 +191,11 @@ axisProto.setupGroups = function (options) {
   this.labelsSizes      = [];
   this.labelsGridPath   = [];
   this.tickLength       = options.tickLength || this.tickLength || null;
+  // #66: tickWidth for x axis defaults to 1, for y to 0
+  this.tickWidth        = pick(options.tickWidth, this.isXAxis ? 1 : 0);
   this.directionFactor  = [-1, 1, 1, -1][this.side];
 
-  this.options.lineWidth = options.lineWidth || 1;
+  this.options.lineWidth = pick(options.lineWidth, 1);
 };
 
 
@@ -229,6 +235,7 @@ axisProto.render = function () {
       d       = axis.labelsGridPath,
       i       = options.drawHorizontalBorders === false ? depth+1 : 0,
       offset  = axis.opposite ? (horiz ? top : right) : (horiz ? bottom : left),
+      tickWidth = axis.tickWidth,
       part;
 
   if (axis.userTickLength)
@@ -238,9 +245,10 @@ axisProto.render = function () {
   if (!grid) {
     grid = axis.labelsGrid = axis.chart.renderer.path()
       .attr({
-        strokeWidth: options.lineWidth, // < 4.0.3
-        'stroke-width': options.lineWidth, // 4.0.3+ #30
-        stroke: options.lineColor
+        // #58: use tickWidth/tickColor instead of lineWidth/lineColor: 
+        strokeWidth: tickWidth, // < 4.0.3
+        'stroke-width': tickWidth, // 4.0.3+ #30
+        stroke: options.tickColor
       })
       .add(axis.axisGroup);
   }
@@ -253,7 +261,7 @@ axisProto.render = function () {
       [left, offset, right, offset] :
       [offset, top, offset, bottom];
 
-    addGridPart(d, part);
+    addGridPart(d, part, tickWidth);
     i++;
   }
 
@@ -302,7 +310,7 @@ axisProto.cleanGroups = function () {
       n;
 
   for (n in ticks)
-    if (ticks[n].parent);
+    if (ticks[n].parent)
       delete ticks[n].parent;
 
   walk(this.categoriesTree, 'categories', function (group) {
@@ -325,11 +333,21 @@ axisProto.cleanGroups = function () {
 // keeps size of each categories level
 axisProto.groupSize = function (level, position) {
   var positions = this.labelsSizes,
-      direction = this.directionFactor;
-
+      direction = this.directionFactor,
+      groupedOptions = this.options.labels.groupedOptions ? this.options.labels.groupedOptions[level-1] : false,
+      userXY = 0;
+      
+  if(groupedOptions) {
+  	if(direction == -1) {
+  		userXY = groupedOptions.x ? groupedOptions.x : 0;
+  	} else {
+  		userXY = groupedOptions.y ? groupedOptions.y : 0;
+  	}
+  }  	
+  
   if (position !== UNDEFINED)
-    positions[level] = mathMax(positions[level] || 0, position + 10);
-
+    positions[level] = mathMax(positions[level] || 0, position + 10 + Math.abs(userXY));
+  
   if (level === true)
     return sum(positions) * direction;
 
@@ -355,12 +373,18 @@ tickProto.addLabel = function () {
       !(category = this.axis.categories[this.pos]))
     return;
 
-  // set label text
-  if (category.name)
-    this.label.attr('text', category.name);
+  // set label text - but applied after formatter #46
+  if (category.name && this.label)
+    this.label.attr('text', this.axis.labelFormatter.call({
+			axis: this.axis,
+			chart: this.axis.chart,
+			isFirst: this.isFirst,
+			isLast: this.isLast,
+			value: category.name
+		}));
 
   // create elements for parent categories
-  if (this.axis.isGrouped)
+  if (this.axis.isGrouped && this.axis.options.labels.enabled)
     this.addGroupedLabels(category);
 };
 
@@ -373,7 +397,7 @@ tickProto.addGroupedLabels = function (category) {
       useHTML = options.useHTML,
       css     = options.style,
       userAttr= options.groupedOptions,
-      attr    = { align: 'center' , rotation: options.rotation },
+      attr    = { align: 'center' , rotation: options.rotation, x: 0, y: 0 },
       size    = axis.horiz ? 'height' : 'width',
       depth   = 0,
       label;
@@ -387,6 +411,7 @@ tickProto.addGroupedLabels = function (category) {
       	  hasOptions = userAttr && userAttr[depth-1],
      	  mergedAttrs =  hasOptions ? merge(attr, userAttr[depth-1] ) : attr,
      	  mergedCSS = hasOptions && userAttr[depth-1].style ? merge(css, userAttr[depth-1].style ) : css;
+     	  
       label = chart.renderer.text(name, 0, 0, useHTML)
         .attr(mergedAttrs)
         .css(mergedCSS)
@@ -398,6 +423,10 @@ tickProto.addGroupedLabels = function (category) {
       tick.leaves = category.leaves;
       tick.visible = this.childCount;
       tick.label = label;
+      tick.labelOffsets = {
+      		x: mergedAttrs.x,
+      		y: mergedAttrs.y
+      };
 
       // link tick with category
       category.tick = tick;
@@ -439,6 +468,7 @@ tickProto.render = function (index, old, opacity) {
       grid    = axis.labelsGridPath,
       size    = axis.groupSize(0),
       tickLen = axis.tickLength || size,
+      tickWidth = axis.tickWidth,
       factor  = axis.directionFactor,
       xy      = tickPosition(tick, tickPos),
       start   = horiz ? xy.y : xy.x,
@@ -453,20 +483,21 @@ tickProto.render = function (index, old, opacity) {
 
   // render grid for "normal" categories (first-level), render left grid line only for the first category
   if (isFirst) {
+  	
     gridAttrs = horiz ?
       [axis.left, xy.y, axis.left, xy.y + axis.groupSize(true)] :
       axis.isXAxis ?
         [xy.x, axis.top, xy.x + axis.groupSize(true), axis.top] :
         [xy.x, axis.top + axis.len, xy.x + axis.groupSize(true), axis.top + axis.len];
 
-    addGridPart(grid, gridAttrs);
+    addGridPart(grid, gridAttrs, tickWidth);
   }
 
     
 	if(horiz && axis.left < xy.x) {
-			addGridPart(grid, [xy.x, xy.y, xy.x, xy.y + size]);
+			addGridPart(grid, [xy.x, xy.y, xy.x, xy.y + size], tickWidth);
 	} else if(!horiz && axis.top < xy.y){
-			addGridPart(grid, [xy.x, xy.y, xy.x + size, xy.y]);
+			addGridPart(grid, [xy.x, xy.y, xy.x + size, xy.y], tickWidth);
 	}
 
   size = start + size;
@@ -483,18 +514,21 @@ tickProto.render = function (index, old, opacity) {
 
 
   while (group = group.parent) {
-  	var fix = fixOffset(group, treeCat, tick);
+  	var fix = fixOffset(group, treeCat, tick),
+  			userX = group.labelOffsets.x,
+  			userY = group.labelOffsets.y;
   	
     minPos  = tickPosition(tick, mathMax(group.startAt - 1, min - 1));
     maxPos  = tickPosition(tick, mathMin(group.startAt + group.leaves - 1 - fix, max));
-    bBox    = group.label.getBBox();
+    bBox    = group.label.getBBox(true);
     lvlSize = axis.groupSize(depth);
+    
     attrs = horiz ? {
-      x: (minPos.x + maxPos.x) / 2,
-      y: size + lvlSize / 2 + baseLine - bBox.height / 2 - 4
+      x: (minPos.x + maxPos.x) / 2 + userX,
+      y: size + lvlSize / 2 + baseLine - bBox.height / 2 - 4 + userY / 2
     } : {
-			x: size + lvlSize / 2,
-			y: (minPos.y + maxPos.y - bBox.height) / 2  + baseLine
+			x: size + lvlSize / 2 + userX,
+			y: (minPos.y + maxPos.y - bBox.height) / 2  + baseLine + userY
 		};
 
 		if(!isNaN(attrs.x) && !isNaN(attrs.y)){ 
@@ -502,9 +536,9 @@ tickProto.render = function (index, old, opacity) {
 	
 			if (grid) {
 				if(horiz && axis.left < maxPos.x) {
-						addGridPart(grid, [maxPos.x, size, maxPos.x, size + lvlSize]);
+						addGridPart(grid, [maxPos.x, size, maxPos.x, size + lvlSize], tickWidth);
 				} else if(!horiz && axis.top < maxPos.y){
-						addGridPart(grid, [size, maxPos.y, size + lvlSize, maxPos.y]);
+						addGridPart(grid, [size, maxPos.y, size + lvlSize, maxPos.y], tickWidth);
 				}
 			}
     }

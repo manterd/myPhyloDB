@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>Multivariate-sPLS</title>
+{% endblock pagetitle %}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% else %}
+        <p>User logged in as:<br>&nbsp;guest</p>
+    {% endif %}
+{% endblock user %}
+
+{% block menu_item %}
+    <input id="run" name="run" type="submit" value="Run Analysis!"/>
+{% endblock menu_item %}
+
+{% block javascript %}
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var NormMeth = 1, selTheme = 0;
+        var nodesQuant = "", taxaLevel = 6;
+        var chart1 = {};
+        var catOptions = {};
+        var remove = 0;
+        var refresh = 0;
+
+        $(function () {
+            $("#tree_metaQuant").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: '/getSampleQuantTree/',
+                    dataType: 'jsonp',
+                    data: {}
+                },
+                onLazyRead: function(node) {
+                    node.appendAjax({
+                        url: '/getSampleQuantTreeChildren/',
+                        data: {pType: node.data.tooltip, field: node.data.title},
+                        success: function(node) {
+                            if (node.childList == undefined) {
+                                alert('No samples are available for this variable!');
+                            }
+                        }
+                    });
+                },
+                onSelect: function(flag, node) {
+                    if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            node.select(false);
+                            node.select(true);
+                        });
+                    }
+                    nodesQuant = node.tree.getSelectedNodes();
+                    $("#run").css("background-color", "lightgray");
+                }
+            });
+
+            $("#normalize").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#selectall").change(function () {
+                taxaLevel = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#NormMeth").change(function () {
+                NormMeth = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#NormVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#Iters").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#MinVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#run").click(function () {
+                if (nodesQuant == '') {
+                    alert("Please select at least one quantitative variable!");
+                    return false;
+                }
+                //chooseData();
+                $("#run").css("background-color", "yellow");
+                getGraphData();
+            });
+
+            $("#clearMeta").click(function(){
+                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                 $("#run").css("background-color", "lightgray");
+            });
+
+            $("#remove").change(function () {
+                if ( document.getElementById('remove').checked ) {
+                    remove = 1
+                } else {
+                    remove = 0
+                }
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+        });
+
+        function updateStatus(RID) {
+            $.ajax({
+                url: '/statusSPLS/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    $('#container-1').empty().append(stage);
+                }
+            });
+        }
+
+        function startTimer(RID) {
+            refresh = setInterval(function(){updateStatus(RID);}, 1000);
+            return refresh;
+        }
+
+        function stopTimer() {
+            clearInterval(refresh);
+
+        }
+
+        function chooseDisplay() {
+            if (NormMeth==1) {
+                $("#NormRow").hide();
+                $("#NormRow-off").show();
+                $("#MinRow").hide();
+                $("#MinRow-off").show();
+                $("#IterRow").hide();
+                $("#IterRow-off").show();
+            }
+            if ((NormMeth == 2) || (NormMeth == 3)) {
+                $("#NormRow").show();
+                $("#NormRow-off").hide();
+                $("#MinRow").hide();
+                $("#MinRow-off").show();
+                $("#IterRow").show();
+                $("#IterRow-off").hide();
+            }
+            if ((NormMeth == 4) || (NormMeth == 5) || (NormMeth == 6)) {
+                $("#NormRow").hide();
+                $("#NormRow-off").show();
+                $("#MinRow").show();
+                $("#MinRow-off").hide();
+                $("#IterRow").hide();
+                $("#IterRow-off").show();
+            }
+        }
+
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
+        function getGraphData() {
+            var RID = makeGUID();
+            startTimer(RID);
+            var arrayVals = [];
+            var arrayIDs = [];
+            var key = '';
+            var value = '';
+            var vals = '';
+            var id = '';
+            var ids = '';
+            for (var i = 0; i < nodesQuant.length; i++) {
+                if (nodesQuant[i].getLevel() == 5) {
+                    if ((nodesQuant[i].data.table == 'mimark') || (nodesQuant[i].data.table == 'user')) {
+                        key = nodesQuant[i].data.field;
+                        value = nodesQuant[i].data.value;
+                        id = nodesQuant[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayVals.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDs.push(ids);
+                    }
+                }
+                else if (nodesQuant[i].getLevel() == 6) {
+                    if ((nodesQuant[i].data.table == 'human_associated') || (nodesQuant[i].data.table == 'soil')) {
+                        key = nodesQuant[i].data.field;
+                        value = nodesQuant[i].data.value;
+                        id = nodesQuant[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayVals.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDs.push(ids);
+                    }
+                }
+            }
+
+            var metaQuant = '';
+            if (nodesQuant.length > 0) {
+                metaQuant = "{" + arrayVals.join(",") + "}";
+            }
+
+            var metaIDs = '';
+            if (nodesQuant.length > 0) {
+                metaIDs = "{" + arrayIDs.join(",") + "}";
+            }
+
+            var myDict = {};
+            myDict['metaQuant'] = metaQuant;
+            myDict['metaIDs'] = metaIDs;
+            myDict['taxa'] = taxaLevel;
+            myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['Iters'] = document.getElementById("Iters").value;
+            myDict['remove'] = remove;
+            myDict['NormMeth'] = NormMeth;
+            myDict['MinSize'] = document.getElementById("MinVal").value;
+            myDict['RID'] = RID;
+
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                url: '/getSPLSData/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: jsonDict
+                },
+                success: function(data) {
+                    stopTimer(refresh);
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var series = obj['series'];
+                    if (series == undefined) {
+                        $('#container-1').empty().append('No significant regresssions!');
+                    } else {
+                        var xAxis = obj['xAxis'];
+                        var yAxis = obj['yAxis'];
+                        heatmap(xAxis, yAxis, series);
+
+                        var res_table = obj['res_table'];
+                        $('#res_table').empty().append(res_table).find('.table').DataTable({
+                            "jQueryUI": true,
+                            "sDom": 'T<"clear">lfrtip',
+                            "oTableTools": {
+                                "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                            },
+                            "bSort": true,
+                            "scrollX": true
+                        }).draw();
+
+                        var pred_table = obj['pred_table'];
+                        $('#pred_table').empty().append(pred_table).find('.table').DataTable({
+                            "jQueryUI": true,
+                            "sDom": 'T<"clear">lfrtip',
+                            "oTableTools": {
+                                "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
+                            },
+                            "bSort": true,
+                            "scrollX": true
+                        }).draw();
+                    }
+
+                    var text = obj['text'];
+                    $('#text-1').val(text);
+
+                    $("#run").css("background-color", "green");
+                }
+            });
+        }
+
+        function heatmap(xAxis, yAxis, series) {
+            catOptions = {
+                chart: {
+                    renderTo: 'container-1',
+                    type: 'heatmap',
+                    height: parseFloat(yAxis.categories.length)*20+250,
+                    width: parseFloat(xAxis.categories.length)*16+200
+                },
+                title: { text: null },
+                legend: {
+                    itemStyle: {
+                        fontSize: '7px',
+                        font: '7pt Trebuchet MS, Verdana, sans-serif'
+                    },
+                    align: 'right',
+                    verticalAlign: 'top',
+                    layout: 'vertical',
+                    x: 0,
+                    y: 30
+                },
+                xAxis: xAxis,
+                yAxis: yAxis,
+                colorAxis: {
+                    stops: [
+                    [0, '#c4463a'],
+                    [0.5, '#ffffff'],
+                    [1, '#3060cf']
+                    ]
+                },
+                tooltip: {
+                    formatter: function () {
+                        return 'Taxa: ' + this.series.xAxis.categories[this.point.x] +
+                            '<br>Coeff: ' + this.point.value + '<br>' +
+                                this.series.yAxis.categories[this.point.y];
+                    }
+                },
+                series: series,
+                credits: { enabled: false }
+            };
+            chart1 = new Highcharts.Chart(catOptions);
+        }
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <br>
+    <!-- tree tables -->
+    <div>
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <th>Select Meta Data:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree_metaQuant"></div>
+            </td>
+        </tr>
+    </table>
+
+    <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+        <tr>
+            <th bgcolor="white"></th>
+            <th bgcolor="white"></th>
+            <th bgcolor="white"></th>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="selectall">
+                    <option value="1">Phyla</option>
+                    <option value="2">Classes</option>
+                    <option value="3">Orders</option>
+                    <option value="4">Families</option>
+                    <option value="5">Genera</option>
+                    <option value="6" selected="selected">Species</option>
+                </select>
+                &nbsp<-- Taxa Level selected
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+    </table>
+    </div>
+    <br>
+
+    <div id="stage"></div>
+    <br><br>
+
+    <table width="950px" border="2">
+        <tr>
+            <th colspan="3" style="padding-right: 10px;">GraphData</th>
+        </tr>
+        <tr>
+            <td style="width: 33%; text-align: left"> </td>
+            <td style="width: 34%; text-align: center">
+                Normalization method:
+                <select id="NormMeth">
+                    <option value="1" selected="selected">None</option>
+                    <option value="2">Rarefaction (remove)</option>
+                    <option value="3">Rarefaction (keep)</option>
+                    <option value="4">Proportion</option>
+                    <option value="5">DESeq2</option>
+                    <option value="6">DESeq2+VS</option>
+                </select>
+            </td>
+            <td style="width: 33%; text-align: left"> </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td id="MinRow" style="display: none; text-align: center">
+                Minimum sample size:
+                <input type="text" id="MinVal" value="1000"/>
+            </td>
+            <td id="NormRow-off"></td>
+            <td id="NormRow" style="display: none; text-align: center">
+                Subsample size:
+                <input type="text" id="NormVal" value="median"/>
+            </td>
+            <td id="MinRow-off"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td id="IterRow-off"></td>
+            <td id="IterRow" style="display: none; text-align: center">
+                Iterations:
+                <input style="background-color: white" type="text" id="Iters" value="1"/>
+            </td>
+            <td></td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <div id="container-1" style="height: 400px; width:950px; overflow-x: auto">No Data has been selected!</div>
+            </td>
+        </tr>
+    </table>
+
+    <div id="txt-1">
+        <h2>Test Results:</h2>
+        <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
+        <br>
+    </div>
+    <br>
+
+    <h2>sPLS Coefficients:</h2>
+    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
+    <br>
+    <br>
+    <h2>Observed & Predicted Data:</h2>
+    <div id="pred_table" style="width: 950px; overflow-x: auto;"></div>
+    <br>
+    <br>
+{% endblock my_content%}

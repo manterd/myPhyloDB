@@ -17,6 +17,10 @@
     <link rel='stylesheet' type='text/css' href="{% static "jquery-ui/jquery-ui.css" %}">
     <script src="{% static "jquery-ui/jquery-ui.js" %}" type="text/javascript"></script>
 
+    <!-- jquery qtip2 -->
+    <link type="text/css" rel="stylesheet" href="{% static "jquery/jquery.qtip.min.css" %}" />
+    <script type="text/javascript" src="{% static "jquery/jquery.qtip.min.js" %}"></script>
+
     <!-- dynatree -->
     <script src="{% static "dynatree/jquery.cookie.js" %}" type="text/javascript"></script>
     <link rel='stylesheet' type='text/css' href="{% static "dynatree/src/skin/ui.dynatree.css" %}">
@@ -34,11 +38,27 @@
     <!-- high charts -->
     <script src="{% static "highcharts/highcharts.js" %}" type="text/javascript"></script>
     <script src="{% static "highcharts/exporting.js" %}" type="text/javascript"></script>
+    <script src="{% static "highcharts/grouped-categories.js" %}" type="text/javascript"></script>
+    <script src="{% static "highcharts/heatmap.js" %}" type="text/javascript"></script>
 
     {% block javascript %}{% endblock javascript %}
 
     <script type="text/javascript">
         $(function () {
+
+            $('[title]').qtip({
+                style: {
+                    classes: 'qtip-jools'
+                },
+                position: {
+                    adjust: {
+                        screen: true
+                    },
+                    my: 'top left',
+                    at: 'bottom center'
+                }
+            });
+
             $.ajax({
                 type: 'GET',
                 url: '/getCookie/',
@@ -76,7 +96,7 @@
         </table>
     </div>
 
-    <div id="Menu" style="background-color: white; height: 450px">
+    <div id="Menu" style="background-color: white; height: 500px">
         {% block user %}{% endblock user %}
         <div class="menuTitle">
            Menu
@@ -85,14 +105,15 @@
         <div class="menuItems">
             <hr><p><em><strong>General Info</strong></em></p><hr>
 
-            <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
             {% if user.is_active %}
-                <a class="Offmouse" href="{% url "logout_user" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Logout current user">Logout</li></a>
+                <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
+                <a class="Offmouse" href="/accounts/logout/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Logout current user">Logout</li></a>
             {% else %}
-                <a class="Offmouse" href="{% url "login_user" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Login as a registered user.">Login</li></a>
+                <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
+                <a class="Offmouse" href="/accounts/login/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Login as a registered user.">Login</li></a>
             {% endif %}
 
-            {% if user.is_staff %}
+            {% if user.is_superuser %}
                 <a class="Offmouse" href="/admin/" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add/remove users">Manage Users</li></a>
             {% endif %}
             <br>
@@ -107,7 +128,10 @@
             {% endif %}
 
             <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Select projects/samples for analysis.">Select Data</li></a>
-            <br>
+            <div id="link2" style="display: none;" >
+                <a class="Offmouse" href="{% url "export" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Export Data</li></a>
+            </div>
+                <br>
 
             <div>
                 <hr><p><em><strong>Taxonomy</strong></em></p><hr>
@@ -122,7 +146,7 @@
 
             <p id="link1" style="display: none;"><strong>Univariate</strong></p>
             <div id="link2" style="display: none;" >
-                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run ANOVA or Regression analyses." >ANOVA/Regr</li></a>
+                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run ANCOVA/GLM analyses." >ANCOVA/GLM</li></a>
             </div>
             <br>
 
@@ -130,6 +154,7 @@
             <div id="link4" style="display: none;" >
                 <a class="Offmouse" href="{% url "DiffAbund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Differential Abundance analysis">Diff Abund</li></a>
                 <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Principal Coordinates Analysis">PCoA</li></a>
+                <a class="Offmouse" href="{% url "spls" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Sparse Partial Least Squares (sPLS) Regression">sPLS</li></a>
             </div>
             <br>
 
