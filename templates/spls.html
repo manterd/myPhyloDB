@@ -26,7 +26,7 @@
     </style>
 
     <script type="text/javascript">
-        var NormMeth = 1, selTheme = 0;
+        var NormMeth = 3, selTheme = 0;
         var nodesQuant = "", taxaLevel = 6;
         var chart1 = {};
         var catOptions = {};
@@ -45,7 +45,7 @@
                 onLazyRead: function(node) {
                     node.appendAjax({
                         url: '/getSampleQuantTreeChildren/',
-                        data: {pType: node.data.tooltip, field: node.data.title},
+                        data: {pType: node.data.pType, field: node.data.title},
                         success: function(node) {
                             if (node.childList == undefined) {
                                 alert('No samples are available for this variable!');
@@ -98,13 +98,7 @@
             });
 
             $("#run").click(function () {
-                if (nodesQuant == '') {
-                    alert("Please select at least one quantitative variable!");
-                    return false;
-                }
-                //chooseData();
-                $("#run").css("background-color", "yellow");
-                getGraphData();
+                chooseData();
             });
 
             $("#clearMeta").click(function(){
@@ -176,6 +170,19 @@
                 $("#MinRow-off").hide();
                 $("#IterRow").hide();
                 $("#IterRow-off").show();
+            }
+        }
+
+        function chooseData() {
+            if (nodesQuant == "") {
+                $("#container-1").empty().append('Please choose a quantitative variable(s)!');
+                $("#text-1").val('No data selected');
+                $("#text-raw").val('No data selected');
+                $("#run").css("background-color", "red");
+            } else {
+                $("#run").css("background-color", "yellow");
+                $("#container-1").empty().append('Analysis is running...please be patient');
+                getGraphData();
             }
         }
 
@@ -370,7 +377,7 @@
                     <option value="5">Genera</option>
                     <option value="6" selected="selected">Species</option>
                 </select>
-                &nbsp<-- Taxa Level selected
+                &nbsp<-- Selected taxa level
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -390,9 +397,9 @@
             <td style="width: 34%; text-align: center">
                 Normalization method:
                 <select id="NormMeth">
-                    <option value="1" selected="selected">None</option>
+                    <option value="1">None</option>
                     <option value="2">Rarefaction (remove)</option>
-                    <option value="3">Rarefaction (keep)</option>
+                    <option value="3" selected="selected">Rarefaction (keep)</option>
                     <option value="4">Proportion</option>
                     <option value="5">DESeq2</option>
                     <option value="6">DESeq2+VS</option>
@@ -406,8 +413,8 @@
                 Minimum sample size:
                 <input type="text" id="MinVal" value="1000"/>
             </td>
-            <td id="NormRow-off"></td>
-            <td id="NormRow" style="display: none; text-align: center">
+            <td id="NormRow-off" style="display: none;"></td>
+            <td id="NormRow" style="text-align: center">
                 Subsample size:
                 <input type="text" id="NormVal" value="median"/>
             </td>
@@ -415,10 +422,10 @@
         </tr>
         <tr>
             <td></td>
-            <td id="IterRow-off"></td>
-            <td id="IterRow" style="display: none; text-align: center">
+            <td id="IterRow-off" style="display: none;"></td>
+            <td id="IterRow" style="text-align: center">
                 Iterations:
-                <input style="background-color: white" type="text" id="Iters" value="1"/>
+                <input style="background-color: white" type="text" id="Iters" value="10"/>
             </td>
             <td></td>
         </tr>

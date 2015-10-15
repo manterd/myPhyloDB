@@ -26,7 +26,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, DepVar = 1, NormMeth = 1, selTheme = 0, i = 0;
+        var button1 = 1, DepVar = 1, NormMeth = 3, selTheme = 0, i = 0;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
@@ -46,7 +46,7 @@
                 onLazyRead: function (node) {
                     node.appendAjax({
                         url: '/getSampleCatTreeChildren/',
-                        data: {pType: node.data.tooltip, field: node.data.title},
+                        data: {pType: node.data.pType, field: node.data.title},
                         success: function (node) {
                             if (node.childList == undefined) {
                                 alert('No samples are available for this variable!');
@@ -77,7 +77,7 @@
                 onLazyRead: function (node) {
                     node.appendAjax({
                         url: '/getSampleQuantTreeChildren/',
-                        data: {pType: node.data.tooltip, field: node.data.title},
+                        data: {pType: node.data.pType, field: node.data.title},
                         success: function (node) {
                             if (node.childList == undefined) {
                                 alert('No samples are available for this variable!');
@@ -139,6 +139,41 @@
                 onClick: function () {
                     selectAll = 0;
                     $("#selectall").val(0);
+                }
+            });
+
+            var $button = $('#hide');
+            $button.click(function() {
+                if (button1 == 1) {
+                    var series = chart1.series[0];
+                    if (series.visible) {
+                        $(chart1.series).each(function(){
+                            this.setVisible(false, false);
+                        });
+                        chart1.redraw();
+                        $button.html('Show series');
+                    } else {
+                        $(chart1.series).each(function(){
+                            this.setVisible(true, false);
+                        });
+                        chart1.redraw();
+                        $button.html('Hide series');
+                    }
+                } else {
+                    var series = chart2.series[0];
+                    if (series.visible) {
+                        $(chart2.series).each(function(){
+                            this.setVisible(false, false);
+                        });
+                        chart2.redraw();
+                        $button.html('Show series');
+                    } else {
+                        $(chart2.series).each(function(){
+                            this.setVisible(true, false);
+                        });
+                        chart2.redraw();
+                        $button.html('Hide series');
+                    }
                 }
             });
 
@@ -234,7 +269,6 @@
             $("#button1").change(function () {
                 button1 = $(this).val();
                 chooseDisplay();
-                $('#res_table').empty();
                 $("#run").css("background-color", "lightgray");
             });
 
@@ -531,48 +565,49 @@
                 return;
             }
 
-
-            if ((nodesCat != "") && (((nodesTaxa != "") || (selectAll != 0))) && (button1 == 1)) {
-                $("#run").css("background-color", "yellow");
-                $("#container-1").empty().append('Analysis is running...please be patient');
-                getCatGraphData();
+            if (button1 == 1) {
+                if ( (nodesCat != "") && ((nodesTaxa != "") || (selectAll != 0)) ) {
+                    $("#run").css("background-color", "yellow");
+                    $("#container-1").empty().append('Analysis is running...please be patient');
+                    getCatGraphData();
+                } else if ( (nodesCat == "") && ((nodesTaxa != "") || (selectAll != 0)) ) {
+                    $("#container-1").empty().append('Please also choose at least one categorical variable(s)!');
+                    $("#text-1").val('No data selected');
+                    $("#text-raw").val('No data selected');
+                    $("#run").css("background-color", "red");
+                } else if ( (nodesCat != "") && ((nodesTaxa == "") || (selectAll == 0)) ) {
+                    $("#container-1").empty().append('Please also choose a taxa level(s)!');
+                    $("#text-1").val('No data selected');
+                    $("#text-raw").val('No data selected');
+                    $("#run").css("background-color", "red");
+                } else if ( (nodesCat == "") && ((nodesTaxa == "") && (selectAll == 0)) ) {
+                    $("#container-1").empty().append('Please also choose your categorical variable(s) and taxa level(s)!');
+                    $("#text-1").val('No data selected');
+                    $("#text-raw").val('No data selected');
+                    $("#run").css("background-color", "red");
+                }
             }
-            else if ((nodesQuant != "") && (((nodesTaxa != "") || (selectAll != 0))) && (button1 == 2)) {
-                $("#run").css("background-color", "yellow");
-                $("#container-2").empty().append('Analysis is running...please be patient');
-                getQuantGraphData();
-            }
-            else if ((nodesCat == "") && (nodesTaxa == "") && (selectAll == 0) && (button1 == 1)) {
-                $("#container-1").empty().append('Please choose your meta variable(s) and taxa level(s)!');
-                $("#text-1").val('No data selected');
-                $("#text-raw").val('No data selected');
-                $("#run").css("background-color", "red");
-            }
-            else if ((nodesQuant == "") && (nodesTaxa == "") && (selectAll == 0) && (button1 == 2)) {
-                $("#container-2").empty().append('Please choose your meta variable(s) and taxa level(s)!');
-                $("#text-2").val('No data selected');
-                $("#text-raw").val('No data selected');
-                $("#run").css("background-color", "red");
-            }
-            else if ((nodesCat != "") && (nodesTaxa == "") && (selectAll == 0) && (button1 == 1)) {
-                $("#container-1").empty().append('Please also choose your taxa level(s)!');
-                $("#text-1").val('No data selected');
-                $("#text-raw").val('No data selected');
-                $("#run").css("background-color", "red");
-            }
-            else if ((nodesQuant != "") && (nodesTaxa == "") && (selectAll == 0) && (button1 == 2)) {
-                $("#container-2").empty().append('Please also choose your taxa level(s)!');
-                $("#run").css("background-color", "red");
-            }
-            else if ((nodesCat == "") && (nodesTaxa != "") && (button1 == 1)) {
-                $("#container-1").empty().append('Please also choose your meta variable(s)!');
-                $("#text-1").val('No data selected');
-                $("#text-raw").val('No data selected');
-                $("#run").css("background-color", "red");
-            }
-            else if ((nodesQuant == "") && (nodesTaxa != "") && (button1 == 2)) {
-                $("#container-2").empty().append('Please select at least one quantitative variable(s)!');
-                $("#run").css("background-color", "red");
+            if (button1 == 2) {
+                if ( (nodesQuant != "") && ((nodesTaxa != "") || (selectAll != 0)) ) {
+                    $("#run").css("background-color", "yellow");
+                    $("#container-2").empty().append('Analysis is running...please be patient');
+                    getQuantGraphData();
+                } else if ( (nodesQuant == "") && ((nodesTaxa != "") || (selectAll != 0)) ) {
+                    $("#container-2").empty().append('Please also choose at least one quantitative variable(s)!');
+                    $("#text-2").val('No data selected');
+                    $("#text-raw").val('No data selected');
+                    $("#run").css("background-color", "red");
+                } else if ( (nodesQuant != "") && ((nodesTaxa == "") || (selectAll == 0)) ) {
+                    $("#container-2").empty().append('Please also choose a taxa level(s)!');
+                    $("#text-2").val('No data selected');
+                    $("#text-raw").val('No data selected');
+                    $("#run").css("background-color", "red");
+                } else if ( (nodesQuant == "") && ((nodesTaxa == "") && (selectAll == 0)) ) {
+                    $("#container-1").empty().append('Please also choose your quantitative variable(s) and taxa level(s)!');
+                    $("#text-2").val('No data selected');
+                    $("#text-raw").val('No data selected');
+                    $("#run").css("background-color", "red");
+                }
             }
         }
 
@@ -769,20 +804,6 @@
                         var text = data['text'];
                         $('#text-1').val(text);
 
-                        var res_table = data['res_table'];
-                        $('#res_table').empty().append(res_table).find('.table').DataTable({
-                            "jQueryUI": true,
-                            "sDom": 'T<"clear">lfrtip',
-                            "oTableTools": {
-                                "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
-                            },
-                            "bSort": true,
-                            "scrollX": true
-                        }).draw();
-
-                        var biome = data['biome'];
-                        $("#biome-text").empty().append(biome);
-
                         $("#run").css("background-color", "green");
                     }
                 });
@@ -946,20 +967,6 @@
                     var text = data['text'];
                     $('#text-2').val(text);
 
-                    var res_table = data['res_table'];
-                    $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        "jQueryUI": true,
-                        "sDom": 'T<"clear">lfrtip',
-                        "oTableTools": {
-                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
-                        },
-                        "bSort": true,
-                        "scrollX": true
-                    }).draw();
-
-                    var biome = data['biome'];
-                    $("#biome-text").empty().append(biome);
-
                     $("#run").css("background-color", "green");
                 }
             });
@@ -1110,24 +1117,6 @@
 
 {% block my_content %}
     <br>
-    <span>
-        Select data type:
-        <select id="button1">
-            <option value="1" selected="selected">ANCOVA</option>
-            <option value="2" >GLM</option>
-        </select>
-        &nbsp &nbsp
-        Select all taxa:
-        <select id="selectall">
-            <option value="0" selected="selected">Off</option>
-            <option value="2">Phyla</option>
-            <option value="3">Classes</option>
-            <option value="4">Orders</option>
-            <option value="5">Families</option>
-            <option value="6">Genera</option>
-            <option value="7">Species</option>
-        </select>
-    </span>
     <!-- tree tables -->
     <div>
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
@@ -1148,6 +1137,34 @@
             <tr>
                 <td style="padding-right: 10px; vertical-align: top">
                     <div id="tree_taxa"></div>
+                </td>
+            </tr>
+        </table>
+        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+            <tr>
+                <th bgcolor="white"></th>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <select id="button1">
+                        <option value="1" selected="selected">ANCOVA</option>
+                        <option value="2" >GLM</option>
+                    </select>
+                    &nbsp<-- Selected test
+                </td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <select id="selectall">
+                        <option value="0" selected="selected">Off</option>
+                        <option value="2">Phyla</option>
+                        <option value="3">Classes</option>
+                        <option value="4">Orders</option>
+                        <option value="5">Families</option>
+                        <option value="6">Genera</option>
+                        <option value="7">Species</option>
+                    </select>
+                    &nbsp<-- Selected taxa level
                 </td>
             </tr>
         </table>
@@ -1192,9 +1209,9 @@
             <td style="width: 34%; text-align: center">
                 Normalization method:
                 <select id="NormMeth">
-                    <option value="1" selected="selected">None</option>
+                    <option value="1">None</option>
                     <option value="2">Rarefaction (remove)</option>
-                    <option value="3">Rarefaction (keep)</option>
+                    <option value="3" selected="selected">Rarefaction (keep)</option>
                     <option value="4">Proportion</option>
                     <option value="5">DESeq2</option>
                 </select>
@@ -1203,9 +1220,9 @@
             </td>
         </tr>
         <tr>
-            <td id="NormRow-off"></td>
+            <td id="NormRow-off" style="display: none;"></td>
             <td id="MinRow-off"></td>
-            <td id="NormRow" style="display: none; text-align: center">
+            <td id="NormRow" style="text-align: center">
                 Subsample size:
                 <input style="background-color: white" type="text" id="NormVal" value="median"/>
             </td>
@@ -1216,11 +1233,11 @@
             <td id="FdrRow-off"></td>
         </tr>
         <tr>
-            <td id="IterRow-off"></td>
+            <td id="IterRow-off" style="display: none;"></td>
             <td id="MinRow-off"></td>
-            <td id="IterRow" style="display: none; text-align: center">
+            <td id="IterRow" style="text-align: center">
                 Iterations:
-                <input style="background-color: white" type="text" id="Iters" value="1"/>
+                <input style="background-color: white" type="text" id="Iters" value="10"/>
             </td>
             <td id="FdrRow-off"></td>
         </tr>
@@ -1231,7 +1248,7 @@
             </td>
         </tr>
     </table>
-    <!--<button id="button">Hide all series</button>-->
+    <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
     <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
 
     <div id="txt-1">
@@ -1240,14 +1257,6 @@
         <textarea style="width: 950px; display: none" wrap="off" id="text-2" rows="20">No data selected</textarea>
         <br>
     </div>
-
-    <br>
-    <h2>Raw Data (Tabular):</h2>
-    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
-
-    <br>
-    <h2>Raw Data (Biom Format):</h2>
-    <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
     <br>
     <br>
 {% endblock my_content%}

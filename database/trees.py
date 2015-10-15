@@ -84,63 +84,63 @@ def getSampleCatTree(request):
 
     list = ['sample_name', 'organism', 'collection_date', 'depth', 'elev', 'seq_platform', 'seq_gene', 'seq_gene_region', 'seq_for_primer', 'seq_rev_primer', 'env_biome', 'env_feature', 'env_material', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot']
     for i in range(len(list)):
-        myNode = {'title': list[i], 'id': 'mimark', 'isFolder': True, 'tooltip': 'mimark', 'isLazy': True, 'children': []}
+        myNode = {'title': list[i], 'id': 'mimark', 'isFolder': True, 'pType': 'mimark', 'isLazy': True, 'children': []}
         mimark['children'].append(myNode)
 
     if 'human_associated' in typeList:
         samp_collect = {'title': 'Sample Collection', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_collect_device', 'samp_mat_process']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             samp_collect['children'].append(myNode)
         human_associated['children'].append(samp_collect)
 
         samp_class = {'title': 'Sample Classification', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_type', 'samp_location', 'samp_oxy_stat']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             samp_class['children'].append(myNode)
         human_associated['children'].append(samp_class)
 
         host = {'title': 'Host', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['host_subject_id', 'host_gender', 'host_ethnicity', 'host_occupation', 'pet_farm_animal', 'smoker']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             host['children'].append(myNode)
         human_associated['children'].append(host)
 
         diet = {'title': 'Host', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['diet_type', 'diet_frequency', 'diet_last_six_month', 'last_meal']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             diet['children'].append(myNode)
         human_associated['children'].append(diet)
 
         disease = {'title': 'Disease', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['medic_hist_perform', 'disease_type', 'disease_location', 'tumor_location', 'tumor_stage']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             disease['children'].append(myNode)
         human_associated['children'].append(disease)
 
         drug_use = {'title': 'Drug Usage', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['drug_usage', 'drug_type', 'drug_frequency']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             drug_use['children'].append(myNode)
         human_associated['children'].append(drug_use)
 
         interven = {'title': 'Intervention', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['perturbation', 'pert_type', 'pert_frequency']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             interven['children'].append(myNode)
         human_associated['children'].append(interven)
 
         fetal = {'title': 'Fetal', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['fetal_health_stat', 'amniotic_fluid_color', 'gestation_stat', 'maternal_health_stat']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             fetal['children'].append(myNode)
         human_associated['children'].append(fetal)
 
@@ -148,76 +148,76 @@ def getSampleCatTree(request):
         samp_collect = {'title': 'Sample Collection', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_collection_device', 'samp_depth', 'samp_prep']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             samp_collect['children'].append(myNode)
         soil['children'].append(samp_collect)
 
         soil_class = {'title': 'Soil Classification', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['fao_class', 'local_class', 'texture_class', 'profile_position', 'slope_aspect', 'drainage_class']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             soil_class['children'].append(myNode)
         soil['children'].append(soil_class)
 
         crop_info = {'title': 'Crop Information', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'crop_rotation', 'cover_crop']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             crop_info['children'].append(myNode)
         soil['children'].append(crop_info)
 
         fert_mgt = {'title': 'Fertilizer Mgt', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['fert_amendment_class', 'fert_placement', 'fert_type']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             fert_mgt['children'].append(myNode)
         soil['children'].append(fert_mgt)
 
         irrigation = {'title': 'Irrigation', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['irrigation_type']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             irrigation['children'].append(myNode)
         soil['children'].append(irrigation)
 
         residue = {'title': 'Residue Mgt', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['residue_removal', 'residue_growth_stage']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             residue['children'].append(myNode)
         soil['children'].append(residue)
 
-        tillage = {'title': 'Residue Mgt', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+        tillage = {'title': 'Tillage Mgt', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['tillage_event']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             tillage['children'].append(myNode)
         soil['children'].append(tillage)
 
         amend = {'title': 'Amendment Mgt', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['amend1_class', 'amend1_active_ingredient', 'amend2_class', 'amend2_active_ingredient', 'amend3_class', 'amend3_active_ingredient']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             amend['children'].append(myNode)
         soil['children'].append(amend)
 
         biomass = {'title': 'Crop Biomass', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['harv_fraction']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             biomass['children'].append(myNode)
         soil['children'].append(biomass)
 
         ghg = {'title': 'GHG Flux', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['ghg_chamber_placement']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             ghg['children'].append(myNode)
         soil['children'].append(ghg)
 
     list = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6']
     for i in range(len(list)):
-        myNode = {'title': list[i], 'id': 'user', 'isFolder': True, 'tooltip': 'user', 'isLazy': True, 'children': []}
+        myNode = {'title': list[i], 'id': 'user', 'isFolder': True, 'pType': 'user', 'isLazy': True, 'children': []}
         user['children'].append(myNode)
 
     myTree['children'].append(mimark)
@@ -270,7 +270,7 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        'tooltip': 'Value',
+                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -300,7 +300,7 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        'tooltip': 'Value',
+                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -330,7 +330,7 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        'tooltip': 'Value',
+                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -360,7 +360,7 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        'tooltip': 'Value',
+                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -405,56 +405,56 @@ def getSampleQuantTree(request):
 
     list = ['latitude', 'longitude', 'annual_season_temp', 'annual_season_precpt']
     for i in range(len(list)):
-        myNode = {'title': list[i], 'id': 'mimark', 'isFolder': True, 'tooltip': 'mimark', 'isLazy': True, 'children': []}
+        myNode = {'title': list[i], 'id': 'mimark', 'isFolder': True, 'pType': 'mimark', 'isLazy': True, 'children': []}
         mimark['children'].append(myNode)
 
     if 'human_associated' in typeList:
         samp_collect = {'title': 'Sample Collection', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_size', 'samp_store_temp', 'samp_store_dur']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             samp_collect['children'].append(myNode)
         human_associated['children'].append(samp_collect)
 
         samp_class = {'title': 'Sample Classification', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_temp', 'samp_ph', 'samp_salinity']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             samp_class['children'].append(myNode)
         human_associated['children'].append(samp_class)
 
         host = {'title': 'Host', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['host_age', 'host_pulse', 'host_height', 'host_weight', 'host_bmi', 'host_weight_loss_3_month', 'host_body_temp']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             host['children'].append(myNode)
         human_associated['children'].append(host)
 
         diet = {'title': 'Diet', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['diet_duration']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             diet['children'].append(myNode)
         human_associated['children'].append(diet)
 
         disease = {'title': 'Disease', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['disease_duration', 'organism_count', 'tumor_mass']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             disease['children'].append(myNode)
         human_associated['children'].append(disease)
 
         drug_use = {'title': 'Drug Usage', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['drug_duration']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             drug_use['children'].append(myNode)
         human_associated['children'].append(drug_use)
 
         interven = {'title': 'Intervention', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['pert_duration']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'tooltip': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
             interven['children'].append(myNode)
         human_associated['children'].append(interven)
 
@@ -462,83 +462,83 @@ def getSampleQuantTree(request):
         samp_collect = {'title': 'Sample Collection', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_size', 'sieve_size', 'storage_cond', 'samp_weight_dna_ext', 'pool_dna_extracts']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             samp_collect['children'].append(myNode)
         soil['children'].append(samp_collect)
 
         soil_class = {'title': 'Soil Classification',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['porosity', 'slope_gradient', 'bulk_density', 'water_content_soil']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             soil_class['children'].append(myNode)
         soil['children'].append(soil_class)
 
         irrigation = {'title': 'Irrigation',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['irrigation_tot_amount']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             irrigation['children'].append(myNode)
         soil['children'].append(irrigation)
 
         residue = {'title': 'Residue Mgt',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['residue_removal_percent']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             residue['children'].append(myNode)
         soil['children'].append(residue)
 
-        tillage = {'title': 'Residue Mgt',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+        tillage = {'title': 'Tillage Mgt',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['tillage_event_depth']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             tillage['children'].append(myNode)
         soil['children'].append(tillage)
 
         amend = {'title': 'Amendment Mgt',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['amend1_tot_amount', 'amend2_tot_amount', 'amend3_tot_amount']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             amend['children'].append(myNode)
         soil['children'].append(amend)
 
         microbe = {'title': 'Microbial Biomass',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['rRNA_copies', 'microbial_biomass_C', 'microbial_biomass_N', 'microbial_respiration']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             microbe['children'].append(myNode)
         soil['children'].append(microbe)
 
         soil_nutrient = {'title': 'Soil Nutrients',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['soil_pH', 'soil_EC', 'soil_C', 'soil_OM', 'soil_N', 'soil_NO3_N', 'soil_NH4_N', 'soil_P', 'soil_K', 'soil_S', 'soil_Zn', 'soil_Fe', 'soil_Cu', 'soil_Mn', 'soil_Ca', 'soil_Mg', 'soil_Na', 'soil_B']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             soil_nutrient['children'].append(myNode)
         soil['children'].append(soil_nutrient)
 
         plant_nutrient = {'title': 'Plant Nutrients',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['plant_C', 'plant_N', 'plant_P', 'plant_K', 'plant_Ca', 'plant_Mg', 'plant_S', 'plant_Na', 'plant_Cl', 'plant_Al', 'plant_B', 'plant_Cu', 'plant_Fe', 'plant_Mn', 'plant_Zn']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             plant_nutrient['children'].append(myNode)
         soil['children'].append(plant_nutrient)
 
         biomass = {'title': 'Crop Biomass',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['crop_tot_biomass_fw', 'crop_tot_biomass_dw', 'crop_tot_above_biomass_fw', 'crop_tot_above_biomass_dw', 'crop_tot_below_biomass_fw', 'crop_tot_below_biomass_dw', 'harv_fresh_weight', 'harv_dry_weight']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             biomass['children'].append(myNode)
         soil['children'].append(biomass)
 
         ghg = {'title': 'GHG Flux',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['ghg_N2O', 'ghg_CO2', 'ghg_NH4']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'tooltip': 'soil', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             ghg['children'].append(myNode)
         soil['children'].append(ghg)
 
     list = ['usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
     for i in range(len(list)):
-        myNode = {'title': list[i], 'id': 'user', 'isFolder': True, 'tooltip': 'user', 'isLazy': True, 'children': []}
+        myNode = {'title': list[i], 'id': 'user', 'isFolder': True, 'pType': 'user', 'isLazy': True, 'children': []}
         user['children'].append(myNode)
 
     myTree['children'].append(mimark)
@@ -591,7 +591,7 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        'tooltip': 'Value',
+                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -622,7 +622,7 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        'tooltip': 'Value',
+                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -653,7 +653,7 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        'tooltip': 'Value',
+                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -684,7 +684,7 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        'tooltip': 'Value',
+                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []

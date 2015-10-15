@@ -46,7 +46,7 @@
                 onLazyRead: function (node) {
                     node.appendAjax({
                         url: '/getSampleCatTreeChildren/',
-                        data: {pType: node.data.tooltip, field: node.data.title},
+                        data: {pType: node.data.pType, field: node.data.title},
                         success: function (node) {
                             if (node.childList == undefined) {
                                 alert('No samples are available for this variable!');
@@ -63,6 +63,24 @@
                     }
                     nodesCat = node.tree.getSelectedNodes();
                     $("#run").css("background-color", "lightgray");
+                }
+            });
+
+            var $button = $('#hide');
+            $button.click(function() {
+                var series = chart1.series[0];
+                if (series.visible) {
+                    $(chart1.series).each(function(){
+                        this.setVisible(false, false);
+                    });
+                    chart1.redraw();
+                    $button.html('Show series');
+                } else {
+                    $(chart1.series).each(function(){
+                        this.setVisible(true, false);
+                    });
+                    chart1.redraw();
+                    $button.html('Hide series');
                 }
             });
 
@@ -474,7 +492,6 @@
                 <th bgcolor="white"></th>
             </tr>
             <tr>
-                Select all taxa:
                 <select id="taxaLevel">
                     <option value="1">Phyla</option>
                     <option value="2">Classes</option>
@@ -483,6 +500,7 @@
                     <option value="5">Genera</option>
                     <option value="6" selected="selected">Species</option>
                 </select>
+                &nbsp<-- Selected taxa level
             </tr>
         </table>
     </div>
@@ -550,6 +568,7 @@
             </td>
         </tr>
     </table>
+    <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
     <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
 
     <div id="txt-1">

@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pickle
 from pyper import *
-from scipy import stats
 import simplejson
 
 from database.export.export_DF import UnivMetaDF, normalizeUniv
@@ -77,7 +76,7 @@ def getExCatData(request):
 
                 RID = str(all["RID"])
                 time1[RID] = time.time()  # Moved these down here so RID is available
-                base[RID] = 'Step 1 of 6: Querying database...'
+                base[RID] = 'Step 1 of 4: Querying database...'
 
                 selectAll = int(all["selectAll"])
                 NormMeth = int(all["NormMeth"])
@@ -110,11 +109,9 @@ def getExCatData(request):
 
                 # Remove samples if below the sequence threshold set by user (rarefaction)
                 newList = []
-                result = ''
                 metaStrCat = all["metaValsCat"]
                 fieldListCat = []
                 valueListCat = []
-                idDictCat = {}
                 try:
                     metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
                     for key in sorted(metaDictCat):
@@ -122,14 +119,12 @@ def getExCatData(request):
                         valueListCat.append(metaDictCat[key])
 
                     idStrCat = all["metaIDsCat"]
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrCat)
                 except:
                     placeholder = ''
 
                 metaStrQuant = all["metaValsQuant"]
                 fieldListQuant = []
                 valueListQuant = []
-                idDictQuant = {}
                 try:
                     metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
                     for key in sorted(metaDictQuant):
@@ -137,7 +132,6 @@ def getExCatData(request):
                         valueListQuant.extend(metaDictQuant[key])
 
                     idStrQuant = all["metaIDsQuant"]
-                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
                 except:
                     placeholder = ''
 
@@ -157,11 +151,6 @@ def getExCatData(request):
                 except:
                     placeholder = ''
 
-                result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
-                result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
-                result += '===============================================\n'
-                result += '\nData Normalization:\n'
-
                 # Limit reads to max value
                 if NormMeth == 1:
                     for sample in qs1:
@@ -173,7 +162,6 @@ def getExCatData(request):
                 elif NormMeth == 2 or NormMeth == 3:
                     if NormReads > maxSize:
                         NormReads = medianSize
-                        result += 'The subsample size was too high and automatically reset to the median value...\n'
 
                     for sample in qs1:
                         total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
@@ -198,7 +186,6 @@ def getExCatData(request):
                 elif NormMeth == 4 or NormMeth == 5:
                     if size > maxSize:
                         size = medianSize
-                        result += 'The minimum sample size was too high and automatically reset to the median value...\n'
                     for sample in qs1:
                         total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
                         if total['count__sum'] is not None and int(total['count__sum']) >= size:
@@ -215,21 +202,8 @@ def getExCatData(request):
                                 newList.append(id)
 
                 metaDF = UnivMetaDF(idDict)
-
-                lenA, col = metaDF.shape
-
                 metaDF = metaDF.ix[newList]
                 metaDF.dropna(inplace=True)
-                lenB, col = metaDF.shape
-
-                selectRem = len(selected) - lenA
-                normRem = lenA - lenB
-
-                result += str(lenB) + ' selected samples were included in the final analysis.\n'
-                if normRem > 0:
-                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
-                if selectRem:
-                    result += str(selectRem) + ' samples were deselected by the user.\n'
 
                 # Create unique list of samples in meta dataframe (may be different than selected samples)
                 myList = metaDF.index.values.tolist()
@@ -271,47 +245,39 @@ def getExCatData(request):
                     qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                     taxaDict['Species'] = qs3
 
-                base[RID] = 'Step 1 of 6: Querying database...done!'
+                base[RID] = 'Step 1 of 4: Querying database...done!'
             except Exception as e:
-                print("Error querying database (ANOVA CAT): ", e)
+                print("Error querying database (EXPORT CAT): ", e)
 
             # Normalize data
             try:
-                base[RID] = 'Step 2 of 6: Normalizing data...'
+                base[RID] = 'Step 2 of 4: Normalizing data...'
 
                 normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
                 finalDict = {}
-                if NormMeth == 1:
-                    result += 'No normalization was performed...\n'
-                elif NormMeth == 2 or NormMeth == 3:
-                    result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-                elif NormMeth == 4:
-                    result += 'Data were normalized by the total number of sequence reads...\n'
-                elif NormMeth == 5 and DESeq_error == 'no':
-                    result += 'Data were normalized by DESeq2...\n'
-                elif NormMeth == 5 and DESeq_error == 'yes':
-                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                    result += 'Analysis was run without normalization...\n'
-                    result += 'To try again, please select fewer samples or another normalization method...\n'
-                result += '===============================================\n\n\n'
-
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
                 finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+                finalDF.reset_index(drop=False, inplace=True)
+                finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
-                base[RID] = 'Step 2 of 6: Normalizing data...done!'
+                base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
             except Exception as e:
                 print("Error with normalization (EXPORT CAT): ", e)
 
             try:
-                base[RID] = 'Step 5 of 6: Formatting biome data...'
+                base[RID] = 'Step 3 of 4: Formatting biome data...'
 
                 biome = {}
-                newList = ['sampleid', 'sample_name']
-                newList.extend(fieldList)
+                if not u'sample_name' in fieldList:
+                    newList = ['sampleid', 'sample_name']
+                    newList.extend(fieldList)
+                else:
+                    newList = ['sampleid']
+                    newList.extend(fieldList)
 
                 grouped = finalDF.groupby(newList, sort=False)
                 nameList = []
@@ -343,12 +309,12 @@ def getExCatData(request):
                 biome['columns'] = nameList
                 biome['data'] = dataList
 
-                base[RID] = 'Step 5 of 6: Formatting biome data...done!'
+                base[RID] = 'Step 3 of 4: Formatting biome data...done!'
 
             except Exception as e:
                 print("Error finishing formatting (EXPORT CAT): ", e)
 
-            base[RID] = 'Step 6 of 6: Formatting result table...'
+            base[RID] = 'Step 4 of 4: Formatting result table...'
 
             res_table = finalDF.to_html(classes="table display")
             res_table = res_table.replace('border="1"', 'border="0"')
@@ -360,7 +326,7 @@ def getExCatData(request):
             finalDict['biome'] = str(biome_json)
             res = simplejson.dumps(finalDict)
 
-            base[RID] = 'Step 6 of 6: Formatting result table...done!'
+            base[RID] = 'Step 4 of 4: Formatting result table...done!'
 
             return HttpResponse(res, content_type='application/json')
 

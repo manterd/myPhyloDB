@@ -48,7 +48,7 @@
 
             $('[title]').qtip({
                 style: {
-                    classes: 'qtip-jools'
+                    classes: 'qtip-jtools'
                 },
                 position: {
                     adjust: {
@@ -70,13 +70,14 @@
                         $("#link2").hide();
                         $("#link3").hide();
                         $("#link4").hide();
+                        $("#link5").hide();
                     } else if (data == 'yes') {
                         $("#link0").show();
                         $("#link1").show();
                         $("#link2").show();
                         $("#link3").show();
                         $("#link4").show();
-                    }
+                        $("#link5").show();                    }
                 }
             });
         });
@@ -128,7 +129,7 @@
             {% endif %}
 
             <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Select projects/samples for analysis.">Select Data</li></a>
-            <div id="link2" style="display: none;" >
+            <div id="link5" style="display: none;" >
                 <a class="Offmouse" href="{% url "export" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Export Data</li></a>
             </div>
                 <br>

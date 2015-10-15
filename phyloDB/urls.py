@@ -45,8 +45,8 @@ urlpatterns = patterns('',
     url(r'^makeReproTree/$', 'database.trees.makeReproTree', name='makeReproTree'),
 
     url(r'^getExCatData/$', 'database.export.export_graphs.getExCatData', name='getExCatData'),
-    url(r'^statusANOVA/$', 'database.export.export_graphs.statusExport', name='statusExport'),
-    url(r'^statusANOVA/$', 'database.export.export_graphs.removeRIDExport', name='removeRIDExport'),
+    url(r'^statusExport/$', 'database.export.export_graphs.statusExport', name='statusExport'),
+    url(r'^statusRIDExport/$', 'database.export.export_graphs.removeRIDExport', name='removeRIDExport'),
 
     url(r'^getCatUnivData/$', 'database.anova.anova_graphs.getCatUnivData', name='getCatUnivData'),
     url(r'^getQuantUnivData/$', 'database.anova.anova_graphs.getQuantUnivData', name='getQuantUnivData'),

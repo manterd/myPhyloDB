@@ -77,7 +77,7 @@ def getCatUnivData(request):
 
                 RID = str(all["RID"])
                 time1[RID] = time.time()  # Moved these down here so RID is available
-                base[RID] = 'Step 1 of 6: Querying database...'
+                base[RID] = 'Step 1 of 4: Querying database...'
 
                 selectAll = int(all["selectAll"])
                 DepVar = int(all["DepVar"])
@@ -273,13 +273,13 @@ def getCatUnivData(request):
                     qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                     taxaDict['Species'] = qs3
 
-                base[RID] = 'Step 1 of 6: Querying database...done!'
+                base[RID] = 'Step 1 of 4: Querying database...done!'
             except Exception as e:
                 print("Error querying database (ANOVA CAT): ", e)
 
             # Normalize data
             try:
-                base[RID] = 'Step 2 of 6: Normalizing data...'
+                base[RID] = 'Step 2 of 4: Normalizing data...'
 
                 normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
@@ -303,12 +303,12 @@ def getCatUnivData(request):
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
                 finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
 
-                base[RID] = 'Step 2 of 6: Normalizing data...done!'
+                base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
             except Exception as e:
                 print("Error with normalization (ANOVA CAT): ", e)
 
-            base[RID] = 'Step 3 of 6: Performing statistical test...'
+            base[RID] = 'Step 3 of 4: Performing statistical test...'
 
             seriesList = []
             xAxisDict = {}
@@ -435,8 +435,11 @@ def getCatUnivData(request):
                         r.assign("cmd", glht_string)
                         r("eval(parse(text=cmd))")
                         r("options(width=5000)")
-                        glht = r("glht")
-                        D += '\n' + str(glht) + '\n'
+                        table = r("glht")
+                        tempStuff = table.split('\n')
+                        for part in tempStuff:
+                            if part != tempStuff[0]:
+                                D += part + '\n'
 
                     else:
                         D += '\nTukey Honest Significant Differences:\n'
@@ -455,13 +458,13 @@ def getCatUnivData(request):
                             except:
                                 placeholder = ''
 
-                    base[RID] = 'Step 3 of 6: Performing statistical test...done!'
+                    base[RID] = 'Step 3 of 4: Performing statistical test...done!'
 
                 except Exception as e:
                     print("Error performing statistical test (ANOVA CAT): ", e)
 
                 try:
-                    base[RID] = 'Step 4 of 6: Formatting graph data for display...'
+                    base[RID] = 'Step 4 of 4: Formatting graph data for display...'
 
                     if sig_only == 1:
                         if p_val >= 0.05:
@@ -571,85 +574,30 @@ def getCatUnivData(request):
 
                 except Exception as e:
                     print("Error with formatting (ANOVA CAT): ", e)
-            try:
-                finalDict['series'] = seriesList
-                finalDict['xAxis'] = xAxisDict
-                finalDict['yAxis'] = yAxisDict
-                finalDict['text'] = result
-                if not seriesList:
-                    finalDict['empty'] = 0
-                else:
-                    finalDict['empty'] = 1
 
-                finalDF.reset_index(inplace=True)
-                finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
+            finalDict['series'] = seriesList
+            finalDict['xAxis'] = xAxisDict
+            finalDict['yAxis'] = yAxisDict
+            finalDict['text'] = result
+            if not seriesList:
+                finalDict['empty'] = 0
+            else:
+                finalDict['empty'] = 1
 
-                if DepVar == 1:
-                    finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
-                elif DepVar == 2:
-                    finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
-                elif DepVar == 3:
-                    finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
+            finalDF.reset_index(inplace=True)
+            finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
-                base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
-                base[RID] = 'Step 5 of 6: Formatting biome data...'
+            if DepVar == 1:
+                finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
+            elif DepVar == 2:
+                finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
+            elif DepVar == 3:
+                finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
-                biome = {}
-                newList = ['sampleid', 'sample_name']
-                newList.extend(fieldList)
+            base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
 
-                grouped = finalDF.groupby(newList, sort=False)
-                nameList = []
-                for name, group in grouped:
-                    metaDict = {}
-                    for i in xrange(1, len(newList)):
-                        metaDict[str(newList[i])] = str(name[i])
-                    nameList.append({"id": str(name[0]), "metadata": metaDict})
-
-                grouped = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'], sort=False)
-                taxaList = []
-                dataList = []
-                for name, group in grouped:
-                    metaDict ={}
-                    taxonList = []
-                    taxonList.append(str(name[1]))
-                    metaDict['taxonomy'] = taxonList
-                    taxaList.append({"id": str(name[2]), "metadata": metaDict})
-                    if DepVar == 1:
-                        dataList.append(group['abund'].values.astype(float).tolist())
-                    if DepVar == 2:
-                        dataList.append(group['rich'].values.astype(float).tolist())
-                    if DepVar == 3:
-                        dataList.append(group['diversity'].values.astype(float).tolist())
-
-                biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
-                biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
-                biome['type'] = 'OTU table'
-                biome['generated_by'] = 'myPhyloDB'
-                biome['date'] = str(datetime.datetime.now())
-                biome['matrix_type'] = 'dense'
-                biome['matrix_element_type'] = 'float'
-                biome['rows'] = taxaList
-                biome['columns'] = nameList
-                biome['data'] = dataList
-
-                base[RID] = 'Step 5 of 6: Formatting biome data...done!'
-            except Exception as e:
-                print("Error finishing formatting (ANOVA CAT): ", e)
-            base[RID] = 'Step 6 of 6: Formatting result table...'
-
-            res_table = finalDF.to_html(classes="table display")
-            res_table = res_table.replace('border="1"', 'border="0"')
-            finalDict['res_table'] = str(res_table)
-
-
-            biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
             finalDict['error'] = 'none'
-            finalDict['biome'] = str(biome_json)
             res = simplejson.dumps(finalDict)
-
-            base[RID] = 'Step 6 of 6: Formatting result table...done!'
-
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -690,7 +638,7 @@ def getQuantUnivData(request):
 
             RID = str(all["RID"])
             time1[RID] = time.time()
-            base[RID] = 'Step 1 of 6: Querying database...'
+            base[RID] = 'Step 1 of 4: Querying database...'
 
             selectAll = int(all["selectAll"])
             DepVar = int(all["DepVar"])
@@ -886,8 +834,8 @@ def getQuantUnivData(request):
                 qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                 taxaDict['Species'] = qs3
 
-            base[RID] = 'Step 1 of 6: Querying database...done!'
-            base[RID] = 'Step 2 of 6: Normalizing data...'
+            base[RID] = 'Step 1 of 4: Querying database...done!'
+            base[RID] = 'Step 2 of 4: Normalizing data...'
 
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
@@ -911,9 +859,9 @@ def getQuantUnivData(request):
             finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
             finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
 
-            base[RID] = 'Step 2 of 6: Normalizing data...done!'
+            base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
-            base[RID] = 'Step 3 of 6: Performing linear regression...'
+            base[RID] = 'Step 3 of 4: Performing linear regression...'
 
             seriesList = []
             xAxisDict = {}
@@ -1268,8 +1216,8 @@ def getQuantUnivData(request):
 
                                 seriesList.append(regrDict)
 
-                base[RID] = 'Step 3 of 6: Performing linear regression...done!'
-                base[RID] = 'Step 4 of 6: Formatting graph data for display...'
+                base[RID] = 'Step 3 of 4: Performing linear regression...done!'
+                base[RID] = 'Step 4 of 4: Formatting graph data for display...'
 
                 xTitle = {}
                 xTitle['text'] = fieldListQuant[0]
@@ -1306,62 +1254,8 @@ def getQuantUnivData(request):
             elif DepVar == 3:
                 finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
-            base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
-            base[RID] = 'Step 5 of 6: Formatting biome data...'
-
-            biome = {}
-            newList = ['sampleid', 'sample_name']
-            newList.extend(fieldList)
-            grouped = finalDF.groupby(newList, sort=False)
-            nameList = []
-            for name, group in grouped:
-                metaDict = {}
-                for i in xrange(1, len(newList)):
-                    metaDict[str(newList[i])] = str(name[i])
-                nameList.append({"id": str(name[0]), "metadata": metaDict})
-
-            grouped = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'], sort=False)
-            taxaList = []
-            dataList = []
-            for name, group in grouped:
-                metaDict ={}
-                taxonList = []
-                taxonList.append(str(name[1]))
-                metaDict['taxonomy'] = taxonList
-                taxaList.append({"id": str(name[2]), "metadata": metaDict})
-                if DepVar == 1:
-                    dataList.append(group['abund'].tolist())
-                if DepVar == 2:
-                    dataList.append(group['rich'].tolist())
-                if DepVar == 3:
-                    dataList.append(group['diversity'].tolist())
-
-            biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
-            biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
-            biome['type'] = 'OTU table'
-            biome['generated_by'] = 'myPhyloDB'
-            biome['date'] = str(datetime.datetime.now())
-            biome['matrix_type'] = 'dense'
-            biome['matrix_element_type'] = 'float'
-            biome['rows'] = taxaList
-            biome['columns'] = nameList
-            biome['data'] = dataList
-
-            base[RID] = 'Step 5 of 6: Formatting biome data...done!'
-            base[RID] = 'Step 6 of 6: Formatting result table...'
-
-            res_table = finalDF.to_html(classes="table display")
-            res_table = res_table.replace('border="1"', 'border="0"')
-            finalDict['res_table'] = str(res_table)
-
+            base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
             finalDict['text'] = result
-            base[RID] = 'Step 4 of 4: Preparing graph data...completed'
-
-            biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
-            finalDict['biome'] = str(biome_json)
-
-            base[RID] = 'Step 6 of 6: Formatting result table...done!'
-
             finalDict['error'] = 'none'
             res = simplejson.dumps(finalDict)
 
