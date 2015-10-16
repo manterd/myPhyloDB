@@ -385,6 +385,13 @@ def getCatUnivData(request):
 
                     r.assign("df", group1)
 
+                    #catString = " * ".join(fieldListCat)
+                    #if len(fieldListQuant) > 0:
+                    #    quantString = " + ".join(fieldListQuant)
+                    #    trtString = str(catString) + " + " + str(quantString)
+                    #else:
+                    #    trtString = catString
+
                     trtString = " * ".join(fieldList)
 
                     if DepVar == 1:
@@ -425,38 +432,49 @@ def getCatUnivData(request):
                             part1 = part.split(' ')
                             if part1[0] == 'Residuals':
                                 break
-                            fList.append(part1[0])
+                            if part1[0] not in fList:
+                                fList.append(part1[0])
 
-                    if len(fieldListQuant) > 0:
-                        r("library(multcomp)")
-                        r("library(lsmeans)")
-
-                        glht_string = "glht <- summary(glht(fit, linfct=lsm(pairwise ~ " + str(trtString) + ")))"
-                        r.assign("cmd", glht_string)
-                        r("eval(parse(text=cmd))")
-                        r("options(width=5000)")
-                        table = r("glht")
-                        tempStuff = table.split('\n')
-                        for part in tempStuff:
-                            if part != tempStuff[0]:
-                                D += part + '\n'
-
-                    else:
-                        D += '\nTukey Honest Significant Differences:\n'
+                    D += '\nTukey Honest Significant Differences:\n'
+                    if len(fieldListQuant) == 0:
                         r("tukey <- TukeyHSD(fit)")
                         for i in fList:
-                            try:
-                                D += str(i) + '\n'
+                            D += str(i) + '\n'
+                            if ":" not in i:
                                 hsd_string = "table <- tukey$" + str(i)
+                            else:
+                                hsd_string = "table <- tukey$`" + str(i) +"`"
+                            r.assign("cmd", hsd_string)
+                            r("eval(parse(text=cmd))")
+                            r("options(width=5000)")
+                            table = r("table")
+                            tempStuff = table.split('\n')
+                            for i in xrange(len(tempStuff)):
+                                if i > 0:
+                                    D += tempStuff[i] + '\n'
+
+                    else:
+                        #r("library(multcomp)")
+                        #r("library(lsmeans)")
+                        for i in fList:
+                            r("tukey <- TukeyHSD(fit, 'usr_cat1:usr_quant1')")
+                            print r("tukey")
+                            if i not in fieldListQuant:
+                                D += str(i) + '\n'
+                                hsd_string = "glht <- summary(glht(fit, linfct=lsm(pairwise ~ " + str(i) + ")))"
+                                #if ":" not in i:
+                                #    hsd_string = "glht <- summary(glht(fit, linfct=mcp(" + str(i) + "='Tukey')))"
+                                #else:
+                                #    hsd_string = "glht <- summary(glht(fit, linfct=mcp(" + str(i) + "='Tukey')))"
                                 r.assign("cmd", hsd_string)
                                 r("eval(parse(text=cmd))")
-                                table = r("table")
-                                tempStuff = table.split('\n')
-                                for part in tempStuff:
-                                    if part != tempStuff[0]:
-                                        D += part + '\n'
-                            except:
-                                placeholder = ''
+                                r("options(width=5000)")
+                                table = r("glht")
+                                #print 'table:', table
+                                tempStuff = table.split('Linear Hypotheses:')
+                                for i in xrange(len(tempStuff)):
+                                    if i > 0:
+                                        D += tempStuff[i] + '\n'
 
                     base[RID] = 'Step 3 of 4: Performing statistical test...done!'
 
