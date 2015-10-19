@@ -40,8 +40,20 @@ def mothur(dest, source):
         except Exception as e:
             print "Mothur failed: " + str(e)
 
-    if source == '454':
+    if source == '454_sff':
         shutil.copy('mothur/temp/temp.sff', '% s/mothur.sff' % dest)
+        shutil.copy('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
+        shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
+        shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
+        shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
+        shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
+        shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
+        shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
+
+        shutil.rmtree('mothur/temp')
+
+    if source == '454_fastq':
+        shutil.copy('mothur/temp/temp.fastq', '% s/mothur.fastq' % dest)
         shutil.copy('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
         shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
         shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
@@ -150,15 +162,11 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
         taxonomy_ref = 'null'
 
     if not Reference.objects.filter(refid=refid).exists():
-        print 'ref record doesnt exist'
         project = Project.objects.get(projectid=p_uuid)
         Reference.objects.create(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
-        print 'created'
     else:
-        print 'ref record exists'
         project = Project.objects.get(projectid=p_uuid)
         Reference.objects.filter(refid=refid).update(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
-        print 'updated'
 
 
 def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userID):
@@ -206,17 +214,13 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
         reference = Reference.objects.get(refid=refid)
 
         if not Sample.objects.filter(sampleid=s_uuid).exists():
-            print 'sample record doesnt exist'
             s_uuid = uuid4().hex
             row['sampleid'] = s_uuid
             idList.append(s_uuid)
             Sample.objects.create(projectid=project, refid=reference, **row)
-            print 'created'
         else:
-            print 'sample record exists'
             idList.append(s_uuid)
             Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
-            print 'updated'
 
         refDict[s_uuid] = refid
         sample = Sample.objects.get(sampleid=s_uuid)
@@ -224,49 +228,36 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
         if pType == "human associated":
             row = df2.iloc[[i]].to_dict(outtype='records')[0]
             if not Human_Associated.objects.filter(sampleid=s_uuid).exists():
-                print 'human record doesnt exist'
                 row.pop('sampleid')
                 row.pop('sample_name')
                 Human_Associated.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
-                print 'created'
             else:
-                print 'huamn record exists'
                 row.pop('sampleid')
                 row.pop('sample_name')
                 Human_Associated.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
-                print 'updated'
 
         elif pType == "soil":
             row = df2.iloc[[i]].to_dict(outtype='records')[0]
             if not Soil.objects.filter(sampleid=s_uuid).exists():
-                print 'soil record doesnt exist'
                 row.pop('sampleid')
                 row.pop('sample_name')
                 Soil.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
-                print 'created'
             else:
-                print 'soil record exists'
                 row.pop('sampleid')
                 row.pop('sample_name')
                 Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
-                print 'updated'
         else:
             placeholder = ''
 
-        ### user not done
         row = df3.iloc[[i]].to_dict(outtype='records')[0]
         if not UserDefined.objects.filter(sampleid=s_uuid).exists():
-            print 'user record doesnt exist'
             row.pop('sampleid')
             row.pop('sample_name')
             UserDefined.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
-            print 'created'
         else:
-            print 'user record exists'
             row.pop('sampleid')
             row.pop('sample_name')
             UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
-            print 'updated'
 
     rb = xlrd.open_workbook(Document, formatting_info=True)
     nSheets = rb.nsheets
@@ -470,17 +461,13 @@ def parse_profile(file3, file4, p_uuid, refDict):
                 reference = Reference.objects.get(refid=refid)
 
                 if Profile.objects.filter(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species).exists():
-                    print 'profile record exists'
                     t = Profile.objects.get(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species)
                     old = t.count
                     new = old + int(count)
                     t.count = new
                     t.save()
-                    print 'count changed from ' + str(old) + ' to ' + str(new)
                 else:
-                    print 'profile record doesnt exist'
                     Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
-                    print 'created'
 
 
 def reanalyze(request):

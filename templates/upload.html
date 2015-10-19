@@ -6,9 +6,7 @@
 
 {% block user %}
     {% if user.is_authenticated %}
-        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
-    {% else %}
-        <p>User logged in as:<br>&nbsp;guest</p>
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
     {% endif %}
 {% endblock user %}
 
@@ -50,17 +48,26 @@
                 source = $("#id_source").val();
                 if (source == "mothur") {
                     $("#mothur").show();
-                    $("#454").hide();
+                    $("#454_sff").hide();
+                    $("#454_fastq").hide();
                     $("#miseq").hide();
                 }
-                if (source == "454") {
+                if (source == "454_sff") {
                     $("#mothur").hide();
-                    $("#454").show();
+                    $("#454_sff").show();
+                    $("#454_fastq").hide();
+                    $("#miseq").hide();
+                }
+                if (source == "454_fastq") {
+                    $("#mothur").hide();
+                    $("#454_sff").hide();
+                    $("#454_fastq").show();
                     $("#miseq").hide();
                 }
                 if (source == "miseq") {
                     $("#mothur").hide();
-                    $("#454").hide();
+                    $("#454_sff").hide();
+                    $("#454_fastq").hide();
                     $("#miseq").show();
                 }
             })
@@ -148,10 +155,28 @@
                             <td>{{ form2.docfile4 }}</td>
                         </tr>
                     </table>
-                    <table id="454" width="100%" border="2" cellspacing="0" cellpadding="1" style="display:none">
+                    <table id="454_sff" width="100%" border="2" cellspacing="0" cellpadding="1" style="display:none">
                         <tr>
                             <td>{{ form2.docfile5.label_tag }}</td>
                             <td>{{ form2.docfile5 }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ form2.docfile6.label_tag }}</td>
+                            <td>{{ form2.docfile6 }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ form2.docfile7.label_tag }}</td>
+                            <td>{{ form2.docfile7 }}</td>
+                        </tr>
+                    </table>
+                    <table id="454_fastq" width="100%" border="2" cellspacing="0" cellpadding="1" style="display:none">
+                        <tr>
+                            <td>{{ form2.docfile11.label_tag }}</td>
+                            <td>{{ form2.docfile11 }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ form2.docfile12.label_tag }}</td>
+                            <td>{{ form2.docfile12 }}</td>
                         </tr>
                         <tr>
                             <td>{{ form2.docfile6.label_tag }}</td>

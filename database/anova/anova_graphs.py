@@ -77,7 +77,7 @@ def getCatUnivData(request):
 
                 RID = str(all["RID"])
                 time1[RID] = time.time()  # Moved these down here so RID is available
-                base[RID] = 'Step 1 of 6: Querying database...'
+                base[RID] = 'Step 1 of 4: Querying database...'
 
                 selectAll = int(all["selectAll"])
                 DepVar = int(all["DepVar"])
@@ -273,13 +273,13 @@ def getCatUnivData(request):
                     qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                     taxaDict['Species'] = qs3
 
-                base[RID] = 'Step 1 of 6: Querying database...done!'
+                base[RID] = 'Step 1 of 4: Querying database...done!'
             except Exception as e:
                 print("Error querying database (ANOVA CAT): ", e)
 
             # Normalize data
             try:
-                base[RID] = 'Step 2 of 6: Normalizing data...'
+                base[RID] = 'Step 2 of 4: Normalizing data...'
 
                 normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
@@ -303,12 +303,15 @@ def getCatUnivData(request):
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
                 finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
 
-                base[RID] = 'Step 2 of 6: Normalizing data...done!'
+                base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
-            except Exception as e:
-                print("Error with normalization (ANOVA CAT): ", e)
+            except:
+                myDict = {}
+                myDict['error'] = 'Selected samples/taxa combination have no valid observations'
+                res = simplejson.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
 
-            base[RID] = 'Step 3 of 6: Performing statistical test...'
+            base[RID] = 'Step 3 of 4: Performing statistical test...'
 
             seriesList = []
             xAxisDict = {}
@@ -425,69 +428,64 @@ def getCatUnivData(request):
                             part1 = part.split(' ')
                             if part1[0] == 'Residuals':
                                 break
-                            fList.append(part1[0])
+                            if part1[0] not in fList:
+                                fList.append(part1[0])
 
-                    if len(fieldListQuant) > 0:
-                        r("library(multcomp)")
-                        r("library(lsmeans)")
+                    D += "\nLSmeans & Tukey's HSD post-hoc test:\n\n"
+                    r("library(lsmeans)")
 
-                        glht_string = "glht <- summary(glht(fit, linfct=lsm(pairwise ~ " + str(trtString) + ")))"
-                        r.assign("cmd", glht_string)
-                        r("eval(parse(text=cmd))")
-                        r("options(width=5000)")
-                        glht = r("glht")
-                        D += '\n' + str(glht) + '\n'
+                    if len(fieldListQuant) == 0:
+                        for i in fList:
+                            hsd_string = "lsm <- lsmeans(fit, list(pairwise ~ " + str(i) + "))"
+                            r.assign("cmd", hsd_string)
+                            r("eval(parse(text=cmd))")
+                            r("options(width=5000)")
+                            table = r("lsm")
+                            tempStuff = table.split('\n')
+                            for i in xrange(len(tempStuff)):
+                                if i > 0:
+                                    D += tempStuff[i] + '\n'
 
                     else:
-                        D += '\nTukey Honest Significant Differences:\n'
-                        r("tukey <- TukeyHSD(fit)")
                         for i in fList:
-                            try:
-                                D += str(i) + '\n'
-                                hsd_string = "table <- tukey$" + str(i)
+                            if i not in fieldListQuant:
+                                hsd_string = "lsm <- lsmeans(fit, list(pairwise ~ " + str(i) + "))"
                                 r.assign("cmd", hsd_string)
                                 r("eval(parse(text=cmd))")
-                                table = r("table")
+                                r("options(width=5000)")
+                                table = r("lsm")
                                 tempStuff = table.split('\n')
-                                for part in tempStuff:
-                                    if part != tempStuff[0]:
-                                        D += part + '\n'
-                            except:
-                                placeholder = ''
+                                for i in xrange(len(tempStuff)):
+                                    if i > 0:
+                                        D += tempStuff[i] + '\n'
 
-                    base[RID] = 'Step 3 of 6: Performing statistical test...done!'
+                    result += '===============================================\n'
+                    result = result + 'Taxa level: ' + str(name1[0]) + '\n'
+                    result = result + 'Taxa name: ' + str(name1[1]) + '\n'
+                    result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
+                    if DepVar == 1:
+                        result = result + 'Dependent Variable: Abundance' + '\n'
+                    elif DepVar == 2:
+                        result = result + 'Dependent Variable: Species Richness' + '\n'
+                    elif DepVar == 3:
+                        result = result + 'Dependent Variable: Species Diversity' + '\n'
+
+                    result = result + '\nANOVA table:\n'
+
+                    result = result + str(D) + '\n'
+                    result += '===============================================\n'
+                    result += '\n\n\n\n'
+
+                    base[RID] = 'Step 3 of 4: Performing statistical test...done!'
 
                 except Exception as e:
                     print("Error performing statistical test (ANOVA CAT): ", e)
 
                 try:
-                    base[RID] = 'Step 4 of 6: Formatting graph data for display...'
+                    base[RID] = 'Step 4 of 4: Formatting graph data for display...'
 
                     if sig_only == 1:
-                        if p_val >= 0.05:
-                            result += '\n===============================================\n\n'
-                            result += 'Taxa Rank: ' + str(name1[0]) + '; Taxa Name: ' + str(name1[1]) + '; Taxa ID: ' + str(name1[2]) + ' is not significant,\n'
-                            result += 'it was removed from your analysis.\n'
-                            result += '\n===============================================\n\n'
-
                         if p_val < 0.05:
-                            result += '===============================================\n'
-                            result = result + 'Taxa level: ' + str(name1[0]) + '\n'
-                            result = result + 'Taxa name: ' + str(name1[1]) + '\n'
-                            result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
-                            if DepVar == 1:
-                                result = result + 'Dependent Variable: Abundance' + '\n'
-                            elif DepVar == 2:
-                                result = result + 'Dependent Variable: Species Richness' + '\n'
-                            elif DepVar == 3:
-                                result = result + 'Dependent Variable: Species Diversity' + '\n'
-
-                            result = result + '\nANOVA table:\n'
-
-                            result = result + str(D) + '\n'
-                            result += '===============================================\n'
-                            result += '\n\n\n\n'
-
                             dataList = []
                             grouped2 = group1.groupby(fieldListCat).mean()
 
@@ -516,23 +514,6 @@ def getCatUnivData(request):
                             yAxisDict['title'] = yTitle
 
                     if sig_only == 0:
-                        result += '===============================================\n'
-                        result = result + 'Taxa level: ' + str(name1[0]) + '\n'
-                        result = result + 'Taxa name: ' + str(name1[1]) + '\n'
-                        result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
-                        if DepVar == 1:
-                            result = result + 'Dependent Variable: Abundance' + '\n'
-                        elif DepVar == 2:
-                            result = result + 'Dependent Variable: Species Richness' + '\n'
-                        elif DepVar == 3:
-                            result = result + 'Dependent Variable: Species Diversity' + '\n'
-
-                        result = result + '\nANOVA table:\n'
-
-                        result = result + str(D) + '\n'
-                        result += '===============================================\n'
-                        result += '\n\n\n\n'
-
                         dataList = []
                         grouped2 = group1.groupby(fieldListCat).mean()
 
@@ -571,85 +552,30 @@ def getCatUnivData(request):
 
                 except Exception as e:
                     print("Error with formatting (ANOVA CAT): ", e)
-            try:
-                finalDict['series'] = seriesList
-                finalDict['xAxis'] = xAxisDict
-                finalDict['yAxis'] = yAxisDict
-                finalDict['text'] = result
-                if not seriesList:
-                    finalDict['empty'] = 0
-                else:
-                    finalDict['empty'] = 1
 
-                finalDF.reset_index(inplace=True)
-                finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
+            finalDict['series'] = seriesList
+            finalDict['xAxis'] = xAxisDict
+            finalDict['yAxis'] = yAxisDict
+            finalDict['text'] = result
+            if not seriesList:
+                finalDict['empty'] = 0
+            else:
+                finalDict['empty'] = 1
 
-                if DepVar == 1:
-                    finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
-                elif DepVar == 2:
-                    finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
-                elif DepVar == 3:
-                    finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
+            finalDF.reset_index(inplace=True)
+            finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
-                base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
-                base[RID] = 'Step 5 of 6: Formatting biome data...'
+            if DepVar == 1:
+                finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
+            elif DepVar == 2:
+                finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
+            elif DepVar == 3:
+                finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
-                biome = {}
-                newList = ['sampleid', 'sample_name']
-                newList.extend(fieldList)
+            base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
 
-                grouped = finalDF.groupby(newList, sort=False)
-                nameList = []
-                for name, group in grouped:
-                    metaDict = {}
-                    for i in xrange(1, len(newList)):
-                        metaDict[str(newList[i])] = str(name[i])
-                    nameList.append({"id": str(name[0]), "metadata": metaDict})
-
-                grouped = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'], sort=False)
-                taxaList = []
-                dataList = []
-                for name, group in grouped:
-                    metaDict ={}
-                    taxonList = []
-                    taxonList.append(str(name[1]))
-                    metaDict['taxonomy'] = taxonList
-                    taxaList.append({"id": str(name[2]), "metadata": metaDict})
-                    if DepVar == 1:
-                        dataList.append(group['abund'].values.astype(float).tolist())
-                    if DepVar == 2:
-                        dataList.append(group['rich'].values.astype(float).tolist())
-                    if DepVar == 3:
-                        dataList.append(group['diversity'].values.astype(float).tolist())
-
-                biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
-                biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
-                biome['type'] = 'OTU table'
-                biome['generated_by'] = 'myPhyloDB'
-                biome['date'] = str(datetime.datetime.now())
-                biome['matrix_type'] = 'dense'
-                biome['matrix_element_type'] = 'float'
-                biome['rows'] = taxaList
-                biome['columns'] = nameList
-                biome['data'] = dataList
-
-                base[RID] = 'Step 5 of 6: Formatting biome data...done!'
-            except Exception as e:
-                print("Error finishing formatting (ANOVA CAT): ", e)
-            base[RID] = 'Step 6 of 6: Formatting result table...'
-
-            res_table = finalDF.to_html(classes="table display")
-            res_table = res_table.replace('border="1"', 'border="0"')
-            finalDict['res_table'] = str(res_table)
-
-
-            biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
             finalDict['error'] = 'none'
-            finalDict['biome'] = str(biome_json)
             res = simplejson.dumps(finalDict)
-
-            base[RID] = 'Step 6 of 6: Formatting result table...done!'
-
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -690,7 +616,7 @@ def getQuantUnivData(request):
 
             RID = str(all["RID"])
             time1[RID] = time.time()
-            base[RID] = 'Step 1 of 6: Querying database...'
+            base[RID] = 'Step 1 of 4: Querying database...'
 
             selectAll = int(all["selectAll"])
             DepVar = int(all["DepVar"])
@@ -886,34 +812,41 @@ def getQuantUnivData(request):
                 qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                 taxaDict['Species'] = qs3
 
-            base[RID] = 'Step 1 of 6: Querying database...done!'
-            base[RID] = 'Step 2 of 6: Normalizing data...'
+            base[RID] = 'Step 1 of 4: Querying database...done!'
+            base[RID] = 'Step 2 of 4: Normalizing data...'
 
-            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
+            try:
+                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
-            finalDict = {}
-            if NormMeth == 1:
-                result += 'No normalization was performed...\n'
-            elif NormMeth == 2 or NormMeth == 3:
-                result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-            elif NormMeth == 4:
-                result += 'Data were normalized by the total number of sequence reads...\n'
-            elif NormMeth == 5 and DESeq_error == 'no':
-                result += 'Data were normalized by DESeq2...\n'
-            elif NormMeth == 5 and DESeq_error == 'yes':
-                result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                result += 'Analysis was run without normalization...\n'
-                result += 'To try again, please select fewer samples or another normalization method...\n'
-            result += '===============================================\n\n\n'
+                finalDict = {}
+                if NormMeth == 1:
+                    result += 'No normalization was performed...\n'
+                elif NormMeth == 2 or NormMeth == 3:
+                    result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+                elif NormMeth == 4:
+                    result += 'Data were normalized by the total number of sequence reads...\n'
+                elif NormMeth == 5 and DESeq_error == 'no':
+                    result += 'Data were normalized by DESeq2...\n'
+                elif NormMeth == 5 and DESeq_error == 'yes':
+                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
+                    result += 'Analysis was run without normalization...\n'
+                    result += 'To try again, please select fewer samples or another normalization method...\n'
+                result += '===============================================\n\n\n'
 
-            normDF.set_index('sampleid', inplace=True)
+                normDF.set_index('sampleid', inplace=True)
 
-            finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-            finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+                finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
 
-            base[RID] = 'Step 2 of 6: Normalizing data...done!'
+            except:
+                myDict = {}
+                myDict['error'] = 'Selected samples/taxa combination have no valid observations'
+                res = simplejson.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
 
-            base[RID] = 'Step 3 of 6: Performing linear regression...'
+            base[RID] = 'Step 2 of 4: Normalizing data...done!'
+
+            base[RID] = 'Step 3 of 4: Performing linear regression...'
 
             seriesList = []
             xAxisDict = {}
@@ -995,12 +928,19 @@ def getQuantUnivData(request):
                 r.assign("cmd", pred_string)
                 r("eval(parse(text=cmd))")
 
-                aov = r("summary(fit)")
-
+                r("options(width=5000)")
+                r("aov <- anova(fit)")
+                aov = r("aov")
                 tempStuff = aov.split('\n')
-                for part in tempStuff:
-                    if part != tempStuff[0]:
-                        D += part + '\n'
+                for i in xrange(len(tempStuff)):
+                    if i >= 1:
+                        D += tempStuff[i] + '\n'
+
+                fit = r("summary(fit)")
+                tempStuff = fit.split('\n')
+                for i in xrange(len(tempStuff)):
+                    if i >= 8:
+                        D += tempStuff[i] + '\n'
 
                 r("p_vals <- summary(fit)$coefficients[,4]")
                 p_vals = r.get("p_vals")
@@ -1013,31 +953,37 @@ def getQuantUnivData(request):
                 resultDF = r.get("df")
                 resultDF = resultDF.rename(columns=lambda x: x.strip())
 
+                result += 'Taxa level: ' + str(name1[0]) + '\n'
+                result += 'Taxa name: ' + str(name1[1]) + '\n'
+                result += 'Taxa ID: ' + str(name1[2]) + '\n'
+                if DepVar == 1:
+                    result = result + 'Dependent Variable: Abundance' + '\n'
+                elif DepVar == 2:
+                    result = result + 'Dependent Variable: Species Richness' + '\n'
+                elif DepVar == 3:
+                    result = result + 'Dependent Variable: Species Diversity' + '\n'
+                result += '\nANCOVA table:\n'
+                result += str(D) + '\n'
+                result += '===============================================\n'
+                result += '\n'
+
                 if len(fieldListCat) > 0:
                     grouped2 = resultDF.groupby(fieldListCat)
                     for name2, group2 in grouped2:
-                        obs = group2['abund'].loc[group2['abund'] > 0].count()
-                        if obs < 3:
-                            result += '\n===============================================\n\n'
-                            result += 'Taxa Rank: ' + str(name1[0]) + '; Taxa Name: ' + str(name1[1]) + '; Taxa ID: ' + str(name1[2]) + ' has ' + str(obs) + ' observation(s),\n'
-                            result += 'it was removed from your analysis.\n'
-                            result += '\n===============================================\n\n'
-                            break
+                        if DepVar == 1:
+                            dataList = group2[[fieldListQuant[0], 'abund']].values.astype(float).tolist()
+                            x = group2[fieldListQuant[0]].astype(float).values.tolist()
+                            y = group2['abund'].values.astype(float).tolist()
+                        elif DepVar == 2:
+                            dataList = group2[[fieldListQuant[0], 'rich']].values.astype(float).tolist()
+                            x = group2[fieldListQuant[0]].values.astype(float).tolist()
+                            y = group2['rich'].values.astype(float).tolist()
+                        elif DepVar == 3:
+                            dataList = group2[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
+                            x = group2[fieldListQuant[0]].astype(float).values.tolist()
+                            y = group2['diversity'].astype(float).values.tolist()
 
-                        else:
-                            if DepVar == 1:
-                                dataList = group2[[fieldListQuant[0], 'abund']].values.astype(float).tolist()
-                                x = group2[fieldListQuant[0]].astype(float).values.tolist()
-                                y = group2['abund'].values.astype(float).tolist()
-                            elif DepVar == 2:
-                                dataList = group2[[fieldListQuant[0], 'rich']].values.astype(float).tolist()
-                                x = group2[fieldListQuant[0]].values.astype(float).tolist()
-                                y = group2['rich'].values.astype(float).tolist()
-                            elif DepVar == 3:
-                                dataList = group2[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
-                                x = group2[fieldListQuant[0]].astype(float).values.tolist()
-                                y = group2['diversity'].astype(float).values.tolist()
-
+                        if sig_only == 0:
                             slp, inter, r_value, p, std_err = stats.linregress(x, y)
                             min_y = float(slp*min(x) + inter)
                             max_y = float(slp*max(x) + inter)
@@ -1046,20 +992,44 @@ def getQuantUnivData(request):
                             r_sq = r_value * r_value
                             r_square = "%0.3f" % r_sq
 
-                            if sig_only == 0:
-                                result += 'Taxa level: ' + str(name1[0]) + '\n'
-                                result += 'Taxa name: ' + str(name1[1]) + '\n'
-                                result += 'Taxa ID: ' + str(name1[2]) + '\n'
-                                if DepVar == 1:
-                                    result = result + 'Dependent Variable: Abundance' + '\n'
-                                elif DepVar == 2:
-                                    result = result + 'Dependent Variable: Species Richness' + '\n'
-                                elif DepVar == 3:
-                                    result = result + 'Dependent Variable: Species Diversity' + '\n'
-                                result += '\nANCOVA table:\n'
-                                result += str(D) + '\n'
-                                result += '===============================================\n'
-                                result += '\n'
+                            regrList = []
+                            regrList.append([float(min(x)), min_y])
+                            regrList.append([float(max(x)), max_y])
+
+                            seriesDict = {}
+                            seriesDict['turboThreshold'] = 0
+                            seriesDict['type'] = 'scatter'
+                            seriesDict['name'] = str(name1[1]) + ": " + str(name2)
+                            seriesDict['data'] = dataList
+                            seriesDict['color'] = colors[colors_idx]
+
+                            markerDict = {}
+                            markerDict['symbol'] = shapes[shapes_idx]
+                            seriesDict['marker'] = markerDict
+                            seriesDict['data'] = dataList
+                            seriesList.append(seriesDict)
+
+                            regrDict = {}
+                            regrDict['type'] = 'line'
+                            regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
+                            regrDict['data'] = regrList
+                            regrDict['color'] = colors[colors_idx]
+
+                            markerDict = {}
+                            markerDict['enabled'] = False
+                            regrDict['marker'] = markerDict
+
+                            seriesList.append(regrDict)
+
+                        if sig_only == 0:
+                            if p_value < 0.05:
+                                slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                                min_y = float(slp*min(x) + inter)
+                                max_y = float(slp*max(x) + inter)
+                                slope = "%0.3f" % slp
+                                intercept = "%0.3f" % inter
+                                r_sq = r_value * r_value
+                                r_square = "%0.3f" % r_sq
 
                                 regrList = []
                                 regrList.append([float(min(x)), min_y])
@@ -1090,105 +1060,64 @@ def getQuantUnivData(request):
 
                                 seriesList.append(regrDict)
 
-                            if sig_only == 1:
-                                if p_value >= 0.05:
-                                    result += '\n===============================================\n\n'
-                                    result += 'Treatment Level: ' + str(name2) + '\n'
-                                    result += 'Taxa Rank: ' + str(name1[0]) + '; Taxa Name: ' + str(name1[1]) + '; Taxa ID: ' + str(name1[2]) + ' is not significant,\n'
-                                    result += 'it was removed from your analysis.\n'
-                                    result += '\n===============================================\n\n'
-                                if p_value <= 0.05:
-                                    result += 'Taxa level: ' + str(name1[0]) + '\n'
-                                    result += 'Taxa name: ' + str(name1[1]) + '\n'
-                                    result += 'Taxa ID: ' + str(name1[2]) + '\n'
-                                    if DepVar == 1:
-                                        result = result + 'Dependent Variable: Abundance' + '\n'
-                                    elif DepVar == 2:
-                                        result = result + 'Dependent Variable: Species Richness' + '\n'
-                                    elif DepVar == 3:
-                                        result = result + 'Dependent Variable: Species Diversity' + '\n'
-                                    result += '\nGLM table:\n'
-                                    result += str(D) + '\n'
-                                    result += '===============================================\n'
-                                    result += '\n'
-
-                                    regrList = []
-                                    regrList.append([float(min(x)), min_y])
-                                    regrList.append([float(max(x)), max_y])
-
-                                    seriesDict = {}
-                                    seriesDict['turboThreshold'] = 0
-                                    seriesDict['type'] = 'scatter'
-                                    seriesDict['name'] = str(name1[1]) + ": " + str(name2)
-                                    seriesDict['data'] = dataList
-                                    seriesDict['color'] = colors[colors_idx]
-
-                                    markerDict = {}
-                                    markerDict['symbol'] = shapes[shapes_idx]
-                                    seriesDict['marker'] = markerDict
-                                    seriesDict['data'] = dataList
-                                    seriesList.append(seriesDict)
-
-                                    regrDict = {}
-                                    regrDict['type'] = 'line'
-                                    regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
-                                    regrDict['data'] = regrList
-                                    regrDict['color'] = colors[colors_idx]
-
-                                    markerDict = {}
-                                    markerDict['enabled'] = False
-                                    regrDict['marker'] = markerDict
-
-                                    seriesList.append(regrDict)
-
                             shapes_idx += 1
                             if shapes_idx >= len(shapes):
                                 shapes_idx = 0
 
                 else:
-                    obs = resultDF['abund'].loc[resultDF['abund'] > 0].count()
-                    if obs < 3:
-                        result += '\n===============================================\n\n'
-                        result += 'Taxa Rank: ' + str(name1[0]) + '; Taxa Name: ' + str(name1[1]) + '; Taxa ID: ' + str(name1[2]) + ' has ' + str(obs) + ' observation(s),\n'
-                        result += 'it was removed from your analysis.\n'
-                        result += '\n===============================================\n\n'
-                    else:
-                        if DepVar == 1:
-                            dataList = resultDF[[str(fieldListQuant[0]), 'abund']].values.astype(float).tolist()
-                            x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
-                            y = resultDF['abund'].astype(float).values.tolist()
-                        elif DepVar == 2:
-                            dataList = resultDF[[fieldListQuant[0], 'rich']].values.astype(float).tolist()
-                            x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
-                            y = resultDF['rich'].astype(float).values.tolist()
-                        elif DepVar == 3:
-                            dataList = resultDF[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
-                            x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
-                            y = resultDF['diversity'].astype(float).values.tolist()
+                    if DepVar == 1:
+                        dataList = resultDF[[str(fieldListQuant[0]), 'abund']].values.astype(float).tolist()
+                        x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
+                        y = resultDF['abund'].astype(float).values.tolist()
+                    elif DepVar == 2:
+                        dataList = resultDF[[fieldListQuant[0], 'rich']].values.astype(float).tolist()
+                        x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
+                        y = resultDF['rich'].astype(float).values.tolist()
+                    elif DepVar == 3:
+                        dataList = resultDF[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
+                        x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
+                        y = resultDF['diversity'].astype(float).values.tolist()
 
-                        slp, inter, r_value, p, std_err = stats.linregress(x, y)
-                        min_y = float(slp*min(x) + inter)
-                        max_y = float(slp*max(x) + inter)
-                        slope = "%0.3f" % slp
-                        intercept = "%0.3f" % inter
-                        r_sq = r_value * r_value
-                        r_square = "%0.3f" % r_sq
+                    slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                    min_y = float(slp*min(x) + inter)
+                    max_y = float(slp*max(x) + inter)
+                    slope = "%0.3f" % slp
+                    intercept = "%0.3f" % inter
+                    r_sq = r_value * r_value
+                    r_square = "%0.3f" % r_sq
 
-                        if sig_only == 0:
-                            result += 'Taxa level: ' + str(name1[0]) + '\n'
-                            result += 'Taxa name: ' + str(name1[1]) + '\n'
-                            result += 'Taxa ID: ' + str(name1[2]) + '\n'
-                            if DepVar == 1:
-                                result = result + 'Dependent Variable: Abundance' + '\n'
-                            elif DepVar == 2:
-                                result = result + 'Dependent Variable: Species Richness' + '\n'
-                            elif DepVar == 3:
-                                result = result + 'Dependent Variable: Species Diversity' + '\n'
-                            result += '\nANCOVA table:\n'
-                            result += str(D) + '\n'
-                            result += '===============================================\n'
-                            result += '\n'
+                    if sig_only == 0:
+                        regrList = []
+                        regrList.append([float(min(x)), min_y])
+                        regrList.append([float(max(x)), max_y])
 
+                        seriesDict = {}
+                        seriesDict['turboThreshold'] = 0
+                        seriesDict['type'] = 'scatter'
+                        seriesDict['name'] = str(name1[1])
+                        seriesDict['data'] = dataList
+                        seriesDict['color'] = colors[colors_idx]
+
+                        markerDict = {}
+                        markerDict['symbol'] = shapes[shapes_idx]
+                        seriesDict['marker'] = markerDict
+                        seriesDict['data'] = dataList
+                        seriesList.append(seriesDict)
+
+                        regrDict = {}
+                        regrDict['type'] = 'line'
+                        regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
+                        regrDict['data'] = regrList
+                        regrDict['color'] = colors[colors_idx]
+
+                        markerDict = {}
+                        markerDict['enabled'] = False
+                        regrDict['marker'] = markerDict
+
+                        seriesList.append(regrDict)
+
+                    if sig_only == 1:
+                        if p_value < 0.05:
                             regrList = []
                             regrList.append([float(min(x)), min_y])
                             regrList.append([float(max(x)), max_y])
@@ -1218,58 +1147,8 @@ def getQuantUnivData(request):
 
                             seriesList.append(regrDict)
 
-                        if sig_only == 1:
-                            if p_value >= 0.05:
-                                result += '\n===============================================\n\n'
-                                result += 'Taxa Rank: ' + str(name1[0]) + '; Taxa Name: ' + str(name1[1]) + '; Taxa ID: ' + str(name1[2]) + ' is not significant,\n'
-                                result += 'it was removed from your analysis.\n'
-                                result += '\n===============================================\n\n'
-                            if p_value < 0.05:
-                                result += 'Taxa level: ' + str(name1[0]) + '\n'
-                                result += 'Taxa name: ' + str(name1[1]) + '\n'
-                                result += 'Taxa ID: ' + str(name1[2]) + '\n'
-                                if DepVar == 1:
-                                    result = result + 'Dependent Variable: Abundance' + '\n'
-                                elif DepVar == 2:
-                                    result = result + 'Dependent Variable: Species Richness' + '\n'
-                                elif DepVar == 3:
-                                    result = result + 'Dependent Variable: Species Diversity' + '\n'
-                                result += '\nANCOVA table:\n'
-                                result += str(D) + '\n'
-                                result += '===============================================\n'
-                                result += '\n'
-
-                                regrList = []
-                                regrList.append([float(min(x)), min_y])
-                                regrList.append([float(max(x)), max_y])
-
-                                seriesDict = {}
-                                seriesDict['turboThreshold'] = 0
-                                seriesDict['type'] = 'scatter'
-                                seriesDict['name'] = str(name1[1])
-                                seriesDict['data'] = dataList
-                                seriesDict['color'] = colors[colors_idx]
-
-                                markerDict = {}
-                                markerDict['symbol'] = shapes[shapes_idx]
-                                seriesDict['marker'] = markerDict
-                                seriesDict['data'] = dataList
-                                seriesList.append(seriesDict)
-
-                                regrDict = {}
-                                regrDict['type'] = 'line'
-                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
-                                regrDict['data'] = regrList
-                                regrDict['color'] = colors[colors_idx]
-
-                                markerDict = {}
-                                markerDict['enabled'] = False
-                                regrDict['marker'] = markerDict
-
-                                seriesList.append(regrDict)
-
-                base[RID] = 'Step 3 of 6: Performing linear regression...done!'
-                base[RID] = 'Step 4 of 6: Formatting graph data for display...'
+                base[RID] = 'Step 3 of 4: Performing linear regression...done!'
+                base[RID] = 'Step 4 of 4: Formatting graph data for display...'
 
                 xTitle = {}
                 xTitle['text'] = fieldListQuant[0]
@@ -1306,62 +1185,8 @@ def getQuantUnivData(request):
             elif DepVar == 3:
                 finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
-            base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
-            base[RID] = 'Step 5 of 6: Formatting biome data...'
-
-            biome = {}
-            newList = ['sampleid', 'sample_name']
-            newList.extend(fieldList)
-            grouped = finalDF.groupby(newList, sort=False)
-            nameList = []
-            for name, group in grouped:
-                metaDict = {}
-                for i in xrange(1, len(newList)):
-                    metaDict[str(newList[i])] = str(name[i])
-                nameList.append({"id": str(name[0]), "metadata": metaDict})
-
-            grouped = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'], sort=False)
-            taxaList = []
-            dataList = []
-            for name, group in grouped:
-                metaDict ={}
-                taxonList = []
-                taxonList.append(str(name[1]))
-                metaDict['taxonomy'] = taxonList
-                taxaList.append({"id": str(name[2]), "metadata": metaDict})
-                if DepVar == 1:
-                    dataList.append(group['abund'].tolist())
-                if DepVar == 2:
-                    dataList.append(group['rich'].tolist())
-                if DepVar == 3:
-                    dataList.append(group['diversity'].tolist())
-
-            biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
-            biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
-            biome['type'] = 'OTU table'
-            biome['generated_by'] = 'myPhyloDB'
-            biome['date'] = str(datetime.datetime.now())
-            biome['matrix_type'] = 'dense'
-            biome['matrix_element_type'] = 'float'
-            biome['rows'] = taxaList
-            biome['columns'] = nameList
-            biome['data'] = dataList
-
-            base[RID] = 'Step 5 of 6: Formatting biome data...done!'
-            base[RID] = 'Step 6 of 6: Formatting result table...'
-
-            res_table = finalDF.to_html(classes="table display")
-            res_table = res_table.replace('border="1"', 'border="0"')
-            finalDict['res_table'] = str(res_table)
-
+            base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
             finalDict['text'] = result
-            base[RID] = 'Step 4 of 4: Preparing graph data...completed'
-
-            biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
-            finalDict['biome'] = str(biome_json)
-
-            base[RID] = 'Step 6 of 6: Formatting result table...done!'
-
             finalDict['error'] = 'none'
             res = simplejson.dumps(finalDict)
 

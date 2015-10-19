@@ -7,9 +7,7 @@
 
 {% block user %}
     {% if user.is_authenticated %}
-        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
-    {% else %}
-        <p>User logged in as:<br>&nbsp;guest</p>
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
     {% endif %}
 {% endblock user %}
 
@@ -212,6 +210,7 @@
                                 "{{ sample.seq_platform }}",
                                 "{{ sample.seq_gene }}",
                                 "{{ sample.seq_gene_region }}",
+                                "{{ sample.seq_barcode }}",
                                 "{{ sample.seq_for_primer }}",
                                 "{{ sample.seq_rev_primer }}",
                                 "{{ sample.env_biome }}",
@@ -395,6 +394,7 @@
                                     "{{ Soil.plant_Fe }}",
                                     "{{ Soil.plant_Mn }}",
                                     "{{ Soil.plant_Zn }}",
+                                    "{{ Soil.crop_tot_biomass_fw }}",
                                     "{{ Soil.crop_tot_biomass_dw }}",
                                     "{{ Soil.crop_tot_above_biomass_fw }}",
                                     "{{ Soil.crop_tot_above_biomass_dw }}",
@@ -481,17 +481,17 @@
                 <table id="projectTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>project_name</th>
-                            <th>project_id</th>
-                            <th>sample_name</th>
-                            <th>project_desc</th>
-                            <th>start_date</th>
-                            <th>end_date</th>
-                            <th>pi_last</th>
-                            <th>pi_first</th>
-                            <th>pi_affiliation</th>
-                            <th>pi_email</th>
-                            <th>pi_phone</th>
+                            <th title="Project name">project_name</th>
+                            <th title="myPhyloDB generated project UUID">project_id</th>
+                            <th title="Sample name (Mothur group name)">sample_name</th>
+                            <th title="Project description">project_desc</th>
+                            <th title="Project start date">start_date</th>
+                            <th title="Project end date">end_date</th>
+                            <th title="Principal investigator: last name">pi_last</th>
+                            <th title="Principal investigator: first name">pi_first</th>
+                            <th title="Principal investigator: affiliation">pi_affiliation</th>
+                            <th title="Principal investigator: e-mail">pi_email</th>
+                            <th title="Principal investigator: phone">pi_phone</th>
                         </tr>
                     </thead>
                 </table>
@@ -501,18 +501,18 @@
                 <table id="referenceTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>project_name</th>
-                            <th>projectid</th>
-                            <th>refid</th>
-                            <th>sample_name</th>
-                            <th>sampleid</th>
-                            <th>raw</th>
-                            <th>path</th>
-                            <th>source</th>
-                            <th>alignDB</th>
-                            <th>templateDB</th>
-                            <th>taxonomyDB</th>
-                            <th>author</th>
+                            <th title="Project name">project_name</th>
+                            <th title="myPhyloDB generated project UUID">projectid</th>
+                            <th title="myPhyloDB generated upload UUID">refid</th>
+                            <th title="Sample name (Mothur group name)">sample_name</th>
+                            <th title="myPhylodb generated sample UUID">sampleid</th>
+                            <th title="True if raw data was uploaded & analyzed by myPhyloDB">raw</th>
+                            <th title="File path to the uploaded data files">path</th>
+                            <th title="Sequencing platform ('mothur' if pre-processed data)">source</th>
+                            <th title="Alignment database used for sequence processing">alignDB</th>
+                            <th title="Template database used for sequence processing">templateDB</th>
+                            <th title="Taxonomy database used for sequence processing">taxonomyDB</th>
+                            <th title="Username of person who uploaded data">author</th>
                         </tr>
                     </thead>
                 </table>
@@ -522,31 +522,32 @@
                 <table id="sampleTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>project_name</th>
-                            <th>ref_id</th>
-                            <th>sample_id</th>
-                            <th>sample_name</th>
-                            <th>organism</th>
-                            <th>collection_date</th>
-                            <th>depth</th>
-                            <th>elev</th>
-                            <th>seq_platform</th>
-                            <th>seq_gene</th>
-                            <th>seq_gene_region</th>
-                            <th>seq_for_primer</th>
-                            <th>seq_rev_primer</th>
-                            <th>env_biome</th>
-                            <th>env_feature</th>
-                            <th>env_material</th>
-                            <th>geo_loc_country</th>
-                            <th>geo_loc_state</th>
-                            <th>geo_loc_city</th>
-                            <th>geo_loc_farm</th>
-                            <th>geo_loc_plot</th>
-                            <th>latitude</th>
-                            <th>longitude</th>
-                            <th>annual_season_precpt</th>
-                            <th>annual_season_temp</th>
+                            <th title="Project name">project_name</th>
+                            <th title="myPhyloDB generated upload UUID">ref_id</th>
+                            <th title="myPhylodb generated sample UUID">sample_id</th>
+                            <th title="Sample name (Mothur group name)">sample_name</th>
+                            <th title="NCBI organism">organism</th>
+                            <th title="Collection Date">collection_date</th>
+                            <th title="Depth below soil surface">depth</th>
+                            <th title="Elevation">elev</th>
+                            <th title="Sequencing platform">seq_platform</th>
+                            <th title="Gene targeted for sequencing">seq_gene</th>
+                            <th title="Gene region targeted for sequencing">seq_gene_region</th>
+                            <th title="Sequencing barcoder">seq_barcode</th>
+                            <th title="Sequencing forward primer">seq_for_primer</th>
+                            <th title="Sequencing reverse primer">seq_rev_primer</th>
+                            <th title="Environment: biome">env_biome</th>
+                            <th title="Environment: feature">env_feature</th>
+                            <th title="Environment: material">env_material</th>
+                            <th title="Geographic location: country">geo_loc_country</th>
+                            <th title="Geographic location: state">geo_loc_state</th>
+                            <th title="Geographic location: city">geo_loc_city</th>
+                            <th title="Geographic location: farm">geo_loc_farm</th>
+                            <th title="Geographic location: plot">geo_loc_plot</th>
+                            <th title="Latitude">latitude</th>
+                            <th title="Longitude">longitude</th>
+                            <th title="Mean annual precipitation">annual_season_precpt</th>
+                            <th title="Mean annual temperature">annual_season_temp</th>
                         </tr>
                     </thead>
                 </table>
@@ -556,57 +557,57 @@
                 <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>project_name</th>
-                            <th>sample_name</th>
-                            <th>samp_collect_device</th>
-                            <th>samp_mat_process</th>
-                            <th>samp_size</th>
-                            <th>samp_store_temp</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_type</th>
-                            <th>samp_location</th>
-                            <th>samp_temp</th>
-                            <th>samp_ph</th>
-                            <th>samp_oxy_stat</th>
-                            <th>samp_salinity</th>
-                            <th>host_subject_id</th>
-                            <th>host_age</th>
-                            <th>host_pulse</th>
-                            <th>host_gender</th>
-                            <th>host_ethnicity</th>
-                            <th>host_height</th>
-                            <th>host_weight</th>
-                            <th>host_bmi</th>
-                            <th>host_weight_loss_3_month</th>
-                            <th>host_body_temp</th>
-                            <th>host_occupation</th>
-                            <th>pet_farm_animal</th>
-                            <th>smoker</th>
-                            <th>diet_type</th>
-                            <th>diet_duration</th>
-                            <th>diet_frequency</th>
-                            <th>diet_last_six_month</th>
-                            <th>last_meal</th>
-                            <th>medic_hist_perform</th>
-                            <th>disease_type</th>
-                            <th>disease_location</th>
-                            <th>disease_duration</th>
-                            <th>organism_count</th>
-                            <th>tumor_location</th>
-                            <th>tumor_mass</th>
-                            <th>tumor_stage</th>
-                            <th>drug_usage</th>
-                            <th>drug_type</th>
-                            <th>drug_duration</th>
-                            <th>drug_frequency</th>
-                            <th>perturbation</th>
-                            <th>pert_type</th>
-                            <th>pert_duration</th>
-                            <th>pert_frequency</th>
-                            <th>fetal_health_stat</th>
-                            <th>amniotic_fluid_color</th>
-                            <th>gestation_stat</th>
-                            <th>maternal_health_stat</th>
+                            <th title="Project namne">project_name</th>
+                            <th title="Sample name (Mothur group name)">sample_name</th>
+                            <th title="Sample: collection device">samp_collect_device</th>
+                            <th title="Sample: material processing">samp_mat_process</th>
+                            <th title="Sample: size">samp_size</th>
+                            <th title="Sample: storage temperature">samp_store_temp</th>
+                            <th title="Sample: storage duration">samp_store_dur</th>
+                            <th title="Sample: type">samp_type</th>
+                            <th title="Sample: location (body part)">samp_location</th>
+                            <th title="Sample: temperature">samp_temp</th>
+                            <th title="Sample: pH">samp_ph</th>
+                            <th title="Sample: oxygen status">samp_oxy_stat</th>
+                            <th title="Sample: salinity">samp_salinity</th>
+                            <th title="Host: unique ID">host_subject_id</th>
+                            <th title="Host: age">host_age</th>
+                            <th title="Host: pulse">host_pulse</th>
+                            <th title="Host: gender">host_gender</th>
+                            <th title="Host: ethnicity">host_ethnicity</th>
+                            <th title="Host: height">host_height</th>
+                            <th title="Host: weight">host_weight</th>
+                            <th title="Host: body mass index">host_bmi</th>
+                            <th title="Host: weight loss in the last 3 months">host_weight_loss_3_month</th>
+                            <th title="Host: body temperature">host_body_temp</th>
+                            <th title="Host: occupation">host_occupation</th>
+                            <th title="Host: pets owned">pet_farm_animal</th>
+                            <th title="Host: smoker">smoker</th>
+                            <th title="Diet: type">diet_type</th>
+                            <th title="Diet: duration">diet_duration</th>
+                            <th title="Diet: frequency">diet_frequency</th>
+                            <th title="Diet: last six months">diet_last_six_month</th>
+                            <th title="Diet: last meal">last_meal</th>
+                            <th title="Disease: medical history performed">medic_hist_perform</th>
+                            <th title="Disease: type">disease_type</th>
+                            <th title="Disease: location (body part)">disease_location</th>
+                            <th title="Disease: duration">disease_duration</th>
+                            <th title="Disease: organism count">organism_count</th>
+                            <th title="Disease: tumor location">tumor_location</th>
+                            <th title="Disease: tumor mass">tumor_mass</th>
+                            <th title="Disease: tumor stage">tumor_stage</th>
+                            <th title="Drugs: usage">drug_usage</th>
+                            <th title="Drugs: type">drug_type</th>
+                            <th title="Drugs: duration">drug_duration</th>
+                            <th title="Drugs: Frequency">drug_frequency</th>
+                            <th title="Intervention: type">perturbation</th>
+                            <th title="Intervention: chemical compound">pert_type</th>
+                            <th title="Intervention: duration">pert_duration</th>
+                            <th title="Intervention: frequency">pert_frequency</th>
+                            <th title="Fetal: health status">fetal_health_stat</th>
+                            <th title="Fetal: amniotic fluid color">amniotic_fluid_color</th>
+                            <th title="Fetal: gestation state">gestation_stat</th>
+                            <th title="Fetal: maternal health status">maternal_health_stat</th>
                         </tr>
                     </thead>
                 </table>
@@ -616,104 +617,105 @@
                 <table id="soilTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>project_name</th>
-                            <th>sample_name</th>
-                            <th>samp_collection_device</th>
-                            <th>samp_size</th>
-                            <th>samp_depth</th>
-                            <th>samp_prep</th>
-                            <th>sieve_size</th>
-                            <th>storage_cond</th>
-                            <th>samp_weight_dna_ext</th>
-                            <th>pool_dna_extracts</th>
-                            <th>fao_class</th>
-                            <th>local_class</th>
-                            <th>texture_class</th>
-                            <th>porosity</th>
-                            <th>profile_position</th>
-                            <th>slope_aspect</th>
-                            <th>slope_gradient</th>
-                            <th>bulk_density</th>
-                            <th>drainage_class</th>
-                            <th>water_content_soil</th>
-                            <th>cur_land_use</th>
-                            <th>cur_vegetation</th>
-                            <th>cur_crop</th>
-                            <th>cur_cultivar</th>
-                            <th>crop_rotation</th>
-                            <th>cover_crop</th>
-                            <th>fert_amendment_class</th>
-                            <th>fert_placement</th>
-                            <th>fert_type</th>
-                            <th>fert_tot_amount</th>
-                            <th>fert_N_tot_amount</th>
-                            <th>fert_P_tot_amount</th>
-                            <th>fert_K_tot_amount</th>
-                            <th>irrigation_type</th>
-                            <th>irrigation_tot_amount</th>
-                            <th>residue_removal</th>
-                            <th>residue_growth_stage</th>
-                            <th>residue_removal_percent</th>
-                            <th>tillage_event</th>
-                            <th>tillage_event_depth</th>
-                            <th>amend1_class</th>
-                            <th>amend1_active_ingredient</th>
-                            <th>amend1_tot_amount</th>
-                            <th>amend2_class</th>
-                            <th>amend2_active_ingredient</th>
-                            <th>amend2_tot_amount</th>
-                            <th>amend3_class</th>
-                            <th>amend3_active_ingredient</th>
-                            <th>amend3_tot_amount</th>
-                            <th>rRNA_copies</th>
-                            <th>microbial_biomass_C</th>
-                            <th>microbial_biomass_N</th>
-                            <th>microbial_respiration</th>
-                            <th>soil_pH</th>
-                            <th>soil_EC</th>
-                            <th>soil_C</th>
-                            <th>soil_OM</th>
-                            <th>soil_N</th>
-                            <th>soil_NO3_N</th>
-                            <th>soil_NH4_N</th>
-                            <th>soil_P</th>
-                            <th>soil_K</th>
-                            <th>soil_S</th>
-                            <th>soil_Zn</th>
-                            <th>soil_Fe</th>
-                            <th>soil_Cu</th>
-                            <th>soil_Mn</th>
-                            <th>soil_Ca</th>
-                            <th>soil_Mg</th>
-                            <th>soil_Na</th>
-                            <th>soil_B</th>
-                            <th>plant_C</th>
-                            <th>plant_N</th>
-                            <th>plant_P</th>
-                            <th>plant_K</th>
-                            <th>plant_Ca</th>
-                            <th>plant_Mg</th>
-                            <th>plant_S</th>
-                            <th>plant_Na</th>
-                            <th>plant_Cl</th>
-                            <th>plant_Al</th>
-                            <th>plant_B</th>
-                            <th>plant_Cu</th>
-                            <th>plant_Fe</th>
-                            <th>plant_Mn</th>
-                            <th>plant_Zn</th>
-                            <th>crop_tot_biomass_dw</th>
-                            <th>crop_tot_above_biomass_fw</th>
-                            <th>crop_tot_above_biomass_dw</th>
-                            <th>crop_tot_below_biomass_fw</th>
-                            <th>crop_tot_below_biomass_dw</th>
-                            <th>harv_fraction</th>
-                            <th>harv_fresh_weight</th>
-                            <th>harv_dry_weight</th>
-                            <th>ghg_chamber_placement</th>
-                            <th>ghg_N2O</th>
-                            <th>ghg_CO2</th>
-                            <th>ghg_NH4</th>
+                            <th title="Project name">project_name</th>
+                            <th title="Sample name (Mothur group name)">sample_name</th>
+                            <th title="Sample: collection device">samp_collection_device</th>
+                            <th title="Sample: size">samp_size</th>
+                            <th title="Sample: depth range">samp_depth</th>
+                            <th title="Sample: preparation">samp_prep</th>
+                            <th title="Sample: size">sieve_size</th>
+                            <th title="Sample: storage condition">storage_cond</th>
+                            <th title="Sample: weight used for DNA extractions">samp_weight_dna_ext</th>
+                            <th title="Sample: number of pooled DNA extracts">pool_dna_extracts</th>
+                            <th title="Soil: FAO classification">fao_class</th>
+                            <th title="Soil: USDA soil taxonomy">local_class</th>
+                            <th title="Soil: texture class">texture_class</th>
+                            <th title="Soil: porosity">porosity</th>
+                            <th title="Soil: profile position">profile_position</th>
+                            <th title="Soil: slope aspect">slope_aspect</th>
+                            <th title="Soil: slope gradient">slope_gradient</th>
+                            <th title="Soil: bulk density">bulk_density</th>
+                            <th title="Soil: drainage class">drainage_class</th>
+                            <th title="Soil: water content">water_content_soil</th>
+                            <th title="Crop: current land use">cur_land_use</th>
+                            <th title="Crop: current vegetation">cur_vegetation</th>
+                            <th title="Crop: current crop">cur_crop</th>
+                            <th title="Crop: current cultivar">cur_cultivar</th>
+                            <th title="Crop: crop rotation">crop_rotation</th>
+                            <th title="Crop: cover crop">cover_crop</th>
+                            <th title="Fertilizer: amendment class">fert_amendment_class</th>
+                            <th title="Fertilizer: placement">fert_placement</th>
+                            <th title="Fertilizer: type">fert_type</th>
+                            <th title="Fertilizer: total amount">fert_tot_amount</th>
+                            <th title="Fertilizer: total N amount">fert_N_tot_amount</th>
+                            <th title="Fertilizer: total P amount">fert_P_tot_amount</th>
+                            <th title="Fertilizer: total K amount">fert_K_tot_amount</th>
+                            <th title="Irrigation: type">irrigation_type</th>
+                            <th title="Irrigation: total amount">irrigation_tot_amount</th>
+                            <th title="Residue: type">residue_removal</th>
+                            <th title="Residue: growth stage at removal">residue_growth_stage</th>
+                            <th title="Residue: amount removed">residue_removal_percent</th>
+                            <th title="Tillage: type">tillage_event</th>
+                            <th title="Tillage: depth">tillage_event_depth</th>
+                            <th title="Amendments: type">amend1_class</th>
+                            <th title="Amendments: active ingredient">amend1_active_ingredient</th>
+                            <th title="Amendments: total amount">amend1_tot_amount</th>
+                            <th title="Amendments: type">amend2_class</th>
+                            <th title="Amendments: active ingredient">amend2_active_ingredient</th>
+                            <th title="Amendments: total amount">amend2_tot_amount</th>
+                            <th title="Amendments: type">amend3_class</th>
+                            <th title="Amendments: active ingredient">amend3_active_ingredient</th>
+                            <th title="Amendments: total amount">amend3_tot_amount</th>
+                            <th title="Microbial Biomass: rRNA copies">rRNA_copies</th>
+                            <th title="Microbial Biomass: microbial biomass Carbon">microbial_biomass_C</th>
+                            <th title="Microbial Biomass: microbial biomass Nitrogen">microbial_biomass_N</th>
+                            <th title="Microbial Biomass: microbial respiration">microbial_respiration</th>
+                            <th title="Soil nutrients: pH">soil_pH</th>
+                            <th title="Soil nutrients: Electrical conductivity">soil_EC</th>
+                            <th title="Soil nutrients: Carbon">soil_C</th>
+                            <th title="Soil nutrients: Organic matter">soil_OM</th>
+                            <th title="Soil nutrients: Nitrogen">soil_N</th>
+                            <th title="Soil nutrients: Nitrate Nitrogen">soil_NO3_N</th>
+                            <th title="Soil nutrients: Ammonium Nitrogen">soil_NH4_N</th>
+                            <th title="Soil nutrients: Phosphorous">soil_P</th>
+                            <th title="Soil nutrients: Potassium">soil_K</th>
+                            <th title="Soil nutrients: Sulfur">soil_S</th>
+                            <th title="Soil nutrients: Zinc">soil_Zn</th>
+                            <th title="Soil nutrients: Iron">soil_Fe</th>
+                            <th title="Soil nutrients: Copper">soil_Cu</th>
+                            <th title="Soil nutrients: Manganese">soil_Mn</th>
+                            <th title="Soil nutrients: Calcium">soil_Ca</th>
+                            <th title="Soil nutrients: Magnesium">soil_Mg</th>
+                            <th title="Soil nutrients: Sodium">soil_Na</th>
+                            <th title="Soil nutrients: Boron">soil_B</th>
+                            <th title="Plant nutrients: Carbon">plant_C</th>
+                            <th title="Plant nutrients: Nitrogen">plant_N</th>
+                            <th title="Plant nutrients: Phosphorous">plant_P</th>
+                            <th title="Plant nutrients: Potassium">plant_K</th>
+                            <th title="Plant nutrients: Calcium">plant_Ca</th>
+                            <th title="Plant nutrients: Magnesium">plant_Mg</th>
+                            <th title="Plant nutrients: Sulfur">plant_S</th>
+                            <th title="Plant nutrients: Sodium">plant_Na</th>
+                            <th title="Plant nutrients: Choride">plant_Cl</th>
+                            <th title="Plant nutrients: Aluminum">plant_Al</th>
+                            <th title="Plant nutrients: Boron">plant_B</th>
+                            <th title="Plant nutrients: Copper">plant_Cu</th>
+                            <th title="Plant nutrients: Iron">plant_Fe</th>
+                            <th title="Plant nutrients: Manganese">plant_Mn</th>
+                            <th title="Plant nutrients: Zinc">plant_Zn</th>
+                            <th title="Crop biomass: total fresh weight">crop_tot_biomass_fw</th>
+                            <th title="Crop biomass: total dry weight">crop_tot_biomass_dw</th>
+                            <th title="Crop biomass: total aboveground biomass fresh weight">crop_tot_above_biomass_fw</th>
+                            <th title="Crop biomass: total aboveground biomass dry weight">crop_tot_above_biomass_dw</th>
+                            <th title="Crop biomass: total belowground biomass fresh weight">crop_tot_below_biomass_fw</th>
+                            <th title="Crop biomass: total belowground biomass dry weight">crop_tot_below_biomass_dw</th>
+                            <th title="Crop biomass: harvested fraction">harv_fraction</th>
+                            <th title="Crop biomass: harvested fresh weight">harv_fresh_weight</th>
+                            <th title="Crop biomass: harvested dry weight">harv_dry_weight</th>
+                            <th title="Greenhouse gas emissions: chamber placement">ghg_chamber_placement</th>
+                            <th title="Greenhouse gas emissions: N2O">ghg_N2O</th>
+                            <th title="Greenhouse gas emission: CO2">ghg_CO2</th>
+                            <th title="Greenhouse gas emission: NH4">ghg_NH4</th>
                         </tr>
                     </thead>
                 </table>
@@ -723,20 +725,20 @@
                 <table id="usrTable" cellpadding="0" cellspacing="0" border="0" class="display">
                     <thead>
                         <tr>
-                            <th>project_name</th>
-                            <th>sample_name</th>
-                            <th>usr_cat1</th>
-                            <th>usr_cat2</th>
-                            <th>usr_cat3</th>
-                            <th>usr_cat4</th>
-                            <th>usr_cat5</th>
-                            <th>usr_cat6</th>
-                            <th>usr_quant1</th>
-                            <th>usr_quant2</th>
-                            <th>usr_quant3</th>
-                            <th>usr_quant4</th>
-                            <th>usr_quant5</th>
-                            <th>usr_quant6</th>
+                            <th title="Project name">project_name</th>
+                            <th title="Sample name (Mothur group name)">sample_name</th>
+                            <th title="User-defined: categorical variable #1">usr_cat1</th>
+                            <th title="User-defined: categorical variable #2">usr_cat2</th>
+                            <th title="User-defined: categorical variable #3">usr_cat3</th>
+                            <th title="User-defined: categorical variable #4">usr_cat4</th>
+                            <th title="User-defined: categorical variable #5">usr_cat5</th>
+                            <th title="User-defined: categorical variable #6">usr_cat6</th>
+                            <th title="User-defined: quantitative variable #1">usr_quant1</th>
+                            <th title="User-defined: quantitative variable #2">usr_quant2</th>
+                            <th title="User-defined: quantitative variable #3">usr_quant3</th>
+                            <th title="User-defined: quantitative variable #4">usr_quant4</th>
+                            <th title="User-defined: quantitative variable #5">usr_quant5</th>
+                            <th title="User-defined: quantitative variable #6">usr_quant6</th>
                         </tr>
                     </thead>
                 </table>

@@ -7,9 +7,7 @@
 
 {% block user %}
     {% if user.is_authenticated %}
-        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
-    {% else %}
-        <p>User logged in as:<br>&nbsp;guest</p>
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
     {% endif %}
 {% endblock user %}
 
@@ -248,14 +246,14 @@
                 $("#run").css("background-color", "yellow");
                 $("#container-1").empty().append('Analysis is running...please be patient');
                 getCatGraphData();
-            }
-
-            else if ( ((nodesCat == "") && (nodesQuant == "")) && ((nodesTaxa != "") || (selectAll != 0)) ) {
-                $("#container-1").empty().append('Please choose your meta variable(s) and taxa level(s)!');
+            } else if ( ((nodesCat == "") || (nodesQuant == "")) && ((nodesTaxa != "") || (selectAll != 0)) ) {
+                $("#container-1").empty().append('Please also choose your meta variable(s)!');
                 $("#run").css("background-color", "red");
-            }
-            else if ( ((nodesCat != "") || (nodesQuant != "")) && ((nodesTaxa == "") && (selectAll == 0)) ) {
-                $("#container-1").empty().append('Please also choose your taxa level(s)!');
+            } else if ( ((nodesCat != "") || (nodesQuant != "")) && ((nodesTaxa == "") || (selectAll == 0)) ) {
+                $("#container-1").empty().append('Please also choose your taxa variable(s)!');
+                $("#run").css("background-color", "red");
+            } else if ( (nodesCat == "") && (nodesQuant == "") && (nodesTaxa == "") && (selectAll == 0) ) {
+                $("#container-1").empty().append('Please choose a meta variable(s) and a taxa level(s)!');
                 $("#run").css("background-color", "red");
             }
         }
@@ -413,7 +411,7 @@
                 },
                 success: function(data) {
                     stopTimer(refresh);
-                    alert(data);
+                    $('#container-1').empty();
                     var res_table = data['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
                         "jQueryUI": true,
@@ -476,7 +474,7 @@
                         <option value="6">Genera</option>
                         <option value="7">Species</option>
                     </select>
-                    &nbsp<-- Select all taxa:
+                    &nbsp<-- Selected taxa level
                 </td>
             </tr>
             <tr>
@@ -488,7 +486,7 @@
                         <option value="4">Proportion</option>
                         <option value="5">DESeq2</option>
                     </select>
-                    &nbsp<-- Normalization method:
+                    &nbsp<-- Selected normalization method
                 </td>
             </tr>
             <tr>
@@ -512,7 +510,7 @@
 
             <tr>
                 <td id="IterRow" style="display: none;" bgcolor="white">
-                    <input style="background-color: white" type="text" id="Iters" value="1"/>
+                    <input style="background-color: white" type="text" id="Iters" value="10"/>
                     &nbsp<-- Iterations:
                 </td>
             </tr>
@@ -526,16 +524,16 @@
 
         </table>
     </div>
-    <br><br>
-    <div id="stage"></div>
-    <div id="container-1" style="height: 40px;">No Data has been selected!</div>
-    <br><br>
+
     <br>
-    <h2>Raw Data (Tabular):</h2>
+    <div id="stage"></div>
+    <div id="container-1" style="height: 40px;"></div>
+
+    <h2>Normalized Data (Tabular):</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
 
     <br>
-    <h2>Raw Data (Biom Format):</h2>
+    <h2>Normalized Data (Biom Format):</h2>
     <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
     <br>
     <br>
