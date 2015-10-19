@@ -7,9 +7,7 @@
 
 {% block user %}
     {% if user.is_authenticated %}
-        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
-    {% else %}
-        <p>User logged in as:<br>&nbsp;guest</p>
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
     {% endif %}
 {% endblock user %}
 
@@ -798,12 +796,12 @@
                             alert(error);
                         }
                         if (empty == 0) {
-                            alert('No significant tests!');
+                            $("#container-1").empty().append('No significant tests!');
+                        } else {
+                            barchart(xAxis, yAxis, series);
                         }
-                        barchart(xAxis, yAxis, series);
                         var text = data['text'];
                         $('#text-1').val(text);
-
                         $("#run").css("background-color", "green");
                     }
                 });
@@ -960,7 +958,7 @@
                         alert(error);
                     }
                     if (empty == 0) {
-                        $("#container-2").empty().append('All treatment combinations contained <3 observations; No statistical analyses were performed!');
+                        $("#container-2").empty().append('No significant regressions!');
                     } else {
                         linechart(xAxis, yAxis, series);
                     }
@@ -1147,10 +1145,10 @@
             <tr>
                 <td bgcolor="white">
                     <select id="button1">
-                        <option value="1" selected="selected">ANCOVA</option>
-                        <option value="2" >GLM</option>
+                        <option value="1" selected="selected">Bar plots (factors)</option>
+                        <option value="2" >Scatter plots (regression)</option>
                     </select>
-                    &nbsp<-- Selected test
+                    &nbsp<-- Selected analysis
                 </td>
             </tr>
             <tr>

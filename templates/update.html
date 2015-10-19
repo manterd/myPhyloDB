@@ -6,9 +6,7 @@
 
 {% block user %}
     {% if user.is_authenticated %}
-        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
-    {% else %}
-        <p>User logged in as:<br>&nbsp;guest</p>
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
     {% endif %}
 {% endblock user %}
 

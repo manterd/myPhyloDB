@@ -46,6 +46,7 @@ class Sample(models.Model):
     seq_platform = models.CharField(max_length=45, blank=True)
     seq_gene = models.CharField(max_length=45, blank=True)
     seq_gene_region = models.CharField(max_length=45, blank=True)
+    seq_barcode = models.CharField(max_length=45, blank=True)
     seq_for_primer = models.CharField(max_length=45, blank=True)
     seq_rev_primer = models.CharField(max_length=45, blank=True)
     env_biome = models.CharField(max_length=45, blank=True)
@@ -97,6 +98,7 @@ class Human_Associated(models.Model):
     host_body_temp = models.FloatField(blank=True, null=True)
     host_occupation = models.CharField(max_length=45, blank=True)
     pet_farm_animal = models.CharField(max_length=45, blank=True)
+    obesity = models.CharField(max_length=45, blank=True)
     smoker = models.CharField(max_length=45, blank=True)
 
     diet_type = models.CharField(max_length=45, blank=True)
@@ -115,7 +117,7 @@ class Human_Associated(models.Model):
     tumor_stage = models.CharField(max_length=45, blank=True)
 
     drug_usage = models.CharField(max_length=45, blank=True)
-    durg_type = models.CharField(max_length=45, blank=True)
+    drug_type = models.CharField(max_length=45, blank=True)
     drug_duration = models.FloatField(blank=True, null=True)
     drug_frequency = models.CharField(max_length=45, blank=True)
 

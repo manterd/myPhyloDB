@@ -87,7 +87,10 @@ def upload(request):
             if source == 'mothur':
                 raw = False
                 batch = 'blank'
-            elif source == '454':
+            elif source == '454_sff':
+                raw = True
+                batch = request.FILES['docfile7']
+            elif source == '454_fastq':
                 raw = True
                 batch = request.FILES['docfile7']
             elif source == 'miseq':
@@ -166,7 +169,7 @@ def upload(request):
                         context_instance=RequestContext(request)
                     )
 
-            elif source == '454':
+            elif source == '454_sff':
                 mothurdest = 'mothur/temp'
 
                 if not os.path.exists(mothurdest):
@@ -175,6 +178,89 @@ def upload(request):
                 sff = 'temp.sff'
                 file5 = request.FILES['docfile5']
                 handle_uploaded_file(file5, mothurdest, sff)
+
+                oligo = 'temp.oligos'
+                file6 = request.FILES['docfile6']
+                handle_uploaded_file(file6, mothurdest, oligo)
+
+                batch = 'mothur.batch'
+                file7 = request.FILES['docfile7']
+                handle_uploaded_file(file7, mothurdest, batch)
+
+                try:
+                    mothur(dest, source)
+
+                except Exception as e:
+                    print("Encountered error with Mothur: " + str(e))
+                    remove_proj(dest)
+
+                    if request.user.is_superuser:
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "There was an error with Mothur"},
+                        context_instance=RequestContext(request)
+                    )
+
+                try:
+                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                        parse_taxonomy(file3)
+                except Exception as e:
+                    print("Error with post-mothur taxonomy file: " + str(e))
+                    remove_proj(dest)
+
+                    if request.user.is_superuser:
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "There was an error parsing your Taxonomy file (post-Mothur)"},
+                        context_instance=RequestContext(request)
+                    )
+
+                try:
+                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/mothur.shared' % dest, 'rb') as file4:
+                            parse_profile(file3, file4, p_uuid, refDict)
+                except Exception as e:
+                    print("Error with parsing post-mothur profile: " + str(e))
+                    remove_proj(dest)
+
+                    if request.user.is_superuser:
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "There was an error parsing your Profile (post-Mothur)"},
+                        context_instance=RequestContext(request)
+                    )
+
+            elif source == '454_fastq':
+                mothurdest = 'mothur/temp'
+
+                if not os.path.exists(mothurdest):
+                    os.makedirs(mothurdest)
+
+                fasta = 'temp.fasta'
+                file11 = request.FILES['docfile11']
+                handle_uploaded_file(file11, mothurdest, fasta)
+
+                qual = 'temp.qual'
+                file12 = request.FILES['docfile12']
+                handle_uploaded_file(file12, mothurdest, qual)
 
                 oligo = 'temp.oligos'
                 file6 = request.FILES['docfile6']

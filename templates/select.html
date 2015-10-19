@@ -7,9 +7,7 @@
 
 {% block user %}
     {% if user.is_authenticated %}
-        <p>User logged in as:<br>&nbsp;{{ user.username }}</p>
-    {% else %}
-        <p>User logged in as:<br>&nbsp;guest</p>
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
     {% endif %}
 {% endblock user %}
 
@@ -212,6 +210,7 @@
                                 "{{ sample.seq_platform }}",
                                 "{{ sample.seq_gene }}",
                                 "{{ sample.seq_gene_region }}",
+                                "{{ sample.seq_barcode }}",
                                 "{{ sample.seq_for_primer }}",
                                 "{{ sample.seq_rev_primer }}",
                                 "{{ sample.env_biome }}",
@@ -534,6 +533,7 @@
                             <th title="Sequencing platform">seq_platform</th>
                             <th title="Gene targeted for sequencing">seq_gene</th>
                             <th title="Gene region targeted for sequencing">seq_gene_region</th>
+                            <th title="Sequencing barcoder">seq_barcode</th>
                             <th title="Sequencing forward primer">seq_for_primer</th>
                             <th title="Sequencing reverse primer">seq_rev_primer</th>
                             <th title="Environment: biome">env_biome</th>
