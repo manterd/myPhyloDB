@@ -248,8 +248,8 @@ def getSPLSAData(request):
             else:
                 r = R(RCMD="R/R-Linux/bin/R")
 
-            r.assign("X", normDF)   ### taxa abundances
-            r.assign("Y", metaDF)    ### quantitative data
+            r.assign("X", normDF)
+            r.assign("Y", metaDF)
 
             r.assign("names", normDF.columns.values)
             r("colnames(X) <- names")
@@ -265,7 +265,7 @@ def getSPLSAData(request):
 
             r("library(spls)")
             r("set.seed(1)")
-            r("cv <- cv.spls(X_final, Y_final, eta=seq(0.1, 0.9, 0.1), K=c(1:10), plot.it=FALSE)")
+            r("cv <- cv.spls(X_final, Y_final, eta=seq(0.1, 0.9, 0.1), K=c(1:5), plot.it=FALSE)")
             r("f <- spls(X_final, Y_final, eta=cv$eta.opt, K=cv$K.opt)")
 
             r("coef.f <- coef(f)")

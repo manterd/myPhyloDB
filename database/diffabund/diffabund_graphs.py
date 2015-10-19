@@ -258,25 +258,15 @@ def getDiffAbund(request):
 
                             nbinom_res['Comparison'] = iterationName
 
-
                             nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
-
                             nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
-
                             nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
-
                             nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
-
                             nbinom_res.rename(columns={' stderr ': 'StdErr'}, inplace=True)
-
                             nbinom_res.rename(columns={' stat ': 'Stat'}, inplace=True)
-
                             nbinom_res.rename(columns={' pval ': 'p-value'}, inplace=True)
-
                             nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
-
                             nbinom_res[['p-value', 'p-adjusted']].astype(float)
-
 
                             finalDF = pd.concat([finalDF, nbinom_res])
 

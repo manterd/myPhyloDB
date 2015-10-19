@@ -7,6 +7,7 @@ import pickle
 from pyper import *
 from scipy import stats
 import simplejson
+import sys
 
 from database.anova.anova_DF import UnivMetaDF, normalizeUniv
 from database.models import Sample, Profile
@@ -18,6 +19,8 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 
 def statusANOVA(request):
@@ -933,7 +936,7 @@ def getQuantUnivData(request):
                 aov = r("aov")
                 tempStuff = aov.split('\n')
                 for i in xrange(len(tempStuff)):
-                    if i >= 1:
+                    if i >= 4:
                         D += tempStuff[i] + '\n'
 
                 fit = r("summary(fit)")
@@ -1021,7 +1024,7 @@ def getQuantUnivData(request):
 
                             seriesList.append(regrDict)
 
-                        if sig_only == 0:
+                        if sig_only == 1:
                             if p_value < 0.05:
                                 slp, inter, r_value, p, std_err = stats.linregress(x, y)
                                 min_y = float(slp*min(x) + inter)

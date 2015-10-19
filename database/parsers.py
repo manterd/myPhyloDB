@@ -53,7 +53,8 @@ def mothur(dest, source):
         shutil.rmtree('mothur/temp')
 
     if source == '454_fastq':
-        shutil.copy('mothur/temp/temp.fastq', '% s/mothur.fastq' % dest)
+        shutil.copy('mothur/temp/temp.fasta', '% s/mothur.fasta' % dest)
+        shutil.copy('mothur/temp/temp.qual', '% s/mothur.qual' % dest)
         shutil.copy('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
         shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
         shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
