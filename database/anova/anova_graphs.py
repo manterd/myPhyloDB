@@ -1,4 +1,3 @@
-import datetime
 from django.http import HttpResponse
 from django.db.models import Sum
 import numpy as np
@@ -417,41 +416,29 @@ def getCatUnivData(request):
                             pList.append(float(part))
                         except:
                             placeholder = ''
-                    p_val = min(pList)
 
-                    tempStuff = aov.split('\n')
-                    for part in tempStuff:
-                        if part != tempStuff[0]:
-                            D += part + '\n'
+                    if pList:
+                        p_val = min(pList)
+                        tempStuff = aov.split('\n')
+                        for part in tempStuff:
+                            if part != tempStuff[0]:
+                                D += part + '\n'
 
-                    fList = []
-                    for part in tempStuff:
-                        if part != tempStuff[0] and part != tempStuff[1]:
-                            part = part.replace('\r', '')
-                            part1 = part.split(' ')
-                            if part1[0] == 'Residuals':
-                                break
-                            if part1[0] not in fList:
-                                fList.append(part1[0])
+                        fList = []
+                        for part in tempStuff:
+                            if part != tempStuff[0] and part != tempStuff[1]:
+                                part = part.replace('\r', '')
+                                part1 = part.split(' ')
+                                if part1[0] == 'Residuals':
+                                    break
+                                if part1[0] not in fList:
+                                    fList.append(part1[0])
 
-                    D += "\nLSmeans & Tukey's HSD post-hoc test:\n\n"
-                    r("library(lsmeans)")
+                        D += "\nLSmeans & Tukey's HSD post-hoc test:\n\n"
+                        r("library(lsmeans)")
 
-                    if len(fieldListQuant) == 0:
-                        for i in fList:
-                            hsd_string = "lsm <- lsmeans(fit, list(pairwise ~ " + str(i) + "))"
-                            r.assign("cmd", hsd_string)
-                            r("eval(parse(text=cmd))")
-                            r("options(width=5000)")
-                            table = r("lsm")
-                            tempStuff = table.split('\n')
-                            for i in xrange(len(tempStuff)):
-                                if i > 0:
-                                    D += tempStuff[i] + '\n'
-
-                    else:
-                        for i in fList:
-                            if i not in fieldListQuant:
+                        if len(fieldListQuant) == 0:
+                            for i in fList:
                                 hsd_string = "lsm <- lsmeans(fit, list(pairwise ~ " + str(i) + "))"
                                 r.assign("cmd", hsd_string)
                                 r("eval(parse(text=cmd))")
@@ -461,6 +448,22 @@ def getCatUnivData(request):
                                 for i in xrange(len(tempStuff)):
                                     if i > 0:
                                         D += tempStuff[i] + '\n'
+
+                        else:
+                            for i in fList:
+                                if i not in fieldListQuant:
+                                    hsd_string = "lsm <- lsmeans(fit, list(pairwise ~ " + str(i) + "))"
+                                    r.assign("cmd", hsd_string)
+                                    r("eval(parse(text=cmd))")
+                                    r("options(width=5000)")
+                                    table = r("lsm")
+                                    tempStuff = table.split('\n')
+                                    for i in xrange(len(tempStuff)):
+                                        if i > 0:
+                                            D += tempStuff[i] + '\n'
+                    else:
+                        p_val = 1.0
+                        D = 'One or more of your groups only had 1 observation, ANOVA was not run\n'
 
                     result += '===============================================\n'
                     result = result + 'Taxa level: ' + str(name1[0]) + '\n'
@@ -560,6 +563,7 @@ def getCatUnivData(request):
             finalDict['xAxis'] = xAxisDict
             finalDict['yAxis'] = yAxisDict
             finalDict['text'] = result
+
             if not seriesList:
                 finalDict['empty'] = 0
             else:
@@ -892,10 +896,9 @@ def getQuantUnivData(request):
             ]
             shapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
             colors_idx = 0
-            shapes_idx = 0
-
             grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
             for name1, group1 in grouped1:
+                shapes_idx = 0
                 dataList = []
                 x = []
                 y = []
@@ -948,10 +951,12 @@ def getQuantUnivData(request):
                 r("p_vals <- summary(fit)$coefficients[,4]")
                 p_vals = r.get("p_vals")
 
-                if p_vals is not None:
+                if not np.isnan(p_vals).any():
                     p_value = min(p_vals)
+
                 else:
                     p_value = 1.0
+                    D = 'One or more of your groups only had 1 observation, ANOVA was not run\n'
 
                 resultDF = r.get("df")
                 resultDF = resultDF.rename(columns=lambda x: x.strip())
@@ -960,11 +965,11 @@ def getQuantUnivData(request):
                 result += 'Taxa name: ' + str(name1[1]) + '\n'
                 result += 'Taxa ID: ' + str(name1[2]) + '\n'
                 if DepVar == 1:
-                    result = result + 'Dependent Variable: Abundance' + '\n'
+                    result += 'Dependent Variable: Abundance' + '\n'
                 elif DepVar == 2:
-                    result = result + 'Dependent Variable: Species Richness' + '\n'
+                    result += 'Dependent Variable: Species Richness' + '\n'
                 elif DepVar == 3:
-                    result = result + 'Dependent Variable: Species Diversity' + '\n'
+                    result += 'Dependent Variable: Species Diversity' + '\n'
                 result += '\nANCOVA table:\n'
                 result += str(D) + '\n'
                 result += '===============================================\n'
@@ -987,18 +992,6 @@ def getQuantUnivData(request):
                             y = group2['diversity'].astype(float).values.tolist()
 
                         if sig_only == 0:
-                            slp, inter, r_value, p, std_err = stats.linregress(x, y)
-                            min_y = float(slp*min(x) + inter)
-                            max_y = float(slp*max(x) + inter)
-                            slope = "%0.3f" % slp
-                            intercept = "%0.3f" % inter
-                            r_sq = r_value * r_value
-                            r_square = "%0.3f" % r_sq
-
-                            regrList = []
-                            regrList.append([float(min(x)), min_y])
-                            regrList.append([float(max(x)), max_y])
-
                             seriesDict = {}
                             seriesDict['turboThreshold'] = 0
                             seriesDict['type'] = 'scatter'
@@ -1012,17 +1005,29 @@ def getQuantUnivData(request):
                             seriesDict['data'] = dataList
                             seriesList.append(seriesDict)
 
-                            regrDict = {}
-                            regrDict['type'] = 'line'
-                            regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
-                            regrDict['data'] = regrList
-                            regrDict['color'] = colors[colors_idx]
+                            if not np.isnan(p_vals).any():
+                                slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                                min_y = float(slp*min(x) + inter)
+                                max_y = float(slp*max(x) + inter)
+                                slope = "%0.3f" % slp
+                                intercept = "%0.3f" % inter
+                                r_sq = r_value * r_value
+                                r_square = "%0.3f" % r_sq
 
-                            markerDict = {}
-                            markerDict['enabled'] = False
-                            regrDict['marker'] = markerDict
+                                regrList = []
+                                regrList.append([float(min(x)), min_y])
+                                regrList.append([float(max(x)), max_y])
 
-                            seriesList.append(regrDict)
+                                regrDict = {}
+                                regrDict['type'] = 'line'
+                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
+                                regrDict['data'] = regrList
+                                regrDict['color'] = colors[colors_idx]
+
+                                markerDict = {}
+                                markerDict['enabled'] = False
+                                regrDict['marker'] = markerDict
+                                seriesList.append(regrDict)
 
                         if sig_only == 1:
                             if p_value < 0.05:
@@ -1063,9 +1068,9 @@ def getQuantUnivData(request):
 
                                 seriesList.append(regrDict)
 
-                            shapes_idx += 1
-                            if shapes_idx >= len(shapes):
-                                shapes_idx = 0
+                        shapes_idx += 1
+                        if shapes_idx >= len(shapes):
+                            shapes_idx = 0
 
                 else:
                     if DepVar == 1:

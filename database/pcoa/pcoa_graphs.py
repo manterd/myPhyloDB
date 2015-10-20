@@ -507,7 +507,6 @@ def getPCoAData(request):
                 "#252F99", "#00CCFF", "#674E60", "#FC009C", "#92896B"
             ]
             colors_idx = 0
-
             if fieldListCat:
                 grouped = pcoaDF.groupby(fieldListCat)
                 for name, group in grouped:

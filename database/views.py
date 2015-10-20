@@ -254,13 +254,36 @@ def upload(request):
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
-                fasta = 'temp.fasta'
-                file11 = request.FILES['docfile11']
-                handle_uploaded_file(file11, mothurdest, fasta)
+                file_list = request.FILES.getlist('fna_files')
+                tempList = []
+                if len(file_list) > 1:
+                    for each in file_list:
+                        file = each
+                        handle_uploaded_file(file, mothurdest, each)
+                        myStr = "mothur\\temp\\" + str(file.name)
+                        tempList.append(myStr)
+                    inputList = "-".join(tempList)
+                    os.system('" mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\" "' % inputList)
+                else:
+                    for each in file_list:
+                        fasta = 'temp.fasta'
+                        handle_uploaded_file(each, mothurdest, fasta)
 
-                qual = 'temp.qual'
-                file12 = request.FILES['docfile12']
-                handle_uploaded_file(file12, mothurdest, qual)
+                file_list = request.FILES.getlist('qual_files')
+                tempList = []
+                if len(file_list) > 1:
+                    for each in file_list:
+                        file = each
+                        handle_uploaded_file(file, mothurdest, each)
+                        myStr = "mothur\\temp\\" + str(file.name)
+                        tempList.append(myStr)
+                    inputList = "-".join(tempList)
+                    os.system('" mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\" "' % inputList)
+                else:
+                    for each in file_list:
+                        qual = 'temp.qual'
+                        handle_uploaded_file(each, mothurdest, qual)
+
 
                 oligo = 'temp.oligos'
                 file6 = request.FILES['docfile6']
@@ -340,7 +363,7 @@ def upload(request):
                 file13 = request.FILES['docfile13']
                 handle_uploaded_file(file13, mothurdest, fastq)
 
-                file_list = request.FILES.getlist('files')
+                file_list = request.FILES.getlist('fastq_files')
                 for each in file_list:
                     file = each
                     handle_uploaded_file(file, mothurdest, each)
