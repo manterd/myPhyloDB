@@ -32,6 +32,13 @@
         var refresh = 0;
 
         $(function () {
+
+            Highcharts.setOptions({
+                lang: {
+                    numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
+                }
+            });
+
             $("#tree_metaCat").dynatree({
                 checkbox: true,
                 rootVisible: false,
@@ -975,6 +982,9 @@
                 chart: {
                     renderTo: 'container-1',
                     type: 'column',
+                    lang: {
+                        numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
+                    },
                     events: {
                         load: function () {
                             var chart = this,
@@ -1044,6 +1054,9 @@
                 chart: {
                     renderTo: 'container-2',
                     type: 'scatter',
+                    lang: {
+                        numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
+                    },
                     zoomType: 'xy',
                     events: {
                         load: function () {
@@ -1105,6 +1118,9 @@
                 series: series,
                 scrollbar: {
                     enabled: true
+                },
+                lang: {
+                    numericSymbols: null //otherwise by default ['k', 'M', 'G', 'T', 'P', 'E']
                 },
                 credits: { enabled: false }
             };
@@ -1199,7 +1215,8 @@
         <tr>
             <td style="width: 33%; text-align: left">
                 Dependent variable:<select id="DepVar">
-                    <option value="1">Abundance</option>
+                    <option value="1">Abundance (counts)</option>
+                    <option value="4">Abundance (16S rRNA copies)</option>
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
                 </select>
@@ -1235,7 +1252,7 @@
             <td id="MinRow-off"></td>
             <td id="IterRow" style="text-align: center">
                 Iterations:
-                <input style="background-color: white" type="text" id="Iters" value="10"/>
+                <input style="background-color: white" type="text" id="Iters" value="1"/>
             </td>
             <td id="FdrRow-off"></td>
         </tr>

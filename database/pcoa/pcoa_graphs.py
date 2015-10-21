@@ -72,6 +72,7 @@ def getPCoAData(request):
             time1[RID] = time.time()
             base[RID] = 'Step 1 of 8: Querying database...'
 
+            DepVar = int(all["DepVar"])
             taxaLevel = int(all["taxa"])
             distance = int(all["distance"])
             PC1 = int(all["PC1"])
@@ -107,19 +108,19 @@ def getPCoAData(request):
 
             newList = []
             result = ''
-            if taxaLevel == 0:
+            if taxaLevel == 1:
                 result = result + 'Taxa level: Kingdom' + '\n'
-            elif taxaLevel == 1:
-                result = result + 'Taxa level: Phyla' + '\n'
             elif taxaLevel == 2:
-                result = result + 'Taxa level: Class' + '\n'
+                result = result + 'Taxa level: Phyla' + '\n'
             elif taxaLevel == 3:
-                result = result + 'Taxa level: Order' + '\n'
+                result = result + 'Taxa level: Class' + '\n'
             elif taxaLevel == 4:
-                result = result + 'Taxa level: Family' + '\n'
+                result = result + 'Taxa level: Order' + '\n'
             elif taxaLevel == 5:
-                result = result + 'Taxa level: Genus' + '\n'
+                result = result + 'Taxa level: Family' + '\n'
             elif taxaLevel == 6:
+                result = result + 'Taxa level: Genus' + '\n'
+            elif taxaLevel == 7:
                 result = result + 'Taxa level: Species' + '\n'
 
             if distance == 1:
@@ -156,30 +157,23 @@ def getPCoAData(request):
             metaStrCat = all["metaValsCat"]
             fieldListCat = []
             valueListCat = []
-            idDictCat = {}
             try:
                 metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
                 for key in sorted(metaDictCat):
                     fieldListCat.append(key)
                     valueListCat.append(metaDictCat[key])
-
-                idStrCat = all["metaIDsCat"]
-                idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrCat)
             except:
                 placeholder = ''
 
             metaStrQuant = all["metaValsQuant"]
             fieldListQuant = []
             valueListQuant = []
-            idDictQuant = {}
             try:
                 metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
                 for key in sorted(metaDictQuant):
                     fieldListQuant.append(key)
                     valueListQuant.extend(metaDictQuant[key])
 
-                idStrQuant = all["metaIDsQuant"]
-                idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
             except:
                 placeholder = ''
 
@@ -199,8 +193,14 @@ def getPCoAData(request):
             except:
                 placeholder = ''
 
-            result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
-            result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
+            if DepVar == 4:
+                idList = []
+                for i in xrange(len(selected)):
+                    idList.append(selected[i][0])
+                idDict['rRNA_copies'] = idList
+
+            result += 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
+            result += 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
             result += '===============================================\n'
             result += '\nData Normalization:\n'
 
@@ -281,11 +281,31 @@ def getPCoAData(request):
             base[RID] = 'Step 1 of 8: Querying database...done!'
             base[RID] = 'Step 2 of 8: Normalizing data...'
 
-            # Sum by taxa level
-            taxaDF = taxaDF.groupby(level=taxaLevel).sum()
+            # Select only the taxa of interest if user used the selectAll button
+            taxaDict = {}
+            if taxaLevel == 1:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
+                taxaDict['Kingdom'] = qs3
+            elif taxaLevel == 2:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
+                taxaDict['Phyla'] = qs3
+            elif taxaLevel == 3:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
+                taxaDict['Class'] = qs3
+            elif taxaLevel == 4:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
+                taxaDict['Order'] = qs3
+            elif taxaLevel == 5:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
+                taxaDict['Family'] = qs3
+            elif taxaLevel == 6:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
+                taxaDict['Genus'] = qs3
+            elif taxaLevel == 7:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
+                taxaDict['Species'] = qs3
 
-            normDF, DESeq_error = normalizePCoA(taxaDF, taxaLevel, myList, NormMeth, NormReads, metaDF, Iters)
-            normDF.sort_index(inplace=True)
+            normDF, DESeq_error = normalizePCoA(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
             finalDict = {}
             if NormMeth == 1:
@@ -308,10 +328,28 @@ def getPCoAData(request):
                 result += 'To try again, please select fewer samples or another normalization method...\n'
             result += '===============================================\n\n'
 
+            normDF.set_index('sampleid', inplace=True)
+
+            finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+            if DepVar == 4:
+                finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
+            else:
+                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+
+            finalDF.reset_index(inplace=True)
+
+            if DepVar == 1:
+                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
+            if DepVar == 2:
+                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
+            if DepVar == 3:
+                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
+            if DepVar == 4:
+                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
+
             base[RID] = 'Step 2 of 8: Normalizing data...done!'
             base[RID] = 'Step 3 of 8: Calculating distance matrix...'
-
-            metaDF.sort_index(inplace=True)
 
             if os.name == 'nt':
                 r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)

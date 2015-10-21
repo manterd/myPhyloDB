@@ -1,18 +1,21 @@
 import datetime
-import os
-import pandas as pd
-import pickle
-import simplejson
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import *
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+import os
+import pandas as pd
+import pickle
+import shutil
+import simplejson
+import xlrd
+
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5
 from models import Project, Reference, Sample, Species, Soil, Profile
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
-from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-import xlrd
+
 
 
 rep_project = ''
@@ -175,13 +178,21 @@ def upload(request):
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
-                sff = 'temp.sff'
-                file5 = request.FILES['docfile5']
-                handle_uploaded_file(file5, mothurdest, sff)
+                file_list = request.FILES.getlist('sff_files')
+                for each in file_list:
+                    file = each
+                    handle_uploaded_file(file, mothurdest, each)
+                    handle_uploaded_file(file, dest, each)
 
-                oligo = 'temp.oligos'
-                file6 = request.FILES['docfile6']
-                handle_uploaded_file(file6, mothurdest, oligo)
+                file_list = request.FILES.getlist('oligo_files')
+                for each in file_list:
+                    file = each
+                    handle_uploaded_file(file, mothurdest, each)
+                    handle_uploaded_file(file, dest, each)
+
+                file5 = request.FILES['docfile5']
+                handle_uploaded_file(file5, mothurdest, 'temp.txt')
+                handle_uploaded_file(file5, mothurdest, file5.name)
 
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
@@ -260,14 +271,17 @@ def upload(request):
                     for each in file_list:
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
+                        handle_uploaded_file(file, dest, each)
                         myStr = "mothur\\temp\\" + str(file.name)
                         tempList.append(myStr)
                     inputList = "-".join(tempList)
                     os.system('" mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\" "' % inputList)
                 else:
                     for each in file_list:
+                        file = each
                         fasta = 'temp.fasta'
-                        handle_uploaded_file(each, mothurdest, fasta)
+                        handle_uploaded_file(file, mothurdest, fasta)
+                        handle_uploaded_file(file, dest, each)
 
                 file_list = request.FILES.getlist('qual_files')
                 tempList = []
@@ -275,19 +289,20 @@ def upload(request):
                     for each in file_list:
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
+                        handle_uploaded_file(file, dest, each)
                         myStr = "mothur\\temp\\" + str(file.name)
                         tempList.append(myStr)
                     inputList = "-".join(tempList)
                     os.system('" mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\" "' % inputList)
                 else:
                     for each in file_list:
+                        file = each
                         qual = 'temp.qual'
-                        handle_uploaded_file(each, mothurdest, qual)
+                        handle_uploaded_file(file, mothurdest, qual)
+                        handle_uploaded_file(file, dest, each)
 
-
-                oligo = 'temp.oligos'
                 file6 = request.FILES['docfile6']
-                handle_uploaded_file(file6, mothurdest, oligo)
+                handle_uploaded_file(file6, mothurdest, file6.name)
 
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
@@ -367,6 +382,7 @@ def upload(request):
                 for each in file_list:
                     file = each
                     handle_uploaded_file(file, mothurdest, each)
+                    handle_uploaded_file(file, dest, each)
 
                 batch = 'mothur.batch'
                 file15 = request.FILES['docfile15']

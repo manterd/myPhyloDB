@@ -6,7 +6,7 @@ import pickle
 from pyper import *
 from scipy import stats
 import simplejson
-import sys
+#import sys
 
 from database.anova.anova_DF import UnivMetaDF, normalizeUniv
 from database.models import Sample, Profile
@@ -18,8 +18,8 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-reload(sys)
-sys.setdefaultencoding('utf8')
+#reload(sys)
+#sys.setdefaultencoding('utf8')
 
 
 def statusANOVA(request):
@@ -160,6 +160,12 @@ def getCatUnivData(request):
 
                 except:
                     placeholder = ''
+
+                if DepVar == 4:
+                    idList = []
+                    for i in xrange(len(selected)):
+                        idList.append(selected[i][0])
+                    idDict['rRNA_copies'] = idList
 
                 result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
                 result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
@@ -303,7 +309,11 @@ def getCatUnivData(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+                if DepVar == 4:
+                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                    finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
+                else:
+                    finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
 
                 base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
@@ -404,6 +414,10 @@ def getCatUnivData(request):
                         anova_string = "fit <- aov(diversity ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
+                    elif DepVar == 4:
+                        anova_string = "fit <- aov(copies ~ " + str(trtString) + ", data=df)"
+                        r.assign("cmd", anova_string)
+                        r("eval(parse(text=cmd))")
 
                     aov = r("summary(fit)")
 
@@ -470,13 +484,15 @@ def getCatUnivData(request):
                     result = result + 'Taxa name: ' + str(name1[1]) + '\n'
                     result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
                     if DepVar == 1:
-                        result = result + 'Dependent Variable: Abundance' + '\n'
+                        result = result + 'Dependent Variable: Abundance (counts)' + '\n'
                     elif DepVar == 2:
                         result = result + 'Dependent Variable: Species Richness' + '\n'
                     elif DepVar == 3:
                         result = result + 'Dependent Variable: Species Diversity' + '\n'
+                    elif DepVar == 4:
+                        result = result + 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
 
-                    result = result + '\nANOVA table:\n'
+                    result = result + '\nANCOVA table:\n'
 
                     result = result + str(D) + '\n'
                     result += '===============================================\n'
@@ -501,6 +517,8 @@ def getCatUnivData(request):
                                 dataList.extend(list(grouped2['rich'].T))
                             elif DepVar == 3:
                                 dataList.extend(list(grouped2['diversity'].T))
+                            elif DepVar == 4:
+                                dataList.extend(list(grouped2['copies'].T))
 
                             seriesDict = {}
                             seriesDict['name'] = name1
@@ -512,11 +530,13 @@ def getCatUnivData(request):
 
                             yTitle = {}
                             if DepVar == 1:
-                                yTitle['text'] = 'Abundance'
+                                yTitle['text'] = 'Abundance (counts)'
                             elif DepVar == 2:
                                 yTitle['text'] = 'Species Richness'
                             elif DepVar == 3:
                                 yTitle['text'] = 'Species Diversity'
+                            elif DepVar == 4:
+                                yTitle['text'] = 'Abundance (16S rRNA copies)'
                             yAxisDict['title'] = yTitle
 
                     if sig_only == 0:
@@ -529,6 +549,8 @@ def getCatUnivData(request):
                             dataList.extend(list(grouped2['rich'].T))
                         elif DepVar == 3:
                             dataList.extend(list(grouped2['diversity'].T))
+                        elif DepVar == 4:
+                            dataList.extend(list(grouped2['copies'].T))
 
                         seriesDict = {}
                         seriesDict['name'] = name1
@@ -545,11 +567,13 @@ def getCatUnivData(request):
 
                         yTitle = {}
                         if DepVar == 1:
-                            yTitle['text'] = 'Abundance'
+                            yTitle['text'] = 'Abundance (counts)'
                         elif DepVar == 2:
                             yTitle['text'] = 'Species Richness'
                         elif DepVar == 3:
                             yTitle['text'] = 'Species Diversity'
+                        elif DepVar == 4:
+                            yTitle['text'] = 'Abundance (16S rRNA copies)'
                         yAxisDict['title'] = yTitle
 
                     colors_idx += 1
@@ -569,15 +593,17 @@ def getCatUnivData(request):
             else:
                 finalDict['empty'] = 1
 
-            finalDF.reset_index(inplace=True)
-            finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
+            #finalDF.reset_index(inplace=True)
+            #finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
-            if DepVar == 1:
-                finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
-            elif DepVar == 2:
-                finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
-            elif DepVar == 3:
-                finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
+            #if DepVar == 1:
+            #    finalDF.drop(['rich', 'diversity', 'copies'], axis=1, inplace=True)
+            #elif DepVar == 2:
+            #    finalDF.drop(['abund', 'diversity', 'copies'], axis=1, inplace=True)
+            #elif DepVar == 3:
+            #    finalDF.drop(['abund', 'rich', 'copies'], axis=1, inplace=True)
+            #elif DepVar == 4:
+            #    finalDF.drop(['abund', 'rich', 'diversity'], axis=1, inplace=True)
 
             base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
 
@@ -704,6 +730,12 @@ def getQuantUnivData(request):
 
             except:
                 placeholder = ''
+
+            if DepVar == 4:
+                idList = []
+                for i in xrange(len(selected)):
+                    idList.append(selected[i][0])
+                idDict['rRNA_copies'] = idList
 
             result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
             result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
@@ -843,7 +875,11 @@ def getQuantUnivData(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+                if DepVar == 4:
+                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                    finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
+                else:
+                    finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
 
             except:
                 myDict = {}
@@ -918,14 +954,16 @@ def getQuantUnivData(request):
                     anova_string = "fit <- lm(abund ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
-
                 elif DepVar == 2:
                     anova_string = "fit <- lm(rich ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
-
                 elif DepVar == 3:
                     anova_string = "fit <- lm(diversity ~ " + str(trtString) + ", data=df)"
+                    r.assign("cmd", anova_string)
+                    r("eval(parse(text=cmd))")
+                elif DepVar == 4:
+                    anova_string = "fit <- lm(copies ~ " + str(trtString) + ", data=df)"
                     r.assign("cmd", anova_string)
                     r("eval(parse(text=cmd))")
 
@@ -965,11 +1003,14 @@ def getQuantUnivData(request):
                 result += 'Taxa name: ' + str(name1[1]) + '\n'
                 result += 'Taxa ID: ' + str(name1[2]) + '\n'
                 if DepVar == 1:
-                    result += 'Dependent Variable: Abundance' + '\n'
+                    result += 'Dependent Variable: Abundance (counts)' + '\n'
                 elif DepVar == 2:
                     result += 'Dependent Variable: Species Richness' + '\n'
                 elif DepVar == 3:
                     result += 'Dependent Variable: Species Diversity' + '\n'
+                elif DepVar == 4:
+                    result += 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
+
                 result += '\nANCOVA table:\n'
                 result += str(D) + '\n'
                 result += '===============================================\n'
@@ -990,6 +1031,10 @@ def getQuantUnivData(request):
                             dataList = group2[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
                             x = group2[fieldListQuant[0]].astype(float).values.tolist()
                             y = group2['diversity'].astype(float).values.tolist()
+                        elif DepVar == 4:
+                            dataList = group2[[fieldListQuant[0], 'copies']].values.astype(float).tolist()
+                            x = group2[fieldListQuant[0]].astype(float).values.tolist()
+                            y = group2['copies'].astype(float).values.tolist()
 
                         if sig_only == 0:
                             seriesDict = {}
@@ -1085,6 +1130,10 @@ def getQuantUnivData(request):
                         dataList = resultDF[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
                         x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
                         y = resultDF['diversity'].astype(float).values.tolist()
+                    elif DepVar == 4:
+                        dataList = resultDF[[fieldListQuant[0], 'copies']].values.astype(float).tolist()
+                        x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
+                        y = resultDF['copies'].astype(float).values.tolist()
 
                     slp, inter, r_value, p, std_err = stats.linregress(x, y)
                     min_y = float(slp*min(x) + inter)
@@ -1164,11 +1213,13 @@ def getQuantUnivData(request):
 
                 yTitle = {}
                 if DepVar == 1:
-                    yTitle['text'] = 'Abundance'
+                    yTitle['text'] = 'Abundance (counts)'
                 elif DepVar == 2:
                     yTitle['text'] = 'Species Richness'
                 elif DepVar == 3:
                     yTitle['text'] = 'Shannon Diversity'
+                elif DepVar == 4:
+                    yTitle['text'] = 'Abundance (16S rRNA copies)'
                 yAxisDict['title'] = yTitle
 
                 colors_idx += 1
@@ -1183,15 +1234,15 @@ def getQuantUnivData(request):
             else:
                 finalDict['empty'] = 1
 
-            finalDF.reset_index(inplace=True)
-            finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
+            #finalDF.reset_index(inplace=True)
+            #finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
-            if DepVar == 1:
-                finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
-            elif DepVar == 2:
-                finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
-            elif DepVar == 3:
-                finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
+            #if DepVar == 1:
+            #    finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
+            #elif DepVar == 2:
+            #    finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
+            #elif DepVar == 3:
+            #    finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
             base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
             finalDict['text'] = result

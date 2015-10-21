@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from numpy.random import mtrand
 import pandas as pd
@@ -6,7 +7,7 @@ from scipy.spatial.distance import *
 import multiprocessing as mp
 
 from database.models import Sample, Human_Associated, Soil, UserDefined
-
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
 def SPLSMetaDF(idDict):
     sampleTableList = Sample._meta.get_all_field_names()
@@ -64,34 +65,18 @@ def SPLSMetaDF(idDict):
     return metaDF
 
 
-def normalizeSPLS(df, taxaLevel, mySet, meth, reads, metaDF, iters):
+def normalizeSPLS(df, taxaDict, mySet, meth, reads, metaDF, iters):
     df2 = df.reset_index()
+    taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
-    taxaID = ''
-    if taxaLevel == 0:
-        taxaID = 'kingdomid'
-    elif taxaLevel == 1:
-        taxaID = 'phylaid'
-    elif taxaLevel == 2:
-        taxaID = 'classid'
-    elif taxaLevel == 3:
-        taxaID = 'orderid'
-    elif taxaLevel == 4:
-        taxaID = 'familyid'
-    elif taxaLevel == 5:
-        taxaID = 'genusid'
-    elif taxaLevel == 6:
-        taxaID = 'speciesid'
-
-    normDF = pd.DataFrame()
-    DESeq_error = ''
-    if meth == 1:
-        normDF = df2.reset_index(drop=True)
+    countDF = pd.DataFrame()
+    DESeq_error = 'no'
+    if meth == 1 or meth == 4:
+        countDF = df2.reset_index(drop=True)
 
     elif meth == 2 or meth == 3:
         if reads >= 0:
-            normDF[taxaID] = df2[taxaID].reset_index(drop=True)
-
+            countDF = df2[taxaID].reset_index(drop=True)
             manager = mp.Manager()
             d = manager.dict()
 
@@ -104,17 +89,13 @@ def normalizeSPLS(df, taxaLevel, mySet, meth, reads, metaDF, iters):
                 p.join()
 
             for key, value in d.items():
-                normDF[key] = value/iters
+                countDF[key] = value/iters
 
         elif reads < 0:
-            normDF[taxaID] = df2.reset_index(drop=True)
-
-    elif meth == 4:
-        normDF[taxaID] = df2[taxaID].reset_index(drop=True)
-        for i in mySet:
-            normDF[i] = df2[i].div(df2[i].sum(), axis=0)
+            countDF = df2.reset_index(drop=True)
 
     elif meth == 5:
+        countDF = df2[taxaID].reset_index(drop=True)
         if os.name == 'nt':
             r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         else:
@@ -129,26 +110,27 @@ def normalizeSPLS(df, taxaLevel, mySet, meth, reads, metaDF, iters):
         r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design= ~ trt)")
         r("dds <- estimateSizeFactors(dds)")
         pycds = r.get("sizeFactors(dds)")
+        colList = df3.columns.tolist()
 
-        if pycds is not None:
+        found = False
+        if pycds is list:
+            for thing in pycds:
+                if str(thing) == "None":
+                    found = True
+        else:
+            if pycds is None:
+                found = True
+
+        if not found:
             DESeq_error = 'no'
-            colList = df3.columns.tolist()
-            indList = df2[taxaID].tolist()
-            normDF = pd.DataFrame(r.get("counts(dds, normalize=TRUE)"), columns=[colList])
-            normDF[taxaID] = indList
-        elif pycds is None:
+            cdsDF = pd.DataFrame(r.get("counts(dds, normalize=TRUE)"), columns=[colList])
+            countDF[colList] = cdsDF[colList]
+        else:
             DESeq_error = 'yes'
-            sizeFactor = []
-            for i in mySet:
-                sizeFactor.append(1)
-            r.assign("sizeFactor", sizeFactor)
-            r("dds$sizeFactor <- sizeFactor")
-            colList = df3.columns.tolist()
-            indList = df2[taxaID].tolist()
-            normDF = pd.DataFrame(r.get("counts(dds, normalize=TRUE)"), columns=[colList])
-            normDF[taxaID] = indList
+            countDF = df2.reset_index(drop=True)
 
     elif meth == 6:
+        countDF = df2[taxaID].reset_index(drop=True)
         if os.name == 'nt':
             r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         else:
@@ -164,29 +146,156 @@ def normalizeSPLS(df, taxaLevel, mySet, meth, reads, metaDF, iters):
         r("dds <- estimateSizeFactors(dds)")
         pycds = r.get("sizeFactors(dds)")
 
-        if pycds is not None:
+        found = False
+        if pycds is list:
+            for thing in pycds:
+                if str(thing) == "None":
+                    found = True
+        else:
+            if pycds is None:
+                found = True
+
+        if not found:
             DESeq_error = 'no'
             r("vsd <- varianceStabilizingTransformation(dds)")
             colList = df3.columns.tolist()
-            indList = df2[taxaID].tolist()
-            normDF = pd.DataFrame(r.get("assay(vsd)"), columns=[colList])
-            normDF[taxaID] = indList
-        elif pycds is None:
+            cdsDF = pd.DataFrame(r.get("assay(vsd)"), columns=[colList])
+            countDF[colList] = cdsDF[colList]
+        else:
             DESeq_error = 'yes'
-            sizeFactor = []
-            for i in mySet:
-                sizeFactor.append(1)
-            r.assign("sizeFactor", sizeFactor)
-            r("dds$sizeFactor <- sizeFactor")
-            r("vsd <- varianceStabilizingTransformation(dds)")
-            colList = df3.columns.tolist()
-            indList = df2[taxaID].tolist()
-            normDF = pd.DataFrame(r.get("assay(vsd)"), columns=[colList])
-            normDF[taxaID] = indList
+            countDF = df2.reset_index(drop=True)
 
-    normDF.set_index(taxaID, inplace=True)
-    finalDF = normDF.transpose()
-    return finalDF, DESeq_error
+    relabundDF = pd.DataFrame(countDF[taxaID])
+    binaryDF = pd.DataFrame(countDF[taxaID])
+    diversityDF = pd.DataFrame(countDF[taxaID])
+    for i in mySet:
+        relabundDF[i] = countDF[i].div(countDF[i].sum(), axis=0)
+        binaryDF[i] = countDF[i].apply(lambda x: 1 if x != 0 else 0)
+        diversityDF[i] = relabundDF[i].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
+
+    rowsList = []
+    namesDF = pd.DataFrame()
+    normDF = pd.DataFrame()
+    for key in taxaDict:
+        taxaList = taxaDict[key]
+
+        if isinstance(taxaList, unicode):
+            if key == 'Kingdom':
+                qs1 = Kingdom.objects.filter(kingdomid=taxaList).values('kingdomid', 'kingdomName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid', 'kingdomName'])
+                namesDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+            elif key == 'Phyla':
+                qs1 = Phyla.objects.filter(phylaid=taxaList).values('phylaid', 'phylaName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['phylaid', 'phylaName'])
+                namesDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+            elif key == 'Class':
+                qs1 = Class.objects.filter(classid=taxaList).values('classid', 'className')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['classid', 'className'])
+                namesDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+            elif key == 'Order':
+                qs1 = Order.objects.filter(orderid=taxaList).values('orderid', 'orderName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['orderid', 'orderName'])
+                namesDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+            elif key == 'Family':
+                qs1 = Family.objects.filter(familyid=taxaList).values('familyid', 'familyName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['familyid', 'familyName'])
+                namesDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+            elif key == 'Genus':
+                qs1 = Genus.objects.filter(genusid=taxaList).values('genusid', 'genusName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['genusid', 'genusName'])
+                namesDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+            elif key == 'Species':
+                qs1 = Species.objects.filter(speciesid=taxaList).values('speciesid', 'speciesName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['speciesid', 'speciesName'])
+                namesDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+        else:
+            if key == 'Kingdom':
+                qs1 = Kingdom.objects.filter(kingdomid__in=taxaList).values('kingdomid', 'kingdomName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid', 'kingdomName'])
+                namesDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+            elif key == 'Phyla':
+                qs1 = Phyla.objects.filter(phylaid__in=taxaList).values('phylaid', 'phylaName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['phylaid', 'phylaName'])
+                namesDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+            elif key == 'Class':
+                qs1 = Class.objects.filter(classid__in=taxaList).values('classid', 'className')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['classid', 'className'])
+                namesDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+            elif key == 'Order':
+                qs1 = Order.objects.filter(orderid__in=taxaList).values('orderid', 'orderName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['orderid', 'orderName'])
+                namesDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+            elif key == 'Family':
+                qs1 = Family.objects.filter(familyid__in=taxaList).values('familyid', 'familyName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['familyid', 'familyName'])
+                namesDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+            elif key == 'Genus':
+                qs1 = Genus.objects.filter(genusid__in=taxaList).values('genusid', 'genusName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['genusid', 'genusName'])
+                namesDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+            elif key == 'Species':
+                qs1 = Species.objects.filter(speciesid__in=taxaList).values('speciesid', 'speciesName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['speciesid', 'speciesName'])
+                namesDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+
+        if key == 'Kingdom':
+            rank = 'Kingdom'
+            field = 'kingdomid'
+        elif key == 'Phyla':
+            rank = 'Phyla'
+            field = 'phylaid'
+        elif key == 'Class':
+            rank = 'Class'
+            field = 'classid'
+        elif key == 'Order':
+            rank = 'Order'
+            field = 'orderid'
+        elif key == 'Family':
+            rank = 'Family'
+            field = 'familyid'
+        elif key == 'Genus':
+            rank = 'Genus'
+            field = 'genusid'
+        elif key == 'Species':
+            rank = 'Species'
+            field = 'speciesid'
+
+        for i in mySet:
+            if meth == 4:
+                groupAbund = relabundDF.groupby(field)[i].sum()
+            else:
+                groupAbund = countDF.groupby(field)[i].sum()
+            groupRich = binaryDF.groupby(field)[i].sum()
+            groupDiversity = diversityDF.groupby(field)[i].sum()
+
+            if isinstance(taxaList, unicode):
+                myDict = {}
+                myDict['sampleid'] = i
+                myDict['rank'] = rank
+                myDict['taxa_id'] = taxaList
+                myDict['abund'] = groupAbund[taxaList]
+                myDict['rich'] = groupRich[taxaList]
+                myDict['diversity'] = groupDiversity[taxaList]
+                rowsList.append(myDict)
+            else:
+                for j in taxaList:
+                    myDict = {}
+                    myDict['sampleid'] = i
+                    myDict['rank'] = rank
+                    myDict['taxa_id'] = j
+                    myDict['abund'] = groupAbund[j]
+                    myDict['rich'] = groupRich[j]
+                    myDict['diversity'] = groupDiversity[j]
+                    rowsList.append(myDict)
+        DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'rank', 'taxa_id', 'abund', 'rich', 'diversity'])
+        DF1 = DF1.merge(namesDF, on='taxa_id', how='outer')
+        DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+
+        if normDF.empty:
+            normDF = DF1
+        else:
+            normDF = normDF.append(DF1)
+    return normDF, DESeq_error
 
 
 def weightedProb(x, cores, reads, iters, mySet, df, meth, d):

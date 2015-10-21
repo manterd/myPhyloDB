@@ -24,8 +24,8 @@
     </style>
 
     <script type="text/javascript">
-        var NormMeth = 3, selTheme = 0;
-        var nodesQuant = "", taxaLevel = 6;
+        var DepVar = 1, NormMeth = 3, selTheme = 0;
+        var nodesQuant = "", taxaLevel = 7;
         var chart1 = {};
         var catOptions = {};
         var remove = 0;
@@ -64,6 +64,12 @@
             });
 
             $("#normalize").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#DepVar").change(function () {
+                DepVar = $(this).val();
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
@@ -239,6 +245,7 @@
             var myDict = {};
             myDict['metaQuant'] = metaQuant;
             myDict['metaIDs'] = metaIDs;
+            myDict['DepVar'] = DepVar;
             myDict['taxa'] = taxaLevel;
             myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['Iters'] = document.getElementById("Iters").value;
@@ -368,12 +375,12 @@
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <select id="selectall">
-                    <option value="1">Phyla</option>
-                    <option value="2">Classes</option>
-                    <option value="3">Orders</option>
-                    <option value="4">Families</option>
-                    <option value="5">Genera</option>
-                    <option value="6" selected="selected">Species</option>
+                    <option value="2">Phyla</option>
+                    <option value="3">Classes</option>
+                    <option value="4">Orders</option>
+                    <option value="5">Families</option>
+                    <option value="6">Genera</option>
+                    <option value="7" selected="selected">Species</option>
                 </select>
                 &nbsp<-- Selected taxa level
             </td>
@@ -391,7 +398,14 @@
             <th colspan="3" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td style="width: 33%; text-align: left"> </td>
+            <td style="width: 33%; text-align: left">
+                Dependent variable:<select id="DepVar">
+                <option value="1">Abundance (counts)</option>
+                <option value="4">Abundance (16S rRNA copies)</option>
+                <option value="2">Species Richness</option>
+                <option value="3">Species Diversity</option>
+                </select>
+            </td>
             <td style="width: 34%; text-align: center">
                 Normalization method:
                 <select id="NormMeth">
@@ -423,7 +437,7 @@
             <td id="IterRow-off" style="display: none;"></td>
             <td id="IterRow" style="text-align: center">
                 Iterations:
-                <input style="background-color: white" type="text" id="Iters" value="10"/>
+                <input style="background-color: white" type="text" id="Iters" value="1"/>
             </td>
             <td></td>
         </tr>

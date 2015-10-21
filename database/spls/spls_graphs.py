@@ -72,6 +72,7 @@ def getSPLSAData(request):
             time1[RID] = time.time()
             base[RID] = 'Step 1 of 8: Querying database...'
 
+            DepVar = int(all["DepVar"])
             taxaLevel = int(all["taxa"])
             NormMeth = int(all["NormMeth"])
             Iters = int(all["Iters"])
@@ -102,19 +103,19 @@ def getSPLSAData(request):
             # Remove samples if below the sequence threshold set by user (rarefaction)
             newList = []
             result = ''
-            if taxaLevel == 0:
+            if taxaLevel == 1:
                 result = result + 'Taxa level: Kingdom' + '\n'
-            elif taxaLevel == 1:
-                result = result + 'Taxa level: Phyla' + '\n'
             elif taxaLevel == 2:
-                result = result + 'Taxa level: Class' + '\n'
+                result = result + 'Taxa level: Phyla' + '\n'
             elif taxaLevel == 3:
-                result = result + 'Taxa level: Order' + '\n'
+                result = result + 'Taxa level: Class' + '\n'
             elif taxaLevel == 4:
-                result = result + 'Taxa level: Family' + '\n'
+                result = result + 'Taxa level: Order' + '\n'
             elif taxaLevel == 5:
-                result = result + 'Taxa level: Genus' + '\n'
+                result = result + 'Taxa level: Family' + '\n'
             elif taxaLevel == 6:
+                result = result + 'Taxa level: Genus' + '\n'
+            elif taxaLevel == 7:
                 result = result + 'Taxa level: Species' + '\n'
 
             metaStr = all["metaQuant"]
@@ -128,7 +129,13 @@ def getSPLSAData(request):
             idStr = all["metaIDs"]
             idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
 
-            result = result + 'Quantitative variables selected: ' + ", ".join(fieldList) + '\n'
+            if DepVar == 4:
+                idList = []
+                for i in xrange(len(selected)):
+                    idList.append(selected[i][0])
+                idDict['rRNA_copies'] = idList
+
+            result += 'Quantitative variables selected: ' + ", ".join(fieldList) + '\n'
             result += '===============================================\n'
             result += '\nData Normalization:\n'
 
@@ -185,8 +192,6 @@ def getSPLSAData(request):
                             newList.append(id)
 
             metaDF = SPLSMetaDF(idDict)
-            fieldList.insert(0, 'sample_name')
-            metaDF = metaDF[fieldList]
 
             lenA, col = metaDF.shape
 
@@ -211,11 +216,31 @@ def getSPLSAData(request):
             base[RID] = 'Step 1 of 5: Querying database...done!'
             base[RID] = 'Step 2 of 5: Normalizing data...'
 
-            # Sum by taxa level
-            taxaDF = taxaDF.groupby(level=taxaLevel).sum()
+            # Select only the taxa of interest if user used the selectAll button
+            taxaDict = {}
+            if taxaLevel == 1:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
+                taxaDict['Kingdom'] = qs3
+            elif taxaLevel == 2:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
+                taxaDict['Phyla'] = qs3
+            elif taxaLevel == 3:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
+                taxaDict['Class'] = qs3
+            elif taxaLevel == 4:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
+                taxaDict['Order'] = qs3
+            elif taxaLevel == 5:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
+                taxaDict['Family'] = qs3
+            elif taxaLevel == 6:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
+                taxaDict['Genus'] = qs3
+            elif taxaLevel == 7:
+                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
+                taxaDict['Species'] = qs3
 
-            normDF, DESeq_error = normalizeSPLS(taxaDF, taxaLevel, myList, NormMeth, NormReads, metaDF, Iters)
-            normDF.sort_index(inplace=True)
+            normDF, DESeq_error = normalizeSPLS(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
             finalDict = {}
             if NormMeth == 1:
@@ -238,10 +263,29 @@ def getSPLSAData(request):
                 result += 'To try again, please select fewer samples or another normalization method...\n'
             result += '===============================================\n\n'
 
+            normDF.set_index('sampleid', inplace=True)
+
+            finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+
+            if DepVar == 4:
+                finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
+            else:
+                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+
+            finalDF.reset_index(inplace=True)
+
+            if DepVar == 1:
+                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
+            if DepVar == 2:
+                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
+            if DepVar == 3:
+                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
+            if DepVar == 4:
+                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
+
             base[RID] = 'Step 2 of 5: Normalizing data...done!'
             base[RID] = 'Step 3 of 5: Calculating sPLS...'
-
-            metaDF.sort_index(inplace=True)
 
             if os.name == 'nt':
                 r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -249,8 +293,7 @@ def getSPLSAData(request):
                 r = R(RCMD="R/R-Linux/bin/R")
 
             r.assign("X", normDF)
-            r.assign("Y", metaDF)
-
+            r.assign("Y", metaDF[fieldList])
             r.assign("names", normDF.columns.values)
             r("colnames(X) <- names")
 
@@ -260,8 +303,7 @@ def getSPLSAData(request):
             r("X_new <- X[,-which(names(X) %in% List)]")
             r("X_final <- scale(X_new, center=TRUE, scale=TRUE)")
 
-            r("Y_new <- Y[,-1]")
-            r("Y_final <- scale(Y_new, center=TRUE, scale=TRUE)")
+            r("Y_final <- scale(Y, center=TRUE, scale=TRUE)")
 
             r("library(spls)")
             r("set.seed(1)")
@@ -269,6 +311,7 @@ def getSPLSAData(request):
             r("f <- spls(X_final, Y_final, eta=cv$eta.opt, K=cv$K.opt)")
 
             r("coef.f <- coef(f)")
+            r("coef.f")
             r("sum <- sum(coef.f != 0)")
             total = r.get("sum")
 
@@ -280,14 +323,13 @@ def getSPLSAData(request):
 
                 r("library(DMwR)")
                 r("pred.ns <- unscale(pred.f, Y_final)")
-                r("pred.ns[,sapply(pred.ns, is.numeric)] <-round(pred.ns[,sapply(pred.ns, is.numeric)],0)")
                 r("pred.ns.rows <- row.names(pred.ns)")
                 pred = r.get("pred.ns")
                 rows = r.get("pred.ns.rows")
 
-                fieldList.remove('sample_name')
                 predList = ['pred_' + s for s in fieldList]
                 predDF = pd.DataFrame(pred,  columns=[predList], index=rows)
+                predDF = predDF.applymap(round)
                 predDF.sort_index(inplace=True)
                 finalDF = pd.merge(metaDF, predDF, left_index=True, right_index=True)
 
@@ -318,37 +360,37 @@ def getSPLSAData(request):
                 taxIDList = coeffsDF.index.values.tolist()
 
                 namesDF = pd.DataFrame()
-                if taxaLevel == 0:
+                if taxaLevel == 1:
                     taxNameList = Kingdom.objects.filter(kingdomid__in=taxIDList).values('kingdomid', 'kingdomName')
                     namesDF = pd.DataFrame(list(taxNameList))
                     namesDF.set_index('kingdomid', inplace=True)
                     namesDF.rename(columns={'kingdomName': 'taxa_name'}, inplace=True)
-                elif taxaLevel == 1:
+                elif taxaLevel == 2:
                     taxNameList = Phyla.objects.filter(phylaid__in=taxIDList).values('phylaid', 'phylaName')
                     namesDF = pd.DataFrame(list(taxNameList))
                     namesDF.set_index('phylaid', inplace=True)
                     namesDF.rename(columns={'phylaName': 'taxa_name'}, inplace=True)
-                elif taxaLevel == 2:
+                elif taxaLevel == 3:
                     taxNameList = Class.objects.filter(classid__in=taxIDList).values('classid', 'className')
                     namesDF = pd.DataFrame(list(taxNameList))
                     namesDF.set_index('classid', inplace=True)
                     namesDF.rename(columns={'className': 'taxa_name'}, inplace=True)
-                elif taxaLevel == 3:
+                elif taxaLevel == 4:
                     taxNameList = Order.objects.filter(orderid__in=taxIDList).values('orderid', 'orderName')
                     namesDF = pd.DataFrame(list(taxNameList))
                     namesDF.set_index('orderid', inplace=True)
                     namesDF.rename(columns={'orderName': 'taxa_name'}, inplace=True)
-                elif taxaLevel == 4:
+                elif taxaLevel == 5:
                     taxNameList = Family.objects.filter(familyid__in=taxIDList).values('familyid', 'familyName')
                     namesDF = pd.DataFrame(list(taxNameList))
                     namesDF.set_index('familyid', inplace=True)
                     namesDF.rename(columns={'familyName': 'taxa_name'}, inplace=True)
-                elif taxaLevel == 5:
+                elif taxaLevel == 6:
                     taxNameList = Genus.objects.filter(genusid__in=taxIDList).values('genusid', 'genusName')
                     namesDF = pd.DataFrame(list(taxNameList))
                     namesDF.set_index('genusid', inplace=True)
                     namesDF.rename(columns={'genusName': 'taxa_name'}, inplace=True)
-                elif taxaLevel == 6:
+                elif taxaLevel == 7:
                     taxNameList = Species.objects.filter(speciesid__in=taxIDList).values('speciesid', 'speciesName')
                     namesDF = pd.DataFrame(list(taxNameList))
                     namesDF.set_index('speciesid', inplace=True)

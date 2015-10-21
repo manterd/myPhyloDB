@@ -94,7 +94,6 @@ def getDiffAbund(request):
                 if total['count__sum'] is not None and total['count__sum'] >= size:
                     id = sample.sampleid
                     newList.append(id)
-            qs2 = Sample.objects.all().filter(sampleid__in=newList)
 
             # Get dict of selected meta variables
             metaStr = all["metaVals"]

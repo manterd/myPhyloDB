@@ -9,7 +9,9 @@ class UploadForm1(forms.Form):
 class UploadForm2(forms.Form):
     docfile3 = forms.FileField(label='Select conserved taxonomy file:')
     docfile4 = forms.FileField(label='Select .shared file:')
-    docfile5 = forms.FileField(label='Select sff file:')
+    sff_files = MultiFileField()
+    oligo_files = MultiFileField()
+    docfile5 = forms.FileField(label='Select filenames file:')
     fna_files = MultiFileField()
     qual_files = MultiFileField()
     docfile6 = forms.FileField(label='Select Oligos file:')
@@ -17,7 +19,7 @@ class UploadForm2(forms.Form):
     docfile13 = forms.FileField(label='Select 3-column contig file:')
     fastq_files = MultiFileField()
     docfile15 = forms.FileField(label='Select Mothur batch file:')
-    source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed mothur files'), ('454_sff', '454 sff file'), ('454_fastq', '454 fna/qual files'), ('miseq', 'Illumina/MiSeq files')))
+    source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed mothur files'), ('454_sff', '454 sff files'), ('454_fastq', '454 fna/qual files'), ('miseq', 'Illumina/MiSeq files')))
 
 
 class UploadForm4(forms.Form):

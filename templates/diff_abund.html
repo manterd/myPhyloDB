@@ -24,7 +24,7 @@
     </style>
 
     <script type="text/javascript">
-        var NormMeth = 1, StatTest = 1, selTheme = 0, i = 0;
+        var NormMeth = 1, DepVar = 1, StatTest = 1, selTheme = 0, i = 0;
         var nodesCat = "", nodesTaxa = "", taxaLevel = 6;
         var chart1 = {};
         var catOptions = {};
@@ -102,6 +102,12 @@
 
             $("#run").show().click(function () {
                 chooseData();
+            });
+
+            $("#DepVar").change(function () {
+                DepVar = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
             });
 
             $("#NormMeth").change(function () {
@@ -346,6 +352,7 @@
                 var myDict = {};
                 myDict['metaVals'] = metaValsCat;
                 myDict['metaIDs'] = metaIDsCat;
+                myDict['DepVar'] = DepVar;
                 myDict['sig_only'] = sig1_only;
                 myDict['taxaLevel'] = taxaLevel;
                 myDict['NormVal'] = document.getElementById("NormVal").value;
@@ -523,6 +530,12 @@
         </tr>
         <tr>
             <td style="width: 33%; text-align: left">
+                Dependent variable:<select id="DepVar">
+                <option value="1">Abundance (counts)</option>
+                <!--<option value="4">Abundance (16S rRNA copies)</option>
+                <option value="2">Species Richness</option>
+                <option value="3">Species Diversity</option>-->
+                </select>
             </td>
             <td style="width: 34%; text-align: center">
                 Normalization method:
