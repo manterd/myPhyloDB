@@ -332,7 +332,6 @@ def getSPLSAData(request):
                 predDF = predDF.applymap(round)
                 predDF.sort_index(inplace=True)
                 finalDF = pd.merge(metaDF, predDF, left_index=True, right_index=True)
-
                 result += 'sPLS Model Fit (y = mx + b):\n'
                 result += 'y = predicted\n'
                 result += 'x = observed\n\n'
