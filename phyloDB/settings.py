@@ -21,6 +21,7 @@ INSTALLED_APPS = (
     'database',
     'database.anova',
     'database.diffabund',
+    'database.export',
     'database.pcoa',
     'database.spls',
     'stats',

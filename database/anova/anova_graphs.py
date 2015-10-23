@@ -18,8 +18,6 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-#reload(sys)
-#sys.setdefaultencoding('utf8')
 
 
 def statusANOVA(request):
@@ -319,7 +317,7 @@ def getCatUnivData(request):
 
             except:
                 myDict = {}
-                myDict['error'] = 'Selected samples/taxa combination have no valid observations'
+                myDict['error'] = 'Your selections resulted in no valid observations'
                 res = simplejson.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
 
@@ -593,18 +591,6 @@ def getCatUnivData(request):
             else:
                 finalDict['empty'] = 1
 
-            #finalDF.reset_index(inplace=True)
-            #finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
-
-            #if DepVar == 1:
-            #    finalDF.drop(['rich', 'diversity', 'copies'], axis=1, inplace=True)
-            #elif DepVar == 2:
-            #    finalDF.drop(['abund', 'diversity', 'copies'], axis=1, inplace=True)
-            #elif DepVar == 3:
-            #    finalDF.drop(['abund', 'rich', 'copies'], axis=1, inplace=True)
-            #elif DepVar == 4:
-            #    finalDF.drop(['abund', 'rich', 'diversity'], axis=1, inplace=True)
-
             base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
 
             finalDict['error'] = 'none'
@@ -688,30 +674,22 @@ def getQuantUnivData(request):
             metaStrCat = all["metaValsCat"]
             fieldListCat = []
             valueListCat = []
-            idDictCat = {}
             try:
                 metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
                 for key in sorted(metaDictCat):
                     fieldListCat.append(key)
                     valueListCat.append(metaDictCat[key])
-
-                idStrCat = all["metaIDsCat"]
-                idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrCat)
             except:
                 placeholder = ''
 
             metaStrQuant = all["metaValsQuant"]
             fieldListQuant = []
             valueListQuant = []
-            idDictQuant = {}
             try:
                 metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
                 for key in sorted(metaDictQuant):
                     fieldListQuant.append(key)
                     valueListQuant.extend(metaDictQuant[key])
-
-                idStrQuant = all["metaIDsQuant"]
-                idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
             except:
                 placeholder = ''
 
@@ -883,7 +861,7 @@ def getQuantUnivData(request):
 
             except:
                 myDict = {}
-                myDict['error'] = 'Selected samples/taxa combination have no valid observations'
+                myDict['error'] = 'Your selections resulted in no valid observations'
                 res = simplejson.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
 

@@ -214,77 +214,86 @@ def getSPLSAData(request):
             taxaDF = taxaProfileDF(myList)
 
             base[RID] = 'Step 1 of 5: Querying database...done!'
-            base[RID] = 'Step 2 of 5: Normalizing data...'
 
-            # Select only the taxa of interest if user used the selectAll button
-            taxaDict = {}
-            if taxaLevel == 1:
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
-                taxaDict['Kingdom'] = qs3
-            elif taxaLevel == 2:
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
-                taxaDict['Phyla'] = qs3
-            elif taxaLevel == 3:
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
-                taxaDict['Class'] = qs3
-            elif taxaLevel == 4:
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
-                taxaDict['Order'] = qs3
-            elif taxaLevel == 5:
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
-                taxaDict['Family'] = qs3
-            elif taxaLevel == 6:
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
-                taxaDict['Genus'] = qs3
-            elif taxaLevel == 7:
-                qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
-                taxaDict['Species'] = qs3
+            try:
+                base[RID] = 'Step 2 of 5: Normalizing data...'
 
-            normDF, DESeq_error = normalizeSPLS(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
+                # Select only the taxa of interest if user used the selectAll button
+                taxaDict = {}
+                if taxaLevel == 1:
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
+                    taxaDict['Kingdom'] = qs3
+                elif taxaLevel == 2:
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
+                    taxaDict['Phyla'] = qs3
+                elif taxaLevel == 3:
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
+                    taxaDict['Class'] = qs3
+                elif taxaLevel == 4:
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
+                    taxaDict['Order'] = qs3
+                elif taxaLevel == 5:
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
+                    taxaDict['Family'] = qs3
+                elif taxaLevel == 6:
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
+                    taxaDict['Genus'] = qs3
+                elif taxaLevel == 7:
+                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
+                    taxaDict['Species'] = qs3
 
-            finalDict = {}
-            if NormMeth == 1:
-                result += 'No normalization was performed...\n'
-            elif NormMeth == 2 or NormMeth == 3:
-                result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-            elif NormMeth == 4:
-                result += 'Data were normalized by the total number of sequence reads...\n'
-            elif NormMeth == 5 and DESeq_error == 'no':
-                result += 'Data were normalized by DESeq2...\n'
-            elif NormMeth == 5 and DESeq_error == 'yes':
-                result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                result += 'Analysis was run without normalization...\n'
-                result += 'To try again, please select fewer samples or another normalization method...\n'
-            elif NormMeth == 6 and DESeq_error == 'no':
-                result += 'Data were normalized by DESeq2 with variance stabilization...\n'
-            elif NormMeth == 6 and DESeq_error == 'yes':
-                result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                result += 'Analysis was run without normalization...\n'
-                result += 'To try again, please select fewer samples or another normalization method...\n'
-            result += '===============================================\n\n'
+                normDF, DESeq_error = normalizeSPLS(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
-            normDF.set_index('sampleid', inplace=True)
+                finalDict = {}
+                if NormMeth == 1:
+                    result += 'No normalization was performed...\n'
+                elif NormMeth == 2 or NormMeth == 3:
+                    result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+                elif NormMeth == 4:
+                    result += 'Data were normalized by the total number of sequence reads...\n'
+                elif NormMeth == 5 and DESeq_error == 'no':
+                    result += 'Data were normalized by DESeq2...\n'
+                elif NormMeth == 5 and DESeq_error == 'yes':
+                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
+                    result += 'Analysis was run without normalization...\n'
+                    result += 'To try again, please select fewer samples or another normalization method...\n'
+                elif NormMeth == 6 and DESeq_error == 'no':
+                    result += 'Data were normalized by DESeq2 with variance stabilization...\n'
+                elif NormMeth == 6 and DESeq_error == 'yes':
+                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
+                    result += 'Analysis was run without normalization...\n'
+                    result += 'To try again, please select fewer samples or another normalization method...\n'
+                result += '===============================================\n\n'
 
-            finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+                normDF.set_index('sampleid', inplace=True)
 
-            if DepVar == 4:
-                finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
-                finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
-            else:
-                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+                finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
 
-            finalDF.reset_index(inplace=True)
+                if DepVar == 4:
+                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                    finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
+                else:
+                    finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
 
-            if DepVar == 1:
-                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
-            if DepVar == 2:
-                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
-            if DepVar == 3:
-                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
-            if DepVar == 4:
-                normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
+                finalDF.reset_index(inplace=True)
 
-            base[RID] = 'Step 2 of 5: Normalizing data...done!'
+                if DepVar == 1:
+                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
+                if DepVar == 2:
+                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
+                if DepVar == 3:
+                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
+                if DepVar == 4:
+                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
+
+                base[RID] = 'Step 2 of 5: Normalizing data...done!'
+
+            except:
+                myDict = {}
+                myDict['error'] = 'Your selections resulted in no valid observations'
+                res = simplejson.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
+
             base[RID] = 'Step 3 of 5: Calculating sPLS...'
 
             if os.name == 'nt':

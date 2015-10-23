@@ -41,52 +41,27 @@ def mothur(dest, source):
             print "Mothur failed: " + str(e)
 
     if source == '454_sff':
-        #shutil.copy('mothur/temp/temp.files', '% s/final.files' % dest)
-        #shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
         shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
         shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
         shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
-        shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
-        shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
-
-        #for afile in glob.glob(r'mothur/temp/*.sff'):
-        #    shutil.copy(afile, dest)
-        #for afile in glob.glob(r'mothur/temp/*.oligos'):
-        #    shutil.copy(afile, dest)
-
+        shutil.copy('mothur/temp/final.taxonomy', '% s/final.taxonomy' % dest)
+        shutil.copy('mothur/temp/final.shared', '% s/final.shared' % dest)
         shutil.rmtree('mothur/temp')
 
     if source == '454_fastq':
-        #shutil.copy('mothur/temp/temp.fasta', '% s/mothur.fasta' % dest)
-        #shutil.copy('mothur/temp/temp.qual', '% s/mothur.qual' % dest)
-        #shutil.copy('mothur/temp/temp.oligos', '% s/mothur.oligos' % dest)
-        #shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
         shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
         shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
         shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
-        shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
-        shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
-
-        #for afile in glob.glob(r'mothur/temp/*.fna'):
-        #    shutil.copy(afile, dest)
-
-        #for afile in glob.glob(r'mothur/temp/*.qual'):
-        #    shutil.copy(afile, dest)
-
+        shutil.copy('mothur/temp/final.taxonomy', '% s/final.taxonomy' % dest)
+        shutil.copy('mothur/temp/final.shared', '% s/final.shared' % dest)
         shutil.rmtree('mothur/temp')
 
     if source == 'miseq':
-        #shutil.copy('mothur/temp/temp.files', '% s/final.files' % dest)
-        #shutil.copy('mothur/temp/mothur.batch', '% s/mothur.batch' % dest)
         shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
         shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
         shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
-        shutil.copy('mothur/temp/final.taxonomy', '% s/mothur.taxonomy' % dest)
-        shutil.copy('mothur/temp/final.shared', '% s/mothur.shared' % dest)
-
-        #for afile in glob.glob(r'mothur/temp/*.fastq'):
-        #    shutil.copy(afile, dest)
-
+        shutil.copy('mothur/temp/final.taxonomy', '% s/final.taxonomy' % dest)
+        shutil.copy('mothur/temp/final.shared', '% s/final.shared' % dest)
         shutil.rmtree('mothur/temp')
 
     purge('mothur/reference/align', '.8mer')
@@ -115,7 +90,6 @@ def projectid(Document):
     f = xlrd.open_workbook(file_contents=Document.read())
     sheet = f.sheet_by_name('Project')
     pType = sheet.cell_value(rowx=5, colx=2)
-
     projectid = sheet.cell_value(rowx=5, colx=3)
     num_samp = int(sheet.cell_value(rowx=5, colx=0))
 
@@ -342,7 +316,9 @@ def parse_taxonomy(Document):
     for row in f:
         if row:
             total += 1.0
+
     Document.seek(0)
+    f = csv.reader(Document, delimiter='\t')
     f.next()
     step = 0.0
     for row in f:

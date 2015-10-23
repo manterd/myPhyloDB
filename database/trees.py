@@ -281,11 +281,11 @@ def getSampleCatTreeChildren(request):
         pType = request.GET["pType"]
         mimark = Sample._meta.get_all_field_names()
         user = UserDefined._meta.get_all_field_names()
-        air = Air._meta.get_all_field_names
+        air = Air._meta.get_all_field_names()
         human_associated = Human_Associated._meta.get_all_field_names()
-        microbial = Microbial._meta.get_all_field_names
+        microbial = Microbial._meta.get_all_field_names()
         soil = Soil._meta.get_all_field_names()
-        water = Water._meta.get_all_field_names
+        water = Water._meta.get_all_field_names()
 
         myNode = []
         if field in mimark:
@@ -596,7 +596,7 @@ def getSampleQuantTree(request):
 
     if 'soil' in typeList:
         samp_collect = {'title': 'Sample Collection', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-        list = ['samp_size', 'sieve_size', 'storage_cond', 'samp_weight_dna_ext', 'pool_dna_extracts']
+        list = ['samp_size', 'samp_sieve_size', 'samp_store_dur', 'samp_store_temp', 'samp_weight_dna_ext', 'pool_dna_extracts']
         for i in range(len(list)):
             myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             samp_collect['children'].append(myNode)
@@ -716,11 +716,11 @@ def getSampleQuantTreeChildren(request):
         pType = request.GET["pType"]
         mimark = Sample._meta.get_all_field_names()
         user = UserDefined._meta.get_all_field_names()
-        air = Air._meta.get_all_field_names
+        air = Air._meta.get_all_field_names()
         human_associated = Human_Associated._meta.get_all_field_names()
-        microbial = Microbial._meta.get_all_field_names
+        microbial = Microbial._meta.get_all_field_names()
         soil = Soil._meta.get_all_field_names()
-        water = Water._meta.get_all_field_names
+        water = Water._meta.get_all_field_names()
 
         myNode = []
         if field in mimark:
@@ -746,6 +746,37 @@ def getSampleQuantTreeChildren(request):
                             'field': field,
                             'value': values[j],
                             'table': 'mimark',
+                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'hideCheckbox': True,
+                            'isFolder': False
+                        }
+                        myNode1['children'].append(myNode2)
+                    myNode.append(myNode1)
+
+        elif field in air and pType == 'air':
+            table_field = 'air__' + field
+            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).distinct().order_by(table_field)
+            for j in range(len(values)):
+                if pd.notnull(values[j]) and not values[j] == 'nan':
+                    myNode1 = {
+                        'title': values[j],
+                        'id': field,
+                        #'tooltip': 'Value',
+                        'isFolder': True,
+                        'hideCheckbox': False,
+                        'children': []
+                    }
+                    args_list = []
+                    args_list.append(Q(**{table_field: values[j]}))
+                    items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
+                    for item in items:
+                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
+                        myNode2 = {
+                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
+                            'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'air',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False
@@ -784,6 +815,37 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
+        elif field in microbial and pType == 'microbial':
+            table_field = 'microbial__' + field
+            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).distinct().order_by(table_field)
+            for j in range(len(values)):
+                if pd.notnull(values[j]) and not values[j] == 'nan':
+                    myNode1 = {
+                        'title': values[j],
+                        'id': field,
+                        #'tooltip': 'Value',
+                        'isFolder': True,
+                        'hideCheckbox': False,
+                        'children': []
+                    }
+                    args_list = []
+                    args_list.append(Q(**{table_field: values[j]}))
+                    items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
+                    for item in items:
+                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
+                        myNode2 = {
+                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
+                            'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'microbial',
+                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'hideCheckbox': True,
+                            'isFolder': False
+                        }
+                        myNode1['children'].append(myNode2)
+                    myNode.append(myNode1)
+
         elif field in soil and pType == 'soil':
             table_field = 'soil__' + field
             values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).distinct().order_by(table_field)
@@ -808,6 +870,37 @@ def getSampleQuantTreeChildren(request):
                             'field': field,
                             'value': values[j],
                             'table': 'soil',
+                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'hideCheckbox': True,
+                            'isFolder': False
+                        }
+                        myNode1['children'].append(myNode2)
+                    myNode.append(myNode1)
+
+        elif field in water and pType == 'water':
+            table_field = 'water__' + field
+            values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).distinct().order_by(table_field)
+            for j in range(len(values)):
+                if pd.notnull(values[j]) and not values[j] == 'nan':
+                    myNode1 = {
+                        'title': values[j],
+                        'id': field,
+                        #'tooltip': 'Value',
+                        'isFolder': True,
+                        'hideCheckbox': False,
+                        'children': []
+                    }
+                    args_list = []
+                    args_list.append(Q(**{table_field: values[j]}))
+                    items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
+                    for item in items:
+                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
+                        myNode2 = {
+                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
+                            'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'water',
                             'tooltip': 'Project: ' + item.projectid.project_name,
                             'hideCheckbox': True,
                             'isFolder': False

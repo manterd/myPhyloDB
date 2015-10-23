@@ -557,6 +557,10 @@
                         "scrollX": true
                     }).draw();
 
+                    //$("#image").show();
+                    //{#% static "" as baseUrl %#}
+                    //$("#my_image").attr("src", "{{# baseUrl #}}/Rplots/{{# user #}}.pcoa.jpg");
+
                     $("#run").css("background-color", "green");
                 }
             });
@@ -819,6 +823,9 @@
 
     <h2>Distance Scores:</h2>
     <div id="dist_table" style="width: 950px; overflow-x: auto;"></div>
+    <br>
+    <br>
+    <!--<span id="image" style="display: none"><img id="my_image" src="#" /></span>-->
     <br>
     <br>
 {% endblock my_content%}

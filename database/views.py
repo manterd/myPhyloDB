@@ -7,7 +7,6 @@ from django.template import RequestContext
 import os
 import pandas as pd
 import pickle
-import shutil
 import simplejson
 import xlrd
 
@@ -15,7 +14,6 @@ from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5
 from models import Project, Reference, Sample, Species, Soil, Profile
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
-
 
 
 rep_project = ''
@@ -37,11 +35,11 @@ def upload(request):
         userID = str(request.user.id)
 
         if form1.is_valid():
+            file1 = request.FILES['docfile1']
             try:
-                file1 = request.FILES['docfile1']
                 p_uuid, pType, num_samp = projectid(file1)
-            except Exception as e:
-                print("Error with project file: " + str(request.FILES['docfile1']) + "; Error: " + str(e))
+            except:
+                print "myPhyloDB could not parse your project file: " + str(request.FILES['docfile1'])
 
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -52,7 +50,8 @@ def upload(request):
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "There was an error parsing your Project file"},
+                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     },
                     context_instance=RequestContext(request)
                 )
 
@@ -70,8 +69,7 @@ def upload(request):
                 handle_uploaded_file(file1, dest, metaName)
                 parse_project(metaFile, p_uuid)
 
-            except Exception as e:
-                print("Error with project file: " + str(request.FILES['docfile1']) + "; Error: " + str(e))
+            except:
                 remove_proj(dest)
 
                 if request.user.is_superuser:
@@ -83,7 +81,8 @@ def upload(request):
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "There was an error parsing your Project file"},
+                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     },
                     context_instance=RequestContext(request)
                 )
 
@@ -105,8 +104,7 @@ def upload(request):
 
             try:
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
-            except Exception as e:
-                print("Error with sample file: " + str(request.FILES['docfile1']) + "; Error: " + str(e))
+            except:
                 remove_proj(dest)
 
                 if request.user.is_superuser:
@@ -118,20 +116,18 @@ def upload(request):
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "There was an error parsing your Sample file"},
+                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     },
                     context_instance=RequestContext(request)
                 )
 
             if source == 'mothur':
-                taxonomy = ".".join(["mothur", "taxonomy"])
                 file3 = request.FILES['docfile3']
-                handle_uploaded_file(file3, dest, taxonomy)
+                handle_uploaded_file(file3, dest, file3.name)
 
                 try:
-                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                        parse_taxonomy(file3)
-                except Exception as e:
-                    print("Error with taxonomy file: " + str(request.FILES['docfile3']) + "; Error: " + str(e))
+                    parse_taxonomy(file3)
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -143,20 +139,17 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your Taxonomy file"},
+                         'error': "There was an error parsing your taxonomy file:" + str(file3.name)
+                         },
                         context_instance=RequestContext(request)
                     )
 
-                shared = ".".join(["mothur", "shared"])
                 file4 = request.FILES['docfile4']
-                handle_uploaded_file(file4, dest, shared)
+                handle_uploaded_file(file4, dest, file4.name)
 
                 try:
-                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/mothur.shared' % dest, 'rb') as file4:
-                            parse_profile(file3, file4, p_uuid, refDict)
-                except Exception as e:
-                    print("Error with shared file: " + str(request.FILES['docfile4']) + "; Error: " + str(e))
+                    parse_profile(file3, file4, p_uuid, refDict)
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -168,7 +161,8 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your Shared file"},
+                         'error': "There was an error parsing your shared file:" + str(file4.name)
+                         },
                         context_instance=RequestContext(request)
                     )
 
@@ -197,12 +191,12 @@ def upload(request):
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
                 handle_uploaded_file(file7, mothurdest, batch)
+                handle_uploaded_file(file7, dest, batch)
 
                 try:
                     mothur(dest, source)
 
-                except Exception as e:
-                    print("Encountered error with Mothur: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -214,15 +208,15 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error with Mothur"},
+                         'error': "There was an error with your mothur batch file:" + str(file7.name)
+                         },
                         context_instance=RequestContext(request)
                     )
 
                 try:
-                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except Exception as e:
-                    print("Error with post-mothur taxonomy file: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -234,16 +228,16 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your Taxonomy file (post-Mothur)"},
+                         'error': "There was an error parsing your taxonomy file: final.taxonomy"
+                         },
                         context_instance=RequestContext(request)
                     )
 
                 try:
-                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/mothur.shared' % dest, 'rb') as file4:
+                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/final.shared' % dest, 'rb') as file4:
                             parse_profile(file3, file4, p_uuid, refDict)
-                except Exception as e:
-                    print("Error with parsing post-mothur profile: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -255,7 +249,8 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your Profile (post-Mothur)"},
+                         'error': "There was an error parsing your shared file: final.shared"
+                         },
                         context_instance=RequestContext(request)
                     )
 
@@ -301,18 +296,20 @@ def upload(request):
                         handle_uploaded_file(file, mothurdest, qual)
                         handle_uploaded_file(file, dest, each)
 
+                oligo = 'temp.oligos'
                 file6 = request.FILES['docfile6']
-                handle_uploaded_file(file6, mothurdest, file6.name)
+                handle_uploaded_file(file6, mothurdest, oligo)
+                handle_uploaded_file(file6, dest, file6.name)
 
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
                 handle_uploaded_file(file7, mothurdest, batch)
+                handle_uploaded_file(file7, dest, batch)
 
                 try:
                     mothur(dest, source)
 
-                except Exception as e:
-                    print("Encountered error with Mothur: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -324,15 +321,15 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error with Mothur"},
+                         'error': "There was an error with your mothur batch file: " + str(file7.name)
+                         },
                         context_instance=RequestContext(request)
                     )
 
                 try:
-                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except Exception as e:
-                    print("Error with post-mothur taxonomy file: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -344,16 +341,16 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your Taxonomy file (post-Mothur)"},
+                         'error': "There was an error parsing your taxonomy file: final.taxonomy"
+                         },
                         context_instance=RequestContext(request)
                     )
 
                 try:
-                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/mothur.shared' % dest, 'rb') as file4:
+                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/final.shared' % dest, 'rb') as file4:
                             parse_profile(file3, file4, p_uuid, refDict)
-                except Exception as e:
-                    print("Error with parsing post-mothur profile: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -365,7 +362,8 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your Profile (post-Mothur)"},
+                         'error': "There was an error parsing your shared file: final.shared"
+                         },
                         context_instance=RequestContext(request)
                     )
 
@@ -377,6 +375,7 @@ def upload(request):
                 fastq = 'temp.files'
                 file13 = request.FILES['docfile13']
                 handle_uploaded_file(file13, mothurdest, fastq)
+                handle_uploaded_file(file13, dest, file13.name)
 
                 file_list = request.FILES.getlist('fastq_files')
                 for each in file_list:
@@ -387,11 +386,11 @@ def upload(request):
                 batch = 'mothur.batch'
                 file15 = request.FILES['docfile15']
                 handle_uploaded_file(file15, mothurdest, batch)
+                handle_uploaded_file(file15, dest, batch)
 
                 try:
                     mothur(dest, source)
-                except Exception as e:
-                    print("Encountered error with Mothur: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -403,15 +402,15 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error with Mothur"},
+                         'error': "There was an error with your mothur batch file: " + str(file15.name)
+                         },
                         context_instance=RequestContext(request)
                     )
 
                 try:
-                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except Exception as e:
-                    print("Error with post-mothur taxonomy file: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -423,16 +422,15 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your Taxonomy file (post-Mothur)"},
+                         'error': "There was an error parsing taxonomy file: final.taxonomy"},
                         context_instance=RequestContext(request)
                     )
 
                 try:
-                    with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/mothur.shared' % dest, 'rb') as file4:
+                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/final.shared' % dest, 'rb') as file4:
                             parse_profile(file3, file4, p_uuid, refDict)
-                except Exception as e:
-                    print("Error with parsing post-mothur profile: " + str(e))
+                except:
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -444,7 +442,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your Profile (post-Mothur)"},
+                         'error': "There was an error parsing your shared file: final.shared"},
                         context_instance=RequestContext(request)
                     )
 
@@ -533,8 +531,10 @@ def DiffAbund(request):
 
 
 def PCoA(request):
+    user = request.user
     return render_to_response(
         'pcoa.html',
+        {user: user},
         context_instance=RequestContext(request)
     )
 
@@ -618,12 +618,11 @@ def update(request):
         p_uuid, pType, num_samp = projectid(file1)
 
         try:
-            metaName = 'final_meta.xls'
-            metaFile = '/'.join([dest, metaName])
-            handle_uploaded_file(file1, dest, metaName)
+            metaFile = '/'.join([dest, file1.name])
+            handle_uploaded_file(file1, dest, file1.name)
             parse_project(metaFile, p_uuid)
-        except Exception as e:
-            state = "Error with project file: " + str(e)
+        except:
+            state = "There was an error parsing your metafile: " + str(file1.name)
             return render_to_response(
                 'update.html',
                 {'form5': UploadForm5,
@@ -635,6 +634,7 @@ def update(request):
             f = xlrd.open_workbook(metaFile)
             sheet = f.sheet_by_name('Project')
             num_samp = int(sheet.cell_value(rowx=5, colx=0))
+
             bat = 'mothur.batch'
             batFile = '/'.join([dest, bat])
             reference = Reference.objects.get(refid=refid)
@@ -644,7 +644,7 @@ def update(request):
             refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
 
         except Exception as e:
-            state = "Error with sample file: " + str(e)
+            state = "There was an error parsing your metafile: " + str(file1.name)
             return render_to_response(
                 'update.html',
                 {'form5': UploadForm5,
