@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block pagetitle %}
-    <title>Multivariate-PCoA</title>
+    <title>PCoA</title>
 {% endblock pagetitle %}
 
 {% block user %}
@@ -26,13 +26,21 @@
     <script type="text/javascript">
         var DepVar = 1, NormMeth = 3, selTheme = 0;
         var nodesCat = "", nodesQuant = "", taxaLevel = 7;
-        var chart1 = {}, chart2 = {};
+        var chart1 = {}, chart2 = {}, display = 1;
         var catOptions = {};
         var distance = 15, PC1 = 1, PC2 = 2, test = 1;
         var remove = 0;
         var refresh = 0;
 
         $(function () {
+
+            $(window).bind('beforeunload', function(){
+                $.ajax({
+                    url: '/removegraphPCoA/',
+                    async: false
+                });
+            });
+
             $("#tree_metaCat").dynatree({
                 checkbox: true,
                 selectMode: 3,
@@ -60,6 +68,17 @@
                         });
                     }
                     nodesCat = node.tree.getSelectedNodes();
+
+                    if (node.data.pType != undefined) {
+                        if (node.bSelected) {
+                            $("#ellipse").prop("checked", true);
+                            $("#ellipseVal").val(node.data.title);
+                        } else {
+                            $("#ellipse").prop("checked", false);
+                            $("#ellipseVal").val("");
+                        }
+                    }
+
                     $("#run").css("background-color", "lightgray");
                 }
             });
@@ -91,6 +110,17 @@
                         });
                     }
                     nodesQuant = node.tree.getSelectedNodes();
+
+                    if (node.data.pType != undefined) {
+                        if (node.bSelected) {
+                            $("#surf").prop("checked", true);
+                            $("#surfVal").val(node.data.title);
+                        } else {
+                            $("#surf").prop("checked", false);
+                            $("#surfVal").val("");
+                        }
+                    }
+
                     $("#run").css("background-color", "lightgray");
                 }
             });
@@ -148,6 +178,21 @@
             $("#DepVar").change(function () {
                 DepVar = $(this).val();
                 chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#graphDisplay").change(function () {
+                display = $(this).val();
+                if (display == 1) {
+                    $("#container-1").show();
+                    $("#container-2").hide();
+                    $("#highchartButtons").show();
+                }
+                if (display == 2) {
+                    $("#container-1").hide();
+                    $("#container-2").show();
+                    $("#highchartButtons").hide();
+                }
                 $("#run").css("background-color", "lightgray");
             });
 
@@ -285,6 +330,10 @@
             });
 
             $("#run").click(function () {
+                $("#my_image").attr("src", "#");
+                $("#container-0").show();
+                $("#container-1").hide();
+                $("#container-2").hide();
                 chooseData();
             });
 
@@ -318,7 +367,7 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var stage = obj['stage'];
-                    $('#container-1').empty().append(stage);
+                    $('#container-0').empty().append(stage);
                 }
             });
         }
@@ -371,7 +420,8 @@
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
                 $("#run").css("background-color", "red");
-            } else {
+            }
+            if (nodesCat != "") {
                 $("#run").css("background-color", "yellow");
                 $("#container-1").empty().append('Analysis is running...please be patient');
                 getGraphData();
@@ -509,11 +559,22 @@
             myDict['NormMeth'] = NormMeth;
             myDict['MinSize'] = document.getElementById("MinVal").value;
             myDict['RID'] = RID;
-
+            myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
+            myDict['surfVal'] = document.getElementById("surfVal").value;
+            if ($("#ellipse").is(':checked')) {
+                myDict['addEllipse'] = 'yes'
+            } else {
+                myDict['addEllipse'] = 'no'
+            }
+            if ($("#surf").is(':checked')) {
+                myDict['addSurf'] = 'yes'
+            } else {
+                myDict['addSurf'] = 'no'
+            }
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getPCoAData/',
+                url: '/getPCoA/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -557,11 +618,23 @@
                         "scrollX": true
                     }).draw();
 
-                    //$("#image").show();
-                    //{#% static "" as baseUrl %#}
-                    //$("#my_image").attr("src", "{{# baseUrl #}}/Rplots/{{# user #}}.pcoa.jpg");
+                    $("#image").show();
+                    {% static "" as baseUrl %}
+                    var d = new Date();
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ user }}.pcoa.jpg?"+d.getTime());
 
                     $("#run").css("background-color", "green");
+
+                    $("#container-0").hide();
+                    var display = $("#graphDisplay").val();
+                    if (display == 1) {
+                        $("#container-1").show();
+                        $("#container-2").hide();
+                    }
+                    if (display == 2) {
+                        $("#container-1").hide();
+                        $("#container-2").show();
+                    }
                 }
             });
         }
@@ -729,8 +802,38 @@
                 &nbsp<-- Selected test
             </td>
             <td bgcolor="white">
-                <div  style="background-color: white" id="permutations">permutations: <input type="text" id="perms" value="1000" style="width:40px; background-color: white"/></div>
+                <div style="background-color: white" id="permutations">permutations: <input type="text" id="perms" value="1000" style="width:40px; background-color: white"/></div>
             </td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white"></td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">Optimize R plot:</td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    Add ordiellipse: <input type="checkbox" title="Click to turn ordiellipse on/off" id="ellipse"/>
+                    <input type="text" title="Input box is automatically changed to the last variable you selected. <br> An entry is required, and will be used to group your plot. <br> To change, manually type in your desired variable." id="ellipseVal" value="" style="background-color: white"/>
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    Add ordisurf: <input type="checkbox"  title="Click to turn ordisurf on/off" id="surf"/>
+                    <input type="text"  title="Input box is automatically changed to the last variable you selected. <br> No entry is required. <br> To change, manually type in your desired variable." id="surfVal" value="" style="background-color: white"/>
+                </div>
+            </td>
+            <td bgcolor="white"></td>
         </tr>
     </table>
     </div>
@@ -739,20 +842,6 @@
     <div id="stage"></div>
     <br><br>
 
-    <div style="float: right;">Select chart theme:
-        <select id="theme">
-            <option value="1" selected="selected">default</option>
-            <option value="2">dark-blue</option>
-            <option value="3">dark-green</option>
-            <option value="4">dark-unica</option>
-            <option value="5">gray</option>
-            <option value="6">grid</option>
-            <option value="7">grid-light</option>
-            <option value="8">sand-signika</option>
-            <option value="9">skies</option>
-        </select>
-        &nbsp&nbsp
-    </div>
     <table width="950px" border="2">
         <tr>
             <th colspan="3" style="padding-right: 10px;">GraphData</th>
@@ -777,7 +866,13 @@
                     <option value="6">DESeq2+VS</option>
                 </select>
             </td>
-            <td style="width: 30%; text-align: left"> </td>
+            <td style="width: 30%; text-align: left">
+                Display graph:
+                <select id="graphDisplay">
+                    <option value="1">Highcharts</option>
+                    <option value="2">R plot</option>
+                </select>
+            </td>
         </tr>
         <tr>
             <td></td>
@@ -803,12 +898,34 @@
         </tr>
         <tr>
             <td colspan="3">
-                <div id="container-1" style="height: 400px;">No Data has been selected!</div>
+                <div id="container-0" style="height: 400px;">No Data has been selected!</div>
+                <div id="container-1" style="height: 400px; display:none"></div>
+                <div id="container-2" style="height: 405px; display:none; overflow-x: auto; overflox-y: auto;"><span id="image" style="display:none;"><img style="height: 100%" id="my_image" src="#" /></span></div>
+            </td>
+        </tr>
+        <tr id="highchartButtons">
+            <td>
+                <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
+            </td>
+            <td>Select chart theme:
+                <select id="theme">
+                    <option value="1" selected="selected">default</option>
+                    <option value="2">dark-blue</option>
+                    <option value="3">dark-green</option>
+                    <option value="4">dark-unica</option>
+                    <option value="5">gray</option>
+                    <option value="6">grid</option>
+                    <option value="7">grid-light</option>
+                    <option value="8">sand-signika</option>
+                    <option value="9">skies</option>
+                </select>
+                &nbsp&nbsp
+            </td>
+            <td>
+                <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
             </td>
         </tr>
     </table>
-    <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
-    <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
 
     <div id="txt-1">
         <h2>Test Results:</h2>
@@ -824,8 +941,6 @@
     <h2>Distance Scores:</h2>
     <div id="dist_table" style="width: 950px; overflow-x: auto;"></div>
     <br>
-    <br>
-    <!--<span id="image" style="display: none"><img id="my_image" src="#" /></span>-->
     <br>
     <br>
 {% endblock my_content%}

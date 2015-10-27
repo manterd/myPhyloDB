@@ -8,13 +8,15 @@
 
 # Installers
 <hr>
-* Installers for the current Linux and Windows stand-alone executables can be found [here] (http://www.ars.usda.gov/services/software/software.htm).
+* Installers for the current Linux and Windows stand-alone executables can be found [here] (http://www.ars.usda.gov/services/software/download.htm?softwareid=472).
 * Executables include all dependencies, allowing myPhyloDB to be run on computers without Python, Mothur or R.
 
 <hr>
 
 # Dependencies
 <hr>
+Dependencies (and the source code provided here) are only required for development purposes.  Most users should use the installers provided above.
+
 ####**Linux systems**
 
 ***Python 2.7.8***

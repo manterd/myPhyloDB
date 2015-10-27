@@ -53,13 +53,15 @@ urlpatterns = patterns('',
     url(r'^statusANOVA/$', 'database.anova.anova_graphs.statusANOVA', name='statusANOVA'),
     url(r'^removeRIDANOVA/$', 'database.anova.anova_graphs.removeRIDANOVA', name='removeRIDANOVA'),
 
-    url(r'^getPCoAData/$', 'database.pcoa.pcoa_graphs.getPCoAData', name='getPCoAData'),
+    url(r'^getPCoA/$', 'database.pcoa.pcoa_graphs.getPCoA', name='getPCoA'),
     url(r'^statusPCoA/$', 'database.pcoa.pcoa_graphs.statusPCoA', name='statusPCoA'),
-    url(r'^removeRIDPCOA/$', 'database.pcoa.pcoa_graphs.removeRIDPCOA', name='removeRIDPCOA'),
+    url(r'^removeRIDPCoA/$', 'database.pcoa.pcoa_graphs.removeRIDPCoA', name='removeRIDPCoA'),
+    url(r'^removegraphPCoA/$', 'database.pcoa.pcoa_graphs.removegraphPCoA', name='removegraphPCoA'),
 
-    url(r'^getSPLSData/$', 'database.spls.spls_graphs.getSPLSAData', name='getSPLSData'),
+    url(r'^getSPLS/$', 'database.spls.spls_graphs.getSPLS', name='getSPLS'),
     url(r'^statusSPLS/$', 'database.spls.spls_graphs.statusSPLS', name='statusSPLS'),
     url(r'^removeRIDSPLS/$', 'database.spls.spls_graphs.removeRIDSPLS', name='removeRIDSPLS'),
+    url(r'^removegraphSPLS/$', 'database.spls.spls_graphs.removegraphSPLS', name='removegraphSPLS'),
 
     url(r'^updateDiffAbund/$', 'database.diffabund.diffabund_graphs.updateDiffAbund', name='updateDiffAbund'),
     url(r'^getDiffAbund/$', 'database.diffabund.diffabund_graphs.getDiffAbund', name='getDiffAbund'),

@@ -9,7 +9,8 @@ import multiprocessing as mp
 from database.models import Sample, Human_Associated, Soil, UserDefined
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
-def SPLSMetaDF(idDict):
+
+def metaData(idDict):
     sampleTableList = Sample._meta.get_all_field_names()
     human_associatedTableList = Human_Associated._meta.get_all_field_names()
     soilTableList = Soil._meta.get_all_field_names()
@@ -65,7 +66,7 @@ def SPLSMetaDF(idDict):
     return metaDF
 
 
-def normalizeSPLS(df, taxaDict, mySet, meth, reads, metaDF, iters):
+def normalizeData(df, taxaDict, mySet, meth, reads, metaDF, iters):
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 

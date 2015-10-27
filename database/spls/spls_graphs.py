@@ -8,7 +8,7 @@ from scipy import stats
 from scipy.spatial.distance import *
 import simplejson
 
-from database.spls.spls_DF import SPLSMetaDF, normalizeSPLS
+from database.spls.spls_DF import metaData, normalizeData
 from database.models import Sample, Profile, Kingdom, Phyla, Class, Order, Family, Genus, Species
 from database.utils import multidict, taxaProfileDF
 
@@ -56,7 +56,7 @@ def removeRIDSPLS(request):
         return False
 
 
-def getSPLSAData(request):
+def getSPLS(request):
     try:
         global base, time1, TimeDiff
         samples = Sample.objects.all()
@@ -191,7 +191,7 @@ def getSPLSAData(request):
                             id = sample.sampleid
                             newList.append(id)
 
-            metaDF = SPLSMetaDF(idDict)
+            metaDF = metaData(idDict)
 
             lenA, col = metaDF.shape
 
@@ -242,7 +242,7 @@ def getSPLSAData(request):
                     qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                     taxaDict['Species'] = qs3
 
-                normDF, DESeq_error = normalizeSPLS(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
+                normDF, DESeq_error = normalizeData(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
                 finalDict = {}
                 if NormMeth == 1:
@@ -310,28 +310,47 @@ def getSPLSAData(request):
             r("ZeroVar <- nearZeroVar(X, freqCut=90/10, uniqueCut=25)")
             r("List <- row.names(ZeroVar$Metrics)")
             r("X_new <- X[,-which(names(X) %in% List)]")
-            r("X_final <- scale(X_new, center=TRUE, scale=TRUE)")
+            r("X_scaled <- scale(X_new, center=TRUE, scale=TRUE)")
 
-            r("Y_final <- scale(Y, center=TRUE, scale=TRUE)")
+            r("Y_scaled <- scale(Y, center=TRUE, scale=TRUE)")
 
+            r("detach('package:mixOmics', unload=TRUE)")
             r("library(spls)")
             r("set.seed(1)")
-            r("cv <- cv.spls(X_final, Y_final, eta=seq(0.1, 0.9, 0.1), K=c(1:5), plot.it=FALSE)")
-            r("f <- spls(X_final, Y_final, eta=cv$eta.opt, K=cv$K.opt)")
+            r("cv <- cv.spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=seq(0.1, 0.9, 0.1), K=c(1:5), plot.it=FALSE)")
+            r("f <- spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=cv$eta.opt, K=cv$K.opt)")
+
+            r("out <- capture.output(print(f))")
+            fout = r.get("out")
+
+            for i in fout:
+                result += str(i) + '\n'
+            result += '===============================================\n\n'
+
+            r("set.seed(1)")
+            r("ci.f <- ci.spls(f, plot.it=FALSE, plot.fix='y')")
+            r("cis <- ci.f$cibeta")
+            r("cf <- correct.spls(ci.f, plot.it=FALSE)")
+            r("out <- capture.output(cis)")
+            fout = r.get("out")
+            result += '\n\nBootstrapped confidence intervals of coefficients:\n'
+            for i in fout:
+                result += str(i) + '\n'
+            result += '===============================================\n\n'
+
 
             r("coef.f <- coef(f)")
-            r("coef.f")
-            r("sum <- sum(coef.f != 0)")
+            r("sum <- sum(cf != 0)")
             total = r.get("sum")
 
             base[RID] = 'Step 3 of 5: Calculating sPLS...done!'
             base[RID] = 'Step 4 of 5: Formatting graph data for display...'
 
             if total > 0:
-                r("pred.f <- predict(f, type='fit', fit.type='response')")
+                r("pred.f <- predict(f, type='fit')")
 
                 r("library(DMwR)")
-                r("pred.ns <- unscale(pred.f, Y_final)")
+                r("pred.ns <- unscale(pred.f, Y_scaled)")
                 r("pred.ns.rows <- row.names(pred.ns)")
                 pred = r.get("pred.ns")
                 rows = r.get("pred.ns.rows")
@@ -457,6 +476,70 @@ def getSPLSAData(request):
                 finalDict['yAxis'] = yAxisDict
                 finalDict['series'] = seriesList
 
+                # R clustered heatmap
+                clustDF = pd.DataFrame()
+                if taxaLevel == 2:
+                    clustDF = coeffsDF.drop('phylaid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 3:
+                    clustDF = coeffsDF.drop('classid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 4:
+                    clustDF = coeffsDF.drop('orderid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 5:
+                    clustDF = coeffsDF.drop('familyid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 6:
+                    clustDF = coeffsDF.drop('genusid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 7:
+                    clustDF = coeffsDF.drop('speciesid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                row, col = clustDF.shape
+
+                method = all['methodVal']
+                metric = all['metricVal']
+
+                name = request.user
+                ip = request.META.get('REMOTE_ADDR')
+                user = str(name) + "." + str(ip)
+
+                path = "media/Rplots/" + str(user) + ".spls.jpg"
+                if os.path.exists(path):
+                    os.remove(path)
+
+                if not os.path.exists('media/Rplots'):
+                    os.makedirs('media/Rplots')
+
+                if row > 2 and col > 2:
+                    file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg')"
+                    r.assign("cmd", file)
+                    r("eval(parse(text=cmd))")
+
+                    r.assign("df", clustDF)
+                    r("df")
+                    r("library(pheatmap)")
+
+                    hmap_str = "pheatmap(df, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "', clustering_distance_cols='" + str(metric) + "')"
+                    r.assign("cmd", hmap_str)
+                    r("eval(parse(text=cmd))")
+                    r("dev.off()")
+
+                else:
+                    file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg')"
+                    r.assign("cmd", file)
+                    r("eval(parse(text=cmd))")
+
+                    r.assign("df", clustDF)
+                    r("df")
+                    r("library(pheatmap)")
+
+                    hmap_str = "pheatmap(df, cluster_col=FALSE, cluster_row=FALSE)"
+                    r.assign("cmd", hmap_str)
+                    r("eval(parse(text=cmd))")
+                    r("dev.off()")
+
             finalDict['text'] = result
 
             base[RID] = 'Step 4 of 5: Formatting graph data for display...done!'
@@ -473,3 +556,13 @@ def getSPLSAData(request):
         myDict['error'] = state
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
+
+
+def removegraphSPLS(request):
+    name = request.user
+    ip = request.META.get('REMOTE_ADDR')
+    user = str(name) + "." + str(ip)
+
+    file = "media/Rplots/" + str(user) + ".spls.jpg"
+    if os.path.exists(file):
+        os.remove(file)

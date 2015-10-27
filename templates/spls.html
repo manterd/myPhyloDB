@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block pagetitle %}
-    <title>Multivariate-sPLS</title>
+    <title>sPLS-Regr</title>
 {% endblock pagetitle %}
 
 {% block user %}
@@ -26,12 +26,20 @@
     <script type="text/javascript">
         var DepVar = 1, NormMeth = 3, selTheme = 0;
         var nodesQuant = "", taxaLevel = 7;
-        var chart1 = {};
+        var chart1 = {}, display = 1;
         var catOptions = {};
         var remove = 0;
         var refresh = 0;
 
         $(function () {
+
+            $(window).bind('beforeunload', function(){
+                $.ajax({
+                    url: '/removegraphSPLS/',
+                    async: false
+                });
+            });
+
             $("#tree_metaQuant").dynatree({
                 checkbox: true,
                 selectMode: 3,
@@ -74,6 +82,19 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#graphDisplay").change(function () {
+                display = $(this).val();
+                if (display == 1) {
+                    $("#container-1").show();
+                    $("#container-2").hide();
+                }
+                if (display == 2) {
+                    $("#container-1").hide();
+                    $("#container-2").show();
+                }
+                $("#run").css("background-color", "lightgray");
+            });
+
             $("#selectall").change(function () {
                 taxaLevel = $(this).val();
                 chooseDisplay();
@@ -101,7 +122,19 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#methodVal").click(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#metricVal").change(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
             $("#run").click(function () {
+                $("#my_image").attr("src", "#");
+                $("#container-0").show();
+                $("#container-1").hide();
+                $("#container-2").hide();
                 chooseData();
             });
 
@@ -135,7 +168,7 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var stage = obj['stage'];
-                    $('#container-1').empty().append(stage);
+                    $('#container-0').empty().append(stage);
                 }
             });
         }
@@ -179,13 +212,14 @@
 
         function chooseData() {
             if (nodesQuant == "") {
-                $("#container-1").empty().append('Please choose a quantitative variable(s)!');
+                $("#container-0").empty().append('Please choose a quantitative variable(s)!');
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
                 $("#run").css("background-color", "red");
-            } else {
+            }
+            if (nodesQuant != "") {
                 $("#run").css("background-color", "yellow");
-                $("#container-1").empty().append('Analysis is running...please be patient');
+                $("#container-0").empty().append('Analysis is running...please be patient');
                 getGraphData();
             }
         }
@@ -252,12 +286,14 @@
             myDict['remove'] = remove;
             myDict['NormMeth'] = NormMeth;
             myDict['MinSize'] = document.getElementById("MinVal").value;
+            myDict['methodVal'] = document.getElementById("methodVal").value;
+            myDict['metricVal'] = document.getElementById("metricVal").value;
             myDict['RID'] = RID;
 
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getSPLSData/',
+                url: '/getSPLS/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -301,7 +337,24 @@
                     var text = obj['text'];
                     $('#text-1').val(text);
 
+                    $("#image").show();
+                    {% static "" as baseUrl %}
+                    var d = new Date();
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ user }}.spls.jpg?"+d.getTime());
+
                     $("#run").css("background-color", "green");
+
+                    $("#container-0").hide();
+                    var display = $("#graphDisplay").val();
+                    if (display == 1) {
+                        $("#container-1").show();
+                        $("#container-2").hide();
+                    }
+                    if (display == 2) {
+                        $("#container-1").hide();
+                        $("#container-2").show();
+                    }
+
                 }
             });
         }
@@ -311,7 +364,7 @@
                 chart: {
                     renderTo: 'container-1',
                     type: 'heatmap',
-                    height: parseFloat(yAxis.categories.length)*20+250,
+                    height: parseFloat(yAxis.categories.length)*16+250,
                     width: parseFloat(xAxis.categories.length)*16+200
                 },
                 title: { text: null },
@@ -386,6 +439,48 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white"></td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">Optimize R plot:</td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select  id="methodVal" title="Linkage method to use for calculating clusters.">
+                        <option value="single">Single (nearest neighbor)</option>
+                        <option value="complete" selected="selected">Complete (farthest neighbor)</option>
+                        <option value="average">Average (UPGMA) </option>
+                        <option value="mcquitty">Weighted (WPGMA)</option>
+                        <option value="median">Median (WPGMC)</option>
+                        <option value="centroid">Centroid (UPGMC)</option>
+                    </select>
+                &nbsp<-- Selected linkage method
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select  id="metricVal" title="Distance metric to use for calculating clusters.">
+                        <option value="correlation">Correlation</option>
+                        <option value="euclidean" selected="selected">Euclidean</option>
+                        <option value="manhattan">Manhattan</option>
+                        <option value="maximum">Maximum</option>
+                    </select>
+                &nbsp<-- Selected distance metric
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
     </table>
     </div>
     <br>
@@ -417,7 +512,13 @@
                     <option value="6">DESeq2+VS</option>
                 </select>
             </td>
-            <td style="width: 30%; text-align: left"> </td>
+            <td style="width: 30%; text-align: left">
+                Display graph:
+                <select id="graphDisplay">
+                    <option value="1">Highcharts</option>
+                    <option value="2">R plot</option>
+                </select>
+            </td>
         </tr>
         <tr>
             <td></td>
@@ -443,7 +544,9 @@
         </tr>
         <tr>
             <td colspan="3">
-                <div id="container-1" style="height: 400px; width:950px; overflow-x: auto">No Data has been selected!</div>
+                <div id="container-0" style="height: 400px;">No Data has been selected!</div>
+                <div id="container-1" style="height: 400px; overflow-x: auto; display:none"></div>
+                <div id="container-2" style="height: 405px; overflow-y: auto; display:none"><span id="image" style="display:none;"><img id="my_image" src="#" /></span></div>
             </td>
         </tr>
     </table>

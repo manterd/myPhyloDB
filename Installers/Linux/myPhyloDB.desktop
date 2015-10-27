@@ -1,9 +1,0 @@
-#!/usr/bin/env xdg-open
-[Desktop Entry]
-Version=1.1
-Type=Application
-Name=PhyloDB
-Icon=myPhyloDB_Logo.png
-Exec=gnome-terminal -x bash -c "cd $HOME/myPhyloDB; ./myPhyloDB.exe; exec $SHELL"
-Name[en_US]=myPhyloDB
-X-GNOME-Autostart-enabled=true

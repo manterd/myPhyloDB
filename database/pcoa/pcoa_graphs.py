@@ -7,7 +7,7 @@ from pyper import *
 from scipy.spatial.distance import *
 import simplejson
 
-from database.pcoa.pcoa_DF import PCoAMetaDF, normalizePCoA
+from database.pcoa.pcoa_DF import metaData, normalizeData
 from database.models import Sample, Profile
 from stats.distance import wOdum
 from database.utils import multidict, taxaProfileDF
@@ -39,7 +39,7 @@ def statusPCoA(request):
         return HttpResponse(json_data, content_type='application/json')
 
 
-def removeRIDPCOA(request):
+def removeRIDPCoA(request):
     global base, stage, time1, time2, TimeDiff
     try:
         if request.is_ajax():
@@ -56,7 +56,7 @@ def removeRIDPCOA(request):
         return False
 
 
-def getPCoAData(request):
+def getPCoA(request):
     try:
         global base, time1, TimeDiff
         samples = Sample.objects.all()
@@ -256,7 +256,7 @@ def getPCoAData(request):
                             id = sample.sampleid
                             newList.append(id)
 
-            metaDF = PCoAMetaDF(idDict)
+            metaDF = metaData(idDict)
 
             lenA, col = metaDF.shape
 
@@ -307,7 +307,7 @@ def getPCoAData(request):
                     qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
                     taxaDict['Species'] = qs3
 
-                normDF, DESeq_error = normalizePCoA(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
+                normDF, DESeq_error = normalizeData(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
                 finalDict = {}
                 if NormMeth == 1:
@@ -422,21 +422,44 @@ def getPCoAData(request):
                 r.assign("cmd", pcoa_string)
                 r("eval(parse(text=cmd))")
 
-                #r("usr_cat1 <- factor(meta$usr_cat1)")
-                #r("usr_quant1 <- meta$usr_quant1")
+                ellipseVal = all['ellipseVal']
+                myStr = "cat <- factor(meta$" + str(ellipseVal) + ")"
+                r.assign("cmd", myStr)
+                r("eval(parse(text=cmd))")
 
-                #r("my_col=c(1:2)[as.factor(usr_cat1)]")
+                surfVal = all['surfVal']
+                if surfVal:
+                    myStr = "quant <- meta$" + str(surfVal)
+                    r.assign("cmd", myStr)
+                    r("eval(parse(text=cmd))")
 
-                #user = request.user
-                #myStr = "jpeg('media/Rplots/" + str(user) + ".pcoa.jpg')"
-                #r.assign("cmd", myStr)
-                #r("eval(parse(text=cmd))")
+                name = request.user
+                ip = request.META.get('REMOTE_ADDR')
+                user = str(name) + "." + str(ip)
 
-                #r("plot(ord, type='n')")
-                #r("points(ord, display='sites', pch=15, col=my_col)")
-                #r("pl <- ordiellipse(ord, usr_cat1, kind='sd', conf=0.95, draw='polygon', border='black')")
-                #r("ordisurf(ord, usr_quant1, add=TRUE)")
-                #r("dev.off()")
+                path = "media/Rplots/" + str(user) + ".pcoa.jpg"
+                if os.path.exists(path):
+                    os.remove(path)
+
+                if not os.path.exists('media/Rplots'):
+                    os.makedirs('media/Rplots')
+
+                file = "jpeg('media/Rplots/" + str(user) + ".pcoa.jpg')"
+                r.assign("cmd", file)
+                r("eval(parse(text=cmd))")
+
+                r("plot(ord, type='n')")
+                r("points(ord, display='sites', pch=15, col=cat, legend=TRUE)")
+                r("legend('topright', legend=levels(cat), pch=15, col=1:length(cat))")
+
+                addEllipse = all['addEllipse']
+                if addEllipse == 'yes':
+                    r("pl <- ordiellipse(ord, cat, kind='sd', conf=0.95, draw='polygon', border='black')")
+
+                addSurf = all['addSurf']
+                if addSurf == 'yes':
+                    r("ordisurf(ord, quant, add=TRUE)")
+                r("dev.off()")
 
                 envFit = ''
                 if len(fieldListQuant) > 0:
@@ -457,6 +480,7 @@ def getPCoAData(request):
                 r("id <- rownames(meta)")
                 r("pcoa <- data.frame(id, meta, res$sites)")
                 pcoaDF = r.get("pcoa")
+
                 pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
                 pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
 
@@ -530,8 +554,12 @@ def getPCoAData(request):
             xAxisDict = {}
             yAxisDict = {}
 
-            CAP1 = PC1 + int(len(fieldList)) + 1
-            CAP2 = PC2 + int(len(fieldList)) + 1
+            if DepVar != 4:
+                CAP1 = PC1 + int(len(fieldList)) + 1
+                CAP2 = PC2 + int(len(fieldList)) + 1
+            else:
+                CAP1 = PC1 + int(len(fieldList)) + 2
+                CAP2 = PC2 + int(len(fieldList)) + 2
 
             colors = [
                 "#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",
@@ -619,7 +647,6 @@ def getPCoAData(request):
             result += '===============================================\n\n\n\n'
 
             finalDict['text'] = result
-
             base[RID] = 'Step 6 of 8: Formatting graph data for display...done!'
             base[RID] = 'Step 7 of 8: Formatting PCoA table...'
 
@@ -649,3 +676,14 @@ def getPCoAData(request):
         myDict['error'] = state
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
+
+
+def removegraphPCoA(request):
+    name = request.user
+    ip = request.META.get('REMOTE_ADDR')
+    user = str(name) + "." + str(ip)
+
+    file = "media/Rplots/" + str(user) + ".pcoa.jpg"
+    if os.path.exists(file):
+        os.remove(file)
+
