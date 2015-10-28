@@ -6,6 +6,7 @@ import pickle
 from pyper import *
 from scipy import stats
 from scipy.spatial.distance import *
+import seaborn as sns
 import simplejson
 
 from database.spls.spls_DF import metaData, normalizeData
@@ -431,6 +432,30 @@ def getSPLS(request):
                 res_table = coeffsDF.to_html(classes="table display")
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
+
+                clustDF = pd.DataFrame()
+                if taxaLevel == 2:
+                    clustDF = coeffsDF.drop('phylaid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 3:
+                    clustDF = coeffsDF.drop('classid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 4:
+                    clustDF = coeffsDF.drop('orderid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 5:
+                    clustDF = coeffsDF.drop('familyid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 6:
+                    clustDF = coeffsDF.drop('genusid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+                elif taxaLevel == 7:
+                    clustDF = coeffsDF.drop('speciesid', axis=1)
+                    clustDF.set_index('taxa_name', inplace=True)
+
+                x, y = clustDF.shape
+                g = sns.clustermap(clustDF, figsize=(x, y))
+                g.savefig('testplot.png')
 
                 finalDF.reset_index(inplace=True)
                 finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
