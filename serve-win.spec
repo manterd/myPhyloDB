@@ -79,10 +79,7 @@ a.datas += extra_datas('mothur/reference')
 a.datas += extra_datas('R/R-Portable')
 a.datas += extra_datas('templates')
 a.datas += extra_datas('uploads')
-a.datas += extra_datas('sample_files/Example1')
-a.datas += extra_datas('sample_files/Example2')
-a.datas += extra_datas('sample_files/Example3')
-a.datas += extra_datas('sample_files/Example4')
+a.datas += extra_datas('sample_files')
 
 pyz = PYZ(a.pure)
 

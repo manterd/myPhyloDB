@@ -1,8 +1,9 @@
 # myPhyloDB       ![myPhyloDB Logo](media/images/myPhyloDB_Logo.png)
 <hr>
-* A user-friendly web-interface for accessing and analyzing taxonomic data from multiple projects and/or sequencing runs.
+* myPhyloDB is a user-friendly web-interface for accessing and analyzing taxonomic data from multiple projects and/or sequencing runs.
 * The goal of myPhyloDB is to allow for easy comparisons and statistical analysis of microbial (i.e., fungi or bacteria) taxonomic abundance across projects, environments, and management scenarios.
 * myPhyloDB accepts Mothur pre-analyzed data from any of its supported sequencing platforms. In addition, raw 454 and Illumina/MiSeq files may be uploaded and analyzed using a user customizable Mothur pipeline.
+* Please visit our [website] (http://www.myphylodb.org) for additional information on how to run myPhyloDB.
 
 <hr>
 

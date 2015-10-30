@@ -40,14 +40,9 @@ Source: "..\..\dist\myPhyloDB\sphinx_rtd_theme\*"; DestDir: "{app}\sphinx_rtd_th
 Source: "..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\zmq\*"; DestDir: "{app}\zmq"; Flags: recursesubdirs; Components: Main
 
-Source: "..\..\dist\myPhyloDB\instructions\*"; DestDir: "{app}\instructions"; Flags: recursesubdirs; Components: Manual
-
-Source: "..\..\dist\myPhyloDB\sample_files\Example1\Example1.tar.gz"; DestDir: "{app}\sample_files\Example1\Example1.tar.gz"; Components: Samples
-Source: "..\..\dist\myPhyloDB\sample_files\Example2\Example2.tar.gz"; DestDir: "{app}\sample_files\Example2\Example2.tar.gz"; Components: Samples
-Source: "..\..\dist\myPhyloDB\sample_files\Example3\Example3.tar.gz"; DestDir: "{app}\sample_files\Example3\Example3.tar.gz"; Components: Samples
-Source: "..\..\dist\myPhyloDB\sample_files\Example4\Example4.tar.gz"; DestDir: "{app}\sample_files\Example4\Example4.tar.gz"; Components: Samples
-
-Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Uploads
+Source: "..\..\dist\myPhyloDB\instructions\*"; DestDir: "{app}\instructions"; Flags: recursesubdirs; Components: Main
+Source: "..\..\dist\myPhyloDB\sample_files\*"; DestDir: "{app}\sample_files"; Components: Main
+Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Main
 
 [Icons]
 Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\media\images\myPhyloDB_Logo.ico"
@@ -56,10 +51,8 @@ Name: "{group}\Uninstall"; Filename: "{uninstallexe}"
 
 [Components]
 Name: Main; Description: Core program files
-Name: Manual; Description: Instruction manual
 Name: Database; Description: Default database
-Name: Uploads; Description: Default uploaded files
-Name: Samples; Description: Sample files
+
 
 [Code]
 function IsRegularUser(): Boolean;
