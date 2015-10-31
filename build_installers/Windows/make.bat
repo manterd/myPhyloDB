@@ -1,5 +1,5 @@
-### This file will not install myPhyloDB.
-### Please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
+rem This file will not install myPhyloDB.
+rem To install, please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
 
 cd C:\Users\daniel.manter\Documents\GitHub\myPhyloDB
 pyinstaller -D serve-win.spec

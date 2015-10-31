@@ -1,7 +1,7 @@
 #!/bin/sh
 
-### This file will not install myPhyloDB.
-### Please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
+# This file will not install myPhyloDB.
+# To install, please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
 
 
 echo "Installing myPhyloDB vers. 1.1\n"

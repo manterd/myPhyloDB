@@ -11,7 +11,7 @@ import simplejson
 import xlrd
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5
-from models import Project, Reference, Sample, Species, Soil, Profile
+from models import Project, Reference, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 

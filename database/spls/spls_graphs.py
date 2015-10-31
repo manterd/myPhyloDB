@@ -6,7 +6,6 @@ import pickle
 from pyper import *
 from scipy import stats
 from scipy.spatial.distance import *
-import seaborn as sns
 import simplejson
 
 from database.spls.spls_DF import metaData, normalizeData
@@ -341,7 +340,7 @@ def getSPLS(request):
 
 
             r("coef.f <- coef(f)")
-            r("sum <- sum(cf != 0)")
+            r("sum <- sum(coef.f != 0)")
             total = r.get("sum")
 
             base[RID] = 'Step 3 of 5: Calculating sPLS...done!'
@@ -452,10 +451,6 @@ def getSPLS(request):
                 elif taxaLevel == 7:
                     clustDF = coeffsDF.drop('speciesid', axis=1)
                     clustDF.set_index('taxa_name', inplace=True)
-
-                x, y = clustDF.shape
-                g = sns.clustermap(clustDF, figsize=(x, y))
-                g.savefig('testplot.png')
 
                 finalDF.reset_index(inplace=True)
                 finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
