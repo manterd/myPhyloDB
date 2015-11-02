@@ -30,6 +30,7 @@ def home(request):
 def upload(request):
     projects = Reference.objects.none()
     if request.method == 'POST' and 'Upload' in request.POST:
+        start = datetime.datetime.now()
         form1 = UploadForm1(request.POST, request.FILES)
         source = str(request.POST['source'])
         userID = str(request.user.id)
@@ -149,6 +150,8 @@ def upload(request):
 
                 try:
                     parse_profile(file3, file4, p_uuid, refDict)
+                    end = datetime.datetime.now()
+                    print 'Total time for upload:', end-start
                 except:
                     remove_proj(dest)
 
@@ -237,6 +240,8 @@ def upload(request):
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         with open('% s/final.shared' % dest, 'rb') as file4:
                             parse_profile(file3, file4, p_uuid, refDict)
+                            end = datetime.datetime.now()
+                    print 'Total time for upload:', end-start
                 except:
                     remove_proj(dest)
 
@@ -350,6 +355,8 @@ def upload(request):
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         with open('% s/final.shared' % dest, 'rb') as file4:
                             parse_profile(file3, file4, p_uuid, refDict)
+                            end = datetime.datetime.now()
+                    print 'Total time for upload:', end-start
                 except:
                     remove_proj(dest)
 
@@ -430,6 +437,8 @@ def upload(request):
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         with open('% s/final.shared' % dest, 'rb') as file4:
                             parse_profile(file3, file4, p_uuid, refDict)
+                            end = datetime.datetime.now()
+                    print 'Total time for upload:', end-start
                 except:
                     remove_proj(dest)
 

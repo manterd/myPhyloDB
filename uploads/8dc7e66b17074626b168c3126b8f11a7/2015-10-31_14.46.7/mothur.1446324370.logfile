@@ -1,0 +1,550 @@
+Windows version
+
+Running 32Bit Version
+
+mothur v.1.35.1
+Last updated: 03/31/2015
+
+by
+Patrick D. Schloss
+
+Department of Microbiology & Immunology
+University of Michigan
+pschloss@umich.edu
+http://www.mothur.org
+
+When using, please cite:
+Schloss, P.D., et al., Introducing mothur: Open-source, platform-independent, community-supported software for describing and comparing microbial communities. Appl Environ Microbiol, 2009. 75(23):7537-41.
+
+Distributed under the GNU General Public License
+
+Type 'help()' for information on the commands that are available
+
+Type 'quit()' to exit program
+Batch Mode
+
+
+mothur > set.dir(input=mothur/temp)
+Mothur's directories:
+inputDir=mothur/temp\
+
+mothur > trim.seqs(fasta=temp.fasta, qfile=temp.qual, oligos=temp.oligos, qaverage=25, pdiffs=2, bdiffs=1, maxhomop=8, flip=T, minlength=200, processors=2)
+
+Using 2 processors.
+1000
+1000
+2000
+3000
+2000
+4000
+5000
+3000
+6000
+4000
+7000
+5000
+8000
+6000
+9000
+7000
+10000
+8000
+11000
+9000
+12000
+10000
+13000
+11000
+14000
+12000
+15000
+13000
+15521
+14000
+15000
+15522
+Appending files from process 1
+
+Group count: 
+AOTX95265	532
+ATC98444	674
+ATC98495	2837
+ATTX98453	1046
+ATX9130	1486
+Atlantic	52
+CO97274	60
+CO98277	76
+Chipeta	55
+Norkotah	54
+Nugget	48
+RedlaSoda	45
+Sangre	95
+YukonGold	1
+Total of all groups is 7061
+
+Output File Names: 
+mothur/temp\temp.trim.fasta
+mothur/temp\temp.scrap.fasta
+mothur/temp\temp.trim.qual
+mothur/temp\temp.scrap.qual
+mothur/temp\temp.groups
+
+
+mothur > unique.seqs(fasta=temp.trim.fasta)
+7061	6063
+
+Output File Names: 
+mothur/temp\temp.trim.names
+mothur/temp\temp.trim.unique.fasta
+
+
+mothur > summary.seqs(fasta=temp.trim.unique.fasta, name=temp.trim.names)
+
+Using 2 processors.
+
+		Start	End	NBases	Ambigs	Polymer	NumSeqs
+Minimum:	1	200	200	0	3	1
+2.5%-tile:	1	210	210	0	3	177
+25%-tile:	1	227	227	0	4	1766
+Median: 	1	234	234	0	5	3531
+75%-tile:	1	242	242	0	5	5296
+97.5%-tile:	1	257	257	0	6	6885
+Maximum:	1	273	273	2	8	7061
+Mean:	1	234.263	234.263	0.0162866	4.70103
+# of unique seqs:	6063
+total # of seqs:	7061
+
+Output File Names: 
+mothur/temp\temp.trim.unique.summary
+
+It took 1 secs to summarize 7061 sequences.
+
+mothur > align.seqs(candidate=temp.trim.unique.fasta, reference=mothur/reference/align/silva.seed_v119.align, flip=T, threshold=50, processors=2)
+
+Using 2 processors.
+
+Reading in the mothur/reference/align/silva.seed_v119.align template sequences...	DONE.
+It took 41 to read  15009 sequences.
+Aligning sequences from mothur/temp\temp.trim.unique.fasta ...
+
+Reading in the mothur/reference/align/silva.seed_v119.align template sequences...	DONE.
+It took 65 to read  15009 sequences.
+Some of you sequences generated alignments that eliminated too many bases, a list is provided in mothur/temp\temp.trim.unique.flip.accnos. If the reverse compliment proved to be better it was reported.
+It took 190 secs to align 6063 sequences.
+
+
+Output File Names: 
+mothur/temp\temp.trim.unique.align
+mothur/temp\temp.trim.unique.align.report
+mothur/temp\temp.trim.unique.flip.accnos
+
+
+mothur > screen.seqs(fasta=temp.trim.unique.align, name=temp.trim.names, group=temp.groups, optimize=start-end, criteria=95, processors=2)
+
+Using 2 processors.
+Optimizing start to 1046.
+Optimizing end to 5290.
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.align
+mothur/temp\temp.trim.unique.bad.accnos
+mothur/temp\temp.trim.good.names
+mothur/temp\temp.good.groups
+
+
+It took 28 secs to screen 6063 sequences.
+
+mothur > filter.seqs(fasta=temp.trim.unique.good.align, vertical=T, trump=., processors=2)
+
+Using 2 processors.
+Creating Filter... 
+
+
+Running Filter... 
+
+
+
+Length of filtered alignment: 586
+Number of columns removed: 49414
+Length of the original alignment: 50000
+Number of sequences used to construct filter: 5702
+
+Output File Names: 
+mothur/temp\temp.filter
+mothur/temp\temp.trim.unique.good.filter.fasta
+
+
+mothur > unique.seqs(fasta=temp.trim.unique.good.filter.fasta, name=temp.trim.good.names)
+5702	4899
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.names
+mothur/temp\temp.trim.unique.good.filter.unique.fasta
+
+
+mothur > summary.seqs(fasta=temp.trim.unique.good.filter.unique.fasta, name=temp.trim.unique.good.filter.names)
+
+Using 2 processors.
+
+		Start	End	NBases	Ambigs	Polymer	NumSeqs
+Minimum:	1	584	167	0	3	1
+2.5%-tile:	1	586	179	0	3	166
+25%-tile:	1	586	191	0	4	1659
+Median: 	1	586	207	0	5	3318
+75%-tile:	1	586	213	0	5	4977
+97.5%-tile:	1	586	226	0	6	6470
+Maximum:	1	586	233	2	8	6635
+Mean:	1	585.999	203.151	0.0113037	4.66571
+# of unique seqs:	4899
+total # of seqs:	6635
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.summary
+
+It took 1 secs to summarize 6635 sequences.
+
+mothur > pre.cluster(fasta=temp.trim.unique.good.filter.unique.fasta, name=temp.trim.unique.good.filter.names, group=temp.good.groups, diffs=2)
+
+Using 2 processors.
+
+Processing group AOTX95265:
+457	417	40
+Total number of sequences before pre.cluster was 457.
+pre.cluster removed 40 sequences.
+
+It took 1 secs to cluster 457 sequences.
+
+Processing group ATC98444:
+551	496	55
+Total number of sequences before pre.cluster was 551.
+pre.cluster removed 55 sequences.
+
+It took 0 secs to cluster 551 sequences.
+
+Processing group ATC98495:
+
+Processing group CO98277:
+61	46	15
+Total number of sequences before pre.cluster was 61.
+pre.cluster removed 15 sequences.
+
+It took 0 secs to cluster 61 sequences.
+
+Processing group Chipeta:
+48	48	0
+Total number of sequences before pre.cluster was 48.
+pre.cluster removed 0 sequences.
+
+It took 1 secs to cluster 48 sequences.
+
+Processing group Norkotah:
+53	48	5
+Total number of sequences before pre.cluster was 53.
+pre.cluster removed 5 sequences.
+
+It took 0 secs to cluster 53 sequences.
+
+Processing group Nugget:
+44	43	1
+Total number of sequences before pre.cluster was 44.
+pre.cluster removed 1 sequences.
+
+It took 0 secs to cluster 44 sequences.
+
+Processing group RedlaSoda:
+41	40	1
+Total number of sequences before pre.cluster was 41.
+pre.cluster removed 1 sequences.
+
+It took 0 secs to cluster 41 sequences.
+
+Processing group Sangre:
+88	86	2
+Total number of sequences before pre.cluster was 88.
+pre.cluster removed 2 sequences.
+
+It took 0 secs to cluster 88 sequences.
+
+Processing group YukonGold:
+1	1	0
+Total number of sequences before pre.cluster was 1.
+pre.cluster removed 0 sequences.
+
+It took 0 secs to cluster 1 sequences.
+2037	1655	382
+Total number of sequences before pre.cluster was 2037.
+pre.cluster removed 382 sequences.
+
+It took 3 secs to cluster 2037 sequences.
+
+Processing group ATTX98453:
+784	668	116
+Total number of sequences before pre.cluster was 784.
+pre.cluster removed 116 sequences.
+
+It took 0 secs to cluster 784 sequences.
+
+Processing group ATX9130:
+1141	966	175
+Total number of sequences before pre.cluster was 1141.
+pre.cluster removed 175 sequences.
+
+It took 1 secs to cluster 1141 sequences.
+
+Processing group Atlantic:
+45	45	0
+Total number of sequences before pre.cluster was 45.
+pre.cluster removed 0 sequences.
+
+It took 0 secs to cluster 45 sequences.
+
+Processing group CO97274:
+56	55	1
+Total number of sequences before pre.cluster was 56.
+pre.cluster removed 1 sequences.
+
+It took 0 secs to cluster 56 sequences.
+
+/******************************************/
+Running command: unique.seqs(fasta=mothur/temp\temp.trim.unique.good.filter.unique.precluster.fasta, name=mothur/temp\temp.trim.unique.good.filter.unique.precluster.names)
+4614	4244
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.unique.names
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.unique.fasta
+
+/******************************************/
+It took 6 secs to run pre.cluster.
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.fasta
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.names
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.AOTX95265.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.ATC98444.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.ATC98495.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.ATTX98453.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.ATX9130.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.Atlantic.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.CO97274.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.CO98277.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.Chipeta.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.Norkotah.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.Nugget.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.RedlaSoda.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.Sangre.map
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.YukonGold.map
+
+
+mothur > summary.seqs(fasta=temp.trim.unique.good.filter.unique.precluster.fasta, name=temp.trim.unique.good.filter.unique.precluster.names, processors=2)
+
+Using 2 processors.
+
+		Start	End	NBases	Ambigs	Polymer	NumSeqs
+Minimum:	1	584	167	0	3	1
+2.5%-tile:	1	586	179	0	3	166
+25%-tile:	1	586	191	0	4	1659
+Median: 	1	586	207	0	5	3318
+75%-tile:	1	586	213	0	5	4977
+97.5%-tile:	1	586	226	0	6	6470
+Maximum:	1	586	233	2	8	6635
+Mean:	1	585.999	203.149	0.00934439	4.66149
+# of unique seqs:	4244
+total # of seqs:	6635
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.summary
+
+It took 0 secs to summarize 6635 sequences.
+
+mothur > chimera.uchime(fasta=temp.trim.unique.good.filter.unique.precluster.fasta, name=temp.trim.unique.good.filter.unique.precluster.names, reference=self, dereplicate=F)
+
+Using 2 processors.
+
+uchime by Robert C. Edgar
+http://drive5.com/uchime
+This code is donated to the public domain.
+
+Checking sequences from mothur/temp\temp.trim.unique.good.filter.unique.precluster.fasta ...
+When using template=self, mothur can only use 1 processor, continuing.
+
+It took 108 secs to check 4244 sequences. 77 chimeras were found.
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.uchime.chimeras
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.uchime.accnos
+
+
+mothur > remove.seqs(accnos=temp.trim.unique.good.filter.unique.precluster.uchime.accnos, fasta=temp.trim.unique.good.filter.unique.precluster.fasta, name=temp.trim.unique.good.filter.unique.precluster.names, group=temp.good.groups, dups=T)
+Removed 82 sequences from your name file.
+Removed 77 sequences from your fasta file.
+Removed 82 sequences from your group file.
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.names
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.fasta
+mothur/temp\temp.good.pick.groups
+
+
+mothur > summary.seqs(fasta=temp.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.trim.unique.good.filter.unique.precluster.pick.names)
+
+Using 2 processors.
+
+		Start	End	NBases	Ambigs	Polymer	NumSeqs
+Minimum:	1	584	167	0	3	1
+2.5%-tile:	1	586	179	0	3	164
+25%-tile:	1	586	191	0	4	1639
+Median: 	1	586	207	0	5	3277
+75%-tile:	1	586	213	0	5	4915
+97.5%-tile:	1	586	226	0	6	6390
+Maximum:	1	586	233	2	8	6553
+Mean:	1	585.999	203.137	0.00930871	4.66092
+# of unique seqs:	4167
+total # of seqs:	6553
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.summary
+
+It took 0 secs to summarize 6553 sequences.
+
+mothur > classify.seqs(fasta=temp.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.trim.unique.good.filter.unique.precluster.pick.names, group=temp.good.pick.groups, template=mothur/reference/template/gg_13_5_99.fasta, taxonomy=mothur/reference/taxonomy/gg_13_5_99.pds.tax, method=wang, processors=2)
+
+Using 2 processors.
+Generating search database...    DONE.
+It took 348 seconds generate search database. 
+
+Reading in the mothur/reference/taxonomy/gg_13_5_99.pds.tax taxonomy...	DONE.
+Calculating template taxonomy tree...     DONE.
+Calculating template probabilities...     DONE.
+It took 869 seconds get probabilities. 
+Classifying sequences from mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.fasta ...
+Reading template taxonomy...     DONE.
+Reading template probabilities...     DONE.
+It took 144 seconds get probabilities. 
+
+It took 195 secs to classify 4167 sequences.
+
+Reading mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.names...  Done.
+
+It took 2 secs to create the summary file for 4167 sequences.
+
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.taxonomy
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.tax.summary
+
+
+mothur > remove.lineage(fasta=temp.trim.unique.good.filter.unique.precluster.pick.fasta, name=temp.trim.unique.good.filter.unique.precluster.pick.names, group=temp.good.pick.groups, taxonomy=temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.taxonomy, taxon=unknown)
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pick.names
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pick.fasta
+mothur/temp\temp.good.pick.pick.groups
+
+
+mothur > summary.seqs(fasta=temp.trim.unique.good.filter.unique.precluster.pick.pick.fasta, name=temp.trim.unique.good.filter.unique.precluster.pick.pick.names)
+
+Using 2 processors.
+
+		Start	End	NBases	Ambigs	Polymer	NumSeqs
+Minimum:	1	584	167	0	3	1
+2.5%-tile:	1	586	179	0	3	164
+25%-tile:	1	586	191	0	4	1639
+Median: 	1	586	207	0	5	3277
+75%-tile:	1	586	213	0	5	4915
+97.5%-tile:	1	586	226	0	6	6390
+Maximum:	1	586	233	2	8	6553
+Mean:	1	585.999	203.137	0.00930871	4.66092
+# of unique seqs:	4167
+total # of seqs:	6553
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pick.summary
+
+It took 0 secs to summarize 6553 sequences.
+
+mothur > phylotype(taxonomy=temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy, name=temp.trim.unique.good.filter.unique.precluster.pick.pick.names, label=1)
+1
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.sabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.list
+
+
+mothur > make.shared(list=temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.list, group=temp.good.pick.pick.groups)
+1
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.shared
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.AOTX95265.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.ATC98444.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.ATC98495.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.ATTX98453.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.ATX9130.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.Atlantic.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.CO97274.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.CO98277.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.Chipeta.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.Norkotah.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.Nugget.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.RedlaSoda.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.Sangre.rabund
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.YukonGold.rabund
+
+
+mothur > classify.otu(taxonomy=temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.taxonomy, name=temp.trim.unique.good.filter.unique.precluster.pick.pick.names, group=temp.good.pick.pick.groups, list=temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.list)
+reftaxonomy is not required, but if given will keep the rankIDs in the summary file static.
+1	477
+
+Output File Names: 
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.1.cons.taxonomy
+mothur/temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.1.cons.tax.summary
+
+
+mothur > system(cp mothur/temp/temp.trim.unique.good.filter.unique.precluster.pick.pick.fasta mothur/temp/final.fasta)
+'cp' is not recognized as an internal or external command,
+operable program or batch file.
+
+
+mothur > system(cp mothur/temp/temp.trim.unique.good.filter.unique.precluster.pick.pick.names mothur/temp/final.names)
+'cp' is not recognized as an internal or external command,
+operable program or batch file.
+
+
+mothur > system(cp mothur/temp/temp.good.pick.pick.groups mothur/temp/final.groups)
+'cp' is not recognized as an internal or external command,
+operable program or batch file.
+
+
+mothur > system(cp mothur/temp/temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.1.cons.taxonomy mothur/temp/final.taxonomy)
+'cp' is not recognized as an internal or external command,
+operable program or batch file.
+
+
+mothur > system(cp mothur/temp/temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.shared mothur/temp/final.shared)
+'cp' is not recognized as an internal or external command,
+operable program or batch file.
+
+
+mothur > system(copy mothur\temp\temp.trim.unique.good.filter.unique.precluster.pick.pick.fasta mothur\temp\final.fasta)
+1 file(s) copied.
+
+
+mothur > system(copy mothur\temp\temp.trim.unique.good.filter.unique.precluster.pick.pick.names mothur\temp\final.names)
+1 file(s) copied.
+
+
+mothur > system(copy mothur\temp\temp.good.pick.pick.groups mothur\temp\final.groups)
+1 file(s) copied.
+
+
+mothur > system(copy mothur\temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.1.cons.taxonomy mothur\temp\final.taxonomy)
+1 file(s) copied.
+
+
+mothur > system(copy mothur\temp\temp.trim.unique.good.filter.unique.precluster.pick.pds.wang.pick.tx.shared mothur\temp\final.shared)
+1 file(s) copied.
+
+
+mothur > quit()

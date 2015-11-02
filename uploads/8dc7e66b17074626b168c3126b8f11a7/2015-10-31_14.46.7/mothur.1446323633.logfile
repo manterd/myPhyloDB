@@ -1,0 +1,104 @@
+Windows version
+
+Running 32Bit Version
+
+mothur v.1.35.1
+Last updated: 03/31/2015
+
+by
+Patrick D. Schloss
+
+Department of Microbiology & Immunology
+University of Michigan
+pschloss@umich.edu
+http://www.mothur.org
+
+When using, please cite:
+Schloss, P.D., et al., Introducing mothur: Open-source, platform-independent, community-supported software for describing and comparing microbial communities. Appl Environ Microbiol, 2009. 75(23):7537-41.
+
+Distributed under the GNU General Public License
+
+Type 'help()' for information on the commands that are available
+
+Type 'quit()' to exit program
+Batch Mode
+
+
+mothur > set.dir(input=mothur/temp)
+Mothur's directories:
+inputDir=mothur/temp\
+
+mothur > sff.multiple(file=temp.txt, order=A, minflows=360, bdiffs=1, pdiffs=3, maxhomop=8, minlength=200, maxiter=10, processors=2)
+
+Using 2 processors.
+Unable to open 90.1.sff. Trying input directory mothur/temp\90.1.sff
+Unable to open 90.1.oligos. Trying input directory mothur/temp\90.1.oligos
+Unable to open 90.2.sff. Trying input directory mothur/temp\90.2.sff
+Unable to open 90.2.oligos. Trying input directory mothur/temp\90.2.oligos
+Unable to open 90.3.sff. Trying input directory mothur/temp\90.3.sff
+Unable to open 90.3.oligos. Trying input directory mothur/temp\90.3.oligos
+Unable to open 90.4.sff. Trying input directory mothur/temp\90.4.sff
+Unable to open 90.4.oligos. Trying input directory mothur/temp\90.4.oligos
+Unable to open 90.5.sff. Trying input directory mothur/temp\90.5.sff
+Unable to open 90.5.oligos. Trying input directory mothur/temp\90.5.oligos
+This command can only use 1 processor on Windows platforms, using 1 processors.
+
+
+>>>>>	Processing mothur/temp\90.1.sff (file 1 of 5)	<<<<<
+/******************************************/
+Running command: sffinfo(sff=mothur/temp\90.1.sff, flow=T, trim=T, inputdir=mothur/temp\)
+Extracting info from mothur/temp\90.1.sff ...
+10000
+15177
+It took 41 secs to extract 15177.
+
+Output File Names: 
+mothur/temp\90.1.fasta
+mothur/temp\90.1.qual
+mothur/temp\90.1.flow
+
+
+
+Running command: summary.seqs(fasta=mothur/temp\90.1.fasta, processors=1)
+
+Using 1 processors.
+
+		Start	End	NBases	Ambigs	Polymer	NumSeqs
+Minimum:	1	43	43	0	2	1
+2.5%-tile:	1	63	63	0	3	380
+25%-tile:	1	255	255	0	4	3795
+Median: 	1	262	262	0	5	7589
+75%-tile:	1	268	268	0	5	11383
+97.5%-tile:	1	284	284	1	7	14798
+Maximum:	1	349	349	9	8	15177
+Mean:	1	253.886	253.886	0.0373592	4.52962
+# of Seqs:	15177
+
+Output File Names: 
+mothur/temp\90.1.summary
+
+It took 0 secs to summarize 15177 sequences.
+
+
+Running command: trim.flows(flow=mothur/temp\90.1.flow, oligos=mothur/temp\90.1.oligos, maxhomop=8, maxflows=450, minflows=360, pdiffs=3, bdiffs=1, ldiffs=0, sdiffs=0, tdiffs=4, signal=0.5, noise=0.7, order=A, processors=1)
+
+Using 1 processors.
+10000
+15177
+
+Output File Names: 
+mothur/temp\90.1.trim.flow
+mothur/temp\90.1.scrap.flow
+mothur/temp\90.1.90.1.flow
+mothur/temp\90.1.90.1a.flow
+mothur/temp\90.1.90.1b.flow
+mothur/temp\90.1.flow.files
+
+
+Running command: shhh.flows(file=mothur/temp\90.1.flow.files, lookup=mothur\mothur-win\lookupFiles\LookUp_Titanium.pat, cutoff=0.01, sigma=60, mindelta=0.000001, order=A, processors=1)
+
+Using 1 processors.
+
+>>>>>	Processing mothur/temp\90.1.90.1.flow (file 1 of 3)	<<<<<
+Reading flowgrams...
+[ERROR]: std::bad_alloc has occurred in the ShhherCommand class function getFlowData. This error indicates your computer is running out of memory.  This is most commonly caused by trying to process a dataset too large, using multiple processors, or a file format issue. If you are running our 32bit version, your memory usage is limited to 4G.  If you have more than 4G of RAM and are running a 64bit OS, using our 64bit version may resolve your issue.  If you are using multiple processors, try running the command with processors=1, the more processors you use the more memory is required. Also, you may be able to reduce the size of your dataset by using the commands outlined in the Schloss SOP, http://www.mothur.org/wiki/Schloss_SOP. If you are uable to resolve the issue, please contact Pat Schloss at mothur.bugs@gmail.com, and be sure to include the mothur.logFile with your inquiry.
