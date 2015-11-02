@@ -41,7 +41,7 @@ Source: "..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: r
 Source: "..\..\dist\myPhyloDB\zmq\*"; DestDir: "{app}\zmq"; Flags: recursesubdirs; Components: Main
 
 Source: "..\..\dist\myPhyloDB\instructions\*"; DestDir: "{app}\instructions"; Flags: recursesubdirs; Components: Main
-Source: "..\..\dist\myPhyloDB\sample_files\*"; DestDir: "{app}\sample_files"; Components: Main
+Source: "..\..\dist\myPhyloDB\sample_files\*"; DestDir: "{app}\sample_files"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Main
 
 [Icons]
