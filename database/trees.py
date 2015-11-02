@@ -15,12 +15,12 @@ def getProjectTree(request):
 
     projects = Project.objects.none()
     if request.user.is_superuser:
-        projects = Project.objects.all()
+        projects = Project.objects.all().order_by('project_name')
     if request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
     if not request.user.is_superuser and not request.user.is_authenticated():
-        projects = Project.objects.all().filter( Q(status='public') )
+        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
 
     for project in projects:
         myNode = {

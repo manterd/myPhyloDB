@@ -272,10 +272,16 @@ def upload(request):
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
                         handle_uploaded_file(file, dest, each)
-                        myStr = "mothur\\temp\\" + str(file.name)
+                        if os.name == 'nt':
+                            myStr = "mothur\\temp\\" + str(file.name)
+                        else:
+                            myStr = "mothur/temp/" + str(file.name)
                         tempList.append(myStr)
                     inputList = "-".join(tempList)
-                    os.system('" mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\" "' % inputList)
+                    if os.name == 'nt':
+                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
+                    else:
+                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
                 else:
                     for each in file_list:
                         file = each
@@ -290,10 +296,16 @@ def upload(request):
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
                         handle_uploaded_file(file, dest, each)
-                        myStr = "mothur\\temp\\" + str(file.name)
+                        if os.name == 'nt':
+                            myStr = "mothur\\temp\\" + str(file.name)
+                        else:
+                            myStr = "mothur/temp/" + str(file.name)
                         tempList.append(myStr)
                     inputList = "-".join(tempList)
-                    os.system('" mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\" "' % inputList)
+                    if os.name == 'nt':
+                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
+                    else:
+                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
                 else:
                     for each in file_list:
                         file = each

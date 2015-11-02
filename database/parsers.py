@@ -36,7 +36,7 @@ def mothur(dest, source):
             print "Mothur failed: " + str(e)
     else:
         try:
-            os.system("mothur\/mothur-linux\/mothur mothur\/temp\/mothur.batch")
+            os.system("mothur/mothur-linux/mothur mothur/temp/mothur.batch")
         except Exception as e:
             print "Mothur failed: " + str(e)
 
