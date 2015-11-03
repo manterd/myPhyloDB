@@ -40,12 +40,10 @@ Source: "..\..\dist\myPhyloDB\sphinx_rtd_theme\*"; DestDir: "{app}\sphinx_rtd_th
 Source: "..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\zmq\*"; DestDir: "{app}\zmq"; Flags: recursesubdirs; Components: Main
 
-Source: "..\..\dist\myPhyloDB\instructions\Manual.pdf"; DestDir: "{app}\instructions\Manual.pdf"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Main
 
 [Icons]
 Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\media\images\myPhyloDB_Logo.ico"
-Name: "{group}\Manual"; Filename: "{app}\instructions\Manual.pdf"
 Name: "{group}\Uninstall"; Filename: "{uninstallexe}"
 
 [Components]

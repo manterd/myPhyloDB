@@ -51,7 +51,6 @@ def Datafiles(*filenames, **kw):
 
 
 db = Datafiles('dbMicrobe')
-manual = Datafiles('instruction/Manual.pdf')
 
 def extra_datas(mydir):
     def rec_glob(p, files):
@@ -94,7 +93,6 @@ coll = COLLECT(exe,
                a.zipfiles,
                a.datas,
                db,
-               manual,
                strip=None,
                upx=True,
                name='myPhyloDB'
