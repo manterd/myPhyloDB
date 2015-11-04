@@ -1,22 +1,23 @@
 import csv
-import pandas as pd
-import re
-import simplejson
+from django.contrib.auth.models import User
 from django.http import HttpResponse
-from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
-from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
-from utils import remove_proj, purge
-from uuid import uuid4
+import glob
 import numpy as np
 from numpy import *
-import glob
 import os
+import pandas as pd
+import re
 import shutil
-from django.contrib.auth.models import User
+import simplejson
+from uuid import uuid4
 import xlrd
 from xlutils.copy import copy
 import xlwt
 from xlwt import Style
+
+from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
+from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
+from utils import remove_proj, purge, handle_uploaded_file
 
 
 stage = ''
@@ -123,10 +124,12 @@ def parse_project(Document, p_uuid):
 def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
     author = User.objects.get(id=userid)
 
+    align_ref = ''
+    template_ref = ''
+    taxonomy_ref = ''
+    batch.seek(0)
+
     if raw:
-        align_ref = ''
-        template_ref = ''
-        taxonomy_ref = ''
         for row in batch:
             if "align.seqs" in row:
                 for item in row.split(','):
@@ -481,13 +484,76 @@ def reanalyze(request):
             dest = project.path
             source = project.source
 
-            if source == '454':
-                shutil.copy('% s/mothur.sff' % dest, '% s/temp.sff' % mothurdest)
-                shutil.copy('% s/mothur.oligos' % dest, '% s/temp.oligos' % mothurdest)
-            if source == 'miseq':
-                shutil.copy('% s/final.files' % dest, '% s/temp.files' % mothurdest)
-                for afile in glob.glob(r'% s/*.fastq' % dest):
+            if source == '454_sff':
+                ls_dir = os.listdir(dest)
+                for afile in ls_dir:
+                    shutil.copyfile(afile, mothurdest)
+
+            if source == '454_fastq':
+                file_list = []
+                for afile in glob.glob(r'% s/*.fna' % dest):
+                    file_list.append(afile)
+
+                tempList = []
+                if len(file_list) > 1:
+                    for each in file_list:
+                        file = each
+                        handle_uploaded_file(file, mothurdest, each)
+                        handle_uploaded_file(file, dest, each)
+                        if os.name == 'nt':
+                            myStr = "mothur\\temp\\" + str(file.name)
+                        else:
+                            myStr = "mothur/temp/" + str(file.name)
+                        tempList.append(myStr)
+                    inputList = "-".join(tempList)
+                    if os.name == 'nt':
+                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
+                    else:
+                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
+                else:
+                    for each in file_list:
+                        file = each
+                        fasta = 'temp.fasta'
+                        handle_uploaded_file(file, mothurdest, fasta)
+                        handle_uploaded_file(file, dest, each)
+
+                file_list = []
+                for afile in glob.glob(r'% s/*.qual' % dest):
+                    file_list.append(afile)
+
+                tempList = []
+                if len(file_list) > 1:
+                    for each in file_list:
+                        file = each
+                        handle_uploaded_file(file, mothurdest, each)
+                        handle_uploaded_file(file, dest, each)
+                        if os.name == 'nt':
+                            myStr = "mothur\\temp\\" + str(file.name)
+                        else:
+                            myStr = "mothur/temp/" + str(file.name)
+                        tempList.append(myStr)
+                    inputList = "-".join(tempList)
+                    if os.name == 'nt':
+                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
+                    else:
+                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
+                else:
+                    for each in file_list:
+                        file = each
+                        qual = 'temp.qual'
+                        handle_uploaded_file(file, mothurdest, qual)
+                        handle_uploaded_file(file, dest, each)
+
+                for afile in glob.glob(r'% s/*.oligos' % dest):
                     shutil.copy(afile, mothurdest)
+
+                for afile in glob.glob(r'% s/*.batch' % dest):
+                    shutil.copy(afile, mothurdest)
+
+            if source == 'miseq':
+                ls_dir = os.listdir(dest)
+                for afile in ls_dir:
+                    shutil.copyfile(afile, mothurdest)
 
             orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
             orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
@@ -526,14 +592,14 @@ def reanalyze(request):
             dest = project.path
             pType = project.projectid.projectType
 
-            shutil.copy('% s/final_meta.csv' % dest, '% s/final_meta.csv' % mothurdest)
+            shutil.copy('% s/final_meta.xls' % dest, '% s/final_meta.xls' % mothurdest)
 
             remove_proj(dest)
 
             if not os.path.exists(dest):
                 os.makedirs(dest)
 
-            shutil.copy('% s/final_meta.csv' % mothurdest, '% s/final_meta.csv' % dest)
+            shutil.copy('% s/final_meta.xls' % mothurdest, '% s/final_meta.xls' % dest)
 
             try:
                 mothur(dest, source)

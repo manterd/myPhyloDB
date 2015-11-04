@@ -665,12 +665,14 @@ def update(request):
             num_samp = int(sheet.cell_value(rowx=5, colx=0))
 
             bat = 'mothur.batch'
-            batFile = '/'.join([dest, bat])
+            batPath = '/'.join([dest, bat])
             reference = Reference.objects.get(refid=refid)
             raw = reference.raw
             source = reference.source
             userID = str(request.user.id)
-            refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+
+            with open(batPath, 'rb') as batFile:
+                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
 
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name)

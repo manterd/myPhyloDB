@@ -299,7 +299,7 @@ def getSPLS(request):
             if os.name == 'nt':
                 r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
             else:
-                r = R(RCMD="R/R-Linux/bin/R")
+                r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
             r.assign("X", normDF)
             r.assign("Y", metaDF[fieldList])

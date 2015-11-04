@@ -394,7 +394,7 @@ def getCatUnivData(request):
                     if os.name == 'nt':
                         r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                     else:
-                        r = R(RCMD="R/R-Linux/bin/R")
+                        r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
                     r.assign("df", group1)
 
@@ -491,8 +491,8 @@ def getCatUnivData(request):
                         result = result + 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
 
                     result = result + '\nANCOVA table:\n'
-
-                    result = result + str(D) + '\n'
+                    D = D.decode('utf-8')
+                    result += result + D + '\n'
                     result += '===============================================\n'
                     result += '\n\n\n\n'
 
@@ -919,7 +919,7 @@ def getQuantUnivData(request):
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
-                    r = R(RCMD="R/R-Linux/bin/R")
+                    r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
                 r.assign("df", group1)
                 if len(fieldList) > 1:
@@ -990,7 +990,8 @@ def getQuantUnivData(request):
                     result += 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
 
                 result += '\nANCOVA table:\n'
-                result += str(D) + '\n'
+                D = D.decode('utf-8')
+                result += D + '\n'
                 result += '===============================================\n'
                 result += '\n'
 
@@ -1211,16 +1212,6 @@ def getQuantUnivData(request):
                 finalDict['empty'] = 0
             else:
                 finalDict['empty'] = 1
-
-            #finalDF.reset_index(inplace=True)
-            #finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
-
-            #if DepVar == 1:
-            #    finalDF.drop(['rich', 'diversity'], axis=1, inplace=True)
-            #elif DepVar == 2:
-            #    finalDF.drop(['abund', 'diversity'], axis=1, inplace=True)
-            #elif DepVar == 3:
-            #    finalDF.drop(['abund', 'rich'], axis=1, inplace=True)
 
             base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
             finalDict['text'] = result

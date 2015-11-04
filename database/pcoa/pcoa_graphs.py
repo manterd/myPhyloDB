@@ -363,7 +363,7 @@ def getPCoA(request):
             if os.name == 'nt':
                 r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
             else:
-                r = R(RCMD="R/R-Linux/bin/R")
+                r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
             r.assign("data", normDF)
             r("library(vegan)")
@@ -505,7 +505,7 @@ def getPCoA(request):
                             r("eval(parse(text=cmd))")
 
                         r.assign("perms", perms)
-                        trtString = " + ".join(fieldListCat)
+                        trtString = " * ".join(fieldListCat)
                         amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
                         r.assign("cmd", amova_string)
                         r("eval(parse(text=cmd))")
@@ -626,19 +626,21 @@ def getPCoA(request):
             finalDict['yAxis'] = yAxisDict
 
             if test == 1:
-                result = result + 'perMANOVA results:' + '\n'
+                result += 'perMANOVA results:' + '\n'
             if test == 2:
-                result = result + 'betaDisper results:' + '\n'
+                result += 'betaDisper results:' + '\n'
 
             if len(fieldListCat) == 0:
-                result = result + 'test cannot be run...' + '\n'
+                result += 'test cannot be run...' + '\n'
             else:
-                result = result + str(bigf) + '\n'
+                bigf = bigf.decode('utf-8')
+                result += bigf + '\n'
             result += '===============================================\n'
 
             if len(fieldListCat) > 0:
-                result = result + '\nenvfit results:\n'
-                result = result + str(envFit)
+                result += '\nenvfit results:\n'
+                envFit = envFit.decode('utf-8')
+                result += envFit
             result += '===============================================\n'
 
             result = result + '\nEigenvalues\n'
