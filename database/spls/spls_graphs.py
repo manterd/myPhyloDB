@@ -432,7 +432,6 @@ def getSPLS(request):
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
 
-                clustDF = pd.DataFrame()
                 if taxaLevel == 2:
                     clustDF = coeffsDF.drop('phylaid', axis=1)
                     clustDF.set_index('taxa_name', inplace=True)
@@ -526,23 +525,40 @@ def getSPLS(request):
                 if not os.path.exists('media/Rplots'):
                     os.makedirs('media/Rplots')
 
-                file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg')"
+                height = 200 + 10*row
+                width = 200 + 15*(col-1)
+                file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg', height=" + str(height) + ", width=" + str(width) + ")"
                 r.assign("cmd", file)
                 r("eval(parse(text=cmd))")
 
                 r.assign("df", clustDF[fieldList])
+                r("df <- as.matrix(df)")
                 r.assign("rows", clustDF.taxa_name.values)
                 r("rownames(df) <- rows")
                 r("library(pheatmap)")
+                r("library(RColorBrewer)")
+                r("col.pal <- brewer.pal(9,'RdBu')")
 
-                if row > 2 and col > 2:
-                    hmap_str = "pheatmap(df, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "', clustering_distance_cols='" + str(metric) + "')"
+                if row > 2 and col > 3:
+                    hmap_str = "pheatmap(df, color=col.pal, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "', clustering_distance_cols='" + str(metric) + "')"
                     r.assign("cmd", hmap_str)
                     r("eval(parse(text=cmd))")
                     r("dev.off()")
 
-                else:
-                    hmap_str = "pheatmap(df, cluster_col=FALSE, cluster_row=FALSE)"
+                if row > 2 and col <= 3:
+                    hmap_str = "pheatmap(df, color=col.pal, cluster_col=FALSE, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "')"
+                    r.assign("cmd", hmap_str)
+                    r("eval(parse(text=cmd))")
+                    r("dev.off()")
+
+                if row <= 2 and col > 3:
+                    hmap_str = "pheatmap(df, color=col.pal, cluster_row=FALSE, clustering_method='" + str(method) + "', clustering_distance_cols='" + str(metric) + "')"
+                    r.assign("cmd", hmap_str)
+                    r("eval(parse(text=cmd))")
+                    r("dev.off()")
+
+                if row <= 2 and col <= 3:
+                    hmap_str = "pheatmap(df, color=col.pal, cluster_col=FALSE, cluster_row=FALSE)"
                     r.assign("cmd", hmap_str)
                     r("eval(parse(text=cmd))")
                     r("dev.off()")
