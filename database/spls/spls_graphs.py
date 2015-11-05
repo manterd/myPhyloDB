@@ -500,22 +500,16 @@ def getSPLS(request):
                 clustDF = pd.DataFrame()
                 if taxaLevel == 2:
                     clustDF = coeffsDF.drop('phylaid', axis=1)
-                    clustDF.set_index('taxa_name', inplace=True)
                 elif taxaLevel == 3:
                     clustDF = coeffsDF.drop('classid', axis=1)
-                    clustDF.set_index('taxa_name', inplace=True)
                 elif taxaLevel == 4:
                     clustDF = coeffsDF.drop('orderid', axis=1)
-                    clustDF.set_index('taxa_name', inplace=True)
                 elif taxaLevel == 5:
                     clustDF = coeffsDF.drop('familyid', axis=1)
-                    clustDF.set_index('taxa_name', inplace=True)
                 elif taxaLevel == 6:
                     clustDF = coeffsDF.drop('genusid', axis=1)
-                    clustDF.set_index('taxa_name', inplace=True)
                 elif taxaLevel == 7:
                     clustDF = coeffsDF.drop('speciesid', axis=1)
-                    clustDF.set_index('taxa_name', inplace=True)
                 row, col = clustDF.shape
 
                 method = all['methodVal']
@@ -532,29 +526,22 @@ def getSPLS(request):
                 if not os.path.exists('media/Rplots'):
                     os.makedirs('media/Rplots')
 
+                file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg')"
+                r.assign("cmd", file)
+                r("eval(parse(text=cmd))")
+
+                r.assign("df", clustDF[fieldList])
+                r.assign("rows", clustDF.taxa_name.values)
+                r("rownames(df) <- rows")
+                r("library(pheatmap)")
+
                 if row > 2 and col > 2:
-                    file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg')"
-                    r.assign("cmd", file)
-                    r("eval(parse(text=cmd))")
-
-                    r.assign("df", clustDF)
-                    r("df")
-                    r("library(pheatmap)")
-
                     hmap_str = "pheatmap(df, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "', clustering_distance_cols='" + str(metric) + "')"
                     r.assign("cmd", hmap_str)
                     r("eval(parse(text=cmd))")
                     r("dev.off()")
 
                 else:
-                    file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg')"
-                    r.assign("cmd", file)
-                    r("eval(parse(text=cmd))")
-
-                    r.assign("df", clustDF)
-                    r("df")
-                    r("library(pheatmap)")
-
                     hmap_str = "pheatmap(df, cluster_col=FALSE, cluster_row=FALSE)"
                     r.assign("cmd", hmap_str)
                     r("eval(parse(text=cmd))")
