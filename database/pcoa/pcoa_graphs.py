@@ -444,12 +444,12 @@ def getPCoA(request):
                 if not os.path.exists('media/Rplots'):
                     os.makedirs('media/Rplots')
 
-                file = "jpeg('media/Rplots/" + str(user) + ".pcoa.jpg')"
+                file = "jpeg('media/Rplots/" + str(user) + ".pcoa.jpg', height=400, width=400)"
                 r.assign("cmd", file)
                 r("eval(parse(text=cmd))")
 
-                r("plot(ord, type='n')")
-                r("points(ord, display='sites', pch=15, col=cat, legend=TRUE)")
+                r("ordiplot(ord, type='n')")
+                r("points(ord, display='sites', pch=15, col=cat)")
                 r("legend('topright', legend=levels(cat), pch=15, col=1:length(cat))")
 
                 addEllipse = all['addEllipse']

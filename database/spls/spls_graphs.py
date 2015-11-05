@@ -525,8 +525,8 @@ def getSPLS(request):
                 if not os.path.exists('media/Rplots'):
                     os.makedirs('media/Rplots')
 
-                height = 200 + 10*row
-                width = 200 + 15*(col-1)
+                height = 200 + 15*row
+                width = 200 + 20*(col-1)
                 file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg', height=" + str(height) + ", width=" + str(width) + ")"
                 r.assign("cmd", file)
                 r("eval(parse(text=cmd))")
@@ -540,7 +540,7 @@ def getSPLS(request):
                 r("col.pal <- brewer.pal(9,'RdBu')")
 
                 if row > 2 and col > 3:
-                    hmap_str = "pheatmap(df, color=col.pal, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "', clustering_distance_cols='" + str(metric) + "')"
+                    hmap_str = "pheatmap(df, fontsize=12, color=col.pal, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "', clustering_distance_cols='" + str(metric) + "')"
                     r.assign("cmd", hmap_str)
                     r("eval(parse(text=cmd))")
                     r("dev.off()")
