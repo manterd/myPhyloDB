@@ -104,19 +104,19 @@ def getSPLS(request):
             newList = []
             result = ''
             if taxaLevel == 1:
-                result = result + 'Taxa level: Kingdom' + '\n'
+                result += 'Taxa level: Kingdom' + '\n'
             elif taxaLevel == 2:
-                result = result + 'Taxa level: Phyla' + '\n'
+                result += 'Taxa level: Phyla' + '\n'
             elif taxaLevel == 3:
-                result = result + 'Taxa level: Class' + '\n'
+                result += 'Taxa level: Class' + '\n'
             elif taxaLevel == 4:
-                result = result + 'Taxa level: Order' + '\n'
+                result += 'Taxa level: Order' + '\n'
             elif taxaLevel == 5:
-                result = result + 'Taxa level: Family' + '\n'
+                result += 'Taxa level: Family' + '\n'
             elif taxaLevel == 6:
-                result = result + 'Taxa level: Genus' + '\n'
+                result += 'Taxa level: Genus' + '\n'
             elif taxaLevel == 7:
-                result = result + 'Taxa level: Species' + '\n'
+                result += 'Taxa level: Species' + '\n'
 
             metaStr = all["metaQuant"]
             fieldList = []
@@ -248,7 +248,7 @@ def getSPLS(request):
                 if NormMeth == 1:
                     result += 'No normalization was performed...\n'
                 elif NormMeth == 2 or NormMeth == 3:
-                    result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
                 elif NormMeth == 4:
                     result += 'Data were normalized by the total number of sequence reads...\n'
                 elif NormMeth == 5 and DESeq_error == 'no':
@@ -323,8 +323,11 @@ def getSPLS(request):
             r("out <- capture.output(print(f))")
             fout = r.get("out")
 
-            for i in fout:
-                result += str(i) + '\n'
+            if fout is not None:
+                for i in fout:
+                    result += str(i) + '\n'
+            else:
+                result += 'No significant variables were found\n'
             result += '===============================================\n\n'
 
             r("set.seed(1)")
@@ -333,11 +336,12 @@ def getSPLS(request):
             r("cf <- correct.spls(ci.f, plot.it=FALSE)")
             r("out <- capture.output(cis)")
             fout = r.get("out")
-            result += '\n\nBootstrapped confidence intervals of coefficients:\n'
-            for i in fout:
-                result += str(i) + '\n'
-            result += '===============================================\n\n'
 
+            if fout is not None:
+                result += '\n\nBootstrapped confidence intervals of coefficients:\n'
+                for i in fout:
+                    result += str(i) + '\n'
+                result += '===============================================\n\n'
 
             r("coef.f <- coef(f)")
             r("sum <- sum(coef.f != 0)")
@@ -346,7 +350,7 @@ def getSPLS(request):
             base[RID] = 'Step 3 of 5: Calculating sPLS...done!'
             base[RID] = 'Step 4 of 5: Formatting graph data for display...'
 
-            if total > 0:
+            if total is not None:
                 r("pred.f <- predict(f, type='fit')")
 
                 r("library(DMwR)")
@@ -525,8 +529,8 @@ def getSPLS(request):
                 if not os.path.exists('media/Rplots'):
                     os.makedirs('media/Rplots')
 
-                height = 200 + 15*row
-                width = 200 + 20*(col-1)
+                height = 250 + 15*row
+                width = 250 + 20*(col-1)
                 file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg', height=" + str(height) + ", width=" + str(width) + ")"
                 r.assign("cmd", file)
                 r("eval(parse(text=cmd))")

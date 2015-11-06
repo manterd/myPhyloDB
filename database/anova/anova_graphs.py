@@ -165,8 +165,8 @@ def getCatUnivData(request):
                         idList.append(selected[i][0])
                     idDict['rRNA_copies'] = idList
 
-                result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
-                result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
+                result += 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
+                result += 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
                 result += '===============================================\n'
                 result += '\nData Normalization:\n'
 
@@ -293,7 +293,7 @@ def getCatUnivData(request):
                 if NormMeth == 1:
                     result += 'No normalization was performed...\n'
                 elif NormMeth == 2 or NormMeth == 3:
-                    result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
                 elif NormMeth == 4:
                     result += 'Data were normalized by the total number of sequence reads...\n'
                 elif NormMeth == 5 and DESeq_error == 'no':
@@ -478,19 +478,19 @@ def getCatUnivData(request):
                         D = 'One or more of your groups only had 1 observation, ANOVA was not run\n'
 
                     result += '===============================================\n'
-                    result = result + 'Taxa level: ' + str(name1[0]) + '\n'
-                    result = result + 'Taxa name: ' + str(name1[1]) + '\n'
-                    result = result + 'Taxa ID: ' + str(name1[2]) + '\n'
+                    result += 'Taxa level: ' + str(name1[0]) + '\n'
+                    result += 'Taxa name: ' + str(name1[1]) + '\n'
+                    result += 'Taxa ID: ' + str(name1[2]) + '\n'
                     if DepVar == 1:
-                        result = result + 'Dependent Variable: Abundance (counts)' + '\n'
+                        result += 'Dependent Variable: Abundance (counts)' + '\n'
                     elif DepVar == 2:
-                        result = result + 'Dependent Variable: Species Richness' + '\n'
+                        result += 'Dependent Variable: Species Richness' + '\n'
                     elif DepVar == 3:
-                        result = result + 'Dependent Variable: Species Diversity' + '\n'
+                        result += 'Dependent Variable: Species Diversity' + '\n'
                     elif DepVar == 4:
-                        result = result + 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
+                        result += 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
 
-                    result = result + '\nANCOVA table:\n'
+                    result += '\nANCOVA table:\n'
                     D = D.decode('utf-8')
                     result += D + '\n'
                     result += '===============================================\n'
@@ -715,8 +715,8 @@ def getQuantUnivData(request):
                     idList.append(selected[i][0])
                 idDict['rRNA_copies'] = idList
 
-            result = result + 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
-            result = result + 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
+            result += 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
+            result += 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
             result += '===============================================\n'
             result += '\nData Normalization:\n'
 
@@ -839,7 +839,7 @@ def getQuantUnivData(request):
                 if NormMeth == 1:
                     result += 'No normalization was performed...\n'
                 elif NormMeth == 2 or NormMeth == 3:
-                    result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
                 elif NormMeth == 4:
                     result += 'Data were normalized by the total number of sequence reads...\n'
                 elif NormMeth == 5 and DESeq_error == 'no':

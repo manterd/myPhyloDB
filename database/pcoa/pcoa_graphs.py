@@ -109,50 +109,50 @@ def getPCoA(request):
             newList = []
             result = ''
             if taxaLevel == 1:
-                result = result + 'Taxa level: Kingdom' + '\n'
+                result += 'Taxa level: Kingdom' + '\n'
             elif taxaLevel == 2:
-                result = result + 'Taxa level: Phyla' + '\n'
+                result += 'Taxa level: Phyla' + '\n'
             elif taxaLevel == 3:
-                result = result + 'Taxa level: Class' + '\n'
+                result += 'Taxa level: Class' + '\n'
             elif taxaLevel == 4:
-                result = result + 'Taxa level: Order' + '\n'
+                result += 'Taxa level: Order' + '\n'
             elif taxaLevel == 5:
-                result = result + 'Taxa level: Family' + '\n'
+                result += 'Taxa level: Family' + '\n'
             elif taxaLevel == 6:
-                result = result + 'Taxa level: Genus' + '\n'
+                result += 'Taxa level: Genus' + '\n'
             elif taxaLevel == 7:
-                result = result + 'Taxa level: Species' + '\n'
+                result += 'Taxa level: Species' + '\n'
 
             if distance == 1:
-                result = result + 'Distance score: Manhattan' + '\n'
+                result += 'Distance score: Manhattan' + '\n'
             elif distance == 2:
-                result = result + 'Distance score: Euclidean' + '\n'
+                result += 'Distance score: Euclidean' + '\n'
             elif distance == 3:
-                result = result + 'Distance score: Canberra' + '\n'
+                result += 'Distance score: Canberra' + '\n'
             elif distance == 4:
-                result = result + 'Distance score: Bray-Curtis' + '\n'
+                result += 'Distance score: Bray-Curtis' + '\n'
             elif distance == 5:
-                result = result + 'Distance score: Kulczynski' + '\n'
+                result += 'Distance score: Kulczynski' + '\n'
             elif distance == 6:
-                result = result + 'Distance score: Jaccard' + '\n'
+                result += 'Distance score: Jaccard' + '\n'
             elif distance == 7:
-                result = result + 'Distance score: Gower' + '\n'
+                result += 'Distance score: Gower' + '\n'
             elif distance == 8:
-                result = result + 'Distance score: altGower' + '\n'
+                result += 'Distance score: altGower' + '\n'
             elif distance == 9:
-                result = result + 'Distance score: Morisita' + '\n'
+                result += 'Distance score: Morisita' + '\n'
             elif distance == 10:
-                result = result + 'Distance score: Horn' + '\n'
+                result += 'Distance score: Horn' + '\n'
             elif distance == 11:
-                result = result + 'Distance score: Mountford' + '\n'
+                result += 'Distance score: Mountford' + '\n'
             elif distance == 12:
-                result = result + 'Distance score: Binomial' + '\n'
+                result += 'Distance score: Binomial' + '\n'
             elif distance == 13:
-                result = result + 'Distance score: Chao' + '\n'
+                result += 'Distance score: Chao' + '\n'
             elif distance == 14:
-                result = result + 'Distance score: Cao' + '\n'
+                result += 'Distance score: Cao' + '\n'
             elif distance == 15:
-                result = result + 'Distance score: wOdum' + '\n'
+                result += 'Distance score: wOdum' + '\n'
 
             metaStrCat = all["metaValsCat"]
             fieldListCat = []
@@ -313,7 +313,7 @@ def getPCoA(request):
                 if NormMeth == 1:
                     result += 'No normalization was performed...\n'
                 elif NormMeth == 2 or NormMeth == 3:
-                    result = result + 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
+                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
                 elif NormMeth == 4:
                     result += 'Data were normalized by the total number of sequence reads...\n'
                 elif NormMeth == 5 and DESeq_error == 'no':
@@ -643,9 +643,9 @@ def getPCoA(request):
                 result += envFit
             result += '===============================================\n'
 
-            result = result + '\nEigenvalues\n'
+            result += '\nEigenvalues\n'
             eigStr = eigDF.to_string()
-            result = result + str(eigStr) + '\n'
+            result += str(eigStr) + '\n'
             result += '===============================================\n\n\n\n'
 
             finalDict['text'] = result
