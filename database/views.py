@@ -26,7 +26,7 @@ def home(request):
     )
 
 
-@login_required(login_url='/myPhyloDB/login/')
+@login_required(login_url='/accounts/login/')
 def upload(request):
     projects = Reference.objects.none()
     if request.method == 'POST' and 'Upload' in request.POST:
@@ -596,7 +596,7 @@ def getCookie(request):
         return HttpResponse('no', content_type='application/text')
 
 
-@login_required(login_url='/myPhyloDB/login/')
+@login_required(login_url='/accounts/login/')
 def reprocess(request):
     try:
         alignFile = request.FILES['docfile8']
@@ -633,7 +633,7 @@ def reprocess(request):
     )
 
 
-@login_required(login_url='/myPhyloDB/login/')
+@login_required(login_url='/accounts/login/')
 def update(request):
     form5 = UploadForm5(request.POST, request.FILES)
     state = ''

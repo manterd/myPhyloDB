@@ -492,7 +492,7 @@ def getCatUnivData(request):
 
                     result = result + '\nANCOVA table:\n'
                     D = D.decode('utf-8')
-                    result += result + D + '\n'
+                    result += D + '\n'
                     result += '===============================================\n'
                     result += '\n\n\n\n'
 

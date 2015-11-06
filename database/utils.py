@@ -37,25 +37,29 @@ def handle_uploaded_file(f, path, name):
 def remove_list(request):
     items = request.POST.getlist('chkbx')
     for item in items:
-        shutil.rmtree(item)
         p_uuid = Reference.objects.get(path=item).projectid.projectid
         Reference.objects.get(path=item).delete()
+        if os.path.exists(item):
+            shutil.rmtree(item)
 
         if not Reference.objects.filter(projectid_id=p_uuid).exists():
             Project.objects.get(projectid=p_uuid).delete()
             path = "/".join(["uploads", str(p_uuid)])
-            shutil.rmtree(path)
+            if os.path.exists(path):
+                shutil.rmtree(path)
 
 
 def remove_proj(path):
-    shutil.rmtree(path)
     p_uuid = Reference.objects.get(path=path).projectid.projectid
     Reference.objects.get(path=path).delete()
+    if os.path.exists(path):
+        shutil.rmtree(path)
 
     if not Reference.objects.filter(projectid_id=p_uuid).exists():
         Project.objects.get(projectid=p_uuid).delete()
         path = "/".join(["uploads", str(p_uuid)])
-        shutil.rmtree(path)
+        if os.path.exists(path):
+            shutil.rmtree(path)
 
 
 def multidict(ordered_pairs):
