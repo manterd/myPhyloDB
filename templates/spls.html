@@ -340,7 +340,7 @@
                     $("#image").show();
                     {% static "" as baseUrl %}
                     var d = new Date();
-                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ user }}.spls.jpg?"+d.getTime());
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.spls.jpg?"+d.getTime());
 
                     $("#run").css("background-color", "green");
 

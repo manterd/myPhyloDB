@@ -398,7 +398,12 @@ def getCatUnivData(request):
 
                     r.assign("df", group1)
 
-                    trtString = " * ".join(fieldList)
+                    newFieldList = []
+                    for key in metaDictCat:
+                        if len(set(metaDictCat[key])) > 1:
+                            newFieldList.append(key)
+
+                    trtString = " * ".join(newFieldList)
 
                     if DepVar == 1:
                         anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
@@ -475,7 +480,7 @@ def getCatUnivData(request):
                                             D += tempStuff[i] + '\n'
                     else:
                         p_val = 1.0
-                        D = 'One or more of your groups only had 1 observation, ANOVA was not run\n'
+                        D = 'ANOVA cannot be performed, please check that you have more than one treatment level and appropriate replication.\n'
 
                     result += '===============================================\n'
                     result += 'Taxa level: ' + str(name1[0]) + '\n'
@@ -921,9 +926,14 @@ def getQuantUnivData(request):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                newFieldList = []
+                for key in metaDict:
+                    if len(set(metaDict[key])) > 1:
+                        newFieldList.append(key)
+
                 r.assign("df", group1)
-                if len(fieldList) > 1:
-                    trtString = "*".join(fieldList)
+                if len(newFieldList) > 1:
+                    trtString = "*".join(newFieldList)
                 else:
                     trtString = fieldListQuant[0]
 
@@ -972,7 +982,7 @@ def getQuantUnivData(request):
 
                 else:
                     p_value = 1.0
-                    D = 'One or more of your groups only had 1 observation, ANOVA was not run\n'
+                    D = 'ANOVA cannot be performed, please check that you have more than one treatment level and appropriate replication.\n'
 
                 resultDF = r.get("df")
                 resultDF = resultDF.rename(columns=lambda x: x.strip())
