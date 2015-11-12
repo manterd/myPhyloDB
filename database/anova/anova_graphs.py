@@ -524,23 +524,20 @@ def getCatUnivData(request):
                             seriesDict['data'] = dataList
                             seriesList.append(seriesDict)
 
-                            xAxisDict['categories'] = trtList
-
-                            yTitle = {}
-                            if DepVar == 1:
-                                yTitle['text'] = 'Abundance (counts)'
-                            elif DepVar == 2:
-                                yTitle['text'] = 'Species Richness'
-                            elif DepVar == 3:
-                                yTitle['text'] = 'Species Diversity'
-                            elif DepVar == 4:
-                                yTitle['text'] = 'Abundance (16S rRNA copies)'
-                            yAxisDict['title'] = yTitle
-
                     if sig_only == 0:
                         dataList = []
                         grouped2 = group1.groupby(fieldListCat).mean()
 
+                        g2indexvals = grouped2.index.values  # actualcats does not work beyond two levels because of how multidict works
+                        #print 'g2indexvals:', g2indexvals
+                        level = g2indexvals[0].__len__()
+
+                        # print 'g2indexvals:', g2indexvals
+                        #print "making cats"
+                        #print g2indexvals
+                        #print "step 2"
+                        #actualcats = multidict(g2indexvals)
+                        #print "cats"
                         if DepVar == 1:
                             dataList.extend(list(grouped2['abund'].T))
                         elif DepVar == 2:
@@ -556,30 +553,30 @@ def getCatUnivData(request):
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
 
-                        if catList.__len__() == 1:
-                            xAxisDict['categories'] = catList[0]
-                        else:
-                            finalList = []
-                            finalList.append(recLabel("", catList))
-                            xAxisDict['categories'] = finalList
-
-                        yTitle = {}
-                        if DepVar == 1:
-                            yTitle['text'] = 'Abundance (counts)'
-                        elif DepVar == 2:
-                            yTitle['text'] = 'Species Richness'
-                        elif DepVar == 3:
-                            yTitle['text'] = 'Species Diversity'
-                        elif DepVar == 4:
-                            yTitle['text'] = 'Abundance (16S rRNA copies)'
-                        yAxisDict['title'] = yTitle
-
                     colors_idx += 1
                     if colors_idx >= len(colors):
                         colors_idx = 0
 
                 except Exception as e:
                     print("Error with formatting (ANOVA CAT): ", e)
+
+            yTitle = {}
+            if DepVar == 1:
+                yTitle['text'] = 'Abundance (counts)'
+            elif DepVar == 2:
+                yTitle['text'] = 'Species Richness'
+            elif DepVar == 3:
+                yTitle['text'] = 'Species Diversity'
+            elif DepVar == 4:
+                yTitle['text'] = 'Abundance (16S rRNA copies)'
+            yAxisDict['title'] = yTitle
+
+            if catList.__len__() == 1:
+                xAxisDict['categories'] = catList[0]
+            else:
+                labelTree = recLabels(g2indexvals, level)
+                xAxisDict['categories'] = [labelTree]
+                #This loops a ton more than seems necessary. No point in remaking the labels for every output
 
             finalDict['series'] = seriesList
             finalDict['xAxis'] = xAxisDict
@@ -607,7 +604,24 @@ def getCatUnivData(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def recLabel(name, list):
+'''def recLabel(name, list):
+
+    retDict = {}
+
+    if node.children.__len__() == 0:
+        retDict['name'] = node.parent
+        retDict['categories'] = node.label
+        return retDict
+
+    subList = []
+    for stuff in node.children:
+        subList.append(recLabel(stuff))
+    retDict['name'] = node.parent
+    retDict['categories'] = subList
+    return retDict
+
+
+
     retDict = {}
     if list.__len__() == 1:
         retDict['name'] = name
@@ -618,6 +632,60 @@ def recLabel(name, list):
         subList.append(recLabel(stuff, list[1:]))
     retDict['name'] = name
     retDict['categories'] = subList
+    return retDict'''
+
+
+def recLabels(lists, level):
+
+    # go through entire list, grab last element, map to parents
+    if lists.__len__() == 0:
+        return {}
+
+    first = lists
+    splitset = []
+    for i in range(0, level):
+        children = []
+        parents = []
+        for set in first:
+            children.append(set[set.__len__()-1])
+            parents.append(set[0:set.__len__()-1])
+        first = parents
+        splitset.append(children)
+
+    return makeLabels(" ", splitset)
+
+
+def makeLabels(name, list):
+    retDict = {}
+    if list.__len__() == 1:
+        # final layer
+        retDict['name'] = name
+        retDict['categories'] = list[0]
+        return retDict
+
+    # change here
+    children = []
+    first = list[list.__len__()-1][0]
+    iter = 0
+    start = 0
+    for stuff in list[list.__len__()-1]:
+        if stuff != first:
+            sublist = []
+            for otherstuff in list[0:list.__len__()-1]:
+                sublist.append(otherstuff[start:iter])
+            children.append(makeLabels(first, sublist))
+            first = stuff
+            start = iter
+        iter += 1
+
+    # Repeat else condition at the end of the list
+    sublist = []
+    for otherstuff in list[0:list.__len__()-1]:
+        sublist.append(otherstuff[start:iter])
+    children.append(makeLabels(first, sublist))
+
+    retDict['name'] = name
+    retDict['categories'] = children
     return retDict
 
 
