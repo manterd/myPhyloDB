@@ -621,7 +621,7 @@
                     $("#image").show();
                     {% static "" as baseUrl %}
                     var d = new Date();
-                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ user }}.pcoa.jpg?"+d.getTime());
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.pcoa.jpg?"+d.getTime());
 
                     $("#run").css("background-color", "green");
 

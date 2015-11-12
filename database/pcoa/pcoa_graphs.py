@@ -342,13 +342,25 @@ def getPCoA(request):
                 finalDF.reset_index(inplace=True)
 
                 if DepVar == 1:
-                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
+                    try:
+                        normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
+                    except:
+                        normDF = finalDF.pivot(index='index', columns='taxa_id', values='abund')
                 if DepVar == 2:
-                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
+                    try:
+                        normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
+                    except:
+                        normDF = finalDF.pivot(index='index', columns='taxa_id', values='rich')
                 if DepVar == 3:
-                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
+                    try:
+                        normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
+                    except:
+                        normDF = finalDF.pivot(index='index', columns='taxa_id', values='diversity')
                 if DepVar == 4:
-                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
+                    try:
+                        normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
+                    except:
+                        normDF = finalDF.pivot(index='index', columns='taxa_id', values='copies')
 
                 base[RID] = 'Step 2 of 8: Normalizing data...done!'
 
@@ -400,6 +412,7 @@ def getPCoA(request):
                 datamtx = np.asarray(normDF)
                 dists = wOdum(datamtx, alpha)
                 r.assign("dist", dists)
+                r("dist <- as.dist(dist)")
 
             r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
             mat = r.get("mat")
@@ -410,14 +423,16 @@ def getPCoA(request):
             base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
             base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
+            newFieldList = []
             trtLength = 0
-            for i in valueList:
-                if len(i) > trtLength:
-                    trtLength = len(i)
+            for key in metaDictCat:
+                if len(set(metaDictCat[key])) > 1:
+                    trtLength += 1
+                    newFieldList.append(key)
+            trtString = " + ".join(newFieldList)
 
-            if trtLength > 1:
+            if trtLength > 0:
                 r.assign("meta", metaDF)
-                trtString = " + ".join(fieldListCat)
                 pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ", meta)"
                 r.assign("cmd", pcoa_string)
                 r("eval(parse(text=cmd))")
@@ -499,13 +514,13 @@ def getPCoA(request):
                         base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                         base[RID] = 'Step 5 of 8: Performing perMANOVA...'
 
-                        for i in fieldListCat:
+                        for i in newFieldList:
                             factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
                             r.assign("cmd", factor_string)
                             r("eval(parse(text=cmd))")
 
                         r.assign("perms", perms)
-                        trtString = " * ".join(fieldListCat)
+                        trtString = " * ".join(newFieldList)
                         amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
                         r.assign("cmd", amova_string)
                         r("eval(parse(text=cmd))")
@@ -522,13 +537,13 @@ def getPCoA(request):
                         base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                         base[RID] = 'Step 5 of 8: Performing BetaDisper...'
 
-                        for i in fieldList:
+                        for i in newFieldList:
                             factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
                             r.assign("cmd", factor_string)
                             r("eval(parse(text=cmd))")
 
                         r.assign("perms", perms)
-                        for i in fieldListCat:
+                        for i in newFieldList:
                             beta_string = "res <- betadisper(dist, " + str(i) + ")"
                             r.assign("cmd", beta_string)
                             r("eval(parse(text=cmd))")

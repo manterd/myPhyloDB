@@ -554,11 +554,11 @@ def DiffAbund(request):
 def PCoA(request):
     name = request.user
     ip = request.META.get('REMOTE_ADDR')
-    user = str(name) + "." + str(ip)
+    fileStr = str(name) + "." + str(ip)
 
     return render_to_response(
         'pcoa.html',
-        {'user': user},
+        {'fileStr': fileStr},
         context_instance=RequestContext(request)
     )
 
@@ -566,11 +566,11 @@ def PCoA(request):
 def SPLS(request):
     name = request.user
     ip = request.META.get('REMOTE_ADDR')
-    user = str(name) + "." + str(ip)
+    fileStr = str(name) + "." + str(ip)
 
     return render_to_response(
         'spls.html',
-        {'user': user},
+        {'fileStr': fileStr},
         context_instance=RequestContext(request)
     )
 
