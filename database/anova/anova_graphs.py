@@ -307,8 +307,10 @@ def getCatUnivData(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+                finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
+
                 if DepVar == 4:
-                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                    finalDF['copies'] = finalDF.abund * finalDF.rRNA_copies
                     finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
                 else:
                     finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
@@ -487,13 +489,13 @@ def getCatUnivData(request):
                     result += 'Taxa name: ' + str(name1[1]) + '\n'
                     result += 'Taxa ID: ' + str(name1[2]) + '\n'
                     if DepVar == 1:
-                        result += 'Dependent Variable: Abundance (counts)' + '\n'
+                        result += 'Dependent Variable: Relative Abundance (proportion)' + '\n'
                     elif DepVar == 2:
                         result += 'Dependent Variable: Species Richness' + '\n'
                     elif DepVar == 3:
                         result += 'Dependent Variable: Species Diversity' + '\n'
                     elif DepVar == 4:
-                        result += 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
+                        result += 'Dependent Variable: Total Abundance (rRNA gene copies)' + '\n'
 
                     result += '\nANCOVA table:\n'
                     D = D.decode('utf-8')
@@ -560,13 +562,13 @@ def getCatUnivData(request):
 
             yTitle = {}
             if DepVar == 1:
-                yTitle['text'] = 'Abundance (counts)'
+                yTitle['text'] = 'Relative Abundance (proportion)'
             elif DepVar == 2:
                 yTitle['text'] = 'Species Richness'
             elif DepVar == 3:
                 yTitle['text'] = 'Species Diversity'
             elif DepVar == 4:
-                yTitle['text'] = 'Abundance (16S rRNA copies)'
+                yTitle['text'] = 'Total Abundance (rRNA gene copies)'
             yAxisDict['title'] = yTitle
 
             if catList.__len__() == 1:
@@ -884,8 +886,10 @@ def getQuantUnivData(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+                finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
+
                 if DepVar == 4:
-                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                    finalDF['copies'] = finalDF.abund * finalDF.rRNA_copies
                     finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
                 else:
                     finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
@@ -1017,13 +1021,13 @@ def getQuantUnivData(request):
                 result += 'Taxa name: ' + str(name1[1]) + '\n'
                 result += 'Taxa ID: ' + str(name1[2]) + '\n'
                 if DepVar == 1:
-                    result += 'Dependent Variable: Abundance (counts)' + '\n'
+                    result += 'Dependent Variable: Relative Abundance (proportion)' + '\n'
                 elif DepVar == 2:
                     result += 'Dependent Variable: Species Richness' + '\n'
                 elif DepVar == 3:
                     result += 'Dependent Variable: Species Diversity' + '\n'
                 elif DepVar == 4:
-                    result += 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
+                    result += 'Dependent Variable: Total Abundance (rRNA gene copies)' + '\n'
 
                 result += '\nANCOVA table:\n'
                 D = D.decode('utf-8')
@@ -1228,13 +1232,13 @@ def getQuantUnivData(request):
 
                 yTitle = {}
                 if DepVar == 1:
-                    yTitle['text'] = 'Abundance (counts)'
+                    yTitle['text'] = 'Relative Abundance (proportion)'
                 elif DepVar == 2:
                     yTitle['text'] = 'Species Richness'
                 elif DepVar == 3:
                     yTitle['text'] = 'Shannon Diversity'
                 elif DepVar == 4:
-                    yTitle['text'] = 'Abundance (16S rRNA copies)'
+                    yTitle['text'] = 'Total Abundance (rRNA gene copies)'
                 yAxisDict['title'] = yTitle
 
                 colors_idx += 1

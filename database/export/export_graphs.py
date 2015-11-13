@@ -259,6 +259,8 @@ def getExCatData(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+                finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
+
                 finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
                 finalDF.reset_index(drop=False, inplace=True)
                 finalDF.rename(columns={'index': 'sampleid'}, inplace=True)

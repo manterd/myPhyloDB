@@ -16,12 +16,6 @@ def metaData(idDict):
     soilTableList = Soil._meta.get_all_field_names()
     usrTableList = UserDefined._meta.get_all_field_names()
 
-    #idList = []
-    #fieldList = []
-    #for key in idDict:
-    #    fieldList.append(key)
-    #    idList.extend(idDict[key])
-
     metaDF = pd.DataFrame()
     index = 0
     for key in idDict:
