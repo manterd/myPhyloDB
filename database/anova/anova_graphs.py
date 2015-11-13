@@ -533,16 +533,9 @@ def getCatUnivData(request):
                         dataList = []
                         grouped2 = group1.groupby(fieldListCat).mean()
 
-                        g2indexvals = grouped2.index.values  # actualcats does not work beyond two levels because of how multidict works
-                        #print 'g2indexvals:', g2indexvals
+                        g2indexvals = grouped2.index.values
                         level = g2indexvals[0].__len__()
 
-                        # print 'g2indexvals:', g2indexvals
-                        #print "making cats"
-                        #print g2indexvals
-                        #print "step 2"
-                        #actualcats = multidict(g2indexvals)
-                        #print "cats"
                         if DepVar == 1:
                             dataList.extend(list(grouped2['abund'].T))
                         elif DepVar == 2:
@@ -581,7 +574,6 @@ def getCatUnivData(request):
             else:
                 labelTree = recLabels(g2indexvals, level)
                 xAxisDict['categories'] = [labelTree]
-                #This loops a ton more than seems necessary. No point in remaking the labels for every output
 
             finalDict['series'] = seriesList
             finalDict['xAxis'] = xAxisDict
@@ -609,40 +601,7 @@ def getCatUnivData(request):
         return HttpResponse(res, content_type='application/json')
 
 
-'''def recLabel(name, list):
-
-    retDict = {}
-
-    if node.children.__len__() == 0:
-        retDict['name'] = node.parent
-        retDict['categories'] = node.label
-        return retDict
-
-    subList = []
-    for stuff in node.children:
-        subList.append(recLabel(stuff))
-    retDict['name'] = node.parent
-    retDict['categories'] = subList
-    return retDict
-
-
-
-    retDict = {}
-    if list.__len__() == 1:
-        retDict['name'] = name
-        retDict['categories'] = list[0]
-        return retDict
-    subList = []
-    for stuff in list[0]:
-        subList.append(recLabel(stuff, list[1:]))
-    retDict['name'] = name
-    retDict['categories'] = subList
-    return retDict'''
-
-
 def recLabels(lists, level):
-
-    # go through entire list, grab last element, map to parents
     if lists.__len__() == 0:
         return {}
 
@@ -656,7 +615,6 @@ def recLabels(lists, level):
             parents.append(set[0:set.__len__()-1])
         first = parents
         splitset.append(children)
-
     return makeLabels(" ", splitset)
 
 

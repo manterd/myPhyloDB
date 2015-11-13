@@ -71,7 +71,6 @@ def upload(request):
             try:
                 handle_uploaded_file(file1, dest, metaName)
                 parse_project(metaFile, p_uuid)
-
             except:
                 remove_proj(dest)
 
@@ -191,7 +190,7 @@ def upload(request):
 
                 file5 = request.FILES['docfile5']
                 handle_uploaded_file(file5, mothurdest, 'temp.txt')
-                handle_uploaded_file(file5, mothurdest, file5.name)
+                handle_uploaded_file(file5, dest, 'temp.txt')
 
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
@@ -403,7 +402,7 @@ def upload(request):
                 fastq = 'temp.files'
                 file13 = request.FILES['docfile13']
                 handle_uploaded_file(file13, mothurdest, fastq)
-                handle_uploaded_file(file13, dest, file13.name)
+                handle_uploaded_file(file13, dest, fastq)
 
                 file_list = request.FILES.getlist('fastq_files')
                 for each in file_list:
