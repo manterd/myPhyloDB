@@ -14,10 +14,12 @@ import xlrd
 from xlutils.copy import copy
 import xlwt
 from xlwt import Style
+import time
 
 from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import remove_proj, purge, handle_uploaded_file
+from models import addQueue, getQueue, subQueue
 
 
 stage = ''
@@ -464,7 +466,7 @@ def reanalyze(request):
     global rep_project
 
     if request.is_ajax():
-        mothurdest = 'mothur/temp'
+        mothurdest = 'mothur/temp/'
         if not os.path.exists(mothurdest):
             os.makedirs(mothurdest)
 
@@ -476,7 +478,6 @@ def reanalyze(request):
         new_tax = str(all['taxonomyDB'])
         new_tax_tag = str(new_tax.split('.')[-2:-1][0])
         new_template = 'template=mothur/reference/template/' + str(all['templateDB'])
-
         projects = Reference.objects.all().filter(refid__in=ids)
 
         for project in projects:
@@ -485,9 +486,11 @@ def reanalyze(request):
             source = project.source
 
             if source == '454_sff':
-                ls_dir = os.listdir(dest)
-                for afile in ls_dir:
-                    shutil.copyfile(afile, mothurdest)
+                try:
+                    shutil.copytree(dest, mothurdest)
+                except Exception as e:
+                    print e
+            print 'copied'
 
             if source == '454_fastq':
                 file_list = []
@@ -495,7 +498,7 @@ def reanalyze(request):
                     file_list.append(afile)
 
                 tempList = []
-                if len(file_list) > 1:
+                if file_list.__len__() > 1:
                     for each in file_list:
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
@@ -522,7 +525,7 @@ def reanalyze(request):
                     file_list.append(afile)
 
                 tempList = []
-                if len(file_list) > 1:
+                if file_list.__len__() > 1:
                     for each in file_list:
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
@@ -545,22 +548,40 @@ def reanalyze(request):
                         handle_uploaded_file(file, dest, each)
 
                 for afile in glob.glob(r'% s/*.oligos' % dest):
-                    shutil.copy(afile, mothurdest)
+                    if os.name =='nt':
+                        srcStr = str(dest) + '\\' + str(afile)
+                        destStr = str(mothurdest) + '\\' + str(afile)
+                    else:
+                        srcStr = str(dest) + '/' + str(afile)
+                        destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
                 for afile in glob.glob(r'% s/*.batch' % dest):
-                    shutil.copy(afile, mothurdest)
+                    if os.name =='nt':
+                        srcStr = str(dest) + '\\' + str(afile)
+                        destStr = str(mothurdest) + '\\' + str(afile)
+                    else:
+                        srcStr = str(dest) + '/' + str(afile)
+                        destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
             if source == 'miseq':
                 ls_dir = os.listdir(dest)
                 for afile in ls_dir:
-                    shutil.copyfile(afile, mothurdest)
+                    if os.name =='nt':
+                        srcStr = str(dest) + '\\' + str(afile)
+                        destStr = str(mothurdest) + '\\' + str(afile)
+                    else:
+                        srcStr = str(dest) + '/' + str(afile)
+                        destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
             orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
             orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
             orig_tax = str(project.taxonomyDB)
             orig_tax_tag = str(orig_tax.split('.')[-2:-1][0])
             orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
-
+            print '564'
             try:
                 with open("% s/mothur.batch" % dest, 'r+') as bat:
                     with open("% s/mothur.batch" % mothurdest, 'wb+') as destination:
@@ -588,7 +609,7 @@ def reanalyze(request):
                 print("Error with batch file: ", e)
 
             p_uuid = project.projectid.projectid
-            refid = project.refid
+
             dest = project.path
             pType = project.projectid.projectType
 
@@ -601,6 +622,10 @@ def reanalyze(request):
 
             shutil.copy('% s/final_meta.xls' % mothurdest, '% s/final_meta.xls' % dest)
 
+            addQueue()
+            while getQueue() > 1:
+                time.sleep(5)
+
             try:
                 mothur(dest, source)
             except Exception as e:
@@ -609,6 +634,7 @@ def reanalyze(request):
                     simplejson.dumps({"error": "yes"}),
                     content_type="application/json"
                 )
+            subQueue()
 
             metaName = 'final_meta.xls'
             metaFile = '/'.join([dest, metaName])

@@ -3,6 +3,23 @@ from django_extensions.db.fields import UUIDField
 from django.contrib.auth.models import User as Users
 
 
+queue = 0
+
+
+def addQueue():
+    global queue
+    queue += 1
+
+
+def getQueue():
+    return queue
+
+
+def subQueue():
+    global queue
+    queue -= 1
+
+
 class Project(models.Model):
     projectid = UUIDField(primary_key=True)
     status = models.CharField(max_length=10, blank=False)

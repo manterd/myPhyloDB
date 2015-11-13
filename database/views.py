@@ -9,11 +9,13 @@ import pandas as pd
 import pickle
 import simplejson
 import xlrd
+import time
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5
 from models import Project, Reference, Sample, Species
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
+from models import addQueue, getQueue, subQueue
 
 
 rep_project = ''
@@ -196,9 +198,14 @@ def upload(request):
                 handle_uploaded_file(file7, mothurdest, batch)
                 handle_uploaded_file(file7, dest, batch)
 
+                # check queue for mothur availability, then run or wait
+                # if mothur is available, run it
+                # else sleep, loop back to check again
+                addQueue()
+                while getQueue() > 1:
+                    time.sleep(5)
                 try:
                     mothur(dest, source)
-
                 except:
                     remove_proj(dest)
 
@@ -215,6 +222,8 @@ def upload(request):
                          },
                         context_instance=RequestContext(request)
                     )
+
+                subQueue()
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
