@@ -375,7 +375,6 @@ def getCatUnivData(request):
                     valList = []
 
                     grouped2 = group1.groupby(fieldListCat)
-
                     for name2, group2 in grouped2:
                         if isinstance(name2, unicode):
                             trt = name2
@@ -511,11 +510,11 @@ def getCatUnivData(request):
                 try:
                     base[RID] = 'Step 4 of 4: Formatting graph data for display...'
 
+                    grouped2 = group1.groupby(fieldListCat).mean()
+
                     if sig_only == 1:
                         if p_val < 0.05:
                             dataList = []
-                            grouped2 = group1.groupby(fieldListCat).mean()
-
                             if DepVar == 1:
                                 dataList.extend(list(grouped2['abund'].T))
                             elif DepVar == 2:
@@ -533,10 +532,7 @@ def getCatUnivData(request):
 
                     if sig_only == 0:
                         dataList = []
-                        grouped2 = group1.groupby(fieldListCat).mean()
 
-                        g2indexvals = grouped2.index.values
-                        level = g2indexvals[0].__len__()
 
                         if DepVar == 1:
                             dataList.extend(list(grouped2['abund'].T))
@@ -574,6 +570,8 @@ def getCatUnivData(request):
             if catList.__len__() == 1:
                 xAxisDict['categories'] = catList[0]
             else:
+                g2indexvals = grouped2.index.values
+                level = g2indexvals[0].__len__()
                 labelTree = recLabels(g2indexvals, level)
                 xAxisDict['categories'] = [labelTree]
 
