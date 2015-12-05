@@ -142,60 +142,60 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters):
             if key == 'Kingdom':
                 qs1 = Kingdom.objects.filter(kingdomid=taxaList).values('kingdomid', 'kingdomName')
                 namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid', 'kingdomName'])
-                namesDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+                #namesDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
             elif key == 'Phyla':
-                qs1 = Phyla.objects.filter(phylaid=taxaList).values('phylaid', 'phylaName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['phylaid', 'phylaName'])
-                namesDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+                qs1 = Phyla.objects.filter(phylaid=taxaList).values('kingdomid__kingdomName', 'phylaid', 'phylaName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid', 'phylaName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName'}, inplace=True)
             elif key == 'Class':
-                qs1 = Class.objects.filter(classid=taxaList).values('classid', 'className')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['classid', 'className'])
-                namesDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+                qs1 = Class.objects.filter(classid=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid', 'className')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid', 'className'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName'}, inplace=True)
             elif key == 'Order':
-                qs1 = Order.objects.filter(orderid=taxaList).values('orderid', 'orderName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['orderid', 'orderName'])
-                namesDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+                qs1 = Order.objects.filter(orderid=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid', 'orderName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid', 'orderName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className'}, inplace=True)
             elif key == 'Family':
-                qs1 = Family.objects.filter(familyid=taxaList).values('familyid', 'familyName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['familyid', 'familyName'])
-                namesDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+                qs1 = Family.objects.filter(familyid=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid', 'familyName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid', 'familyName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName'}, inplace=True)
             elif key == 'Genus':
-                qs1 = Genus.objects.filter(genusid=taxaList).values('genusid', 'genusName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['genusid', 'genusName'])
-                namesDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+                qs1 = Genus.objects.filter(genusid=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid', 'genusName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid', 'genusName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName'}, inplace=True)
             elif key == 'Species':
-                qs1 = Species.objects.filter(speciesid=taxaList).values('speciesid', 'speciesName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['speciesid', 'speciesName'])
-                namesDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                qs1 = Species.objects.filter(speciesid=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesid', 'speciesName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesid', 'speciesName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName'}, inplace=True)
         else:
             if key == 'Kingdom':
                 qs1 = Kingdom.objects.filter(kingdomid__in=taxaList).values('kingdomid', 'kingdomName')
                 namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid', 'kingdomName'])
-                namesDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+                #namesDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
             elif key == 'Phyla':
-                qs1 = Phyla.objects.filter(phylaid__in=taxaList).values('phylaid', 'phylaName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['phylaid', 'phylaName'])
-                namesDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+                qs1 = Phyla.objects.filter(phylaid__in=taxaList).values('kingdomid__kingdomName', 'phylaid', 'phylaName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid', 'phylaName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName'}, inplace=True)
             elif key == 'Class':
-                qs1 = Class.objects.filter(classid__in=taxaList).values('classid', 'className')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['classid', 'className'])
-                namesDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+                qs1 = Class.objects.filter(classid__in=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid', 'className')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid', 'className'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName'}, inplace=True)
             elif key == 'Order':
-                qs1 = Order.objects.filter(orderid__in=taxaList).values('orderid', 'orderName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['orderid', 'orderName'])
-                namesDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+                qs1 = Order.objects.filter(orderid__in=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid', 'orderName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid', 'orderName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className'}, inplace=True)
             elif key == 'Family':
-                qs1 = Family.objects.filter(familyid__in=taxaList).values('familyid', 'familyName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['familyid', 'familyName'])
-                namesDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+                qs1 = Family.objects.filter(familyid__in=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid', 'familyName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid', 'familyName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName'}, inplace=True)
             elif key == 'Genus':
-                qs1 = Genus.objects.filter(genusid__in=taxaList).values('genusid', 'genusName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['genusid', 'genusName'])
-                namesDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+                qs1 = Genus.objects.filter(genusid__in=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid', 'genusName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid', 'genusName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName'}, inplace=True)
             elif key == 'Species':
-                qs1 = Species.objects.filter(speciesid__in=taxaList).values('speciesid', 'speciesName')
-                namesDF = pd.DataFrame.from_records(qs1, columns=['speciesid', 'speciesName'])
-                namesDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                qs1 = Species.objects.filter(speciesid__in=taxaList).values('kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesid', 'speciesName')
+                namesDF = pd.DataFrame.from_records(qs1, columns=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesid', 'speciesName'])
+                namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName'}, inplace=True)
 
         if key == 'Kingdom':
             rank = 'Kingdom'
@@ -247,8 +247,35 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters):
                     myDict['diversity'] = groupDiversity[j]
                     rowsList.append(myDict)
         DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'rank', 'taxa_id', 'abund', 'rich', 'diversity'])
-        DF1 = DF1.merge(namesDF, on='taxa_id', how='outer')
-        DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+
+        if key == 'Kingdom':
+            DF1.rename(columns={'taxa_id': 'kingdomid'}, inplace=True)
+            DF1 = DF1.merge(namesDF, on='kingdomid', how='outer')
+            #DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+        elif key == 'Phyla':
+            DF1.rename(columns={'taxa_id': 'phylaid'}, inplace=True)
+            DF1 = DF1.merge(namesDF, on='phylaid', how='outer')
+            #DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+        elif key == 'Class':
+            DF1.rename(columns={'taxa_id': 'classid'}, inplace=True)
+            DF1 = DF1.merge(namesDF, on='classid', how='outer')
+            #DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+        elif key == 'Order':
+            DF1.rename(columns={'taxa_id': 'orderid'}, inplace=True)
+            DF1 = DF1.merge(namesDF, on='orderid', how='outer')
+            #DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+        elif key == 'Family':
+            DF1.rename(columns={'taxa_id': 'familyid'}, inplace=True)
+            DF1 = DF1.merge(namesDF, on='familyid', how='outer')
+            #DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+        elif key == 'Genus':
+            DF1.rename(columns={'taxa_id': 'genusid'}, inplace=True)
+            DF1 = DF1.merge(namesDF, on='genusid', how='outer')
+            #DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
+        elif key == 'Species':
+            DF1.rename(columns={'taxa_id': 'speciesid'}, inplace=True)
+            DF1 = DF1.merge(namesDF, on='speciesid', how='outer')
+            #DF1 = DF1[['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'rich', 'diversity']]
 
         if normDF.empty:
             normDF = DF1

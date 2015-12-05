@@ -289,7 +289,21 @@ def getExCatData(request):
                         metaDict[str(newList[i])] = str(name[i])
                     nameList.append({"id": str(name[0]), "metadata": metaDict})
 
-                grouped = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'], sort=False)
+                if key == 'Kingdom':
+                    grouped = finalDF.groupby(['rank', 'kingdomName', 'kingdomid'], sort=False)
+                elif key == 'Phyla':
+                    grouped = finalDF.groupby(['rank', 'phylaName', 'phylaid'], sort=False)
+                elif key == 'Class':
+                    grouped = finalDF.groupby(['rank', 'className', 'classid'], sort=False)
+                elif key == 'Order':
+                    grouped = finalDF.groupby(['rank', 'orderName', 'orderid'], sort=False)
+                elif key == 'Family':
+                    grouped = finalDF.groupby(['rank', 'familyName', 'familyid'], sort=False)
+                elif key == 'Genus':
+                    grouped = finalDF.groupby(['rank', 'genusName', 'genusid'], sort=False)
+                elif key == 'Species':
+                    grouped = finalDF.groupby(['rank', 'speciesName', 'speciesid'], sort=False)
+
                 taxaList = []
                 dataList = []
                 for name, group in grouped:

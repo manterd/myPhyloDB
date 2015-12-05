@@ -22,7 +22,7 @@ def subQueue():
 
 class Project(models.Model):
     projectid = UUIDField(primary_key=True)
-    status = models.CharField(max_length=10, blank=False)
+    status = models.CharField(max_length=15, blank=False)
     projectType = models.CharField(max_length=90, blank=False)
     project_name = models.TextField(blank=True)
     project_desc = models.TextField(blank=True)
@@ -101,7 +101,7 @@ class Human_Associated(models.Model):
     samp_location = models.CharField(max_length=90, blank=True)
     samp_temp = models.FloatField(blank=True, null=True)
     samp_ph = models.FloatField(blank=True, null=True)
-    samp_oxy_stat = models.CharField(max_length=45, blank=True)
+    samp_oxy_stat = models.CharField(max_length=90, blank=True)
     samp_salinity = models.FloatField(blank=True, null=True)
 
     host_subject_id = models.CharField(max_length=90, blank=True)
@@ -164,7 +164,7 @@ class Soil(models.Model):
     samp_store_loc = models.CharField(max_length=90, blank=True)
     samp_store_temp = models.FloatField(blank=True, null=True)
     samp_weight_dna_ext = models.FloatField(blank=True, null=True)
-    pool_dna_extracts = models.IntegerField(blank=True, null=True)
+    pool_dna_extracts = models.FloatField(blank=True, null=True)
 
     fao_class = models.CharField(max_length=90, blank=True)
     local_class = models.CharField(max_length=90, blank=True)
