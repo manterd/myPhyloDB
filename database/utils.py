@@ -3,9 +3,9 @@ import numpy as np
 import os
 import re
 import shutil
+import sys
 from collections import defaultdict
 from models import Project, Reference, Profile
-from django.utils.translation import ugettext_lazy as _
 from django import forms
 from django.core.exceptions import ValidationError
 

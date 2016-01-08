@@ -31,6 +31,7 @@
         var distance = 15, PC1 = 1, PC2 = 2, test = 1;
         var remove = 0;
         var refresh = 0;
+        var running = false;
 
         $(function () {
 
@@ -334,6 +335,11 @@
                 $("#container-0").show();
                 $("#container-1").hide();
                 $("#container-2").hide();
+                if(running == true) {
+                    alert("myPhyloDB is currently running your previous analysis request!");
+                    return false;
+                }
+                running = true;
                 chooseData();
             });
 
@@ -412,6 +418,7 @@
         function chooseData() {
             if (document.getElementById("alphaVal").value < 0 || document.getElementById("alphaVal").value > 10){
                 alert("Alpha must be between 0 and 10");
+                running = false;
                 return;
             }
 
@@ -420,6 +427,7 @@
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
                 $("#run").css("background-color", "red");
+                running = false;
             }
             if (nodesCat != "") {
                 $("#run").css("background-color", "yellow");
@@ -581,6 +589,7 @@
                     all: jsonDict
                 },
                 success: function(data) {
+                    running = false;
                     stopTimer(refresh);
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);

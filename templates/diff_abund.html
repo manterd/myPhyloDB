@@ -30,6 +30,7 @@
         var catOptions = {};
         var sig1_only = 0;
         var refresh;
+        var running = false;
 
         $(function () {
             $("#tree_metaCat").dynatree({
@@ -101,6 +102,11 @@
             });
 
             $("#run").show().click(function () {
+                if(running == true) {
+                    alert("myPhyloDB is currently running your previous analysis request!");
+                    return false;
+                }
+                running = true;
                 chooseData();
             });
 
@@ -255,15 +261,15 @@
         }
         function chooseData() {
 
-            if (document.getElementById("FdrVal").value < 0 || document.getElementById("FdrVal").value > 1)
-            {
+            if (document.getElementById("FdrVal").value < 0 || document.getElementById("FdrVal").value > 1) {
                 alert("False Discovery Rate must be between 0 and 1");
+                running = false;
                 return;
             }
 
-            if (document.getElementById("Theta").value < 0 || document.getElementById("Theta").value > 1)
-            {
+            if (document.getElementById("Theta").value < 0 || document.getElementById("Theta").value > 1) {
                 alert("Theta must be between 0 and 1");
+                running = false;
                 return;
             }
 
@@ -277,6 +283,7 @@
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
                 $("#run").css("background-color", "red");
+                running = false;
             }
         }
 
@@ -371,6 +378,7 @@
                         all: jsonDict
                     },
                     success: function(data) {
+                        running = false;
                         stopTimer();
                         var xAxis = data['xAxis'];
                         var series = data['series'];

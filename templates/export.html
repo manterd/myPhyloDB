@@ -27,6 +27,7 @@
         var NormMeth = 1, selTheme = 0, i = 0;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
         var refresh = 0;
+        var running = false;
 
         $(function () {
             $("#tree_metaCat").dynatree({
@@ -127,6 +128,11 @@
             });
 
             $("#run").show().click(function () {
+                if(running == true) {
+                    alert("myPhyloDB is currently running your previous analysis request!");
+                    return false;
+                }
+                running = true;
                 chooseData();
             });
 
@@ -234,11 +240,13 @@
         function chooseData() {
             if (document.getElementById("NormVal").value < 0) {
                 alert("Sample size can only be a positive integer, 'min', 'median', or 'max'");
+                running = false;
                 return;
             }
 
             if (document.getElementById("MinVal").value < 0) {
                 alert("Sample size can only be a positive integer");
+                running = false;
                 return;
             }
 
@@ -249,12 +257,15 @@
             } else if ( ((nodesCat == "") || (nodesQuant == "")) && ((nodesTaxa != "") || (selectAll != 0)) ) {
                 $("#container-1").empty().append('Please also choose your meta variable(s)!');
                 $("#run").css("background-color", "red");
+                running = false;
             } else if ( ((nodesCat != "") || (nodesQuant != "")) && ((nodesTaxa == "") || (selectAll == 0)) ) {
                 $("#container-1").empty().append('Please also choose your taxa variable(s)!');
                 $("#run").css("background-color", "red");
+                running = false;
             } else if ( (nodesCat == "") && (nodesQuant == "") && (nodesTaxa == "") && (selectAll == 0) ) {
                 $("#container-1").empty().append('Please choose a meta variable(s) and a taxa level(s)!');
                 $("#run").css("background-color", "red");
+                running = false;
             }
         }
 
@@ -410,6 +421,7 @@
                     all: jsonDict
                 },
                 success: function(data) {
+                    running = false;
                     stopTimer(refresh);
                     $('#container-1').empty();
                     var res_table = data['res_table'];
