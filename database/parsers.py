@@ -14,10 +14,12 @@ import xlrd
 from xlutils.copy import copy
 import xlwt
 from xlwt import Style
+import time
 
 from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
-from utils import remove_proj, purge, handle_uploaded_file
+from utils import purge, handle_uploaded_file
+from models import addQueue, getQueue, subQueue
 
 
 stage = ''
@@ -127,9 +129,9 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
     align_ref = ''
     template_ref = ''
     taxonomy_ref = ''
-    batch.seek(0)
 
     if raw:
+        batch.seek(0)
         for row in batch:
             if "align.seqs" in row:
                 for item in row.split(','):
@@ -464,7 +466,7 @@ def reanalyze(request):
     global rep_project
 
     if request.is_ajax():
-        mothurdest = 'mothur/temp'
+        mothurdest = 'mothur/temp/'
         if not os.path.exists(mothurdest):
             os.makedirs(mothurdest)
 
@@ -476,7 +478,6 @@ def reanalyze(request):
         new_tax = str(all['taxonomyDB'])
         new_tax_tag = str(new_tax.split('.')[-2:-1][0])
         new_template = 'template=mothur/reference/template/' + str(all['templateDB'])
-
         projects = Reference.objects.all().filter(refid__in=ids)
 
         for project in projects:
@@ -487,7 +488,9 @@ def reanalyze(request):
             if source == '454_sff':
                 ls_dir = os.listdir(dest)
                 for afile in ls_dir:
-                    shutil.copyfile(afile, mothurdest)
+                    srcStr = str(dest) + '/' + str(afile)
+                    destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
             if source == '454_fastq':
                 file_list = []
@@ -495,7 +498,7 @@ def reanalyze(request):
                     file_list.append(afile)
 
                 tempList = []
-                if len(file_list) > 1:
+                if file_list.__len__() > 1:
                     for each in file_list:
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
@@ -522,7 +525,7 @@ def reanalyze(request):
                     file_list.append(afile)
 
                 tempList = []
-                if len(file_list) > 1:
+                if file_list.__len__() > 1:
                     for each in file_list:
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
@@ -545,15 +548,21 @@ def reanalyze(request):
                         handle_uploaded_file(file, dest, each)
 
                 for afile in glob.glob(r'% s/*.oligos' % dest):
-                    shutil.copy(afile, mothurdest)
+                    srcStr = str(dest) + '/' + str(afile)
+                    destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
                 for afile in glob.glob(r'% s/*.batch' % dest):
-                    shutil.copy(afile, mothurdest)
+                    srcStr = str(dest) + '/' + str(afile)
+                    destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
             if source == 'miseq':
                 ls_dir = os.listdir(dest)
                 for afile in ls_dir:
-                    shutil.copyfile(afile, mothurdest)
+                    srcStr = str(dest) + '/' + str(afile)
+                    destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
             orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
             orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
@@ -588,18 +597,22 @@ def reanalyze(request):
                 print("Error with batch file: ", e)
 
             p_uuid = project.projectid.projectid
-            refid = project.refid
+
             dest = project.path
             pType = project.projectid.projectType
 
             shutil.copy('% s/final_meta.xls' % dest, '% s/final_meta.xls' % mothurdest)
 
-            remove_proj(dest)
+            Reference.objects.get(path=dest).delete()
 
             if not os.path.exists(dest):
                 os.makedirs(dest)
 
             shutil.copy('% s/final_meta.xls' % mothurdest, '% s/final_meta.xls' % dest)
+
+            addQueue()
+            while getQueue() > 1:
+                time.sleep(5)
 
             try:
                 mothur(dest, source)
@@ -610,25 +623,28 @@ def reanalyze(request):
                     content_type="application/json"
                 )
 
+            subQueue()
+
             metaName = 'final_meta.xls'
             metaFile = '/'.join([dest, metaName])
+
             parse_project(metaFile, p_uuid)
 
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
                 userID = str(request.user.id)
 
-                f = xlrd.open_workbook(file_contents=metaFile)
+                f = xlrd.open_workbook(metaFile)
                 sheet = f.sheet_by_name('Project')
                 num_samp = int(sheet.cell_value(rowx=5, colx=0))
 
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
 
-            with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
+            with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
-            with open('% s/mothur.taxonomy' % dest, 'rb') as file3:
-                with open('% s/mothur.shared' % dest, 'rb') as file4:
+            with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                with open('% s/final.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid, refDict)
 
         return HttpResponse(

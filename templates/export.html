@@ -42,7 +42,7 @@
                 onLazyRead: function (node) {
                     node.appendAjax({
                         url: '/getSampleCatTreeChildren/',
-                        data: {pType: node.data.tooltip, field: node.data.title},
+                        data: {pType: node.data.pType, field: node.data.title},
                         success: function (node) {
                             if (node.childList == undefined) {
                                 alert('No samples are available for this variable!');
@@ -73,7 +73,7 @@
                 onLazyRead: function (node) {
                     node.appendAjax({
                         url: '/getSampleQuantTreeChildren/',
-                        data: {pType: node.data.tooltip, field: node.data.title},
+                        data: {pType: node.data.pType, field: node.data.title},
                         success: function (node) {
                             if (node.childList == undefined) {
                                 alert('No samples are available for this variable!');

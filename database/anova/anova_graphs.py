@@ -307,8 +307,10 @@ def getCatUnivData(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+                finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
+
                 if DepVar == 4:
-                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                    finalDF['copies'] = finalDF.abund * finalDF.rRNA_copies
                     finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
                 else:
                     finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
@@ -373,7 +375,6 @@ def getCatUnivData(request):
                     valList = []
 
                     grouped2 = group1.groupby(fieldListCat)
-
                     for name2, group2 in grouped2:
                         if isinstance(name2, unicode):
                             trt = name2
@@ -398,7 +399,12 @@ def getCatUnivData(request):
 
                     r.assign("df", group1)
 
-                    trtString = " * ".join(fieldList)
+                    newFieldList = []
+                    for key in metaDictCat:
+                        if len(set(metaDictCat[key])) > 1:
+                            newFieldList.append(key)
+
+                    trtString = " * ".join(newFieldList)
 
                     if DepVar == 1:
                         anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
@@ -475,20 +481,20 @@ def getCatUnivData(request):
                                             D += tempStuff[i] + '\n'
                     else:
                         p_val = 1.0
-                        D = 'One or more of your groups only had 1 observation, ANOVA was not run\n'
+                        D = 'ANOVA cannot be performed, please check that you have more than one treatment level and appropriate replication.\n'
 
                     result += '===============================================\n'
                     result += 'Taxa level: ' + str(name1[0]) + '\n'
                     result += 'Taxa name: ' + str(name1[1]) + '\n'
                     result += 'Taxa ID: ' + str(name1[2]) + '\n'
                     if DepVar == 1:
-                        result += 'Dependent Variable: Abundance (counts)' + '\n'
+                        result += 'Dependent Variable: Relative Abundance (proportion)' + '\n'
                     elif DepVar == 2:
                         result += 'Dependent Variable: Species Richness' + '\n'
                     elif DepVar == 3:
                         result += 'Dependent Variable: Species Diversity' + '\n'
                     elif DepVar == 4:
-                        result += 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
+                        result += 'Dependent Variable: Total Abundance (rRNA gene copies)' + '\n'
 
                     result += '\nANCOVA table:\n'
                     D = D.decode('utf-8')
@@ -504,11 +510,11 @@ def getCatUnivData(request):
                 try:
                     base[RID] = 'Step 4 of 4: Formatting graph data for display...'
 
+                    grouped2 = group1.groupby(fieldListCat).mean()
+
                     if sig_only == 1:
                         if p_val < 0.05:
                             dataList = []
-                            grouped2 = group1.groupby(fieldListCat).mean()
-
                             if DepVar == 1:
                                 dataList.extend(list(grouped2['abund'].T))
                             elif DepVar == 2:
@@ -524,22 +530,9 @@ def getCatUnivData(request):
                             seriesDict['data'] = dataList
                             seriesList.append(seriesDict)
 
-                            xAxisDict['categories'] = trtList
-
-                            yTitle = {}
-                            if DepVar == 1:
-                                yTitle['text'] = 'Abundance (counts)'
-                            elif DepVar == 2:
-                                yTitle['text'] = 'Species Richness'
-                            elif DepVar == 3:
-                                yTitle['text'] = 'Species Diversity'
-                            elif DepVar == 4:
-                                yTitle['text'] = 'Abundance (16S rRNA copies)'
-                            yAxisDict['title'] = yTitle
-
                     if sig_only == 0:
                         dataList = []
-                        grouped2 = group1.groupby(fieldListCat).mean()
+
 
                         if DepVar == 1:
                             dataList.extend(list(grouped2['abund'].T))
@@ -556,30 +549,31 @@ def getCatUnivData(request):
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
 
-                        if catList.__len__() == 1:
-                            xAxisDict['categories'] = catList[0]
-                        else:
-                            finalList = []
-                            finalList.append(recLabel("", catList))
-                            xAxisDict['categories'] = finalList
-
-                        yTitle = {}
-                        if DepVar == 1:
-                            yTitle['text'] = 'Abundance (counts)'
-                        elif DepVar == 2:
-                            yTitle['text'] = 'Species Richness'
-                        elif DepVar == 3:
-                            yTitle['text'] = 'Species Diversity'
-                        elif DepVar == 4:
-                            yTitle['text'] = 'Abundance (16S rRNA copies)'
-                        yAxisDict['title'] = yTitle
-
                     colors_idx += 1
                     if colors_idx >= len(colors):
                         colors_idx = 0
 
                 except Exception as e:
                     print("Error with formatting (ANOVA CAT): ", e)
+
+            yTitle = {}
+            if DepVar == 1:
+                yTitle['text'] = 'Relative Abundance (proportion)'
+            elif DepVar == 2:
+                yTitle['text'] = 'Species Richness'
+            elif DepVar == 3:
+                yTitle['text'] = 'Species Diversity'
+            elif DepVar == 4:
+                yTitle['text'] = 'Total Abundance (rRNA gene copies)'
+            yAxisDict['title'] = yTitle
+
+            if catList.__len__() == 1:
+                xAxisDict['categories'] = catList[0]
+            else:
+                g2indexvals = grouped2.index.values
+                level = g2indexvals[0].__len__()
+                labelTree = recLabels(g2indexvals, level)
+                xAxisDict['categories'] = [labelTree]
 
             finalDict['series'] = seriesList
             finalDict['xAxis'] = xAxisDict
@@ -607,17 +601,54 @@ def getCatUnivData(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def recLabel(name, list):
+def recLabels(lists, level):
+    if lists.__len__() == 0:
+        return {}
+
+    first = lists
+    splitset = []
+    for i in range(0, level):
+        children = []
+        parents = []
+        for set in first:
+            children.append(set[set.__len__()-1])
+            parents.append(set[0:set.__len__()-1])
+        first = parents
+        splitset.append(children)
+    return makeLabels(" ", splitset)
+
+
+def makeLabels(name, list):
     retDict = {}
     if list.__len__() == 1:
+        # final layer
         retDict['name'] = name
         retDict['categories'] = list[0]
         return retDict
-    subList = []
-    for stuff in list[0]:
-        subList.append(recLabel(stuff, list[1:]))
+
+    # change here
+    children = []
+    first = list[list.__len__()-1][0]
+    iter = 0
+    start = 0
+    for stuff in list[list.__len__()-1]:
+        if stuff != first:
+            sublist = []
+            for otherstuff in list[0:list.__len__()-1]:
+                sublist.append(otherstuff[start:iter])
+            children.append(makeLabels(first, sublist))
+            first = stuff
+            start = iter
+        iter += 1
+
+    # Repeat else condition at the end of the list
+    sublist = []
+    for otherstuff in list[0:list.__len__()-1]:
+        sublist.append(otherstuff[start:iter])
+    children.append(makeLabels(first, sublist))
+
     retDict['name'] = name
-    retDict['categories'] = subList
+    retDict['categories'] = children
     return retDict
 
 
@@ -853,8 +884,10 @@ def getQuantUnivData(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+                finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
+
                 if DepVar == 4:
-                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
+                    finalDF['copies'] = finalDF.abund * finalDF.rRNA_copies
                     finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
                 else:
                     finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
@@ -921,9 +954,14 @@ def getQuantUnivData(request):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                newFieldList = []
+                for key in metaDict:
+                    if len(set(metaDict[key])) > 1:
+                        newFieldList.append(key)
+
                 r.assign("df", group1)
-                if len(fieldList) > 1:
-                    trtString = "*".join(fieldList)
+                if len(newFieldList) > 1:
+                    trtString = "*".join(newFieldList)
                 else:
                     trtString = fieldListQuant[0]
 
@@ -972,7 +1010,7 @@ def getQuantUnivData(request):
 
                 else:
                     p_value = 1.0
-                    D = 'One or more of your groups only had 1 observation, ANOVA was not run\n'
+                    D = 'ANOVA cannot be performed, please check that you have more than one treatment level and appropriate replication.\n'
 
                 resultDF = r.get("df")
                 resultDF = resultDF.rename(columns=lambda x: x.strip())
@@ -981,13 +1019,13 @@ def getQuantUnivData(request):
                 result += 'Taxa name: ' + str(name1[1]) + '\n'
                 result += 'Taxa ID: ' + str(name1[2]) + '\n'
                 if DepVar == 1:
-                    result += 'Dependent Variable: Abundance (counts)' + '\n'
+                    result += 'Dependent Variable: Relative Abundance (proportion)' + '\n'
                 elif DepVar == 2:
                     result += 'Dependent Variable: Species Richness' + '\n'
                 elif DepVar == 3:
                     result += 'Dependent Variable: Species Diversity' + '\n'
                 elif DepVar == 4:
-                    result += 'Dependent Variable: Abundance (16S rRNA copies)' + '\n'
+                    result += 'Dependent Variable: Total Abundance (rRNA gene copies)' + '\n'
 
                 result += '\nANCOVA table:\n'
                 D = D.decode('utf-8')
@@ -1192,13 +1230,13 @@ def getQuantUnivData(request):
 
                 yTitle = {}
                 if DepVar == 1:
-                    yTitle['text'] = 'Abundance (counts)'
+                    yTitle['text'] = 'Relative Abundance (proportion)'
                 elif DepVar == 2:
                     yTitle['text'] = 'Species Richness'
                 elif DepVar == 3:
                     yTitle['text'] = 'Shannon Diversity'
                 elif DepVar == 4:
-                    yTitle['text'] = 'Abundance (16S rRNA copies)'
+                    yTitle['text'] = 'Total Abundance (rRNA gene copies)'
                 yAxisDict['title'] = yTitle
 
                 colors_idx += 1

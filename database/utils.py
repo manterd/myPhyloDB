@@ -54,7 +54,6 @@ def remove_proj(path):
     Reference.objects.get(path=path).delete()
     if os.path.exists(path):
         shutil.rmtree(path)
-
     if not Reference.objects.filter(projectid_id=p_uuid).exists():
         Project.objects.get(projectid=p_uuid).delete()
         path = "/".join(["uploads", str(p_uuid)])

@@ -19,7 +19,7 @@ class UploadForm2(forms.Form):
     docfile13 = forms.FileField(label='Select 3-column contig file:')
     fastq_files = MultiFileField()
     docfile15 = forms.FileField(label='Select Mothur batch file:')
-    source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed mothur files'), ('454_sff', '454 sff files'), ('454_fastq', '454 fna/qual files'), ('miseq', 'Illumina/MiSeq files')))
+    source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed mothur files'), ('454_sff', 'sff files'), ('454_fastq', 'fna/qual files'), ('miseq', 'fastq files')))
 
 
 class UploadForm4(forms.Form):

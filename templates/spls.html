@@ -348,7 +348,7 @@
                     $("#image").show();
                     {% static "" as baseUrl %}
                     var d = new Date();
-                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ user }}.spls.jpg?"+d.getTime());
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.spls.jpg?"+d.getTime());
 
                     $("#run").css("background-color", "green");
 
@@ -503,8 +503,8 @@
         <tr>
             <td style="width: 36%; text-align: left">
                 Dependent variable:<select id="DepVar">
-                <option value="1">Abundance (counts)</option>
-                <option value="4">Abundance (16S rRNA copies)</option>
+                <option value="1">Relative Abundance (proportion)</option>
+                <option value="4">Total Abundance (rRNA gene copies)</option>
                 <option value="2">Species Richness</option>
                 <option value="3">Species Diversity</option>
                 </select>

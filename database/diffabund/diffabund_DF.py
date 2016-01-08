@@ -8,13 +8,6 @@ def catDiffAbundDF(idDict):
     soilTableList = Soil._meta.get_all_field_names()
     usrTableList = UserDefined._meta.get_all_field_names()
 
-    #metaDF = pd.DataFrame()
-    #idList = []
-    #fieldList = []
-    #for key in idDict:
-    #    fieldList.append(key)
-    #    idList.extend(idDict[key])
-
     metaDF = pd.DataFrame()
     index = 0
     for key in idDict:
