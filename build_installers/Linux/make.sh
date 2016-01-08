@@ -10,4 +10,4 @@ tar -zcvf myPhyloDB.tar.gz myPhyloDB/*
 mv myPhyloDB.tar.gz $HOME/PycharmProjects/myPhyloDB/build_installers/Linux/myPhyloDB.tar.gz
 cd $HOME/PycharmProjects/myPhyloDB/build_installers/Linux
 chmod +x ./install.sh
-$HOME/megastep-makeself-be1c982/makeself.sh . myPhyloDB_v.1.1.1_Linux_x64_install.sh "myPhyloDB installer..." ./install.sh
+$HOME/megastep-makeself-be1c982/makeself.sh . myPhyloDB_v.1.1.2_Linux_x64_install.sh "myPhyloDB installer..." ./install.sh
