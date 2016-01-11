@@ -12,7 +12,9 @@
 {% endblock user %}
 
 {% block menu_item %}
-    <p><input id="run" type="submit" value="Run Analysis!"/></p>
+    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
+    <br>
+    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
 {% endblock menu_item %}
 
 {% block javascript %}
@@ -277,6 +279,11 @@
                 chooseData();
             });
 
+            $("#stop").show().click(function () {
+                running = false;
+                stopAll();
+            });
+
             $("#button1").change(function () {
                 button1 = $(this).val();
                 chooseDisplay();
@@ -490,6 +497,27 @@
                 });
             });
         });
+
+        function stopAll() {
+            clearInterval(refresh);
+            $.ajax({
+                url: '/stopANOVA/',
+                type: 'GET',
+                dataType: 'json',
+                data: {},
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['error'];
+                    if (button1 == 1) {
+                        $('#container-1').empty().append(stage);
+                    } else if (button1 == 2) {
+                        $('#container-2').empty().append(stage);
+                    }
+                }
+            });
+        }
 
         function updateStatus(RID) {
             $.ajax({
@@ -816,6 +844,9 @@
                         var error = data['error'];
                         if (error != "none") {
                             alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
                         }
                         if (empty == 0) {
                             $("#container-1").empty().append('No significant tests!');
@@ -824,7 +855,6 @@
                         }
                         var text = data['text'];
                         $('#text-1').val(text);
-                        $("#run").css("background-color", "green");
                     }
                 });
             }
@@ -979,6 +1009,9 @@
                     var error = data['error'];
                     if (error != "none") {
                         alert(error);
+                        $("#run").css("background-color", "red");
+                    } else {
+                        $("#run").css("background-color", "green");
                     }
                     if (empty == 0) {
                         $("#container-2").empty().append('No significant regressions!');
@@ -987,8 +1020,6 @@
                     }
                     var text = data['text'];
                     $('#text-2').val(text);
-
-                    $("#run").css("background-color", "green");
                 }
             });
         }

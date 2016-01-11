@@ -52,6 +52,7 @@ urlpatterns = patterns('',
     url(r'^getQuantUnivData/$', 'database.anova.anova_graphs.getQuantUnivData', name='getQuantUnivData'),
     url(r'^statusANOVA/$', 'database.anova.anova_graphs.statusANOVA', name='statusANOVA'),
     url(r'^removeRIDANOVA/$', 'database.anova.anova_graphs.removeRIDANOVA', name='removeRIDANOVA'),
+    url(r'^stopANOVA/$', 'database.anova.anova_graphs.stopANOVA', name='stopANOVA'),
 
     url(r'^getPCoA/$', 'database.pcoa.pcoa_graphs.getPCoA', name='getPCoA'),
     url(r'^statusPCoA/$', 'database.pcoa.pcoa_graphs.statusPCoA', name='statusPCoA'),
