@@ -65,10 +65,10 @@ def stopDiffAbund(request):
     global res, thread2, stop2
     if request.is_ajax():
         stop2 = True
-        myDict = {}
         try:
             thread2.terminate()
             thread2.join()
+            myDict = {}
             myDict['error'] = 'Your analysis has been stopped!'
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
@@ -79,15 +79,15 @@ def stopDiffAbund(request):
 def getDiffAbund(request):
     global res, thread2, stop2
     if request.is_ajax():
+        stop2 = False
         thread2 = stoppableThread(target=loopCat, args=(request,))
         thread2.start()
         thread2.join()
-        stop2 = False
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global res, base, time1, TimeDiff, stop2
+    global res, base, stage, time1, TimeDiff, stop2
     try:
         while True:
             # Get selected samples from cookie and query database for sample info
@@ -380,8 +380,8 @@ def loopCat(request):
             res = simplejson.dumps(myDict)
             raise
 
-    finally:
-        return None
+    #finally:
+    #    return None
 
 
 def findTaxa(id):

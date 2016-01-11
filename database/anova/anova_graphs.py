@@ -66,10 +66,10 @@ def stopANOVA(request):
     global res, thread1, stop1
     if request.is_ajax():
         stop1 = True
-        myDict = {}
         try:
             thread1.terminate()
             thread1.join()
+            myDict = {}
             myDict['error'] = 'Your analysis has been stopped!'
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
@@ -620,8 +620,8 @@ def loopCat(request):
             res = simplejson.dumps(myDict)
             raise
 
-    finally:
-        return None
+    #finally:
+    #    return None
 
 
 def recLabels(lists, level):
@@ -1283,6 +1283,6 @@ def loopQuant(request):
             res = simplejson.dumps(myDict)
             raise
 
-    finally:
-        return None
+    #finally:
+    #    return None
 

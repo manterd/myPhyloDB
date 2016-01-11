@@ -67,10 +67,10 @@ def stopSPLS(request):
     global res, thread5, stop5
     if request.is_ajax():
         stop5 = True
-        myDict = {}
         try:
             thread5.terminate()
             thread5.join()
+            myDict = {}
             myDict['error'] = 'Your analysis has been stopped!'
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
@@ -89,7 +89,7 @@ def getSPLS(request):
 
 
 def loopCat(request):
-    global res, base, time1, TimeDiff, stop5
+    global res, base, stage, time1, TimeDiff, stop5
     try:
         while True:
             samples = Sample.objects.all()
@@ -596,6 +596,7 @@ def loopCat(request):
 
                 base[RID] = 'Step 4 of 5: Formatting graph data for display...done!'
                 base[RID] = 'Step 5 of 5: Formatting sPLS coefficient table...'
+                finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return None
     except:
@@ -608,8 +609,8 @@ def loopCat(request):
             res = simplejson.dumps(myDict)
             raise
 
-    finally:
-        return None
+    #finally:
+    #    return None
 
 
 def removegraphSPLS(request):

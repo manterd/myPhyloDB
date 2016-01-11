@@ -66,10 +66,10 @@ def stopPCoA(request):
     global res, thread4, stop4
     if request.is_ajax():
         stop4 = True
-        myDict = {}
         try:
             thread4.terminate()
             thread4.join()
+            myDict = {}
             myDict['error'] = 'Your analysis has been stopped!'
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
@@ -77,7 +77,7 @@ def stopPCoA(request):
             pass
 
 
-def getDiffAbund(request):
+def getPCoA(request):
     global res, thread4, stop4
     if request.is_ajax():
         thread4 = stoppableThread(target=loopCat, args=(request,))
@@ -88,7 +88,7 @@ def getDiffAbund(request):
 
 
 def loopCat(request):
-    global res, base, time1, TimeDiff, stop4
+    global res, base, stage, time1, TimeDiff, stop4
     try:
         while True:
             samples = Sample.objects.all()
@@ -715,8 +715,8 @@ def loopCat(request):
             res = simplejson.dumps(myDict)
             raise
 
-    finally:
-        return None
+    #finally:
+    #    return None
 
 
 def removegraphPCoA(request):

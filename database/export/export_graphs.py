@@ -65,10 +65,10 @@ def stopExport(request):
     global res, thread3, stop3
     if request.is_ajax():
         stop3 = True
-        myDict = {}
         try:
             thread3.terminate()
             thread3.join()
+            myDict = {}
             myDict['error'] = 'Your analysis has been stopped!'
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
@@ -366,8 +366,8 @@ def loopCat(request):
             res = simplejson.dumps(myDict)
             raise
 
-    finally:
-        return None
+    #finally:
+    #    return None
 
 
 
