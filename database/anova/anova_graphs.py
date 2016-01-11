@@ -58,18 +58,18 @@ def removeRIDANOVA(request):
         return False
 
 
-thread = stoppableThread()
-stop = False
+thread1 = stoppableThread()
+stop1 = False
 
 
 def stopANOVA(request):
-    global res, thread, stop
+    global res, thread1, stop1
     if request.is_ajax():
-        stop = True
+        stop1 = True
         myDict = {}
         try:
-            thread.terminate()
-            thread.join()
+            thread1.terminate()
+            thread1.join()
             myDict['error'] = 'Your analysis has been stopped!'
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
@@ -78,27 +78,27 @@ def stopANOVA(request):
 
 
 def getCatUnivData(request):
-    global res, thread, stop
+    global res, thread1, stop1
     if request.is_ajax():
-        thread = stoppableThread(target=loopCat, args=(request,))
-        thread.start()
-        thread.join()
-        stop = False
+        thread1 = stoppableThread(target=loopCat, args=(request,))
+        thread1.start()
+        thread1.join()
+        stop1 = False
         return HttpResponse(res, content_type='application/json')
 
 
 def getQuantUnivData(request):
-    global res, thread, stop
+    global res, thread1, stop1
     if request.is_ajax():
-        thread = stoppableThread(target=loopQuant, args=(request,))
-        thread.start()
-        thread.join()
-        stop = False
+        thread1 = stoppableThread(target=loopQuant, args=(request,))
+        thread1.start()
+        thread1.join()
+        stop1 = False
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff
+    global res, base, stage, time1, TimeDiff, stop1
     try:
         while True:
             # Get selected samples from cookie and query database for sample info
@@ -611,7 +611,7 @@ def loopCat(request):
                 return None
 
     except:
-        if not stop:
+        if not stop1:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
@@ -676,7 +676,7 @@ def makeLabels(name, list):
 
 
 def loopQuant(request):
-    global res, base, time1, TimeDiff
+    global res, base, time1, TimeDiff, stop1
     try:
         while True:
             samples = Sample.objects.all()
@@ -1274,7 +1274,7 @@ def loopQuant(request):
                 return None
 
     except:
-        if not stop:
+        if not stop1:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)

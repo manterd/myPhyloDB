@@ -1,6 +1,7 @@
 import datetime
 from django.http import HttpResponse
 from django.db.models import Sum
+import logging
 import numpy as np
 import pandas as pd
 import pickle
@@ -9,7 +10,7 @@ import simplejson
 
 from database.export.export_DF import UnivMetaDF, normalizeUniv
 from database.models import Sample, Profile
-from database.utils import multidict, taxaProfileDF
+from database.utils import multidict, taxaProfileDF, stoppableThread
 
 
 base = {}
@@ -17,6 +18,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+LOG_FILENAME = 'error_log.txt'
 
 
 def statusExport(request):
@@ -55,21 +57,46 @@ def removeRIDExport(request):
         return False
 
 
-def getExCatData(request):
-    try:
-        try:
-            global base, stage, time1, TimeDiff
+thread3 = stoppableThread()
+stop3 = False
 
+
+def stopExport(request):
+    global res, thread3, stop3
+    if request.is_ajax():
+        stop3 = True
+        myDict = {}
+        try:
+            thread3.terminate()
+            thread3.join()
+            myDict['error'] = 'Your analysis has been stopped!'
+            res = simplejson.dumps(myDict)
+            return HttpResponse(res, content_type='application/json')
+        except:
+            pass
+
+
+def getExCatData(request):
+    global res, thread3, stop3
+    if request.is_ajax():
+        thread3 = stoppableThread(target=loopCat, args=(request,))
+        thread3.start()
+        thread3.join()
+        stop3 = False
+        return HttpResponse(res, content_type='application/json')
+
+
+def loopCat(request):
+    global res, base, stage, time1, TimeDiff, stop3
+    try:
+        while True:
             # Get selected samples from cookie and query database for sample info
             samples = Sample.objects.all()
             samples.query = pickle.loads(request.session['selected_samples'])
             selected = samples.values_list('sampleid')
             qs1 = Sample.objects.all().filter(sampleid__in=selected)
-        except Exception as e:
-            print("Error starting EXPORT: ", e)
 
-        if request.is_ajax():
-            try:
+            if request.is_ajax():
                 # Get variables from web page
                 allJson = request.GET["all"]
                 all = simplejson.loads(allJson)
@@ -246,11 +273,6 @@ def getExCatData(request):
                     taxaDict['Species'] = qs3
 
                 base[RID] = 'Step 1 of 4: Querying database...done!'
-            except Exception as e:
-                print("Error querying database (EXPORT CAT): ", e)
-
-            # Normalize data
-            try:
                 base[RID] = 'Step 2 of 4: Normalizing data...'
 
                 normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
@@ -266,11 +288,6 @@ def getExCatData(request):
                 finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
                 base[RID] = 'Step 2 of 4: Normalizing data...done!'
-
-            except Exception as e:
-                print("Error with normalization (EXPORT CAT): ", e)
-
-            try:
                 base[RID] = 'Step 3 of 4: Formatting biome data...'
 
                 biome = {}
@@ -326,33 +343,31 @@ def getExCatData(request):
                 biome['data'] = dataList
 
                 base[RID] = 'Step 3 of 4: Formatting biome data...done!'
+                base[RID] = 'Step 4 of 4: Formatting result table...'
 
-            except Exception as e:
-                print("Error finishing formatting (EXPORT CAT): ", e)
-
-            base[RID] = 'Step 4 of 4: Formatting result table...'
-
-            res_table = finalDF.to_html(classes="table display")
-            res_table = res_table.replace('border="1"', 'border="0"')
-            finalDict['res_table'] = str(res_table)
+                res_table = finalDF.to_html(classes="table display")
+                res_table = res_table.replace('border="1"', 'border="0"')
+                finalDict['res_table'] = str(res_table)
 
 
-            biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
-            finalDict['error'] = 'none'
-            finalDict['biome'] = str(biome_json)
-            res = simplejson.dumps(finalDict)
+                biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
+                finalDict['error'] = 'none'
+                finalDict['biome'] = str(biome_json)
+                res = simplejson.dumps(finalDict)
+                base[RID] = 'Step 4 of 4: Formatting result table...done!'
+                return None
+    except:
+        if not stop3:
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+            myDict = {}
+            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            res = simplejson.dumps(myDict)
+            raise
 
-            base[RID] = 'Step 4 of 4: Formatting result table...done!'
+    finally:
+        return None
 
-            return HttpResponse(res, content_type='application/json')
-
-    except Exception as e:
-        print "Error with EXPORT: ", e
-        state = "Error with EXPORT: " + str(e)
-
-        myDict = {}
-        myDict['error'] = state
-        res = simplejson.dumps(myDict)
-        return HttpResponse(res, content_type='application/json')
 
 

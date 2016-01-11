@@ -47,6 +47,7 @@ urlpatterns = patterns('',
     url(r'^getExCatData/$', 'database.export.export_graphs.getExCatData', name='getExCatData'),
     url(r'^statusExport/$', 'database.export.export_graphs.statusExport', name='statusExport'),
     url(r'^statusRIDExport/$', 'database.export.export_graphs.removeRIDExport', name='removeRIDExport'),
+    url(r'^stopExport/$', 'database.export.export_graphs.stopExport', name='stopExport'),
 
     url(r'^getCatUnivData/$', 'database.anova.anova_graphs.getCatUnivData', name='getCatUnivData'),
     url(r'^getQuantUnivData/$', 'database.anova.anova_graphs.getQuantUnivData', name='getQuantUnivData'),
@@ -58,15 +59,19 @@ urlpatterns = patterns('',
     url(r'^statusPCoA/$', 'database.pcoa.pcoa_graphs.statusPCoA', name='statusPCoA'),
     url(r'^removeRIDPCoA/$', 'database.pcoa.pcoa_graphs.removeRIDPCoA', name='removeRIDPCoA'),
     url(r'^removegraphPCoA/$', 'database.pcoa.pcoa_graphs.removegraphPCoA', name='removegraphPCoA'),
+    url(r'^stopPCoA/$', 'database.pcoa.pcoa_graphs.stopPCoA', name='stopPCoA'),
 
     url(r'^getSPLS/$', 'database.spls.spls_graphs.getSPLS', name='getSPLS'),
     url(r'^statusSPLS/$', 'database.spls.spls_graphs.statusSPLS', name='statusSPLS'),
     url(r'^removeRIDSPLS/$', 'database.spls.spls_graphs.removeRIDSPLS', name='removeRIDSPLS'),
     url(r'^removegraphSPLS/$', 'database.spls.spls_graphs.removegraphSPLS', name='removegraphSPLS'),
+   url(r'^stopSPLS/$', 'database.spls.spls_graphs.stopSPLS', name='stopSPLS'),
 
     url(r'^updateDiffAbund/$', 'database.diffabund.diffabund_graphs.updateDiffAbund', name='updateDiffAbund'),
     url(r'^getDiffAbund/$', 'database.diffabund.diffabund_graphs.getDiffAbund', name='getDiffAbund'),
     url(r'^removeRIDDIFF/$', 'database.diffabund.diffabund_graphs.removeRIDDIFF', name='removeRIDDIFF'),
+    url(r'^stopDiffAbund/$', 'database.diffabund.diffabund_graphs.stopDiffAbund', name='stopDiffAbund'),
+
 )
 
 

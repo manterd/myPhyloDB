@@ -1,5 +1,7 @@
+import datetime
 from django.http import HttpResponse
 from django.db.models import Sum
+import logging
 import pandas as pd
 import pickle
 import simplejson
@@ -8,7 +10,7 @@ from pyper import *
 
 from database.diffabund.diffabund_DF import catDiffAbundDF
 from database.models import Sample, Profile
-from database.utils import multidict, taxaProfileDF
+from database.utils import multidict, taxaProfileDF, stoppableThread
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
 
@@ -17,6 +19,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+LOG_FILENAME = 'error_log.txt'
 
 
 def updateDiffAbund(request):
@@ -54,176 +57,205 @@ def removeRIDDIFF(request):
     except:
         return False
 
+thread2 = stoppableThread()
+stop2 = False
+
+
+def stopDiffAbund(request):
+    global res, thread2, stop2
+    if request.is_ajax():
+        stop2 = True
+        myDict = {}
+        try:
+            thread2.terminate()
+            thread2.join()
+            myDict['error'] = 'Your analysis has been stopped!'
+            res = simplejson.dumps(myDict)
+            return HttpResponse(res, content_type='application/json')
+        except:
+            pass
+
 
 def getDiffAbund(request):
+    global res, thread2, stop2
+    if request.is_ajax():
+        thread2 = stoppableThread(target=loopCat, args=(request,))
+        thread2.start()
+        thread2.join()
+        stop2 = False
+        return HttpResponse(res, content_type='application/json')
+
+
+def loopCat(request):
+    global res, base, time1, TimeDiff, stop2
     try:
-        global base, time1, TimeDiff
-        # Get selected samples from cookie and query database for sample info
-        samples = Sample.objects.all()
-        samples.query = pickle.loads(request.session['selected_samples'])
-        selected = samples.values_list('sampleid')
-        qs1 = Sample.objects.all().filter(sampleid__in=selected)
+        while True:
+            # Get selected samples from cookie and query database for sample info
+            samples = Sample.objects.all()
+            samples.query = pickle.loads(request.session['selected_samples'])
+            selected = samples.values_list('sampleid')
+            qs1 = Sample.objects.all().filter(sampleid__in=selected)
 
-        if request.is_ajax():
-            # Get variables from web page
-            allJson = request.GET["all"]
-            all = simplejson.loads(allJson)
+            if request.is_ajax():
+                # Get variables from web page
+                allJson = request.GET["all"]
+                all = simplejson.loads(allJson)
 
-            RID = str(all["RID"])
-            time1[RID] = time.time()
-            base[RID] = 'Step 1 of 6: Querying database...'
+                RID = str(all["RID"])
+                time1[RID] = time.time()
+                base[RID] = 'Step 1 of 6: Querying database...'
 
-            taxaLevel = int(all["taxaLevel"])
-            NormMeth = int(all["NormMeth"])
-            FdrVal = float(all["FdrVal"])
-            size = int(all["NormVal"])
-            theta = float(all["Theta"])
+                taxaLevel = int(all["taxaLevel"])
+                NormMeth = int(all["NormMeth"])
+                FdrVal = float(all["FdrVal"])
+                size = int(all["NormVal"])
+                theta = float(all["Theta"])
 
-            # Generate a list of sequence reads per sample
-            countList = []
-            for sample in qs1:
-                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                if total['count__sum'] is not None:
-                    countList.append(total['count__sum'])
+                # Generate a list of sequence reads per sample
+                countList = []
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None:
+                        countList.append(total['count__sum'])
 
-            # Remove blank samples if below the sequence threshold set by user (rarefaction)
-            newList = []
-            result = 'Data Normalization:\n'
-            for sample in qs1:
-                total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                if total['count__sum'] is not None and total['count__sum'] >= size:
-                    id = sample.sampleid
-                    newList.append(id)
+                # Remove blank samples if below the sequence threshold set by user (rarefaction)
+                newList = []
+                result = 'Data Normalization:\n'
+                for sample in qs1:
+                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                    if total['count__sum'] is not None and total['count__sum'] >= size:
+                        id = sample.sampleid
+                        newList.append(id)
 
-            # Get dict of selected meta variables
-            metaStr = all["metaVals"]
-            fieldList = []
-            valueList = []
-            idDict = {}
-            try:
-                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-                for key in sorted(metaDict):
-                    fieldList.append(key)
-                    valueList.extend(metaDict[key])
+                # Get dict of selected meta variables
+                metaStr = all["metaVals"]
+                fieldList = []
+                valueList = []
+                idDict = {}
+                try:
+                    metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
+                    for key in sorted(metaDict):
+                        fieldList.append(key)
+                        valueList.extend(metaDict[key])
 
-                idStr = all["metaIDs"]
-                idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
+                    idStr = all["metaIDs"]
+                    idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
 
-            except:
-                placeholder = ''
+                except:
+                    placeholder = ''
 
-            metaDF = catDiffAbundDF(idDict)
+                metaDF = catDiffAbundDF(idDict)
 
-            lenA, col = metaDF.shape
+                lenA, col = metaDF.shape
 
-            metaDF = metaDF.ix[newList]
-            metaDF.dropna(inplace=True)
-            lenB, col = metaDF.shape
+                metaDF = metaDF.ix[newList]
+                metaDF.dropna(inplace=True)
+                lenB, col = metaDF.shape
 
-            selectRem = len(selected) - lenA
-            normRem = lenA - lenB
+                selectRem = len(selected) - lenA
+                normRem = lenA - lenB
 
-            result += str(lenB) + ' selected samples were included in the final analysis.\n'
-            if normRem > 0:
-                result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
-            if selectRem:
-                result += str(selectRem) + ' samples were deselected by the user.\n'
+                result += str(lenB) + ' selected samples were included in the final analysis.\n'
+                if normRem > 0:
+                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
+                if selectRem:
+                    result += str(selectRem) + ' samples were deselected by the user.\n'
 
-            # Create unique list of samples in meta dataframe (may be different than selected samples)
-            myList = metaDF.index.values.tolist()
+                # Create unique list of samples in meta dataframe (may be different than selected samples)
+                myList = metaDF.index.values.tolist()
 
-            taxaDF = taxaProfileDF(myList)
+                taxaDF = taxaProfileDF(myList)
 
-            base[RID] = 'Step 1 of 6: Querying database...done!'
-            base[RID] = 'Step 2 of 6: Normalizing data...'
+                base[RID] = 'Step 1 of 6: Querying database...done!'
+                base[RID] = 'Step 2 of 6: Normalizing data...'
 
-            # Create combined metadata column
-            if len(fieldList) > 1:
-                for index, row in metaDF.iterrows():
-                    metaDF.ix[index, 'merge'] = "; ".join(row[fieldList])
-            else:
-                metaDF['merge'] = metaDF[fieldList[0]]
+                # Create combined metadata column
+                if len(fieldList) > 1:
+                    for index, row in metaDF.iterrows():
+                        metaDF.ix[index, 'merge'] = "; ".join(row[fieldList])
+                else:
+                    metaDF['merge'] = metaDF[fieldList[0]]
 
-            # Sum by taxa level
-            taxaDF = taxaDF.groupby(level=taxaLevel).sum()
+                # Sum by taxa level
+                taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
-            # Normalization
-            finalDict = {}
-            if os.name == 'nt':
-                r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
-            else:
-                r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
-            r.assign("metaDF", metaDF)
-            r("trt <- factor(metaDF$merge)")
-            r.assign("count", taxaDF)
+                # Normalization
+                finalDict = {}
+                if os.name == 'nt':
+                    r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                else:
+                    r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+                r.assign("metaDF", metaDF)
+                r("trt <- factor(metaDF$merge)")
+                r.assign("count", taxaDF)
 
-            DESeq_error = ''
-            if NormMeth == 1:
-                r("countFilt <- count")
-                r("trtFilt <- trt")
+                DESeq_error = ''
+                if NormMeth == 1:
+                    r("countFilt <- count")
+                    r("trtFilt <- trt")
 
-                r("library(DESeq2)")
-                r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
-                r("dds <- DESeqDataSetFromMatrix(countData=countFilt, colData=colData, design= ~ trt)")
+                    r("library(DESeq2)")
+                    r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
+                    r("dds <- DESeqDataSetFromMatrix(countData=countFilt, colData=colData, design= ~ trt)")
 
-                r("dds <- estimateSizeFactors(dds)")
-                pycds = r.get("sizeFactors(dds)")
+                    r("dds <- estimateSizeFactors(dds)")
+                    pycds = r.get("sizeFactors(dds)")
 
-                if pycds is not None:
-                    DESeq_error = 'no'
-                    r("dds <- estimateDispersions(dds)")
-                    r("dds <- nbinomWaldTest(dds)")
+                    if pycds is not None:
+                        DESeq_error = 'no'
+                        r("dds <- estimateDispersions(dds)")
+                        r("dds <- nbinomWaldTest(dds)")
 
-                elif pycds is None:
-                    DESeq_error = 'yes'
-                    r("sizeFactor <- rep(1, length(trtFilt))")
-                    r("dds$sizeFactor <- sizeFactor")
-                    r("dds <- estimateDispersions(dds)")
-                    r("dds <- nbinomWaldTest(dds)")
+                    elif pycds is None:
+                        DESeq_error = 'yes'
+                        r("sizeFactor <- rep(1, length(trtFilt))")
+                        r("dds$sizeFactor <- sizeFactor")
+                        r("dds <- estimateDispersions(dds)")
+                        r("dds <- nbinomWaldTest(dds)")
 
-            elif NormMeth == 2:
-                r("rs = rowSums(count)")
-                r.assign("theta", theta)
-                r("row <- (rs > quantile(rs, probs=theta))")
-                r("countFilt <- count[row,]")
-                r("trtFilt <- trt")
+                elif NormMeth == 2:
+                    r("rs = rowSums(count)")
+                    r.assign("theta", theta)
+                    r("row <- (rs > quantile(rs, probs=theta))")
+                    r("countFilt <- count[row,]")
+                    r("trtFilt <- trt")
 
-                r("library(DESeq2)")
-                r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
-                r("dds <- DESeqDataSetFromMatrix(countData=countFilt, colData=colData, design= ~ trt)")
+                    r("library(DESeq2)")
+                    r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
+                    r("dds <- DESeqDataSetFromMatrix(countData=countFilt, colData=colData, design= ~ trt)")
 
-                r("dds <- estimateSizeFactors(dds)")
-                pycds = r.get("sizeFactors(dds)")
+                    r("dds <- estimateSizeFactors(dds)")
+                    pycds = r.get("sizeFactors(dds)")
 
-                if pycds is not None:
-                    DESeq_error = 'no'
-                    r("dds <- estimateDispersions(dds)")
-                    r("dds <- nbinomWaldTest(dds)")
+                    if pycds is not None:
+                        DESeq_error = 'no'
+                        r("dds <- estimateDispersions(dds)")
+                        r("dds <- nbinomWaldTest(dds)")
 
-                elif pycds is None:
-                    DESeq_error = 'yes'
-                    r("sizeFactor <- rep(1, length(trtFilt))")
-                    r("dds$sizeFactor <- sizeFactor")
-                    r("dds <- estimateDispersions(dds)")
-                    r("dds <- nbinomWaldTest(dds)")
+                    elif pycds is None:
+                        DESeq_error = 'yes'
+                        r("sizeFactor <- rep(1, length(trtFilt))")
+                        r("dds$sizeFactor <- sizeFactor")
+                        r("dds <- estimateDispersions(dds)")
+                        r("dds <- nbinomWaldTest(dds)")
 
-            if NormMeth == 1 and DESeq_error == 'no':
-                result += 'Data were normalized by DESeq2...\n'
-            elif NormMeth == 1 and DESeq_error == 'yes':
-                result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                result += 'Analysis was run without size normalization...\n'
-                result += 'To try again, select a different sample combination or increase the minimum sample size...\n'
-            elif NormMeth == 2 and DESeq_error == 'no':
-                result += 'Data were normalized by DESeq2+Filter...\n'
-            elif NormMeth == 2 and DESeq_error == 'yes':
-                result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                result += 'Analysis was run without size normalization...\n'
-                result += 'To try again, select a different sample combination or  increase the minimum sample size...\n'
-            result += '===============================================\n\n\n'
+                if NormMeth == 1 and DESeq_error == 'no':
+                    result += 'Data were normalized by DESeq2...\n'
+                elif NormMeth == 1 and DESeq_error == 'yes':
+                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
+                    result += 'Analysis was run without size normalization...\n'
+                    result += 'To try again, select a different sample combination or increase the minimum sample size...\n'
+                elif NormMeth == 2 and DESeq_error == 'no':
+                    result += 'Data were normalized by DESeq2+Filter...\n'
+                elif NormMeth == 2 and DESeq_error == 'yes':
+                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
+                    result += 'Analysis was run without size normalization...\n'
+                    result += 'To try again, select a different sample combination or  increase the minimum sample size...\n'
+                result += '===============================================\n\n\n'
 
-            base[RID] = 'Step 2 of 6: Normalizing data...done!'
-            base[RID] = 'Step 3 of 6: Performing statistical test...'
-            try:
+                base[RID] = 'Step 2 of 6: Normalizing data...done!'
+                base[RID] = 'Step 3 of 6: Performing statistical test...'
+
                 mergeList = metaDF['merge'].tolist()
                 mergeSet = list(set(mergeList))
 
@@ -271,89 +303,85 @@ def getDiffAbund(request):
 
                             base[RID] = 'Step 3 of 6: Performing statistical test...' + str(iterationName) + ' is done!'
 
+                base[RID] = 'Step 3 of 6: Performing statistical test...done!'
+                base[RID] = 'Step 4 of 6: Formatting graph data for display...'
 
-            except Exception as e:
-                print ("Exception! "+str(e.args))
+                seriesList = []
+                xAxisDict = {}
+                yAxisDict = {}
 
-            base[RID] = 'Step 3 of 6: Performing statistical test...done!'
-            base[RID] = 'Step 4 of 6: Formatting graph data for display...'
+                grouped = finalDF.groupby('Comparison')
 
-            seriesList = []
-            xAxisDict = {}
-            yAxisDict = {}
+                listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
+                shapeIterator = 0
 
-            grouped = finalDF.groupby('Comparison')
+                for name, group in grouped:
+                    nosigDF = group[group["p-adjusted"] > FdrVal]
+                    allData = nosigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
+                    sigDF = group[group["p-adjusted"] <= FdrVal]
+                    sigData = sigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
 
-            listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
-            shapeIterator = 0
+                    seriesDict = {}
+                    seriesDict['name'] = "NotSig: " + str(name)
+                    seriesDict['data'] = allData
+                    markerDict = {}
+                    markerDict['symbol'] = listOfShapes[shapeIterator]
+                    seriesDict['marker'] = markerDict
+                    seriesList.append(seriesDict)
 
-            for name, group in grouped:
-                nosigDF = group[group["p-adjusted"] > FdrVal]
-                allData = nosigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
-                sigDF = group[group["p-adjusted"] <= FdrVal]
-                sigData = sigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
+                    seriesDict = {}
+                    seriesDict['name'] = "Sig: " + str(name)
+                    seriesDict['data'] = sigData
+                    markerDict = {}
+                    markerDict['symbol'] = listOfShapes[shapeIterator]
+                    seriesDict['marker'] = markerDict
+                    seriesList.append(seriesDict)
 
-                seriesDict = {}
-                seriesDict['name'] = "NotSig: " + str(name)
-                seriesDict['data'] = allData
-                markerDict = {}
-                markerDict['symbol'] = listOfShapes[shapeIterator]
-                seriesDict['marker'] = markerDict
-                seriesList.append(seriesDict)
+                    shapeIterator += 1
+                    if shapeIterator >= len(listOfShapes):
+                        shapeIterator = 0
 
-                seriesDict = {}
-                seriesDict['name'] = "Sig: " + str(name)
-                seriesDict['data'] = sigData
-                markerDict = {}
-                markerDict['symbol'] = listOfShapes[shapeIterator]
-                seriesDict['marker'] = markerDict
-                seriesList.append(seriesDict)
+                    base[RID] = 'Step 4 of 6: Formatting graph data for display...' + str(name) + ' is done!'
 
-                shapeIterator += 1
-                if shapeIterator >= len(listOfShapes):
-                    shapeIterator = 0
+                xTitle = {}
+                xTitle['text'] = "baseMean"
+                xAxisDict['title'] = xTitle
+                xAxisDict['type'] = 'logarithmic'
 
-                base[RID] = 'Step 4 of 6: Formatting graph data for display...' + str(name) + ' is done!'
+                yTitle = {}
+                yTitle['text'] = "log2FoldChange"
+                yAxisDict['title'] = yTitle
+                yAxisDict['type'] = 'linear'
 
-            xTitle = {}
-            xTitle['text'] = "baseMean"
-            xAxisDict['title'] = xTitle
-            xAxisDict['type'] = 'logarithmic'
+                finalDict['series'] = seriesList
+                finalDict['xAxis'] = xAxisDict
+                finalDict['yAxis'] = yAxisDict
 
-            yTitle = {}
-            yTitle['text'] = "log2FoldChange"
-            yAxisDict['title'] = yTitle
-            yAxisDict['type'] = 'linear'
+                base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
+                base[RID] = 'Step 5 of 6:  Formatting nbinomTest results for display...'
 
-            finalDict['series'] = seriesList
-            finalDict['xAxis'] = xAxisDict
-            finalDict['yAxis'] = yAxisDict
+                finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
+                res_table = finalDF.to_html(classes="table display")
+                res_table = res_table.replace('border="1"', 'border="0"')
+                finalDict['res_table'] = str(res_table)
+                finalDict['text'] = result
 
-            base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
-            base[RID] = 'Step 5 of 6:  Formatting nbinomTest results for display...'
+                base[RID] = 'Step 6 of 6: Formatting results for display...done!'
+                finalDict['error'] = 'none'
+                res = simplejson.dumps(finalDict)
+                return None
+    except:
+        if not stop2:
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+            myDict = {}
+            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            res = simplejson.dumps(myDict)
+            raise
 
-            finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
-            res_table = finalDF.to_html(classes="table display")
-            res_table = res_table.replace('border="1"', 'border="0"')
-            finalDict['res_table'] = str(res_table)
-            finalDict['text'] = result
-
-            base[RID] = 'Step 6 of 6: Formatting results for display...done!'
-            finalDict['error'] = 'none'
-
-            res = simplejson.dumps(finalDict)
-
-            return HttpResponse(res, content_type='application/json')
-
-    except Exception as e:
-        print "Error with DIFFABUND: ", e
-        print "RID: ", RID
-        state = "Error with DIFFABUND: " + str(e)
-
-        myDict = {}
-        myDict['error'] = state
-        res = simplejson.dumps(myDict)
-        return HttpResponse(res, content_type='application/json')
+    finally:
+        return None
 
 
 def findTaxa(id):

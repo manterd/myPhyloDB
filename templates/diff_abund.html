@@ -12,7 +12,9 @@
 {% endblock user %}
 
 {% block menu_item %}
-    <p><input id="run" type="submit" value="Run Analysis!"/></p>
+    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
+    <br>
+    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
 {% endblock menu_item %}
 
 {% block javascript %}
@@ -108,6 +110,11 @@
                 }
                 running = true;
                 chooseData();
+            });
+
+           $("#stop").show().click(function () {
+                running = false;
+                stopAll();
             });
 
             $("#DepVar").change(function () {
@@ -223,6 +230,23 @@
             });
 
         });
+
+        function stopAll() {
+            clearInterval(refresh);
+            $.ajax({
+                url: '/stopDiffAbund/',
+                type: 'GET',
+                dataType: 'json',
+                data: {},
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['error'];
+                    $('#container-1').empty().append(stage);
+                }
+            });
+        }
 
         function updateStatus(RID) {
             $.ajax({
@@ -387,6 +411,9 @@
                         var error = data['error'];
                         if (error != "none") {
                             alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
                         }
                         if (empty == 0) {
                             alert('No significant tests!');
@@ -407,8 +434,6 @@
                         }).draw();
 
                         scatter(xAxis, yAxis, series);
-
-                        $("#run").css("background-color", "green");
                     }
                 });
             } else {

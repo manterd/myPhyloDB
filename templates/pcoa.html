@@ -12,7 +12,9 @@
 {% endblock user %}
 
 {% block menu_item %}
-    <input id="run" name="run" type="submit" value="Run Analysis!"/>
+    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
+    <br>
+    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
 {% endblock menu_item %}
 
 {% block javascript %}
@@ -343,6 +345,11 @@
                 chooseData();
             });
 
+           $("#stop").show().click(function () {
+                running = false;
+                stopAll();
+            });
+
             $("#clearMeta").click(function(){
                 $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                     node.select(false);
@@ -360,6 +367,23 @@
                 $("#run").css("background-color", "lightgray");
             });
         });
+
+        function stopAll() {
+            clearInterval(refresh);
+            $.ajax({
+                url: '/stopPCoA/',
+                type: 'GET',
+                dataType: 'json',
+                data: {},
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['error'];
+                    $('#container-1').empty().append(stage);
+                }
+            });
+        }
 
         function updateStatus(RID) {
             $.ajax({
@@ -599,6 +623,9 @@
                     var error = data['error'];
                     if (error != "none") {
                         alert(error);
+                        $("#run").css("background-color", "red");
+                    } else {
+                        $("#run").css("background-color", "green");
                     }
                     linechart1(xAxis, yAxis, series);
 
@@ -631,8 +658,6 @@
                     {% static "" as baseUrl %}
                     var d = new Date();
                     $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.pcoa.jpg?"+d.getTime());
-
-                    $("#run").css("background-color", "green");
 
                     $("#container-0").hide();
                     var display = $("#graphDisplay").val();
