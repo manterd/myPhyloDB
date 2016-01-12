@@ -26,6 +26,7 @@ Source: "..\..\dist\myPhyloDB\eggs\*"; DestDir: "{app}\eggs"; Flags: recursesubd
 Source: "..\..\dist\myPhyloDB\idlelib\*"; DestDir: "{app}\idlelib"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\include\*"; DestDir: "{app}\include"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\ipython\*"; DestDir: "{app}\ipython"; Flags: recursesubdirs; Components: Main
+Source: "..\..\dist\myPhyloDB\instructions\current\*"; DestDir: "{app}\instructions\current"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\media\*"; DestDir: "{app}\media"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\mothur-win\*"; DestDir: "{app}\mothur\mothur-win"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\reference\align\*"; DestDir: "{app}\mothur\reference\align"; Flags: recursesubdirs; Components: Main
