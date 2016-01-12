@@ -44,6 +44,7 @@ Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recur
 
 [Icons]
 Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\media\images\myPhyloDB_Logo.ico"
+Name: "{group}\Manual.pdf"; Filename: "{app}\instructions\current\Manual.pdf"
 Name: "{group}\Uninstall"; Filename: "{uninstallexe}"
 
 [Components]

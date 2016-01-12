@@ -72,6 +72,7 @@ def extra_datas(mydir):
     return extra_datas
 
 a.datas += extra_datas('config')
+a.datas += extra_datas('instructions/current')
 a.datas += extra_datas('media')
 a.datas += extra_datas('mothur/mothur-win')
 a.datas += extra_datas('mothur/reference')

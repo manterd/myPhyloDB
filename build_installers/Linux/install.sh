@@ -4,7 +4,7 @@
 # To install, please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
 
 
-echo "Installing myPhyloDB vers. 1.1.2\n"
+echo "Installing myPhyloDB v.1.1.2\n"
 echo "Checking if myPhyloDB exists...\n"
 
 if [ -d "$HOME/myPhyloDB" ]
