@@ -20,7 +20,7 @@ class UploadForm2(forms.Form):
     fastq_files = MultiFileField()
     docfile15 = forms.FileField(label='Select Mothur batch file:')
     source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed mothur files'), ('454_sff', 'sff files'), ('454_fastq', 'fna/qual files'), ('miseq', 'fastq files')))
-
+    processors = forms.IntegerField(initial=2, min_value=1, max_value=100)
 
 class UploadForm4(forms.Form):
     docfile8 = forms.FileField(label='Select alignment file (e.g., silva.seed_v119.align):')
@@ -33,4 +33,5 @@ class UploadForm4(forms.Form):
 
 class UploadForm5(forms.Form):
     docfile11 = forms.FileField(label='Select meta.xls file:')
+
 

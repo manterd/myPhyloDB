@@ -4,6 +4,8 @@ from django.db.models import Q
 from django.http import *
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+import fileinput
+import multiprocessing as mp
 import os
 import pandas as pd
 import pickle
@@ -36,6 +38,7 @@ def upload(request):
         form1 = UploadForm1(request.POST, request.FILES)
         source = str(request.POST['source'])
         userID = str(request.user.id)
+        processors = int(request.POST['processors'])
 
         if form1.is_valid():
             file1 = request.FILES['docfile1']
@@ -194,7 +197,16 @@ def upload(request):
 
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
+
+                avail_proc = mp.cpu_count()-1 or 1
+                use_proc = min(avail_proc, processors)
+                actual_proc = 'processors=' + str(use_proc)
+
                 handle_uploaded_file(file7, mothurdest, batch)
+
+                for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
+                    print line.replace("processors=X", actual_proc),
+
                 handle_uploaded_file(file7, dest, batch)
 
                 # check queue for mothur availability, then run or wait
@@ -328,7 +340,16 @@ def upload(request):
 
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
+
+                avail_proc = mp.cpu_count()-1 or 1
+                use_proc = min(avail_proc, processors)
+                actual_proc = 'processors=' + str(use_proc)
+
                 handle_uploaded_file(file7, mothurdest, batch)
+
+                for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
+                    print line.replace("processors=X", actual_proc),
+
                 handle_uploaded_file(file7, dest, batch)
 
                 try:
@@ -412,7 +433,16 @@ def upload(request):
 
                 batch = 'mothur.batch'
                 file15 = request.FILES['docfile15']
+
+                avail_proc = mp.cpu_count()-1 or 1
+                use_proc = min(avail_proc, processors)
+                actual_proc = 'processors=' + str(use_proc)
+
                 handle_uploaded_file(file15, mothurdest, batch)
+
+                for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
+                    print line.replace("processors=X", actual_proc),
+
                 handle_uploaded_file(file15, dest, batch)
 
                 try:

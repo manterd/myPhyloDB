@@ -51,24 +51,28 @@
                     $("#454_sff").hide();
                     $("#454_fastq").hide();
                     $("#miseq").hide();
+                    $("#proc_table").hide();
                 }
                 if (source == "454_sff") {
                     $("#mothur").hide();
                     $("#454_sff").show();
                     $("#454_fastq").hide();
                     $("#miseq").hide();
+                    $("#proc_table").show();
                 }
                 if (source == "454_fastq") {
                     $("#mothur").hide();
                     $("#454_sff").hide();
                     $("#454_fastq").show();
                     $("#miseq").hide();
+                    $("#proc_table").show();
                 }
                 if (source == "miseq") {
                     $("#mothur").hide();
                     $("#454_sff").hide();
                     $("#454_fastq").hide();
                     $("#miseq").show();
+                    $("#proc_table").show();
                 }
             })
         });
@@ -125,13 +129,14 @@
 
         <table width="100%" border="0" cellspacing="0" cellpadding="5">
             <tr>
-                <td>2.) Select sequence data format:</td>
+                <td colspan="2">2.) Select sequence data format:</td>
             </tr>
             <tr>
-                <td>
+                <td colspan="2">
                     <table width="100%" border="2" cellspacing="0" cellpadding="1">
                         <tr>
-                            <td>Available Data Formats:&nbsp;{{ form2.source }}</td>
+                            <td>Available Data Formats:&nbsp;</td>
+                            <td>{{ form2.source }}</td>
                         </tr>
                     </table>
                 </td>
@@ -204,6 +209,22 @@
                             <td>{{ form2.docfile15.label_tag }}</td>
                             <td>{{ form2.docfile15 }}</td>
                         </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table id="proc_table" style="display: none" width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td width="100">4.) How many processors would you like to use?</td>
+            </tr>
+            <tr>
+                <td>
+                    <table border="2">
+                    <tr>
+                        <td>Processors: </td>
+                        <td>{{ form2.processors }}</td>
+                    </tr>
                     </table>
                 </td>
             </tr>
