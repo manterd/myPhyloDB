@@ -52,7 +52,7 @@ table, fieldset {
     top: 100px;
 	width: 115px;
     height: 350px;
-    position: fixed;
+    position: absolute;
     z-index: 999;
 	background: url('../images/sf_menu.png') repeat-x;
 	border: 1px solid #7CBE29;
