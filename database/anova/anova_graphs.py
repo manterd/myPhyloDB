@@ -19,6 +19,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stops = {}
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -51,6 +52,7 @@ def removeRIDANOVA(request):
             time1.pop(RID, None)
             time2.pop(RID, None)
             TimeDiff.pop(RID, None)
+            stops.pop(RID, None)
             return True
         else:
             return False
@@ -63,7 +65,7 @@ stop1 = False
 
 
 def stopANOVA(request):
-    global res, thread1, stop1
+    """global res, thread1, stop1
     if request.is_ajax():
         stop1 = True
         try:
@@ -74,7 +76,12 @@ def stopANOVA(request):
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
         except:
-            pass
+            pass"""
+
+    global stops
+    if request.is_ajax():
+        RID = request.GET["all"]
+        stops[RID] = True
 
 
 def getCatUnivData(request):
@@ -98,7 +105,7 @@ def getQuantUnivData(request):
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop1
+    global res, base, stage, time1, TimeDiff, stop1, stops
     try:
         while True:
             # Get selected samples from cookie and query database for sample info
@@ -113,6 +120,7 @@ def loopCat(request):
                 all = simplejson.loads(allJson)
 
                 RID = str(all["RID"])
+                stops[RID] = False
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Querying database...'
 
@@ -123,6 +131,16 @@ def loopCat(request):
                 NormVal = all["NormVal"]
                 sig_only = int(all["sig_only"])
                 size = int(all["MinSize"])
+
+                """
+                """
+
+                if stops[RID]:
+                    print "Received stop code"
+                    return  #stopcode, WIP
+
+                """
+                """
 
                 # Generate a list of sequence reads per sample
                 countList = []
@@ -179,6 +197,12 @@ def loopCat(request):
                     idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStrQuant)
                 except:
                     placeholder = ''
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return  #stopcode, WIP
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 metaStr = all["metaVals"]
                 fieldList = []
@@ -318,6 +342,12 @@ def loopCat(request):
 
                 base[RID] = 'Step 1 of 4: Querying database...done!'
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return  #stopcode, WIP
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 # Normalize data
                 base[RID] = 'Step 2 of 4: Normalizing data...'
 
@@ -351,7 +381,14 @@ def loopCat(request):
 
                 base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return  #stopcode, WIP
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 base[RID] = 'Step 3 of 4: Performing statistical test...'
+
 
                 seriesList = []
                 xAxisDict = {}
