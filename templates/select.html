@@ -14,21 +14,9 @@
 {% block javascript %}
     <script type="text/javascript">
         var selKeys = "";
+        var table1, table2, table3, table4, table5, table6, table7, table8, table9;
 
         $(function () {
-            $("#tabs").tabs({
-                "activate": function(event, ui) {
-                    var table = $.fn.dataTable.fnTables(true);
-                    if ( table.length > 0 ) {
-                        $(table).dataTable().fnAdjustColumnSizing();
-                        var oTableTools = TableTools.fnGetInstance(table[0]);
-                        if (oTableTools != null && oTableTools.fnResizeRequired()) {
-                            oTableTools.fnResizeButtons();
-                        }
-                    }
-                }
-            });
-
             $(".display").dataTable({
                 dom: 'Bfrtip',
                 scroller: true,
@@ -37,6 +25,66 @@
                 //fixedHeader: true,
                 buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
             });
+
+            $("#drawtable").click(function () {
+                updateProjectTable(selKeys);
+                updateReferenceTable(selKeys);
+                updateSampleTable(selKeys);
+                updateAirTable(selKeys);
+                updateAssociatedTable(selKeys);
+                updateMicrobialTable(selKeys);
+                updateSoilTable(selKeys);
+                updateWaterTable(selKeys);
+                updateUsrTable(selKeys);
+                if (table1.data().length == 0) {
+                    $("#tabs").tabs("disable", 0)
+                } else {
+                    $("#tabs").tabs("enable", 0)
+                }
+
+                if (table2.data().length == 0) {
+                    $("#tabs").tabs("disable", 1)
+                } else {
+                   $("#tabs").tabs("enable", 1)
+                }
+                if (table3.data().length == 0) {
+                    $("#tabs").tabs("disable", 2);
+                } else {
+                    $("#tabs").tabs("enable", 2);
+                }
+                if (table4.data().length == 0) {
+                    $("#tabs").tabs("disable", 3);
+                } else {
+                    $("#tabs").tabs("enable", 3);
+                }
+                if (table5.data().length == 0) {
+                    $("#tabs").tabs("disable", 4);
+                } else {
+                    $("#tabs").tabs("enable", 4);
+                }
+                if (table6.data().length == 0) {
+                    $("#tabs").tabs("disable", 5);
+                } else {
+                    $("#tabs").tabs("enable", 5);
+                }
+                if (table7.data().length == 0) {
+                    $("#tabs").tabs("disable", 6);
+                } else {
+                    $("#tabs").tabs("enable", 6);
+                }
+                if (table8.data().length == 0) {
+                    $("#tabs").tabs("disable", 7);
+                } else {
+                    $("#tabs").tabs("enable", 7);
+                }
+                if (table9.data().length == 0) {
+                    $("#tabs").tabs("disable", 8);
+                } else {
+                    $("#tabs").tabs("enable", 8);
+                }
+            });
+
+            $("#tabs").tabs();
 
             $("#tree").dynatree({
                 checkbox: true,
@@ -53,7 +101,7 @@
                     });
                 },
                 onSelect: function (flag, node) {
-                   if (flag && node.childList == undefined) {
+                    if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
                             node.select(false);
                             node.select(true);
@@ -62,18 +110,19 @@
                 }
             });
 
-            $("#drawtable").click(function () {
-                selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
-                    return node.data.id;
-                });
-                updateNodes(selKeys);
-            });
-
-            $("#clearMeta").click(function(){
+            $("#clearMeta").click(function () {
                 $("#tree").dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
-                updateNodes();
+                updateProjectTable();
+                updateSampleTable();
+                updateReferenceTable();
+                updateAirTable();
+                updateAssociatedTable();
+                updateMicrobialTable();
+                updateSoilTable();
+                updateWaterTable();
+                updateUsrTable();
             });
 
             $("#submit").click(function () {
@@ -86,7 +135,7 @@
                     url: '/saveCookie/',
                     dataType: 'json',
                     data: {all: jsonDict},
-                    success: function(data) {
+                    success: function (data) {
                         var result = JSON.stringify(data);
                         alert(result);
                         $("#link0").show();
@@ -98,49 +147,18 @@
                     }
                 });
             });
+
         });
 
-        function updateNodes(selKeys) {
-            updateProjectTable(selKeys);
-            updateReferenceTable(selKeys);
-            updateSampleTable(selKeys);
-
-            var pTypes = new Array(0);
-
-            $.each(selKeys, function (index, value) {
-                {% for project in projects %}
-                    var id = "{{ project.projectid }}";
-                    if (id == value) {
-                        var element = "{{ project.projectType }}";
-                        pTypes.push(element);
-                    }
-                {% endfor %}
-            });
-
-            if (pTypes.indexOf("soil")>-1) {
-                updateSoilTable(selKeys);
-                $("#soil").show();
-            } else {
-                $("#soil").hide();
-            }
-            if (pTypes.indexOf("human_associated")>-1) {
-                updateAssociatedTable(selKeys);
-                $("#humasso").show();
-            } else {
-                $("#humasso").hide();
-            }
-            updateUsrTable(selKeys);
-        }
-
         function updateProjectTable(selKeys) {
-            var table = $('#projectTable').DataTable();
-            table.rows().remove().draw();
+            table1 = $('#projectTable').DataTable();
+            table1.clear().draw();
             $.each(selKeys, function (index, value) {
                 {% for project in projects %}
                     {% for sample in project.sample_set.all %}
                         var id = "{{ sample.sampleid }}";
                         if (id == value) {
-                            table.row.add([
+                            table1.row.add([
                                 "{{ project.project_name }}",
                                 "{{ project.projectid }}",
                                 "{{ sample.sample_name }}",
@@ -161,15 +179,15 @@
         }
 
         function updateReferenceTable(selKeys) {
-            var table = $('#referenceTable').DataTable();
-            table.rows().remove().draw();
+            table2 = $('#referenceTable').DataTable();
+            table2.clear().draw();
             $.each(selKeys, function (index, value) {
                 {% for project in projects %}
                     {% for ref in project.reference_set.all %}
                         {% for sample in ref.sample_set.all %}
                             var id = "{{ sample.sampleid }}";
                             if (id == value) {
-                                 table.row.add([
+                                 table2.row.add([
                                     "{{ project.project_name }}",
                                     "{{ project.projectid }}",
                                     "{{ ref.refid }}",
@@ -191,14 +209,14 @@
         }
 
         function updateSampleTable(selKeys) {
-            var table = $('#sampleTable').DataTable();
-            table.rows().remove().draw();
+            table3 = $('#sampleTable').DataTable();
+            table3.clear().draw();
             $.each(selKeys, function (index, value) {
                 {% for project in projects %}
                     {% for sample in project.sample_set.all %}
                         var id = "{{ sample.sampleid }}";
                         if (id == value) {
-                             table.row.add([
+                             table3.row.add([
                                 "{{ project.project_name }}",
                                 "{{ sample.refid.refid }}",
                                 "{{ sample.sampleid }}",
@@ -233,14 +251,14 @@
         }
 
         function updateAirTable(selKeys){
-            var table = $('#airTable').DataTable();
-            table.rows().remove().draw();
+            table4 = $('#airTable').DataTable();
+            table4.clear().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Air in project.air_set.all %}
                             var id = "{{ Air.sampleid.sampleid }}";
                             if (id == value) {
-                                 table.row.add([
+                                 table4.row.add([
                                     "{{ project.project_name }}",
                                     "{{ Air.sampleid.sample_name }}",
                                     "{{ Air.barometric_press }}",
@@ -285,14 +303,14 @@
         }
 
         function updateAssociatedTable(selKeys) {
-            var table = $('#humassoTable').DataTable();
-            table.rows().remove().draw();
+            table5 = $('#humassoTable').DataTable();
+            table5.clear().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Human_Associated in project.human_associated_set.all %}
                             var id = "{{ Human_Associated.sampleid.sampleid }}";
                             if (id == value) {
-                                 table.row.add([
+                                 table5.row.add([
                                     "{{ project.project_name }}",
                                     "{{ Human_Associated.sampleid.sample_name }}",
                                     "{{ Human_Associated.samp_collect_device }}",
@@ -352,14 +370,14 @@
         }
 
         function updateMicrobialTable(selKeys){
-            var table = $('#microbialTable').DataTable();
-            table.rows().remove().draw();
+            table6 = $('#microbialTable').DataTable();
+            table6.clear().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Microbe in project.microbial_set.all %}
                             var id = "{{ Microbe.sampleid.sampleid }}";
                             if (id == value) {
-                                 table.row.add([
+                                 table6.row.add([
                                     "{{ project.project_name }}",
                                     "{{ Microbe.sampleid.sample_name }}",
                                     "{{ Microbe.alkalinity }}",
@@ -441,14 +459,14 @@
         }
 
         function updateSoilTable(selKeys){
-            var table = $('#soilTable').DataTable();
-            table.rows().remove().draw();
+            table7 = $('#soilTable').DataTable();
+            table7.clear().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Soil in project.soil_set.all %}
                             var id = "{{ Soil.sampleid.sampleid }}";
                             if (id == value) {
-                                 table.row.add([
+                                 table7.row.add([
                                     "{{ project.project_name }}",
                                     "{{ Soil.sampleid.sample_name }}",
                                     "{{ Soil.samp_collection_device }}",
@@ -558,14 +576,14 @@
         }
 
         function updateWaterTable(selKeys){
-            var table = $('#waterTable').DataTable();
-            table.rows().remove().draw();
+            table8 = $('#waterTable').DataTable();
+            table8.clear().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for Water in project.water_set.all %}
                             var id = "{{ Water.sampleid.sampleid }}";
                             if (id == value) {
-                                 table.row.add([
+                                 table8.row.add([
                                     "{{ project.project_name }}",
                                     "{{ Water.sampleid.sample_name }}",
                                     "{{ Water.alkalinity }}",
@@ -663,14 +681,14 @@
         }
 
         function updateUsrTable(selKeys) {
-            var table = $('#usrTable').DataTable();
-            table.rows().remove().draw();
+            table9 = $('#usrTable').DataTable();
+            table9.clear().draw();
             $.each(selKeys, function (index, value) {
                     {% for project in projects %}
                         {% for User in project.userdefined_set.all %}
                             var id = "{{ User.sampleid.sampleid }}";
                             if (id == value) {
-                                 table.row.add([
+                                 table9.row.add([
                                     "{{ project.project_name }}",
                                     "{{ User.sampleid.sample_name }}",
                                     "{{ User.usr_cat1 }}",
@@ -710,517 +728,515 @@
     <br>
     <input id="submit" type="button" value="Save Selection(s)!"/>
     <br><br><br>
-    <h2>Project/Sample information for selected samples</h2>
-    <input id="drawtable" type="button" value="Show Selection(s) in DataTable!"/>
+    <h2>Project/Sample information for selected samples:</h2>
+    <input id="drawtable" type="button" value="Populate DataTable!"/>
     <br><br>
 
-    <div id="demo" style="width: 1000px">
-        <div id="tabs">
-            <ul>
-                <li><a href="#tabs-1" style="font-size: 14px">Project</a></li>
-                <li><a href="#tabs-2" style="font-size: 14px">Reference</a></li>
-                <li><a href="#tabs-3" style="font-size: 14px">MIMARKs</a></li>
-                <li><a href="#tabs-air" style="font-size: 14px; display: none" id="air">Human Associated</a></li>
-                <li><a href="#tabs-humasso" style="font-size: 14px; display: none" id="humasso">Human Associated</a></li>
-                <li><a href="#tabs-microbial" style="font-size: 14px; display: none" id="microbial">Human Associated</a></li>
-                <li><a href="#tabs-soil" style="font-size: 14px; display: none" id="soil">Soil</a></li>
-                <li><a href="#tabs-water" style="font-size: 14px; display: none" id="water">Human Associated</a></li>
-                <li><a href="#tabs-9" style="font-size: 14px" id="usr">User-defined</a></li>
-            </ul>
+    <div id="tabs" style="width: 950px">
+        <ul>
+            <li><a href="#tabs-1">Project</a></li>
+            <li><a href="#tabs-2">Reference</a></li>
+            <li><a href="#tabs-3">MIMARKs</a></li>
+            <li><a href="#tabs-4">Air</a></li>
+            <li><a href="#tabs-5">Human</a></li>
+            <li><a href="#tabs-6">Microbial</a></li>
+            <li><a href="#tabs-7">Soil</a></li>
+            <li><a href="#tabs-8">Water</a></li>
+            <li><a href="#tabs-9">User</a></li>
+        </ul>
 
-            <div id="tabs-1">
-                <table id="projectTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project name">project_name</th>
-                            <th title="myPhyloDB generated project UUID">project_id</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th title="Project description">project_desc</th>
-                            <th title="Project start date">start_date</th>
-                            <th title="Project end date">end_date</th>
-                            <th title="Principal investigator: last name">pi_last</th>
-                            <th title="Principal investigator: first name">pi_first</th>
-                            <th title="Principal investigator: affiliation">pi_affiliation</th>
-                            <th title="Principal investigator: e-mail">pi_email</th>
-                            <th title="Principal investigator: phone">pi_phone</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-1">
+            <table id="projectTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project name">project_name</th>
+                        <th title="myPhyloDB generated project UUID">project_id</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th title="Project description">project_desc</th>
+                        <th title="Project start date">start_date</th>
+                        <th title="Project end date">end_date</th>
+                        <th title="Principal investigator: last name">pi_last</th>
+                        <th title="Principal investigator: first name">pi_first</th>
+                        <th title="Principal investigator: affiliation">pi_affiliation</th>
+                        <th title="Principal investigator: e-mail">pi_email</th>
+                        <th title="Principal investigator: phone">pi_phone</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
 
-            <div id="tabs-2">
-                <table id="referenceTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project name">project_name</th>
-                            <th title="myPhyloDB generated project UUID">projectid</th>
-                            <th title="myPhyloDB generated upload UUID">refid</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th title="myPhylodb generated sample UUID">sampleid</th>
-                            <th title="True if raw data was uploaded & analyzed by myPhyloDB">raw</th>
-                            <th title="File path to the uploaded data files">path</th>
-                            <th title="Sequencing platform ('mothur' if pre-processed data)">source</th>
-                            <th title="Alignment database used for sequence processing">alignDB</th>
-                            <th title="Template database used for sequence processing">templateDB</th>
-                            <th title="Taxonomy database used for sequence processing">taxonomyDB</th>
-                            <th title="Username of person who uploaded data">author</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-2">
+            <table id="referenceTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project name">project_name</th>
+                        <th title="myPhyloDB generated project UUID">projectid</th>
+                        <th title="myPhyloDB generated upload UUID">refid</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th title="myPhylodb generated sample UUID">sampleid</th>
+                        <th title="True if raw data was uploaded & analyzed by myPhyloDB">raw</th>
+                        <th title="File path to the uploaded data files">path</th>
+                        <th title="Sequencing platform ('mothur' if pre-processed data)">source</th>
+                        <th title="Alignment database used for sequence processing">alignDB</th>
+                        <th title="Template database used for sequence processing">templateDB</th>
+                        <th title="Taxonomy database used for sequence processing">taxonomyDB</th>
+                        <th title="Username of person who uploaded data">author</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
 
-            <div id="tabs-3">
-                <table id="sampleTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project name">project_name</th>
-                            <th title="myPhyloDB generated upload UUID">ref_id</th>
-                            <th title="myPhylodb generated sample UUID">sample_id</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th title="NCBI organism">organism</th>
-                            <th title="Collection Date">collection_date</th>
-                            <th title="Depth below soil surface">depth</th>
-                            <th title="Elevation">elev</th>
-                            <th title="Sequencing platform">seq_platform</th>
-                            <th title="Gene targeted for sequencing">seq_gene</th>
-                            <th title="Gene region targeted for sequencing">seq_gene_region</th>
-                            <th title="Sequencing barcoder">seq_barcode</th>
-                            <th title="Sequencing forward primer">seq_for_primer</th>
-                            <th title="Sequencing reverse primer">seq_rev_primer</th>
-                            <th title="Environment: biome">env_biome</th>
-                            <th title="Environment: feature">env_feature</th>
-                            <th title="Environment: material">env_material</th>
-                            <th title="Geographic location: country">geo_loc_country</th>
-                            <th title="Geographic location: state">geo_loc_state</th>
-                            <th title="Geographic location: city">geo_loc_city</th>
-                            <th title="Geographic location: farm">geo_loc_farm</th>
-                            <th title="Geographic location: plot">geo_loc_plot</th>
-                            <th title="Latitude">latitude</th>
-                            <th title="Longitude">longitude</th>
-                            <th title="Mean annual precipitation">annual_season_precpt</th>
-                            <th title="Mean annual temperature">annual_season_temp</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-3">
+            <table id="sampleTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project name">project_name</th>
+                        <th title="myPhyloDB generated upload UUID">ref_id</th>
+                        <th title="myPhylodb generated sample UUID">sample_id</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th title="NCBI organism">organism</th>
+                        <th title="Collection Date">collection_date</th>
+                        <th title="Depth below soil surface">depth</th>
+                        <th title="Elevation">elev</th>
+                        <th title="Sequencing platform">seq_platform</th>
+                        <th title="Gene targeted for sequencing">seq_gene</th>
+                        <th title="Gene region targeted for sequencing">seq_gene_region</th>
+                        <th title="Sequencing barcoder">seq_barcode</th>
+                        <th title="Sequencing forward primer">seq_for_primer</th>
+                        <th title="Sequencing reverse primer">seq_rev_primer</th>
+                        <th title="Environment: biome">env_biome</th>
+                        <th title="Environment: feature">env_feature</th>
+                        <th title="Environment: material">env_material</th>
+                        <th title="Geographic location: country">geo_loc_country</th>
+                        <th title="Geographic location: state">geo_loc_state</th>
+                        <th title="Geographic location: city">geo_loc_city</th>
+                        <th title="Geographic location: farm">geo_loc_farm</th>
+                        <th title="Geographic location: plot">geo_loc_plot</th>
+                        <th title="Latitude">latitude</th>
+                        <th title="Longitude">longitude</th>
+                        <th title="Mean annual precipitation">annual_season_precpt</th>
+                        <th title="Mean annual temperature">annual_season_temp</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
 
-            <div id="tabs-air">
-                <table id="airTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project name">project_name</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th>barometric_press</th>
-                            <th>carb_dioxide</th>
-                            <th>carb_monoxide</th>
-                            <th>chem_admin_term</th>
-                            <th>chem_admin_time</th>
-                            <th>elev</th>
-                            <th>humidity</th>
-                            <th>methane</th>
-                            <th>organism_type</th>
-                            <th>organism_count</th>
-                            <th>oxy_stat_samp</th>
-                            <th>oxygen</th>
-                            <th>perturbation_type</th>
-                            <th>perturbation_interval</th>
-                            <th>pollutants_type</th>
-                            <th>pollutants_concentration</th>
-                            <th>rel_to_oxygen</th>
-                            <th>resp_part_matter_substance</th>
-                            <th>resp_part_matter_concentration</th>
-                            <th>samp_collect_device</th>
-                            <th>samp_mat_process</th>
-                            <th>samp_salinity</th>
-                            <th>samp_size</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_store_loc</th>
-                            <th>samp_store_temp</th>
-                            <th>solar_irradiance</th>
-                            <th>temp</th>
-                            <th>ventilation_rate</th>
-                            <th>ventilation_type</th>
-                            <th>volatile_org_comp_name</th>
-                            <th>volatile_org_comp_concentration</th>
-                            <th>wind_direction</th>
-                            <th>wind_speed</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-4">
+            <table id="airTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project name">project_name</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th>barometric_press</th>
+                        <th>carb_dioxide</th>
+                        <th>carb_monoxide</th>
+                        <th>chem_admin_term</th>
+                        <th>chem_admin_time</th>
+                        <th>elev</th>
+                        <th>humidity</th>
+                        <th>methane</th>
+                        <th>organism_type</th>
+                        <th>organism_count</th>
+                        <th>oxy_stat_samp</th>
+                        <th>oxygen</th>
+                        <th>perturbation_type</th>
+                        <th>perturbation_interval</th>
+                        <th>pollutants_type</th>
+                        <th>pollutants_concentration</th>
+                        <th>rel_to_oxygen</th>
+                        <th>resp_part_matter_substance</th>
+                        <th>resp_part_matter_concentration</th>
+                        <th>samp_collect_device</th>
+                        <th>samp_mat_process</th>
+                        <th>samp_salinity</th>
+                        <th>samp_size</th>
+                        <th>samp_store_dur</th>
+                        <th>samp_store_loc</th>
+                        <th>samp_store_temp</th>
+                        <th>solar_irradiance</th>
+                        <th>temp</th>
+                        <th>ventilation_rate</th>
+                        <th>ventilation_type</th>
+                        <th>volatile_org_comp_name</th>
+                        <th>volatile_org_comp_concentration</th>
+                        <th>wind_direction</th>
+                        <th>wind_speed</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
 
-            <div id="tabs-humasso">
-                <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project namne">project_name</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th title="Sample: collection device">samp_collect_device</th>
-                            <th title="Sample: material processing">samp_mat_process</th>
-                            <th title="Sample: size">samp_size</th>
-                            <th title="Sample: storage temperature">samp_store_temp</th>
-                            <th title="Sample: storage duration">samp_store_dur</th>
-                            <th title="Sample: type">samp_type</th>
-                            <th title="Sample: location (body part)">samp_location</th>
-                            <th title="Sample: temperature">samp_temp</th>
-                            <th title="Sample: pH">samp_ph</th>
-                            <th title="Sample: oxygen status">samp_oxy_stat</th>
-                            <th title="Sample: salinity">samp_salinity</th>
-                            <th title="Host: unique ID">host_subject_id</th>
-                            <th title="Host: age">host_age</th>
-                            <th title="Host: pulse">host_pulse</th>
-                            <th title="Host: gender">host_gender</th>
-                            <th title="Host: ethnicity">host_ethnicity</th>
-                            <th title="Host: height">host_height</th>
-                            <th title="Host: weight">host_weight</th>
-                            <th title="Host: body mass index">host_bmi</th>
-                            <th title="Host: weight loss in the last 3 months">host_weight_loss_3_month</th>
-                            <th title="Host: body temperature">host_body_temp</th>
-                            <th title="Host: occupation">host_occupation</th>
-                            <th title="Host: pets owned">pet_farm_animal</th>
-                            <th title="Host: smoker">smoker</th>
-                            <th title="Diet: type">diet_type</th>
-                            <th title="Diet: duration">diet_duration</th>
-                            <th title="Diet: frequency">diet_frequency</th>
-                            <th title="Diet: last six months">diet_last_six_month</th>
-                            <th title="Diet: last meal">last_meal</th>
-                            <th title="Disease: medical history performed">medic_hist_perform</th>
-                            <th title="Disease: type">disease_type</th>
-                            <th title="Disease: location (body part)">disease_location</th>
-                            <th title="Disease: duration">disease_duration</th>
-                            <th title="Disease: organism count">organism_count</th>
-                            <th title="Disease: tumor location">tumor_location</th>
-                            <th title="Disease: tumor mass">tumor_mass</th>
-                            <th title="Disease: tumor stage">tumor_stage</th>
-                            <th title="Drugs: usage">drug_usage</th>
-                            <th title="Drugs: type">drug_type</th>
-                            <th title="Drugs: duration">drug_duration</th>
-                            <th title="Drugs: Frequency">drug_frequency</th>
-                            <th title="Intervention: type">perturbation</th>
-                            <th title="Intervention: chemical compound">pert_type</th>
-                            <th title="Intervention: duration">pert_duration</th>
-                            <th title="Intervention: frequency">pert_frequency</th>
-                            <th title="Fetal: health status">fetal_health_stat</th>
-                            <th title="Fetal: amniotic fluid color">amniotic_fluid_color</th>
-                            <th title="Fetal: gestation state">gestation_stat</th>
-                            <th title="Fetal: maternal health status">maternal_health_stat</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-5">
+            <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project namne">project_name</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th title="Sample: collection device">samp_collect_device</th>
+                        <th title="Sample: material processing">samp_mat_process</th>
+                        <th title="Sample: size">samp_size</th>
+                        <th title="Sample: storage temperature">samp_store_temp</th>
+                        <th title="Sample: storage duration">samp_store_dur</th>
+                        <th title="Sample: type">samp_type</th>
+                        <th title="Sample: location (body part)">samp_location</th>
+                        <th title="Sample: temperature">samp_temp</th>
+                        <th title="Sample: pH">samp_ph</th>
+                        <th title="Sample: oxygen status">samp_oxy_stat</th>
+                        <th title="Sample: salinity">samp_salinity</th>
+                        <th title="Host: unique ID">host_subject_id</th>
+                        <th title="Host: age">host_age</th>
+                        <th title="Host: pulse">host_pulse</th>
+                        <th title="Host: gender">host_gender</th>
+                        <th title="Host: ethnicity">host_ethnicity</th>
+                        <th title="Host: height">host_height</th>
+                        <th title="Host: weight">host_weight</th>
+                        <th title="Host: body mass index">host_bmi</th>
+                        <th title="Host: weight loss in the last 3 months">host_weight_loss_3_month</th>
+                        <th title="Host: body temperature">host_body_temp</th>
+                        <th title="Host: occupation">host_occupation</th>
+                        <th title="Host: pets owned">pet_farm_animal</th>
+                        <th title="Host: smoker">smoker</th>
+                        <th title="Diet: type">diet_type</th>
+                        <th title="Diet: duration">diet_duration</th>
+                        <th title="Diet: frequency">diet_frequency</th>
+                        <th title="Diet: last six months">diet_last_six_month</th>
+                        <th title="Diet: last meal">last_meal</th>
+                        <th title="Disease: medical history performed">medic_hist_perform</th>
+                        <th title="Disease: type">disease_type</th>
+                        <th title="Disease: location (body part)">disease_location</th>
+                        <th title="Disease: duration">disease_duration</th>
+                        <th title="Disease: organism count">organism_count</th>
+                        <th title="Disease: tumor location">tumor_location</th>
+                        <th title="Disease: tumor mass">tumor_mass</th>
+                        <th title="Disease: tumor stage">tumor_stage</th>
+                        <th title="Drugs: usage">drug_usage</th>
+                        <th title="Drugs: type">drug_type</th>
+                        <th title="Drugs: duration">drug_duration</th>
+                        <th title="Drugs: Frequency">drug_frequency</th>
+                        <th title="Intervention: type">perturbation</th>
+                        <th title="Intervention: chemical compound">pert_type</th>
+                        <th title="Intervention: duration">pert_duration</th>
+                        <th title="Intervention: frequency">pert_frequency</th>
+                        <th title="Fetal: health status">fetal_health_stat</th>
+                        <th title="Fetal: amniotic fluid color">amniotic_fluid_color</th>
+                        <th title="Fetal: gestation state">gestation_stat</th>
+                        <th title="Fetal: maternal health status">maternal_health_stat</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
 
-            <div id="tabs-microbial">
-                <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project namne">project_name</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th>alkalinity</th>
-                            <th>alkyl_diethers</th>
-                            <th>altitude</th>
-                            <th>aminopept_act</th>
-                            <th>ammonium</th>
-                            <th>bacteria_carb_prod</th>
-                            <th>biomass_part_name</th>
-                            <th>biomass_amount</th>
-                            <th>bishomohopanol</th>
-                            <th>bromide</th>
-                            <th>calcium</th>
-                            <th>carb_nitro_ratio</th>
-                            <th>chem_administration_term</th>
-                            <th>chem_administration_time</th>
-                            <th>chloride</th>
-                            <th>chlorophyll</th>
-                            <th>diether_lipids_name</th>
-                            <th>diether_lipids_concentration</th>
-                            <th>diss_carb_dioxide</th>
-                            <th>diss_hydrogen</th>
-                            <th>diss_inorg_carb</th>
-                            <th>diss_org_carb</th>
-                            <th>diss_org_nitro</th>
-                            <th>diss_oxygen</th>
-                            <th>glucosidase_act</th>
-                            <th>magnesium</th>
-                            <th>mean_frict_vel</th>
-                            <th>mean_peak_frict_vel</th>
-                            <th>methane</th>
-                            <th>n_alkanes_name</th>
-                            <th>n_alkanes_concentration</th>
-                            <th>nitrate</th>
-                            <th>nitrite</th>
-                            <th>nitro</th>
-                            <th>org_carb</th>
-                            <th>org_matter</th>
-                            <th>org_nitro</th>
-                            <th>organism_name</th>
-                            <th>organism_count</th>
-                            <th>oxy_stat_samp</th>
-                            <th>part_org_carb</th>
-                            <th>perturbation_type</th>
-                            <th>perturbation_interval</th>
-                            <th>petroleum_hydrocarb</th>
-                            <th>ph</th>
-                            <th>phaeopigments_type</th>
-                            <th>phaeopigments_concentration</th>
-                            <th>phosphate</th>
-                            <th>phosplipid_fatt_acid_name</th>
-                            <th>phosplipid_fatt_acid_concentration</th>
-                            <th>potassium</th>
-                            <th>pressure</th>
-                            <th>redox_potential</th>
-                            <th>rel_to_oxygen</th>
-                            <th>salinity</th>
-                            <th>samp_collect_device</th>
-                            <th>samp_mat_process</th>
-                            <th>samp_size</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_store_loc</th>
-                            <th>samp_store_temp</th>
-                            <th>silicate</th>
-                            <th>sodium</th>
-                            <th>sulfate</th>
-                            <th>sulfide</th>
-                            <th>temp</th>
-                            <th>tot_carb</th>
-                            <th>tot_nitro</th>
-                            <th>tot_org_carb</th>
-                            <th>turbidity</th>
-                            <th>water_content</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-6">
+            <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project namne">project_name</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th>alkalinity</th>
+                        <th>alkyl_diethers</th>
+                        <th>altitude</th>
+                        <th>aminopept_act</th>
+                        <th>ammonium</th>
+                        <th>bacteria_carb_prod</th>
+                        <th>biomass_part_name</th>
+                        <th>biomass_amount</th>
+                        <th>bishomohopanol</th>
+                        <th>bromide</th>
+                        <th>calcium</th>
+                        <th>carb_nitro_ratio</th>
+                        <th>chem_administration_term</th>
+                        <th>chem_administration_time</th>
+                        <th>chloride</th>
+                        <th>chlorophyll</th>
+                        <th>diether_lipids_name</th>
+                        <th>diether_lipids_concentration</th>
+                        <th>diss_carb_dioxide</th>
+                        <th>diss_hydrogen</th>
+                        <th>diss_inorg_carb</th>
+                        <th>diss_org_carb</th>
+                        <th>diss_org_nitro</th>
+                        <th>diss_oxygen</th>
+                        <th>glucosidase_act</th>
+                        <th>magnesium</th>
+                        <th>mean_frict_vel</th>
+                        <th>mean_peak_frict_vel</th>
+                        <th>methane</th>
+                        <th>n_alkanes_name</th>
+                        <th>n_alkanes_concentration</th>
+                        <th>nitrate</th>
+                        <th>nitrite</th>
+                        <th>nitro</th>
+                        <th>org_carb</th>
+                        <th>org_matter</th>
+                        <th>org_nitro</th>
+                        <th>organism_name</th>
+                        <th>organism_count</th>
+                        <th>oxy_stat_samp</th>
+                        <th>part_org_carb</th>
+                        <th>perturbation_type</th>
+                        <th>perturbation_interval</th>
+                        <th>petroleum_hydrocarb</th>
+                        <th>ph</th>
+                        <th>phaeopigments_type</th>
+                        <th>phaeopigments_concentration</th>
+                        <th>phosphate</th>
+                        <th>phosplipid_fatt_acid_name</th>
+                        <th>phosplipid_fatt_acid_concentration</th>
+                        <th>potassium</th>
+                        <th>pressure</th>
+                        <th>redox_potential</th>
+                        <th>rel_to_oxygen</th>
+                        <th>salinity</th>
+                        <th>samp_collect_device</th>
+                        <th>samp_mat_process</th>
+                        <th>samp_size</th>
+                        <th>samp_store_dur</th>
+                        <th>samp_store_loc</th>
+                        <th>samp_store_temp</th>
+                        <th>silicate</th>
+                        <th>sodium</th>
+                        <th>sulfate</th>
+                        <th>sulfide</th>
+                        <th>temp</th>
+                        <th>tot_carb</th>
+                        <th>tot_nitro</th>
+                        <th>tot_org_carb</th>
+                        <th>turbidity</th>
+                        <th>water_content</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
 
-            <div id="tabs-soil">
-                <table id="soilTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project name">project_name</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th title="Sample: collection device">samp_collection_device</th>
-                            <th title="Sample: size">samp_size</th>
-                            <th title="Sample: depth range">samp_depth</th>
-                            <th title="Sample: preparation">samp_prep</th>
-                            <th title="Sample: sieve size">samp_sieve_size</th>
-                            <th title="Sample: storage duration">samp_store_dur</th>
-                            <th title="Sample: storage location">samp_store_loc</th>
-                            <th title="Sample: storage temperature">samp_store_temp</th>
-                            <th title="Sample: weight used for DNA extractions">samp_weight_dna_ext</th>
-                            <th title="Sample: number of pooled DNA extracts">pool_dna_extracts</th>
-                            <th title="Soil: FAO classification">fao_class</th>
-                            <th title="Soil: USDA soil taxonomy">local_class</th>
-                            <th title="Soil: texture class">texture_class</th>
-                            <th title="Soil: porosity">porosity</th>
-                            <th title="Soil: profile position">profile_position</th>
-                            <th title="Soil: slope aspect">slope_aspect</th>
-                            <th title="Soil: slope gradient">slope_gradient</th>
-                            <th title="Soil: bulk density">bulk_density</th>
-                            <th title="Soil: drainage class">drainage_class</th>
-                            <th title="Soil: water content">water_content_soil</th>
-                            <th title="Crop: current land use">cur_land_use</th>
-                            <th title="Crop: current vegetation">cur_vegetation</th>
-                            <th title="Crop: current crop">cur_crop</th>
-                            <th title="Crop: current cultivar">cur_cultivar</th>
-                            <th title="Crop: crop rotation">crop_rotation</th>
-                            <th title="Crop: cover crop">cover_crop</th>
-                            <th title="Fertilizer: amendment class">fert_amendment_class</th>
-                            <th title="Fertilizer: placement">fert_placement</th>
-                            <th title="Fertilizer: type">fert_type</th>
-                            <th title="Fertilizer: total amount">fert_tot_amount</th>
-                            <th title="Fertilizer: total N amount">fert_N_tot_amount</th>
-                            <th title="Fertilizer: total P amount">fert_P_tot_amount</th>
-                            <th title="Fertilizer: total K amount">fert_K_tot_amount</th>
-                            <th title="Irrigation: type">irrigation_type</th>
-                            <th title="Irrigation: total amount">irrigation_tot_amount</th>
-                            <th title="Residue: type">residue_removal</th>
-                            <th title="Residue: growth stage at removal">residue_growth_stage</th>
-                            <th title="Residue: amount removed">residue_removal_percent</th>
-                            <th title="Tillage: type">tillage_event</th>
-                            <th title="Tillage: depth">tillage_event_depth</th>
-                            <th title="Amendments: type">amend1_class</th>
-                            <th title="Amendments: active ingredient">amend1_active_ingredient</th>
-                            <th title="Amendments: total amount">amend1_tot_amount</th>
-                            <th title="Amendments: type">amend2_class</th>
-                            <th title="Amendments: active ingredient">amend2_active_ingredient</th>
-                            <th title="Amendments: total amount">amend2_tot_amount</th>
-                            <th title="Amendments: type">amend3_class</th>
-                            <th title="Amendments: active ingredient">amend3_active_ingredient</th>
-                            <th title="Amendments: total amount">amend3_tot_amount</th>
-                            <th title="Microbial Biomass: rRNA copies">rRNA_copies</th>
-                            <th title="Microbial Biomass: microbial biomass Carbon">microbial_biomass_C</th>
-                            <th title="Microbial Biomass: microbial biomass Nitrogen">microbial_biomass_N</th>
-                            <th title="Microbial Biomass: microbial respiration">microbial_respiration</th>
-                            <th title="Soil nutrients: pH">soil_pH</th>
-                            <th title="Soil nutrients: Electrical conductivity">soil_EC</th>
-                            <th title="Soil nutrients: Carbon">soil_C</th>
-                            <th title="Soil nutrients: Organic matter">soil_OM</th>
-                            <th title="Soil nutrients: Nitrogen">soil_N</th>
-                            <th title="Soil nutrients: Nitrate Nitrogen">soil_NO3_N</th>
-                            <th title="Soil nutrients: Ammonium Nitrogen">soil_NH4_N</th>
-                            <th title="Soil nutrients: Phosphorous">soil_P</th>
-                            <th title="Soil nutrients: Potassium">soil_K</th>
-                            <th title="Soil nutrients: Sulfur">soil_S</th>
-                            <th title="Soil nutrients: Zinc">soil_Zn</th>
-                            <th title="Soil nutrients: Iron">soil_Fe</th>
-                            <th title="Soil nutrients: Copper">soil_Cu</th>
-                            <th title="Soil nutrients: Manganese">soil_Mn</th>
-                            <th title="Soil nutrients: Calcium">soil_Ca</th>
-                            <th title="Soil nutrients: Magnesium">soil_Mg</th>
-                            <th title="Soil nutrients: Sodium">soil_Na</th>
-                            <th title="Soil nutrients: Boron">soil_B</th>
-                            <th title="Plant nutrients: Carbon">plant_C</th>
-                            <th title="Plant nutrients: Nitrogen">plant_N</th>
-                            <th title="Plant nutrients: Phosphorous">plant_P</th>
-                            <th title="Plant nutrients: Potassium">plant_K</th>
-                            <th title="Plant nutrients: Calcium">plant_Ca</th>
-                            <th title="Plant nutrients: Magnesium">plant_Mg</th>
-                            <th title="Plant nutrients: Sulfur">plant_S</th>
-                            <th title="Plant nutrients: Sodium">plant_Na</th>
-                            <th title="Plant nutrients: Choride">plant_Cl</th>
-                            <th title="Plant nutrients: Aluminum">plant_Al</th>
-                            <th title="Plant nutrients: Boron">plant_B</th>
-                            <th title="Plant nutrients: Copper">plant_Cu</th>
-                            <th title="Plant nutrients: Iron">plant_Fe</th>
-                            <th title="Plant nutrients: Manganese">plant_Mn</th>
-                            <th title="Plant nutrients: Zinc">plant_Zn</th>
-                            <th title="Crop biomass: total fresh weight">crop_tot_biomass_fw</th>
-                            <th title="Crop biomass: total dry weight">crop_tot_biomass_dw</th>
-                            <th title="Crop biomass: total aboveground biomass fresh weight">crop_tot_above_biomass_fw</th>
-                            <th title="Crop biomass: total aboveground biomass dry weight">crop_tot_above_biomass_dw</th>
-                            <th title="Crop biomass: total belowground biomass fresh weight">crop_tot_below_biomass_fw</th>
-                            <th title="Crop biomass: total belowground biomass dry weight">crop_tot_below_biomass_dw</th>
-                            <th title="Crop biomass: harvested fraction">harv_fraction</th>
-                            <th title="Crop biomass: harvested fresh weight">harv_fresh_weight</th>
-                            <th title="Crop biomass: harvested dry weight">harv_dry_weight</th>
-                            <th title="Greenhouse gas emissions: chamber placement">ghg_chamber_placement</th>
-                            <th title="Greenhouse gas emissions: N2O">ghg_N2O</th>
-                            <th title="Greenhouse gas emission: CO2">ghg_CO2</th>
-                            <th title="Greenhouse gas emission: NH4">ghg_NH4</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-7">
+            <table id="soilTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project name">project_name</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th title="Sample: collection device">samp_collection_device</th>
+                        <th title="Sample: size">samp_size</th>
+                        <th title="Sample: depth range">samp_depth</th>
+                        <th title="Sample: preparation">samp_prep</th>
+                        <th title="Sample: sieve size">samp_sieve_size</th>
+                        <th title="Sample: storage duration">samp_store_dur</th>
+                        <th title="Sample: storage location">samp_store_loc</th>
+                        <th title="Sample: storage temperature">samp_store_temp</th>
+                        <th title="Sample: weight used for DNA extractions">samp_weight_dna_ext</th>
+                        <th title="Sample: number of pooled DNA extracts">pool_dna_extracts</th>
+                        <th title="Soil: FAO classification">fao_class</th>
+                        <th title="Soil: USDA soil taxonomy">local_class</th>
+                        <th title="Soil: texture class">texture_class</th>
+                        <th title="Soil: porosity">porosity</th>
+                        <th title="Soil: profile position">profile_position</th>
+                        <th title="Soil: slope aspect">slope_aspect</th>
+                        <th title="Soil: slope gradient">slope_gradient</th>
+                        <th title="Soil: bulk density">bulk_density</th>
+                        <th title="Soil: drainage class">drainage_class</th>
+                        <th title="Soil: water content">water_content_soil</th>
+                        <th title="Crop: current land use">cur_land_use</th>
+                        <th title="Crop: current vegetation">cur_vegetation</th>
+                        <th title="Crop: current crop">cur_crop</th>
+                        <th title="Crop: current cultivar">cur_cultivar</th>
+                        <th title="Crop: crop rotation">crop_rotation</th>
+                        <th title="Crop: cover crop">cover_crop</th>
+                        <th title="Fertilizer: amendment class">fert_amendment_class</th>
+                        <th title="Fertilizer: placement">fert_placement</th>
+                        <th title="Fertilizer: type">fert_type</th>
+                        <th title="Fertilizer: total amount">fert_tot_amount</th>
+                        <th title="Fertilizer: total N amount">fert_N_tot_amount</th>
+                        <th title="Fertilizer: total P amount">fert_P_tot_amount</th>
+                        <th title="Fertilizer: total K amount">fert_K_tot_amount</th>
+                        <th title="Irrigation: type">irrigation_type</th>
+                        <th title="Irrigation: total amount">irrigation_tot_amount</th>
+                        <th title="Residue: type">residue_removal</th>
+                        <th title="Residue: growth stage at removal">residue_growth_stage</th>
+                        <th title="Residue: amount removed">residue_removal_percent</th>
+                        <th title="Tillage: type">tillage_event</th>
+                        <th title="Tillage: depth">tillage_event_depth</th>
+                        <th title="Amendments: type">amend1_class</th>
+                        <th title="Amendments: active ingredient">amend1_active_ingredient</th>
+                        <th title="Amendments: total amount">amend1_tot_amount</th>
+                        <th title="Amendments: type">amend2_class</th>
+                        <th title="Amendments: active ingredient">amend2_active_ingredient</th>
+                        <th title="Amendments: total amount">amend2_tot_amount</th>
+                        <th title="Amendments: type">amend3_class</th>
+                        <th title="Amendments: active ingredient">amend3_active_ingredient</th>
+                        <th title="Amendments: total amount">amend3_tot_amount</th>
+                        <th title="Microbial Biomass: rRNA copies">rRNA_copies</th>
+                        <th title="Microbial Biomass: microbial biomass Carbon">microbial_biomass_C</th>
+                        <th title="Microbial Biomass: microbial biomass Nitrogen">microbial_biomass_N</th>
+                        <th title="Microbial Biomass: microbial respiration">microbial_respiration</th>
+                        <th title="Soil nutrients: pH">soil_pH</th>
+                        <th title="Soil nutrients: Electrical conductivity">soil_EC</th>
+                        <th title="Soil nutrients: Carbon">soil_C</th>
+                        <th title="Soil nutrients: Organic matter">soil_OM</th>
+                        <th title="Soil nutrients: Nitrogen">soil_N</th>
+                        <th title="Soil nutrients: Nitrate Nitrogen">soil_NO3_N</th>
+                        <th title="Soil nutrients: Ammonium Nitrogen">soil_NH4_N</th>
+                        <th title="Soil nutrients: Phosphorous">soil_P</th>
+                        <th title="Soil nutrients: Potassium">soil_K</th>
+                        <th title="Soil nutrients: Sulfur">soil_S</th>
+                        <th title="Soil nutrients: Zinc">soil_Zn</th>
+                        <th title="Soil nutrients: Iron">soil_Fe</th>
+                        <th title="Soil nutrients: Copper">soil_Cu</th>
+                        <th title="Soil nutrients: Manganese">soil_Mn</th>
+                        <th title="Soil nutrients: Calcium">soil_Ca</th>
+                        <th title="Soil nutrients: Magnesium">soil_Mg</th>
+                        <th title="Soil nutrients: Sodium">soil_Na</th>
+                        <th title="Soil nutrients: Boron">soil_B</th>
+                        <th title="Plant nutrients: Carbon">plant_C</th>
+                        <th title="Plant nutrients: Nitrogen">plant_N</th>
+                        <th title="Plant nutrients: Phosphorous">plant_P</th>
+                        <th title="Plant nutrients: Potassium">plant_K</th>
+                        <th title="Plant nutrients: Calcium">plant_Ca</th>
+                        <th title="Plant nutrients: Magnesium">plant_Mg</th>
+                        <th title="Plant nutrients: Sulfur">plant_S</th>
+                        <th title="Plant nutrients: Sodium">plant_Na</th>
+                        <th title="Plant nutrients: Choride">plant_Cl</th>
+                        <th title="Plant nutrients: Aluminum">plant_Al</th>
+                        <th title="Plant nutrients: Boron">plant_B</th>
+                        <th title="Plant nutrients: Copper">plant_Cu</th>
+                        <th title="Plant nutrients: Iron">plant_Fe</th>
+                        <th title="Plant nutrients: Manganese">plant_Mn</th>
+                        <th title="Plant nutrients: Zinc">plant_Zn</th>
+                        <th title="Crop biomass: total fresh weight">crop_tot_biomass_fw</th>
+                        <th title="Crop biomass: total dry weight">crop_tot_biomass_dw</th>
+                        <th title="Crop biomass: total aboveground biomass fresh weight">crop_tot_above_biomass_fw</th>
+                        <th title="Crop biomass: total aboveground biomass dry weight">crop_tot_above_biomass_dw</th>
+                        <th title="Crop biomass: total belowground biomass fresh weight">crop_tot_below_biomass_fw</th>
+                        <th title="Crop biomass: total belowground biomass dry weight">crop_tot_below_biomass_dw</th>
+                        <th title="Crop biomass: harvested fraction">harv_fraction</th>
+                        <th title="Crop biomass: harvested fresh weight">harv_fresh_weight</th>
+                        <th title="Crop biomass: harvested dry weight">harv_dry_weight</th>
+                        <th title="Greenhouse gas emissions: chamber placement">ghg_chamber_placement</th>
+                        <th title="Greenhouse gas emissions: N2O">ghg_N2O</th>
+                        <th title="Greenhouse gas emission: CO2">ghg_CO2</th>
+                        <th title="Greenhouse gas emission: NH4">ghg_NH4</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
 
-            <div id="tabs-water">
-                <table id="waterTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project namne">project_name</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th>alkalinity</th>
-                            <th>alkyl_diethers</th>
-                            <th>altitude</th>
-                            <th>aminopept_act</th>
-                            <th>ammonium</th>
-                            <th>atmospheric_data</th>
-                            <th>bac_prod</th>
-                            <th>bac_resp</th>
-                            <th>bacteria_carb_prod</th>
-                            <th>biomass_part_name</th>
-                            <th>biomass_amount</th>
-                            <th>bishomohopanol</th>
-                            <th>bromide</th>
-                            <th>calcium</th>
-                            <th>carb_nitro_ratio</th>
-                            <th>chem_administration_name</th>
-                            <th>chem_administration_time</th>
-                            <th>chloride</th>
-                            <th>chlorophyll</th>
-                            <th>conduc</th>
-                            <th>density</th>
-                            <th>diether_lipids</th>
-                            <th>diss_carb_dioxide</th>
-                            <th>diss_hydrogen</th>
-                            <th>diss_inorg_carb</th>
-                            <th>diss_inorg_nitro</th>
-                            <th>diss_inorg_phosp</th>
-                            <th>diss_org_carb</th>
-                            <th>diss_org_nitro</th>
-                            <th>diss_oxygen</th>
-                            <th>down_par</th>
-                            <th>elev</th>
-                            <th>fluor</th>
-                            <th>glucosidase_act</th>
-                            <th>light_intensity</th>
-                            <th>magnesium</th>
-                            <th>mean_frict_vel</th>
-                            <th>mean_peak_frict_vel</th>
-                            <th>n_alkanes</th>
-                            <th>nitrate</th>
-                            <th>nitrite</th>
-                            <th>nitro</th>
-                            <th>org_carb</th>
-                            <th>org_matter</th>
-                            <th>org_nitro</th>
-                            <th>organism_name</th>
-                            <th>organism_count</th>
-                            <th>oxy_stat_samp</th>
-                            <th>part_org_carb</th>
-                            <th>part_org_nitro</th>
-                            <th>perturbation_type</th>
-                            <th>perturbation_interval</th>
-                            <th>pretroleum_hydrocarb</th>
-                            <th>ph</th>
-                            <th>phaeopigments</th>
-                            <th>phosphate</th>
-                            <th>phosplipid_fatt_acid</th>
-                            <th>photon_flux</th>
-                            <th>potassium</th>
-                            <th>pressure</th>
-                            <th>primary_prod</th>
-                            <th>redox_potential</th>
-                            <th>rel_to_oxygen</th>
-                            <th>samp_mat_process</th>
-                            <th>samp_salinity</th>
-                            <th>samp_size</th>
-                            <th>samp_store_dur</th>
-                            <th>samp_store_loc</th>
-                            <th>samp_store_temp</th>
-                            <th>samp_vol_we_dna_ext</th>
-                            <th>silicate</th>
-                            <th>sodium</th>
-                            <th>soluble_react_phosp</th>
-                            <th>source_material_id</th>
-                            <th>sulfate</th>
-                            <th>sulfide</th>
-                            <th>suspen_part_matter</th>
-                            <th>temp</th>
-                            <th>tidal_stage</th>
-                            <th>tot_depth_water_col</th>
-                            <th>tot_diss_nitro</th>
-                            <th>tot_inorg_nitro</th>
-                            <th>tot_nitro</th>
-                            <th>tot_part_carb</th>
-                            <th>tot_phosp</th>
-                            <th>water_current_direction</th>
-                            <th>water_current_magnitude</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-8">
+            <table id="waterTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project namne">project_name</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th>alkalinity</th>
+                        <th>alkyl_diethers</th>
+                        <th>altitude</th>
+                        <th>aminopept_act</th>
+                        <th>ammonium</th>
+                        <th>atmospheric_data</th>
+                        <th>bac_prod</th>
+                        <th>bac_resp</th>
+                        <th>bacteria_carb_prod</th>
+                        <th>biomass_part_name</th>
+                        <th>biomass_amount</th>
+                        <th>bishomohopanol</th>
+                        <th>bromide</th>
+                        <th>calcium</th>
+                        <th>carb_nitro_ratio</th>
+                        <th>chem_administration_name</th>
+                        <th>chem_administration_time</th>
+                        <th>chloride</th>
+                        <th>chlorophyll</th>
+                        <th>conduc</th>
+                        <th>density</th>
+                        <th>diether_lipids</th>
+                        <th>diss_carb_dioxide</th>
+                        <th>diss_hydrogen</th>
+                        <th>diss_inorg_carb</th>
+                        <th>diss_inorg_nitro</th>
+                        <th>diss_inorg_phosp</th>
+                        <th>diss_org_carb</th>
+                        <th>diss_org_nitro</th>
+                        <th>diss_oxygen</th>
+                        <th>down_par</th>
+                        <th>elev</th>
+                        <th>fluor</th>
+                        <th>glucosidase_act</th>
+                        <th>light_intensity</th>
+                        <th>magnesium</th>
+                        <th>mean_frict_vel</th>
+                        <th>mean_peak_frict_vel</th>
+                        <th>n_alkanes</th>
+                        <th>nitrate</th>
+                        <th>nitrite</th>
+                        <th>nitro</th>
+                        <th>org_carb</th>
+                        <th>org_matter</th>
+                        <th>org_nitro</th>
+                        <th>organism_name</th>
+                        <th>organism_count</th>
+                        <th>oxy_stat_samp</th>
+                        <th>part_org_carb</th>
+                        <th>part_org_nitro</th>
+                        <th>perturbation_type</th>
+                        <th>perturbation_interval</th>
+                        <th>pretroleum_hydrocarb</th>
+                        <th>ph</th>
+                        <th>phaeopigments</th>
+                        <th>phosphate</th>
+                        <th>phosplipid_fatt_acid</th>
+                        <th>photon_flux</th>
+                        <th>potassium</th>
+                        <th>pressure</th>
+                        <th>primary_prod</th>
+                        <th>redox_potential</th>
+                        <th>rel_to_oxygen</th>
+                        <th>samp_mat_process</th>
+                        <th>samp_salinity</th>
+                        <th>samp_size</th>
+                        <th>samp_store_dur</th>
+                        <th>samp_store_loc</th>
+                        <th>samp_store_temp</th>
+                        <th>samp_vol_we_dna_ext</th>
+                        <th>silicate</th>
+                        <th>sodium</th>
+                        <th>soluble_react_phosp</th>
+                        <th>source_material_id</th>
+                        <th>sulfate</th>
+                        <th>sulfide</th>
+                        <th>suspen_part_matter</th>
+                        <th>temp</th>
+                        <th>tidal_stage</th>
+                        <th>tot_depth_water_col</th>
+                        <th>tot_diss_nitro</th>
+                        <th>tot_inorg_nitro</th>
+                        <th>tot_nitro</th>
+                        <th>tot_part_carb</th>
+                        <th>tot_phosp</th>
+                        <th>water_current_direction</th>
+                        <th>water_current_magnitude</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
 
-            <div id="tabs-9">
-                <table id="usrTable" cellpadding="0" cellspacing="0" border="0" class="display">
-                    <thead>
-                        <tr>
-                            <th title="Project name">project_name</th>
-                            <th title="Sample name (Mothur group name)">sample_name</th>
-                            <th title="User-defined: categorical variable #1">usr_cat1</th>
-                            <th title="User-defined: categorical variable #2">usr_cat2</th>
-                            <th title="User-defined: categorical variable #3">usr_cat3</th>
-                            <th title="User-defined: categorical variable #4">usr_cat4</th>
-                            <th title="User-defined: categorical variable #5">usr_cat5</th>
-                            <th title="User-defined: categorical variable #6">usr_cat6</th>
-                            <th title="User-defined: quantitative variable #1">usr_quant1</th>
-                            <th title="User-defined: quantitative variable #2">usr_quant2</th>
-                            <th title="User-defined: quantitative variable #3">usr_quant3</th>
-                            <th title="User-defined: quantitative variable #4">usr_quant4</th>
-                            <th title="User-defined: quantitative variable #5">usr_quant5</th>
-                            <th title="User-defined: quantitative variable #6">usr_quant6</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+        <div id="tabs-9">
+            <table id="usrTable" cellpadding="0" cellspacing="0" border="0" class="display">
+                <thead>
+                    <tr>
+                        <th title="Project name">project_name</th>
+                        <th title="Sample name (Mothur group name)">sample_name</th>
+                        <th title="User-defined: categorical variable #1">usr_cat1</th>
+                        <th title="User-defined: categorical variable #2">usr_cat2</th>
+                        <th title="User-defined: categorical variable #3">usr_cat3</th>
+                        <th title="User-defined: categorical variable #4">usr_cat4</th>
+                        <th title="User-defined: categorical variable #5">usr_cat5</th>
+                        <th title="User-defined: categorical variable #6">usr_cat6</th>
+                        <th title="User-defined: quantitative variable #1">usr_quant1</th>
+                        <th title="User-defined: quantitative variable #2">usr_quant2</th>
+                        <th title="User-defined: quantitative variable #3">usr_quant3</th>
+                        <th title="User-defined: quantitative variable #4">usr_quant4</th>
+                        <th title="User-defined: quantitative variable #5">usr_quant5</th>
+                        <th title="User-defined: quantitative variable #6">usr_quant6</th>
+                    </tr>
+                </thead>
+            </table>
         </div>
     </div>
 {% endblock my_content %}
