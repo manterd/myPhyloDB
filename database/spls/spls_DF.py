@@ -258,7 +258,8 @@ def normalizeData(df, taxaDict, mySet, meth, reads, metaDF, iters):
             if meth == 4:
                 groupAbund = relabundDF.groupby(field)[i].sum()
             else:
-                groupAbund = countDF.groupby(field)[i].sum()
+                #groupAbund = countDF.groupby(field)[i].sum()
+                groupAbund = countDF.groupby(field)[i].sum().div(countDF[i].sum())
             groupRich = binaryDF.groupby(field)[i].sum()
             groupDiversity = diversityDF.groupby(field)[i].sum()
 

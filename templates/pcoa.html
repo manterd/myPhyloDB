@@ -634,24 +634,22 @@
 
                     var res_table = obj['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        "jQueryUI": true,
-                        "sDom": 'T<"clear">lfrtip',
-                        "oTableTools": {
-                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
-                        },
-                        "bSort": true,
-                        "scrollX": true
+                        dom: 'Bfrtip',
+                        scroller: true,
+                        scrollX: 600,
+                        scrollY: 600,
+                        //fixedHeader: true,
+                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                     }).draw();
 
                     var dist_table = obj['dist_table'];
                     $('#dist_table').empty().append(dist_table).find('.table').DataTable({
-                        "jQueryUI": true,
-                        "sDom": 'T<"clear">lfrtip',
-                        "oTableTools": {
-                            "sSwfPath": "{% static "tabletools/swf/copy_csv_xls_pdf.swf" %}"
-                        },
-                        "bSort": false,
-                        "scrollX": true
+                        dom: 'Bfrtip',
+                        scroller: true,
+                        scrollX: 600,
+                        scrollY: 600,
+                        //fixedHeader: true,
+                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                     }).draw();
 
                     $("#image").show();
@@ -895,7 +893,7 @@
                     <option value="1">None</option>
                     <option value="2">Rarefaction (remove)</option>
                     <option value="3" selected="selected">Rarefaction (keep)</option>
-                    <option value="4">Proportion</option>
+                    <!--<option value="4">Proportion</option>-->
                     <option value="5">DESeq2</option>
                     <option value="6">DESeq2+VS</option>
                 </select>

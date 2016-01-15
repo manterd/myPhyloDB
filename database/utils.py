@@ -175,16 +175,16 @@ def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
     if not inspect.isclass(exctype):
         raise TypeError("Only types can be raised (not instances)")
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
-    if res == 0:
-        raise ValueError("invalid thread id")
-    elif res != 1:
-        # """if it returns a number greater than one, you're in trouble,
-        # and you should call it again with exc=NULL to revert the effect"""
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
-        raise SystemError("PyThreadState_SetAsyncExc failed")
+    #res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+    #if res == 0:
+    #    raise ValueError("invalid thread id")
+    #elif res != 1:
+    #    # """if it returns a number greater than one, you're in trouble,
+    #    # and you should call it again with exc=NULL to revert the effect"""
+    #    ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+    #    raise SystemError("PyThreadState_SetAsyncExc failed")
 
-
+import os
 class stoppableThread(threading.Thread):
     def _get_my_tid(self):
         """determines this (self's) thread id"""
@@ -210,4 +210,4 @@ class stoppableThread(threading.Thread):
     def terminate(self):
         """raises SystemExit in the context of the given thread, which should
         cause the thread to exit silently (unless caught)"""
-        self.raise_exc(SystemExit)
+        self.raise_exc(BaseException)

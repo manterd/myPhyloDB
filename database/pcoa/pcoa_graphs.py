@@ -363,6 +363,7 @@ def loopCat(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
+
                 if DepVar == 4:
                     finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
                     finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)

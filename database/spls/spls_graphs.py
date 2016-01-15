@@ -299,7 +299,7 @@ def loopCat(request):
                 normDF.set_index('sampleid', inplace=True)
 
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-                finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
+                #finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
 
                 if DepVar == 4:
                     finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
