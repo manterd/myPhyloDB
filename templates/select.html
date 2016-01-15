@@ -17,7 +17,7 @@
         var table1, table2, table3, table4, table5, table6, table7, table8, table9;
 
         $(function () {
-            $("#tabs").tabs();
+
             $(".display").dataTable({
                 dom: 'Bfrtip',
                 scroller: true,
@@ -25,6 +25,14 @@
                 scrollY: 600,
                 //fixedHeader: true,
                 buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+            });
+
+            $("#tabs").tabs({
+                "activate": function(event, ui) {
+                    $( $.fn.dataTable.tables( true ) ).DataTable()
+                            .columns.adjust()
+                            .buttons.resize();
+                }
             });
 
             $("#drawtable").click(function () {

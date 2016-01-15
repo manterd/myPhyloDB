@@ -82,6 +82,10 @@ def stopANOVA(request):
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
+        myDict = {}
+        myDict['error'] = 'Your analysis has been stopped!'
+        res = simplejson.dumps(myDict)
+        return HttpResponse(res, content_type='application/json')
 
 
 def getCatUnivData(request):
@@ -132,15 +136,11 @@ def loopCat(request):
                 sig_only = int(all["sig_only"])
                 size = int(all["MinSize"])
 
-                """
-                """
-
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[RID]:
                     print "Received stop code"
-                    return  #stopcode, WIP
-
-                """
-                """
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 # Generate a list of sequence reads per sample
                 countList = []
@@ -201,7 +201,7 @@ def loopCat(request):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[RID]:
                     print "Received stop code"
-                    return  #stopcode, WIP
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 metaStr = all["metaVals"]
@@ -345,7 +345,7 @@ def loopCat(request):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[RID]:
                     print "Received stop code"
-                    return  #stopcode, WIP
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 # Normalize data
@@ -384,7 +384,7 @@ def loopCat(request):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[RID]:
                     print "Received stop code"
-                    return  #stopcode, WIP
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 3 of 4: Performing statistical test...'
@@ -420,7 +420,7 @@ def loopCat(request):
                     "#00005F", "#A97399", "#4B8160", "#59738A", "#FF5DA7", "#F7C9BF", "#643127", "#513A01",
                     "#6B94AA", "#51A058", "#A45B02", "#1D1702", "#E20027", "#E7AB63", "#4C6001", "#9C6966",
                     "#64547B", "#97979E", "#006A66", "#391406", "#F4D749", "#0045D2", "#006C31", "#DDB6D0",
-                    "#7C6571", "#9FB2A4", "#00D891", "#15A08A", "#BC65E9", "#FFFFFE", "#C6DC99", "#203B3C",
+                    "#7C6571", "#9FB2A4", "#00D891", "#15A08A", "#BC65E9", "#C6DC99", "#203B3C",
                     "#671190", "#6B3A64", "#F5E1FF", "#FFA0F2", "#CCAA35", "#374527", "#8BB400", "#797868",
                     "#C6005A", "#3B000A", "#C86240", "#29607C", "#402334", "#7D5A44", "#CCB87C", "#B88183",
                     "#AA5199", "#B5D6C3", "#A38469", "#9F94F0", "#A74571", "#B894A6", "#71BB8C", "#00B433",
@@ -568,6 +568,12 @@ def loopCat(request):
 
                     base[RID] = 'Step 3 of 4: Performing statistical test...done!'
 
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    if stops[RID]:
+                        print "Received stop code"
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                     base[RID] = 'Step 4 of 4: Formatting graph data for display...'
 
                     grouped2 = group1.groupby(fieldListCat).mean()
@@ -656,9 +662,6 @@ def loopCat(request):
             myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
             raise
-
-    #finally:
-    #    return None
 
 
 def recLabels(lists, level):
@@ -982,7 +985,7 @@ def loopQuant(request):
                     "#00005F", "#A97399", "#4B8160", "#59738A", "#FF5DA7", "#F7C9BF", "#643127", "#513A01",
                     "#6B94AA", "#51A058", "#A45B02", "#1D1702", "#E20027", "#E7AB63", "#4C6001", "#9C6966",
                     "#64547B", "#97979E", "#006A66", "#391406", "#F4D749", "#0045D2", "#006C31", "#DDB6D0",
-                    "#7C6571", "#9FB2A4", "#00D891", "#15A08A", "#BC65E9", "#FFFFFE", "#C6DC99", "#203B3C",
+                    "#7C6571", "#9FB2A4", "#00D891", "#15A08A", "#BC65E9", "#C6DC99", "#203B3C",
                     "#671190", "#6B3A64", "#F5E1FF", "#FFA0F2", "#CCAA35", "#374527", "#8BB400", "#797868",
                     "#C6005A", "#3B000A", "#C86240", "#29607C", "#402334", "#7D5A44", "#CCB87C", "#B88183",
                     "#AA5199", "#B5D6C3", "#A38469", "#9F94F0", "#A74571", "#B894A6", "#71BB8C", "#00B433",
