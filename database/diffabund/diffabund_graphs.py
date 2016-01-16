@@ -310,6 +310,11 @@ def loopCat(request):
                 xAxisDict = {}
                 yAxisDict = {}
 
+                '''DESeq2 flags genes with abnormal distribtuions and sets the p-value to NaN
+                We will replace NaN with 1, so they can be converted to floats, but still not
+                be interpreted as significant'''
+                finalDF.fillna(1, inplace=True)
+
                 grouped = finalDF.groupby('Comparison')
 
                 listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
