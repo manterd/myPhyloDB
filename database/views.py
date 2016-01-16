@@ -575,6 +575,13 @@ def export(request):
     )
 
 
+def norm(request):
+    return render_to_response(
+        'norm.html',
+        context_instance=RequestContext(request)
+    )
+
+
 def ANOVA(request):
     return render_to_response(
         'anova.html',

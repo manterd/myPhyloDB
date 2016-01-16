@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>Norm</title>
+{% endblock pagetitle%}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
+{% block menu_item %}
+    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
+    <br>
+    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
+{% endblock menu_item %}
+
+{% block javascript %}
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var NormMeth = 1, selTheme = 0, i = 0;
+        var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
+        var refresh = 0;
+        var running = false;
+
+        $(function () {
+            $("#run").show().click(function () {
+                if(running == true) {
+                    alert("myPhyloDB is currently running your previous analysis request!");
+                    return false;
+                }
+                running = true;
+                chooseData();
+            });
+
+           $("#stop").show().click(function () {
+                running = false;
+                stopAll();
+            });
+
+            $("#NormMeth").change(function () {
+                NormMeth = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#NormVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#Iters").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#MinVal").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+
+            $("#clearMeta").click(function () {
+                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#clearTaxa").click(function () {
+                $("#selectall").val(0);
+                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                selectAll = 0;
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#selectall").change(function () {
+                selectAll = $(this).val();
+                $("#run").css("background-color", "lightgray");
+                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+        });
+
+        function stopAll() {
+            clearInterval(refresh);
+            $.ajax({
+                url: '/stoNorm/',
+                type: 'GET',
+                dataType: 'json',
+                data: {},
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['error'];
+                    $('#container-1').empty().append(stage);
+                }
+            });
+        }
+
+        function updateStatus(RID) {
+            $.ajax({
+                url: '/statusNorm/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    $('#container-1').empty().append(stage);
+                }
+            });
+        }
+
+        function startTimer(RID) {
+            refresh = setInterval(function(){
+                updateStatus(RID);
+            }, 1000);
+            return refresh;
+        }
+
+        function stopTimer() {
+            clearInterval(refresh);
+        }
+
+        function chooseDisplay() {
+            if ((NormMeth == 2) || (NormMeth == 3)) {
+                $("#NormRow").show();
+                $("#NormRow-off").hide();
+                $("#IterRow").show();
+                $("#IterRow-off").hide();
+            } else {
+                $("#NormRow").hide();
+                $("#NormRow-off").show();
+                $("#IterRow").hide();
+                $("#IterRow-off").show();
+            }
+
+            if ((NormMeth == 4) || (NormMeth == 5)) {
+                $("#MinRow").show();
+                $("#MinRow-off").hide();
+            } else {
+                $("#MinRow").hide();
+                $("#MinRow-off").show();
+            }
+        }
+
+        function chooseData() {
+            if (document.getElementById("NormVal").value < 0) {
+                alert("Sample size can only be a positive integer, 'min', 'median', or 'max'");
+                running = false;
+                return;
+            }
+
+            if (document.getElementById("MinVal").value < 0) {
+                alert("Sample size can only be a positive integer");
+                running = false;
+                return;
+            }
+
+            if ( ((nodesCat != "") || (nodesQuant != "")) && ((nodesTaxa != "") || (selectAll != 0)) ) {
+                $("#run").css("background-color", "yellow");
+                $("#container-1").empty().append('Analysis is running...please be patient');
+                getCatGraphData();
+            } else if ( ((nodesCat == "") || (nodesQuant == "")) && ((nodesTaxa != "") || (selectAll != 0)) ) {
+                $("#container-1").empty().append('Please also choose your meta variable(s)!');
+                $("#run").css("background-color", "red");
+                running = false;
+            } else if ( ((nodesCat != "") || (nodesQuant != "")) && ((nodesTaxa == "") || (selectAll == 0)) ) {
+                $("#container-1").empty().append('Please also choose your taxa variable(s)!');
+                $("#run").css("background-color", "red");
+                running = false;
+            } else if ( (nodesCat == "") && (nodesQuant == "") && (nodesTaxa == "") && (selectAll == 0) ) {
+                $("#container-1").empty().append('Please choose a meta variable(s) and a taxa level(s)!');
+                $("#run").css("background-color", "red");
+                running = false;
+            }
+        }
+
+        function searchData() {
+            var search = $.map(nodesTaxa, function(node) {
+                return node.data.title;
+            });
+            $("#MicrobeWiki").attr("href", "https://microbewiki.kenyon.edu/index.php/Special:Search?search=" + search);
+            $("#Wiki").attr("href", "http://en.wikipedia.org/wiki/" + search);
+            $("#Google").attr("href", "http://www.google.com/search?q=" + search);
+        }
+
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
+        function getCatGraphData() {
+            var RID = makeGUID();
+            startTimer(RID);
+            var myDict = {};
+            myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['Iters'] = document.getElementById("Iters").value;
+            myDict['MinSize'] = document.getElementById("MinVal").value;
+            myDict['selectAll'] = selectAll;
+            myDict['NormMeth'] = NormMeth;
+            myDict['RID'] = RID;
+            var jsonDict = JSON.stringify(myDict);
+            $.ajax({
+                url: '/getNormCatData/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: jsonDict
+                },
+                success: function(data) {
+                    running = false;
+                    stopTimer(refresh);
+                    $('#container-1').empty();
+                    var res_table = data['res_table'];
+                    $('#res_table').empty().append(res_table).find('.table').DataTable({
+                        dom: 'Bfrtip',
+                        scroller: true,
+                        scrollX: 600,
+                        scrollY: 600,
+                        //fixedHeader: true,
+                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                    }).draw();
+
+                    var biome = data['biome'];
+                    $("#biome-text").empty().append(biome);
+
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    } else {
+                        $("#run").css("background-color", "green");
+                    }
+
+                }
+            });
+        }
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <br>
+
+    <!-- tree tables -->
+    <div>
+        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+            <tr>
+                <th bgcolor="white"></th>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <select id="selectall">
+                        <option value="0" selected="selected">Off</option>
+                        <option value="2">Phyla</option>
+                        <option value="3">Classes</option>
+                        <option value="4">Orders</option>
+                        <option value="5">Families</option>
+                        <option value="6">Genera</option>
+                        <option value="7">Species</option>
+                    </select>
+                    &nbsp<-- Selected taxa level
+                </td>
+            </tr>
+            <tr>
+                <td  bgcolor="white">
+                    <select id="NormMeth">
+                        <option value="1" selected="selected">None</option>
+                        <option value="2">Rarefaction (remove)</option>
+                        <option value="3">Rarefaction (keep)</option>
+                        <option value="4">Proportion</option>
+                        <option value="5">DESeq2</option>
+                    </select>
+                    &nbsp<-- Selected normalization method
+                </td>
+            </tr>
+            <tr>
+                <td id="NormRow-off" bgcolor="white"></td>
+            </tr>
+            <tr>
+                <td id="MinRow-off" bgcolor="white"></td>
+            </tr>
+            <tr>
+                <td id="IterRow-off" bgcolor="white"></td>
+            </tr>
+            <tr>
+                <td id="MinRow-off" bgcolor="white"></td>
+            </tr>
+            <tr>
+                <td id="NormRow" style="display: none;" bgcolor="white">
+                    <input style="background-color: white" type="text" id="NormVal" value="median"/>
+                    &nbsp<-- Subsample size:
+                </td>
+            </tr>
+
+            <tr>
+                <td id="IterRow" style="display: none;" bgcolor="white">
+                    <input style="background-color: white" type="text" id="Iters" value="1"/>
+                    &nbsp<-- Iterations:
+                </td>
+            </tr>
+
+            <tr>
+                <td id="MinRow" style="display: none;" bgcolor="white">
+                    <input style="background-color: white"  type="text" id="MinVal" value="1000"/>
+                    &nbsp<-- Minimum sample size:
+                </td>
+            </tr>
+
+        </table>
+    </div>
+
+    <br>
+    <div id="stage"></div>
+    <div id="container-1" style="height: 40px;"></div>
+
+    <h2>Normalized Data (Tabular):</h2>
+    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
+
+    <br>
+    <h2>Normalized Data (Biom Format):</h2>
+    <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
+    <br>
+    <br>
+{% endblock my_content%}
+
+
