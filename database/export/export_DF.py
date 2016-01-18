@@ -7,7 +7,8 @@ import pandas as pd
 from pyper import *
 from scipy.spatial.distance import *
 
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
+from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
 
 def UnivMetaDF(idDict):

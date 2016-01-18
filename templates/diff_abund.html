@@ -357,7 +357,7 @@
                     }
                 }
                 else if (nodesCat[i].getLevel() == 6) {
-                    if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil')) {
+                    if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil') || (nodesCat[i].data.table == 'air') || (nodesCat[i].data.table == 'microbial') || (nodesCat[i].data.table == 'water')) {
                         key = nodesCat[i].data.field;
                         value = nodesCat[i].data.value;
                         id = nodesCat[i].data.id;
@@ -564,9 +564,7 @@
             <td style="width: 36%; text-align: left">
                 Dependent variable:<select id="DepVar">
                 <option value="1">Abundance (counts)</option>
-                <!--<option value="4">Abundance (16S rRNA copies)</option>
-                <option value="2">Species Richness</option>
-                <option value="3">Species Diversity</option>-->
+
                 </select>
             </td>
             <td style="width: 34%; text-align: center">

@@ -272,6 +272,7 @@ class Air(models.Model):
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
+
     barometric_press = models.FloatField(blank=True, null=True)
     carb_dioxide = models.FloatField(blank=True, null=True)
     carb_monoxide = models.FloatField(blank=True, null=True)
@@ -309,6 +310,10 @@ class Air(models.Model):
 
 
 class Microbial(models.Model):
+    sampleid = models.ForeignKey(Sample)
+    projectid = models.ForeignKey(Project)
+    refid = models.ForeignKey(Reference)
+
     alkalinity = models.FloatField(blank=True, null=True)
     alkyl_diethers = models.FloatField(blank=True, null=True)
     altitude = models.FloatField(blank=True, null=True)
@@ -383,6 +388,10 @@ class Microbial(models.Model):
 
 
 class Water(models.Model):
+    sampleid = models.ForeignKey(Sample)
+    projectid = models.ForeignKey(Project)
+    refid = models.ForeignKey(Reference)
+
     alkalinity = models.FloatField(blank=True, null=True)
     alkyl_diethers = models.FloatField(blank=True, null=True)
     altitude = models.FloatField(blank=True, null=True)

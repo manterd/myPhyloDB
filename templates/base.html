@@ -67,17 +67,36 @@
 
             $.ajax({
                 type: 'GET',
-                url: '/getCookie/',
+                url: '/getSampleCookie/',
+                dataType: 'json',
                 data: {},
                 success: function (data) {
-                    if (data == 'no') {
+                    var select = data['select'];
+                    var norm = data['norm'];
+                    //alert('select: '+select);
+                    //alert('norm: '+norm);
+                    if ((select == 'no') && (norm == 'no')) {
                         $("#link0").hide();
                         $("#link1").hide();
                         $("#link2").hide();
                         $("#link3").hide();
                         $("#link4").hide();
                         $("#link5").hide();
-                    } else if (data == 'yes') {
+                    } else if ((select == 'yes') && (norm == 'no')) {
+                        $("#link0").hide();
+                        $("#link1").hide();
+                        $("#link2").hide();
+                        $("#link3").hide();
+                        $("#link4").hide();
+                        $("#link5").show();
+                    } else if ((select == 'no') && ( norm== 'yes')) {
+                        $("#link0").hide();
+                        $("#link1").hide();
+                        $("#link2").hide();
+                        $("#link3").hide();
+                        $("#link4").hide();
+                        $("#link5").hide();
+                    } else if ((select == 'yes') && ( norm== 'yes')) {
                         $("#link0").show();
                         $("#link1").show();
                         $("#link2").show();
@@ -88,6 +107,7 @@
                 }
             });
         });
+
     </script>
 
 </head>
@@ -127,6 +147,12 @@
             <br>
 
             <div>
+                <hr><p><em><strong>Taxonomy</strong></em></p><hr>
+            </div>
+            <a class="Offmouse" href="{% url "taxa" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore taxonomic data in your database.">Search Taxa</li></a>
+            <br>
+
+            <div>
                 <hr><p><em><strong>Data Mgt</strong></em></p><hr>
             </div>
             {% if user.is_authenticated %}
@@ -137,19 +163,11 @@
 
             <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Select projects/samples for analysis.">Select Data</li></a>
             <div id="link5" style="display: none;" >
-                <!--<a class="Offmouse" href="{% url "norm" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Normalize Data</li></a>-->
-                <a class="Offmouse" href="{% url "export" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Export Data</li></a>
+                <a class="Offmouse" href="{% url "norm" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Normalize Data</li></a>
             </div>
                 <br>
 
-            <div>
-                <hr><p><em><strong>Taxonomy</strong></em></p><hr>
-            </div>
-
-            <a class="Offmouse" href="{% url "taxa" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore taxonomic data in your database.">Search Taxa</li></a>
-            <br>
-
-            <div id="link0">
+            <div id="link0" style="display: none;">
                 <hr><p><em><strong>Analysis</strong></em></p><hr>
             </div>
 

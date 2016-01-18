@@ -620,7 +620,7 @@ def SPLS(request):
     )
 
 
-def saveCookie(request):
+def saveSampleCookie(request):
     if request.is_ajax():
         allJson = request.GET["all"]
         selList = simplejson.loads(allJson)
@@ -632,13 +632,19 @@ def saveCookie(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def getCookie(request):
-    samples = Sample.objects.all()
-    try:
-        samples.query = pickle.loads(request.session['selected_samples'])
-        return HttpResponse('yes', content_type='application/text')
-    except:
-        return HttpResponse('no', content_type='application/text')
+def getSampleCookie(request):
+    myDict = {}
+    if "selected_samples" in request.session:
+        myDict['select'] = 'yes'
+    else:
+        myDict['select'] = 'no'
+    if "savedDF" in request.session:
+        myDict['norm'] = 'yes'
+    else:
+        myDict['norm'] = 'no'
+
+    res = simplejson.dumps(myDict, encoding="Latin-1")
+    return HttpResponse(res, content_type='application/json')
 
 
 @login_required(login_url='/accounts/login/')

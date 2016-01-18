@@ -333,7 +333,7 @@
                     }
                 }
                 else if (nodesQuant[i].getLevel() == 6) {
-                    if ((nodesQuant[i].data.table == 'human_associated') || (nodesQuant[i].data.table == 'soil')) {
+                    if ((nodesQuant[i].data.table == 'human_associated') || (nodesQuant[i].data.table == 'soil') || (nodesQuant[i].data.table == 'air') || (nodesQuant[i].data.table == 'microbial') || (nodesQuant[i].data.table == 'water')) {
                         key = nodesQuant[i].data.field;
                         value = nodesQuant[i].data.value;
                         id = nodesQuant[i].data.id;
@@ -357,7 +357,7 @@
                     }
                 }
                 else if (nodesCat[i].getLevel() == 6) {
-                    if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil')) {
+                    if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil') || (nodesCat[i].data.table == 'air') || (nodesCat[i].data.table == 'microbial') || (nodesCat[i].data.table == 'water')) {
                         key = nodesCat[i].data.field;
                         value = nodesCat[i].data.value;
                         id = nodesCat[i].data.id;

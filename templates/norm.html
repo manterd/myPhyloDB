@@ -30,6 +30,8 @@
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
         var refresh = 0;
         var running = false;
+        var tabular= 0, biome = 0;
+        var remove = 0, minsize = 0;
 
         $(function () {
             $("#run").show().click(function () {
@@ -38,10 +40,12 @@
                     return false;
                 }
                 running = true;
+                $("#run").css("background-color", "yellow");
+                $("text-1").empty();
                 chooseData();
             });
 
-           $("#stop").show().click(function () {
+            $("#stop").show().click(function () {
                 running = false;
                 stopAll();
             });
@@ -62,11 +66,55 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#MinSize").change(function () {
+                if (document.getElementById('MinSize').checked) {
+                    minsize = 1;
+                } else {
+                    minsize = 0;
+                }
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
             $("#MinVal").change(function () {
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#Tabular").change(function () {
+                if (document.getElementById('Tabular').checked) {
+                    tabular = 1;
+                } else {
+                    tabular = 0;
+                }
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#Biom").change(function () {
+                if (document.getElementById('Biom').checked) {
+                    biome = 1;
+                } else {
+                    biome = 0;
+                }
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#Remove").change(function () {
+                if (document.getElementById('Remove').checked) {
+                    remove = 1;
+                } else {
+                    remove = 0;
+                }
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#Cutoff").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
 
             $("#clearMeta").click(function () {
                 $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
@@ -142,24 +190,40 @@
         }
 
         function chooseDisplay() {
-            if ((NormMeth == 2) || (NormMeth == 3)) {
-                $("#NormRow").show();
-                $("#NormRow-off").hide();
-                $("#IterRow").show();
-                $("#IterRow-off").hide();
-            } else {
+            if (NormMeth== 1) {
                 $("#NormRow").hide();
-                $("#NormRow-off").show();
                 $("#IterRow").hide();
-                $("#IterRow-off").show();
-            }
-
-            if ((NormMeth == 4) || (NormMeth == 5)) {
                 $("#MinRow").show();
-                $("#MinRow-off").hide();
-            } else {
-                $("#MinRow").hide();
-                $("#MinRow-off").show();
+                $("#VSRow").hide();
+                $("#FilterRow").hide();
+            }
+            if (NormMeth == 2) {
+                $("#NormRow").show();
+                $("#IterRow").show();
+                $("#MinRow").show();
+                $("#VSRow").hide();
+                $("#FilterRow").hide();
+            }
+            if (NormMeth == 3) {
+                $("#NormRow").show();
+                $("#IterRow").show();
+                $("#MinRow").show();
+                $("#VSRow").hide();
+                $("#FilterRow").hide();
+            }
+            if (NormMeth == 4) {
+                $("#NormRow").hide();
+                $("#IterRow").hide();
+                $("#MinRow").show();
+                $("#VSRow").hide();
+                $("#FilterRow").hide();
+            }
+            if (NormMeth == 5) {
+                $("#NormRow").hide();
+                $("#IterRow").hide();
+                $("#MinRow").show();
+                $("#VSRow").show();
+                $("#FilterRow").show();
             }
         }
 
@@ -176,32 +240,7 @@
                 return;
             }
 
-            if ( ((nodesCat != "") || (nodesQuant != "")) && ((nodesTaxa != "") || (selectAll != 0)) ) {
-                $("#run").css("background-color", "yellow");
-                $("#container-1").empty().append('Analysis is running...please be patient');
-                getCatGraphData();
-            } else if ( ((nodesCat == "") || (nodesQuant == "")) && ((nodesTaxa != "") || (selectAll != 0)) ) {
-                $("#container-1").empty().append('Please also choose your meta variable(s)!');
-                $("#run").css("background-color", "red");
-                running = false;
-            } else if ( ((nodesCat != "") || (nodesQuant != "")) && ((nodesTaxa == "") || (selectAll == 0)) ) {
-                $("#container-1").empty().append('Please also choose your taxa variable(s)!');
-                $("#run").css("background-color", "red");
-                running = false;
-            } else if ( (nodesCat == "") && (nodesQuant == "") && (nodesTaxa == "") && (selectAll == 0) ) {
-                $("#container-1").empty().append('Please choose a meta variable(s) and a taxa level(s)!');
-                $("#run").css("background-color", "red");
-                running = false;
-            }
-        }
-
-        function searchData() {
-            var search = $.map(nodesTaxa, function(node) {
-                return node.data.title;
-            });
-            $("#MicrobeWiki").attr("href", "https://microbewiki.kenyon.edu/index.php/Special:Search?search=" + search);
-            $("#Wiki").attr("href", "http://en.wikipedia.org/wiki/" + search);
-            $("#Google").attr("href", "http://www.google.com/search?q=" + search);
+            getCatGraphData();
         }
 
         function makeGUID(){
@@ -215,9 +254,14 @@
             var RID = makeGUID();
             startTimer(RID);
             var myDict = {};
+            myDict['Tabular'] = tabular;
+            myDict['Biome'] = biome;
+            myDict['Remove'] = remove;
+            myDict['Cutoff'] = document.getElementById("Cutoff").value;
             myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['Iters'] = document.getElementById("Iters").value;
-            myDict['MinSize'] = document.getElementById("MinVal").value;
+            myDict['MinSize'] = minsize;
+            myDict['MinVal'] = document.getElementById("MinVal").value;
             myDict['selectAll'] = selectAll;
             myDict['NormMeth'] = NormMeth;
             myDict['RID'] = RID;
@@ -239,7 +283,6 @@
                         scroller: true,
                         scrollX: 600,
                         scrollY: 600,
-                        //fixedHeader: true,
                         buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                     }).draw();
 
@@ -253,7 +296,15 @@
                     } else {
                         $("#run").css("background-color", "green");
                     }
+                    var text = data['text'];
+                    $("#text-1").empty().append(text);
 
+                    $("#link0").show();
+                    $("#link1").show();
+                    $("#link2").show();
+                    $("#link3").show();
+                    $("#link4").show();
+                    $("#link5").show();
                 }
             });
         }
@@ -261,27 +312,16 @@
 {% endblock javascript %}
 
 {% block my_content %}
-    <br>
-
-    <!-- tree tables -->
     <div>
+        <h2>Select your output formats:</h2>
+        <input type="checkbox" title="Click to turn on/off" id="Tabular"/>&nbsp<-- Output results in tabular format:
+        <br>
+        <input type="checkbox" title="Click to turn on/off" id="Biom"/>&nbsp<-- Output results in biom format:
+        <br><br>
+        <h2>Select your normalization method:</h2>
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
                 <th bgcolor="white"></th>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <select id="selectall">
-                        <option value="0" selected="selected">Off</option>
-                        <option value="2">Phyla</option>
-                        <option value="3">Classes</option>
-                        <option value="4">Orders</option>
-                        <option value="5">Families</option>
-                        <option value="6">Genera</option>
-                        <option value="7">Species</option>
-                    </select>
-                    &nbsp<-- Selected taxa level
-                </td>
             </tr>
             <tr>
                 <td  bgcolor="white">
@@ -295,45 +335,51 @@
                     &nbsp<-- Selected normalization method
                 </td>
             </tr>
-            <tr>
-                <td id="NormRow-off" bgcolor="white"></td>
-            </tr>
-            <tr>
-                <td id="MinRow-off" bgcolor="white"></td>
-            </tr>
-            <tr>
-                <td id="IterRow-off" bgcolor="white"></td>
-            </tr>
-            <tr>
-                <td id="MinRow-off" bgcolor="white"></td>
-            </tr>
-            <tr>
-                <td id="NormRow" style="display: none;" bgcolor="white">
+            <tr id="NormRow" style="display: none;" bgcolor="white">
+                <td>
                     <input style="background-color: white" type="text" id="NormVal" value="median"/>
-                    &nbsp<-- Subsample size:
+                    &nbsp<-- Sub-sample size:
                 </td>
             </tr>
 
-            <tr>
-                <td id="IterRow" style="display: none;" bgcolor="white">
+            <tr id="IterRow" style="display: none;" bgcolor="white">
+                <td>
                     <input style="background-color: white" type="text" id="Iters" value="1"/>
                     &nbsp<-- Iterations:
                 </td>
             </tr>
-
+        </table>
+        <br><br>
+        <h2>Select sample/species cutoffs:</h2>
+        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
-                <td id="MinRow" style="display: none;" bgcolor="white">
-                    <input style="background-color: white"  type="text" id="MinVal" value="1000"/>
+                <th bgcolor="white"></th>
+            </tr>
+            <tr id="MinRow" bgcolor="white">
+                <td>
+                    <input type="checkbox" title="Click to turn on/off" id="MinSize"/>
+                    <input style="background-color: white"  type="text" id="MinVal" value="0"/>
                     &nbsp<-- Minimum sample size:
                 </td>
             </tr>
-
+            <tr id="CutoffRow">
+                <td bgcolor="white">
+                    <input type="checkbox" title="Click to turn on/off" id="Remove"/>
+                    <input style="background-color: white"  type="text" id="Cutoff" value="0"/>
+                    &nbsp<-- Minimum species size:
+                </td>
+            </tr>
         </table>
     </div>
-
     <br>
+
     <div id="stage"></div>
     <div id="container-1" style="height: 40px;"></div>
+    <br>
+
+    <h2>Normalization Results:</h2>
+    <textarea id="text-1" style="width: 950px;" wrap="off" rows="10">Please run a normalization procedure!</textarea>
+    <br>
 
     <h2>Normalized Data (Tabular):</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
@@ -341,6 +387,7 @@
     <br>
     <h2>Normalized Data (Biom Format):</h2>
     <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
+    <br>
     <br>
     <br>
 {% endblock my_content%}

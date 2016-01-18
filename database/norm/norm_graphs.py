@@ -106,9 +106,19 @@ def loopCat(request):
                 base[RID] = 'Step 1 of 4: Querying database...'
 
                 NormMeth = int(all["NormMeth"])
+                remove = int(all["Remove"])
+                cutoff = int(all["Cutoff"])
                 Iters = int(all["Iters"])
                 NormVal = all["NormVal"]
-                size = int(all["MinSize"])
+                size_on = int(all["MinSize"])
+
+                if size_on == 1:
+                    size = int(all["MinVal"])
+                else:
+                    size = 0
+
+                tabular_on = int(all['Tabular'])
+                biom_on = int(all['Biome'])
 
                 # Generate a list of sequence reads per sample
                 countList = []
@@ -133,18 +143,33 @@ def loopCat(request):
                 else:
                     NormReads = int(all["NormVal"])
 
+                result = ''
+                result += '\nData Normalization:\n\n'
                 newList = []
                 # Limit reads to max value
-                if NormMeth == 1:
+                if NormMeth == 1 or NormMeth == 4 or NormMeth == 5:
+                    if size > maxSize:
+                        size = medianSize
+                        result += 'The minimum sample size was too high and automatically reset to the median value...\n'
                     for sample in qs1:
                         total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None:
+                        if total['count__sum'] is not None and int(total['count__sum']) >= size:
                             id = sample.sampleid
                             newList.append(id)
+
+                    # If user set reads too high sample list will be blank
+                    if not newList:
+                        size = medianSize
+                        for sample in qs1:
+                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                            if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                                id = sample.sampleid
+                                newList.append(id)
 
                 elif NormMeth == 2 or NormMeth == 3:
                     if NormReads > maxSize:
                         NormReads = medianSize
+                        result += 'The subsample size was too high and automatically reset to the median value...\n'
 
                     for sample in qs1:
                         total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
@@ -166,28 +191,24 @@ def loopCat(request):
                                 id = sample.sampleid
                                 newList.append(id)
 
-                elif NormMeth == 4 or NormMeth == 5:
-                    if size > maxSize:
-                        size = medianSize
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                            id = sample.sampleid
-                            newList.append(id)
-
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        size = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                                id = sample.sampleid
-                                newList.append(id)
-
-                #TODO: create a new idDicct with all variable
                 metaDF = UnivMetaDF(newList)
-                metaDF = metaDF.ix[newList]
-                metaDF.dropna(inplace=True)
+
+                # remove emptycols
+                mtColsDF = metaDF.replace(to_replace='None', value=np.nan)
+                mtColsDF.replace(to_replace='nan', value=np.nan, inplace=True)
+                mtColsDF.dropna(axis=1, how='all', inplace=True)
+                mtColsList = mtColsDF.columns.values.tolist()
+                metaDF = metaDF[mtColsList]
+
+                metaDF.dropna(axis=0, how='all', inplace=True)
+                lenB, col = metaDF.shape
+
+                normRem = len(selected) - lenB
+
+                result += str(lenB) + ' selected samples were included in the final analysis.\n'
+                if normRem > 0:
+                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
+                result += '\n'
 
                 # Create unique list of samples in meta dataframe (may be different than selected samples)
                 myList = metaDF.index.values.tolist()
@@ -203,61 +224,102 @@ def loopCat(request):
                 base[RID] = 'Step 1 of 4: Querying database...done!'
                 base[RID] = 'Step 2 of 4: Normalizing data...'
 
+                if size_on == 1:
+                    if NormReads < size:
+                        NormReads = size
+
                 normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
+                if remove == 1:
+                    grouped = normDF.groupby('speciesid')
+                    goodIDs = []
+                    for name, group in grouped:
+                        if group['abund'].sum() > cutoff:
+                            goodIDs.append(name)
+                    normDF = normDF.loc[normDF['speciesid'].isin(goodIDs)]
+
                 finalDict = {}
+                if NormMeth == 1:
+                    result += 'No normalization was performed...\n'
+                elif NormMeth == 2 or NormMeth == 3:
+                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads with ' + str(Iters) + ' iterations...\n'
+                elif NormMeth == 4:
+                    result += 'Data were normalized by the total number of sequence reads...\n'
+                elif NormMeth == 5 and DESeq_error == 'no':
+                    result += 'Data were normalized by DESeq2...\n'
+                elif NormMeth == 5 and DESeq_error == 'yes':
+                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
+                    result += 'Analysis was run without normalization...\n'
+                    result += 'To try again, please select fewer samples or another normalization method...\n'
+
+                result += '\n'
+                if size_on == 1:
+                    result += "Samples with fewer than " + str(size) + " reads were removed from your analysis...\n"
+                else:
+                    result += "No minimum samples size was applied...\n"
+
+                result += '\n'
+                if remove == 1:
+                    result += "Species with fewer than " + str(cutoff) + " reads were removed from your analysis\n"
+                else:
+                    result += "No minimum species size was applied...\n"
+
+                result += '===============================================\n\n\n'
+                finalDict['text'] = result
+
                 normDF.set_index('sampleid', inplace=True)
-
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-                #finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
 
-                finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+                finalDF['abund_16S'] = finalDF['rel_abund'] * finalDF['rRNA_copies']
+
+                if NormMeth == 4:
+                    finalDF.drop('abund', axis=1, inplace=True)
+                    finalDF.rename(columns={'rel_abund': 'abund'}, inplace=True)
+                else:
+                    finalDF.drop('rel_abund', axis=1, inplace=True)
+
+                finalDF[['abund', 'abund_16S', 'rich', 'diversity']] = finalDF[['abund', 'abund_16S', 'rich', 'diversity']].astype(float)
+
                 finalDF.reset_index(drop=False, inplace=True)
                 finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
+
+                #re-order finalDF
+                metaDFList = list(metaDF.columns.values)
+                removeList = ['projectid', 'refid', 'sample_name']
+                for x in removeList:
+                    if x in metaDFList:
+                        metaDFList.remove(x)
+                metaDFList = ['projectid', 'refid', 'sampleid', 'sample_name'] + metaDFList
+                metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']
+                finalDF = finalDF[metaDFList]
+
+                # save finalDF to cookie
+                request.session['savedDF'] = pickle.dumps(finalDF)
 
                 base[RID] = 'Step 2 of 4: Normalizing data...done!'
                 base[RID] = 'Step 3 of 4: Formatting biome data...'
 
                 biome = {}
-                if not u'sample_name' in fieldList:
-                    newList = ['sampleid', 'sample_name']
-                    newList.extend(fieldList)
-                else:
-                    newList = ['sampleid']
-                    newList.extend(fieldList)
 
-                grouped = finalDF.groupby(newList, sort=False)
                 nameList = []
-                for name, group in grouped:
-                    metaDict = {}
-                    for i in xrange(1, len(newList)):
-                        metaDict[str(newList[i])] = str(name[i])
-                    nameList.append({"id": str(name[0]), "metadata": metaDict})
+                for i in myList:
+                    nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
-                if key == 'Kingdom':
-                    grouped = finalDF.groupby(['rank', 'kingdomName', 'kingdomid'], sort=False)
-                elif key == 'Phyla':
-                    grouped = finalDF.groupby(['rank', 'phylaName', 'phylaid'], sort=False)
-                elif key == 'Class':
-                    grouped = finalDF.groupby(['rank', 'className', 'classid'], sort=False)
-                elif key == 'Order':
-                    grouped = finalDF.groupby(['rank', 'orderName', 'orderid'], sort=False)
-                elif key == 'Family':
-                    grouped = finalDF.groupby(['rank', 'familyName', 'familyid'], sort=False)
-                elif key == 'Genus':
-                    grouped = finalDF.groupby(['rank', 'genusName', 'genusid'], sort=False)
-                elif key == 'Species':
-                    grouped = finalDF.groupby(['rank', 'speciesName', 'speciesid'], sort=False)
+                # get list of lists with abundances
+                taxaOnlyDF = finalDF[['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
+                taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
+                dataList = taxaOnlyDF.values.tolist()
+
+                # get list of taxa
+                namesDF = finalDF[['sampleid', 'speciesid']]
+                namesDF['taxa'] = finalDF[['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
+                namesDF = namesDF.pivot(index='speciesid', columns='sampleid', values='taxa')
 
                 taxaList = []
-                dataList = []
-                for name, group in grouped:
-                    metaDict ={}
-                    taxonList = []
-                    taxonList.append(str(name[1]))
-                    metaDict['taxonomy'] = taxonList
-                    taxaList.append({"id": str(name[2]), "metadata": metaDict})
-                    dataList.append(group['abund'].values.astype(float).tolist())
+                for index, row in namesDF.iterrows():
+                    metaDict = {}
+                    metaDict['taxonomy'] = row[0]
+                    taxaList.append({"id": index, "metadata": metaDict})
 
                 biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
                 biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
@@ -270,32 +332,34 @@ def loopCat(request):
                 biome['columns'] = nameList
                 biome['data'] = dataList
 
+                if biom_on == 1:
+                    biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
+                    finalDict['biome'] = str(biome_json)
+
                 base[RID] = 'Step 3 of 4: Formatting biome data...done!'
                 base[RID] = 'Step 4 of 4: Formatting result table...'
 
-                res_table = finalDF.to_html(classes="table display")
-                res_table = res_table.replace('border="1"', 'border="0"')
-                finalDict['res_table'] = str(res_table)
+                if tabular_on == 1:
+                    res_table = finalDF.to_html(classes="table display")
+                    res_table = res_table.replace('border="1"', 'border="0"')
+                    finalDict['res_table'] = str(res_table)
 
-
-                biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
                 finalDict['error'] = 'none'
-                finalDict['biome'] = str(biome_json)
                 res = simplejson.dumps(finalDict)
+
                 base[RID] = 'Step 4 of 4: Formatting result table...done!'
                 return None
+
     except:
         if not stop3:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
-            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict['error'] = "Error with Normalization!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
             raise
 
-    #finally:
-    #    return None
 
 
 

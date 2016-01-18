@@ -140,17 +140,17 @@
                 var jsonDict = JSON.stringify(selKeys);
                 $.ajax({
                     type: 'GET',
-                    url: '/saveCookie/',
+                    url: '/saveSampleCookie/',
                     dataType: 'json',
                     data: {all: jsonDict},
                     success: function (data) {
                         var result = JSON.stringify(data);
                         alert(result);
-                        $("#link0").show();
-                        $("#link1").show();
-                        $("#link2").show();
-                        $("#link3").show();
-                        $("#link4").show();
+                        $("#link0").hide();
+                        $("#link1").hide();
+                        $("#link2").hide();
+                        $("#link3").hide();
+                        $("#link4").hide();
                         $("#link5").show();
                     }
                 });
