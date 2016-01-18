@@ -110,7 +110,10 @@ def loopCat(request):
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
 
                 # Get normalized data from cookie
-                savedDF = pickle.loads(request.session['savedDF'])
+                #savedDF = pickle.loads(request.session['savedDF'])
+
+                path = pickle.loads(request.session['savedDF'])
+                savedDF = pd.read_pickle(path)
 
                 selectAll = int(all["selectAll"])
                 DepVar = int(all["DepVar"])

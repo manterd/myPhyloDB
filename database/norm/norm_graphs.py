@@ -7,6 +7,7 @@ import pandas as pd
 import pickle
 from pyper import *
 import simplejson
+from uuid import uuid4
 
 from database.norm.norm_DF import UnivMetaDF, normalizeUniv
 from database.models import Sample, Profile
@@ -293,8 +294,17 @@ def loopCat(request):
                 metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']
                 finalDF = finalDF[metaDFList]
 
-                # save finalDF to cookie
-                request.session['savedDF'] = pickle.dumps(finalDF)
+                # save finalDF to session (i.e. dataabase
+                #request.session['savedDF'] = pickle.dumps(finalDF)
+
+                # save location info to session
+                myDir = 'database/norm/saved/'
+                userID = str(request.user.id)       # if logged in as guest will set to 'None', problematic?
+                path = str(myDir) + 'savedDF_' + str(userID) + '.pkl'
+                request.session['savedDF'] = pickle.dumps(path)
+
+                # now save file to computer
+                finalDF.to_pickle(path)
 
                 base[RID] = 'Step 2 of 4: Normalizing data...done!'
                 base[RID] = 'Step 3 of 4: Formatting biome data...'
