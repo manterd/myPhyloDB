@@ -600,251 +600,201 @@ def makeLabels(name, list):
 
 
 def loopQuant(request):
-    global res, base, time1, TimeDiff, stop1
+    global res, base, time1, TimeDiff, stop1, stops
     try:
         while True:
-            samples = Sample.objects.all()
-            samples.query = pickle.loads(request.session['selected_samples'])
-            selected = samples.values_list('sampleid')
-            qs1 = Sample.objects.all().filter(sampleid__in=selected)
-
             if request.is_ajax():
+                # Get variables from web page
                 allJson = request.GET["all"]
                 all = simplejson.loads(allJson)
 
                 RID = str(all["RID"])
+                stops[RID] = False
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 4: Querying database...'
 
+                # Get normalized data from cookie
+                #savedDF = pickle.loads(request.session['savedDF'])
+
+                path = pickle.loads(request.session['savedDF'])
+                savedDF = pd.read_pickle(path)
+
                 selectAll = int(all["selectAll"])
                 DepVar = int(all["DepVar"])
-                NormMeth = int(all["NormMeth"])
-                NormVal = all["NormVal"]
-                Iters = int(all["Iters"])
                 sig_only = int(all["sig_only"])
-                size = int(all["MinSize"])
 
-                # Generate a list of sequence reads per sample
-                countList = []
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None:
-                        countList.append(total['count__sum'])
+                # Select samples and meta-variables from savedDF
+                catSampleIDs = list(set(all["metaIDsCat"]))
+                catFields = list(set(all["metaFieldsCat"]))
+                catValues = list(set(all["metaValsCat"]))
+                quantSampleIDs = list(set(all["metaIDsQuant"]))
+                quantFields = list(set(all["metaFieldsQuant"]))
+                quantValues = list(set(all["metaValsQuant"]))
 
-                # Calculate min/median/max of sequence reads for rarefaction
-                minSize = int(min(countList))
-                medianSize = int(np.median(np.array(countList)))
-                maxSize = int(max(countList))
+                allSampleIDs = list(set(catSampleIDs + quantSampleIDs))
+                allFields = list(set(catFields + quantFields))
+                allValues = list(set(catValues + quantValues))
 
-                if NormVal == "min":
-                    NormReads = minSize
-                elif NormVal == "median":
-                    NormReads = medianSize
-                elif NormVal == "max":
-                    NormReads = maxSize
-                elif NormVal == "none":
-                    NormReads = -1
-                else:
-                    NormReads = int(all["NormVal"])
+                # Removes samples (rows) that are not in our samplelist
+                metaDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+                metaDF = metaDF[allFields]
 
-                # Remove samples if below the sequence threshold set by user (rarefaction)
-                newList = []
                 result = ''
-                metaStrCat = all["metaValsCat"]
-                fieldListCat = []
-                valueListCat = []
-                try:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
-                    for key in sorted(metaDictCat):
-                        fieldListCat.append(key)
-                        valueListCat.append(metaDictCat[key])
-                except:
-                    placeholder = ''
-
-                metaStrQuant = all["metaValsQuant"]
-                fieldListQuant = []
-                valueListQuant = []
-                try:
-                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
-                    for key in sorted(metaDictQuant):
-                        fieldListQuant.append(key)
-                        valueListQuant.extend(metaDictQuant[key])
-                except:
-                    placeholder = ''
-
-                metaStr = all["metaVals"]
-                fieldList = []
-                valueList = []
-                idDict = {}
-                try:
-                    metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-                    for key in sorted(metaDict):
-                        fieldList.append(key)
-                        valueList.append(metaDict[key])
-
-                    idStr = all["metaIDs"]
-                    idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
-
-                except:
-                    placeholder = ''
-
-                if DepVar == 4:
-                    idList = []
-                    for i in xrange(len(selected)):
-                        idList.append(selected[i][0])
-                    idDict['rRNA_copies'] = idList
-
-                result += 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
-                result += 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
+                result += 'Categorical variables selected: ' + ", ".join(catFields) + '\n'
+                result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
-                result += '\nData Normalization:\n'
 
-                # Limit reads to max value
-                if NormMeth == 1:
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None:
-                            id = sample.sampleid
-                            newList.append(id)
+                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
-                elif NormMeth == 2 or NormMeth == 3:
-                    if NormReads > maxSize:
-                        NormReads = medianSize
-                        result += 'The subsample size was too high and automatically reset to the median value...\n'
 
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if NormMeth == 2:
-                            if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                                id = sample.sampleid
-                                newList.append(id)
-                        else:
-                            if total['count__sum'] is not None:
-                                id = sample.sampleid
-                                newList.append(id)
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        NormReads = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                                id = sample.sampleid
-                                newList.append(id)
-
-                elif NormMeth == 4 or NormMeth == 5:
-                    if size > maxSize:
-                        size = medianSize
-                        result += 'The minimum sample size was too high and automatically reset to the median value...\n'
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                            id = sample.sampleid
-                            newList.append(id)
-
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        size = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                                id = sample.sampleid
-                                newList.append(id)
-
-                metaDF = UnivMetaDF(idDict)
-
-                lenA, col = metaDF.shape
-
-                metaDF = metaDF.ix[newList]
-                metaDF.dropna(inplace=True)
-                lenB, col = metaDF.shape
-
-                selectRem = len(selected) - lenA
-                normRem = lenA - lenB
-
-                result += str(lenB) + ' selected samples were included in the final analysis.\n'
-                if normRem > 0:
-                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
-                if selectRem:
-                    result += str(selectRem) + ' samples were deselected by the user.\n'
-
-                # Create unique list of samples in meta dataframe (may be different than selected samples)
-                myList = metaDF.index.values.tolist()
-
-                # Create dataframe with all taxa/count data by sample
-                taxaDF = taxaProfileDF(myList)
+                base[RID] = 'Step 2 of 4: Selecting your chosen taxa...'
 
                 # Select only the taxa of interest if user used the taxa tree
                 taxaString = all["taxa"]
                 taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
 
-                # Select only the taxa of interest if user used the selectAll button
-                if selectAll == 1:
-                    taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
-                    taxaDict['Kingdom'] = qs3
+                # get selected taxa fro each rank selected in the tree
+                taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'abund_16S', 'rich', 'diversity'])
+                if selectAll == 0:
+                    for key in taxaDict:
+                        taxaList = taxaDict[key]
+                        if isinstance(taxaList, unicode):
+                            if key == 'Kingdom':
+                                tempDF = savedDF.loc[savedDF['kingdomid'] == taxaList]
+                                tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Kingdom'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Phyla':
+                                tempDF = savedDF.loc[savedDF['phylaid'] == taxaList]
+                                tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Phyla'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Class':
+                                tempDF = savedDF.loc[savedDF['classid'] == taxaList]
+                                tempDF = tempDF[['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Class'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Order':
+                                tempDF = savedDF.loc[savedDF['orderid'] == taxaList]
+                                tempDF = tempDF[['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Order'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Family':
+                                tempDF = savedDF.loc[savedDF['familyid'] == taxaList]
+                                tempDF = tempDF[['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Family'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Genus':
+                                tempDF = savedDF.loc[savedDF['genusid'] == taxaList]
+                                tempDF = tempDF[['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Genus'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Species':
+                                tempDF = savedDF.loc[savedDF['speciesid'] == taxaList]
+                                tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Species'
+                                taxaDF = taxaDF.append(tempDF)
+                        else:
+                            if key == 'Kingdom':
+                                tempDF = savedDF.loc[savedDF['kingdomid'].isin(taxaList)]
+                                tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Kingdom'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Phyla':
+                                tempDF = savedDF.loc[savedDF['phylaid'].isin(taxaList)]
+                                tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Phyla'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Class':
+                                tempDF = savedDF.loc[savedDF['classid'].isin(taxaList)]
+                                tempDF = tempDF[['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Class'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Order':
+                                tempDF = savedDF.loc[savedDF['orderid'].isin(taxaList)]
+                                tempDF = tempDF[['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Order'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Family':
+                                tempDF = savedDF.loc[savedDF['familyid'].isin(taxaList)]
+                                tempDF = tempDF[['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Family'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Genus':
+                                tempDF = savedDF.loc[savedDF['genusid'].isin(taxaList)]
+                                tempDF = tempDF[['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Genus'
+                                taxaDF = taxaDF.append(tempDF)
+                            elif key == 'Species':
+                                tempDF = savedDF.loc[savedDF['speciesid'].isin(taxaList)]
+                                tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                                tempDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                                tempDF['rank'] = 'Species'
+                                taxaDF = taxaDF.append(tempDF)
+                elif selectAll == 1:
+                    taxaDF = savedDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+                    taxaDF['rank'] = 'Kingdom'
                 elif selectAll == 2:
-                    taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
-                    taxaDict['Phyla'] = qs3
+                    taxaDF = savedDF[['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+                    taxaDF['rank'] = 'Phyla'
                 elif selectAll == 3:
-                    taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
-                    taxaDict['Class'] = qs3
+                    taxaDF = savedDF[['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+                    taxaDF['rank'] = 'Class'
                 elif selectAll == 4:
-                    taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
-                    taxaDict['Order'] = qs3
+                    taxaDF = savedDF[['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+                    taxaDF['rank'] = 'Order'
                 elif selectAll == 5:
-                    taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
-                    taxaDict['Family'] = qs3
+                    taxaDF = savedDF[['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+                    taxaDF['rank'] = 'Family'
                 elif selectAll == 6:
-                    taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
-                    taxaDict['Genus'] = qs3
+                    taxaDF = savedDF[['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+                    taxaDF['rank'] = 'Genus'
                 elif selectAll == 7:
-                    taxaDict = {}
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
-                    taxaDict['Species'] = qs3
+                    taxaDF = savedDF[['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                    taxaDF['rank'] = 'Species'
 
-                base[RID] = 'Step 1 of 4: Querying database...done!'
-                base[RID] = 'Step 2 of 4: Normalizing data...'
+                finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+                wantedList = allFields + ['sampleid', 'rank', 'taxa_name', 'taxa_id']
+                finalDF = finalDF.groupby(wantedList)[['abund', 'abund_16S', 'rich', 'diversity']].sum()
+                finalDF.reset_index(drop=False, inplace=True)
 
-                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
+                base[RID] = 'Step 2 of 4: Selecting your chosen taxa...done'
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
+                base[RID] = 'Step 3 of 4: Performing statistical test...!'
                 finalDict = {}
-                if NormMeth == 1:
-                    result += 'No normalization was performed...\n'
-                elif NormMeth == 2 or NormMeth == 3:
-                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-                elif NormMeth == 4:
-                    result += 'Data were normalized by the total number of sequence reads...\n'
-                elif NormMeth == 5 and DESeq_error == 'no':
-                    result += 'Data were normalized by DESeq2...\n'
-                elif NormMeth == 5 and DESeq_error == 'yes':
-                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                    result += 'Analysis was run without normalization...\n'
-                    result += 'To try again, please select fewer samples or another normalization method...\n'
-                result += '===============================================\n\n\n'
-
-                normDF.set_index('sampleid', inplace=True)
-
-                finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-                #finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
-
-                if DepVar == 4:
-                    finalDF['copies'] = finalDF.abund * finalDF.rRNA_copies
-                    finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
-                else:
-                    finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
-
-                base[RID] = 'Step 2 of 4: Normalizing data...done!'
-                base[RID] = 'Step 3 of 4: Performing linear regression...'
-
-                seriesList = []
-                xAxisDict = {}
-                yAxisDict = {}
+                colors_idx = 0
                 colors = [
                     "#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",
                     "#7A4900", "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87",
@@ -881,31 +831,24 @@ def loopQuant(request):
                     "#2F5D9B", "#6C5E46", "#D25B88", "#5B656C", "#00B57F", "#545C46", "#866097", "#365D25",
                     "#252F99", "#00CCFF", "#674E60", "#FC009C", "#92896B"
                 ]
+
+                # group DataFrame by each taxa level selected
                 shapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
-                colors_idx = 0
                 grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
+                pValDict = {}
+                p_vals = ''
                 for name1, group1 in grouped1:
-                    shapes_idx = 0
-                    dataList = []
-                    x = []
-                    y = []
+                    D = ''
+                    p_val = 1.0
+
                     if os.name == 'nt':
                         r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                     else:
                         r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                    newFieldList = []
-                    for key in metaDict:
-                        if len(set(metaDict[key])) > 1:
-                            newFieldList.append(key)
-
                     r.assign("df", group1)
-                    if len(newFieldList) > 1:
-                        trtString = "*".join(newFieldList)
-                    else:
-                        trtString = fieldListQuant[0]
+                    trtString = " * ".join(allFields)
 
-                    D = ""
                     if DepVar == 1:
                         anova_string = "fit <- lm(abund ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
@@ -952,8 +895,10 @@ def loopQuant(request):
                         p_value = 1.0
                         D = 'ANOVA cannot be performed, please check that you have more than one treatment level and appropriate replication.\n'
 
-                    resultDF = r.get("df")
-                    resultDF = resultDF.rename(columns=lambda x: x.strip())
+                    pValDict[name1] = p_val
+
+                    #resultDF = r.get("df")
+                    #resultDF = resultDF.rename(columns=lambda x: x.strip())
 
                     result += 'Taxa level: ' + str(name1[0]) + '\n'
                     result += 'Taxa name: ' + str(name1[1]) + '\n'
@@ -971,136 +916,156 @@ def loopQuant(request):
                     D = D.decode('utf-8')
                     result += D + '\n'
                     result += '===============================================\n'
-                    result += '\n'
+                    result += '\n\n\n\n'
 
-                    if len(fieldListCat) > 0:
-                        grouped2 = resultDF.groupby(fieldListCat)
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    if stops[RID]:
+                        print "Received stop code"
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
+                base[RID] = 'Step 3 of 4: Performing statistical test...done!'
+                base[RID] = 'Step 4 of 4: Formatting graph data for display...'
+
+                seriesList = []
+                grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
+                for name1, group1 in grouped1:
+                    pValue = pValDict[name1]
+                    shapes_idx = 0
+
+                    if len(catFields) > 0:
+                        grouped2 = group1.groupby(catFields)
                         for name2, group2 in grouped2:
-                            if DepVar == 1:
-                                dataList = group2[[fieldListQuant[0], 'abund']].values.astype(float).tolist()
-                                x = group2[fieldListQuant[0]].astype(float).values.tolist()
-                                y = group2['abund'].values.astype(float).tolist()
-                            elif DepVar == 2:
-                                dataList = group2[[fieldListQuant[0], 'rich']].values.astype(float).tolist()
-                                x = group2[fieldListQuant[0]].values.astype(float).tolist()
-                                y = group2['rich'].values.astype(float).tolist()
-                            elif DepVar == 3:
-                                dataList = group2[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
-                                x = group2[fieldListQuant[0]].astype(float).values.tolist()
-                                y = group2['diversity'].astype(float).values.tolist()
-                            elif DepVar == 4:
-                                dataList = group2[[fieldListQuant[0], 'copies']].values.astype(float).tolist()
-                                x = group2[fieldListQuant[0]].astype(float).values.tolist()
-                                y = group2['copies'].astype(float).values.tolist()
-
+                            dataList = []
+                            x = []
+                            y = []
                             if sig_only == 0:
-                                seriesDict = {}
-                                seriesDict['turboThreshold'] = 0
-                                seriesDict['type'] = 'scatter'
-                                seriesDict['name'] = str(name1[1]) + ": " + str(name2)
-                                seriesDict['data'] = dataList
-                                seriesDict['color'] = colors[colors_idx]
+                                if DepVar == 1:
+                                    dataList = group2[[quantFields[0], 'abund']].values.astype(float).tolist()
+                                    x = group2[quantFields[0]].values.astype(float).tolist()
+                                    y = group2['abund'].values.astype(float).tolist()
+                                elif DepVar == 2:
+                                    dataList = group1.groupby(catFields)[[quantFields[0], 'rich']].astype(float).tolist()
+                                    x = group1.groupby(catFields)[quantFields[0]].values.astype(float).tolist()
+                                    y = group1.groupby(catFields)['rich'].values.astype(float).tolist()
+                                elif DepVar == 3:
+                                    dataList = group1.groupby(catFields)[[quantFields[0], 'diversity']].values.astype(float).tolist()
+                                    x = group1.groupby(catFields)[quantFields[0]].values.astype(float).tolist()
+                                    y = group1.groupby(catFields)['diversity'].values.astype(float).tolist()
+                                elif DepVar == 4:
+                                    dataList = group1.groupby(catFields)[[quantFields[0], 'abund_16S']].values.astype(float).tolist()
+                                    x = group1.groupby(catFields)[quantFields[0]].values.astype(float).tolist()
+                                    y = group1.groupby(catFields)['abund_16S'].values.astype(float).tolist()
+
+                            elif sig_only == 1:
+                                if pValue < 0.05:
+                                    if DepVar == 1:
+                                        dataList = group1.groupby(catFields)[[quantFields[0], 'abund']].values.astype(float).tolist()
+                                        x = group1.groupby(catFields)[quantFields[0]].values.astype(float).tolist()
+                                        y = group1.groupby(catFields)['abund'].values.astype(float).tolist()
+                                    elif DepVar == 2:
+                                        dataList = group1.groupby(catFields)[[quantFields[0], 'rich']].values.astype(float).tolist()
+                                        x = group1.groupby(catFields)[quantFields[0]].values.astype(float).tolist()
+                                        y = group1.groupby(catFields)['rich'].values.astype(float).tolist()
+                                    elif DepVar == 3:
+                                        dataList = group1.groupby(catFields)[[quantFields[0], 'diversity']].values.astype(float).tolist()
+                                        x = group1.groupby(catFields)[quantFields[0]].values.astype(float).tolist()
+                                        y = group1.groupby(catFields)['diversity'].values.astype(float).tolist()
+                                    elif DepVar == 4:
+                                        dataList = group1.groupby(catFields)[[quantFields[0], 'abund_16S']].values.astype(float).tolist()
+                                        x = group1.groupby(catFields)[quantFields[0]].values.astype(float).tolist()
+                                        y = group1.groupby(catFields)['abund_16S'].values.astype(float).tolist()
+
+                            seriesDict = {}
+                            seriesDict['turboThreshold'] = 0
+                            seriesDict['type'] = 'scatter'
+                            seriesDict['name'] = str(name1[1]) + ": " + str(name2)
+                            seriesDict['data'] = dataList
+                            seriesDict['color'] = colors[colors_idx]
+
+                            markerDict = {}
+                            markerDict['symbol'] = shapes[shapes_idx]
+                            seriesDict['marker'] = markerDict
+                            seriesDict['data'] = dataList
+
+                            seriesList.append(seriesDict)
+
+                            if not np.isnan(p_vals).any():
+                                slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                                min_y = float(slp*min(x) + inter)
+                                max_y = float(slp*max(x) + inter)
+                                slope = "%0.3f" % slp
+                                intercept = "%0.3f" % inter
+                                r_sq = r_value * r_value
+                                r_square = "%0.3f" % r_sq
+
+                                regrList = []
+                                regrList.append([float(min(x)), min_y])
+                                regrList.append([float(max(x)), max_y])
+
+                                regrDict = {}
+                                regrDict['type'] = 'line'
+                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
+                                regrDict['data'] = regrList
+                                regrDict['color'] = colors[colors_idx]
 
                                 markerDict = {}
-                                markerDict['symbol'] = shapes[shapes_idx]
-                                seriesDict['marker'] = markerDict
-                                seriesDict['data'] = dataList
-                                seriesList.append(seriesDict)
+                                markerDict['enabled'] = False
+                                regrDict['marker'] = markerDict
+                                seriesList.append(regrDict)
 
-                                if not np.isnan(p_vals).any():
-                                    slp, inter, r_value, p, std_err = stats.linregress(x, y)
-                                    min_y = float(slp*min(x) + inter)
-                                    max_y = float(slp*max(x) + inter)
-                                    slope = "%0.3f" % slp
-                                    intercept = "%0.3f" % inter
-                                    r_sq = r_value * r_value
-                                    r_square = "%0.3f" % r_sq
+                                shapes_idx += 1
+                                if shapes_idx >= len(shapes):
+                                    shapes_idx = 0
 
-                                    regrList = []
-                                    regrList.append([float(min(x)), min_y])
-                                    regrList.append([float(max(x)), max_y])
-
-                                    regrDict = {}
-                                    regrDict['type'] = 'line'
-                                    regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
-                                    regrDict['data'] = regrList
-                                    regrDict['color'] = colors[colors_idx]
-
-                                    markerDict = {}
-                                    markerDict['enabled'] = False
-                                    regrDict['marker'] = markerDict
-                                    seriesList.append(regrDict)
-
-                            if sig_only == 1:
-                                if p_value < 0.05:
-                                    slp, inter, r_value, p, std_err = stats.linregress(x, y)
-                                    min_y = float(slp*min(x) + inter)
-                                    max_y = float(slp*max(x) + inter)
-                                    slope = "%0.3f" % slp
-                                    intercept = "%0.3f" % inter
-                                    r_sq = r_value * r_value
-                                    r_square = "%0.3f" % r_sq
-
-                                    regrList = []
-                                    regrList.append([float(min(x)), min_y])
-                                    regrList.append([float(max(x)), max_y])
-
-                                    seriesDict = {}
-                                    seriesDict['turboThreshold'] = 0
-                                    seriesDict['type'] = 'scatter'
-                                    seriesDict['name'] = str(name1[1]) + ": " + str(name2)
-                                    seriesDict['data'] = dataList
-                                    seriesDict['color'] = colors[colors_idx]
-
-                                    markerDict = {}
-                                    markerDict['symbol'] = shapes[shapes_idx]
-                                    seriesDict['marker'] = markerDict
-                                    seriesDict['data'] = dataList
-                                    seriesList.append(seriesDict)
-
-                                    regrDict = {}
-                                    regrDict['type'] = 'line'
-                                    regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
-                                    regrDict['data'] = regrList
-                                    regrDict['color'] = colors[colors_idx]
-
-                                    markerDict = {}
-                                    markerDict['enabled'] = False
-                                    regrDict['marker'] = markerDict
-
-                                    seriesList.append(regrDict)
-
-                            shapes_idx += 1
-                            if shapes_idx >= len(shapes):
-                                shapes_idx = 0
-
+                    # start loop if catFields == 0
                     else:
-                        if DepVar == 1:
-                            dataList = resultDF[[str(fieldListQuant[0]), 'abund']].values.astype(float).tolist()
-                            x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
-                            y = resultDF['abund'].astype(float).values.tolist()
-                        elif DepVar == 2:
-                            dataList = resultDF[[fieldListQuant[0], 'rich']].values.astype(float).tolist()
-                            x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
-                            y = resultDF['rich'].astype(float).values.tolist()
-                        elif DepVar == 3:
-                            dataList = resultDF[[fieldListQuant[0], 'diversity']].values.astype(float).tolist()
-                            x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
-                            y = resultDF['diversity'].astype(float).values.tolist()
-                        elif DepVar == 4:
-                            dataList = resultDF[[fieldListQuant[0], 'copies']].values.astype(float).tolist()
-                            x = resultDF[fieldListQuant[0]].astype(float).values.tolist()
-                            y = resultDF['copies'].astype(float).values.tolist()
-
-                        slp, inter, r_value, p, std_err = stats.linregress(x, y)
-                        min_y = float(slp*min(x) + inter)
-                        max_y = float(slp*max(x) + inter)
-                        slope = "%0.3f" % slp
-                        intercept = "%0.3f" % inter
-                        r_sq = r_value * r_value
-                        r_square = "%0.3f" % r_sq
-
                         if sig_only == 0:
+                            if DepVar == 1:
+                                dataList = group1[[quantFields[0], 'abund']].values.astype(float).tolist()
+                                x = group1[quantFields[0]].values.astype(float).tolist()
+                                y = group1['abund'].values.astype(float).tolist()
+                            elif DepVar == 2:
+                                dataList = group1[[quantFields[0], 'rich']].values.astype(float).tolist()
+                                x = group1[quantFields[0]].values.astype(float).tolist()
+                                y = group1['rich'].values.astype(float).tolist()
+                            elif DepVar == 3:
+                                dataList = group1[[quantFields[0], 'diversity']].values.astype(float).tolist()
+                                x = group1[quantFields[0]].values.astype(float).tolist()
+                                y = group1['diversity'].values.astype(float).tolist()
+                            elif DepVar == 4:
+                                dataList = group1[[quantFields[0], 'abund_16S']].values.astype(float).tolist()
+                                x = group1[quantFields[0]].values.astype(float).tolist()
+                                y = group1['abund_16S'].values.astype(float).tolist()
+
+                        elif sig_only == 1:
+                            if pValue < 0.05:
+                                if DepVar == 1:
+                                    dataList = group1[[quantFields[0], 'abund']].values.astype(float).tolist()
+                                    x = group1[quantFields[0]].values.astype(float).tolist()
+                                    y = group1['abund'].values.astype(float).tolist()
+                                elif DepVar == 2:
+                                    dataList = group1[[quantFields[0], 'rich']].values.astype(float).tolist()
+                                    x = group1[quantFields[0]].values.astype(float).tolist()
+                                    y = group1['rich'].values.astype(float).tolist()
+                                elif DepVar == 3:
+                                    dataList = group1[[quantFields[0], 'diversity']].values.astype(float).tolist()
+                                    x = group1[quantFields[0]].values.astype(float).tolist()
+                                    y = group1['diversity'].values.astype(float).tolist()
+                                elif DepVar == 4:
+                                    dataList = group1[[quantFields[0], 'abund_16S']].values.astype(float).tolist()
+                                    x = group1[quantFields[0]].values.astype(float).tolist()
+                                    y = group1['abund_16S'].values.astype(float).tolist()
+
+                        if not np.isnan(p_vals).any():
+                            slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                            min_y = float(slp*min(x) + inter)
+                            max_y = float(slp*max(x) + inter)
+                            slope = "%0.3f" % slp
+                            intercept = "%0.3f" % inter
+                            r_sq = r_value * r_value
+                            r_square = "%0.3f" % r_sq
+
                             regrList = []
                             regrList.append([float(min(x)), min_y])
                             regrList.append([float(max(x)), max_y])
@@ -1130,58 +1095,32 @@ def loopQuant(request):
 
                             seriesList.append(regrDict)
 
-                        if sig_only == 1:
-                            if p_value < 0.05:
-                                regrList = []
-                                regrList.append([float(min(x)), min_y])
-                                regrList.append([float(max(x)), max_y])
-
-                                seriesDict = {}
-                                seriesDict['turboThreshold'] = 0
-                                seriesDict['type'] = 'scatter'
-                                seriesDict['name'] = str(name1[1])
-                                seriesDict['data'] = dataList
-                                seriesDict['color'] = colors[colors_idx]
-
-                                markerDict = {}
-                                markerDict['symbol'] = shapes[shapes_idx]
-                                seriesDict['marker'] = markerDict
-                                seriesDict['data'] = dataList
-                                seriesList.append(seriesDict)
-
-                                regrDict = {}
-                                regrDict['type'] = 'line'
-                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
-                                regrDict['data'] = regrList
-                                regrDict['color'] = colors[colors_idx]
-
-                                markerDict = {}
-                                markerDict['enabled'] = False
-                                regrDict['marker'] = markerDict
-
-                                seriesList.append(regrDict)
-
-                    base[RID] = 'Step 3 of 4: Performing linear regression...done!'
-                    base[RID] = 'Step 4 of 4: Formatting graph data for display...'
-
-                    xTitle = {}
-                    xTitle['text'] = fieldListQuant[0]
-                    xAxisDict['title'] = xTitle
-
-                    yTitle = {}
-                    if DepVar == 1:
-                        yTitle['text'] = 'Relative Abundance (proportion)'
-                    elif DepVar == 2:
-                        yTitle['text'] = 'Species Richness'
-                    elif DepVar == 3:
-                        yTitle['text'] = 'Shannon Diversity'
-                    elif DepVar == 4:
-                        yTitle['text'] = 'Total Abundance (rRNA gene copies)'
-                    yAxisDict['title'] = yTitle
-
                     colors_idx += 1
                     if colors_idx >= len(colors):
                         colors_idx = 0
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    if stops[RID]:
+                        print "Received stop code"
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
+                xAxisDict = {}
+                xTitle = {}
+                xTitle['text'] = quantFields[0]
+                xAxisDict['title'] = xTitle
+
+                yAxisDict = {}
+                yTitle = {}
+                if DepVar == 1:
+                    yTitle['text'] = 'Abundance'
+                elif DepVar == 2:
+                    yTitle['text'] = 'Species Richness'
+                elif DepVar == 3:
+                    yTitle['text'] = 'Shannon Diversity'
+                elif DepVar == 4:
+                    yTitle['text'] = 'Abundance (rRNA gene copies)'
+                yAxisDict['title'] = yTitle
 
                 finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict
@@ -1207,6 +1146,4 @@ def loopQuant(request):
             res = simplejson.dumps(myDict)
             raise
 
-    #finally:
-    #    return None
 

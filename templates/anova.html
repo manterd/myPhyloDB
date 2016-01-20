@@ -780,104 +780,68 @@
         function getQuantGraphData() {
             var RID = makeGUID();
             startTimer(RID);
+            var arrayFieldsCat = [];
             var arrayValsCat = [];
             var arrayIDsCat = [];
+            var arrayFieldsQuant = [];
             var arrayValsQuant = [];
             var arrayIDsQuant = [];
             var key = '';
             var value = '';
-            var vals = '';
             var id = '';
-            var ids = '';
             for (var i = 0; i < nodesQuant.length; i++) {
                 if (nodesQuant[i].getLevel() == 5) {
                     if ((nodesQuant[i].data.table == 'mimark') || (nodesQuant[i].data.table == 'user')) {
                         key = nodesQuant[i].data.field;
-                        value = nodesQuant[i].data.value;
+                        arrayFieldsQuant.push(key);
+
                         id = nodesQuant[i].data.id;
-                        vals = '"' + key + '" : "' + value + '"';
-                        arrayValsQuant.push(vals);
-                        ids = '"' + key + '" : "' + id + '"';
-                        arrayIDsQuant.push(ids);
+                        arrayIDsQuant.push(id);
+
+                        value = nodesQuant[i].data.value;
+                        arrayValsQuant.push(value);
                     }
                 }
                 else if (nodesQuant[i].getLevel() == 6) {
                     if ((nodesQuant[i].data.table == 'human_associated') || (nodesQuant[i].data.table == 'soil') || (nodesQuant[i].data.table == 'air') || (nodesQuant[i].data.table == 'microbial') || (nodesQuant[i].data.table == 'water')) {
                         key = nodesQuant[i].data.field;
-                        value = nodesQuant[i].data.value;
+                        arrayFieldsQuant.push(key);
+
                         id = nodesQuant[i].data.id;
-                        vals = '"' + key + '" : "' + value + '"';
-                        arrayValsQuant.push(vals);
-                        ids = '"' + key + '" : "' + id + '"';
-                        arrayIDsQuant.push(ids);
+                        arrayIDsQuant.push(id);
+
+                        value = nodesQuant[i].data.value;
+                        arrayValsQuant.push(value);
+
                     }
                 }
             }
+
             for (var i = 0; i < nodesCat.length; i++) {
                 if (nodesCat[i].getLevel() == 5) {
                     if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
                         key = nodesCat[i].data.field;
-                        value = nodesCat[i].data.value;
+                        arrayFieldsCat.push(key);
+
                         id = nodesCat[i].data.id;
-                        vals = '"' + key + '" : "' + value + '"';
-                        arrayValsCat.push(vals);
-                        ids = '"' + key + '" : "' + id + '"';
-                        arrayIDsCat.push(ids);
+                        arrayIDsCat.push(id);
+
+                        value = nodesCat[i].data.value;
+                        arrayValsCat.push(value);
                     }
                 }
                 else if (nodesCat[i].getLevel() == 6) {
                     if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil') || (nodesCat[i].data.table == 'air') || (nodesCat[i].data.table == 'microbial') || (nodesCat[i].data.table == 'water')) {
                         key = nodesCat[i].data.field;
-                        value = nodesCat[i].data.value;
+                        arrayFieldsCat.push(key);
+
                         id = nodesCat[i].data.id;
-                        vals = '"' + key + '" : "' + value + '"';
-                        arrayValsCat.push(vals);
-                        ids = '"' + key + '" : "' + id + '"';
-                        arrayIDsCat.push(ids);
+                        arrayIDsCat.push(id);
+
+                        value = nodesCat[i].data.value;
+                        arrayValsCat.push(value);
                     }
                 }
-            }
-
-            var metaValsCat = '';
-            if (nodesCat.length > 0) {
-                metaValsCat = "{" + arrayValsCat.join(",") + "}";
-            }
-
-            var metaIDsCat = '';
-            if (nodesCat.length > 0) {
-                metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
-            }
-
-            var metaValsQuant = '';
-            if (nodesQuant.length > 0) {
-                metaValsQuant = "{" + arrayValsQuant.join(",") + "}";
-            }
-
-            var metaIDsQuant = '';
-            if (nodesQuant.length > 0) {
-                metaIDsQuant = "{" + arrayIDsQuant.join(",") + "}";
-            }
-
-            var metaVals = '';
-            if ((nodesCat.length > 0) && (nodesQuant.length > 0)) {
-                metaVals = "{" + arrayValsCat.join(",") + "," + arrayValsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
-                metaVals = "{" + arrayValsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
-                metaVals = "{" + arrayValsCat.join(",") + "}";
-            }
-
-            var metaIDs = '';
-            if ((nodesCat.length > 0) && (nodesQuant.length > 0)) {
-                metaIDs = "{" + arrayIDsCat.join(",") + "," + arrayIDsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
-                metaIDs = "{" + arrayIDsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
-                metaIDs = "{" + arrayIDsCat.join(",") + "}";
             }
 
             var array2 = [];
@@ -892,20 +856,16 @@
             var taxa = "{" + array2.join(",") + "}";
 
             var myDict = {};
-            myDict['metaVals'] = metaVals;
-            myDict['metaIDs'] = metaIDs;
-            myDict['metaValsCat'] = metaValsCat;
-            myDict['metaIDsCat'] = metaIDsCat;
-            myDict['metaValsQuant'] = metaValsQuant;
-            myDict['metaIDsQuant'] = metaIDsQuant;
+            myDict['metaFieldsCat'] = arrayFieldsCat;
+            myDict['metaValsCat'] = arrayValsCat;
+            myDict['metaIDsCat'] = arrayIDsCat;
+            myDict['metaFieldsQuant'] = arrayFieldsQuant;
+            myDict['metaValsQuant'] = arrayValsQuant;
+            myDict['metaIDsQuant'] = arrayIDsQuant;
             myDict['taxa'] = taxa;
             myDict['DepVar'] = DepVar;
-            myDict['sig_only'] = sig2_only;
+            myDict['sig_only'] = sig1_only;
             myDict['selectAll'] = selectAll;
-            myDict['NormVal'] = document.getElementById("NormVal").value;
-            myDict['Iters'] = document.getElementById("Iters").value;
-            myDict['MinSize'] = document.getElementById("MinVal").value;
-            myDict['NormMeth'] = NormMeth;
             myDict['RID'] = RID;
             var jsonDict = JSON.stringify(myDict);
 
