@@ -333,6 +333,7 @@ def loopCat(request):
                 # group DataFrame by each taxa level selected
                 grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
                 pValDict = {}
+                counter = 1
                 for name1, group1 in grouped1:
                     D = ''
                     p_val = 1.0
@@ -440,6 +441,10 @@ def loopCat(request):
                     result += D + '\n'
                     result += '===============================================\n'
                     result += '\n\n\n\n'
+
+                    taxa_no = len(grouped1)
+                    base[RID] = 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!'
+                    counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                     if stops[RID]:
@@ -837,6 +842,7 @@ def loopQuant(request):
                 grouped1 = finalDF.groupby(['rank', 'taxa_name', 'taxa_id'])
                 pValDict = {}
                 p_vals = ''
+                counter = 1
                 for name1, group1 in grouped1:
                     D = ''
                     p_val = 1.0
@@ -897,9 +903,6 @@ def loopQuant(request):
 
                     pValDict[name1] = p_val
 
-                    #resultDF = r.get("df")
-                    #resultDF = resultDF.rename(columns=lambda x: x.strip())
-
                     result += 'Taxa level: ' + str(name1[0]) + '\n'
                     result += 'Taxa name: ' + str(name1[1]) + '\n'
                     result += 'Taxa ID: ' + str(name1[2]) + '\n'
@@ -917,6 +920,10 @@ def loopQuant(request):
                     result += D + '\n'
                     result += '===============================================\n'
                     result += '\n\n\n\n'
+
+                    taxa_no = len(grouped1)
+                    base[RID] = 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!'
+                    counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                     if stops[RID]:
