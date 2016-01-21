@@ -33,6 +33,7 @@
         var sig1_only = 0;
         var refresh;
         var running = false;
+        var RID = 0;
 
         $(function () {
             $("#tree_metaCat").dynatree({
@@ -113,8 +114,12 @@
             });
 
            $("#stop").show().click(function () {
+                document.getElementById("stop").value = "Stopping...";
                 running = false;
-                stopAll();
+                stopThis(RID);
+                setTimeout(function() {
+                   document.getElementById("stop").value = "Stop Analysis!";
+                }, 10*1000); //Resets stop button after 10 seconds in case of failure on stop function's part
             });
 
             $("#DepVar").change(function () {
@@ -231,19 +236,26 @@
 
         });
 
-        function stopAll() {
+        function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
                 url: '/stopDiffAbund/',
                 type: 'GET',
                 dataType: 'json',
-                data: {},
+                data: {
+                    all: RID
+                },
                 success: function (data) {
                     $("#run").css("background-color", "red");
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var stage = obj['error'];
-                    $('#container-1').empty().append(stage);
+                    if (button1 == 1) {
+                        $('#container-1').empty().append(stage);
+                    } else if (button1 == 2) {
+                        $('#container-2').empty().append(stage);
+                    }
+                    document.getElementById("stop").value = "Stop Analysis!";
                 }
             });
         }

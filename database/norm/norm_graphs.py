@@ -19,6 +19,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stops = {}
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -51,6 +52,7 @@ def removeRIDNorm(request):
             time1.pop(RID, None)
             time2.pop(RID, None)
             TimeDiff.pop(RID, None)
+            stops.pop(RID, None)
             return True
         else:
             return False
@@ -63,18 +65,14 @@ stop3 = False
 
 
 def stopNorm(request):
-    global res, thread3, stop3
+    global stops
     if request.is_ajax():
-        stop3 = True
-        try:
-            thread3.terminate()
-            thread3.join()
-            myDict = {}
-            myDict['error'] = 'Your analysis has been stopped!'
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-        except:
-            pass
+        RID = request.GET["all"]
+        stops[RID] = True
+        myDict = {}
+        myDict['error'] = 'Your analysis has been stopped!'
+        res = simplejson.dumps(myDict)
+        return HttpResponse(res, content_type='application/json')
 
 
 def getNormCatData(request):
@@ -88,7 +86,7 @@ def getNormCatData(request):
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop3
+    global res, base, stage, time1, TimeDiff, stop3, stops
     try:
         while True:
             # Get selected samples from cookie and query database for sample info
@@ -103,6 +101,7 @@ def loopCat(request):
                 all = simplejson.loads(allJson)
 
                 RID = str(all["RID"])
+                stops[RID] = False
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Querying database...'
 
@@ -120,6 +119,12 @@ def loopCat(request):
 
                 tabular_on = int(all['Tabular'])
                 biom_on = int(all['Biome'])
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 # Generate a list of sequence reads per sample
                 countList = []
@@ -192,6 +197,12 @@ def loopCat(request):
                                 id = sample.sampleid
                                 newList.append(id)
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 metaDF = UnivMetaDF(newList)
 
                 # remove emptycols
@@ -238,6 +249,12 @@ def loopCat(request):
                         if group['abund'].sum() > cutoff:
                             goodIDs.append(name)
                     normDF = normDF.loc[normDF['speciesid'].isin(goodIDs)]
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 finalDict = {}
                 if NormMeth == 1:
@@ -304,7 +321,15 @@ def loopCat(request):
                 request.session['savedDF'] = pickle.dumps(path)
 
                 # now save file to computer
-                finalDF.to_pickle(path)
+                print "To pickle!"
+                finalDF.to_pickle(path)  # Problem line TODO fix
+                print "Not to pickle!"
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 2 of 4: Normalizing data...done!'
                 base[RID] = 'Step 3 of 4: Formatting biome data...'
@@ -345,6 +370,12 @@ def loopCat(request):
                 if biom_on == 1:
                     biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
                     finalDict['biome'] = str(biome_json)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 3 of 4: Formatting biome data...done!'
                 base[RID] = 'Step 4 of 4: Formatting result table...'

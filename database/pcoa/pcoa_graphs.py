@@ -20,6 +20,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stops = {}
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -52,6 +53,7 @@ def removeRIDPCoA(request):
             time1.pop(RID, None)
             time2.pop(RID, None)
             TimeDiff.pop(RID, None)
+            stops.pop(RID, None)
             return True
         else:
             return False
@@ -63,18 +65,14 @@ stop4 = False
 
 
 def stopPCoA(request):
-    global res, thread4, stop4
+    global stops
     if request.is_ajax():
-        stop4 = True
-        try:
-            thread4.terminate()
-            thread4.join()
-            myDict = {}
-            myDict['error'] = 'Your analysis has been stopped!'
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-        except:
-            pass
+        RID = request.GET["all"]
+        stops[RID] = True
+        myDict = {}
+        myDict['error'] = 'Your analysis has been stopped!'
+        res = simplejson.dumps(myDict)
+        return HttpResponse(res, content_type='application/json')
 
 
 def getPCoA(request):
@@ -88,7 +86,7 @@ def getPCoA(request):
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop4
+    global res, base, stage, time1, TimeDiff, stop4, stops
     try:
         while True:
             samples = Sample.objects.all()
@@ -101,6 +99,7 @@ def loopCat(request):
                 all = simplejson.loads(allJson)
 
                 RID = str(all["RID"])
+                stops[RID] = False
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 8: Querying database...'
 
@@ -116,6 +115,12 @@ def loopCat(request):
                 Iters = int(all["Iters"])
                 NormVal = all["NormVal"]
                 size = int(all["MinSize"])
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 countList = []
                 for sample in qs1:
@@ -236,6 +241,12 @@ def loopCat(request):
                 result += '===============================================\n'
                 result += '\nData Normalization:\n'
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 # Limit reads to max value
                 if NormMeth == 1:
                     for sample in qs1:
@@ -288,6 +299,12 @@ def loopCat(request):
                                 id = sample.sampleid
                                 newList.append(id)
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 metaDF = metaData(idDict)
 
                 lenA, col = metaDF.shape
@@ -309,6 +326,12 @@ def loopCat(request):
                 myList = metaDF.index.values.tolist()
 
                 taxaDF = taxaProfileDF(myList)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 1 of 8: Querying database...done!'
                 base[RID] = 'Step 2 of 8: Normalizing data...'
@@ -403,6 +426,12 @@ def loopCat(request):
 
                 r.assign("data", normDF)
                 r("library(vegan)")
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 if distance == 1:
                     r("dist <- vegdist(data, method='manhattan')")
@@ -586,6 +615,12 @@ def loopCat(request):
                     myDict['error'] = state
                     res = simplejson.dumps(myDict)
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 base[RID] = 'Step 6 of 8: Formatting graph data for display...'
 
                 seriesList = []
@@ -655,13 +690,31 @@ def loopCat(request):
                 xTitle['text'] = str(eigDF.columns.values.tolist()[PC1]) + " (" + str(eigDF.iloc[1][PC1] * 100) + "%)"
                 xAxisDict['title'] = xTitle
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 yTitle = {}
                 yTitle['text'] = str(eigDF.columns.values.tolist()[PC2]) + " (" + str(eigDF.iloc[1][PC2] * 100) + "%)"
                 yAxisDict['title'] = yTitle
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 if test == 1:
                     result += 'perMANOVA results:' + '\n'
@@ -701,6 +754,12 @@ def loopCat(request):
                 dist_table = distDF.to_html(classes="table display")
                 dist_table = dist_table.replace('border="1"', 'border="0"')
                 finalDict['dist_table'] = str(dist_table)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 8 of 8: Formatting distance score table...done!'
                 finalDict['error'] = 'none'

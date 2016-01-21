@@ -19,6 +19,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stops = {}
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -51,6 +52,7 @@ def removeRIDDIFF(request):
             time1.pop(RID, None)
             time2.pop(RID, None)
             TimeDiff.pop(RID, None)
+            stops.pop(RID, None)
             return True
         else:
             return False
@@ -62,18 +64,14 @@ stop2 = False
 
 
 def stopDiffAbund(request):
-    global res, thread2, stop2
+    global stops
     if request.is_ajax():
-        stop2 = True
-        try:
-            thread2.terminate()
-            thread2.join()
-            myDict = {}
-            myDict['error'] = 'Your analysis has been stopped!'
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-        except:
-            pass
+        RID = request.GET["all"]
+        stops[RID] = True
+        myDict = {}
+        myDict['error'] = 'Your analysis has been stopped!'
+        res = simplejson.dumps(myDict)
+        return HttpResponse(res, content_type='application/json')
 
 
 def getDiffAbund(request):
@@ -87,7 +85,7 @@ def getDiffAbund(request):
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop2
+    global res, base, stage, time1, TimeDiff, stop2, stops
     try:
         while True:
             # Get selected samples from cookie and query database for sample info
@@ -102,8 +100,15 @@ def loopCat(request):
                 all = simplejson.loads(allJson)
 
                 RID = str(all["RID"])
+                stops[RID] = False
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 6: Querying database...'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 taxaLevel = int(all["taxaLevel"])
                 NormMeth = int(all["NormMeth"])
@@ -155,6 +160,12 @@ def loopCat(request):
                 selectRem = len(selected) - lenA
                 normRem = lenA - lenB
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 result += str(lenB) + ' selected samples were included in the final analysis.\n'
                 if normRem > 0:
                     result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
@@ -165,6 +176,12 @@ def loopCat(request):
                 myList = metaDF.index.values.tolist()
 
                 taxaDF = taxaProfileDF(myList)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 1 of 6: Querying database...done!'
                 base[RID] = 'Step 2 of 6: Normalizing data...'
@@ -179,6 +196,12 @@ def loopCat(request):
                 # Sum by taxa level
                 taxaDF = taxaDF.groupby(level=taxaLevel).sum()
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 # Normalization
                 finalDict = {}
                 if os.name == 'nt':
@@ -188,6 +211,12 @@ def loopCat(request):
                 r.assign("metaDF", metaDF)
                 r("trt <- factor(metaDF$merge)")
                 r.assign("count", taxaDF)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 DESeq_error = ''
                 if NormMeth == 1:
@@ -239,6 +268,12 @@ def loopCat(request):
                         r("dds <- estimateDispersions(dds)")
                         r("dds <- nbinomWaldTest(dds)")
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 if NormMeth == 1 and DESeq_error == 'no':
                     result += 'Data were normalized by DESeq2...\n'
                 elif NormMeth == 1 and DESeq_error == 'yes':
@@ -253,11 +288,23 @@ def loopCat(request):
                     result += 'To try again, select a different sample combination or  increase the minimum sample size...\n'
                 result += '===============================================\n\n\n'
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 base[RID] = 'Step 2 of 6: Normalizing data...done!'
                 base[RID] = 'Step 3 of 6: Performing statistical test...'
 
                 mergeList = metaDF['merge'].tolist()
                 mergeSet = list(set(mergeList))
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 finalDF = pd.DataFrame()
                 for i, val in enumerate(mergeSet):
@@ -303,6 +350,12 @@ def loopCat(request):
 
                             base[RID] = 'Step 3 of 6: Performing statistical test...' + str(iterationName) + ' is done!'
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 base[RID] = 'Step 3 of 6: Performing statistical test...done!'
                 base[RID] = 'Step 4 of 6: Formatting graph data for display...'
 
@@ -319,6 +372,12 @@ def loopCat(request):
 
                 listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
                 shapeIterator = 0
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 for name, group in grouped:
                     nosigDF = group[group["p-adjusted"] > FdrVal]
@@ -362,6 +421,12 @@ def loopCat(request):
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
                 base[RID] = 'Step 5 of 6:  Formatting nbinomTest results for display...'
 
@@ -370,6 +435,12 @@ def loopCat(request):
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
                 finalDict['text'] = result
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 6 of 6: Formatting results for display...done!'
                 finalDict['error'] = 'none'

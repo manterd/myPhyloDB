@@ -20,6 +20,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stops = {}
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -52,6 +53,7 @@ def removeRIDSPLS(request):
             time1.pop(RID, None)
             time2.pop(RID, None)
             TimeDiff.pop(RID, None)
+            stops.pop(RID, None)
             return True
         else:
             return False
@@ -89,7 +91,7 @@ def getSPLS(request):
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop5
+    global res, base, stage, time1, TimeDiff, stop5, stops
     try:
         while True:
             samples = Sample.objects.all()
@@ -102,6 +104,7 @@ def loopCat(request):
                 all = simplejson.loads(allJson)
 
                 RID = str(all["RID"])
+                stops[RID] = False
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 8: Querying database...'
 
@@ -132,6 +135,12 @@ def loopCat(request):
                     NormReads = -1
                 else:
                     NormReads = int(all["NormVal"])
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 # Remove samples if below the sequence threshold set by user (rarefaction)
                 newList = []
@@ -167,6 +176,12 @@ def loopCat(request):
                     for i in xrange(len(selected)):
                         idList.append(selected[i][0])
                     idDict['rRNA_copies'] = idList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 result += 'Quantitative variables selected: ' + ", ".join(fieldList) + '\n'
                 result += '===============================================\n'
@@ -224,6 +239,12 @@ def loopCat(request):
                                 id = sample.sampleid
                                 newList.append(id)
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 metaDF = metaData(idDict)
 
                 lenA, col = metaDF.shape
@@ -245,6 +266,12 @@ def loopCat(request):
                 myList = metaDF.index.values.tolist()
 
                 taxaDF = taxaProfileDF(myList)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 1 of 5: Querying database...done!'
                 base[RID] = 'Step 2 of 5: Normalizing data...'
@@ -275,6 +302,12 @@ def loopCat(request):
 
                 normDF, DESeq_error = normalizeData(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 finalDict = {}
                 if NormMeth == 1:
                     result += 'No normalization was performed...\n'
@@ -295,6 +328,12 @@ def loopCat(request):
                     result += 'Analysis was run without normalization...\n'
                     result += 'To try again, please select fewer samples or another normalization method...\n'
                 result += '===============================================\n\n'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 normDF.set_index('sampleid', inplace=True)
 
@@ -318,6 +357,12 @@ def loopCat(request):
                 if DepVar == 4:
                     normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 base[RID] = 'Step 2 of 5: Normalizing data...done!'
                 base[RID] = 'Step 3 of 5: Calculating sPLS...'
 
@@ -326,16 +371,34 @@ def loopCat(request):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
                 r.assign("X", normDF)
                 r.assign("Y", metaDF[fieldList])
                 r.assign("names", normDF.columns.values)
                 r("colnames(X) <- names")
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 r("library(mixOmics)")
                 r("ZeroVar <- nearZeroVar(X, freqCut=90/10, uniqueCut=25)")
                 r("List <- row.names(ZeroVar$Metrics)")
                 r("X_new <- X[,-which(names(X) %in% List)]")
                 r("X_scaled <- scale(X_new, center=TRUE, scale=TRUE)")
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 r("Y_scaled <- scale(Y, center=TRUE, scale=TRUE)")
 
@@ -344,6 +407,12 @@ def loopCat(request):
                 r("set.seed(1)")
                 r("cv <- cv.spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=seq(0.1, 0.9, 0.1), K=c(1:5), plot.it=FALSE)")
                 r("f <- spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=cv$eta.opt, K=cv$K.opt)")
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 r("out <- capture.output(print(f))")
                 fout = r.get("out")
@@ -354,6 +423,12 @@ def loopCat(request):
                 else:
                     result += 'No significant variables were found\n'
                 result += '===============================================\n\n'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 r("set.seed(1)")
                 r("ci.f <- ci.spls(f, plot.it=FALSE, plot.fix='y')")
@@ -371,6 +446,12 @@ def loopCat(request):
                 r("coef.f <- coef(f)")
                 r("sum <- sum(coef.f != 0)")
                 total = r.get("sum")
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 3 of 5: Calculating sPLS...done!'
                 base[RID] = 'Step 4 of 5: Formatting graph data for display...'
@@ -591,6 +672,12 @@ def loopCat(request):
                         r.assign("cmd", hmap_str)
                         r("eval(parse(text=cmd))")
                         r("dev.off()")
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                if stops[RID]:
+                    print "Received stop code"
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 finalDict['text'] = result
 

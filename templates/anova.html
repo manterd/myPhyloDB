@@ -284,7 +284,9 @@
                 document.getElementById("stop").value = "Stopping...";
                 running = false;
                 stopThis(RID);
-                //stopAll();
+                setTimeout(function() {
+                   document.getElementById("stop").value = "Stop Analysis!";
+                }, 10*1000); //Resets stop button after 10 seconds in case of failure on stop function's part
             });
 
             $("#button1").change(function () {
