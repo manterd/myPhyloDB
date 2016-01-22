@@ -26,7 +26,7 @@
     </style>
 
     <script type="text/javascript">
-        var NormMeth = 1, DepVar = 1, StatTest = 1, selTheme = 0, i = 0;
+        var DepVar = 1, selTheme = 0, i = 0;
         var nodesCat = "", nodesTaxa = "", taxaLevel = 6;
         var chart1 = {};
         var catOptions = {};
@@ -114,34 +114,15 @@
             });
 
            $("#stop").show().click(function () {
-                document.getElementById("stop").value = "Stopping...";
                 running = false;
                 stopThis(RID);
-                setTimeout(function() {
-                   document.getElementById("stop").value = "Stop Analysis!";
-                }, 10*1000); //Resets stop button after 10 seconds in case of failure on stop function's part
             });
 
-            $("#DepVar").change(function () {
-                DepVar = $(this).val();
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#NormMeth").change(function () {
-                NormMeth = $(this).val();
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
 
             $("#FdrVal").change(function () {
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#StatTest").change(function () {
-                StatTest = $(this).val();
-                $("#run").css("background-color", "lightgray");
-            });
 
             $("#sig_box-1").change(function () {
                 if (document.getElementById('sig_box-1').checked) {
@@ -230,10 +211,6 @@
                 $("#run").css("background-color", "lightgray");
             });
 
-            $("#NormVal").change(function () {
-                $("#run").css("background-color", "lightgray");
-            });
-
         });
 
         function stopThis(RID) {
@@ -255,7 +232,6 @@
                     } else if (button1 == 2) {
                         $('#container-2').empty().append(stage);
                     }
-                    document.getElementById("stop").value = "Stop Analysis!";
                 }
             });
         }
@@ -286,25 +262,10 @@
             clearInterval(refresh)
         }
 
-        function chooseDisplay() {
-            if (NormMeth == 2) {
-                $("#ThetaRow").show();
-                $("#ThetaRow-off").hide();
-            } else {
-                $("#ThetaRow").hide();
-                $("#ThetaRow-off").show();
-            }
-        }
         function chooseData() {
 
             if (document.getElementById("FdrVal").value < 0 || document.getElementById("FdrVal").value > 1) {
                 alert("False Discovery Rate must be between 0 and 1");
-                running = false;
-                return;
-            }
-
-            if (document.getElementById("Theta").value < 0 || document.getElementById("Theta").value > 1) {
-                alert("Theta must be between 0 and 1");
                 running = false;
                 return;
             }
@@ -393,17 +354,13 @@
                 }
 
                 var myDict = {};
-                myDict['metaVals'] = metaValsCat;
-                myDict['metaIDs'] = metaIDsCat;
+                myDict['metaValsCat'] = metaValsCat;
+                myDict['metaIDsCat'] = metaIDsCat;
                 myDict['DepVar'] = DepVar;
                 myDict['sig_only'] = sig1_only;
-                myDict['taxaLevel'] = taxaLevel;
-                myDict['NormVal'] = document.getElementById("NormVal").value;
-                myDict['Theta'] = document.getElementById("Theta").value;
-                myDict['NormMeth'] = NormMeth;
-                myDict['StatTest'] = StatTest;
-                myDict['FdrVal'] = document.getElementById("FdrVal").value;
+                myDict['selectAll'] = taxaLevel;
                 myDict['RID'] = RID;
+                myDict['FdrVal'] = document.getElementById("FdrVal").value;
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
@@ -542,32 +499,18 @@
             </tr>
             <tr>
                 <select id="taxaLevel">
-                    <option value="1">Phyla</option>
-                    <option value="2">Classes</option>
-                    <option value="3">Orders</option>
-                    <option value="4">Families</option>
-                    <option value="5">Genera</option>
-                    <option value="6" selected="selected">Species</option>
+                    <option value="2">Phyla</option>
+                    <option value="3">Classes</option>
+                    <option value="4">Orders</option>
+                    <option value="5">Families</option>
+                    <option value="6">Genera</option>
+                    <option value="7" selected="selected">Species</option>
                 </select>
                 &nbsp<-- Selected taxa level
             </tr>
         </table>
     </div>
     <br><br>
-    <div style="float: right;">Select chart theme:
-        <select id="theme">
-            <option value="1" selected="selected">default</option>
-            <option value="2">dark-blue</option>
-            <option value="3">dark-green</option>
-            <option value="4">dark-unica</option>
-            <option value="5">gray</option>
-            <option value="6">grid</option>
-            <option value="7">grid-light</option>
-            <option value="8">sand-signika</option>
-            <option value="9">skies</option>
-        </select>
-        &nbsp&nbsp
-    </div>
     <table width="950px" border="2">
         <tr>
             <th colspan="3" style="padding-right: 10px;">GraphData</th>
@@ -575,54 +518,44 @@
         <tr>
             <td style="width: 36%; text-align: left">
                 Dependent variable:<select id="DepVar">
-                <option value="1">Abundance (counts)</option>
+                <option value="1">Abundance</option>
 
                 </select>
             </td>
-            <td style="width: 34%; text-align: center">
-                Normalization method:
-                <select id="NormMeth">
-                    <option value="1" selected="selected">DESeq2</option>
-                    <option value="2">DESeq2+Filter</option>
-                </select>
-            </td>
-            <td id="StatTest-text" style="width: 30%; text-align: right">
-                Statistical test:
-                <select id="StatTest">
-                    <option value="1">nbinomTest</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td></td>
-            <td id="NormRow" style="text-align: center">
-                Minimum sample size:
-                <input type="text" id="NormVal" value="1000"/>
-            </td>
-            <td id="NormRow-off" style="display: none"></td>
+            <td style="width: 34%; text-align: center"></td>
             <td id="FdrRow" style="text-align: right;">
                 False Discovery Rate:
                 <input style="background-color: white" type="text" id="FdrVal" value="0.10"/>
             </td>
-            <td id="FdrRow-off" style="display: none"></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td id="ThetaRow" style="display: none; text-align: center">
-                theta:
-                <input type="text" id="Theta" value="0.4"/>
-            </td>
-            <td id="ThetaRow-off"></td>
-            <td></td>
         </tr>
         <tr>
             <td colspan="3">
                 <div id="container-1" style="height: 400px;">No Data has been selected!</div>
             </td>
         </tr>
+        <tr id="highchartButtons">
+            <td>
+                <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
+            </td>
+            <td>Select chart theme:
+                <select id="theme">
+                    <option value="1" selected="selected">default</option>
+                    <option value="2">dark-blue</option>
+                    <option value="3">dark-green</option>
+                    <option value="4">dark-unica</option>
+                    <option value="5">gray</option>
+                    <option value="6">grid</option>
+                    <option value="7">grid-light</option>
+                    <option value="8">sand-signika</option>
+                    <option value="9">skies</option>
+                </select>
+                &nbsp&nbsp
+            </td>
+            <td>
+                <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
+            </td>
+        </tr>
     </table>
-    <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
-    <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
 
     <div id="txt-1">
         <h2>Normalization Results:</h2>

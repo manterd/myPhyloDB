@@ -568,13 +568,6 @@ def taxa(request):
     )
 
 
-def export(request):
-    return render_to_response(
-        'export.html',
-        context_instance=RequestContext(request)
-    )
-
-
 def norm(request):
     return render_to_response(
         'norm.html',

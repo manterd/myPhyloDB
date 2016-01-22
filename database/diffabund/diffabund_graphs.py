@@ -1,6 +1,5 @@
 import datetime
 from django.http import HttpResponse
-from django.db.models import Sum
 import logging
 import pandas as pd
 import pickle
@@ -8,9 +7,7 @@ import simplejson
 import numpy as np
 from pyper import *
 
-from database.diffabund.diffabund_DF import catDiffAbundDF
-from database.models import Sample, Profile
-from database.utils import multidict, taxaProfileDF, stoppableThread
+from database.utils import multidict, stoppableThread
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
 
@@ -19,7 +16,10 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stop2 = False
 stops = {}
+thread2 = stoppableThread()
+res = ''
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -59,17 +59,18 @@ def removeRIDDIFF(request):
     except:
         return False
 
-thread2 = stoppableThread()
-stop2 = False
-
 
 def stopDiffAbund(request):
     global stops
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
+        stop2 = True
+        thread2.terminate()
+        thread2.join()
         myDict = {}
-        myDict['error'] = 'Your analysis has been stopped!'
+        myDict['error'] = 'none'
+        myDict['message'] = 'Your analysis has been stopped!'
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 
@@ -88,12 +89,6 @@ def loopCat(request):
     global res, base, stage, time1, TimeDiff, stop2, stops
     try:
         while True:
-            # Get selected samples from cookie and query database for sample info
-            samples = Sample.objects.all()
-            samples.query = pickle.loads(request.session['selected_samples'])
-            selected = samples.values_list('sampleid')
-            qs1 = Sample.objects.all().filter(sampleid__in=selected)
-
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.GET["all"]
@@ -101,210 +96,175 @@ def loopCat(request):
 
                 RID = str(all["RID"])
                 stops[RID] = False
-                time1[RID] = time.time()
-                base[RID] = 'Step 1 of 6: Querying database...'
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                time1[RID] = time.time()  # Moved these down here so RID is available
+                base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...'
 
-                taxaLevel = int(all["taxaLevel"])
-                NormMeth = int(all["NormMeth"])
-                FdrVal = float(all["FdrVal"])
-                size = int(all["NormVal"])
-                theta = float(all["Theta"])
+                path = pickle.loads(request.session['savedDF'])
+                savedDF = pd.read_pickle(path)
 
-                # Generate a list of sequence reads per sample
-                countList = []
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None:
-                        countList.append(total['count__sum'])
+                selectAll = int(all["selectAll"])
+                DepVar = int(all["DepVar"])
+                sig_only = int(all["sig_only"])
 
-                # Remove blank samples if below the sequence threshold set by user (rarefaction)
-                newList = []
-                result = 'Data Normalization:\n'
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None and total['count__sum'] >= size:
-                        id = sample.sampleid
-                        newList.append(id)
+                # Select samples and meta-variables from savedDF
+                metaValsCat = all['metaValsCat']
+                metaIDsCat = all['metaIDsCat']
 
-                # Get dict of selected meta variables
-                metaStr = all["metaVals"]
-                fieldList = []
-                valueList = []
-                idDict = {}
-                try:
-                    metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-                    for key in sorted(metaDict):
-                        fieldList.append(key)
-                        valueList.extend(metaDict[key])
+                metaDictCat = {}
+                catFields = []
+                catValues = []
+                if metaValsCat:
+                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
+                    for key in sorted(metaDictCat):
+                        catFields.append(key)
+                        catValues.extend(metaDictCat[key])
 
-                    idStr = all["metaIDs"]
-                    idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
+                catSampleIDs = []
+                if metaIDsCat:
+                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
+                    for key in sorted(idDictCat):
+                        catSampleIDs.extend(idDictCat[key])
 
-                except:
-                    placeholder = ''
+                # Removes samples (rows) that are not in our samplelist
+                metaDF = savedDF.loc[savedDF['sampleid'].isin(catSampleIDs)]
 
-                metaDF = catDiffAbundDF(idDict)
+                if metaDictCat:
+                    for key in metaDictCat:
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
-                lenA, col = metaDF.shape
-
-                metaDF = metaDF.ix[newList]
-                metaDF.dropna(inplace=True)
-                lenB, col = metaDF.shape
-
-                selectRem = len(selected) - lenA
-                normRem = lenA - lenB
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                result += str(lenB) + ' selected samples were included in the final analysis.\n'
-                if normRem > 0:
-                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
-                if selectRem:
-                    result += str(selectRem) + ' samples were deselected by the user.\n'
-
-                # Create unique list of samples in meta dataframe (may be different than selected samples)
-                myList = metaDF.index.values.tolist()
-
-                taxaDF = taxaProfileDF(myList)
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                base[RID] = 'Step 1 of 6: Querying database...done!'
-                base[RID] = 'Step 2 of 6: Normalizing data...'
-
-                # Create combined metadata column
-                if len(fieldList) > 1:
+                # Create combined metadata column - DiffAbund only
+                if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
-                        metaDF.ix[index, 'merge'] = "; ".join(row[fieldList])
+                        metaDF.ix[index, 'merge'] = "; ".join(row[catFields])
                 else:
-                    metaDF['merge'] = metaDF[fieldList[0]]
+                    metaDF['merge'] = metaDF[catFields[0]]
 
-                # Sum by taxa level
-                taxaDF = taxaDF.groupby(level=taxaLevel).sum()
+                # command is unique to DiffAbund
+                metaDF = metaDF.loc[:, ['merge']]
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                result = ''
+                result += 'Categorical variables selected: ' + ", ".join(catFields) + '\n'
+                result += '===============================================\n'
+
+                base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...done'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                # Normalization
+                base[RID] = 'Step 2 of 5: Selecting your chosen taxa...'
+
+                # get selected taxa fro each rank selected in the tree
+                taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'abund_16S', 'rich', 'diversity'])
+
+                if selectAll == 1:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Kingdom'
+                elif selectAll == 2:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Phyla'
+                elif selectAll == 3:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Class'
+                elif selectAll == 4:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Order'
+                elif selectAll == 5:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Family'
+                elif selectAll == 6:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Genus'
+                elif selectAll == 7:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Species'
+
+                # next 3 sets of commands are tailored to DiffAbund
+                finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+                wantedList = ['sampleid', 'merge', 'rank', 'taxa_name', 'taxa_id']
+                finalDF = finalDF.groupby(wantedList)[['abund']].sum()
+
+                '''DESeq can only use integers...
+                so it cannot use proportion and other methods must be set to integers
+                also only seems to be working for none and rarefaction(keep)'''
+
+                finalDF['abund'] = finalDF['abund'].astype(int)
+
+                finalDF.reset_index(drop=False, inplace=True)
+
+                count_rDF = finalDF.pivot(index='taxa_id', columns='sampleid', values='abund')
+                meta_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='merge')
+
+                wanted = meta_rDF.columns.values.tolist()[0]
+                meta_rDF = meta_rDF.loc[:, [wanted]]
+                meta_rDF.rename(columns={wanted: 'merge'}, inplace=True)
+
+                base[RID] = 'Step 2 of 5: Selecting your chosen taxa...done'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                base[RID] = 'Step 3 of 5: Performing statistical test...'
+
                 finalDict = {}
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
-                r.assign("metaDF", metaDF)
-                r("trt <- factor(metaDF$merge)")
-                r.assign("count", taxaDF)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                r.assign("metaDF", meta_rDF)
+                r("metaDF")
+                r("trt <- factor(metaDF$merge)")
+                r("trt")
+
+                r.assign("count", count_rDF)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 DESeq_error = ''
-                if NormMeth == 1:
-                    r("countFilt <- count")
-                    r("trtFilt <- trt")
+                r("library(DESeq2)")
+                r("colData <- data.frame(row.names=colnames(count), trt=trt)")
+                r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design= ~ trt)")
 
-                    r("library(DESeq2)")
-                    r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
-                    r("dds <- DESeqDataSetFromMatrix(countData=countFilt, colData=colData, design= ~ trt)")
+                r("dds <- estimateSizeFactors(dds)")
+                pycds = r.get("sizeFactors(dds)")
 
-                    r("dds <- estimateSizeFactors(dds)")
-                    pycds = r.get("sizeFactors(dds)")
+                if pycds is not None:
+                    DESeq_error = 'no'
+                    r("dds <- estimateDispersions(dds)")
+                    r("dds <- nbinomWaldTest(dds)")
 
-                    if pycds is not None:
-                        DESeq_error = 'no'
-                        r("dds <- estimateDispersions(dds)")
-                        r("dds <- nbinomWaldTest(dds)")
+                elif pycds is None:
+                    DESeq_error = 'yes'
+                    r("sizeFactor <- rep(1, length(trt))")
+                    r("dds$sizeFactor <- sizeFactor")
+                    r("dds <- estimateDispersions(dds)")
+                    r("dds <- nbinomWaldTest(dds)")
 
-                    elif pycds is None:
-                        DESeq_error = 'yes'
-                        r("sizeFactor <- rep(1, length(trtFilt))")
-                        r("dds$sizeFactor <- sizeFactor")
-                        r("dds <- estimateDispersions(dds)")
-                        r("dds <- nbinomWaldTest(dds)")
-
-                elif NormMeth == 2:
-                    r("rs = rowSums(count)")
-                    r.assign("theta", theta)
-                    r("row <- (rs > quantile(rs, probs=theta))")
-                    r("countFilt <- count[row,]")
-                    r("trtFilt <- trt")
-
-                    r("library(DESeq2)")
-                    r("colData <- data.frame(row.names=colnames(countFilt), trt=trtFilt)")
-                    r("dds <- DESeqDataSetFromMatrix(countData=countFilt, colData=colData, design= ~ trt)")
-
-                    r("dds <- estimateSizeFactors(dds)")
-                    pycds = r.get("sizeFactors(dds)")
-
-                    if pycds is not None:
-                        DESeq_error = 'no'
-                        r("dds <- estimateDispersions(dds)")
-                        r("dds <- nbinomWaldTest(dds)")
-
-                    elif pycds is None:
-                        DESeq_error = 'yes'
-                        r("sizeFactor <- rep(1, length(trtFilt))")
-                        r("dds$sizeFactor <- sizeFactor")
-                        r("dds <- estimateDispersions(dds)")
-                        r("dds <- nbinomWaldTest(dds)")
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                if NormMeth == 1 and DESeq_error == 'no':
+                if DESeq_error == 'no':
                     result += 'Data were normalized by DESeq2...\n'
-                elif NormMeth == 1 and DESeq_error == 'yes':
+                elif DESeq_error == 'yes':
                     result += 'DESeq2 cannot run estimateSizeFactors...\n'
                     result += 'Analysis was run without size normalization...\n'
                     result += 'To try again, select a different sample combination or increase the minimum sample size...\n'
-                elif NormMeth == 2 and DESeq_error == 'no':
-                    result += 'Data were normalized by DESeq2+Filter...\n'
-                elif NormMeth == 2 and DESeq_error == 'yes':
-                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                    result += 'Analysis was run without size normalization...\n'
-                    result += 'To try again, select a different sample combination or  increase the minimum sample size...\n'
                 result += '===============================================\n\n\n'
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                base[RID] = 'Step 2 of 6: Normalizing data...done!'
-                base[RID] = 'Step 3 of 6: Performing statistical test...'
-
-                mergeList = metaDF['merge'].tolist()
+                mergeList = meta_rDF['merge'].tolist()
                 mergeSet = list(set(mergeList))
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 finalDF = pd.DataFrame()
                 for i, val in enumerate(mergeSet):
@@ -348,16 +308,15 @@ def loopCat(request):
 
                             finalDF = pd.concat([finalDF, nbinom_res])
 
-                            base[RID] = 'Step 3 of 6: Performing statistical test...' + str(iterationName) + ' is done!'
+                            base[RID] = 'Step 3 of 5: Performing statistical test...' + str(iterationName) + ' is done!'
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 3 of 6: Performing statistical test...done!'
-                base[RID] = 'Step 4 of 6: Formatting graph data for display...'
+                base[RID] = 'Step 3 of 5: Performing statistical test...done!'
+                base[RID] = 'Step 4 of 5: Formatting graph data for display...'
 
                 seriesList = []
                 xAxisDict = {}
@@ -373,12 +332,12 @@ def loopCat(request):
                 listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
                 shapeIterator = 0
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                FdrVal = float(all['FdrVal'])
                 for name, group in grouped:
                     nosigDF = group[group["p-adjusted"] > FdrVal]
                     allData = nosigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
@@ -405,7 +364,7 @@ def loopCat(request):
                     if shapeIterator >= len(listOfShapes):
                         shapeIterator = 0
 
-                    base[RID] = 'Step 4 of 6: Formatting graph data for display...' + str(name) + ' is done!'
+                    base[RID] = 'Step 4 of 5: Formatting graph data for display...' + str(name) + ' is done!'
 
                 xTitle = {}
                 xTitle['text'] = "baseMean"
@@ -427,8 +386,8 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                base[RID] = 'Step 4 of 6: Formatting graph data for display...done!'
-                base[RID] = 'Step 5 of 6:  Formatting nbinomTest results for display...'
+                base[RID] = 'Step 4 of 5: Formatting graph data for display...done!'
+                base[RID] = 'Step 5 of 5:  Formatting nbinomTest results for display...'
 
                 finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
                 res_table = finalDF.to_html(classes="table display")
@@ -442,7 +401,7 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                base[RID] = 'Step 6 of 6: Formatting results for display...done!'
+                base[RID] = 'Step 5 of 5: Formatting nbinomTest results for display...done!'
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return None

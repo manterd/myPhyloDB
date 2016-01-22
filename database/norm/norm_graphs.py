@@ -7,11 +7,10 @@ import pandas as pd
 import pickle
 from pyper import *
 import simplejson
-from uuid import uuid4
 
 from database.norm.norm_DF import UnivMetaDF, normalizeUniv
 from database.models import Sample, Profile
-from database.utils import multidict, taxaProfileDF, stoppableThread
+from database.utils import taxaProfileDF, stoppableThread
 
 
 base = {}
@@ -19,7 +18,10 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stop0 = False
 stops = {}
+thread0 = stoppableThread()
+res = ''
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -34,7 +36,7 @@ def statusNorm(request):
             TimeDiff[RID] = 0
         myDict = {}
         try:
-            stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            stage[RID] = str(base[RID]) + '&#10;Analysis has been running for %.1f seconds' % TimeDiff[RID]
         except:
             stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         myDict['stage'] = stage[RID]
@@ -60,33 +62,32 @@ def removeRIDNorm(request):
         return False
 
 
-thread3 = stoppableThread()
-stop3 = False
-
-
 def stopNorm(request):
-    global stops
+    global res, thread0, stops, stop0
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
+        stop0 = True
+        thread0.terminate()
+        thread0.join()
         myDict = {}
-        myDict['error'] = 'Your analysis has been stopped!'
+        myDict['error'] = 'none'
+        myDict['message'] = 'Your analysis has been stopped!'
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 
 
 def getNormCatData(request):
-    global res, thread3, stop3
+    global res, thread0, stop0
     if request.is_ajax():
-        thread3 = stoppableThread(target=loopCat, args=(request,))
-        thread3.start()
-        thread3.join()
-        stop3 = False
+        thread0 = stoppableThread(target=loopCat, args=(request,))
+        thread0.start()
+        thread0.join()
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop3, stops
+    global base, stage, time1, TimeDiff, res, stop0, stops
     try:
         while True:
             # Get selected samples from cookie and query database for sample info
@@ -102,10 +103,12 @@ def loopCat(request):
 
                 RID = str(all["RID"])
                 stops[RID] = False
+
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Querying database...'
 
                 NormMeth = int(all["NormMeth"])
+
                 remove = int(all["Remove"])
                 cutoff = int(all["Cutoff"])
                 Iters = int(all["Iters"])
@@ -120,11 +123,10 @@ def loopCat(request):
                 tabular_on = int(all['Tabular'])
                 biom_on = int(all['Biome'])
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 # Generate a list of sequence reads per sample
                 countList = []
@@ -197,11 +199,10 @@ def loopCat(request):
                                 id = sample.sampleid
                                 newList.append(id)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 metaDF = UnivMetaDF(newList)
 
@@ -250,11 +251,10 @@ def loopCat(request):
                             goodIDs.append(name)
                     normDF = normDF.loc[normDF['speciesid'].isin(goodIDs)]
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict = {}
                 if NormMeth == 1:
@@ -311,25 +311,22 @@ def loopCat(request):
                 metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']
                 finalDF = finalDF[metaDFList]
 
-                # save finalDF to session (i.e. dataabase
-                #request.session['savedDF'] = pickle.dumps(finalDF)
-
                 # save location info to session
                 myDir = 'database/norm/saved/'
-                userID = str(request.user.id)       # if logged in as guest will set to 'None', problematic?
-                path = str(myDir) + 'savedDF_' + str(userID) + '.pkl'
+                name = request.user
+                ip = request.META.get('REMOTE_ADDR')
+                path = str(myDir) + 'savedDF_' + str(name) + '_' + str(ip) + '.pkl'
                 request.session['savedDF'] = pickle.dumps(path)
 
                 # now save file to computer
-                print "To pickle!"
-                finalDF.to_pickle(path)  # Problem line TODO fix
-                print "Not to pickle!"
+                if not os.path.exists(myDir):
+                    os.makedirs(myDir)
+                finalDF.to_pickle(path)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 2 of 4: Normalizing data...done!'
                 base[RID] = 'Step 3 of 4: Formatting biome data...'
@@ -371,11 +368,10 @@ def loopCat(request):
                     biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
                     finalDict['biome'] = str(biome_json)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 4: Formatting biome data...done!'
                 base[RID] = 'Step 4 of 4: Formatting result table...'
@@ -392,7 +388,7 @@ def loopCat(request):
                 return None
 
     except:
-        if not stop3:
+        if not stop0:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)

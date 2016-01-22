@@ -1,6 +1,5 @@
 import datetime
 from django.http import HttpResponse
-from django.db.models import Sum
 import logging
 import numpy as np
 import pandas as pd
@@ -9,9 +8,8 @@ from pyper import *
 from scipy import stats
 import simplejson
 
-from database.anova.anova_DF import UnivMetaDF, normalizeUniv
-from database.models import Sample, Profile
-from database.utils import multidict, taxaProfileDF, stoppableThread
+
+from database.utils import multidict, stoppableThread
 
 
 base = {}
@@ -19,7 +17,10 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stop1 = False
 stops = {}
+thread1 = stoppableThread()
+res = ''
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -60,43 +61,41 @@ def removeRIDANOVA(request):
         return False
 
 
-thread1 = stoppableThread()
-stop1 = False
-
-
 def stopANOVA(request):
-    global stops
+    global res, thread1, stops, stop1
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
+        stop1 = True
+        thread1.terminate()
+        thread1.join()
         myDict = {}
-        myDict['error'] = 'Your analysis has been stopped!'
+        myDict['error'] = 'none'
+        myDict['message'] = 'Your analysis has been stopped!'
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 
 
 def getCatUnivData(request):
-    global res, thread1, stop1
+    global res, thread1
     if request.is_ajax():
         thread1 = stoppableThread(target=loopCat, args=(request,))
         thread1.start()
         thread1.join()
-        stop1 = False
         return HttpResponse(res, content_type='application/json')
 
 
 def getQuantUnivData(request):
-    global res, thread1, stop1
+    global res, thread1
     if request.is_ajax():
         thread1 = stoppableThread(target=loopQuant, args=(request,))
         thread1.start()
         thread1.join()
-        stop1 = False
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop1, stops
+    global base, stage, time1, TimeDiff, res, stop1, stops
     try:
         while True:
             if request.is_ajax():
@@ -106,11 +105,9 @@ def loopCat(request):
 
                 RID = str(all["RID"])
                 stops[RID] = False
+
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
-
-                # Get normalized data from cookie
-                #savedDF = pickle.loads(request.session['savedDF'])
 
                 path = pickle.loads(request.session['savedDF'])
                 savedDF = pd.read_pickle(path)
@@ -120,19 +117,55 @@ def loopCat(request):
                 sig_only = int(all["sig_only"])
 
                 # Select samples and meta-variables from savedDF
-                catSampleIDs = list(set(all["metaIDsCat"]))
-                catFields = list(set(all["metaFieldsCat"]))
-                catValues = list(set(all["metaValsCat"]))
-                quantSampleIDs = list(set(all["metaIDsQuant"]))
-                quantFields = list(set(all["metaFieldsQuant"]))
-                quantValues = list(set(all["metaValsQuant"]))
+                metaValsCat = all['metaValsCat']
+                metaIDsCat = all['metaIDsCat']
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
+
+                metaDictCat = {}
+                catFields = []
+                catValues = []
+                if metaValsCat:
+                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
+                    for key in sorted(metaDictCat):
+                        catFields.append(key)
+                        catValues.extend(metaDictCat[key])
+
+                catSampleIDs = []
+                if metaIDsCat:
+                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
+                    for key in sorted(idDictCat):
+                        catSampleIDs.extend(idDictCat[key])
+
+                metaDictQuant = {}
+                quantFields = []
+                quantValues = []
+                if metaValsQuant:
+                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
+                    for key in sorted(metaDictQuant):
+                        quantFields.append(key)
+                        quantValues.extend(metaDictQuant[key])
+
+                quantSampleIDs = []
+                if metaIDsQuant:
+                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
+                    for key in sorted(idDictQuant):
+                        quantSampleIDs.extend(idDictQuant[key])
 
                 allSampleIDs = list(set(catSampleIDs + quantSampleIDs))
                 allFields = list(set(catFields + quantFields))
-                allValues = list(set(catValues + quantValues))
 
                 # Removes samples (rows) that are not in our samplelist
                 metaDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+
+                if metaDictCat:
+                    for key in metaDictCat:
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
+
+                if metaDictQuant:
+                    for key in metaDictCat:
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
+
                 metaDF = metaDF[allFields]
 
                 result = ''
@@ -142,11 +175,10 @@ def loopCat(request):
 
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 2 of 4: Selecting your chosen taxa...'
 
@@ -164,115 +196,115 @@ def loopCat(request):
                                 tempDF = savedDF.loc[savedDF['kingdomid'] == taxaList]
                                 tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Kingdom'
+                                tempDF.loc[:, 'rank'] = 'Kingdom'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Phyla':
                                 tempDF = savedDF.loc[savedDF['phylaid'] == taxaList]
                                 tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Phyla'
+                                tempDF.loc[:, 'rank'] = 'Phyla'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Class':
                                 tempDF = savedDF.loc[savedDF['classid'] == taxaList]
                                 tempDF = tempDF[['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Class'
+                                tempDF.loc[:, 'rank'] = 'Class'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Order':
                                 tempDF = savedDF.loc[savedDF['orderid'] == taxaList]
                                 tempDF = tempDF[['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Order'
+                                tempDF.loc[:, 'rank'] = 'Order'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Family':
                                 tempDF = savedDF.loc[savedDF['familyid'] == taxaList]
                                 tempDF = tempDF[['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Family'
+                                tempDF.loc[:, 'rank'] = 'Family'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Genus':
                                 tempDF = savedDF.loc[savedDF['genusid'] == taxaList]
                                 tempDF = tempDF[['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Genus'
+                                tempDF.loc[:, 'rank'] = 'Genus'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Species':
                                 tempDF = savedDF.loc[savedDF['speciesid'] == taxaList]
                                 tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Species'
+                                tempDF.loc[:, 'rank'] = 'Species'
                                 taxaDF = taxaDF.append(tempDF)
                         else:
                             if key == 'Kingdom':
                                 tempDF = savedDF.loc[savedDF['kingdomid'].isin(taxaList)]
                                 tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Kingdom'
+                                tempDF.loc[:, 'rank'] = 'Kingdom'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Phyla':
                                 tempDF = savedDF.loc[savedDF['phylaid'].isin(taxaList)]
                                 tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Phyla'
+                                tempDF.loc[:, 'rank'] = 'Phyla'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Class':
                                 tempDF = savedDF.loc[savedDF['classid'].isin(taxaList)]
                                 tempDF = tempDF[['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Class'
+                                tempDF.loc[:, 'rank'] = 'Class'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Order':
                                 tempDF = savedDF.loc[savedDF['orderid'].isin(taxaList)]
                                 tempDF = tempDF[['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Order'
+                                tempDF.loc[:, 'rank'] = 'Order'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Family':
                                 tempDF = savedDF.loc[savedDF['familyid'].isin(taxaList)]
                                 tempDF = tempDF[['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Family'
+                                tempDF.loc[:, 'rank'] = 'Family'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Genus':
                                 tempDF = savedDF.loc[savedDF['genusid'].isin(taxaList)]
                                 tempDF = tempDF[['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Genus'
+                                tempDF.loc[:, 'rank'] = 'Genus'
                                 taxaDF = taxaDF.append(tempDF)
                             elif key == 'Species':
                                 tempDF = savedDF.loc[savedDF['speciesid'].isin(taxaList)]
                                 tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
                                 tempDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
-                                tempDF['rank'] = 'Species'
+                                tempDF.loc[:, 'rank'] = 'Species'
                                 taxaDF = taxaDF.append(tempDF)
                 elif selectAll == 1:
-                    taxaDF = savedDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
                     taxaDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
-                    taxaDF['rank'] = 'Kingdom'
+                    taxaDF.loc[:, 'rank'] = 'Kingdom'
                 elif selectAll == 2:
-                    taxaDF = savedDF[['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
                     taxaDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
-                    taxaDF['rank'] = 'Phyla'
+                    taxaDF.loc[:, 'rank'] = 'Phyla'
                 elif selectAll == 3:
-                    taxaDF = savedDF[['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
                     taxaDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
-                    taxaDF['rank'] = 'Class'
+                    taxaDF.loc[:, 'rank'] = 'Class'
                 elif selectAll == 4:
-                    taxaDF = savedDF[['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
                     taxaDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
-                    taxaDF['rank'] = 'Order'
+                    taxaDF.loc[:, 'rank'] = 'Order'
                 elif selectAll == 5:
-                    taxaDF = savedDF[['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
                     taxaDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
-                    taxaDF['rank'] = 'Family'
+                    taxaDF.loc[:, 'rank'] = 'Family'
                 elif selectAll == 6:
-                    taxaDF = savedDF[['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
                     taxaDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
-                    taxaDF['rank'] = 'Genus'
+                    taxaDF.loc[:, 'rank'] = 'Genus'
                 elif selectAll == 7:
-                    taxaDF = savedDF[['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
                     taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
-                    taxaDF['rank'] = 'Species'
+                    taxaDF.loc[:, 'rank'] = 'Species'
 
                 finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
                 wantedList = allFields + ['sampleid', 'rank', 'taxa_name', 'taxa_id']
@@ -281,11 +313,10 @@ def loopCat(request):
 
                 base[RID] = 'Step 2 of 4: Selecting your chosen taxa...done'
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 4: Performing statistical test...'
                 finalDict = {}
@@ -336,7 +367,6 @@ def loopCat(request):
                 counter = 1
                 for name1, group1 in grouped1:
                     D = ''
-                    p_val = 1.0
 
                     if os.name == 'nt':
                         r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -446,11 +476,10 @@ def loopCat(request):
                     base[RID] = 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!'
                     counter += 1
 
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[RID]:
-                        print "Received stop code"
-                        return None
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                        break
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 4: Performing statistical test...done!'
                 base[RID] = 'Step 4 of 4: Formatting graph data for display...'
@@ -509,11 +538,10 @@ def loopCat(request):
                         labelTree = recLabels(g2indexvals, level)
                         xAxisDict['categories'] = [labelTree]
 
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[RID]:
-                        print "Received stop code"
-                        return None
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                        break
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 yTitle = {}
                 if DepVar == 1:
@@ -550,7 +578,7 @@ def loopCat(request):
             myDict = {}
             myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            raise
+            return HttpResponse(res, content_type='application/json')
 
 
 def recLabels(lists, level):
@@ -615,11 +643,8 @@ def loopQuant(request):
 
                 RID = str(all["RID"])
                 stops[RID] = False
-                time1[RID] = time.time()
-                base[RID] = 'Step 1 of 4: Querying database...'
-
-                # Get normalized data from cookie
-                #savedDF = pickle.loads(request.session['savedDF'])
+                time1[RID] = time.time()  # Moved these down here so RID is available
+                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
 
                 path = pickle.loads(request.session['savedDF'])
                 savedDF = pd.read_pickle(path)
@@ -629,19 +654,55 @@ def loopQuant(request):
                 sig_only = int(all["sig_only"])
 
                 # Select samples and meta-variables from savedDF
-                catSampleIDs = list(set(all["metaIDsCat"]))
-                catFields = list(set(all["metaFieldsCat"]))
-                catValues = list(set(all["metaValsCat"]))
-                quantSampleIDs = list(set(all["metaIDsQuant"]))
-                quantFields = list(set(all["metaFieldsQuant"]))
-                quantValues = list(set(all["metaValsQuant"]))
+                metaValsCat = all['metaValsCat']
+                metaIDsCat = all['metaIDsCat']
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
+
+                metaDictCat = {}
+                catFields = []
+                catValues = []
+                if metaValsCat:
+                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
+                    for key in sorted(metaDictCat):
+                        catFields.append(key)
+                        catValues.extend(metaDictCat[key])
+
+                catSampleIDs = []
+                if metaIDsCat:
+                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
+                    for key in sorted(idDictCat):
+                        catSampleIDs.extend(idDictCat[key])
+
+                metaDictQuant = {}
+                quantFields = []
+                quantValues = []
+                if metaValsQuant:
+                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
+                    for key in sorted(metaDictQuant):
+                        quantFields.append(key)
+                        quantValues.extend(metaDictQuant[key])
+
+                quantSampleIDs = []
+                if metaIDsQuant:
+                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
+                    for key in sorted(idDictQuant):
+                        quantSampleIDs.extend(idDictQuant[key])
 
                 allSampleIDs = list(set(catSampleIDs + quantSampleIDs))
                 allFields = list(set(catFields + quantFields))
-                allValues = list(set(catValues + quantValues))
 
                 # Removes samples (rows) that are not in our samplelist
                 metaDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+
+                if metaDictCat:
+                    for key in metaDictCat:
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
+
+                if metaDictQuant:
+                    for key in metaDictCat:
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
+
                 metaDF = metaDF[allFields]
 
                 result = ''
@@ -650,7 +711,6 @@ def loopQuant(request):
                 result += '===============================================\n'
 
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
-
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[RID]:

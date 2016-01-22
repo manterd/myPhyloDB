@@ -1,13 +1,12 @@
 #!/usr/bin/env python
+import cherrypy
+from cherrypy.process import plugins
+import multiprocessing as mp
 import os
 import os.path
 import sys
 import signal
-
-import cherrypy
-from cherrypy.process import plugins
 import webbrowser
-import multiprocessing as mp
 
 
 class Server(object):

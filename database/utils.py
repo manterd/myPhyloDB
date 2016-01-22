@@ -8,7 +8,9 @@ import os
 import pandas as pd
 import re
 import shutil
+import sys
 import threading
+import time
 
 from models import Project, Reference, Profile
 
@@ -175,16 +177,16 @@ def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
     if not inspect.isclass(exctype):
         raise TypeError("Only types can be raised (not instances)")
-    #res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
-    #if res == 0:
-    #    raise ValueError("invalid thread id")
-    #elif res != 1:
-    #    # """if it returns a number greater than one, you're in trouble,
-    #    # and you should call it again with exc=NULL to revert the effect"""
-    #    ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
-    #    raise SystemError("PyThreadState_SetAsyncExc failed")
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+    if res == 0:
+        raise ValueError("invalid thread id")
+    elif res != 1:
+        # """if it returns a number greater than one, you're in trouble,
+        # and you should call it again with exc=NULL to revert the effect"""
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
 
-import os
+#import os
 class stoppableThread(threading.Thread):
     def _get_my_tid(self):
         """determines this (self's) thread id"""
@@ -211,3 +213,38 @@ class stoppableThread(threading.Thread):
         """raises SystemExit in the context of the given thread, which should
         cause the thread to exit silently (unless caught)"""
         self.raise_exc(BaseException)
+
+
+def remove(path):
+    """
+    Remove the file or directory
+    """
+    if os.path.isdir(path):
+        try:
+            os.rmdir(path)
+        except OSError:
+            print "Unable to remove folder: %s" % path
+    else:
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except OSError:
+            print "Unable to remove file: %s" % path
+
+
+def cleanup(number_of_days, path):
+    """
+    Removes files from the passed in path that are older than or equal
+    to the number_of_days
+    """
+    time_in_secs = time.time() - (number_of_days * 24 * 60 * 60)
+    for root, dirs, files in os.walk(path, topdown=False):
+        for file_ in files:
+            full_path = os.path.join(root, file_)
+            stat = os.stat(full_path)
+
+            if stat.st_mtime <= time_in_secs:
+                remove(full_path)
+
+        if not os.listdir(root):
+            remove(root)

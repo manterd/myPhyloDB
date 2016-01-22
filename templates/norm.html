@@ -42,17 +42,17 @@
                 }
                 running = true;
                 $("#run").css("background-color", "yellow");
-                $("text-1").empty();
+                $("#text-1").empty();
                 chooseData();
             });
 
             $("#stop").show().click(function () {
-                document.getElementById("stop").value = "Stopping...";
+                //document.getElementById("stop").value = "Stopping...";
                 running = false;
                 stopThis(RID);
-                setTimeout(function() {
-                   document.getElementById("stop").value = "Stop Analysis!";
-                }, 10*1000); //Resets stop button after 10 seconds in case of failure on stop function's part
+                //setTimeout(function() {
+                //   document.getElementById("stop").value = "Stop Analysis!";
+                //}, 10*1000); //Resets stop button after 10 seconds in case of failure on stop function's part
             });
 
             $("#NormMeth").change(function () {
@@ -163,12 +163,8 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var stage = obj['error'];
-                    if (button1 == 1) {
-                        $('#container-1').empty().append(stage);
-                    } else if (button1 == 2) {
-                        $('#container-2').empty().append(stage);
-                    }
-                    document.getElementById("stop").value = "Stop Analysis!";
+                    $('#container-1').empty().append(stage);
+                    //document.getElementById("stop").value = "Stop Analysis!";
                 }
             });
         }
@@ -263,7 +259,7 @@
         }
 
         function getCatGraphData() {
-            var RID = makeGUID();
+            RID = makeGUID();
             startTimer(RID);
             var myDict = {};
             myDict['Tabular'] = tabular;
@@ -286,8 +282,6 @@
                     all: jsonDict
                 },
                 success: function(data) {
-                    running = false;
-                    stopTimer(refresh);
                     $('#container-1').empty();
                     var res_table = data['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
@@ -298,6 +292,8 @@
                         buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                     }).draw();
 
+                    running = false;
+                    stopTimer(refresh);
                     var biome = data['biome'];
                     $("#biome-text").empty().append(biome);
 
@@ -309,7 +305,7 @@
                         $("#run").css("background-color", "green");
                     }
                     var text = data['text'];
-                    $("#text-1").empty().append(text);
+                    $("#container-1").empty().append(text);
 
                     $("#link0").show();
                     $("#link1").show();
@@ -383,20 +379,16 @@
             </tr>
         </table>
     </div>
-    <br>
-
-    <div id="stage"></div>
-    <div id="container-1" style="height: 40px;"></div>
-    <br>
+    <br><br>
 
     <h2>Normalization Results:</h2>
-    <textarea id="text-1" style="width: 950px;" wrap="off" rows="10">Please run a normalization procedure!</textarea>
+    <textarea id="container-1" style="width: 950px;" wrap="off" rows="10">Please run a normalization procedure!</textarea>
     <br>
 
     <h2>Normalized Data (Tabular):</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
-
     <br>
+
     <h2>Normalized Data (Biom Format):</h2>
     <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
     <br>
