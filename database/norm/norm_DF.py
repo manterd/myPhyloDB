@@ -129,6 +129,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters):
 
             for key, value in d.items():
                 countDF[key] = value/iters
+                #countDF[key] = countDF[key].round(0).astype(int)
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
@@ -144,7 +145,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters):
         r.assign("count", df3)
         r.assign("metaDF", metaDF)
 
-        #R add X to colnames that begin with a number, need to replace
+        #R adds Xs to colnames that begin with a number, need to replace
         r("rows <- rownames(metaDF)")
         r("colnames(count) <- rows")
 

@@ -73,8 +73,7 @@
                 success: function (data) {
                     var select = data['select'];
                     var norm = data['norm'];
-                    //alert('select: '+select);
-                    //alert('norm: '+norm);
+                    var NormMeth = data['NormMeth'];
                     if ((select == 'no') && (norm == 'no')) {
                         $("#link0").hide();
                         $("#link1").hide();
@@ -82,6 +81,7 @@
                         $("#link3").hide();
                         $("#link4").hide();
                         $("#link5").hide();
+                        $("#link6").hide();
                     } else if ((select == 'yes') && (norm == 'no')) {
                         $("#link0").hide();
                         $("#link1").hide();
@@ -89,20 +89,33 @@
                         $("#link3").hide();
                         $("#link4").hide();
                         $("#link5").show();
-                    } else if ((select == 'no') && ( norm== 'yes')) {
+                        $("#link6").hide();
+                    } else if ((select == 'no') && ( norm != 'no')) {
                         $("#link0").hide();
                         $("#link1").hide();
                         $("#link2").hide();
                         $("#link3").hide();
                         $("#link4").hide();
                         $("#link5").hide();
-                    } else if ((select == 'yes') && ( norm== 'yes')) {
-                        $("#link0").show();
-                        $("#link1").show();
-                        $("#link2").show();
-                        $("#link3").show();
-                        $("#link4").show();
-                        $("#link5").show();
+                        $("#link6").hide();
+                    } else if ((select == 'yes') && ( norm != 'no')) {
+                        if (NormMeth != '4') {
+                            $("#link0").show();
+                            $("#link1").show();
+                            $("#link2").show();
+                            $("#link3").show();
+                            $("#link4").show();
+                            $("#link5").show();
+                            $("#link6").show();
+                        } else {
+                            $("#link0").show();
+                            $("#link1").show();
+                            $("#link2").show();
+                            $("#link3").show();
+                            $("#link4").hide();
+                            $("#link5").show();
+                            $("#link6").show();
+                        }
                     }
                 }
             });
@@ -178,8 +191,10 @@
             <br>
 
             <p id="link3" style="display: none;"><strong>Multivariate</strong></p>
-            <div id="link4" style="display: none;" >
+            <div id="link4" style="display: none;">
                 <a class="Offmouse" href="{% url "DiffAbund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Differential Abundance analysis">Diff Abund</li></a>
+            </div>
+            <div id="link6" style="display: none;" >
                 <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Principal Coordinates Analysis">PCoA</li></a>
                 <a class="Offmouse" href="{% url "spls" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Sparse Partial Least Squares Regression">sPLS-Regr</li></a>
             </div>

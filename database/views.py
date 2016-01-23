@@ -635,7 +635,10 @@ def getSampleCookie(request):
         myDict['norm'] = 'yes'
     else:
         myDict['norm'] = 'no'
-
+    if "NormMeth" in request.session:
+        myDict['NormMeth'] = request.session['NormMeth']
+    else:
+        myDict['NormMeth'] = 'no'
     res = simplejson.dumps(myDict, encoding="Latin-1")
     return HttpResponse(res, content_type='application/json')
 

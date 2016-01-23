@@ -61,7 +61,7 @@ def removeRIDDIFF(request):
 
 
 def stopDiffAbund(request):
-    global stops
+    global stops, stop2
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
@@ -192,14 +192,10 @@ def loopCat(request):
                 finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
                 wantedList = ['sampleid', 'merge', 'rank', 'taxa_name', 'taxa_id']
                 finalDF = finalDF.groupby(wantedList)[['abund']].sum()
-
-                '''DESeq can only use integers...
-                so it cannot use proportion and other methods must be set to integers
-                also only seems to be working for none and rarefaction(keep)'''
-
-                finalDF['abund'] = finalDF['abund'].astype(int)
-
                 finalDF.reset_index(drop=False, inplace=True)
+                taxaSums = finalDF.groupby('taxa_id').sum()
+                goodList = taxaSums[taxaSums['abund'] > 0].index.values.tolist()
+                finalDF = finalDF.loc[finalDF['taxa_id'].isin(goodList)]
 
                 count_rDF = finalDF.pivot(index='taxa_id', columns='sampleid', values='abund')
                 meta_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='merge')
@@ -310,10 +306,10 @@ def loopCat(request):
 
                             base[RID] = 'Step 3 of 5: Performing statistical test...' + str(iterationName) + ' is done!'
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
-                    break
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[RID]:
+                        break
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 5: Performing statistical test...done!'
                 base[RID] = 'Step 4 of 5: Formatting graph data for display...'
@@ -332,21 +328,16 @@ def loopCat(request):
                 listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
                 shapeIterator = 0
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
-                    break
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
                 FdrVal = float(all['FdrVal'])
                 for name, group in grouped:
                     nosigDF = group[group["p-adjusted"] > FdrVal]
-                    allData = nosigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
+                    nosigData = nosigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
                     sigDF = group[group["p-adjusted"] <= FdrVal]
                     sigData = sigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
 
                     seriesDict = {}
                     seriesDict['name'] = "NotSig: " + str(name)
-                    seriesDict['data'] = allData
+                    seriesDict['data'] = nosigData
                     markerDict = {}
                     markerDict['symbol'] = listOfShapes[shapeIterator]
                     seriesDict['marker'] = markerDict
@@ -364,7 +355,10 @@ def loopCat(request):
                     if shapeIterator >= len(listOfShapes):
                         shapeIterator = 0
 
-                    base[RID] = 'Step 4 of 5: Formatting graph data for display...' + str(name) + ' is done!'
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[RID]:
+                        break
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 xTitle = {}
                 xTitle['text'] = "baseMean"
@@ -405,6 +399,7 @@ def loopCat(request):
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return None
+
     except:
         if not stop2:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)

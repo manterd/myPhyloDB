@@ -218,9 +218,9 @@ def loopCat(request):
 
                 normRem = len(selected) - lenB
 
-                result += str(lenB) + ' selected samples were included in the final analysis.\n'
+                result += str(lenB) + ' selected sample(s) were included in the final analysis.\n'
                 if normRem > 0:
-                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
+                    result += str(normRem) + ' sample(s) did not met the desired normalization criteria.\n'
                 result += '\n'
 
                 # Create unique list of samples in meta dataframe (may be different than selected samples)
@@ -243,6 +243,11 @@ def loopCat(request):
 
                 normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
 
+                normDF['rel_abund'] = normDF['rel_abund'].astype(float)
+                normDF['abund'] = normDF['abund'].round(0).astype(int)
+                normDF['rich'] = normDF['rel_abund'].round(0).astype(int)
+                normDF['diversity'] = normDF['diversity'].astype(float)
+
                 if remove == 1:
                     grouped = normDF.groupby('speciesid')
                     goodIDs = []
@@ -260,7 +265,7 @@ def loopCat(request):
                 if NormMeth == 1:
                     result += 'No normalization was performed...\n'
                 elif NormMeth == 2 or NormMeth == 3:
-                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads with ' + str(Iters) + ' iterations...\n'
+                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads with ' + str(Iters) + ' iteration(s)...\n'
                 elif NormMeth == 4:
                     result += 'Data were normalized by the total number of sequence reads...\n'
                 elif NormMeth == 5 and DESeq_error == 'no':
@@ -278,7 +283,7 @@ def loopCat(request):
 
                 result += '\n'
                 if remove == 1:
-                    result += "Species with fewer than " + str(cutoff) + " reads were removed from your analysis\n"
+                    result += "Species with fewer than " + str(cutoff) + " read(s) were removed from your analysis\n"
                 else:
                     result += "No minimum species size was applied...\n"
 
@@ -293,10 +298,13 @@ def loopCat(request):
                 if NormMeth == 4:
                     finalDF.drop('abund', axis=1, inplace=True)
                     finalDF.rename(columns={'rel_abund': 'abund'}, inplace=True)
+                    finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
+                    finalDF['abund_16S'] = finalDF['abund_16S'].astype(int)
+
                 else:
                     finalDF.drop('rel_abund', axis=1, inplace=True)
-
-                finalDF[['abund', 'abund_16S', 'rich', 'diversity']] = finalDF[['abund', 'abund_16S', 'rich', 'diversity']].astype(float)
+                    finalDF[['rich', 'diversity']] = finalDF[['rich', 'diversity']].astype(float)
+                    finalDF[['abund', 'abund_16S']] = finalDF[['abund', 'abund_16S']].astype(int)
 
                 finalDF.reset_index(drop=False, inplace=True)
                 finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
@@ -317,6 +325,7 @@ def loopCat(request):
                 ip = request.META.get('REMOTE_ADDR')
                 path = str(myDir) + 'savedDF_' + str(name) + '_' + str(ip) + '.pkl'
                 request.session['savedDF'] = pickle.dumps(path)
+                request.session['NormMeth'] = NormMeth
 
                 # now save file to computer
                 if not os.path.exists(myDir):
@@ -338,13 +347,13 @@ def loopCat(request):
                     nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
                 # get list of lists with abundances
-                taxaOnlyDF = finalDF[['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
+                taxaOnlyDF = finalDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
                 taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
                 dataList = taxaOnlyDF.values.tolist()
 
                 # get list of taxa
-                namesDF = finalDF[['sampleid', 'speciesid']]
-                namesDF['taxa'] = finalDF[['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
+                namesDF = finalDF.loc[:, ['sampleid', 'speciesid']]
+                namesDF['taxa'] = finalDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
                 namesDF = namesDF.pivot(index='speciesid', columns='sampleid', values='taxa')
 
                 taxaList = []
