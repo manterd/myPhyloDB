@@ -22,7 +22,7 @@ Dependencies (and the source code provided here) are only required for developme
 
 ***Python 2.7.8***
 
-* **Modules:** CherryPy 3.6.0, Django 1.6.5, Django-extensions 1.4.4, Django-registration-redux 1.2, PypeR 1.1.2, numPy 1.8.1, pandas 0.14.0, sciPy 0.14.0, simplejson 3.5.2
+* **Modules:** CherryPy 3.6.0, Django 1.6.5, Django-extensions 1.4.4, Django-registration-redux 1.2, PypeR 1.1.2, numPy 1.8.1, pandas 0.17.1, sciPy 0.14.0, simplejson 3.5.2
 
 ***R 3.1.2***
 

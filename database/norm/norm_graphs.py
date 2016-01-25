@@ -18,7 +18,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-stop0 = False
+stop0 = True
 stops = {}
 thread0 = stoppableThread()
 res = ''
@@ -63,31 +63,36 @@ def removeRIDNorm(request):
 
 
 def stopNorm(request):
-    global res, thread0, stops, stop0
+    global thread0, stops, stop0, res
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
         stop0 = True
         thread0.terminate()
         thread0.join()
+        removeRIDNorm(request)
+
+        res = ''
         myDict = {}
         myDict['error'] = 'none'
         myDict['message'] = 'Your analysis has been stopped!'
-        res = simplejson.dumps(myDict)
-        return HttpResponse(res, content_type='application/json')
+        stop = simplejson.dumps(myDict)
+        return HttpResponse(stop, content_type='application/json')
 
 
 def getNormCatData(request):
     global res, thread0, stop0
     if request.is_ajax():
+        stop0 = False
         thread0 = stoppableThread(target=loopCat, args=(request,))
         thread0.start()
         thread0.join()
+        removeRIDNorm(request)
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global base, stage, time1, TimeDiff, res, stop0, stops
+    global base, stage, time1, TimeDiff, res, stops, stop0
     try:
         while True:
             # Get selected samples from cookie and query database for sample info
@@ -125,7 +130,8 @@ def loopCat(request):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    break
+                    res = ''
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 # Generate a list of sequence reads per sample
@@ -201,7 +207,8 @@ def loopCat(request):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    break
+                    res = ''
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 metaDF = UnivMetaDF(newList)
@@ -245,7 +252,7 @@ def loopCat(request):
 
                 normDF['rel_abund'] = normDF['rel_abund'].astype(float)
                 normDF['abund'] = normDF['abund'].round(0).astype(int)
-                normDF['rich'] = normDF['rel_abund'].round(0).astype(int)
+                normDF['rich'] = normDF['rich'].round(0).astype(int)
                 normDF['diversity'] = normDF['diversity'].astype(float)
 
                 if remove == 1:
@@ -258,7 +265,8 @@ def loopCat(request):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    break
+                    res = ''
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict = {}
@@ -334,7 +342,8 @@ def loopCat(request):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    break
+                    res = ''
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 2 of 4: Normalizing data...done!'
@@ -379,7 +388,8 @@ def loopCat(request):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    break
+                    res = ''
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 4: Formatting biome data...done!'
@@ -390,10 +400,16 @@ def loopCat(request):
                     res_table = res_table.replace('border="1"', 'border="0"')
                     finalDict['res_table'] = str(res_table)
 
+                base[RID] = 'Step 4 of 4: Formatting result table...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-
-                base[RID] = 'Step 4 of 4: Formatting result table...done!'
                 return None
 
     except:
@@ -404,7 +420,7 @@ def loopCat(request):
             myDict = {}
             myDict['error'] = "Error with Normalization!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            raise
+        return None
 
 
 

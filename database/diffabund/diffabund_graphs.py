@@ -61,18 +61,21 @@ def removeRIDDIFF(request):
 
 
 def stopDiffAbund(request):
-    global stops, stop2
+    global thread2, stops, stop2, res
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
         stop2 = True
         thread2.terminate()
         thread2.join()
+        removeRIDDIFF(request)
+
+        res = ''
         myDict = {}
         myDict['error'] = 'none'
         myDict['message'] = 'Your analysis has been stopped!'
-        res = simplejson.dumps(myDict)
-        return HttpResponse(res, content_type='application/json')
+        stop = simplejson.dumps(myDict)
+        return HttpResponse(stop, content_type='application/json')
 
 
 def getDiffAbund(request):
@@ -82,11 +85,12 @@ def getDiffAbund(request):
         thread2 = stoppableThread(target=loopCat, args=(request,))
         thread2.start()
         thread2.join()
+        removeRIDDIFF(request)
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop2, stops
+    global res, base, stage, time1, TimeDiff, stops, stop2
     try:
         while True:
             if request.is_ajax():
@@ -105,7 +109,22 @@ def loopCat(request):
 
                 selectAll = int(all["selectAll"])
                 DepVar = int(all["DepVar"])
-                sig_only = int(all["sig_only"])
+
+                result = ''
+                if selectAll == 1:
+                    result += 'Taxa level: Kingdom' + '\n'
+                elif selectAll == 2:
+                    result += 'Taxa level: Phyla' + '\n'
+                elif selectAll == 3:
+                    result += 'Taxa level: Class' + '\n'
+                elif selectAll == 4:
+                    result += 'Taxa level: Order' + '\n'
+                elif selectAll == 5:
+                    result += 'Taxa level: Family' + '\n'
+                elif selectAll == 6:
+                    result += 'Taxa level: Genus' + '\n'
+                elif selectAll == 7:
+                    result += 'Taxa level: Species' + '\n'
 
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
@@ -119,6 +138,21 @@ def loopCat(request):
                     for key in sorted(metaDictCat):
                         catFields.append(key)
                         catValues.extend(metaDictCat[key])
+
+                catFields_edit = []
+                removed = []
+                for i in metaDictCat:
+                    levels = len(set(metaDictCat[i]))
+                    if levels > 1:
+                        catFields_edit.append(i)
+                    else:
+                        removed.append(i)
+
+                if not catFields_edit:
+                    myDict = {}
+                    myDict['error'] = "Selected meta data only has one level.\nPlease select a different variable(s)."
+                    res = simplejson.dumps(myDict)
+                    return None
 
                 catSampleIDs = []
                 if metaIDsCat:
@@ -134,24 +168,25 @@ def loopCat(request):
                         metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
                 # Create combined metadata column - DiffAbund only
-                if len(catFields) > 1:
+                if len(catFields_edit) > 1:
                     for index, row in metaDF.iterrows():
-                        metaDF.ix[index, 'merge'] = "; ".join(row[catFields])
+                        metaDF.ix[index, 'merge'] = "; ".join(row[catFields_edit])
                 else:
-                    metaDF['merge'] = metaDF[catFields[0]]
+                    metaDF['merge'] = metaDF[catFields_edit[0]]
 
                 # command is unique to DiffAbund
                 metaDF = metaDF.loc[:, ['merge']]
 
-                result = ''
-                result += 'Categorical variables selected: ' + ", ".join(catFields) + '\n'
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
+                result += 'Categorical variables removed (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n'
 
                 base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    break
+                    res = ''
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 2 of 5: Selecting your chosen taxa...'
@@ -188,27 +223,34 @@ def loopCat(request):
                     taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
                     taxaDF.loc[:, 'rank'] = 'Species'
 
-                # next 3 sets of commands are tailored to DiffAbund
                 finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+                
                 wantedList = ['sampleid', 'merge', 'rank', 'taxa_name', 'taxa_id']
-                finalDF = finalDF.groupby(wantedList)[['abund']].sum()
+                finalDF = finalDF.groupby(wantedList)[['abund', 'abund_16S']].sum()
+
                 finalDF.reset_index(drop=False, inplace=True)
+
                 taxaSums = finalDF.groupby('taxa_id').sum()
                 goodList = taxaSums[taxaSums['abund'] > 0].index.values.tolist()
                 finalDF = finalDF.loc[finalDF['taxa_id'].isin(goodList)]
 
-                count_rDF = finalDF.pivot(index='taxa_id', columns='sampleid', values='abund')
-                meta_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='merge')
+                count_rDF = pd.DataFrame()
+                if DepVar == 1:
+                    count_rDF = finalDF.pivot(index='taxa_id', columns='sampleid', values='abund')
+                elif DepVar == 4:
+                    count_rDF = finalDF.pivot(index='taxa_id', columns='sampleid', values='abund_16S')
 
-                wanted = meta_rDF.columns.values.tolist()[0]
-                meta_rDF = meta_rDF.loc[:, [wanted]]
-                meta_rDF.rename(columns={wanted: 'merge'}, inplace=True)
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
+                wantedList = ['sampleid', 'merge']
+                meta_rDF = meta_rDF[wantedList]
+                meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
                 base[RID] = 'Step 2 of 5: Selecting your chosen taxa...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    break
+                    res = ''
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 5: Performing statistical test...'
@@ -220,15 +262,14 @@ def loopCat(request):
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
                 r.assign("metaDF", meta_rDF)
-                r("metaDF")
                 r("trt <- factor(metaDF$merge)")
-                r("trt")
 
                 r.assign("count", count_rDF)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    break
+                    res = ''
+                    return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 DESeq_error = ''
@@ -306,9 +347,15 @@ def loopCat(request):
 
                             base[RID] = 'Step 3 of 5: Performing statistical test...' + str(iterationName) + ' is done!'
 
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                            if stops[RID]:
+                                return None
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[RID]:
-                        break
+                        res = ''
+                        return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 5: Performing statistical test...done!'
@@ -321,7 +368,7 @@ def loopCat(request):
                 '''DESeq2 flags genes with abnormal distribtuions and sets the p-value to NaN
                 We will replace NaN with 1, so they can be converted to floats, but still not
                 be interpreted as significant'''
-                finalDF.fillna(1, inplace=True)
+                #finalDF.fillna(1, inplace=True)
 
                 grouped = finalDF.groupby('Comparison')
 
@@ -357,7 +404,8 @@ def loopCat(request):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[RID]:
-                        break
+                        res = ''
+                        return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 xTitle = {}
@@ -374,13 +422,14 @@ def loopCat(request):
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
                 base[RID] = 'Step 4 of 5: Formatting graph data for display...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 base[RID] = 'Step 5 of 5:  Formatting nbinomTest results for display...'
 
                 finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
@@ -389,13 +438,14 @@ def loopCat(request):
                 finalDict['res_table'] = str(res_table)
                 finalDict['text'] = result
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
                 base[RID] = 'Step 5 of 5: Formatting nbinomTest results for display...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return None
@@ -408,10 +458,7 @@ def loopCat(request):
             myDict = {}
             myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            raise
-
-    #finally:
-    #    return None
+        return None
 
 
 def findTaxa(id):

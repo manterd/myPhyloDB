@@ -1,6 +1,5 @@
 import datetime
 from django.http import HttpResponse
-from django.db.models import Sum
 import logging
 import numpy as np
 import pandas as pd
@@ -9,10 +8,8 @@ from pyper import *
 from scipy.spatial.distance import *
 import simplejson
 
-from database.pcoa.pcoa_DF import metaData, normalizeData
-from database.models import Sample, Profile
 from stats.distance import wOdum
-from database.utils import multidict, taxaProfileDF, stoppableThread
+from database.utils import multidict, stoppableThread
 
 
 base = {}
@@ -20,7 +17,10 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+stop4 = False
 stops = {}
+thread4 = stoppableThread()
+res = ''
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -60,104 +60,76 @@ def removeRIDPCoA(request):
     except:
         return False
 
-thread4 = stoppableThread()
-stop4 = False
-
 
 def stopPCoA(request):
-    global stops
+    global thread4, stops, stop4, res
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
+        stop4 = True
+        thread4.terminate()
+        thread4.join()
+        removeRIDPCoA(request)
+
+        res = ''
         myDict = {}
-        myDict['error'] = 'Your analysis has been stopped!'
-        res = simplejson.dumps(myDict)
-        return HttpResponse(res, content_type='application/json')
+        myDict['error'] = 'none'
+        myDict['message'] = 'Your analysis has been stopped!'
+        stop = simplejson.dumps(myDict)
+        return HttpResponse(stop, content_type='application/json')
 
 
 def getPCoA(request):
     global res, thread4, stop4
     if request.is_ajax():
+        stop4 = False
         thread4 = stoppableThread(target=loopCat, args=(request,))
         thread4.start()
         thread4.join()
-        stop4 = False
+        removeRIDPCoA(request)
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop4, stops
+    global res, base, stage, time1, TimeDiff, stops, stop4
     try:
         while True:
-            samples = Sample.objects.all()
-            samples.query = pickle.loads(request.session['selected_samples'])
-            selected = samples.values_list('sampleid')
-            qs1 = Sample.objects.all().filter(sampleid__in=selected)
-
             if request.is_ajax():
                 allJson = request.GET["all"]
                 all = simplejson.loads(allJson)
 
                 RID = str(all["RID"])
                 stops[RID] = False
+
                 time1[RID] = time.time()
-                base[RID] = 'Step 1 of 8: Querying database...'
+                base[RID] = 'Step 1 of 8: Selecting your chosen meta-variables...'
+
+                path = pickle.loads(request.session['savedDF'])
+                savedDF = pd.read_pickle(path)
 
                 DepVar = int(all["DepVar"])
-                taxaLevel = int(all["taxa"])
+                selectAll = int(all["taxa"])
                 distance = int(all["distance"])
                 PC1 = int(all["PC1"])
                 PC2 = int(all["PC2"])
                 test = int(all["test"])
                 alpha = float(all["alpha"])
                 perms = int(all["perms"])
-                NormMeth = int(all["NormMeth"])
-                Iters = int(all["Iters"])
-                NormVal = all["NormVal"]
-                size = int(all["MinSize"])
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                countList = []
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None:
-                        countList.append(total['count__sum'])
-
-                minSize = int(min(countList))
-                medianSize = int(np.median(np.array(countList)))
-                maxSize = int(max(countList))
-
-                if NormVal == "min":
-                    NormReads = minSize
-                elif NormVal == "median":
-                    NormReads = medianSize
-                elif NormVal == "max":
-                    NormReads = maxSize
-                elif NormVal == "none":
-                    NormReads = -1
-                else:
-                    NormReads = int(all["NormVal"])
-
-                newList = []
                 result = ''
-                if taxaLevel == 1:
+                if selectAll == 1:
                     result += 'Taxa level: Kingdom' + '\n'
-                elif taxaLevel == 2:
+                elif selectAll == 2:
                     result += 'Taxa level: Phyla' + '\n'
-                elif taxaLevel == 3:
+                elif selectAll == 3:
                     result += 'Taxa level: Class' + '\n'
-                elif taxaLevel == 4:
+                elif selectAll == 4:
                     result += 'Taxa level: Order' + '\n'
-                elif taxaLevel == 5:
+                elif selectAll == 5:
                     result += 'Taxa level: Family' + '\n'
-                elif taxaLevel == 6:
+                elif selectAll == 6:
                     result += 'Taxa level: Genus' + '\n'
-                elif taxaLevel == 7:
+                elif selectAll == 7:
                     result += 'Taxa level: Species' + '\n'
 
                 if distance == 1:
@@ -190,233 +162,158 @@ def loopCat(request):
                     result += 'Distance score: Cao' + '\n'
                 elif distance == 15:
                     result += 'Distance score: wOdum' + '\n'
+                    result += 'alpha: ' + str(alpha) + '\n'
 
-                metaStrCat = all["metaValsCat"]
-                fieldListCat = []
-                valueListCat = []
-                try:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrCat)
+                # Select samples and meta-variables from savedDF
+                metaValsCat = all['metaValsCat']
+                metaIDsCat = all['metaIDsCat']
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
+
+                metaDictCat = {}
+                catFields = []
+                catValues = []
+                if metaValsCat:
+                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
                     for key in sorted(metaDictCat):
-                        fieldListCat.append(key)
-                        valueListCat.append(metaDictCat[key])
-                except:
-                    placeholder = ''
+                        catFields.append(key)
+                        catValues.extend(metaDictCat[key])
 
-                metaStrQuant = all["metaValsQuant"]
-                fieldListQuant = []
-                valueListQuant = []
-                try:
-                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStrQuant)
+                catFields_edit = []
+                removed = []
+                for i in metaDictCat:
+                    levels = len(set(metaDictCat[i]))
+                    if levels > 1:
+                        catFields_edit.append(i)
+                    else:
+                        removed.append(i)
+
+                if not catFields_edit:
+                    myDict = {}
+                    myDict['error'] = "Selected meta data only has one level.\nPlease select a different variable."
+                    res = simplejson.dumps(myDict)
+                    return None
+
+                catSampleIDs = []
+                if metaIDsCat:
+                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
+                    for key in sorted(idDictCat):
+                        catSampleIDs.extend(idDictCat[key])
+
+                metaDictQuant = {}
+                quantFields = []
+                quantValues = []
+                if metaValsQuant:
+                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
                     for key in sorted(metaDictQuant):
-                        fieldListQuant.append(key)
-                        valueListQuant.extend(metaDictQuant[key])
+                        quantFields.append(key)
+                        quantValues.extend(metaDictQuant[key])
 
-                except:
-                    placeholder = ''
+                quantSampleIDs = []
+                if metaIDsQuant:
+                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
+                    for key in sorted(idDictQuant):
+                        quantSampleIDs.extend(idDictQuant[key])
 
-                metaStr = all["metaVals"]
-                fieldList = []
-                valueList = []
-                idDict = {}
-                try:
-                    metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-                    for key in sorted(metaDict):
-                        fieldList.append(key)
-                        valueList.append(metaDict[key])
+                allSampleIDs = catSampleIDs + quantSampleIDs
+                allFields = catFields_edit + quantFields
 
-                    idStr = all["metaIDs"]
-                    idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
+                # Removes samples (rows) that are not in our samplelist
+                metaDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
 
-                except:
-                    placeholder = ''
+                if metaDictCat:
+                    for key in metaDictCat:
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
-                if DepVar == 4:
-                    idList = []
-                    for i in xrange(len(selected)):
-                        idList.append(selected[i][0])
-                    idDict['rRNA_copies'] = idList
+                if metaDictQuant:
+                    for key in metaDictQuant:
+                        valueList = [float(x) for x in metaDictQuant[key]]
+                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
 
-                result += 'Categorical variables selected: ' + ", ".join(fieldListCat) + '\n'
-                result += 'Quantitative variables selected: ' + ", ".join(fieldListQuant) + '\n'
+                wantedList = allFields + ['sample_name']
+                metaDF = metaDF[wantedList]
+
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
+                result += 'Categorical variables removed (contains only 1 level): ' + ", ".join(removed) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
-                result += '\nData Normalization:\n'
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
+                    res = ''
                     return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                # Limit reads to max value
-                if NormMeth == 1:
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None:
-                            id = sample.sampleid
-                            newList.append(id)
+                base[RID] = 'Step 2 of 4: Selecting your chosen taxa...'
 
-                elif NormMeth == 2 or NormMeth == 3:
-                    if NormReads > maxSize:
-                        NormReads = medianSize
-                        result += 'The subsample size was too high and automatically reset to the median value...\n'
+                # get selected taxa fro each rank selected in the tree
+                taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'abund_16S', 'rich', 'diversity'])
 
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if NormMeth == 2:
-                            if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                                id = sample.sampleid
-                                newList.append(id)
-                        else:
-                            if total['count__sum'] is not None:
-                                id = sample.sampleid
-                                newList.append(id)
+                if selectAll == 1:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Kingdom'
+                elif selectAll == 2:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Phyla'
+                elif selectAll == 3:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Class'
+                elif selectAll == 4:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Order'
+                elif selectAll == 5:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Family'
+                elif selectAll == 6:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Genus'
+                elif selectAll == 7:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Species'
 
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        NormReads = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                                id = sample.sampleid
-                                newList.append(id)
+                finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
 
-                elif NormMeth == 4 or NormMeth == 5 or NormMeth == 6:
-                    if size > maxSize:
-                        size = medianSize
-                        result += 'The minimum sample size was too high and automatically reset to the median value...\n'
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                            id = sample.sampleid
-                            newList.append(id)
+                wantedList = allFields + ['sampleid', 'sample_name', 'rank', 'taxa_name', 'taxa_id']
+                finalDF = finalDF.groupby(wantedList)[['abund', 'abund_16S', 'rich', 'diversity']].sum()
 
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        size = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                                id = sample.sampleid
-                                newList.append(id)
+                finalDF.reset_index(drop=False, inplace=True)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                taxaSums = finalDF.groupby('taxa_id').sum()
+                goodList = taxaSums[taxaSums['abund'] > 0].index.values.tolist()
+                finalDF = finalDF.loc[finalDF['taxa_id'].isin(goodList)]
 
-                metaDF = metaData(idDict)
-
-                lenA, col = metaDF.shape
-
-                metaDF = metaDF.ix[newList]
-                metaDF.dropna(inplace=True)
-                lenB, col = metaDF.shape
-
-                selectRem = len(selected) - lenA
-                normRem = lenA - lenB
-
-                result += str(lenB) + ' selected samples were included in the final analysis.\n'
-                if normRem > 0:
-                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
-                if selectRem:
-                    result += str(selectRem) + ' samples were deselected by the user.\n'
-
-                # Create unique list of samples in meta dataframe (may be different than selected samples)
-                myList = metaDF.index.values.tolist()
-
-                taxaDF = taxaProfileDF(myList)
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                base[RID] = 'Step 1 of 8: Querying database...done!'
-                base[RID] = 'Step 2 of 8: Normalizing data...'
-
-                # Select only the taxa of interest if user used the selectAll button
-                taxaDict = {}
-                if taxaLevel == 1:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
-                    taxaDict['Kingdom'] = qs3
-                elif taxaLevel == 2:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
-                    taxaDict['Phyla'] = qs3
-                elif taxaLevel == 3:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
-                    taxaDict['Class'] = qs3
-                elif taxaLevel == 4:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
-                    taxaDict['Order'] = qs3
-                elif taxaLevel == 5:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
-                    taxaDict['Family'] = qs3
-                elif taxaLevel == 6:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
-                    taxaDict['Genus'] = qs3
-                elif taxaLevel == 7:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
-                    taxaDict['Species'] = qs3
-
-                normDF, DESeq_error = normalizeData(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
-
-                finalDict = {}
-                if NormMeth == 1:
-                    result += 'No normalization was performed...\n'
-                elif NormMeth == 2 or NormMeth == 3:
-                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-                elif NormMeth == 4:
-                    result += 'Data were normalized by the total number of sequence reads...\n'
-                elif NormMeth == 5 and DESeq_error == 'no':
-                    result += 'Data were normalized by DESeq2...\n'
-                elif NormMeth == 5 and DESeq_error == 'yes':
-                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                    result += 'Analysis was run without normalization...\n'
-                    result += 'To try again, please select fewer samples or another normalization method...\n'
-                elif NormMeth == 6 and DESeq_error == 'no':
-                    result += 'Data were normalized by DESeq2 with variance stabilization...\n'
-                elif NormMeth == 6 and DESeq_error == 'yes':
-                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                    result += 'Analysis was run without normalization...\n'
-                    result += 'To try again, please select fewer samples or another normalization method...\n'
-                result += '===============================================\n\n'
-
-                normDF.set_index('sampleid', inplace=True)
-
-                finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-
-                if DepVar == 4:
-                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
-                    finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
-                else:
-                    finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
-
-                finalDF.reset_index(inplace=True)
-
+                count_rDF = pd.DataFrame()
                 if DepVar == 1:
-                    try:
-                        normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
-                    except:
-                        normDF = finalDF.pivot(index='index', columns='taxa_id', values='abund')
-                if DepVar == 2:
-                    try:
-                        normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
-                    except:
-                        normDF = finalDF.pivot(index='index', columns='taxa_id', values='rich')
-                if DepVar == 3:
-                    try:
-                        normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
-                    except:
-                        normDF = finalDF.pivot(index='index', columns='taxa_id', values='diversity')
-                if DepVar == 4:
-                    try:
-                        normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
-                    except:
-                        normDF = finalDF.pivot(index='index', columns='taxa_id', values='copies')
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
+                elif DepVar == 2:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund_16S')
+                elif DepVar == 3:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
+                elif DepVar == 4:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
 
-                base[RID] = 'Step 2 of 8: Normalizing data...done!'
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
+                wantedList = allFields + ['sampleid', 'sample_name']
+                meta_rDF = meta_rDF[wantedList]
+                meta_rDF.set_index('sampleid', drop=True, inplace=True)
+
+                base[RID] = 'Step 2 of 5: Selecting your chosen taxa...done'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 base[RID] = 'Step 3 of 8: Calculating distance matrix...'
 
                 if os.name == 'nt':
@@ -424,14 +321,8 @@ def loopCat(request):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                r.assign("data", normDF)
+                r.assign("data", count_rDF)
                 r("library(vegan)")
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 if distance == 1:
                     r("dist <- vegdist(data, method='manhattan')")
@@ -462,7 +353,7 @@ def loopCat(request):
                 elif distance == 14:
                     r("dist <- vegdist(data, method='cao')")
                 elif distance == 15:
-                    datamtx = np.asarray(normDF)
+                    datamtx = np.asarray(count_rDF)
                     dists = wOdum(datamtx, alpha)
                     r.assign("dist", dists)
                     r("dist <- as.dist(dist)")
@@ -470,22 +361,35 @@ def loopCat(request):
                 r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
                 mat = r.get("mat")
 
-                rowList = metaDF['sample_name'].tolist()
+                rowList = meta_rDF['sample_name'].tolist()
+
                 distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
                 base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 base[RID] = 'Step 4 of 8: Principal coordinates analysis...'
 
-                newFieldList = []
-                trtLength = 0
-                for key in metaDictCat:
-                    if len(set(metaDictCat[key])) > 1:
-                        trtLength += 1
-                        newFieldList.append(key)
-                trtString = " + ".join(newFieldList)
+                anovaFields = []
+                for i in metaDictCat:
+                    levels = len(set(metaDictCat[i]))
+                    if levels > 1:
+                        anovaFields.append(i)
 
+                trtLength = len(set(catValues))
+                trtString = " + ".join(anovaFields)
+
+                pcoaDF = pd.DataFrame()
+                eigDF = pd.DataFrame()
+                bigf = ''
+                envFit = ''
                 if trtLength > 0:
-                    r.assign("meta", metaDF)
+                    r.assign("meta", meta_rDF)
                     pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ", meta)"
                     r.assign("cmd", pcoa_string)
                     r("eval(parse(text=cmd))")
@@ -529,9 +433,8 @@ def loopCat(request):
                         r("ordisurf(ord, quant, add=TRUE)")
                     r("dev.off()")
 
-                    envFit = ''
-                    if len(fieldListQuant) > 0:
-                        trtString = " + ".join(fieldListQuant)
+                    if len(quantFields) > 0:
+                        trtString = " + ".join(quantFields)
                         envfit_str = "fit <- envfit(ord ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
                         r.assign("cmd", envfit_str)
                         r("eval(parse(text=cmd))")
@@ -556,24 +459,35 @@ def loopCat(request):
                     r("eig <- data.frame(Stat, res$cont$importance)")
                     eigDF = r.get("eig")
 
-                    bigf = ''
-                    if perms <= 10:
-                        bigf = 'Please increase the number of permutations...'
-                    elif len(fieldListCat) == 0:
+                    base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[RID]:
+                        res = ''
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                    base[RID] = 'Step 5 of 8: Performing perMANOVA...'
+
+                    if perms < 10:
+                        bigf = 'A minimum of 10 permutations is required...'
+                    elif len(catFields_edit) == 0:
                         bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
-                    elif perms > 10 and len(fieldListCat) > 0:
+                    elif perms >= 10 and len(catFields_edit) > 0:
                         if test == 1:
-
-                            base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
-                            base[RID] = 'Step 5 of 8: Performing perMANOVA...'
-
-                            for i in newFieldList:
+                            for i in catFields_edit:
                                 factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
                                 r.assign("cmd", factor_string)
                                 r("eval(parse(text=cmd))")
 
+                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                                if stops[RID]:
+                                    res = ''
+                                    return None
+                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                             r.assign("perms", perms)
-                            trtString = " * ".join(newFieldList)
+                            trtString = " * ".join(catFields_edit)
                             amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
                             r.assign("cmd", amova_string)
                             r("eval(parse(text=cmd))")
@@ -590,13 +504,19 @@ def loopCat(request):
                             base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
                             base[RID] = 'Step 5 of 8: Performing BetaDisper...'
 
-                            for i in newFieldList:
+                            for i in catFields_edit:
                                 factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
                                 r.assign("cmd", factor_string)
                                 r("eval(parse(text=cmd))")
 
+                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                                if stops[RID]:
+                                    res = ''
+                                    return None
+                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                             r.assign("perms", perms)
-                            for i in newFieldList:
+                            for i in catFields_edit:
                                 beta_string = "res <- betadisper(dist, " + str(i) + ")"
                                 r.assign("cmd", beta_string)
                                 r("eval(parse(text=cmd))")
@@ -609,30 +529,33 @@ def loopCat(request):
                                     if part != tempStuff[0]:
                                         bigf += part + '\n'
                                 base[RID] = 'Step 5 of 8: Performing BetaDisper...done!'
+
+                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                                if stops[RID]:
+                                    res = ''
+                                    return None
+                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 else:
                     state = "Your selected variable(s) only have one treatment level, please select additional data!"
                     myDict = {}
                     myDict['error'] = state
                     res = simplejson.dumps(myDict)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
+                    res = ''
                     return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 6 of 8: Formatting graph data for display...'
-
+                finalDict = {}
                 seriesList = []
                 xAxisDict = {}
                 yAxisDict = {}
 
-                if DepVar != 4:
-                    CAP1 = PC1 + int(len(fieldList)) + 1
-                    CAP2 = PC2 + int(len(fieldList)) + 1
-                else:
-                    CAP1 = PC1 + int(len(fieldList)) + 2
-                    CAP2 = PC2 + int(len(fieldList)) + 2
+                CAP1 = PC1 + len(catFields_edit) + len(quantFields) + 1
+                CAP2 = PC2 + len(catFields_edit) + len(quantFields) + 1
 
                 colors = [
                     "#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",
@@ -670,12 +593,13 @@ def loopCat(request):
                     "#2F5D9B", "#6C5E46", "#D25B88", "#5B656C", "#00B57F", "#545C46", "#866097", "#365D25",
                     "#252F99", "#00CCFF", "#674E60", "#FC009C", "#92896B"
                 ]
+
                 colors_idx = 0
-                if fieldListCat:
-                    grouped = pcoaDF.groupby(fieldListCat)
+                if catFields_edit:
+                    grouped = pcoaDF.groupby(catFields_edit)
                     for name, group in grouped:
-                        dataList = group.icol([CAP1, CAP2]).values.astype(float).tolist()
-                        if len(fieldListCat) > 1:
+                        dataList = group[[CAP1, CAP2]].values.astype(float).tolist()
+                        if len(catFields_edit) > 1:
                             trt = "; ".join(name)
                         else:
                             trt = name
@@ -686,49 +610,37 @@ def loopCat(request):
                         seriesList.append(seriesDict)
                         colors_idx += 1
 
+                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                        if stops[RID]:
+                            res = ''
+                            return None
+                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 xTitle = {}
                 xTitle['text'] = str(eigDF.columns.values.tolist()[PC1]) + " (" + str(eigDF.iloc[1][PC1] * 100) + "%)"
                 xAxisDict['title'] = xTitle
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 yTitle = {}
                 yTitle['text'] = str(eigDF.columns.values.tolist()[PC2]) + " (" + str(eigDF.iloc[1][PC2] * 100) + "%)"
                 yAxisDict['title'] = yTitle
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
                 finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 if test == 1:
                     result += 'perMANOVA results:' + '\n'
                 if test == 2:
                     result += 'betaDisper results:' + '\n'
 
-                if len(fieldListCat) == 0:
+                if len(catFields_edit) == 0:
                     result += 'test cannot be run...' + '\n'
                 else:
                     bigf = bigf.decode('utf-8')
                     result += bigf + '\n'
                 result += '===============================================\n'
 
-                if len(fieldListCat) > 0:
+                if len(catFields_edit) > 0:
                     result += '\nenvfit results:\n'
                     envFit = envFit.decode('utf-8')
                     result += envFit
@@ -740,31 +652,49 @@ def loopCat(request):
                 result += '===============================================\n\n\n\n'
 
                 finalDict['text'] = result
+
                 base[RID] = 'Step 6 of 8: Formatting graph data for display...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 base[RID] = 'Step 7 of 8: Formatting PCoA table...'
 
-                pcoaDF.reset_index(drop=True, inplace=True)
                 res_table = pcoaDF.to_html(classes="table display")
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
 
                 base[RID] = 'Step 7 of 8: Formatting PCoA table...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 base[RID] = 'Step 8 of 8: Formatting distance score table...'
 
+                distDF.sort_index(axis=1, inplace=True)
+                distDF.sort_index(axis=0, inplace=True)
                 dist_table = distDF.to_html(classes="table display")
                 dist_table = dist_table.replace('border="1"', 'border="0"')
                 finalDict['dist_table'] = str(dist_table)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
                 base[RID] = 'Step 8 of 8: Formatting distance score table...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return None
+
     except:
         if not stop4:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -773,10 +703,7 @@ def loopCat(request):
             myDict = {}
             myDict['error'] = "Error with PCoA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            raise
-
-    #finally:
-    #    return None
+        return None
 
 
 def removegraphPCoA(request):

@@ -42,7 +42,9 @@
                 }
                 running = true;
                 $("#run").css("background-color", "yellow");
-                $("#text-1").empty();
+                $("#container-1").empty();
+                $("#biome-text").val('');
+                $("#res_table").empty();
                 chooseData();
             });
 
@@ -218,7 +220,7 @@
                     $("#run").css("background-color", "red");
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var stage = obj['error'];
+                    var stage = obj['message'];
                     $('#container-1').empty().append(stage);
                     //document.getElementById("stop").value = "Stop Analysis!";
                 }

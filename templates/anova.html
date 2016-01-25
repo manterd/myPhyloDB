@@ -276,6 +276,10 @@
                     alert("myPhyloDB is currently running your previous analysis request!");
                     return false;
                 }
+                $("#container-1").empty();
+                $("#container-2").empty();
+                $("#text-1").val('');
+                $("#text-2").val('');
                 running = true;
                 chooseData();
             });
@@ -935,9 +939,6 @@
                 chart: {
                     renderTo: 'container-1',
                     type: 'column',
-                    lang: {
-                        numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
-                    },
                     events: {
                         load: function () {
                             var chart = this,
@@ -973,8 +974,8 @@
                     align: 'right',
                     verticalAlign: 'top',
                     layout: 'vertical',
-                    x: 0,
-                    y: 20,
+                    x: -25,
+                    y: 25,
                     labelFormatter: function () {
                         return this.name[0] + ': ' + this.name[1] + '<br/>'
                     }
@@ -1007,9 +1008,6 @@
                 chart: {
                     renderTo: 'container-2',
                     type: 'scatter',
-                    lang: {
-                        numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
-                    },
                     zoomType: 'xy',
                     events: {
                         load: function () {
@@ -1063,8 +1061,8 @@
                     align: 'right',
                     verticalAlign: 'top',
                     layout: 'vertical',
-                    x: 0,
-                    y: 20
+                    x: -25,
+                    y: 25
                 },
                 xAxis: xAxis,
                 yAxis: yAxis,
@@ -1148,33 +1146,46 @@
     </div>
 
     <table width="950px" border="2">
+        <colgroup>
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+        </colgroup>
         <tr>
-            <th colspan="3" style="padding-right: 10px;">GraphData</th>
+            <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td style="width: 36%; text-align: left">
-                Dependent variable:<select id="DepVar">
+            <td colspan="8" style="text-align: center">
+                Dependent variable:
+                <select id="DepVar">
                     <option value="1">Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
                 </select>
             </td>
-            <td style="width: 34%; text-align: center"></td>
-            <td id="StatTest-text" style="width: 30%; text-align: right">
-            </td>
+            <td colspan="4" style="text-align: center">
+            <td colspan="8" style="text-align: center">
         </tr>
         <tr>
-            <td colspan="3">
-                <div id="container-1" style="height: 400px;">No Data has been selected!</div>
-                <div id="container-2" style="height: 400px; display: none">No Data has been selected!</div>
+            <td colspan="20" style="text-align: left">
+                <div id="container-1" style="height: 600px;">No Data has been selected!</div>
+                <div id="container-2" style="height: 600px; display: none">No Data has been selected!</div>
             </td>
         </tr>
         <tr id="highchartButtons">
-            <td>
+            <td colspan="6" style="text-align: center">
                 <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
             </td>
-            <td>Select chart theme:
+            <td colspan="8" style="text-align: center">
+                Select chart theme:
                 <select id="theme">
                     <option value="1" selected="selected">default</option>
                     <option value="2">dark-blue</option>
@@ -1188,8 +1199,8 @@
                 </select>
                 &nbsp&nbsp
             </td>
-            <td>
-                <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
+            <td colspan="6" style="text-align: center">
+                <button id="button" title="Click to change an individual series color or symbol">Change series</button>
             </td>
         </tr>
     </table>

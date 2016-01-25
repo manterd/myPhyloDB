@@ -27,15 +27,21 @@
 
     <script type="text/javascript">
         var DepVar = 1, selTheme = 0, i = 0;
-        var nodesCat = "", nodesTaxa = "", taxaLevel = 6;
+        var nodesCat = "", nodesTaxa = "", taxaLevel = 7;
         var chart1 = {};
         var catOptions = {};
-        var sig1_only = 0;
         var refresh;
         var running = false;
         var RID = 0;
 
         $(function () {
+
+            Highcharts.setOptions({
+                lang: {
+                    numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
+                }
+            });
+
             $("#tree_metaCat").dynatree({
                 checkbox: true,
                 rootVisible: false,
@@ -109,6 +115,9 @@
                     alert("myPhyloDB is currently running your previous analysis request!");
                     return false;
                 }
+                $("#container-1").empty();
+                $("#text-1").val('');
+                $("#res_table").empty();
                 running = true;
                 chooseData();
             });
@@ -118,18 +127,13 @@
                 stopThis(RID);
             });
 
-
-            $("#FdrVal").change(function () {
+            $("#DepVar").change(function () {
+                DepVar = $(this).val();
                 $("#run").css("background-color", "lightgray");
             });
 
 
-            $("#sig_box-1").change(function () {
-                if (document.getElementById('sig_box-1').checked) {
-                    sig1_only = 1
-                } else {
-                    sig1_only = 0
-                }
+            $("#FdrVal").change(function () {
                 $("#run").css("background-color", "lightgray");
             });
 
@@ -226,12 +230,8 @@
                     $("#run").css("background-color", "red");
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var stage = obj['error'];
-                    if (button1 == 1) {
-                        $('#container-1').empty().append(stage);
-                    } else if (button1 == 2) {
-                        $('#container-2').empty().append(stage);
-                    }
+                    var stage = obj['message'];
+                    $('#container-1').empty().append(stage);
                 }
             });
         }
@@ -357,7 +357,6 @@
                 myDict['metaValsCat'] = metaValsCat;
                 myDict['metaIDsCat'] = metaIDsCat;
                 myDict['DepVar'] = DepVar;
-                myDict['sig_only'] = sig1_only;
                 myDict['selectAll'] = taxaLevel;
                 myDict['RID'] = RID;
                 myDict['FdrVal'] = document.getElementById("FdrVal").value;
@@ -417,7 +416,6 @@
                 chart: {
                     renderTo: 'container-1',
                     type: 'scatter',
-                    zoomType: 'xy',
                     events: {
                         load: function () {
                             var chart = this,
@@ -455,8 +453,8 @@
                     align: 'right',
                     verticalAlign: 'top',
                     layout: 'vertical',
-                    x: 0,
-                    y: 20,
+                    x: -25,
+                    y: 25,
                     labelFormatter: function () {
                         return this.name + '<br/>'
                     }
@@ -512,32 +510,46 @@
     </div>
     <br><br>
     <table width="950px" border="2">
+        <colgroup>
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+        </colgroup>
         <tr>
-            <th colspan="3" style="padding-right: 10px;">GraphData</th>
+            <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td style="width: 36%; text-align: left">
-                Dependent variable:<select id="DepVar">
+            <td colspan="8" style="text-align: center">
+                Dependent variable:
+                <select id="DepVar">
                 <option value="1">Abundance</option>
-
+                <option value="4">Abundance (rRNA gene copies)</option>
                 </select>
             </td>
-            <td style="width: 34%; text-align: center"></td>
-            <td id="FdrRow" style="text-align: right;">
+            <td colspan="4" style="text-align: center">
+            <td id="FdrRow" colspan="8" style="text-align: center;">
                 False Discovery Rate:
                 <input style="background-color: white" type="text" id="FdrVal" value="0.10"/>
             </td>
         </tr>
         <tr>
-            <td colspan="3">
+            <td colspan="20" style="text-align: left">
                 <div id="container-1" style="height: 400px;">No Data has been selected!</div>
             </td>
         </tr>
         <tr id="highchartButtons">
-            <td>
+            <td colspan="6" style="text-align: center">
                 <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
             </td>
-            <td>Select chart theme:
+            <td colspan="8" style="text-align: center">
+                Select chart theme:
                 <select id="theme">
                     <option value="1" selected="selected">default</option>
                     <option value="2">dark-blue</option>
@@ -551,8 +563,8 @@
                 </select>
                 &nbsp&nbsp
             </td>
-            <td>
-                <button id="button" title="Click to change an individual series color or symbol" style="float: right">Change series</button>
+            <td colspan="6" style="text-align: center">
+                <button id="button" title="Click to change an individual series color or symbol">Change series</button>
             </td>
         </tr>
     </table>

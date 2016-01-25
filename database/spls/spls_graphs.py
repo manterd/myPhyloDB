@@ -1,6 +1,5 @@
 import datetime
 from django.http import HttpResponse
-from django.db.models import Sum
 import logging
 import numpy as np
 import pandas as pd
@@ -10,9 +9,8 @@ from scipy import stats
 from scipy.spatial.distance import *
 import simplejson
 
-from database.spls.spls_DF import metaData, normalizeData
-from database.models import Sample, Profile, Kingdom, Phyla, Class, Order, Family, Genus, Species
-from database.utils import multidict, taxaProfileDF, stoppableThread
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+from database.utils import multidict, stoppableThread
 
 
 base = {}
@@ -21,6 +19,9 @@ time1 = {}
 time2 = {}
 TimeDiff = {}
 stops = {}
+stop5 = False
+thread5 = stoppableThread()
+res = ''
 LOG_FILENAME = 'error_log.txt'
 
 
@@ -61,309 +62,165 @@ def removeRIDSPLS(request):
         return False
 
 
-thread5 = stoppableThread()
-stop5 = False
-
-
 def stopSPLS(request):
-    global res, thread5, stop5
+    global thread5, stops, stop5, res
     if request.is_ajax():
+        RID = request.GET["all"]
+        stops[RID] = True
         stop5 = True
-        try:
-            thread5.terminate()
-            thread5.join()
-            myDict = {}
-            myDict['error'] = 'Your analysis has been stopped!'
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-        except:
-            pass
+        thread5.terminate()
+        thread5.join()
+        removeRIDSPLS(request)
+
+        res = ''
+        myDict = {}
+        myDict['error'] = 'none'
+        myDict['message'] = 'Your analysis has been stopped!'
+        stop = simplejson.dumps(myDict)
+        return HttpResponse(stop, content_type='application/json')
 
 
 def getSPLS(request):
     global res, thread5, stop5
     if request.is_ajax():
+        stop5 = False
         thread5 = stoppableThread(target=loopCat, args=(request,))
         thread5.start()
         thread5.join()
-        stop5 = False
+        removeRIDSPLS(request)
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stop5, stops
+    global res, base, stage, time1, TimeDiff, stops, stop5
     try:
         while True:
-            samples = Sample.objects.all()
-            samples.query = pickle.loads(request.session['selected_samples'])
-            selected = samples.values_list('sampleid')
-            qs1 = Sample.objects.all().filter(sampleid__in=selected)
-
-            if request.is_ajax():
                 allJson = request.GET["all"]
                 all = simplejson.loads(allJson)
 
                 RID = str(all["RID"])
                 stops[RID] = False
+
                 time1[RID] = time.time()
-                base[RID] = 'Step 1 of 8: Querying database...'
+                base[RID] = 'Step 1 of 8: Selecting your chosen meta-variables...'
+
+                path = pickle.loads(request.session['savedDF'])
+                savedDF = pd.read_pickle(path)
 
                 DepVar = int(all["DepVar"])
-                taxaLevel = int(all["taxa"])
-                NormMeth = int(all["NormMeth"])
-                Iters = int(all["Iters"])
-                NormVal = all["NormVal"]
-                size = int(all["MinSize"])
+                selectAll = int(all["taxa"])
 
-                countList = []
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None:
-                        countList.append(total['count__sum'])
+                # Select samples and meta-variables from savedDF
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
 
-                minSize = int(min(countList))
-                medianSize = int(np.median(np.array(countList)))
-                maxSize = int(max(countList))
+                metaDictQuant = {}
+                quantFields = []
+                quantValues = []
+                if metaValsQuant:
+                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
+                    for key in sorted(metaDictQuant):
+                        quantFields.append(key)
+                        quantValues.extend(metaDictQuant[key])
 
-                if NormVal == "min":
-                    NormReads = minSize
-                elif NormVal == "median":
-                    NormReads = medianSize
-                elif NormVal == "max":
-                    NormReads = maxSize
-                elif NormVal == "none":
-                    NormReads = -1
-                else:
-                    NormReads = int(all["NormVal"])
+                quantSampleIDs = []
+                if metaIDsQuant:
+                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
+                    for key in sorted(idDictQuant):
+                        quantSampleIDs.extend(idDictQuant[key])
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # Removes samples (rows) that are not in our samplelist
+                metaDF = savedDF.loc[savedDF['sampleid'].isin(quantSampleIDs)]
 
-                # Remove samples if below the sequence threshold set by user (rarefaction)
-                newList = []
+                if metaDictQuant:
+                    for key in metaDictQuant:
+                        valueList = [float(x) for x in metaDictQuant[key]]
+                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
+
+                wantedList = quantFields + ['sample_name']
+                metaDF = metaDF[wantedList]
+
                 result = ''
-                if taxaLevel == 1:
-                    result += 'Taxa level: Kingdom' + '\n'
-                elif taxaLevel == 2:
-                    result += 'Taxa level: Phyla' + '\n'
-                elif taxaLevel == 3:
-                    result += 'Taxa level: Class' + '\n'
-                elif taxaLevel == 4:
-                    result += 'Taxa level: Order' + '\n'
-                elif taxaLevel == 5:
-                    result += 'Taxa level: Family' + '\n'
-                elif taxaLevel == 6:
-                    result += 'Taxa level: Genus' + '\n'
-                elif taxaLevel == 7:
-                    result += 'Taxa level: Species' + '\n'
-
-                metaStr = all["metaQuant"]
-                fieldList = []
-                valueList = []
-                metaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaStr)
-                for key in sorted(metaDict):
-                    fieldList.append(key)
-                    valueList.extend(metaDict[key])
-
-                idStr = all["metaIDs"]
-                idDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(idStr)
-
-                if DepVar == 4:
-                    idList = []
-                    for i in xrange(len(selected)):
-                        idList.append(selected[i][0])
-                    idDict['rRNA_copies'] = idList
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                result += 'Quantitative variables selected: ' + ", ".join(fieldList) + '\n'
+                result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
-                result += '\nData Normalization:\n'
 
-                # Limit reads to max value
-                if NormMeth == 1:
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None:
-                            id = sample.sampleid
-                            newList.append(id)
+                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
-                elif NormMeth == 2 or NormMeth == 3:
-                    if NormReads > maxSize:
-                        NormReads = medianSize
-                        result += 'The subsample size was too high and automatically reset to the median value...\n'
-
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if NormMeth == 2:
-                            if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                                id = sample.sampleid
-                                newList.append(id)
-                        else:
-                            if total['count__sum'] is not None:
-                                id = sample.sampleid
-                                newList.append(id)
-
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        NormReads = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                                id = sample.sampleid
-                                newList.append(id)
-
-                elif NormMeth == 4 or NormMeth == 5 or NormMeth == 6:
-                    if size > maxSize:
-                        size = medianSize
-                        result += 'The minimum sample size was too high and automatically reset to the median value...\n'
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                            id = sample.sampleid
-                            newList.append(id)
-
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        size = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                                id = sample.sampleid
-                                newList.append(id)
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
+                    res = ''
                     return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                metaDF = metaData(idDict)
+                base[RID] = 'Step 2 of 4: Selecting your chosen taxa...'
 
-                lenA, col = metaDF.shape
+                # get selected taxa fro each rank selected in the tree
+                taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'abund_16S', 'rich', 'diversity'])
 
-                metaDF = metaDF.ix[newList]
-                metaDF.dropna(inplace=True)
-                lenB, col = metaDF.shape
+                if selectAll == 1:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Kingdom'
+                elif selectAll == 2:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Phyla'
+                elif selectAll == 3:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Class'
+                elif selectAll == 4:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Order'
+                elif selectAll == 5:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Family'
+                elif selectAll == 6:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Genus'
+                elif selectAll == 7:
+                    taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
+                    taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
+                    taxaDF.loc[:, 'rank'] = 'Species'
 
-                selectRem = len(selected) - lenA
-                normRem = lenA - lenB
+                finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
 
-                result += str(lenB) + ' selected samples were included in the final analysis.\n'
-                if normRem > 0:
-                    result += str(normRem) + ' samples did not met the desired normalization criteria.\n'
-                if selectRem:
-                    result += str(selectRem) + ' samples were deselected by the user.\n'
+                wantedList = quantFields + ['sampleid', 'sample_name', 'rank', 'taxa_name', 'taxa_id']
+                finalDF = finalDF.groupby(wantedList)[['abund', 'abund_16S', 'rich', 'diversity']].sum()
 
-                # Create unique list of samples in meta dataframe (may be different than selected samples)
-                myList = metaDF.index.values.tolist()
+                finalDF.reset_index(drop=False, inplace=True)
 
-                taxaDF = taxaProfileDF(myList)
+                taxaSums = finalDF.groupby('taxa_id').sum()
+                goodList = taxaSums[taxaSums['abund'] > 0].index.values.tolist()
+                finalDF = finalDF.loc[finalDF['taxa_id'].isin(goodList)]
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                base[RID] = 'Step 1 of 5: Querying database...done!'
-                base[RID] = 'Step 2 of 5: Normalizing data...'
-
-                # Select only the taxa of interest if user used the selectAll button
-                taxaDict = {}
-                if taxaLevel == 1:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('kingdomid', flat='True').distinct()
-                    taxaDict['Kingdom'] = qs3
-                elif taxaLevel == 2:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('phylaid', flat='True').distinct()
-                    taxaDict['Phyla'] = qs3
-                elif taxaLevel == 3:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('classid', flat='True').distinct()
-                    taxaDict['Class'] = qs3
-                elif taxaLevel == 4:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('orderid', flat='True').distinct()
-                    taxaDict['Order'] = qs3
-                elif taxaLevel == 5:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('familyid', flat='True').distinct()
-                    taxaDict['Family'] = qs3
-                elif taxaLevel == 6:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('genusid', flat='True').distinct()
-                    taxaDict['Genus'] = qs3
-                elif taxaLevel == 7:
-                    qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
-                    taxaDict['Species'] = qs3
-
-                normDF, DESeq_error = normalizeData(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                finalDict = {}
-                if NormMeth == 1:
-                    result += 'No normalization was performed...\n'
-                elif NormMeth == 2 or NormMeth == 3:
-                    result += 'Data were rarefied to ' + str(NormReads) + ' sequence reads...\n'
-                elif NormMeth == 4:
-                    result += 'Data were normalized by the total number of sequence reads...\n'
-                elif NormMeth == 5 and DESeq_error == 'no':
-                    result += 'Data were normalized by DESeq2...\n'
-                elif NormMeth == 5 and DESeq_error == 'yes':
-                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                    result += 'Analysis was run without normalization...\n'
-                    result += 'To try again, please select fewer samples or another normalization method...\n'
-                elif NormMeth == 6 and DESeq_error == 'no':
-                    result += 'Data were normalized by DESeq2 with variance stabilization...\n'
-                elif NormMeth == 6 and DESeq_error == 'yes':
-                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                    result += 'Analysis was run without normalization...\n'
-                    result += 'To try again, please select fewer samples or another normalization method...\n'
-                result += '===============================================\n\n'
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                normDF.set_index('sampleid', inplace=True)
-
-                finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-                #finalDF['abund'] = finalDF['abund'].div(finalDF['abund'].groupby(finalDF.index).sum())
-
-                if DepVar == 4:
-                    finalDF['copies'] = finalDF.abund / NormReads * finalDF.rRNA_copies
-                    finalDF[['abund', 'copies', 'rich', 'diversity']] = finalDF[['abund', 'copies', 'rich', 'diversity']].astype(float)
-                else:
-                    finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
-
-                finalDF.reset_index(inplace=True)
-
+                count_rDF = pd.DataFrame()
                 if DepVar == 1:
-                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
-                if DepVar == 2:
-                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
-                if DepVar == 3:
-                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
-                if DepVar == 4:
-                    normDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='copies')
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
+                elif DepVar == 2:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund_16S')
+                elif DepVar == 3:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
+                elif DepVar == 4:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
+
+                wantedList = quantFields + ['sampleid']
+                meta_rDF = meta_rDF[wantedList]
+                meta_rDF.set_index('sampleid', drop=True, inplace=True)
+
+                base[RID] = 'Step 2 of 5: Selecting your chosen taxa...done'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
-                    print "Received stop code"
+                    res = ''
                     return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of 5: Normalizing data...done!'
                 base[RID] = 'Step 3 of 5: Calculating sPLS...'
 
                 if os.name == 'nt':
@@ -371,48 +228,26 @@ def loopCat(request):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
-                r.assign("X", normDF)
-                r.assign("Y", metaDF[fieldList])
-                r.assign("names", normDF.columns.values)
+                r.assign("X", count_rDF)
+                r.assign("Y", meta_rDF)
+                r.assign("names", count_rDF.columns.values)
                 r("colnames(X) <- names")
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 r("library(mixOmics)")
                 r("ZeroVar <- nearZeroVar(X, freqCut=90/10, uniqueCut=25)")
                 r("List <- row.names(ZeroVar$Metrics)")
                 r("X_new <- X[,-which(names(X) %in% List)]")
                 r("X_scaled <- scale(X_new, center=TRUE, scale=TRUE)")
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
                 r("Y_scaled <- scale(Y, center=TRUE, scale=TRUE)")
-
                 r("detach('package:mixOmics', unload=TRUE)")
                 r("library(spls)")
                 r("set.seed(1)")
-                r("cv <- cv.spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=seq(0.1, 0.9, 0.1), K=c(1:5), plot.it=FALSE)")
-                r("f <- spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=cv$eta.opt, K=cv$K.opt)")
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+                spls_string = "cv <- cv.spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=seq(0.1, 0.9, 0.1), K=c(1:" + str(len(quantFields)-1) + "), plot.it=FALSE)"
+                r.assign("cmd", spls_string)
+                r("eval(parse(text=cmd))")
+
+                r("f <- spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=cv$eta.opt, K=cv$K.opt)")
 
                 r("out <- capture.output(print(f))")
                 fout = r.get("out")
@@ -423,12 +258,6 @@ def loopCat(request):
                 else:
                     result += 'No significant variables were found\n'
                 result += '===============================================\n\n'
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 r("set.seed(1)")
                 r("ci.f <- ci.spls(f, plot.it=FALSE, plot.fix='y')")
@@ -447,87 +276,93 @@ def loopCat(request):
                 r("sum <- sum(coef.f != 0)")
                 total = r.get("sum")
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
                 base[RID] = 'Step 3 of 5: Calculating sPLS...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 base[RID] = 'Step 4 of 5: Formatting graph data for display...'
 
+                finalDict = {}
                 if total is not None:
                     r("pred.f <- predict(f, type='fit')")
-
                     r("library(DMwR)")
                     r("pred.ns <- unscale(pred.f, Y_scaled)")
                     r("pred.ns.rows <- row.names(pred.ns)")
                     pred = r.get("pred.ns")
                     rows = r.get("pred.ns.rows")
 
-                    predList = ['pred_' + s for s in fieldList]
+                    predList = ['pred_' + s for s in quantFields]
                     predDF = pd.DataFrame(pred,  columns=[predList], index=rows)
-                    predDF = predDF.applymap(round)
-                    predDF.sort_index(inplace=True)
-                    finalDF = pd.merge(metaDF, predDF, left_index=True, right_index=True)
+
+                    resultDF = pd.merge(meta_rDF, predDF, left_index=True, right_index=True)
                     result += 'sPLS Model Fit (y = mx + b):\n'
                     result += 'y = predicted\n'
                     result += 'x = observed\n\n'
 
-                    for i in xrange(len(fieldList)):
-                        x = finalDF[fieldList[i]].astype(float).values.tolist()
-                        y = finalDF[predList[i]].astype(float).values.tolist()
+                    for i in xrange(len(quantFields)):
+                        x = resultDF[quantFields[i]].astype(float).values.tolist()
+                        y = resultDF[predList[i]].astype(float).values.tolist()
 
                         slp, inter, r_value, p, se = stats.linregress(x, y)
                         r_sq = r_value * r_value
 
-                        result += 'Variable: ' + str(fieldList[i]) + '\n'
+                        result += 'Variable: ' + str(quantFields[i]) + '\n'
                         result += 'Slope (m): ' + str(slp) + '\n'
                         result += 'Intercept (b): ' + str(inter) + '\n'
                         result += 'R2: ' + str(r_sq) + '\n'
                         result += 'Std Error: ' + str(se) + '\n\n\n'
 
+                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                        if stops[RID]:
+                            res = ''
+                            return None
+                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                     r("coef.f.rows <- row.names(coef.f)")
                     cf = r.get("coef.f")
                     rows = r.get("coef.f.rows")
 
-                    coeffsDF = pd.DataFrame(cf,  columns=[fieldList], index=rows)
+                    coeffsDF = pd.DataFrame(cf,  columns=[quantFields], index=rows)
                     coeffsDF = coeffsDF.loc[(coeffsDF != 0).any(axis=1)]
                     coeffsDF.sort_index(inplace=True)
                     taxIDList = coeffsDF.index.values.tolist()
 
                     namesDF = pd.DataFrame()
-                    if taxaLevel == 1:
+                    if selectAll == 1:
                         taxNameList = Kingdom.objects.filter(kingdomid__in=taxIDList).values('kingdomid', 'kingdomName')
                         namesDF = pd.DataFrame(list(taxNameList))
                         namesDF.set_index('kingdomid', inplace=True)
                         namesDF.rename(columns={'kingdomName': 'taxa_name'}, inplace=True)
-                    elif taxaLevel == 2:
+                    elif selectAll == 2:
                         taxNameList = Phyla.objects.filter(phylaid__in=taxIDList).values('phylaid', 'phylaName')
                         namesDF = pd.DataFrame(list(taxNameList))
                         namesDF.set_index('phylaid', inplace=True)
                         namesDF.rename(columns={'phylaName': 'taxa_name'}, inplace=True)
-                    elif taxaLevel == 3:
+                    elif selectAll == 3:
                         taxNameList = Class.objects.filter(classid__in=taxIDList).values('classid', 'className')
                         namesDF = pd.DataFrame(list(taxNameList))
                         namesDF.set_index('classid', inplace=True)
                         namesDF.rename(columns={'className': 'taxa_name'}, inplace=True)
-                    elif taxaLevel == 4:
+                    elif selectAll == 4:
                         taxNameList = Order.objects.filter(orderid__in=taxIDList).values('orderid', 'orderName')
                         namesDF = pd.DataFrame(list(taxNameList))
                         namesDF.set_index('orderid', inplace=True)
                         namesDF.rename(columns={'orderName': 'taxa_name'}, inplace=True)
-                    elif taxaLevel == 5:
+                    elif selectAll == 5:
                         taxNameList = Family.objects.filter(familyid__in=taxIDList).values('familyid', 'familyName')
                         namesDF = pd.DataFrame(list(taxNameList))
                         namesDF.set_index('familyid', inplace=True)
                         namesDF.rename(columns={'familyName': 'taxa_name'}, inplace=True)
-                    elif taxaLevel == 6:
+                    elif selectAll == 6:
                         taxNameList = Genus.objects.filter(genusid__in=taxIDList).values('genusid', 'genusName')
                         namesDF = pd.DataFrame(list(taxNameList))
                         namesDF.set_index('genusid', inplace=True)
                         namesDF.rename(columns={'genusName': 'taxa_name'}, inplace=True)
-                    elif taxaLevel == 7:
+                    elif selectAll == 7:
                         taxNameList = Species.objects.filter(speciesid__in=taxIDList).values('speciesid', 'speciesName')
                         namesDF = pd.DataFrame(list(taxNameList))
                         namesDF.set_index('speciesid', inplace=True)
@@ -536,34 +371,46 @@ def loopCat(request):
                     namesDF.sort_index(inplace=True)
                     taxaNameList = namesDF['taxa_name'].values.tolist()
 
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[RID]:
+                        res = ''
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                     coeffsDF = pd.merge(namesDF, coeffsDF, left_index=True, right_index=True)
                     coeffsDF.reset_index(inplace=True)
                     res_table = coeffsDF.to_html(classes="table display")
                     res_table = res_table.replace('border="1"', 'border="0"')
                     finalDict['res_table'] = str(res_table)
 
-                    if taxaLevel == 2:
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[RID]:
+                        res = ''
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                    if selectAll == 2:
                         clustDF = coeffsDF.drop('phylaid', axis=1)
                         clustDF.set_index('taxa_name', inplace=True)
-                    elif taxaLevel == 3:
+                    elif selectAll == 3:
                         clustDF = coeffsDF.drop('classid', axis=1)
                         clustDF.set_index('taxa_name', inplace=True)
-                    elif taxaLevel == 4:
+                    elif selectAll == 4:
                         clustDF = coeffsDF.drop('orderid', axis=1)
                         clustDF.set_index('taxa_name', inplace=True)
-                    elif taxaLevel == 5:
+                    elif selectAll == 5:
                         clustDF = coeffsDF.drop('familyid', axis=1)
                         clustDF.set_index('taxa_name', inplace=True)
-                    elif taxaLevel == 6:
+                    elif selectAll == 6:
                         clustDF = coeffsDF.drop('genusid', axis=1)
                         clustDF.set_index('taxa_name', inplace=True)
-                    elif taxaLevel == 7:
+                    elif selectAll == 7:
                         clustDF = coeffsDF.drop('speciesid', axis=1)
                         clustDF.set_index('taxa_name', inplace=True)
 
-                    finalDF.reset_index(inplace=True)
-                    finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
-                    pred_table = finalDF.to_html(classes="table display")
+                    resultDF.reset_index(inplace=True)
+                    resultDF.rename(columns={'index': 'sampleid'}, inplace=True)
+                    pred_table = resultDF.to_html(classes="table display")
                     pred_table = pred_table.replace('border="1"', 'border="0"')
                     finalDict['pred_table'] = str(pred_table)
 
@@ -577,8 +424,7 @@ def loopCat(request):
                     xAxisDict['tickLength'] = 0
 
                     yAxisDict = {}
-                    catList = fieldList
-                    yAxisDict['categories'] = catList
+                    yAxisDict['categories'] = quantFields
                     yAxisDict['title'] = {'text': None}
 
                     seriesList = []
@@ -588,11 +434,23 @@ def loopCat(request):
                     row, col = coeffsDF.shape
                     dataList = []
                     for i in xrange(row):
-                        for j in xrange(len(fieldList)):
-                            val = round(coeffsDF[fieldList[j]].iloc[i], 5)
+                        for j in xrange(len(quantFields)):
+                            val = round(coeffsDF[quantFields[j]].iloc[i], 5)
                             tup = (i, j, val)
                             obsList = list(tup)
                             dataList.append(obsList)
+
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                            if stops[RID]:
+                                res = ''
+                                return None
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[RID]:
+                        res = ''
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     seriesDict['data'] = dataList
                     labelDict = {}
@@ -607,17 +465,17 @@ def loopCat(request):
 
                     # R clustered heatmap
                     clustDF = pd.DataFrame()
-                    if taxaLevel == 2:
+                    if selectAll == 2:
                         clustDF = coeffsDF.drop('phylaid', axis=1)
-                    elif taxaLevel == 3:
+                    elif selectAll == 3:
                         clustDF = coeffsDF.drop('classid', axis=1)
-                    elif taxaLevel == 4:
+                    elif selectAll == 4:
                         clustDF = coeffsDF.drop('orderid', axis=1)
-                    elif taxaLevel == 5:
+                    elif selectAll == 5:
                         clustDF = coeffsDF.drop('familyid', axis=1)
-                    elif taxaLevel == 6:
+                    elif selectAll == 6:
                         clustDF = coeffsDF.drop('genusid', axis=1)
-                    elif taxaLevel == 7:
+                    elif selectAll == 7:
                         clustDF = coeffsDF.drop('speciesid', axis=1)
                     row, col = clustDF.shape
 
@@ -641,7 +499,7 @@ def loopCat(request):
                     r.assign("cmd", file)
                     r("eval(parse(text=cmd))")
 
-                    r.assign("df", clustDF[fieldList])
+                    r.assign("df", clustDF[quantFields])
                     r("df <- as.matrix(df)")
                     r.assign("rows", clustDF.taxa_name.values)
                     r("rownames(df) <- rows")
@@ -673,19 +531,21 @@ def loopCat(request):
                         r("eval(parse(text=cmd))")
                         r("dev.off()")
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[RID]:
-                    print "Received stop code"
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
                 finalDict['text'] = result
 
                 base[RID] = 'Step 4 of 5: Formatting graph data for display...done!'
                 base[RID] = 'Step 5 of 5: Formatting sPLS coefficient table...'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return None
+
     except:
         if not stop5:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -694,10 +554,7 @@ def loopCat(request):
             myDict = {}
             myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            raise
-
-    #finally:
-    #    return None
+        return None
 
 
 def removegraphSPLS(request):
