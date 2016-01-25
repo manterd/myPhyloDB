@@ -502,13 +502,13 @@ def loopCat(request):
                     result += 'Taxa name: ' + str(name1[1]) + '\n'
                     result += 'Taxa ID: ' + str(name1[2]) + '\n'
                     if DepVar == 1:
-                        result += 'Dependent Variable: Relative Abundance (proportion)' + '\n'
+                        result += 'Dependent Variable: Abundance' + '\n'
                     elif DepVar == 2:
                         result += 'Dependent Variable: Species Richness' + '\n'
                     elif DepVar == 3:
                         result += 'Dependent Variable: Species Diversity' + '\n'
                     elif DepVar == 4:
-                        result += 'Dependent Variable: Total Abundance (rRNA gene copies)' + '\n'
+                        result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
 
                     result += '\nANCOVA table:\n'
                     D = D.decode('utf-8')
@@ -1034,13 +1034,13 @@ def loopQuant(request):
                     result += 'Taxa name: ' + str(name1[1]) + '\n'
                     result += 'Taxa ID: ' + str(name1[2]) + '\n'
                     if DepVar == 1:
-                        result += 'Dependent Variable: Relative Abundance (proportion)' + '\n'
+                        result += 'Dependent Variable: Abundance' + '\n'
                     elif DepVar == 2:
                         result += 'Dependent Variable: Species Richness' + '\n'
                     elif DepVar == 3:
                         result += 'Dependent Variable: Species Diversity' + '\n'
                     elif DepVar == 4:
-                        result += 'Dependent Variable: Total Abundance (rRNA gene copies)' + '\n'
+                        result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
 
                     result += '\nANCOVA table:\n'
                     D = D.decode('utf-8')

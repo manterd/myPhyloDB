@@ -113,6 +113,7 @@ def loopCat(request):
                 base[RID] = 'Step 1 of 4: Querying database...'
 
                 NormMeth = int(all["NormMeth"])
+                Proc = int(all["Proc"])
 
                 remove = int(all["Remove"])
                 cutoff = int(all["Cutoff"])
@@ -120,10 +121,27 @@ def loopCat(request):
                 NormVal = all["NormVal"]
                 size_on = int(all["MinSize"])
 
+                # Generate a list of sequence reads per sample and filter samples if minimum samplesize
+                countList = []
+                subList = []
                 if size_on == 1:
                     size = int(all["MinVal"])
+                    for sample in qs1:
+                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                        if total['count__sum'] >= size:
+                            countList.append(total['count__sum'])
+                            subList.append(sample.sampleid)
+                    qs1 = qs1.filter(sampleid__in=subList)
                 else:
-                    size = 0
+                    for sample in qs1:
+                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                        countList.append(total['count__sum'])
+
+                if not countList:
+                    myDict = {}
+                    myDict['error'] = "Error with Normalization!\nYour minimum sample has caused all samples to be removed!"
+                    res = simplejson.dumps(myDict)
+                    return None
 
                 tabular_on = int(all['Tabular'])
                 biom_on = int(all['Biome'])
@@ -134,76 +152,45 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                # Generate a list of sequence reads per sample
-                countList = []
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None:
-                        countList.append(total['count__sum'])
-
                 # Calculate min/median/max of sequence reads for rarefaction
-                minSize = int(min(countList))
-                medianSize = int(np.median(np.array(countList)))
-                maxSize = int(max(countList))
+                NormReads = 0
+                if not NormMeth == 1:
+                    minSize = int(min(countList))
+                    medianSize = int(np.median(np.array(countList)))
+                    maxSize = int(max(countList))
 
-                if NormVal == "min":
-                    NormReads = minSize
-                elif NormVal == "median":
-                    NormReads = medianSize
-                elif NormVal == "max":
-                    NormReads = maxSize
-                elif NormVal == "none":
-                    NormReads = -1
-                else:
-                    NormReads = int(all["NormVal"])
+                    if NormVal == "min":
+                        NormReads = minSize
+                    elif NormVal == "median":
+                        NormReads = medianSize
+                    elif NormVal == "max":
+                        NormReads = maxSize
+                    elif NormVal == "none":
+                        NormReads = -1
+                    else:
+                        NormReads = int(all["NormVal"])
 
                 result = ''
-                result += '\nData Normalization:\n\n'
+                result += 'Data Normalization:\n'
                 newList = []
-                # Limit reads to max value
-                if NormMeth == 1 or NormMeth == 4 or NormMeth == 5:
-                    if size > maxSize:
-                        size = medianSize
-                        result += 'The minimum sample size was too high and automatically reset to the median value...\n'
+                if NormMeth == 2:
                     for sample in qs1:
                         total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None and int(total['count__sum']) >= size:
+                        if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                            id = sample.sampleid
+                            newList.append(id)
+                else:
+                    for sample in qs1:
+                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
+                        if total['count__sum'] is not None:
                             id = sample.sampleid
                             newList.append(id)
 
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        size = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= size:
-                                id = sample.sampleid
-                                newList.append(id)
-
-                elif NormMeth == 2 or NormMeth == 3:
-                    if NormReads > maxSize:
-                        NormReads = medianSize
-                        result += 'The subsample size was too high and automatically reset to the median value...\n'
-
-                    for sample in qs1:
-                        total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if NormMeth == 2:
-                            if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                                id = sample.sampleid
-                                newList.append(id)
-                        else:
-                            if total['count__sum'] is not None:
-                                id = sample.sampleid
-                                newList.append(id)
-
-                    # If user set reads too high sample list will be blank
-                    if not newList:
-                        NormReads = medianSize
-                        for sample in qs1:
-                            total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                            if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
-                                id = sample.sampleid
-                                newList.append(id)
+                if not newList:
+                    myDict = {}
+                    myDict['error'] = "Error with Normalization!\nYour sub-sample size has caused all samples to be removed!"
+                    res = simplejson.dumps(myDict)
+                    return None
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -225,9 +212,9 @@ def loopCat(request):
 
                 normRem = len(selected) - lenB
 
-                result += str(lenB) + ' selected sample(s) were included in the final analysis.\n'
+                result += str(lenB) + ' selected sample(s) were included in the final analysis...\n'
                 if normRem > 0:
-                    result += str(normRem) + ' sample(s) did not met the desired normalization criteria.\n'
+                    result += str(normRem) + ' sample(s) did not met the desired normalization criteria...\n'
                 result += '\n'
 
                 # Create unique list of samples in meta dataframe (may be different than selected samples)
@@ -244,11 +231,7 @@ def loopCat(request):
                 base[RID] = 'Step 1 of 4: Querying database...done!'
                 base[RID] = 'Step 2 of 4: Normalizing data...'
 
-                if size_on == 1:
-                    if NormReads < size:
-                        NormReads = size
-
-                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters)
+                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Proc)
 
                 normDF['rel_abund'] = normDF['rel_abund'].astype(float)
                 normDF['abund'] = normDF['abund'].round(0).astype(int)
@@ -283,13 +266,11 @@ def loopCat(request):
                     result += 'Analysis was run without normalization...\n'
                     result += 'To try again, please select fewer samples or another normalization method...\n'
 
-                result += '\n'
                 if size_on == 1:
                     result += "Samples with fewer than " + str(size) + " reads were removed from your analysis...\n"
                 else:
                     result += "No minimum samples size was applied...\n"
 
-                result += '\n'
                 if remove == 1:
                     result += "Species with fewer than " + str(cutoff) + " read(s) were removed from your analysis\n"
                 else:

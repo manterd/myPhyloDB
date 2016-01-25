@@ -104,7 +104,7 @@ def UnivMetaDF(sampleList):
     return metaDF
 
 
-def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters):
+def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Proc):
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
@@ -119,7 +119,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters):
             manager = mp.Manager()
             d = manager.dict()
 
-            numcore = mp.cpu_count()-1 or 1
+            numcore = min(mp.cpu_count(), Proc)
             processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d)) for x in range(numcore)]
 
             for p in processes:
@@ -129,7 +129,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters):
 
             for key, value in d.items():
                 countDF[key] = value/iters
-                #countDF[key] = countDF[key].round(0).astype(int)
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)

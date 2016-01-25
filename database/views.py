@@ -198,7 +198,7 @@ def upload(request):
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
 
-                avail_proc = mp.cpu_count()-1 or 1
+                avail_proc = mp.cpu_count()
                 use_proc = min(avail_proc, processors)
                 actual_proc = 'processors=' + str(use_proc)
 

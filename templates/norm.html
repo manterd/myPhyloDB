@@ -23,6 +23,17 @@
             display: inline-block;
             vertical-align: top;
         }
+        hr.style8 {
+            border-top: 1px solid #8c8b8b;
+            border-bottom: 1px solid #fff;
+        }
+        hr.style8:after {
+            content: '';
+            display: block;
+            margin-top: 2px;
+            border-top: 1px solid #8c8b8b;
+            border-bottom: 1px solid #fff;
+        }
     </style>
 
     <script type="text/javascript">
@@ -32,7 +43,7 @@
         var running = false;
         var tabular= 0, biome = 0;
         var remove = 0, minsize = 0;
-        var RID = 0;
+        var RID = 0, Proc = 2;
 
         $(function () {
             $("#run").show().click(function () {
@@ -59,6 +70,17 @@
 
             $("#NormMeth").change(function () {
                 NormMeth = $(this).val();
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+                if (NormMeth == 2) {
+                    $("#NormVal").val("min");
+                } else {
+                    $("#NormVal").val("median");
+                }
+            });
+
+            $("#Proc").change(function () {
+                Proc = $(this).val();
                 chooseDisplay();
                 $("#run").css("background-color", "lightgray");
             });
@@ -330,6 +352,7 @@
             myDict['MinVal'] = document.getElementById("MinVal").value;
             myDict['selectAll'] = selectAll;
             myDict['NormMeth'] = NormMeth;
+            myDict['Proc'] = Proc;
             myDict['RID'] = RID;
             var jsonDict = JSON.stringify(myDict);
             $.ajax({
@@ -340,7 +363,7 @@
                     all: jsonDict
                 },
                 success: function(data) {
-                    $('#container-1').empty();
+
                     var res_table = data['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
                         dom: 'Bfrtip',
@@ -374,15 +397,16 @@
 
 {% block my_content %}
     <div>
-        <h2>Select your output formats:</h2>
-        <input type="checkbox" title="Click to turn on/off" id="Tabular"/>&nbsp<-- Output results in tabular format:
-        <br>
-        <input type="checkbox" title="Click to turn on/off" id="Biom"/>&nbsp<-- Output results in biom format:
-        <br><br>
         <h2>Select your normalization method:</h2>
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
                 <th bgcolor="white"></th>
+            </tr>
+            <tr id="ProcRow">
+                <td>
+                    <input style="background-color: white" type="text" id="Proc" value="2"/>
+                    &nbsp<-- How many processors would you like to use?
+                </td>
             </tr>
             <tr>
                 <td  bgcolor="white">
@@ -398,7 +422,7 @@
             </tr>
             <tr id="NormRow" style="display: none;" bgcolor="white">
                 <td>
-                    <input style="background-color: white" type="text" id="NormVal" value="median"/>
+                    <input style="background-color: white" type="text" id="NormVal" value=""/>
                     &nbsp<-- Sub-sample size:
                 </td>
             </tr>
@@ -411,7 +435,7 @@
             </tr>
         </table>
         <br><br>
-        <h2>Select sample/species cutoffs:</h2>
+        <h2>Select sample/species cutoffs (optional):</h2>
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
                 <th bgcolor="white"></th>
@@ -431,15 +455,21 @@
                 </td>
             </tr>
         </table>
+        <br><br>
+        <h2>Select your output formats (optional):</h2>
+        <input type="checkbox" title="Click to turn on/off" id="Tabular"/>&nbsp<-- Output results in tabular format:
+        <br>
+        <input type="checkbox" title="Click to turn on/off" id="Biom"/>&nbsp<-- Output results in biom format:
     </div>
     <br><br>
 
+    <hr class="style8">
     <h2>Normalization Results:</h2>
     <textarea id="container-1" style="width: 950px;" wrap="off" rows="10">Please run a normalization procedure!</textarea>
     <br>
 
     <h2>Normalized Data (Tabular):</h2>
-    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
+    <div id="res_table" style="width: 950px;"></div>
     <br>
 
     <h2>Normalized Data (Biom Format):</h2>
