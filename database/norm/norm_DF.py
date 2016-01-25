@@ -119,6 +119,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Proc):
             manager = mp.Manager()
             d = manager.dict()
 
+            if Proc < 1:
+                Proc = 1
             numcore = min(mp.cpu_count(), Proc)
             processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d)) for x in range(numcore)]
 
@@ -236,19 +238,22 @@ def weightedProb(x, cores, reads, iters, mySet, df, meth, d):
 
     for i in set:
         arr = asarray(df[i])
-        cols = shape(arr)
+        cols = np.ma.shape(arr)
+        otus = cols[0]
         sample = arr.astype(dtype=np.float64)
-
         if meth == 3:
-            prob = (sample + 0.1) / (sample.sum() + cols[0] * 0.1)
+            prob = (sample + 0.1) / (sample.sum() + otus * 0.1)
         else:
             prob = sample / sample.sum()
 
-        temp = np.zeros(cols)
+        temp = np.zeros((otus,), dtype=np.int)
         for n in range(reads*iters):
-            sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
-            temp2 = np.zeros(cols)
-            np.put(temp2, sub, 1)
+            if meth == 3:
+                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
+            else:
+                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
+            temp2 = np.zeros((otus,), dtype=np.int)
+            np.put(temp2, sub, [1])
             temp = np.core.umath.add(temp, temp2)
         d[i] = temp
 

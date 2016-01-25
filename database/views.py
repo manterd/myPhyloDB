@@ -643,6 +643,11 @@ def getSampleCookie(request):
     return HttpResponse(res, content_type='application/json')
 
 
+def clearNormCookie(request):
+    request.session.pop('NormMeth', None)
+    request.session.pop('savedDF', None)
+    return HttpResponse()
+
 @login_required(login_url='/accounts/login/')
 def reprocess(request):
     try:

@@ -30,6 +30,7 @@ urlpatterns = patterns('',
 
     url(r'^saveSampleCookie/$', 'database.views.saveSampleCookie', name='saveSampleCookie'),
     url(r'^getSampleCookie/$', 'database.views.getSampleCookie', name='getSampleCookie'),
+    url(r'^clearNormCookie/$', 'database.views.clearNormCookie', name='clearNormCookie'),
 
     url(r'^status/$', 'database.parsers.status', name='status'),
     url(r'^reanalyze/$', 'database.parsers.reanalyze', name='reanalyze'),

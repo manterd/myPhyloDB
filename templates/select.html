@@ -152,11 +152,20 @@
                         $("#link3").hide();
                         $("#link4").hide();
                         $("#link5").show();
+                        $("#link6").hide();
+                        clearCookie();
                     }
                 });
             });
 
         });
+
+        function clearCookie() {
+            $.ajax({
+                type: 'GET',
+                url: '/clearNormCookie/'
+            });
+        }
 
         function updateProjectTable(selKeys) {
             table1 = $('#projectTable').DataTable();
