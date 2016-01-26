@@ -8,7 +8,6 @@ from pyper import *
 from scipy import stats
 import simplejson
 
-
 from database.utils import multidict, stoppableThread
 
 

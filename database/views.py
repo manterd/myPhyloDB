@@ -648,6 +648,7 @@ def clearNormCookie(request):
     request.session.pop('savedDF', None)
     return HttpResponse()
 
+
 @login_required(login_url='/accounts/login/')
 def reprocess(request):
     try:

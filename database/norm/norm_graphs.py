@@ -124,6 +124,7 @@ def loopCat(request):
                 # Generate a list of sequence reads per sample and filter samples if minimum samplesize
                 countList = []
                 subList = []
+                size = 1
                 if size_on == 1:
                     size = int(all["MinVal"])
                     for sample in qs1:
@@ -229,6 +230,13 @@ def loopCat(request):
                 taxaDict['Species'] = qs3
 
                 base[RID] = 'Step 1 of 4: Querying database...done!'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 base[RID] = 'Step 2 of 4: Normalizing data...'
 
                 normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Proc)
@@ -295,6 +303,12 @@ def loopCat(request):
                     finalDF[['rich', 'diversity']] = finalDF[['rich', 'diversity']].astype(float)
                     finalDF[['abund', 'abund_16S']] = finalDF[['abund', 'abund_16S']].astype(int)
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 finalDF.reset_index(drop=False, inplace=True)
                 finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
@@ -336,6 +350,12 @@ def loopCat(request):
                 for i in myList:
                     nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[RID]:
+                        res = ''
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 # get list of lists with abundances
                 taxaOnlyDF = finalDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
                 taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
@@ -351,6 +371,12 @@ def loopCat(request):
                     metaDict = {}
                     metaDict['taxonomy'] = row[0]
                     taxaList.append({"id": index, "metadata": metaDict})
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[RID]:
+                        res = ''
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
                 biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
