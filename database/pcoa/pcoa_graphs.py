@@ -301,7 +301,7 @@ def loopCat(request):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
 
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last='last')
                 wantedList = allFields + ['sampleid', 'sample_name']
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)

@@ -1,6 +1,6 @@
 # -*- mode: python -*-
 a = Analysis(['serve-win.py'],
-             pathex=['C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB'],
+             pathex=['C:\\Users\\daniel.manter.NPA-VOICE\\PycharmProjects\\myPhyloDB'],
              hiddenimports=[
                 'registration.admin',
                 'registration.forms',
@@ -22,10 +22,6 @@ a = Analysis(['serve-win.py'],
                 'django.contrib.admin.templatetags.admin_modify',
                 'django.contrib.admin.templatetags.admin_static',
                 'django.contrib.admin.templatetags.admin_urls',
-                'scipy.special._ufuncs_cxx',
-                'scipy.linalg',
-                'scipy.linalg.cython_blas',
-                'scipy.linalg.cython_lapack',
                 ],
              hookspath=None,
              excludes=[

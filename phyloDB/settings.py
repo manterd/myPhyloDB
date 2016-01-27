@@ -15,7 +15,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'registration',
-    'south',
+    #'south',
     'phyloDB',
     'config',
     'database',

@@ -186,7 +186,7 @@ def _async_raise(tid, exctype):
         ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
         raise SystemError("PyThreadState_SetAsyncExc failed")
 
-#import os
+
 class stoppableThread(threading.Thread):
     def _get_my_tid(self):
         """determines this (self's) thread id"""

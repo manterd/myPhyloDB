@@ -51,6 +51,7 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         import HTMLParser
         import Cookie
         import django.contrib.sessions.serializers
+        import django.core.cache.backends.locmem
 
         from config.local_cfg import update
         update()
