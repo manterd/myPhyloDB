@@ -110,7 +110,7 @@ def parse_project(Document, p_uuid):
     perc = 0
 
     df = pd.read_excel(Document, skiprows=4, sheetname='Project')
-    rowDict = df.to_dict(outtype='records')[0]
+    rowDict = df.to_dict(orient='records')[0]
     rowDict.pop('num_samp')
 
     if not Project.objects.filter(projectid=p_uuid).exists():
@@ -185,7 +185,7 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
         step += 1.0
         perc = int((step / total/2) * 100)
 
-        row = df1.iloc[[i]].to_dict(outtype='records')[0]
+        row = df1.iloc[[i]].to_dict(orient='records')[0]
 
         pathid = row['refid']
 
@@ -203,20 +203,22 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
         parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
         reference = Reference.objects.get(refid=refid)
 
-        if not Sample.objects.filter(sampleid=s_uuid).exists():
+        if not np.isnan(s_uuid):
+            if Sample.objects.filter(sampleid=s_uuid).exists():
+                idList.append(s_uuid)
+                Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
+        else:
             s_uuid = uuid4().hex
             row['sampleid'] = s_uuid
             idList.append(s_uuid)
             Sample.objects.create(projectid=project, refid=reference, **row)
-        else:
-            idList.append(s_uuid)
-            Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
 
         refDict[s_uuid] = refid
+
         sample = Sample.objects.get(sampleid=s_uuid)
 
         if pType == "human associated":
-            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            row = df2.iloc[[i]].to_dict(orient='records')[0]
             if not Human_Associated.objects.filter(sampleid=s_uuid).exists():
                 row.pop('sampleid')
                 row.pop('sample_name')
@@ -227,7 +229,7 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
                 Human_Associated.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
         elif pType == "soil":
-            row = df2.iloc[[i]].to_dict(outtype='records')[0]
+            row = df2.iloc[[i]].to_dict(orient='records')[0]
             if not Soil.objects.filter(sampleid=s_uuid).exists():
                 row.pop('sampleid')
                 row.pop('sample_name')
@@ -239,7 +241,7 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
         else:
             placeholder = ''
 
-        row = df3.iloc[[i]].to_dict(outtype='records')[0]
+        row = df3.iloc[[i]].to_dict(orient='records')[0]
         if not UserDefined.objects.filter(sampleid=s_uuid).exists():
             row.pop('sampleid')
             row.pop('sample_name')
@@ -401,13 +403,14 @@ def parse_profile(file3, file4, p_uuid, refDict):
     df2 = df2[b]
     file4.close()
 
-    df3 = df1.join(df2, how='outer')
+    #df3 = df1.join(df2, how='outer')
+    df3 = pd.merge(df1, df2, left_index=True, right_index=True, how='inner')
     df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', value='', regex=True, inplace=True)
     df3.reset_index(drop=True, inplace=True)
     del df1, df2
 
-    indexList = df3.index.values.tolist()
-    total = len(indexList)
+    total, columns = df3.shape
+
     sampleList = df3.columns.values.tolist()
     sampleList.remove('Taxonomy')
 
@@ -418,6 +421,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
         taxon = str(row['Taxonomy'])
         taxon = taxon[:-1]
         taxaList = taxon.split(';')
+
         k = taxaList[0]
         p = taxaList[1]
         c = taxaList[2]
@@ -439,17 +443,13 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
         for name in sampleList:
             count = int(row[str(name)])
-            if count > 0:
 
+            if count > 0:
                 project = Project.objects.get(projectid=p_uuid)
                 sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
-                sampID = sample.sampleid
+                sampid = sample.sampleid
 
-                refid = ''
-                for key in refDict:
-                    if key == sampID:
-                        refid = refDict[key]
-
+                refid = refDict[sampid]
                 reference = Reference.objects.get(refid=refid)
 
                 if Profile.objects.filter(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species).exists():

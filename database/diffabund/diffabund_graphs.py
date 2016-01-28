@@ -178,7 +178,7 @@ def loopCat(request):
                 metaDF = metaDF.loc[:, ['merge']]
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed (contains only 1 level): ' + ", ".join(removed) + '\n'
+                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n'
 
                 base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...done'
@@ -240,7 +240,7 @@ def loopCat(request):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='taxa_id', columns='sampleid', values='abund_16S')
 
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last='last')
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
                 wantedList = ['sampleid', 'merge']
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)

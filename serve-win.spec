@@ -1,37 +1,66 @@
 # -*- mode: python -*-
-a = Analysis(['serve-win.py'],
-             pathex=['C:\\Users\\daniel.manter.NPA-VOICE\\PycharmProjects\\myPhyloDB'],
-             hiddenimports=[
-                'registration.admin',
-                'registration.forms',
-                'registration.urls',
-                'django.views.defaults',
-                'django.template.defaulttags',
-                'django.template.defaultfilters',
-                'django.template.loader_tags',
-                'django.templatetags.future',
-                'django.templatetags.i18n',
-                'django.templatetags.__init__',
-                'django.templatetags.cache',
-                'django.templatetags.l10n',
-                'django.templatetags.static',
-                'django.templatetags.tz',
+
+a = Analysis(
+            ['serve-win.py'],
+            pathex=[
+                'C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB',
+                'C:\\Users\\daniel.manter\\AppData\\Local\\Continuum\\Anaconda2\\Lib\\site-packages'
+                ],
+            hiddenimports=[
                 'django.contrib.admin.templatetags.log',
                 'django.contrib.admin.templatetags.__init__',
                 'django.contrib.admin.templatetags.admin_list',
                 'django.contrib.admin.templatetags.admin_modify',
                 'django.contrib.admin.templatetags.admin_static',
                 'django.contrib.admin.templatetags.admin_urls',
+                'django.contrib.auth',
+                'django.contrib.auth.backends',
+                'django.contrib.auth.middleware',
+                'django.contrib.auth.views',
+                'django.contrib.messages.middleware',
+                'django.contrib.sessions',
+                'django.contrib.sessions.backends.db',
+                'django.contrib.sessions.middleware',
+                'django.core.cache.backends',
+                'django.core.cache.backends.locmem',
+                'django.template.defaulttags',
+                'django.templatetags.__init__',
+                'django.templatetags.cache',
+                'django.templatetags.l10n',
+                'django.templatetags.static',
+                'django.templatetags.tz',
+                'django.templatetags.future',
+                'django.views.defaults',
+                'registration.admin',
+                'registration.forms',
+                'registration.urls',
                 ],
-             hookspath=None,
-             excludes=[
-                '_gtkagg', '_tkagg', '_agg2', '_cairo', '_cocoaagg', '_fltkagg',
-                '_gtk', '_gtkcairo', 'backend_qt', 'backend_qt4', 'backend_qtagg'
-                'backend_cairo','backend_cocoagg', 'Tkconstants', 'Tkinter', 'tcl',
-                '_imagingtk', 'PIL._imagingtk', 'ImageTk', 'PIL.ImageTk', 'TixTk'
-                ],
-             runtime_hooks=None
-             )
+            hookspath=None,
+            runtime_hooks=None,
+            excludes=[
+                    '_gtkagg',
+                    '_tkagg',
+                    '_agg2',
+                    '_cairo',
+                    '_cocoaagg',
+                    '_fltkagg',
+                    '_gtk',
+                    '_gtkcairo',
+                    'backend_qt',
+                    'backend_qt4',
+                    'backend_qtagg'
+                    'backend_cairo',
+                    'backend_cocoagg',
+                    'Tkconstants',
+                    'Tkinter',
+                    'tcl',
+                    '_imagingtk',
+                    'PIL._imagingtk',
+                    'ImageTk',
+                    'PIL.ImageTk',
+                    'TixTk'
+                    ],
+            )
 
 def Datafiles(*filenames, **kw):
     import os
@@ -49,7 +78,7 @@ def Datafiles(*filenames, **kw):
         for filename in filenames
         if os.path.isfile(filename))
 
-db = Datafiles('dbMicrobe')
+db = Datafiles('db.Microbe')
 
 def extra_datas(mydir):
     def rec_glob(p, files):

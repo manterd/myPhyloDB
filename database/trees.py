@@ -279,13 +279,27 @@ def getSampleCatTreeChildren(request):
     if request.is_ajax():
         field = request.GET["field"]
         pType = request.GET["pType"]
-        mimark = Sample._meta.get_all_field_names()
-        user = UserDefined._meta.get_all_field_names()
-        air = Air._meta.get_all_field_names()
-        human_associated = Human_Associated._meta.get_all_field_names()
-        microbial = Microbial._meta.get_all_field_names()
-        soil = Soil._meta.get_all_field_names()
-        water = Water._meta.get_all_field_names()
+
+        your_fields = Sample._meta.local_fields
+        mimark = [f.name for f in your_fields]
+
+        your_fields = UserDefined._meta.local_fields
+        user = [f.name for f in your_fields]
+
+        your_fields = Air._meta.local_fields
+        air = [f.name for f in your_fields]
+
+        your_fields = Human_Associated._meta.local_fields
+        human_associated = [f.name for f in your_fields]
+
+        your_fields = Microbial._meta.local_fields
+        microbial = [f.name for f in your_fields]
+
+        your_fields = Soil._meta.local_fields
+        soil = [f.name for f in your_fields]
+
+        your_fields = Water._meta.local_fields
+        water = [f.name for f in your_fields]
 
         myNode = []
         if field in mimark:

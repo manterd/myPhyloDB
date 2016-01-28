@@ -1,37 +1,80 @@
 # -*- mode: python -*-
-a = Analysis(['serve-linux.py'],
-             pathex=['/home/manterd/PycharmProjects/myPhyloDB'],
-             hiddenimports=[
+
+a = Analysis([
+        'serve-linux.py'],
+        pathex=[
+            '/home/manterd/PycharmProjects/myPhyloDB'
+            ],
+            hiddenimports=[
+                'django.conf.urls',
+                'django.conf.urls.shortcut',
+                'django.contrib.admin',
+                'django.contrib.admin.templatetags.admin_list',
+                'django.contrib.admin.templatetags.admin_modify',
+                'django.contrib.admin.templatetags.log',
+                'django.contrib.admin.views.auth',
+                'django.contrib.admin.views.doc',
+                'django.contrib.admin.views.main',
+                'django.contrib.admin.views.template',
+                'django.contrib.auth',
+                'django.contrib.auth.backends',
+                'django.contrib.auth.middleware',
+                'django.contrib.auth.views',
+                'django.contrib.contenttypes',
+                'django.contrib.messages.middleware',
+                'django.contrib.sessions',
+                'django.contrib.sessions.backends.db',
+                'django.contrib.sessions.middleware',
+                'django.contrib.sites',
+                'django.core.cache.backends',
+                'django.core.cache.backends.locmem',
+                'django.core.context_processors',
+                'django.db.backends.sqlite3.base',
+                'django.db.backends.sqlite3.client',
+                'django.db.backends.sqlite3.creation',
+                'django.db.backends.sqlite3.introspection',
+                'django.middleware.common',
+                'django.middleware.doc',
+                'django.template.defaultfilters',
+                'django.template.defaulttags',
+                'django.template.loader_tags',
+                'django.template.loaders.app_directories',
+                'django.template.loaders.filesystem',
+                'django.templatetags.i18n',
+                'django.views.defaults',
+                'django.views.generic.list_detail',
+                'django.views.i18n'
+                'django.views.static',
                 'registration.admin',
                 'registration.forms',
                 'registration.urls',
-                'django.views.defaults',
-                'django.template.defaulttags',
-                'django.template.defaultfilters',
-                'django.template.loader_tags',
-                'django.templatetags.future',
-                'django.templatetags.i18n',
-                'django.templatetags.__init__',
-                'django.templatetags.cache',
-                'django.templatetags.l10n',
-                'django.templatetags.static',
-                'django.templatetags.tz',
-                'django.contrib.admin.templatetags.log',
-                'django.contrib.admin.templatetags.__init__',
-                'django.contrib.admin.templatetags.admin_list',
-                'django.contrib.admin.templatetags.admin_modify',
-                'django.contrib.admin.templatetags.admin_static',
-                'django.contrib.admin.templatetags.admin_urls',
-                ],
-             hookspath=None,
-             excludes=[
-                '_gtkagg', '_tkagg', '_agg2', '_cairo', '_cocoaagg', '_fltkagg',
-                '_gtk', '_gtkcairo', 'backend_qt', 'backend_qt4', 'backend_qtagg'
-                'backend_cairo','backend_cocoagg', 'Tkconstants', 'Tkinter', 'tcl',
-                '_imagingtk', 'PIL._imagingtk', 'ImageTk', 'PIL.ImageTk', 'TixTk'
-                ],
-             runtime_hooks=None
-             )
+            ],
+            hookspath=None,
+            runtime_hooks=None,
+            excludes=[
+                    '_gtkagg',
+                    '_tkagg',
+                    '_agg2',
+                    '_cairo',
+                    '_cocoaagg',
+                    '_fltkagg',
+                    '_gtk',
+                    '_gtkcairo',
+                    'backend_qt',
+                    'backend_qt4',
+                    'backend_qtagg'
+                    'backend_cairo',
+                    'backend_cocoagg',
+                    'Tkconstants',
+                    'Tkinter',
+                    'tcl',
+                    '_imagingtk',
+                    'PIL._imagingtk',
+                    'ImageTk',
+                    'PIL.ImageTk',
+                    'TixTk'
+                    ],
+                )
 
 def Datafiles(*filenames, **kw):
     import os
@@ -50,7 +93,7 @@ def Datafiles(*filenames, **kw):
         if os.path.isfile(filename))
 
 
-db = Datafiles('dbMicrobe')
+db = Datafiles('db.Microbe')
 
 def extra_datas(mydir):
     def rec_glob(p, files):

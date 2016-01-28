@@ -1,5 +1,5 @@
+import uuid
 from django.db import models
-from django_extensions.db.fields import UUIDField
 from django.contrib.auth.models import User as Users
 
 
@@ -21,7 +21,7 @@ def subQueue():
 
 
 class Project(models.Model):
-    projectid = UUIDField(primary_key=True)
+    projectid = models.TextField(primary_key=True)
     status = models.CharField(max_length=15, blank=False)
     projectType = models.CharField(max_length=90, blank=False)
     project_name = models.TextField(blank=True)
@@ -36,7 +36,7 @@ class Project(models.Model):
 
 
 class Reference(models.Model):
-    refid = UUIDField(primary_key=True)
+    refid = models.TextField(primary_key=True)
     raw = models.BooleanField()
     projectid = models.ForeignKey(Project)
     path = models.CharField(max_length=90)
@@ -53,7 +53,7 @@ class Reference(models.Model):
 class Sample(models.Model):
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
-    sampleid = UUIDField(primary_key=True)
+    sampleid = models.TextField(primary_key=True)
 
     sample_name = models.TextField(blank=False)
     organism = models.CharField(max_length=90, blank=True)
@@ -504,20 +504,20 @@ class UserDefined(models.Model):
 
 
 class Kingdom(models.Model):
-    kingdomid = UUIDField(primary_key=True)
+    kingdomid = models.TextField(primary_key=True)
     kingdomName = models.CharField(max_length=90, blank=True)
 
 
 class Phyla(models.Model):
     kingdomid = models.ForeignKey(Kingdom)
-    phylaid = UUIDField(primary_key=True)
+    phylaid = models.TextField(primary_key=True)
     phylaName = models.CharField(max_length=90, blank=True)
 
 
 class Class(models.Model):
     kingdomid = models.ForeignKey(Kingdom)
     phylaid = models.ForeignKey(Phyla)
-    classid = UUIDField(primary_key=True)
+    classid = models.TextField(primary_key=True)
     className = models.CharField(max_length=90, blank=True)
 
 
@@ -525,7 +525,7 @@ class Order(models.Model):
     kingdomid = models.ForeignKey(Kingdom)
     phylaid = models.ForeignKey(Phyla)
     classid = models.ForeignKey(Class)
-    orderid = UUIDField(primary_key=True)
+    orderid = models.TextField(primary_key=True)
     orderName = models.CharField(max_length=90, blank=True)
 
 
@@ -534,7 +534,7 @@ class Family(models.Model):
     phylaid = models.ForeignKey(Phyla)
     classid = models.ForeignKey(Class)
     orderid = models.ForeignKey(Order)
-    familyid = UUIDField(primary_key=True)
+    familyid = models.TextField(primary_key=True)
     familyName = models.CharField(max_length=90, blank=True)
 
 
@@ -544,7 +544,7 @@ class Genus(models.Model):
     classid = models.ForeignKey(Class)
     orderid = models.ForeignKey(Order)
     familyid = models.ForeignKey(Family)
-    genusid = UUIDField(primary_key=True)
+    genusid = models.TextField(primary_key=True)
     genusName = models.CharField(max_length=90, blank=True)
 
 
@@ -555,7 +555,7 @@ class Species(models.Model):
     orderid = models.ForeignKey(Order)
     familyid = models.ForeignKey(Family)
     genusid = models.ForeignKey(Genus)
-    speciesid = UUIDField(primary_key=True)
+    speciesid = models.TextField(primary_key=True)
     speciesName = models.CharField(max_length=90, blank=True)
 
 
@@ -572,7 +572,3 @@ class Profile(models.Model):
     genusid = models.ForeignKey(Genus)
     speciesid = models.ForeignKey(Species)
     count = models.IntegerField()
-
-
-
-

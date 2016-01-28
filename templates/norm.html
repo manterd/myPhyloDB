@@ -46,6 +46,16 @@
         var RID = 0, Proc = 2;
 
         $(function () {
+
+            if ( "{{ platform }}" == 'nt') {
+                $("#ProcRow").hide();
+                $("#Procrow-off").show();
+            } else {
+                $("#ProcRow").show();
+                $("#Procrow-off").hide();
+            }
+
+
             $("#run").show().click(function () {
                 if(running == true) {
                     alert("myPhyloDB is currently running your previous analysis request!");
@@ -363,20 +373,25 @@
                     all: jsonDict
                 },
                 success: function(data) {
-
-                    var res_table = data['res_table'];
-                    $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        dom: 'Bfrtip',
-                        scroller: true,
-                        scrollX: 600,
-                        scrollY: 600,
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-
                     running = false;
                     stopTimer(refresh);
-                    var biome = data['biome'];
-                    $("#biome-text").empty().append(biome);
+
+                    if (tabular == 1) {
+                        var res_table = data['res_table'];
+                        $('#res_table').empty().append(res_table).find('.table').DataTable({
+                            dom: 'Bfrtip',
+                            scroller: true,
+                            scrollX: 600,
+                            scrollY: 600,
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+                    }
+
+                    if (biome == 1) {
+                        var biome_txt = data['biome'];
+
+                        $("#biome-text").val(biome_txt);
+                    }
 
                     var error = data['error'];
                     if (error != "none") {
@@ -407,6 +422,9 @@
                     <input style="background-color: white" type="text" id="Proc" value="2"/>
                     &nbsp<-- How many processors would you like to use?
                 </td>
+            </tr>
+            <tr id="ProcRow-off" style="display: none">
+                <td bgcolor="white"></td>
             </tr>
             <tr>
                 <td  bgcolor="white">

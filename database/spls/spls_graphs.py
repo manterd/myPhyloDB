@@ -207,7 +207,7 @@ def loopCat(request):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
 
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last='last')
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
 
                 wantedList = quantFields + ['sampleid']
                 meta_rDF = meta_rDF[wantedList]
@@ -565,3 +565,4 @@ def removegraphSPLS(request):
     file = "media/Rplots/" + str(user) + ".spls.jpg"
     if os.path.exists(file):
         os.remove(file)
+    return HttpResponse()
