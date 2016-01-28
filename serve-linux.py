@@ -46,11 +46,7 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         self.base_dir = base_dir
 
     def start(self):
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'phyloDB.settings'
-        import django.test
-        import HTMLParser
-        import Cookie
-        import django.contrib.sessions.serializers
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'myPhyloDB.settings'
 
         from config.local_cfg import update
         update()

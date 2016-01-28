@@ -8,7 +8,6 @@ import os
 import pandas as pd
 import re
 import shutil
-import sys
 import threading
 import time
 
@@ -248,3 +247,29 @@ def cleanup(number_of_days, path):
 
         if not os.listdir(root):
             remove(root)
+
+
+def wOdum(data, alpha):
+    length = data.__len__()
+    numrows, numcols = np.shape(data)
+    dists = np.zeros((numrows, numrows))
+
+    for i in xrange(length):
+        for j in xrange(length):
+            dist = 0.0
+            if i == j:
+                dists[i,j] = dist
+                dists[j,i] = dist
+            else:
+                num, den = 0.0, 0.0
+                otus = data[i].__len__()
+                for l in xrange(otus):
+                    u = data[i,l]
+                    v = data[j,l]
+                    if u > 0 or v > 0:
+                        num += abs(u-v)/(u+v)*(u+v)**alpha
+                        den += (u+v)**alpha
+                dist = num / den
+                dists[i,j] = dist
+                dists[j,i] = dist
+    return dists

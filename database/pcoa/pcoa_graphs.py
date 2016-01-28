@@ -8,8 +8,7 @@ from pyper import *
 from scipy.spatial.distance import *
 import simplejson
 
-from stats.distance import wOdum
-from database.utils import multidict, stoppableThread
+from database.utils import multidict, stoppableThread, wOdum
 
 
 base = {}
@@ -234,7 +233,7 @@ def loopCat(request):
                 metaDF = metaDF[wantedList]
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed (contains only 1 level): ' + ", ".join(removed) + '\n'
+                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
 
@@ -301,7 +300,7 @@ def loopCat(request):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
 
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last='last')
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
                 wantedList = allFields + ['sampleid', 'sample_name']
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
@@ -714,4 +713,4 @@ def removegraphPCoA(request):
     file = "media/Rplots/" + str(user) + ".pcoa.jpg"
     if os.path.exists(file):
         os.remove(file)
-
+    return HttpResponse()

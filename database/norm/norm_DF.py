@@ -6,6 +6,7 @@ from numpy.random import mtrand
 import pandas as pd
 from pyper import *
 from scipy.spatial.distance import *
+import threading
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from database.models import Species
@@ -15,12 +16,14 @@ def UnivMetaDF(sampleList):
     tableNames = ['project', 'reference', 'sample', 'air', 'human_associated', 'microbial', 'soil', 'water', 'userdefined', 'profile']
     idList = ['projectid', 'refid', u'id']
 
-    sampleTableList = Sample._meta.get_all_field_names()
+    your_fields = Sample._meta.local_fields
+    sampleTableList = [f.name for f in your_fields]
     for x in tableNames:
         if x in sampleTableList:
             sampleTableList.remove(x)
 
-    airTableList = Air._meta.get_all_field_names()
+    your_fields = Air._meta.local_fields
+    airTableList = [f.name for f in your_fields]
     for x in tableNames:
         if x in airTableList:
             airTableList.remove(x)
@@ -28,7 +31,8 @@ def UnivMetaDF(sampleList):
         if x in airTableList:
             airTableList.remove(x)
 
-    humanAssocTableList = Human_Associated._meta.get_all_field_names()
+    your_fields = Human_Associated._meta.local_fields
+    humanAssocTableList = [f.name for f in your_fields]
     for x in tableNames:
         if x in humanAssocTableList:
             humanAssocTableList.remove(x)
@@ -36,7 +40,8 @@ def UnivMetaDF(sampleList):
         if x in humanAssocTableList:
             humanAssocTableList.remove(x)
 
-    microbialTableList = Microbial._meta.get_all_field_names()
+    your_fields = Microbial._meta.local_fields
+    microbialTableList = [f.name for f in your_fields]
     for x in tableNames:
         if x in microbialTableList:
             microbialTableList.remove(x)
@@ -44,7 +49,8 @@ def UnivMetaDF(sampleList):
         if x in microbialTableList:
             microbialTableList.remove(x)
 
-    soilTableList = Soil._meta.get_all_field_names()
+    your_fields = Soil._meta.local_fields
+    soilTableList = [f.name for f in your_fields]
     for x in tableNames:
         if x in soilTableList:
             soilTableList.remove(x)
@@ -52,7 +58,8 @@ def UnivMetaDF(sampleList):
         if x in soilTableList:
             soilTableList.remove(x)
 
-    waterTableList = Water._meta.get_all_field_names()
+    your_fields = Water._meta.local_fields
+    waterTableList = [f.name for f in your_fields]
     for x in tableNames:
         if x in waterTableList:
             waterTableList.remove(x)
@@ -60,7 +67,8 @@ def UnivMetaDF(sampleList):
         if x in waterTableList:
             waterTableList.remove(x)
 
-    usrTableList = UserDefined._meta.get_all_field_names()
+    your_fields = UserDefined._meta.local_fields
+    usrTableList = [f.name for f in your_fields]
     for x in tableNames:
         if x in usrTableList:
             usrTableList.remove(x)
@@ -121,8 +129,13 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Proc):
 
             if Proc < 1:
                 Proc = 1
-            numcore = min(mp.cpu_count(), Proc)
-            processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d)) for x in range(numcore)]
+
+            if os.name == 'nt':
+                numcore = 1
+                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d,)) for x in range(numcore)]
+            else:
+                numcore = min(mp.cpu_count(), Proc)
+                processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d,)) for x in range(numcore)]
 
             for p in processes:
                 p.start()
@@ -192,16 +205,16 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Proc):
     namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName'}, inplace=True)
 
     normDF = pd.DataFrame()
-    for i in mySet:
+    for item in mySet:
         rowsList = []
-        groupRelAbund = relabundDF.groupby(field)[i].sum()
-        groupAbund = countDF.groupby(field)[i].sum()
-        groupRich = binaryDF.groupby(field)[i].sum()
-        groupDiversity = diversityDF.groupby(field)[i].sum()
+        groupRelAbund = relabundDF.groupby(field)[item].sum()
+        groupAbund = countDF.groupby(field)[item].sum()
+        groupRich = binaryDF.groupby(field)[item].sum()
+        groupDiversity = diversityDF.groupby(field)[item].sum()
 
         if isinstance(taxaList, unicode):
             myDict = {}
-            myDict['sampleid'] = i
+            myDict['sampleid'] = item
             myDict['taxa_id'] = taxaList
             myDict['rel_abund'] = groupRelAbund[taxaList]
             myDict['abund'] = groupAbund[taxaList]
@@ -209,14 +222,14 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Proc):
             myDict['diversity'] = groupDiversity[taxaList]
             rowsList.append(myDict)
         else:
-            for j in taxaList:
+            for taxa in taxaList:
                 myDict = {}
-                myDict['sampleid'] = i
-                myDict['taxa_id'] = j
-                myDict['rel_abund'] = groupRelAbund[j]
-                myDict['abund'] = groupAbund[j]
-                myDict['rich'] = groupRich[j]
-                myDict['diversity'] = groupDiversity[j]
+                myDict['sampleid'] = item
+                myDict['taxa_id'] = taxa
+                myDict['rel_abund'] = groupRelAbund[taxa]
+                myDict['abund'] = groupAbund[taxa]
+                myDict['rich'] = groupRich[taxa]
+                myDict['diversity'] = groupDiversity[taxa]
                 rowsList.append(myDict)
 
         DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'taxa_id', 'rel_abund', 'abund', 'rich', 'diversity'])

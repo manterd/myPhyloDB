@@ -192,7 +192,7 @@ def loopCat(request):
 
                 result = ''
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed (contains only 1 level): ' + ", ".join(removed) + '\n'
+                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
 
@@ -773,7 +773,7 @@ def loopQuant(request):
 
                 result = ''
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed (contains only 1 level): ' + ", ".join(removed) + '\n'
+                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
 
