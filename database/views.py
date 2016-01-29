@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.http import *
 from django.shortcuts import render
 import fileinput
+import logging
 import multiprocessing as mp
 import os
 import pandas as pd
@@ -19,7 +20,7 @@ from parsers import mothur, projectid, parse_project, parse_sample, parse_taxono
 from utils import handle_uploaded_file, remove_list, remove_proj
 
 
-
+LOG_FILENAME = 'error_log.txt'
 rep_project = ''
 
 
@@ -46,7 +47,10 @@ def upload(request):
             try:
                 p_uuid, pType, num_samp = projectid(file1)
             except:
-                print "myPhyloDB could not parse your project file: " + str(request.FILES['docfile1'])
+                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                logging.exception(myDate)
+
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 elif request.user.is_authenticated():
@@ -57,7 +61,7 @@ def upload(request):
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     'error': "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                      }
                 )
 
@@ -75,6 +79,10 @@ def upload(request):
                 handle_uploaded_file(file1, dest, metaName)
                 parse_project(metaFile, p_uuid)
             except:
+                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                logging.exception(myDate)
+
                 remove_proj(dest)
 
                 if request.user.is_superuser:
@@ -87,7 +95,7 @@ def upload(request):
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     'error': "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                      }
                 )
 
@@ -110,6 +118,10 @@ def upload(request):
             try:
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
             except:
+                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                logging.exception(myDate)
+
                 remove_proj(dest)
 
                 if request.user.is_superuser:
@@ -122,7 +134,7 @@ def upload(request):
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     'error': "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                      }
                 )
 
@@ -133,6 +145,10 @@ def upload(request):
                 try:
                     parse_taxonomy(file3)
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -145,7 +161,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your taxonomy file:" + str(file3.name)
+                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -157,6 +173,10 @@ def upload(request):
                     end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -169,7 +189,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file:" + str(file4.name)
+                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -218,6 +238,10 @@ def upload(request):
                 try:
                     mothur(dest, source)
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -230,7 +254,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error with your mothur batch file:" + str(file7.name)
+                         'error': "TmyPhyloDB found an error with your Mothur batch file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -240,6 +264,10 @@ def upload(request):
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -252,7 +280,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your taxonomy file: final.taxonomy"
+                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -263,6 +291,10 @@ def upload(request):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -275,7 +307,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.shared"
+                         'error': "TmyPhyloDB could not parse your shared file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -341,7 +373,7 @@ def upload(request):
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
 
-                avail_proc = mp.cpu_count()-1 or 1
+                avail_proc = mp.cpu_count()
                 use_proc = min(avail_proc, processors)
                 actual_proc = 'processors=' + str(use_proc)
 
@@ -356,6 +388,10 @@ def upload(request):
                     mothur(dest, source)
 
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -368,7 +404,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error with your mothur batch file: " + str(file7.name)
+                         'error': "TmyPhyloDB found an error with your Mothur batch file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -376,6 +412,10 @@ def upload(request):
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -388,7 +428,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your taxonomy file: final.taxonomy"
+                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -399,6 +439,10 @@ def upload(request):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -411,7 +455,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.shared"
+                         'error': "TmyPhyloDB could not parse your shared file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -434,7 +478,7 @@ def upload(request):
                 batch = 'mothur.batch'
                 file15 = request.FILES['docfile15']
 
-                avail_proc = mp.cpu_count()-1 or 1
+                avail_proc = mp.cpu_count()
                 use_proc = min(avail_proc, processors)
                 actual_proc = 'processors=' + str(use_proc)
 
@@ -448,6 +492,10 @@ def upload(request):
                 try:
                     mothur(dest, source)
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -460,7 +508,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error with your mothur batch file: " + str(file15.name)
+                         'error': "TmyPhyloDB found an error with your Mothur batch file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -468,6 +516,10 @@ def upload(request):
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -480,7 +532,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing taxonomy file: final.taxonomy"
+                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -491,6 +543,10 @@ def upload(request):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -503,7 +559,7 @@ def upload(request):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.shared"
+                         'error': "TmyPhyloDB could not parse your shared file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                          }
                     )
 
@@ -714,7 +770,11 @@ def update(request):
             handle_uploaded_file(file1, dest, file1.name)
             parse_project(metaFile, p_uuid)
         except:
-            state = "There was an error parsing your metafile: " + str(file1.name)
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+
+            state = "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             return render(
                 request,
                 'update.html',
@@ -738,7 +798,11 @@ def update(request):
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
 
         except Exception as e:
-            state = "There was an error parsing your metafile: " + str(file1.name)
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+
+            state = "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             return render(
                 request,
                 'update.html',
