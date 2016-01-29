@@ -44,6 +44,7 @@
         var tabular= 0, biome = 0;
         var remove = 0, minsize = 0;
         var RID = 0, Proc = 2;
+        var res_table = null;
 
         $(function () {
 
@@ -73,9 +74,6 @@
                 //document.getElementById("stop").value = "Stopping...";
                 running = false;
                 stopThis(RID);
-                //setTimeout(function() {
-                //   document.getElementById("stop").value = "Stop Analysis!";
-                //}, 10*1000); //Resets stop button after 10 seconds in case of failure on stop function's part
             });
 
             $("#NormMeth").change(function () {
@@ -254,7 +252,6 @@
                     var obj = $.parseJSON(result);
                     var stage = obj['message'];
                     $('#container-1').empty().append(stage);
-                    //document.getElementById("stop").value = "Stop Analysis!";
                 }
             });
         }
@@ -373,25 +370,7 @@
                     all: jsonDict
                 },
                 success: function(data) {
-                    running = false;
-                    stopTimer(refresh);
-
-                    if (tabular == 1) {
-                        var res_table = data['res_table'];
-                        $('#res_table').empty().append(res_table).find('.table').DataTable({
-                            dom: 'Bfrtip',
-                            scroller: true,
-                            scrollX: 600,
-                            scrollY: 600,
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-                    }
-
-                    if (biome == 1) {
-                        var biome_txt = data['biome'];
-
-                        $("#biome-text").val(biome_txt);
-                    }
+                    menuUpdate();
 
                     var error = data['error'];
                     if (error != "none") {
@@ -400,11 +379,47 @@
                     } else {
                         $("#run").css("background-color", "green");
                     }
+
+                    if (tabular == 1) {
+                        var rowData = data['data'];
+                        var colData = data['columns'];
+
+                        if (res_table == null) {
+                            res_table = $('#res_table').dataTable({
+                                dom: 'Bfrtip',
+                                scroller: true,
+                                scrollX: 600,
+                                scrollY: 600,
+                                buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ],
+                                data: rowData,
+                                columns: colData
+                            });
+                        } else {
+                            res_table = $('#res_table').DataTable({
+                                dom: 'Bfrtip',
+                                scroller: true,
+                                scrollX: 600,
+                                scrollY: 600,
+                                buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ],
+                                data: rowData,
+                                columns: colData,
+                                "destroy": true
+                            });
+                        }
+                    }
+
+                    if (biome == 1) {
+                        var biome_txt = data['biome'];
+                        $("#biome-text").val(biome_txt);
+                    }
+
+                    stopTimer(refresh);
+
                     var text = data['text'];
                     $("#container-1").empty().append(text);
 
-                    menuUpdate();
-                }
+                    running = false;
+               }
             });
         }
     </script>
@@ -486,8 +501,10 @@
     <textarea id="container-1" style="width: 950px;" wrap="off" rows="10">Please run a normalization procedure!</textarea>
     <br>
 
+    <div style="width: 950px">
     <h2>Normalized Data (Tabular):</h2>
-    <div id="res_table" style="width: 950px;"></div>
+    <table id="res_table" class="display"></table>
+    </div>
     <br>
 
     <h2>Normalized Data (Biom Format):</h2>

@@ -95,12 +95,6 @@ def loopCat(request):
     global base, stage, time1, TimeDiff, res, stops, stop0
     try:
         while True:
-            # Get selected samples from cookie and query database for sample info
-            samples = Sample.objects.all()
-            samples.query = pickle.loads(request.session['selected_samples'])
-            selected = samples.values_list('sampleid')
-            qs1 = Sample.objects.all().filter(sampleid__in=selected)
-
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.GET["all"]
@@ -120,6 +114,12 @@ def loopCat(request):
                 Iters = int(all["Iters"])
                 NormVal = all["NormVal"]
                 size_on = int(all["MinSize"])
+
+                # Get selected samples from cookie and query database for sample info
+                samples = Sample.objects.all()
+                samples.query = pickle.loads(request.session['selected_samples'])
+                selected = samples.values_list('sampleid')
+                qs1 = Sample.objects.all().filter(sampleid__in=selected)
 
                 # Generate a list of sequence reads per sample and filter samples if minimum samplesize
                 countList = []
@@ -403,11 +403,17 @@ def loopCat(request):
                 base[RID] = 'Step 4 of 4: Formatting result table...'
 
                 if tabular_on == 1:
-                    res_table = finalDF.to_html(classes="table display")
-                    res_table = res_table.replace('border="1"', 'border="0"')
-                    finalDict['res_table'] = str(res_table)
+                    data = finalDF.values.tolist()
+                    cols = finalDF.columns.values.tolist()
+                    colList = []
+                    for item in cols:
+                        colDict = {}
+                        colDict['title'] = item
+                        colList.append(colDict)
+                    finalDict['data'] = data
+                    finalDict['columns'] = colList
 
-                base[RID] = 'Step 4 of 4: Formatting result table...done!'
+                #base[RID] = 'Step 4 of 5: Formatting result table...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
