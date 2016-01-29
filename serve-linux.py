@@ -11,7 +11,7 @@ import webbrowser
 
 class Server(object):
     def __init__(self):
-        self.base_dir = os.path.join(os.path.abspath(os.getcwd()), "phyloDB")
+        self.base_dir = os.path.join(os.path.abspath(os.getcwd()), "myPhyloDB")
 
         cherrypy.config.update("config/server.cfg")
         DjangoAppPlugin(cherrypy.engine, self.base_dir).subscribe()
@@ -46,7 +46,8 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         self.base_dir = base_dir
 
     def start(self):
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'myPhyloDB.settings'
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myPhyloDB.settings")
+        import HTMLParser
 
         import django
         django.setup()

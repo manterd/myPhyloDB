@@ -7,6 +7,9 @@ a = Analysis(
                 'C:\\Users\\daniel.manter\\AppData\\Local\\Continuum\\Anaconda2\\Lib\\site-packages'
                 ],
             hiddenimports=[
+                'django.apps',
+                'django.apps.config',
+                'django.apps.registry',
                 'django.contrib.admin.templatetags.log',
                 'django.contrib.admin.templatetags.__init__',
                 'django.contrib.admin.templatetags.admin_list',
