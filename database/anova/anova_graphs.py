@@ -470,7 +470,6 @@ def loopCat(request):
                                 for i in xrange(len(tempStuff)):
                                     if i > 0:
                                         D += tempStuff[i] + '\n'
-
                         else:
                             for i in fList:
                                 if i not in quantFields:
@@ -482,7 +481,6 @@ def loopCat(request):
                                     tempStuff = table.split('\n')
                                     for i in xrange(len(tempStuff)):
                                         if i > 0:
-
                                             D += tempStuff[i] + '\n'
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
