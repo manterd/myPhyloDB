@@ -141,6 +141,15 @@ def loopCat(request):
                 metaDF = metaDF[wantedList]
 
                 result = ''
+                if DepVar == 1:
+                    result += 'Dependent variable: Abundance\n'
+                if DepVar == 2:
+                    result += 'Dependent variable: Species Richness\n'
+                if DepVar == 3:
+                    result += 'Dependent variable: Species Diversity\n'
+                if DepVar == 4:
+                    result += 'Dependent variable: Abundance (rRNA gene copies)\n'
+
                 result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
 
@@ -201,11 +210,11 @@ def loopCat(request):
                 if DepVar == 1:
                     count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
                 elif DepVar == 2:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund_16S')
-                elif DepVar == 3:
                     count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
-                elif DepVar == 4:
+                elif DepVar == 3:
                     count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
+                elif DepVar == 4:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund_16S')
 
                 meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
 
@@ -377,7 +386,7 @@ def loopCat(request):
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                    coeffsDF = pd.merge(namesDF, coeffsDF, left_index=True, right_index=True)
+                    coeffsDF = pd.merge(namesDF, coeffsDF, left_index=True, right_index=True, how='inner')
                     coeffsDF.reset_index(inplace=True)
                     res_table = coeffsDF.to_html(classes="table display")
                     res_table = res_table.replace('border="1"', 'border="0"')

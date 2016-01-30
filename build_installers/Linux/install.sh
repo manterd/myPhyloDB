@@ -20,12 +20,12 @@ fi
 if [ $response = y ]
     then
 	mkdir $HOME/myPhyloDB_temp
-	cp $HOME/myPhyloDB/dbMicrobe $HOME/myPhyloDB_temp/dbMicrobe
+	cp $HOME/myPhyloDB/dbMicrobe $HOME/myPhyloDB_temp/db.Microbe
 	cp -r $HOME/myPhyloDB/uploads $HOME/myPhyloDB_temp/uploads
 	tar -zxf myPhyloDB.tar.gz -C $HOME
-	rm $HOME/myPhyloDB/dbMicrobe
+	rm $HOME/myPhyloDB/db.Microbe
 	rm -rf $HOME/myPhyloDB/uploads
-	cp $HOME/myPhyloDB_temp/dbMicrobe $HOME/myPhyloDB/dbMicrobe
+	cp $HOME/myPhyloDB_temp/dbMicrobe $HOME/myPhyloDB/db.Microbe
 	cp -r $HOME/myPhyloDB_temp/uploads $HOME/myPhyloDB/uploads
 	rm -rf $HOME/myPhyloDB_temp
     else
