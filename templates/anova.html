@@ -109,11 +109,11 @@
                         if (value.getLevel() == 3) {
                             count += 1;
                         }
-                        if ((count > 1) && (button1 == 2)) {
-                            alert("Please select only one quantitative variable!");
-                            return false;
-                        }
                     });
+                    if (count > 1) {
+                        alert("Please select only one quantitative variable!");
+                        return false;
+                    }
                 }
             });
 
