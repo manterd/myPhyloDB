@@ -382,6 +382,11 @@
                     }
                 },
                 series: series,
+                plotOptions: {
+                        series: {
+                            turboThreshold:0
+                        }
+                },
                 credits: { enabled: false }
             };
             chart1 = new Highcharts.Chart(catOptions);

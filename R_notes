@@ -1,0 +1,57 @@
+How to install/update R on Linux
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 1: Download R source file
+
+    R-3.2.2.tar.gz
+    unzip to temporary folder
+    open terminal and navigate to your temporary folder
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 2: Build new R installation
+
+    ./configure --prefix=$HOME/myPhyloDB/R/R-Linux
+
+    make prefix=$HOME/myPhyloDB/R/R-Linux install
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 3: Install required packages
+
+    open terminal and navigate to '$HOME/myPhyloDB/R/R-Linux/bin'
+
+    type "./R"
+
+    install.packages("lsmeans")
+
+    install.packages("vegan")
+
+    install.packages("spls")
+
+    install.packages("mixOmics")
+
+    install.packages("DMwR")
+
+    install.packages("pheatmap")
+
+    install.packages("RColorBrewer")
+
+    source("http://bioconductor.org/biocLite.R")
+
+    biocLite("DESeq2")
+        update: none
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 4:
+
+    edit the "myPhyloDB/R/R-Linux/bin/R" file
+        replace "/home/manterd/myPhyloDB/R/R-Linux/lib/R"
+        with "R/R-Linux/lib/R"
+
+    edit the "myPhyloDB/R/R-Linux/lib/R/bin/R" file
+        replace "/home/manterd/myPhyloDB/R/R-Linux/lib/R"
+        with "R/R-Linux/lib/R"
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 5 (development only):
+
+    copy new directory to "PycharmProjects/R/R-Linux" for development
+    do not delete the original folder

@@ -417,7 +417,7 @@ def loopCat(request):
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
                     elif DepVar == 4:
-                        anova_string = "fit <- aov(copies ~ " + str(trtString) + ", data=df)"
+                        anova_string = "fit <- aov(abund_16S ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
 
@@ -998,7 +998,7 @@ def loopQuant(request):
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
                     elif DepVar == 4:
-                        anova_string = "fit <- lm(copies ~ " + str(trtString) + ", data=df)"
+                        anova_string = "fit <- lm(abund_16S ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
 
