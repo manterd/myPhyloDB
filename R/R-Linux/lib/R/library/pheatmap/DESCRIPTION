@@ -1,0 +1,18 @@
+Package: pheatmap
+Type: Package
+Title: Pretty Heatmaps
+Version: 1.0.8
+Date: 2015-07-02
+Author: Raivo Kolde
+Maintainer: Raivo Kolde <rkolde@gmail.com>
+Depends: R (>= 2.0)
+Description: Implementation of heatmaps that offers more control
+    over dimensions and appearance.
+Imports: grid, RColorBrewer, scales, gtable, stats, grDevices, graphics
+License: GPL-2
+LazyLoad: yes
+NeedsCompilation: no
+Packaged: 2015-12-11 14:36:08 UTC; kolde
+Repository: CRAN
+Date/Publication: 2015-12-11 16:50:10
+Built: R 3.2.2; ; 2016-01-31 06:15:03 UTC; unix

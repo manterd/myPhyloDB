@@ -1,0 +1,28 @@
+ci.spls                 Calculate bootstrapped confidence intervals of
+                        SPLS coefficients
+coefplot.spls           Plot estimated coefficients of the SPLS object
+correct.spls            Correct the initial SPLS coefficient estimates
+                        based on bootstrapped confidence intervals
+cv.sgpls                Compute and plot the cross-validated error for
+                        SGPLS classification
+cv.spls                 Compute and plot cross-validated mean squared
+                        prediction error for SPLS regression
+cv.splsda               Compute and plot cross-validated error for
+                        SPLSDA classification
+lymphoma                Lymphoma Gene Expression Dataset
+mice                    Mice Dataset
+plot.spls               Plot the coefficient path of SPLS regression
+predict.sgpls           Make predictions or extract coefficients from a
+                        fitted SGPLS model
+predict.spls            Make predictions or extract coefficients from a
+                        fitted SPLS model
+predict.splsda          Make predictions or extract coefficients from a
+                        fitted SPLSDA model
+print.sgpls             Print function for a SGPLS object
+print.spls              Print function for a SPLS object
+print.splsda            Print function for a SPLSDA object
+prostate                Prostate Tumor Gene Expression Dataset
+sgpls                   Fit SGPLS classification models
+spls                    Fit SPLS regression models
+splsda                  Fit SPLSDA classification models
+yeast                   Yeast Cell Cycle Dataset

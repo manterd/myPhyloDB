@@ -1,0 +1,127 @@
+
+import(MASS, lattice, igraph, rgl, ggplot2,corpcor)
+
+importFrom("grDevices", "as.graphicsAnnot", "chull", "col2rgb",
+             "colorRamp", "colorRampPalette", "colors", "dev.cur",
+             "dev.new", "dev.off", "dev.prev", "dev.set",
+             "devAskNewPage", "graphics.off", "gray", "gray.colors",
+             "heat.colors", "rgb","jpeg", "pdf", "tiff", "x11")
+
+importFrom("graphics", "abline", "arrows", "axis", "barplot", "box",
+             "image", "layout", "legend", "lines", "locator", "mtext",
+             "par", "plot", "plot.default", "points", "polygon", "rect",
+             "segments", "strheight", "strwidth", "symbols", "text",
+             "title")
+
+importFrom("stats", "as.dendrogram", "as.dist", "coefficients", "cor",
+             "cov", "dist", "hclust", "lm", "lsfit", "median", "na.omit",
+             "order.dendrogram", "predict", "quantile", "reorder", "var")
+
+importFrom("utils", "setTxtProgressBar", "txtProgressBar","packageDescription")
+
+importFrom("ellipse","ellipse")
+
+export(
+bin.color, 
+color.jet,
+color.GreenRed,
+color.spectral,
+color.mixo,
+cov2,
+cim, 
+deflation,
+defl.select,
+ica.par,
+ica.def,
+image.tune.rcc, 
+imgCor,
+initsvd,
+ipca,
+loo,
+l2.norm,
+mat.rank, 
+map,
+Mfold,
+miscrossprod,
+multilevel,
+nearZeroVar,
+network,
+nipals, 
+pca,
+pcasvd,
+perf,
+plotArrow,
+plotContrib,
+plotIndiv, 
+plotVar, 
+pls,
+plsda, 
+rcc,
+scale2,
+scatterutil.base, 
+scatterutil.eti, 
+scatterutil.grid, 
+selectVar,
+sipca,
+s.match,
+soft_thresholding_L1,
+soft.threshold,
+sparsity,
+spca,
+spls,
+splsda,
+tau.estimate,
+tune.multilevel,
+tune.splsdalevel1,
+tune.splsdalevel2,
+tune.splslevel,
+tune.pca,
+tune.rcc,
+unmap,
+vip,
+withinVariation,
+wrapper.rgcca,
+wrapper.sgcca,
+wrapper.sgccda)
+
+S3method(perf, pls)
+S3method(perf, spls)
+S3method(perf, plsda)
+S3method(perf, splsda)
+
+S3method(image, tune.rcc)
+
+S3method(plot, perf)
+S3method(plot, rcc)
+S3method(plot, pca)
+
+
+S3method(predict, pls)
+S3method(predict, spls)
+S3method(predict, plsda)
+S3method(predict, splsda)
+
+S3method(summary, pls)
+S3method(summary, spls)
+S3method(summary, rcc)
+
+S3method(print, pls)
+S3method(print, spls)
+S3method(print, plsda)
+S3method(print, splsda)
+S3method(print, rcc)
+S3method(print, summary)
+S3method(print, pca)
+S3method(print, spca)
+S3method(print, ipca)
+S3method(print, sipca)
+S3method(print, sgcca)
+S3method(print, rgcca)
+
+
+S3method(selectVar, pls)
+S3method(selectVar, plsda)
+S3method(selectVar, pca)
+S3method(selectVar, sipca)
+S3method(selectVar, sgcca)
+

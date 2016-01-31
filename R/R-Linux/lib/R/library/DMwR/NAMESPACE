@@ -1,0 +1,118 @@
+importFrom(abind,abind) 
+##import(rpart)
+importFrom(rpart,rpart,prune.rpart)
+##import(xts)
+importFrom(xts,as.xts,xts)
+##import(quantmod)
+importFrom(quantmod,newTA,Delt,candleChart)
+importFrom(zoo,as.zoo,zoo,coredata,index)
+importFrom(class,knn)
+import(ROCR)
+
+
+
+exportClasses(
+            learner, task, dataset,
+            cvSettings, cvRun,
+            mcSettings, mcRun,
+            hldSettings, hldRun,
+            loocvSettings, loocvRun,
+            bootSettings, bootRun,
+            expSettings,
+            compExp,
+            tradeRecord
+            )
+
+exportMethods(show)
+#exportMethods(summary)
+#exportMethods(plot)
+exportMethods(subset)
+
+export(
+       # experiments.R file
+       runLearner,
+       regr.eval,class.eval,ts.eval,
+       experimentalComparison,
+       crossValidation, 
+       monteCarlo,
+       holdOut,
+       loocv,
+       bootstrap,
+#       standardWF,timeseriesWF,
+#       regrWF,classWF,
+#       slideRegrWF,growRegrWF,tsRegrWF,
+#       slideClassWF,growClassWF,tsClassWF,
+       compAnalysis,
+       bestScores, rankSystems, statScores,
+       getFoldsResults,getSummaryResults,
+       variants, getVariant,
+       slidingWindowTest, growingWindowTest,
+       join,
+       dsNames, learnerNames, statNames,
+       
+       # kNN.R file
+       kNN,
+       
+       # OR.R file
+       outliers.ranking,
+       
+       # selfTraining.R file
+       SelfTrain,
+       
+       # smote.R file
+       SMOTE,
+
+       # LOF.R file
+       lofactor,
+       
+       # trading.R file
+       trading.simulator,
+       sigs.PR,
+       trading.signals,
+       tradingEvaluation,
+       .addEq,.Eq,
+       .addSt,.St,
+       
+       # trees.R file
+       rpartXse,
+       rt.prune,
+       prettyTree,
+
+       # utils.R file
+       centralValue,
+       resp,
+       manyNAs,
+       centralImputation,
+       knnImputation,
+       unscale,
+       PRcurve,
+       CRchart,
+       SoftMax,
+       LinearScaling,
+       ReScaling,
+
+       # classes.R file (the class constructors need to be exported)
+       learner, task, dataset,
+       cvSettings, cvRun,
+       mcSettings, mcRun,
+       hldSettings, hldRun,
+       loocvSettings, loocvRun,
+       bootSettings, bootRun,
+       compExp,
+       tradeRecord
+       )
+
+
+S3method(plot,cvRun)
+S3method(summary,cvRun)
+S3method(plot,hldRun)
+S3method(summary,hldRun)
+S3method(summary,loocvRun)
+S3method(summary,bootRun)
+S3method(plot,mcRun)
+S3method(summary,mcRun)
+S3method(plot,compExp)
+S3method(summary,compExp)
+
+S3method(plot,tradeRecord)
+S3method(summary,tradeRecord)

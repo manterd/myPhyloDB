@@ -2,10 +2,7 @@
 
 a = Analysis(
         ['serve-linux.py'],
-        pathex=[
-            '/home/manterd/PycharmProjects/myPhyloDB',
-            '/home/manterd/anaconda2/bin'
-            ],
+        pathex=['/home/manterd/PycharmProjects/myPhyloDB'],
             hiddenimports=[
                 'django.apps',
                 'django.apps.config',
@@ -62,7 +59,7 @@ a = Analysis(
                     'ImageTk',
                     'PIL.ImageTk',
                     'TixTk',
-                    'win32',
+                    'win32com',
                     'IPython',
                     'gtk',
                     'PyGTK',
