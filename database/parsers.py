@@ -203,10 +203,9 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
         parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
         reference = Reference.objects.get(refid=refid)
 
-        if not np.isnan(s_uuid):
-            if Sample.objects.filter(sampleid=s_uuid).exists():
-                idList.append(s_uuid)
-                Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
+        if Sample.objects.filter(sampleid=s_uuid).exists():
+            idList.append(s_uuid)
+            Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
         else:
             s_uuid = uuid4().hex
             row['sampleid'] = s_uuid
