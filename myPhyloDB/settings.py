@@ -76,7 +76,8 @@ TEMPLATES = [
                 'admin_list': 'django.contrib.admin.templatetags.admin_list',
                 'admin_modify': 'django.contrib.admin.templatetags.admin_modify',
                 'admin_static': 'django.contrib.admin.templatetags.admin_static',
-                'admin_urls': 'django.contrib.admin.templatetags.admin_urls'
+                'admin_urls': 'django.contrib.admin.templatetags.admin_urls',
+                'log': 'django.contrib.admin.templatetags.log',
             },
         },
     },
