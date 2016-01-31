@@ -23,7 +23,7 @@ class Server(object):
         for line in lines:
             if "server.socket_port: " in line:
                 port = line.split(' ')[1]
-                url = "http://127.0.0.1:" + str(port) + "/myPhyloDB/home/"
+                url = "http://127.0.0.1:" + str(port.rstrip('\n')) + "/myPhyloDB/home/"
         webbrowser.open_new(url)
 
     def run(self):

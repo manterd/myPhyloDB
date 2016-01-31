@@ -68,6 +68,7 @@ TEMPLATES = [
             'libraries': {
                 'static': 'django.templatetags.static',
                 'i18n': 'django.templatetags.i18n',
+                'admin.urls': 'django.contrib.admin.templatetags.admin_urls'
             },
         },
     },
