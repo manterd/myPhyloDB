@@ -59,11 +59,6 @@ a = Analysis(
                     'ImageTk',
                     'PIL.ImageTk',
                     'TixTk',
-                    'win32com',
-                    'IPython',
-                    'gtk',
-                    'PyGTK',
-                    'GdkPixbuf',
                     ],
                 )
 

@@ -35,8 +35,10 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.messages',
     'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    #'django.contrib.sites',
     'registration',
 ]
 
@@ -66,9 +68,15 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
             'libraries': {
-                'static': 'django.templatetags.static',
+                'cache': 'django.templatetags.cache',
                 'i18n': 'django.templatetags.i18n',
-                'admin.urls': 'django.contrib.admin.templatetags.admin_urls'
+                'l10n': 'django.templatetags.l10n',
+                'static': 'django.templatetags.static',
+                'tz': 'django.templatetags.tz',
+                'admin_list': 'django.contrib.admin.templatetags.admin_list',
+                'admin_modify': 'django.contrib.admin.templatetags.admin_modify',
+                'admin_static': 'django.contrib.admin.templatetags.admin_static',
+                'admin_urls': 'django.contrib.admin.templatetags.admin_urls'
             },
         },
     },
@@ -92,18 +100,10 @@ DATABASES = {
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    #{ 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    #{ 'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    #{ 'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    #{ 'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 
 
