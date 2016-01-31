@@ -1,22 +1,31 @@
-How to install/update R on Linux
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+How to install a 'portable' copy of R for Linux
+This is for development purposes only...
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 1: Download R source file
 
     R-3.2.2.tar.gz
-    unzip to temporary folder
+    unzip to $HOME/R-3.2.2
     open terminal and navigate to your temporary folder
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 2: Build new R installation
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 2: Make sure the following R dependencies are installed (all may not be needed!?)
 
-    ./configure --prefix=$HOME/myPhyloDB/R/R-Linux
+    sudo apt-get install xorg xopenbox libX11-dev libxt-dev
+    sudo apt-get install sudo apt-get install tcl8.4-dev tk8.4-dev bison groff-base
+        libncurses5-dev libreadline6-dev debhelper texi2html libbz2-dev libpcre3-dev
+        zlib1g-dev libpng12-dev libjpeg62-dev libx11-dev libxt-dev xpdf rds-tools libxml2-dev
+        mesa-common-dev libglu1-mesa-dev
 
-    make prefix=$HOME/myPhyloDB/R/R-Linux install
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 3: Build new R installation
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 3: Install required packages
+    ./configure --prefix=$HOME/R/R-Linux
+    make prefix=$HOME/R/R-Linux install
 
-    open terminal and navigate to '$HOME/myPhyloDB/R/R-Linux/bin'
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 4: Install required packages
+
+    open terminal and navigate to '$HOME/R/R-Linux/bin'
 
     type "./R"
 
@@ -39,19 +48,37 @@ Step 3: Install required packages
     biocLite("DESeq2")
         update: none
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 4:
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 5:
 
-    edit the "myPhyloDB/R/R-Linux/bin/R" file
-        replace "/home/manterd/myPhyloDB/R/R-Linux/lib/R"
+    edit the "$HOME/R/R-Linux/bin/R" file
+        replace "$HOME/R/R-Linux/lib/R"
         with "R/R-Linux/lib/R"
 
-    edit the "myPhyloDB/R/R-Linux/lib/R/bin/R" file
-        replace "/home/manterd/myPhyloDB/R/R-Linux/lib/R"
-        with "R/R-Linux/lib/R"
+    edit the "$HOME/R/R-Linux/lib/R/bin/R" file
+        replace "$HOME/R/R-Linux/lib/R"
+        with "R/R-Linux/lib/R/bin/R"
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 5 (development only):
 
-    copy new directory to "PycharmProjects/R/R-Linux" for development
-    do not delete the original folder
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 6:
+
+    copy new R installation to:
+        "$HOME/PycharmProjects/myPhyloDB/R/R-Linux"
+    or
+        your development folder of choice
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Step 7:
+
+    make sure all program files are executable:
+        R/R-Linux/bin/R
+
+        R/R-Linux/lib/R/bin/exec/R
+
+        R/R-Linux/lib/R/bin/f77_f2c
+        R/R-Linux/lib/R/bin/libtool
+        R/R-Linux/lib/R/bin/mkinstalldirs
+        R/R-Linux/lib/R/bin/pager
+        R/R-Linux/lib/R/bin/R
+        R/R-Linux/lib/R/bin/Rcmd

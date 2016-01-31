@@ -1,0 +1,104 @@
+CRchart                 Plot a Cumulative Recall chart
+DMwR-package            Functions and data for the book "Data Mining
+                        with R"
+GSPC                    A set of daily quotes for SP500
+LinearScaling           Normalize a set of continuous values using a
+                        linear scaling
+PRcurve                 Plot a Precision/Recall curve
+ReScaling               Re-scales a set of continuous values into a new
+                        range using a linear scaling
+SMOTE                   SMOTE algorithm for unbalanced classification
+                        problems
+SelfTrain               Self train a model on semi-supervised data
+SoftMax                 Normalize a set of continuous values using
+                        SoftMax
+algae                   Training data for predicting algae blooms
+algae.sols              The solutions for the test data set for
+                        predicting algae blooms
+bestScores              Obtain the best scores from an experimental
+                        comparison
+bootRun-class           Class "bootRun"
+bootSettings-class      Class "bootSettings"
+bootstrap               Runs a bootstrap experiment
+centralImputation       Fill in NA values with central statistics
+centralValue            Obtain statistic of centrality
+class.eval              Calculate Some Standard Classification
+                        Evaluation Statistics
+compAnalysis            Analyse and print the statistical significance
+                        of the differences between a set of learners.
+compExp-class           Class "compExp"
+crossValidation         Run a Cross Validation Experiment
+cvRun-class             Class "cvRun"
+cvSettings-class        Class "cvSettings"
+dataset-class           Class "dataset"
+dist.to.knn             An auxiliary function of 'lofactor()'
+dsNames                 Obtain the name of the data sets involved in an
+                        experimental comparison
+expSettings-class       Class "expSettings"
+experimentalComparison
+                        Carry out Experimental Comparisons Among
+                        Learning Systems
+getFoldsResults         Obtain the results on each iteration of a
+                        learner
+getSummaryResults       Obtain a set of descriptive statistics of the
+                        results of a learner
+getVariant              Obtain the learner associated with an
+                        identifier within a comparison
+growingWindowTest       Obtain the predictions of a model using a
+                        growing window learning approach.
+hldRun-class            Class "hldRun"
+hldSettings-class       Class "hldSettings"
+holdOut                 Runs a Hold Out experiment
+join                    Merging several 'compExp' class objects
+kNN                     k-Nearest Neighbour Classification
+knnImputation           Fill in NA values with the values of the
+                        nearest neighbours
+knneigh.vect            An auxiliary function of 'lofactor()'
+learner-class           Class "learner"
+learnerNames            Obtain the name of the learning systems
+                        involved in an experimental comparison
+lofactor                An implementation of the LOF algorithm
+loocv                   Run a Leave One Out Cross Validation Experiment
+loocvRun-class          Class "loocvRun"
+loocvSettings-class     Class "loocvSettings"
+manyNAs                 Find rows with too many NA values
+mcRun-class             Class "mcRun"
+mcSettings-class        Class "mcSettings"
+monteCarlo              Run a Monte Carlo experiment
+outliers.ranking        Obtain outlier rankings
+prettyTree              Visual representation of a tree-based model
+rankSystems             Provide a ranking of learners involved in an
+                        experimental comparison.
+reachability            An auxiliary function of 'lofactor()'
+regr.eval               Calculate Some Standard Regression Evaluation
+                        Statistics
+resp                    Obtain the target variable values of a
+                        prediction problem
+rpartXse                Obtain a tree-based model
+rt.prune                Prune a tree-based model using the SE rule
+runLearner              Run a Learning Algorithm
+sales                   A data set with sale transaction reports
+sigs.PR                 Precision and recall of a set of predicted
+                        trading signals
+slidingWindowTest       Obtain the predictions of a model using a
+                        sliding window learning approach.
+statNames               Obtain the name of the statistics involved in
+                        an experimental comparison
+statScores              Obtains a summary statistic of one of the
+                        evaluation metrics used in an experimental
+                        comparison, for all learners and data sets
+                        involved in the comparison.
+subset-methods          Methods for Function subset in Package 'DMwR'
+task-class              Class "task"
+test.algae              Testing data for predicting algae blooms
+tradeRecord-class       Class "tradeRecord"
+trading.signals         Discretize a set of values into a set of
+                        trading signals
+trading.simulator       Simulate daily trading using a set of trading
+                        signals
+tradingEvaluation       Obtain a set of evaluation metrics for a set of
+                        trading actions
+ts.eval                 Calculate Some Standard Evaluation Statistics
+                        for Time Series Forecasting Tasks
+unscale                 Invert the effect of the scale function
+variants                Generate variants of a learning system

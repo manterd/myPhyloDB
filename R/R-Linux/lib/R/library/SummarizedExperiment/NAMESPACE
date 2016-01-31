@@ -1,0 +1,106 @@
+import(methods)
+importFrom(stats, setNames)
+import(BiocGenerics)
+import(S4Vectors)
+import(IRanges)
+import(GenomeInfoDb)
+import(GenomicRanges)
+import(Biobase)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Export S4 classes
+###
+
+exportClasses(
+    ## TODO: Uncomment the line below once these helper classes are defined in
+    ## the SummarizedExperiment package. Otherwise, RangedSummarizedExperiment
+    ## objects that have been serialized *before* these helper classes were
+    ## moved are going to look broken (i.e. validObjet() will fail on them).
+    #Assays, ShallowData, ShallowSimpleListAssays,
+
+    SummarizedExperiment0,
+    RangedSummarizedExperiment
+)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Export S4 methods for generics not defined in SummarizedExperiment
+###
+
+exportMethods(
+    length, names, "names<-",
+    dim, dimnames, "dimnames<-",
+    "[", "[<-", "[[", "[[<-", "$", "$<-",
+    as.data.frame,
+    coerce,
+    show,
+    c,
+    merge,
+    Compare,
+
+    ## Generics defined in BiocGenerics:
+    cbind, rbind,
+    duplicated, match,
+    is.unsorted, order, rank, sort,
+    updateObject,
+    start, "start<-", end, "end<-", width, "width<-",
+    strand, "strand<-",
+
+    ## Generics defined in S4Vectors:
+    "metadata<-",
+    mcols, "mcols<-",
+    elementMetadata, "elementMetadata<-",
+    values, "values<-",
+    extractROWS, replaceROWS,
+    subset,
+    compare,
+
+    ## Generics defined in IRanges:
+    ranges, "ranges<-",
+    shift, narrow, resize, flank, promoters, restrict, trim,
+    isDisjoint, disjointBins,
+    coverage,
+    findOverlaps, countOverlaps, overlapsAny, subsetByOverlaps,
+    precede, follow, nearest, distance, distanceToNearest,
+
+    ## Generics defined in GenomeInfoDb:
+    seqinfo, "seqinfo<-",
+    seqnames, "seqnames<-",
+
+    ## Generics defined in GenomicRanges (at some point, these generics will
+    ## be defined in SummarizedExperiment):
+    SummarizedExperiment,
+    rowRanges, "rowRanges<-",
+    colData, "colData<-",
+    assayNames, "assayNames<-",
+    assays, "assays<-",
+    assay, "assay<-"
+)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Export non-generic functions
+###
+
+export(
+    Assays,
+    .DollarNames.SummarizedExperiment0,
+    makeSummarizedExperimentFromExpressionSet,
+    naiveRangeMapper, probeRangeMapper, geneRangeMapper,
+    readKallisto, readKallistoBootstrap, KALLISTO_ASSAYS
+)
+
+
+### - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### Export S4 generics defined in SummarizedExperiment + export corresponding
+### methods
+###
+
+export(
+)
+
+### Exactly the same list as above.
+exportMethods(
+)
+

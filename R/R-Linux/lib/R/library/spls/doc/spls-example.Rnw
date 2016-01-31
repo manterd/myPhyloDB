@@ -1,0 +1,343 @@
+% -*- mode: noweb; noweb-default-code-mode: R-mode; -*-
+\documentclass[11pt]{article}
+%% Set my margins
+\setlength{\oddsidemargin}{0.0truein}
+\setlength{\evensidemargin}{0.0truein}
+\setlength{\textwidth}{6.5truein}
+\setlength{\topmargin}{0.0truein}
+\setlength{\textheight}{9.0truein}
+\setlength{\headsep}{0.0truein}
+\setlength{\headheight}{0.0truein}
+\setlength{\topskip}{0pt}
+%% End of margins
+
+%%\pagestyle{myheadings}
+%%\markboth{$Date$\hfil$Revision$}{\thepage}
+
+\usepackage[pdftex,
+bookmarks, 
+bookmarksopen,
+pdfauthor={Dongjun Chung, Hyonho Chun and Sunduz Keles},
+pdftitle={spls Vignette}]
+{hyperref}
+
+
+\title{An Introduction to the `\texttt{spls}' Package, Version 1.0}
+\author{Dongjun Chung$^1$, Hyonho Chun$^1$ and S\"und\"uz Kele\c{s}$^{1,2}$\\
+  $^1$Department of Statistics, University of Wisconsin\\ 
+  Madison, WI 53706.\\
+  $^2$Department of Biostatistics and Medical Informatics, University of Wisconsin\\
+  Madison, WI 53706.}
+
+\date{\today}
+
+\SweaveOpts{engine=R, echo=TRUE, pdf=TRUE}
+
+\begin{document}
+%\VignetteIndexEntry{Sparse PLS}
+%\VignetteKeywords{PLS, Sparse PLS}
+%\VignettePackage{spls}
+\maketitle
+
+\section{Overview}
+
+This vignette provides basic information about the
+`\texttt{spls}' package. SPLS stands for ``Sparse Partial Least Squares''.
+The  SPLS regression methodology is developed in \cite{spls}. The main principle of this methodology is
+to impose sparsity within the context of partial least squares and thereby carry out  dimension
+reduction and variable selection simultaneously. SPLS regression exhibits good performance even when
+(1) the sample size is much smaller than the total number of variables; and
+(2) the covariates are highly correlated. One additional advantage of SPLS regression is
+its ability to handle both univariate and multivariate responses.
+
+The package can be loaded with the command:
+
+<<preliminaries,echo=FALSE,results=hide>>=
+options(prompt = "R> ")
+@
+
+<<spls-prelim,results=hide>>=
+library("spls")
+@
+
+\section{Input Data}
+
+The package requires that the response is given in the form of a either vector or matrix, and
+the predictors in the form of a matrix. The response can be either univariate or multivariate.
+The responses and the predictors are assumed to be numerical and should not contain missing values.
+As part of pre-processing, the predictors are centered and scaled and the responses are
+centered automatically as default by the package `\texttt{spls}'.
+
+We provide the Yeast Cell Cycle dataset as an example application for the `\texttt{spls}' package.
+The responses are the cell cycle gene expression data of 542 genes \cite{cycle}
+from an $\alpha$ factor based experiment. In this experiment, mRNA levels were measured at every 7 minute during 119
+minutes. Hence, the response has a total of 18 measurements covering two cell cycle periods.
+These 18 measurements correspond to 18 columns of the response matrix  in the dataset.
+The predictors are chromatin immunoprecipitation on chip (ChIP-chip) data of \cite{chip}
+and they contain the binding information for 106 transcription factors (TF).
+This application is concerned with identifying cell cycle
+related TFs, i.e., TFs whose binding events contribute to explaining the variability in gene expression,
+as well as inferring their activities. See \cite{spls} for more details.
+
+The yeast cell cycle dataset with the `\texttt{y}' matrix
+as the cell cycle gene expression (responses) and the `\texttt{x}' matrix as the
+ChIP-chip data (predictors) can be loaded as follows:
+
+<<spls-data>>=
+data(yeast)
+yeast$x[1:5,1:5]
+yeast$y[1:5,1:5]
+@
+
+\section{Tuning Parameters}
+\texttt{SPLS} regression has two main tuning parameters: `\texttt{eta}' represents 
+the sparsity tuning parameter and `\texttt{K}'
+is the number of hidden (latent) components. Parameters can be chosen by ($v$-fold) 
+cross-validation using the
+function `\texttt{cv.spls}'.  The user specifies the range for these parameters and 
+the cross-validation procedure
+searches within these ranges. `\texttt{eta}' should have a value between 0 and 1. `\texttt{K}' 
+is integer valued and can range between
+1 and $ min \left\{ p, (v-1) n / v \right\} $, where $p$ is the number of predictors and $n$ is the sample size. For example, if 10-fold cross-validation is used (default), `\texttt{K}' should be smaller than $ min \left\{ p, 0.9 n \right\} $. For the yeast data, we search for `\texttt{K}' between 5 and 10 and for `\texttt{eta}' between 0.1 and 0.9
+with the following command:
+
+<<plot1,eval=FALSE>>=
+set.seed(1)
+cv <- cv.spls( yeast$x, yeast$y, eta = seq(0.1,0.9,0.1), K = c(5:10) )
+@
+
+`\texttt{cv.spls}' returns a heatmap-type plot of mean squared prediction error (MSPE)
+and the optimal values for  `\texttt{eta}' and `\texttt{K}'. MSPE plot is given in Figure \ref{fig:cv}
+and `\texttt{cv.spls}' recommends to use `\texttt{eta}=0.7' and `\texttt{K}=8'.
+
+\begin{figure}[tbh]
+\begin{center}
+<<cv,fig=TRUE,height=6,width=6,echo=FALSE,results=hide>>=
+<<plot1>>
+@
+\caption{\label{fig:cv} MSPE plot of SPLS when eta = 0.1--0.9 and K = 5--10.}
+\end{center}
+\end{figure}
+
+\section{\texttt{SPLS} Fit}
+Using the parameters obtained from `\texttt{cv.spls}', \texttt{SPLS} can be fitted
+by the function `\texttt{spls}'. `\texttt{spls}' also prints out the variables
+that join the set of selected variables at each iteration step of SPLS fit.
+`\texttt{print.spls}' displays
+the parameters used, the number of selected predictors, and the list of the
+selected predictors. `\texttt{coef.spls}' prints out the coefficient estimates of SPLS fits.
+
+<<spls-fn>>=
+f <- spls( yeast$x, yeast$y, eta = cv$eta.opt, K = cv$K.opt )
+print(f)
+coef.f <- coef(f)
+coef.f[1:5,1:5]
+@
+
+A plot that illuminates the fitting procedure is the
+coefficient path plot given in Figure \ref{fig:plot}. This plot illustrates how the 
+coefficient estimates change as a function of `\texttt{K}' for a given `\texttt{eta}'.
+The coefficient path plot for a specific value of `\texttt{eta}' can be obtained  using the function
+`\texttt{plot.spls}'. When there are many responses,
+it might not be a good idea to plot them all together.
+The response of interest can be defined with the option `\texttt{yvar}'.
+If the option `\texttt{yvar}' is not specified,
+then `\texttt{plot.spls}' draws the coefficient paths
+of all responses. The command below generates the coefficient path plot given in Figure
+\ref{fig:plot}.
+
+<<plot2,eval=FALSE>>=
+plot.spls( f, yvar=1 )
+@
+
+\begin{figure}[tbh]
+\begin{center}
+<<plot,fig=TRUE,height=6,width=6,echo=FALSE>>=
+<<plot2>>
+@
+\caption{\label{fig:plot} Coefficient path plot of the SPLS fit for the yeast data when eta=0.7.}
+\end{center}
+\end{figure}
+
+In the yeast cell cycle data, the responses were repeatedly measured at different time points.
+In this case, it is useful to visualize how the estimated coefficients
+change as a function of time. The function `\texttt{coefplot.spls}'
+plots the estimated coefficients of the fit obtained from the `\texttt{spls}' function across 
+all the responses. By default, `\texttt{coefplot.spls}' displays the estimated coefficients of
+the selected predictors. However, in the case
+that too many predictors are chosen, this might lead to a  crowded plotting area.
+We provide  two options to avoid this. First, one  can choose predictors
+to be plotted by the option `\texttt{xvar}'. Note that the index number here is defined
+among the selected variables. For example, `\texttt{xvar = 1}' refers to  the first variable
+among the selected predictors. In this  example, `\texttt{xvar}' can be
+ between 1 and 28. Second, one can also control the number of plots
+that appear in each window using the option `\texttt{nwin}'. For example,
+`\texttt{nwin = c(2,2)}' indicates that the plotting area will have 4 plots with
+two rows and two columns. An illustration of this plotting option is given below and the 
+resulting plots are displayed in Figure \ref{fig:coef}.
+
+<<plot3,eval=FALSE>>=
+coefplot.spls( f, nwin=c(2,2), xvar=c(1:4) )
+@
+
+\begin{figure}[tbh]
+\begin{center}
+<<coef,fig=TRUE,height=6,width=6,echo=FALSE>>=
+<<plot3>>
+@
+\caption{\label{fig:coef} Plot of the estimated coefficients.}
+\end{center}
+\end{figure}
+
+\section{eQTL Application}
+
+In this section, we study the application of SPLS regression
+to the expression quantitative trait loci (eQTL) mapping.
+We provide the mice dataset \cite{mice} as an example
+of the eQTL application. Mice were collected from a \textit{$F_2$-ob/ob} cross and
+lacked a functional leptin protein hormone. The functional leptin protein hormone
+is known to be important for reproduction and regulation of body weight and metabolism.
+The predictors are
+the marker map consisting of 145 microsatellite markers from 19 non-sex mouse chromosomes. 
+The responses are the gene expression measurements of 83 transcripts
+from liver tissues of 60 mice. This group of 83 transcripts was obtained
+as one of the clusters, when 45,265 transcripts were clustered using a hierarchical
+clustering approach. See \cite{eqtl} for more details.  
+
+The mice dataset with the `\texttt{y}' matrix as the gene expression (responses) and
+the `\texttt{x}' matrix as the marker map (predictors) can be loaded as follows:
+
+<<eqtl-data>>=
+data(mice)
+mice$x[1:5,1:5]
+mice$y[1:5,1:5]
+@
+
+The optimal parameters were chosen as `\texttt{eta=0.6}' and `\texttt{K=1}'
+from `\texttt{cv.spls}' as follows.
+
+<<eqtl-cv, eval=FALSE>>=
+set.seed(1)
+cv <- cv.spls( mice$x, mice$y, eta = seq(0.1,0.9,0.1), K = c(1:5) )
+@
+
+SPLS fits are obtained as below.
+
+<<eqtl-fn, eval=FALSE>>=
+f <- spls( mice$x, mice$y, eta = cv$eta.opt, K = cv$K.opt )
+print(f)
+@
+
+<<eqtl-fn, echo=FALSE>>=
+f <- spls( mice$x, mice$y, eta = 0.6, K = 1 )
+print(f)
+@
+
+In this eQTL analysis, we can improve the initial SPLS fits further
+as described in \cite{eqtl}.
+First, we obtain the bootstrapped confidence intervals
+for the coefficients of the selected predictors using the function `\texttt{ci.spls}'.
+`\texttt{ci.spls}' also provides the confidence interval plots and
+lets users to control the plots with two options, `\texttt{plot.fix}' and `\texttt{plot.var}'.
+If `\texttt{plot.fix="x"}', then the function `\texttt{ci.spls}' plots the confidence intervals
+of a given predictor specified by the option `\texttt{plot.var}' across all the responses.
+Similarly, `\texttt{plot.fix="y"}' draws the plot against the predictors for the given responses.
+Note that if `\texttt{plot.fix="x"}', then the index number is defined among the selected variables.
+Figure \ref{fig:ciplot} shows the confidence interval plot of the coefficients.
+ 
+<<plot5,eval=FALSE>>=
+set.seed(1)
+ci.f <- ci.spls( f, plot.it=TRUE, plot.fix='x', plot.var=20 )
+@
+
+\begin{figure}[tbh]
+\begin{center}
+<<ciplot,fig=TRUE,height=6,width=6,echo=FALSE,results=hide>>=
+<<plot5>>
+@
+\caption{\label{fig:ciplot} Example plot of the confidence intervals of the coefficients.}
+\end{center}
+\end{figure}
+
+The function `\texttt{ci.spls}' returns the list whose
+element is the matrix of the confidence intervals
+of the coefficients. The names of elements of the
+list are the same as the column names of the responses.
+
+<<eqtl-ci>>=
+cis <- ci.f$cibeta
+cis[[20]][1:5,]
+@
+
+After we obtain the confidence intervals of the coefficients,
+the function `\texttt{correct.spls}' updates the coefficient estimates
+of the selected variables by setting the coefficients with zero-containing
+confidence intervals to zero.
+In addition, `\texttt{correct.spls}' provides the heatmap-type plots
+of the original SPLS coefficient estimates (Figure \ref{fig:coef1})
+and the corrected coefficient estimates (Figure \ref{fig:coef2}).
+
+<<cor1,eval=FALSE>>=
+cf <- correct.spls( ci.f )
+@
+
+<<cor2,echo=FALSE>>=
+cf <- correct.spls( ci.f, plot.it=FALSE )
+@
+    
+<<cor-out>>=
+cf[15:20,1:5]
+@
+
+<<plot6,echo=FALSE,eval=FALSE>>=
+heatmap.spls( mat=f$betahat, xlab='Predictors', ylab='Responses',
+            main='Original Coefficient Estimates', coln=16, as='i' )
+@
+
+<<plot7,echo=FALSE,eval=FALSE>>=
+heatmap.spls( mat=cf, xlab='Predictors', ylab='Responses',
+            main='Corrected Coefficient Estimates', coln=16, as='i' )        
+@
+
+\begin{figure}[tbh]
+\begin{center}
+<<coef1,fig=TRUE,height=6,width=6,echo=FALSE>>=
+<<plot6>>
+@
+\caption{\label{fig:coef1} Plot of the original coefficient estimates.}
+\end{center}
+\end{figure}
+
+\begin{figure}[tbh]
+\begin{center}
+<<coef2,fig=TRUE,height=6,width=6,echo=FALSE>>=
+<<plot7>>
+@
+\caption{\label{fig:coef2} Plot of the corrected coefficient estimates.}
+\end{center}
+\end{figure}
+
+\begin{thebibliography}{99}
+\bibitem{spls} Chun, H. and Kele\c{s}, S. (2007) ``Sparse partial least squares
+  for simultaneous dimension reduction and variable selection'',
+(\url{http://www.stat.wisc.edu/~keles/Papers/SPLS_Nov07.pdf}).
+\bibitem{eqtl} Chun, H. and Kele\c{s}, S. (2008). ``Expression quantitative trait loci mapping 
+with multivariate sparse partial least squares regression",
+(\url{http://www.stat.wisc.edu/~keles/Papers/chun_keles_eQTL_SPLS_submit.pdf}).
+\bibitem{mice} Lan, H., M. Chen, J. B. Flowers, B. S. Yandell, D. S. Stapleton, C. M. Mata,
+E. T-K Mui, M. T. Flowers, K. L. Schueler, K. F. Manly, R. W. Williams,
+C. Kendziorski, and A. D. Attie (2006). ``Combined expression
+trait correlations and expression quantitative trait locus mapping", \textit{PLoS
+Genetics}, 2, e6.
+\bibitem{chip} Lee, T. I., N. J. Rinaldi, F. Robert, D. T. Odom, Z. Bar-Joseph, G. K. Gerber,
+N. M. Hannett, C. T. Harbison, C. M. Thomson, I. Simon, J. Zeitlinger, E. G.
+Jennings, H. L. Murray, D. B. Gordon, B. Ren, J. J. Wyrick, J.-B. Tagne,
+T. L. Volkert, E. Fraenkel, D. K. Gifford, and R. A. Young (2002). ``Transcriptional
+regulatory networks in \textit{Saccharmomyces cerevisiae}". \textit{Science}, \textbf{298}, pp. 799--804.
+\bibitem{cycle} Spellman, P. T., G. Sherlock, M. Q. Zhang, V. R. Iyer, K. Anders, M. B. Eisen,
+P. O. Brown, D. Botstein, and B. Futcher (1998). ``Comprehensive identification of cell cycle-
+regulated genes of the yeast \textit{Saccharomyces cerevisiae} by microarray hydrization".
+\textit{Molecular Biology of the Cell}, \textbf{9}, pp. 3273--3279.
+\end{thebibliography}
+
+\end{document}

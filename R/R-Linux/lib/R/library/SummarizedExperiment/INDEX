@@ -1,0 +1,18 @@
+Assays-class            Assays objects
+RangedSummarizedExperiment-class
+                        RangedSummarizedExperiment objects
+SummarizedExperiment0-class
+                        SummarizedExperiment0 objects
+coverage-methods        Coverage of a RangedSummarizedExperiment object
+findOverlaps-methods    Finding overlapping ranges in
+                        RangedSummarizedExperiment objects
+inter-range-methods     Inter range transformations of a
+                        RangedSummarizedExperiment object
+intra-range-methods     Intra range transformations of a
+                        RangedSummarizedExperiment object
+makeSummarizedExperimentFromExpressionSet
+                        Make a RangedSummarizedExperiment object from
+                        an ExpressionSet and vice-versa
+nearest-methods         Finding the nearest range neighbor in
+                        RangedSummarizedExperiment objects
+readKallisto            Input kallisto or kallisto bootstrap results.
