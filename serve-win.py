@@ -9,6 +9,10 @@ import signal
 import webbrowser
 
 
+from myPhyloDB.wsgi import application
+cherrypy.tree.graft(application)
+
+
 class Server(object):
     def __init__(self):
         self.base_dir = os.path.join(os.path.abspath(os.getcwd()), "myPhyloDB")
@@ -46,17 +50,11 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         self.base_dir = base_dir
 
     def start(self):
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myPhyloDB.settings")
-        import HTMLParser
-
         import django
         django.setup()
 
         from config.local_cfg import update
         update()
-
-        from django.core.handlers.wsgi import WSGIHandler
-        cherrypy.tree.graft(WSGIHandler())
 
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]
@@ -86,7 +84,7 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 def signal_handler(signal, frame):
     print 'Exiting...'
     cherrypy.engine.exit()
-    sys.exit(0)
+    #sys.exit(0)
 
 
 signal.signal(signal.SIGINT, signal_handler)
