@@ -600,7 +600,12 @@ def loopCat(request):
                     yTitle['text'] = 'Species Diversity'
                 elif DepVar == 4:
                     yTitle['text'] = 'Abundance (rRNA gene copies)'
+                yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
                 yAxisDict['title'] = yTitle
+
+                styleDict = {'style': {'color': 'black', 'fontSize': '14px'}}
+                xAxisDict['labels'] = styleDict
+                yAxisDict['labels'] = styleDict
 
                 finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict
@@ -1331,6 +1336,7 @@ def loopQuant(request):
                 xAxisDict = {}
                 xTitle = {}
                 xTitle['text'] = quantFields[0]
+                xTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
                 xAxisDict['title'] = xTitle
 
                 yAxisDict = {}
@@ -1344,6 +1350,13 @@ def loopQuant(request):
                 elif DepVar == 4:
                     yTitle['text'] = 'Abundance (rRNA gene copies)'
                 yAxisDict['title'] = yTitle
+
+                yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
+                yAxisDict['title'] = yTitle
+
+                styleDict = {'style': {'color': 'black', 'fontSize': '14px'}}
+                xAxisDict['labels'] = styleDict
+                yAxisDict['labels'] = styleDict
 
                 finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict

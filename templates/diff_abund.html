@@ -447,8 +447,8 @@
                 title: { text: null },
                 legend: {
                     itemStyle: {
-                        fontSize: '7px',
-                        font: '7pt Trebuchet MS, Verdana, sans-serif'
+                        fontSize: '10px',
+                        font: '10pt Trebuchet MS, Verdana, sans-serif'
                     },
                     align: 'right',
                     verticalAlign: 'top',
@@ -466,6 +466,13 @@
                     formatter: function () {
                         return this.series.name + '<br/>' +
                             'Value: (' + Math.round(this.x*1000)/1000 + ',' + Math.round(1000*this.y)/1000 + ')<br/>';
+                    }
+                },
+                plotOptions: {
+                    series: {
+                        marker: {
+                            radius: 6
+                        }
                     }
                 },
                 credits: { enabled: false }

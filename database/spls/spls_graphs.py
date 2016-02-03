@@ -428,12 +428,14 @@ def loopCat(request):
                     labelsDict = {}
                     labelsDict['rotation'] = 270
                     labelsDict['enabled'] = True
+                    labelsDict['style'] = {'color': 'black', 'fontSize': '14px'}
                     xAxisDict['labels'] = labelsDict
                     xAxisDict['title'] = {'text': None}
                     xAxisDict['tickLength'] = 0
 
                     yAxisDict = {}
                     yAxisDict['categories'] = quantFields
+                    yAxisDict['labels'] = {'style': {'color': 'black', 'fontSize': '14px'}}
                     yAxisDict['title'] = {'text': None}
 
                     seriesList = []
@@ -495,16 +497,16 @@ def loopCat(request):
                     ip = request.META.get('REMOTE_ADDR')
                     user = str(name) + "." + str(ip)
 
-                    path = "media/Rplots/" + str(user) + ".spls.jpg"
+                    path = "media/Rplots/" + str(user) + ".spls.pdf"
                     if os.path.exists(path):
                         os.remove(path)
 
                     if not os.path.exists('media/Rplots'):
                         os.makedirs('media/Rplots')
 
-                    height = 250 + 15*row
-                    width = 250 + 20*(col-1)
-                    file = "jpeg('media/Rplots/" + str(user) + ".spls.jpg', height=" + str(height) + ", width=" + str(width) + ")"
+                    height = 2.5 + 0.2*row
+                    width = 3 + 0.2*(col-1)
+                    file = "pdf('media/Rplots/" + str(user) + ".spls.pdf', height=" + str(height) + ", width=" + str(width) + ", onefile=FALSE)"
                     r.assign("cmd", file)
                     r("eval(parse(text=cmd))")
 
@@ -520,25 +522,23 @@ def loopCat(request):
                         hmap_str = "pheatmap(df, fontsize=12, color=col.pal, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "', clustering_distance_cols='" + str(metric) + "')"
                         r.assign("cmd", hmap_str)
                         r("eval(parse(text=cmd))")
-                        r("dev.off()")
 
                     if row > 2 and col <= 3:
                         hmap_str = "pheatmap(df, color=col.pal, cluster_col=FALSE, clustering_method='" + str(method) + "', clustering_distance_rows='" + str(metric) + "')"
                         r.assign("cmd", hmap_str)
                         r("eval(parse(text=cmd))")
-                        r("dev.off()")
 
                     if row <= 2 and col > 3:
                         hmap_str = "pheatmap(df, color=col.pal, cluster_row=FALSE, clustering_method='" + str(method) + "', clustering_distance_cols='" + str(metric) + "')"
                         r.assign("cmd", hmap_str)
                         r("eval(parse(text=cmd))")
-                        r("dev.off()")
 
                     if row <= 2 and col <= 3:
                         hmap_str = "pheatmap(df, color=col.pal, cluster_col=FALSE, cluster_row=FALSE)"
                         r.assign("cmd", hmap_str)
                         r("eval(parse(text=cmd))")
-                        r("dev.off()")
+
+                    r("dev.off()")
 
                 finalDict['text'] = result
 
@@ -571,7 +571,7 @@ def removegraphSPLS(request):
     ip = request.META.get('REMOTE_ADDR')
     user = str(name) + "." + str(ip)
 
-    file = "media/Rplots/" + str(user) + ".spls.jpg"
+    file = "media/Rplots/" + str(user) + ".spls.pdf"
     if os.path.exists(file):
         os.remove(file)
     return HttpResponse()
