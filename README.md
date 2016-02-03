@@ -13,31 +13,24 @@
 * Executables include all dependencies, allowing myPhyloDB to be run on computers without Python, Mothur or R.
 
 <hr>
-
 # Dependencies
 <hr>
 Dependencies (and the source code provided here) are only required for development purposes.  Most users should use the installers provided above.
 
 ####**Linux systems**
+Please see the 'Setup_notes' file for more details... 
 
-***Python 2.7.8***
 
-* **Modules:** CherryPy 3.6.0, Django 1.6.5, Django-extensions 1.4.4, Django-registration-redux 1.2, PypeR 1.1.2, numPy 1.8.1, pandas 0.17.1, sciPy 0.14.0, simplejson 3.5.2
+***Python 2.7.6 or above***
 
-***R 3.1.2***
 
-* **Packages:** vegan, multcomp, lsmeans, spls, mixOmics, DESeq2
-* **Source:** [R for Linux] (http://lib.stat.cmu.edu/R/CRAN/)
-* **Installation folder:** 'R/R-Linux'
+* **Modules:** CherryPy 4.0, Django 1.9.1, Django-extensions 1.4.4, Django-registration-redux 1.3, PypeR 1.1.2, numPy 1.8.1, pandas 0.17.1, sciPy 0.14.0, simplejson 3.5.2, xlrd 0.9.4, xlutils 1.7.1
 
-***Mothur 1.35.1***
 
-* **Source:** [Mothur.cen_64.zip] (https://github.com/mothur/mothur/releases/tag/v1.35.1)
-* **Installation folder:** 'mothur/mothur-linux'
-       
 ***Mothur reference files***
 
-* **Source:** [silva.seed_v119.align] (http://www.mothur.org/wiki/Taxonomy_outline)
+
+* **Example:** [silva.seed_v119.align] (http://www.mothur.org/wiki/Taxonomy_outline)
 * **Installation folder:** 'mothur/reference/align'
 
 
@@ -47,27 +40,20 @@ Dependencies (and the source code provided here) are only required for developme
 
 * **Example:** [gg_13_5_99.fasta]  (http://www.mothur.org/wiki/Taxonomy_outline)
 * **Installation folder:** 'mothur/reference/template'
+
 
 ####**Windows systems**
 
-***Python 2.7.8***
+***Python 2.7.6 or above***
 
-* **Modules:** CherryPy 3.6.0, Django 1.6.5, Django-extensions 1.4.4, Django-registration-redux 1.2, PypeR 1.1.2, numPy 1.8.1, pandas 0.14.0, sciPy 0.14.0, simplejson 3.5.2
 
-***R 3.1.2***
+* **Modules:** CherryPy 4.0, Django 1.9.1, Django-extensions 1.4.4, Django-registration-redux 1.3, PypeR 1.1.2, numPy 1.8.1, pandas 0.17.1, sciPy 0.14.0, simplejson 3.5.2, xlrd 0.9.4, xlutils 1.7.1
 
-* **Packages:** vegan, multcomp, lsmeans, spls, mixOmics, DESeq2
-* **Source:** [R Portable] (http://sourceforge.net/projects/rportable/)
-* **Installation folder:** 'R/R-Portable'
 
-***Mothur 1.35.1***
-
-* **Source:** [Mothur.win_64.zip] (https://github.com/mothur/mothur/releases/tag/v1.35.1)
-* **Installation folder:** 'mothur/mothur-win'
-       
 ***Mothur reference files***
 
-* **Source:** [silva.seed_v119.align] (http://www.mothur.org/wiki/Taxonomy_outline)
+
+* **Example:** [silva.seed_v119.align] (http://www.mothur.org/wiki/Taxonomy_outline)
 * **Installation folder:** 'mothur/reference/align'
 
 
@@ -77,5 +63,4 @@ Dependencies (and the source code provided here) are only required for developme
 
 * **Example:** [gg_13_5_99.fasta]  (http://www.mothur.org/wiki/Taxonomy_outline)
 * **Installation folder:** 'mothur/reference/template'
-
 <hr>

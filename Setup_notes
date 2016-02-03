@@ -47,3 +47,5 @@ Clone myPhyloDB repository
 Install makeself
     stephanepeter.com/makeself/
     extract to $HOME/megastep-makeself
+
+Add mothur reference files - see README.md for more info
