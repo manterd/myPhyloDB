@@ -1,10 +1,18 @@
 #!/bin/sh
+### This file is used to make a new myPhyloDB installer
+#    it will not install myPhyloDB.
 
-### This file will not install myPhyloDB.
-### Please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
+### If you are looking for a pre-built installer
+# Please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
 
-cd $HOME/PycharmProjects/myPhyloDB/
+### To run this file type the following in your terminal
+# cd $HOME/PycharmProjects/myPhyloDB/build_installers/Linux
+# workon myphylodb
+# sh make.sh
+
+cd $HOME/PycharmProjects/myPhyloDB
 pyinstaller -D $HOME/PycharmProjects/myPhyloDB/serve-linux.spec
+deactivate
 cd $HOME/PycharmProjects/myPhyloDB/dist/
 tar -zcvf myPhyloDB.tar.gz myPhyloDB/*
 mv myPhyloDB.tar.gz $HOME/PycharmProjects/myPhyloDB/build_installers/Linux/myPhyloDB.tar.gz

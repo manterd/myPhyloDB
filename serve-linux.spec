@@ -2,7 +2,9 @@
 
 a = Analysis(
         ['serve-linux.py'],
-        pathex=['/home/manterd/PycharmProjects/myPhyloDB'],
+        pathex=['/home/manterd/.virtualenvs/myphylodb',
+                '/home/manterd/PycharmProjects/myPhyloDB',
+                ],
             hiddenimports=[
                 'django.apps',
                 'django.apps.config',
