@@ -1,10 +1,7 @@
-#!/usr/bin/env python
 import cherrypy
 from cherrypy.process import plugins
 import multiprocessing as mp
-import os
 import os.path
-import sys
 import signal
 import webbrowser
 
@@ -78,7 +75,6 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 def signal_handler(signal, frame):
     print 'Exiting...'
     cherrypy.engine.exit()
-    #sys.exit(0)
 
 
 signal.signal(signal.SIGINT, signal_handler)
