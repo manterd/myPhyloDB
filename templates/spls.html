@@ -322,7 +322,7 @@
                     $("#image").show();
                     {% static "" as baseUrl %}
                     var d = new Date();
-                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.spls.jpg?"+d.getTime());
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.spls.pdf?"+d.getTime());
 
                     $("#container-0").hide();
                     var display = $("#graphDisplay").val();
@@ -356,8 +356,8 @@
                 title: { text: null },
                 legend: {
                     itemStyle: {
-                        fontSize: '7px',
-                        font: '7pt Trebuchet MS, Verdana, sans-serif'
+                        fontSize: '10px',
+                        font: '10pt Trebuchet MS, Verdana, sans-serif'
                     },
                     align: 'right',
                     verticalAlign: 'top',
@@ -369,10 +369,10 @@
                 yAxis: yAxis,
                 colorAxis: {
                     stops: [
-                    [0, '#c4463a'],
-                    [0.5, '#ffffff'],
-                    [1, '#3060cf']
-                    ]
+                        [0, '#c4463a'],
+                        [0.5, '#ffffff'],
+                        [1, '#3060cf']
+                    ],
                 },
                 tooltip: {
                     formatter: function () {
@@ -518,7 +518,7 @@
             <td colspan="20">
                 <div id="container-0" style="height: 400px; width: 950px;">No Data has been selected!</div>
                 <div id="container-1" style="height: 400px; width: 950px; overflow-x: auto; display:none"></div>
-                <div id="container-2" style="height: 405px; width: 950px; overflow-y: auto; display:none"><span id="image" style="display:none;"><img id="my_image" src="#" /></span></div>
+                <div id="container-2" style="height: 400px; width:950px; display:none"><iframe id="my_image" src="#" height="100%" width="100%"></iframe></div>
             </td>
         </tr>
         <tr id="highchartButtons">

@@ -14,7 +14,7 @@ Step 2: Make sure the following R dependencies are installed (all may not be nee
     sudo apt-get install sudo apt-get install tcl8.4-dev tk8.4-dev bison groff-base
         libncurses5-dev libreadline6-dev debhelper texi2html libbz2-dev libpcre3-dev
         zlib1g-dev libpng12-dev libjpeg62-dev libx11-dev libxt-dev xpdf rds-tools libxml2-dev
-        mesa-common-dev libglu1-mesa-dev
+        mesa-common-dev libglu1-mesa-dev libtiff4-dev
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 3: Build new R installation
@@ -82,7 +82,3 @@ Step 7:
         R/R-Linux/lib/R/bin/pager
         R/R-Linux/lib/R/bin/R
         R/R-Linux/lib/R/bin/Rcmd
-
-    copy the following files:
-        /usr/lib/x86_64-linux-gnu/libjpeg.so.62 to $HOME/PycharmProjects/R/R-Linux/lib/R/lib/libjpeg.so.62
-        /usr/lib/x86_64-linux-gnu/libjpeg.so.62.0.0 to $HOME/PycharmProjects/R/R-Linux/lib/R/lib/libjpeg.so.62.0.0

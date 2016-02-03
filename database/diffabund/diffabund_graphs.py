@@ -410,13 +410,19 @@ def loopCat(request):
 
                 xTitle = {}
                 xTitle['text'] = "baseMean"
+                xTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
                 xAxisDict['title'] = xTitle
                 xAxisDict['type'] = 'logarithmic'
 
                 yTitle = {}
                 yTitle['text'] = "log2FoldChange"
+                yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
                 yAxisDict['title'] = yTitle
                 yAxisDict['type'] = 'linear'
+
+                styleDict = {'style': {'color': 'black', 'fontSize': '14px'}}
+                xAxisDict['labels'] = styleDict
+                yAxisDict['labels'] = styleDict
 
                 finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict

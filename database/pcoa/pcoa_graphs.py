@@ -408,16 +408,16 @@ def loopCat(request):
                     ip = request.META.get('REMOTE_ADDR')
                     user = str(name) + "." + str(ip)
 
-                    path = "media/Rplots/" + str(user) + ".pcoa.jpg"
+                    path = "media/Rplots/" + str(user) + ".pcoa.pdf"
                     if os.path.exists(path):
                         os.remove(path)
 
                     if not os.path.exists('media/Rplots'):
                         os.makedirs('media/Rplots')
 
-                    file = "jpeg('media/Rplots/" + str(user) + ".pcoa.jpg', height=400, width=400)"
+                    file = "pdf('media/Rplots/" + str(user) + ".pcoa.pdf', height=4, width=4)"
                     r.assign("cmd", file)
-                    r("eval(parse(text=cmd))")
+                    print r("eval(parse(text=cmd))")
 
                     r("ordiplot(ord, type='n')")
                     r("points(ord, display='sites', pch=15, col=cat)")
@@ -617,11 +617,17 @@ def loopCat(request):
 
                 xTitle = {}
                 xTitle['text'] = str(eigDF.columns.values.tolist()[PC1]) + " (" + str(eigDF.iloc[1][PC1] * 100) + "%)"
+                xTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
                 xAxisDict['title'] = xTitle
 
                 yTitle = {}
                 yTitle['text'] = str(eigDF.columns.values.tolist()[PC2]) + " (" + str(eigDF.iloc[1][PC2] * 100) + "%)"
+                yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
                 yAxisDict['title'] = yTitle
+
+                styleDict = {'style': {'color': 'black', 'fontSize': '14px'}}
+                xAxisDict['labels'] = styleDict
+                yAxisDict['labels'] = styleDict
 
                 finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict
@@ -710,7 +716,7 @@ def removegraphPCoA(request):
     ip = request.META.get('REMOTE_ADDR')
     user = str(name) + "." + str(ip)
 
-    file = "media/Rplots/" + str(user) + ".pcoa.jpg"
+    file = "media/Rplots/" + str(user) + ".pcoa.pdf"
     if os.path.exists(file):
         os.remove(file)
     return HttpResponse()
