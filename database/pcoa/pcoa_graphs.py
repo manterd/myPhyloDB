@@ -417,7 +417,7 @@ def loopCat(request):
 
                     file = "pdf('media/Rplots/" + str(user) + ".pcoa.pdf', height=4, width=4)"
                     r.assign("cmd", file)
-                    print r("eval(parse(text=cmd))")
+                    r("eval(parse(text=cmd))")
 
                     r("ordiplot(ord, type='n')")
                     r("points(ord, display='sites', pch=15, col=cat)")
