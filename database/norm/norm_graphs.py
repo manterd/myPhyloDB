@@ -202,12 +202,8 @@ def loopCat(request):
                 metaDF = UnivMetaDF(newList)
 
                 # remove emptycols
-                mtColsDF = metaDF.replace(to_replace='None', value=np.nan)
-                mtColsDF.replace(to_replace='nan', value=np.nan, inplace=True)
-                mtColsDF.dropna(axis=1, how='all', inplace=True)
-                mtColsList = mtColsDF.columns.values.tolist()
-                metaDF = metaDF[mtColsList]
-
+                metaDF.replace('nan', np.nan, inplace=True)
+                metaDF.dropna(axis=1, how='all', inplace=True)
                 metaDF.dropna(axis=0, how='all', inplace=True)
                 lenB, col = metaDF.shape
 
@@ -290,7 +286,10 @@ def loopCat(request):
                 normDF.set_index('sampleid', inplace=True)
                 finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
 
-                finalDF['abund_16S'] = finalDF['rel_abund'] * finalDF['rRNA_copies']
+                if 'rRNA_copies' in finalDF.columns:
+                    finalDF['abund_16S'] = finalDF['rel_abund'] * finalDF['rRNA_copies']
+                else:
+                    finalDF['abund_16S'] = 0
 
                 if NormMeth == 4:
                     finalDF.drop('abund', axis=1, inplace=True)
