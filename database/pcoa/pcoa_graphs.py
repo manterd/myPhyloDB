@@ -300,7 +300,7 @@ def loopCat(request):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund_16S')
 
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last=True)
                 wantedList = allFields + ['sampleid', 'sample_name']
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
@@ -389,20 +389,9 @@ def loopCat(request):
                 envFit = ''
                 if trtLength > 0:
                     r.assign("meta", meta_rDF)
-                    pcoa_string = "ord <- capscale(mat ~ " + str(trtString) + ", meta)"
+                    pcoa_string = "ord <- capscale(dist ~ " + str(trtString) + ", meta)"
                     r.assign("cmd", pcoa_string)
                     r("eval(parse(text=cmd))")
-
-                    ellipseVal = all['ellipseVal']
-                    myStr = "cat <- factor(meta$" + str(ellipseVal) + ")"
-                    r.assign("cmd", myStr)
-                    r("eval(parse(text=cmd))")
-
-                    surfVal = all['surfVal']
-                    if surfVal:
-                        myStr = "quant <- meta$" + str(surfVal)
-                        r.assign("cmd", myStr)
-                        r("eval(parse(text=cmd))")
 
                     name = request.user
                     ip = request.META.get('REMOTE_ADDR')
@@ -420,16 +409,32 @@ def loopCat(request):
                     r("eval(parse(text=cmd))")
 
                     r("ordiplot(ord, type='n')")
-                    r("points(ord, display='sites', pch=15, col=cat)")
-                    r("legend('topright', legend=levels(cat), pch=15, col=1:length(cat))")
 
-                    addEllipse = all['addEllipse']
-                    if addEllipse == 'yes':
+                    colorVal = all['colorVal']
+                    if colorVal != 'None':
+                        myStr = "cat <- factor(meta$" + str(colorVal) + ")"
+                        r.assign("cmd", myStr)
+                        r("eval(parse(text=cmd))")
+                        r("points(ord, display='sites', pch=15, col=cat)")
+                        r("legend('topright', legend=levels(cat), pch=15, col=1:length(cat))")
+                    else:
+                        r("points(ord, display='sites', pch=15)")
+
+                    ellipseVal = all['ellipseVal']
+                    if ellipseVal != 'None':
+                        myStr = "cat <- factor(meta$" + str(ellipseVal) + ")"
+                        r.assign("cmd", myStr)
+                        r("eval(parse(text=cmd))")
                         r("pl <- ordiellipse(ord, cat, kind='sd', conf=0.95, draw='polygon', border='black')")
 
-                    addSurf = all['addSurf']
-                    if addSurf == 'yes':
-                        r("ordisurf(ord, quant, add=TRUE)")
+
+                    surfVal = all['surfVal']
+                    if surfVal != 'None':
+                        myStr = "quant <- meta$" + str(surfVal)
+                        r.assign("cmd", myStr)
+                        r("eval(parse(text=cmd))")
+                        r("ordisurf(ord, quant, cex=1, labcex=0.6, add=TRUE)")
+
                     r("dev.off()")
 
                     if len(quantFields) > 0:

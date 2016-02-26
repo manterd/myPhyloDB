@@ -15,6 +15,7 @@ from xlutils.copy import copy
 import xlwt
 from xlwt import Style
 import time
+import zipfile
 
 from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
@@ -31,6 +32,35 @@ def mothur(dest, source):
     global stage, perc
     stage = "Step 3 of 5: Running mothur...please check your host terminal for progress!"
     perc = 0
+
+    if not os.path.exists('mothur/reference/align'):
+        os.makedirs('mothur/reference/align')
+
+    if not os.path.exists('mothur/reference/taxonomy'):
+        os.makedirs('mothur/reference/taxonomy')
+
+    if not os.path.exists('mothur/reference/template'):
+        os.makedirs('mothur/reference/template')
+
+    if not os.path.exists('mothur/reference/align/silva.gold.align'):
+        ref = zipfile.ZipFile('mothur/reference/zip/silva.gold.align.zip', 'r')
+        ref.extractall('mothur/reference/align')
+        ref.close()
+
+    if not os.path.exists('mothur/reference/align/silva.seed_v119.align'):
+        ref = zipfile.ZipFile('mothur/reference/zip/silva.seed_v119.align.zip', 'r')
+        ref.extractall('mothur/reference/align')
+        ref.close()
+
+    if not os.path.exists('mothur/reference/taxonomy/gg_13_5_99.pds.tax'):
+        ref = zipfile.ZipFile('mothur/reference/zip/gg_13_5_99.pds.tax.zip', 'r')
+        ref.extractall('mothur/reference/taxonomy')
+        ref.close()
+
+    if not os.path.exists('mothur/reference/template/gg_13_5_99.fasta'):
+        ref = zipfile.ZipFile('mothur/reference/zip/gg_13_5_99.fasta.zip', 'r')
+        ref.extractall('mothur/reference/template')
+        ref.close()
 
     if os.name == 'nt':
         try:

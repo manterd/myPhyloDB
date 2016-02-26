@@ -67,22 +67,18 @@
                 onSelect: function(flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            node.select(false);
-                            node.select(true);
+                            if (node.childList == undefined) {
+                                node.select(false);
+                                node.remove(true);
+                            } else {
+                                node.select(false);
+                                node.select(true);
+                            }
                         });
                     }
                     nodesCat = node.tree.getSelectedNodes();
-
-                    if (node.data.pType != undefined) {
-                        if (node.bSelected) {
-                            $("#ellipse").prop("checked", true);
-                            $("#ellipseVal").val(node.data.title);
-                        } else {
-                            $("#ellipse").prop("checked", false);
-                            $("#ellipseVal").val("");
-                        }
-                    }
-
+                    colorBox();
+                    ellipseBox();
                     $("#run").css("background-color", "lightgray");
                 }
             });
@@ -101,6 +97,7 @@
                         data: {pType: node.data.pType, field: node.data.title},
                         success: function(node) {
                             if (node.childList == undefined) {
+                                node.select(false);
                                 alert('No samples are available for this variable!');
                             }
                         }
@@ -109,21 +106,17 @@
                 onSelect: function(flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            node.select(false);
-                            node.select(true);
+                            if (node.childList == undefined) {
+                                node.select(false);
+                                node.remove(true);
+                            } else {
+                                node.select(false);
+                                node.select(true);
+                            }
                         });
                     }
                     nodesQuant = node.tree.getSelectedNodes();
-
-                    if (node.data.pType != undefined) {
-                        if (node.bSelected) {
-                            $("#surf").prop("checked", true);
-                            $("#surfVal").val(node.data.title);
-                        } else {
-                            $("#surf").prop("checked", false);
-                            $("#surfVal").val("");
-                        }
-                    }
+                    surfBox();
 
                     $("#run").css("background-color", "lightgray");
                 }
@@ -300,6 +293,18 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#colorVal").change(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#ellipseVal").change(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
+            $("#surfVal").change(function () {
+                $("#run").css("background-color", "lightgray");
+            });
+
             $("#run").click(function () {
                 if(running == true) {
                     alert("myPhyloDB is currently running your previous analysis request!");
@@ -337,6 +342,69 @@
                 $("#run").css("background-color", "lightgray");
             });
         });
+
+        function colorBox() {
+            $("#colorVal").empty().prepend('<option selected="selected" value="None">None</option>');
+            for (var i = 0; i < nodesCat.length; i++) {
+                if (nodesCat[i].getLevel() == 3) {
+                    if ((nodesCat[i].data.pType == 'mimark') || (nodesCat[i].data.pType == 'user')) {
+                        if (nodesCat[i].bSelected) {
+                            var title = nodesCat[i].data.title;
+                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                } else if (nodesCat[i].getLevel() == 4) {
+                    if ((nodesCat[i].data.pType == 'human_associated') || (nodesCat[i].data.pType == 'soil') || (nodesCat[i].data.pType == 'air') || (nodesCat[i].data.pType == 'microbial') || (nodesCat[i].data.pType == 'water')) {
+                        if (nodesCat[i].bSelected) {
+                            var title = nodesCat[i].data.title;
+                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            }
+        }
+
+        function ellipseBox() {
+            $("#ellipseVal").empty().prepend('<option selected="selected" value="None">None</option>');
+            for (var i = 0; i < nodesCat.length; i++) {
+                if (nodesCat[i].getLevel() == 3) {
+                    if ((nodesCat[i].data.pType == 'mimark') || (nodesCat[i].data.pType == 'user')) {
+                        if (nodesCat[i].bSelected) {
+                            var title = nodesCat[i].data.title;
+                            $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                } else if (nodesCat[i].getLevel() == 4) {
+                    if ((nodesCat[i].data.pType == 'human_associated') || (nodesCat[i].data.pType == 'soil') || (nodesCat[i].data.pType == 'air') || (nodesCat[i].data.pType == 'microbial') || (nodesCat[i].data.pType == 'water')) {
+                        if (nodesCat[i].bSelected) {
+                            var title = nodesCat[i].data.title;
+                            $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            }
+        }
+
+        function surfBox() {
+            $("#surfVal").empty().prepend('<option selected="selected" value="None">None</option>');
+            for (var i = 0; i < nodesQuant.length; i++) {
+                if (nodesQuant[i].getLevel() == 3) {
+                    if ((nodesQuant[i].data.pType == 'mimark') || (nodesQuant[i].data.pType == 'user')) {
+                        if (nodesQuant[i].bSelected) {
+                            var title = nodesQuant[i].data.title;
+                            $("#surfVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                } else if (nodesQuant[i].getLevel() == 4) {
+                    if ((nodesQuant[i].data.pType == 'human_associated') || (nodesQuant[i].data.pType == 'soil') || (nodesQuant[i].data.pType == 'air') || (nodesQuant[i].data.pType == 'microbial') || (nodesQuant[i].data.pType == 'water')) {
+                        if (nodesQuant[i].bSelected) {
+                            var title = nodesCat[i].data.title;
+                            $("#surfVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            }
+        }
 
         function stopThis(RID) {
             clearInterval(refresh);
@@ -394,7 +462,7 @@
             }
 
             if (nodesCat == "") {
-                $("#container-1").empty().append('Please choose a categorical variable(s)!');
+                $("#container-0").empty().append('Please choose a categorical variable(s)!');
                 $("#text-1").val('No data selected');
                 $("#text-raw").val('No data selected');
                 $("#run").css("background-color", "red");
@@ -402,7 +470,7 @@
             }
             if (nodesCat != "") {
                 $("#run").css("background-color", "yellow");
-                $("#container-1").empty().append('Analysis is running...please be patient');
+                $("#container-0").empty().append('Analysis is running...please be patient');
                 getGraphData();
             }
         }
@@ -534,18 +602,10 @@
             myDict['alpha'] = document.getElementById("alphaVal").value;
             myDict['perms'] = document.getElementById("perms").value;
             myDict['RID'] = RID;
+            myDict['colorVal'] = document.getElementById("colorVal").value;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
             myDict['surfVal'] = document.getElementById("surfVal").value;
-            if ($("#ellipse").is(':checked')) {
-                myDict['addEllipse'] = 'yes'
-            } else {
-                myDict['addEllipse'] = 'no'
-            }
-            if ($("#surf").is(':checked')) {
-                myDict['addSurf'] = 'yes'
-            } else {
-                myDict['addSurf'] = 'no'
-            }
+
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -801,8 +861,10 @@
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    Add ordiellipse: <input type="checkbox" title="Click to turn ordiellipse on/off" id="ellipse"/>
-                    <input type="text" title="Input box is automatically changed to the last variable you selected. <br> If checked, an entry is required. <br> To change, manually type in your desired variable." id="ellipseVal" value="" style="background-color: white"/>
+                    <select id="colorVal">
+                        <option value="None">None</option>
+                    </select>
+                    &nbsp<-- Select variable for symbol colors
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -811,8 +873,22 @@
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    Add ordisurf: <input type="checkbox"  title="Click to turn ordisurf on/off" id="surf"/>
-                    <input type="text"  title="Input box is automatically changed to the last variable you selected. <br> No entry is required. <br> To change, manually type in your desired variable." id="surfVal" value="" style="background-color: white"/>
+                    <select id="ellipseVal">
+                        <option value="None">None</option>
+                    </select>
+                    &nbsp<-- Select variable for ordiellipse
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="surfVal">
+                        <option value="None">None</option>
+                    </select>
+                    &nbsp<-- Select variable for ordisurf
                 </div>
             </td>
             <td bgcolor="white"></td>

@@ -65,8 +65,13 @@
                 onSelect: function(flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            node.select(false);
-                            node.select(true);
+                            if (node.childList == undefined) {
+                                node.select(false);
+                                node.remove(true);
+                            } else {
+                                node.select(false);
+                                node.select(true);
+                            }
                         });
                     }
                     nodesQuant = node.tree.getSelectedNodes();

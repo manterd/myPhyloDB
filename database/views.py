@@ -2,9 +2,9 @@ import datetime
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import *
-from django.shortcuts import render
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 import fileinput
-import logging
 import multiprocessing as mp
 import os
 import pandas as pd
@@ -19,16 +19,13 @@ from models import addQueue, getQueue, subQueue
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 
-
-LOG_FILENAME = 'error_log.txt'
 rep_project = ''
 
 
 def home(request):
-    return render(
-        request,
+    return render_to_response(
         'home.html',
-        {}
+        context_instance=RequestContext(request)
     )
 
 
@@ -47,22 +44,20 @@ def upload(request):
             try:
                 p_uuid, pType, num_samp = projectid(file1)
             except:
-                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                logging.exception(myDate)
+                print "myPhyloDB could not parse your project file: " + str(request.FILES['docfile1'])
 
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 elif request.user.is_authenticated():
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                return render(
-                    request,
+                return render_to_response(
                     'upload.html',
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                     }
+                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     },
+                    context_instance=RequestContext(request)
                 )
 
             date = datetime.date.today().isoformat()
@@ -79,24 +74,20 @@ def upload(request):
                 handle_uploaded_file(file1, dest, metaName)
                 parse_project(metaFile, p_uuid)
             except:
-                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                logging.exception(myDate)
-
                 remove_proj(dest)
 
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 elif request.user.is_authenticated():
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                return render(
-                    request,
+                return render_to_response(
                     'upload.html',
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                     }
+                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     },
+                    context_instance=RequestContext(request)
                 )
 
             if source == 'mothur':
@@ -118,24 +109,20 @@ def upload(request):
             try:
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
             except:
-                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                logging.exception(myDate)
-
                 remove_proj(dest)
 
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 elif request.user.is_authenticated():
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                return render(
-                    request,
+                return render_to_response(
                     'upload.html',
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
-                     'error': "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                     }
+                     'error': "There was an error parsing your meta file:" + str(file1.name)
+                     },
+                    context_instance=RequestContext(request)
                 )
 
             if source == 'mothur':
@@ -144,25 +131,21 @@ def upload(request):
 
                 try:
                     parse_taxonomy(file3)
-                except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
+                except Exception as err:
                     remove_proj(dest)
-
+                    print("Error: "+str(err))
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error parsing your taxonomy file:" + str(file3.name)
+                         },
+                        context_instance=RequestContext(request)
                     )
 
                 file4 = request.FILES['docfile4']
@@ -173,24 +156,20 @@ def upload(request):
                     end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
                     remove_proj(dest)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error parsing your shared file:" + str(file4.name)
+                         },
+                        context_instance=RequestContext(request)
                     )
 
             elif source == '454_sff':
@@ -238,24 +217,20 @@ def upload(request):
                 try:
                     mothur(dest, source)
                 except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
                     remove_proj(dest)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB found an error with your Mothur batch file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error with your mothur batch file:" + str(file7.name)
+                         },
+                        context_instance=RequestContext(request)
                     )
 
                 subQueue()
@@ -263,25 +238,21 @@ def upload(request):
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
+                except Exception as err:
                     remove_proj(dest)
-
+                    print("Error: "+str(err))
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error parsing your taxonomy file: final.taxonomy"
+                         },
+                        context_instance=RequestContext(request)
                     )
 
                 try:
@@ -291,24 +262,20 @@ def upload(request):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
                     remove_proj(dest)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB could not parse your shared file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error parsing your shared file: final.shared"
+                         },
+                        context_instance=RequestContext(request)
                     )
 
             elif source == '454_fastq':
@@ -388,48 +355,40 @@ def upload(request):
                     mothur(dest, source)
 
                 except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
                     remove_proj(dest)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB found an error with your Mothur batch file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error with your mothur batch file: " + str(file7.name)
+                         },
+                        context_instance=RequestContext(request)
                     )
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
+                except Exception as err:
                     remove_proj(dest)
-
+                    print("Error: "+str(err))
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error parsing your taxonomy file: final.taxonomy"
+                         },
+                        context_instance=RequestContext(request)
                     )
 
                 try:
@@ -439,24 +398,20 @@ def upload(request):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
                     remove_proj(dest)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB could not parse your shared file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error parsing your shared file: final.shared"
+                         },
+                        context_instance=RequestContext(request)
                     )
 
             elif source == 'miseq':
@@ -492,48 +447,39 @@ def upload(request):
                 try:
                     mothur(dest, source)
                 except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
                     remove_proj(dest)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB found an error with your Mothur batch file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error with your mothur batch file: " + str(file15.name)
+                         },
+                        context_instance=RequestContext(request)
                     )
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
+                except Exception as err:
                     remove_proj(dest)
-
+                    print("Error: "+str(err))
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB could not parse your taxonomy file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error parsing taxonomy file: final.taxonomy"},
+                        context_instance=RequestContext(request)
                     )
 
                 try:
@@ -543,24 +489,19 @@ def upload(request):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-
                     remove_proj(dest)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
+                    return render_to_response(
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "TmyPhyloDB could not parse your shared file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-                         }
+                         'error': "There was an error parsing your shared file: final.shared"},
+                        context_instance=RequestContext(request)
                     )
 
             else:
@@ -574,14 +515,13 @@ def upload(request):
     elif request.user.is_authenticated():
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
 
-    return render(
-        request,
+    return render_to_response(
         'upload.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'error': ""
-         }
+         'error': ""},
+        context_instance=RequestContext(request)
     )
 
 
@@ -598,13 +538,12 @@ def select(request):
     refs = Reference.objects.filter(projectid__in=projects)
     samples = Sample.objects.filter(projectid__in=projects)
 
-    return render(
-        request,
+    return render_to_response(
         'select.html',
         {'projects': projects,
          'refs': refs,
-         'samples': samples
-         }
+         'samples': samples},
+        context_instance=RequestContext(request)
     )
 
 
@@ -621,36 +560,31 @@ def taxa(request):
     table = df.to_html(classes="table display", columns=['Kingdom Name', 'Kingdom ID', 'Phylum Name', 'Phylum ID', 'Class Name', 'Class ID', 'Order Name', 'Order ID', 'Family Name', 'Family ID', 'Genus Name', 'Genus ID', 'Species Name', 'Species ID'])
     table = table.replace('border="1"', 'border="0"')
 
-    return render(
-        request,
+    return render_to_response(
         'taxa.html',
-        {'table': table}
+        {'table': table},
+        context_instance=RequestContext(request)
     )
 
 
 def norm(request):
-    platform = os.name
-
-    return render(
-        request,
+    return render_to_response(
         'norm.html',
-        {'platform': platform}
+        context_instance=RequestContext(request)
     )
 
 
 def ANOVA(request):
-    return render(
-        request,
+    return render_to_response(
         'anova.html',
-        {}
+        context_instance=RequestContext(request)
     )
 
 
 def DiffAbund(request):
-    return render(
-        request,
+    return render_to_response(
         'diff_abund.html',
-        {}
+        context_instance=RequestContext(request)
     )
 
 
@@ -659,10 +593,10 @@ def PCoA(request):
     ip = request.META.get('REMOTE_ADDR')
     fileStr = str(name) + "." + str(ip)
 
-    return render(
-        request,
+    return render_to_response(
         'pcoa.html',
-        {'fileStr': fileStr}
+        {'fileStr': fileStr},
+        context_instance=RequestContext(request)
     )
 
 
@@ -671,10 +605,10 @@ def SPLS(request):
     ip = request.META.get('REMOTE_ADDR')
     fileStr = str(name) + "." + str(ip)
 
-    return render(
-        request,
+    return render_to_response(
         'spls.html',
-        {'fileStr': fileStr}
+        {'fileStr': fileStr},
+        context_instance=RequestContext(request)
     )
 
 
@@ -741,14 +675,13 @@ def reprocess(request):
     templateDB = sorted(os.listdir('mothur/reference/template/'))
     taxonomyDB = sorted(os.listdir('mothur/reference/taxonomy/'))
 
-    return render(
-        request,
+    return render_to_response(
         'reprocess.html',
         {'form4': UploadForm4,
          'alignDB': alignDB,
          'templateDB': templateDB,
-         'taxonomyDB': taxonomyDB
-         }
+         'taxonomyDB': taxonomyDB},
+        context_instance=RequestContext(request)
     )
 
 
@@ -770,16 +703,12 @@ def update(request):
             handle_uploaded_file(file1, dest, file1.name)
             parse_project(metaFile, p_uuid)
         except:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-
-            state = "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-            return render(
-                request,
+            state = "There was an error parsing your metafile: " + str(file1.name)
+            return render_to_response(
                 'update.html',
                 {'form5': UploadForm5,
-                 'state': state}
+                 'state': state},
+                context_instance=RequestContext(request)
             )
 
         try:
@@ -798,26 +727,20 @@ def update(request):
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
 
         except Exception as e:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-
-            state = "TmyPhyloDB could not parse your Excel meta file\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-            return render(
-                request,
+            state = "There was an error parsing your metafile: " + str(file1.name)
+            return render_to_response(
                 'update.html',
                 {'form5': UploadForm5,
-                 'state': state
-                 }
+                 'state': state},
+                context_instance=RequestContext(request)
             )
 
         state = 'Path: ' + str(dest) + ' is finished parsing!'
 
-    return render(
-        request,
+    return render_to_response(
         'update.html',
         {'form5': UploadForm5,
-         'state': state
-         }
+         'state': state},
+        context_instance=RequestContext(request)
     )
 

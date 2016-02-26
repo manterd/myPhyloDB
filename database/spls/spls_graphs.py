@@ -216,7 +216,7 @@ def loopCat(request):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund_16S')
 
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', keep='last')
+                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last=True)
 
                 wantedList = quantFields + ['sampleid']
                 meta_rDF = meta_rDF[wantedList]
