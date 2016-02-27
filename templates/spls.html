@@ -26,16 +26,17 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar = 1, selTheme = 0;
-        var nodesQuant = "", taxaLevel = 7;
+        var DepVar_taxa = 1, DepVar_kegg = 1, DepVar_nz = 1, selTheme = 0;
+        var nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
         var chart1 = {}, display = 1;
         var catOptions = {};
-        var remove = 0;
         var refresh = 0;
         var running = false;
         var RID = 0;
 
         $(function () {
+
+            // remove R plot on close
             $(window).bind('beforeunload', function(){
                 $.ajax({
                     url: '/removegraphSPLS/',
@@ -43,6 +44,7 @@
                 });
             });
 
+            // Initialize dynatree
             $("#tree_metaQuant").dynatree({
                 checkbox: true,
                 selectMode: 3,
@@ -79,41 +81,8 @@
                 }
             });
 
-            $("#normalize").change(function () {
-                $("#run").css("background-color", "lightgray");
-            });
 
-            $("#DepVar").change(function () {
-                DepVar = $(this).val();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#graphDisplay").change(function () {
-                display = $(this).val();
-                if (display == 1) {
-                    $("#container-1").show();
-                    $("#container-2").hide();
-                }
-                if (display == 2) {
-                    $("#container-1").hide();
-                    $("#container-2").show();
-                }
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#selectall").change(function () {
-                taxaLevel = $(this).val();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#methodVal").click(function () {
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#metricVal").change(function () {
-                $("#run").css("background-color", "lightgray");
-            });
-
+            // Start stop and other 'click' functions
             $("#run").click(function () {
                 if(running == true) {
                     alert("myPhyloDB is currently running your previous analysis request!");
@@ -140,18 +109,124 @@
                 $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
-                 $("#run").css("background-color", "lightgray");
+                 checkButtons();
             });
 
-            $("#remove").change(function () {
-                if ( document.getElementById('remove').checked ) {
-                    remove = 1
-                } else {
-                    remove = 0
-                }
-                $("#run").css("background-color", "lightgray");
+            $("#methodVal").click(function () {
+                 checkButtons();
             });
+
+            $("#metricVal").change(function () {
+                 checkButtons();
+            });
+
+            // Capture all changes in textboxes, etc.
+            $("#selectTree").change(function () {
+                button3 = $(this).val();
+                 checkButtons();
+                if (button3 == 1) {
+                    $('#row_taxa').show();
+                    $('#row_kegg').hide();
+                    $('#row_nz').hide();
+                    $('#cell_taxa').show();
+                    $('#cell_kegg').hide();
+                    $('#cell_nz').hide();
+                    $('#text-1').val('');
+                } else if (button3 == 2) {
+                    $('#row_taxa').hide();
+                    $('#row_kegg').show();
+                    $('#row_nz').hide();
+                    $('#cell_taxa').hide();
+                    $('#cell_kegg').show();
+                    $('#cell_nz').hide();
+                    $('#text-1').val('');
+                } else if (button3 == 3) {
+                    $('#row_taxa').hide();
+                    $('#row_kegg').hide();
+                    $('#row_nz').show();
+                    $('#cell_taxa').hide();
+                    $('#cell_kegg').hide();
+                    $('#cell_nz').show();
+                    $('#text-1').val('');
+                }
+            });
+
+            $("#freqCut").change(function () {
+                checkButtons();
+            });
+
+            $("#uniqueCut").change(function () {
+                checkButtons();
+            });
+
+            $("#DepVar_taxa").change(function () {
+                DepVar_taxa = $(this).val();
+                checkButtons();
+            });
+            $("#DepVar_kegg").change(function () {
+                DepVar_kegg = $(this).val();
+                checkButtons();
+            });
+            $("#DepVar_nz").change(function () {
+                DepVar_nz = $(this).val();
+                checkButtons();
+            });
+
+            $("#selectall-taxa").change(function () {
+                taxaAll = $(this).val();
+                checkButtons();
+            });
+
+            $("#selectall-kegg").change(function () {
+                keggAll = $(this).val();
+                checkButtons();
+                $("#tree_kegg").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+
+            $("#selectall-nz").change(function () {
+                nzAll = $(this).val();
+                checkButtons();
+                $("#tree_nz").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+
+            $("#graphDisplay").change(function () {
+                display = $(this).val();
+                //checkButtons();
+                chooseDisplay();
+            });
+
         });
+
+        function checkButtons(){
+            //set all buttons to their proper states given the current state of the independent buttons
+            $("#run").css("background-color", "lightgray");
+
+            if (button3 == 1) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-1").empty().hide();
+                $("#container-2").hide();
+                $("#my_image").attr("src", "#");
+            }
+
+            if (button3 == 2) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-1").empty().hide();
+                $("#container-2").hide();
+                $("#my_image").attr("src", "#");
+            }
+
+            if (button3 == 3) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-1").empty().hide();
+                $("#container-2").hide();
+                $("#my_image").attr("src", "#");
+            }
+
+        }
 
         function stopThis(RID) {
             clearInterval(refresh);
@@ -199,6 +274,30 @@
         function stopTimer() {
             clearInterval(refresh);
 
+        }
+
+        function chooseDisplay() {
+            if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
+                if (display == 1) {
+                    $("#container-0").hide();
+                    $("#container-1").show();
+                    $("#container-2").hide();
+                    $("#highchartButtons").show();
+                }
+                if (display == 2) {
+                    $("#container-0").hide();
+                    $("#container-1").hide();
+                    $("#container-2").show();
+                    $("#highchartButtons").hide();
+
+                    {% static "" as baseUrl %}
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.spls.pdf");
+                }
+            } else {
+                $("#container-0").show();
+                $("#container-1").hide();
+                $("#container-2").hide();
+            }
         }
 
         function chooseData() {
@@ -271,9 +370,17 @@
             var myDict = {};
             myDict['metaValsQuant'] = metaQuant;
             myDict['metaIDsQuant'] = metaIDs;
-            myDict['DepVar'] = DepVar;
-            myDict['taxa'] = taxaLevel;
-            myDict['remove'] = remove;
+            myDict['selectAll'] = taxaAll;
+            myDict['keggAll'] = keggAll;
+            myDict['nzAll'] = nzAll;
+            myDict['DepVar_taxa'] = DepVar_taxa;
+            myDict['DepVar_kegg'] = DepVar_kegg;
+            myDict['DepVar_nz'] = DepVar_nz;
+            myDict['button3'] = button3;
+            //myDict['freqCut'] = document.getElementById("freqCut").value;
+            //myDict['uniqueCut'] = document.getElementById("uniqueCut").value;
+            myDict['freqCut'] = '95/5';
+            myDict['uniqueCut'] = '10';
             myDict['methodVal'] = document.getElementById("methodVal").value;
             myDict['metricVal'] = document.getElementById("metricVal").value;
             myDict['RID'] = RID;
@@ -293,12 +400,25 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var series = obj['series'];
+
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    } else {
+                        $("#run").css("background-color", "green");
+                    }
+
+                    var text = obj['text'];
+                    $('#text-1').val(text);
+
                     if (series == undefined) {
                         $('#container-1').empty().append('No significant regresssions!');
                     } else {
                         var xAxis = obj['xAxis'];
                         var yAxis = obj['yAxis'];
                         heatmap(xAxis, yAxis, series);
+                        chooseDisplay();
 
                         var res_table = obj['res_table'];
                         $('#res_table').empty().append(res_table).find('.table').DataTable({
@@ -306,7 +426,6 @@
                             scroller: true,
                             scrollX: 600,
                             scrollY: 600,
-                            //fixedHeader: true,
                             buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                         }).draw();
 
@@ -316,35 +435,8 @@
                             scroller: true,
                             scrollX: 600,
                             scrollY: 600,
-                            //fixedHeader: true,
                             buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                         }).draw();
-                    }
-
-                    var text = obj['text'];
-                    $('#text-1').val(text);
-
-                    $("#image").show();
-                    {% static "" as baseUrl %}
-                    var d = new Date();
-                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.spls.pdf?"+d.getTime());
-
-                    $("#container-0").hide();
-                    var display = $("#graphDisplay").val();
-                    if (display == 1) {
-                        $("#container-1").show();
-                        $("#container-2").hide();
-                    }
-                    if (display == 2) {
-                        $("#container-1").hide();
-                        $("#container-2").show();
-                    }
-                    var error = data['error'];
-                    if (error != "none") {
-                        alert(error);
-                        $("#run").css("background-color", "red");
-                    } else {
-                        $("#run").css("background-color", "green");
                     }
                 }
             });
@@ -356,7 +448,9 @@
                     renderTo: 'container-1',
                     type: 'heatmap',
                     height: parseFloat(yAxis.categories.length)*16+250,
-                    width: parseFloat(xAxis.categories.length)*16+200
+                    width: parseFloat(xAxis.categories.length)*16+250,
+                    marginRight: 150,
+                    spacingRight: 50
                 },
                 title: { text: null },
                 legend: {
@@ -377,7 +471,7 @@
                         [0, '#c4463a'],
                         [0.5, '#ffffff'],
                         [1, '#3060cf']
-                    ],
+                    ]
                 },
                 tooltip: {
                     formatter: function () {
@@ -401,6 +495,13 @@
 
 {% block my_content %}
     <br>
+    <!--<th>Select Type:
+        <select id="selectTree">
+            <option value="1" selected="selected">Taxa</option>
+            <option value="2" >KEGG pathway</option>
+            <option value="3" >KEGG enzyme</option>
+        </select>
+    </th>-->
     <!-- tree tables -->
     <div>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
@@ -420,10 +521,11 @@
             <th bgcolor="white"></th>
             <th bgcolor="white"></th>
         </tr>
-        <tr>
+        <tr id="row_taxa">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectall">
+                <select id="selectall-taxa">
+                    <option value="0" >Off</option>
                     <option value="2">Phyla</option>
                     <option value="3">Classes</option>
                     <option value="4">Orders</option>
@@ -432,6 +534,55 @@
                     <option value="7" selected="selected">Species</option>
                 </select>
                 &nbsp<-- Selected taxa level
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr id="row_kegg" style="display:none">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="selectall-kegg">
+                    <option value="0">Off</option>
+                    <option value="1" selected="selected">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                </select>
+                &nbsp<-- Selected KEGG Pathway level
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr id="row_nz" style="display:none">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="selectall-nz">
+                    <option value="0">Off</option>
+                    <option value="1" selected="selected">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                    <option value="4">Level 4</option>
+                    <option value="5">GIBBs</option>
+                    <option value="6">N cycle</option>
+                </select>
+                &nbsp<-- Selected KEGG Enzyme level
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <!--<span title="cutoff for the ratio of the most common value to the second most common value">
+                    <input type="text" id="freqCut" value="95/5" style="width:40px; background-color: white"/>
+                    &nbsp<-- freqCut for nearZeroVar
+                </span>-->
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <!--<span title="cutoff for the percentage of distinct values out of the number of total samples" >
+                    <input type="text" id="uniqueCut" value="10" style="width:40px; background-color: white"/>
+                    &nbsp<-- uniqueCut for nearZeroVar
+                </span>-->
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -501,13 +652,27 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td colspan="8" style="text-align: center">
+            <td id="cell_taxa" colspan="8" style="text-align: center">
                 Dependent variable:
-                <select id="DepVar">
+                <select id="DepVar_taxa">
                     <option value="1">Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
+                </select>
+            </td>
+            <td id="cell_kegg" colspan="8" style="text-align: center; display: none">
+                Dependent variable:
+                <select id="DepVar_kegg">
+                    <option value="1">Abundance</option>
+                    <option value="4">Abundance (rRNA gene copies)</option>
+                </select>
+            </td>
+            <td id="cell_nz" colspan="8" style="text-align: center; display: none">
+                Dependent variable:
+                <select id="DepVar_nz">
+                    <option value="1">Abundance</option>
+                    <option value="4">Abundance (rRNA gene copies)</option>
                 </select>
             </td>
             <td colspan="4" style="text-align: center"></td>
@@ -521,33 +686,15 @@
         </tr>
         <tr>
             <td colspan="20">
-                <div id="container-0" style="height: 400px; width: 950px;">No Data has been selected!</div>
-                <div id="container-1" style="height: 400px; width: 950px; overflow-x: auto; display:none"></div>
-                <div id="container-2" style="height: 400px; width:950px; display:none"><iframe id="my_image" src="#" height="100%" width="100%"></iframe></div>
+                <div id="container-0" style="height: 425px; width: 950px;">No Data has been selected!</div>
+                <div id="container-1" style="height: 425px; width: 950px; overflow-x: auto; display:none"></div>
+                <div id="container-2" style="height: 425px; width: 950px; display:none"><iframe id="my_image" src="#" height="100%" width="100%"></iframe></div>
             </td>
         </tr>
         <tr id="highchartButtons">
-            <td colspan="6" style="text-align: center">
-                <!--<button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>-->
-            </td>
-            <td colspan="8" style="text-align: center">
-                <!--Select chart theme:
-                <select id="theme">
-                    <option value="1" selected="selected">default</option>
-                    <option value="2">dark-blue</option>
-                    <option value="3">dark-green</option>
-                    <option value="4">dark-unica</option>
-                    <option value="5">gray</option>
-                    <option value="6">grid</option>
-                    <option value="7">grid-light</option>
-                    <option value="8">sand-signika</option>
-                    <option value="9">skies</option>
-                </select>
-                &nbsp&nbsp-->
-            </td>
-            <td colspan="6" style="text-align: center">
-                <!--<button id="button" title="Click to change an individual series color or symbol">Change series</button>-->
-            </td>
+            <td colspan="6" style="text-align: center"></td>
+            <td colspan="8" style="text-align: center"></td>
+            <td colspan="6" style="text-align: center"></td>
         </tr>
     </table>
 

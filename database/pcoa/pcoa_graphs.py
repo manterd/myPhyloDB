@@ -1,13 +1,19 @@
+#import ast
 import datetime
+#from django import db
 from django.http import HttpResponse
 import logging
+#import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import pickle
 from pyper import *
-from scipy.spatial.distance import *
 import simplejson
+#import threading
 
+#from database.models import PICRUSt
+#from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
+#from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, stoppableThread, wOdum
 
 
@@ -106,8 +112,10 @@ def loopCat(request):
                 path = pickle.loads(request.session['savedDF'])
                 savedDF = pd.read_pickle(path)
 
-                DepVar = int(all["DepVar"])
-                selectAll = int(all["taxa"])
+                selectAll = int(all["selectAll"])
+                keggAll = int(all["keggAll"])
+                nzAll = int(all["nzAll"])
+
                 distance = int(all["distance"])
                 PC1 = int(all["PC1"])
                 PC2 = int(all["PC2"])
@@ -116,20 +124,43 @@ def loopCat(request):
                 perms = int(all["perms"])
 
                 result = ''
-                if selectAll == 1:
-                    result += 'Taxa level: Kingdom' + '\n'
-                elif selectAll == 2:
-                    result += 'Taxa level: Phyla' + '\n'
-                elif selectAll == 3:
-                    result += 'Taxa level: Class' + '\n'
-                elif selectAll == 4:
-                    result += 'Taxa level: Order' + '\n'
-                elif selectAll == 5:
-                    result += 'Taxa level: Family' + '\n'
-                elif selectAll == 6:
-                    result += 'Taxa level: Genus' + '\n'
-                elif selectAll == 7:
-                    result += 'Taxa level: Species' + '\n'
+                result = ''
+                button3 = int(all['button3'])
+                if button3 == 1:
+                    if selectAll == 1:
+                        result += 'Taxa level: Kingdom' + '\n'
+                    elif selectAll == 2:
+                        result += 'Taxa level: Phyla' + '\n'
+                    elif selectAll == 3:
+                        result += 'Taxa level: Class' + '\n'
+                    elif selectAll == 4:
+                        result += 'Taxa level: Order' + '\n'
+                    elif selectAll == 5:
+                        result += 'Taxa level: Family' + '\n'
+                    elif selectAll == 6:
+                        result += 'Taxa level: Genus' + '\n'
+                    elif selectAll == 7:
+                        result += 'Taxa level: Species' + '\n'
+                elif button3 == 2:
+                    if keggAll == 1:
+                        result += 'KEGG Pathway level: 1' + '\n'
+                    elif keggAll == 2:
+                        result += 'KEGG Pathway level: 2' + '\n'
+                    elif keggAll == 3:
+                        result += 'KEGG Pathway level: 3' + '\n'
+                elif button3 == 3:
+                    if nzAll == 1:
+                        result += 'KEGG Enzyme level: 1' + '\n'
+                    elif nzAll == 2:
+                        result += 'KEGG Enzyme level: 2' + '\n'
+                    elif nzAll == 3:
+                        result += 'KEGG Enzyme level: 3' + '\n'
+                    elif nzAll == 4:
+                        result += 'KEGG Enzyme level: 4' + '\n'
+                    elif keggAll == 5:
+                        result += 'KEGG Enzyme level: GIBBs' + '\n'
+                    elif keggAll == 6:
+                        result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
                 if distance == 1:
                     result += 'Distance score: Manhattan' + '\n'
@@ -166,8 +197,6 @@ def loopCat(request):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
-                metaValsQuant = all['metaValsQuant']
-                metaIDsQuant = all['metaIDsQuant']
 
                 metaDictCat = {}
                 catFields = []
@@ -199,6 +228,9 @@ def loopCat(request):
                     for key in sorted(idDictCat):
                         catSampleIDs.extend(idDictCat[key])
 
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
+
                 metaDictQuant = {}
                 quantFields = []
                 quantValues = []
@@ -218,26 +250,26 @@ def loopCat(request):
                 allFields = catFields_edit + quantFields
 
                 # Removes samples (rows) that are not in our samplelist
-                metaDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+                tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
+                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
 
                 if metaDictQuant:
                     for key in metaDictQuant:
                         valueList = [float(x) for x in metaDictQuant[key]]
-                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
+                        tempDF = tempDF.loc[tempDF[key].isin(valueList)]
 
-                wantedList = allFields + ['sample_name']
-                metaDF = metaDF[wantedList]
+                wantedList = allFields + ['sampleid']
+                metaDF = tempDF[wantedList]
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
 
-                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
+                base[RID] = 'Step 1 of 8: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -245,67 +277,38 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of 4: Selecting your chosen taxa...'
+                base[RID] = 'Step 2 of 8: Selecting your chosen taxa or KEGG level...'
 
-                # get selected taxa fro each rank selected in the tree
-                taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'abund_16S', 'rich', 'diversity'])
+                DepVar = 1
+                finalDF = pd.DataFrame()
+                if button3 == 1:
+                    DepVar = int(all["DepVar_taxa"])
+                    finalDF = getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID)
 
-                if selectAll == 1:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Kingdom'
-                elif selectAll == 2:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Phyla'
-                elif selectAll == 3:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Class'
-                elif selectAll == 4:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Order'
-                elif selectAll == 5:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Family'
-                elif selectAll == 6:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Genus'
-                elif selectAll == 7:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Species'
+                if button3 == 2:
+                    DepVar = int(all["DepVar_kegg"])
+                    finalDF = getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID)
 
-                finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
-
-                wantedList = allFields + ['sampleid', 'sample_name', 'rank', 'taxa_name', 'taxa_id']
-                finalDF = finalDF.groupby(wantedList)[['abund', 'abund_16S', 'rich', 'diversity']].sum()
-
-                finalDF.reset_index(drop=False, inplace=True)
-
-                taxaSums = finalDF.groupby('taxa_id').sum()
-                goodList = taxaSums[taxaSums['abund'] > 0].index.values.tolist()
-                finalDF = finalDF.loc[finalDF['taxa_id'].isin(goodList)]
+                if button3 == 3:
+                    DepVar = int(all["DepVar_nz"])
+                    finalDF = getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID)
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 1:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
                 elif DepVar == 2:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
                 elif DepVar == 3:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
                 elif DepVar == 4:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund_16S')
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
 
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last=True)
+                meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
                 wantedList = allFields + ['sampleid', 'sample_name']
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
-                base[RID] = 'Step 2 of 5: Selecting your chosen taxa...done'
+                base[RID] = 'Step 2 of 8: Selecting your chosen taxa...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -360,8 +363,7 @@ def loopCat(request):
                 r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
                 mat = r.get("mat")
 
-                rowList = meta_rDF['sample_name'].tolist()
-
+                rowList = meta_rDF.sample_name.values.tolist()
                 distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
                 base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
@@ -602,11 +604,19 @@ def loopCat(request):
                 if catFields_edit:
                     grouped = pcoaDF.groupby(catFields_edit)
                     for name, group in grouped:
-                        dataList = group[[CAP1, CAP2]].values.astype(float).tolist()
                         if len(catFields_edit) > 1:
                             trt = "; ".join(name)
                         else:
                             trt = name
+
+                        dataList = []
+                        for index, row in group.iterrows():
+                            dataDict = {}
+                            dataDict['name'] = row['Sample Name']
+                            dataDict['x'] = float(row[CAP1])
+                            dataDict['y'] = float(row[CAP2])
+                            dataList.append(dataDict)
+
                         seriesDict = {}
                         seriesDict['name'] = str(trt)
                         seriesDict['data'] = dataList
@@ -704,6 +714,66 @@ def loopCat(request):
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return None
+
+    except:
+        if not stop4:
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+            myDict = {}
+            myDict['error'] = "Error with PCoA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            res = simplejson.dumps(myDict)
+        return None
+
+
+def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID):
+    global base, stops, stop4, res
+    try:
+        base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
+        taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'abund', 'abund_16S'])
+
+        if selectAll == 2:
+            taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Phyla'
+        elif selectAll == 3:
+            taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Class'
+        elif selectAll == 4:
+            taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Order'
+        elif selectAll == 5:
+            taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Family'
+        elif selectAll == 6:
+            taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Genus'
+        elif selectAll == 7:
+            taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Species'
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stops[RID]:
+            res = ''
+            return None
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        taxaDF.drop('sampleid', axis=1, inplace=True)
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+
+        wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
+        if DepVar == 1:
+            finalDF = finalDF.groupby(wantedList)[['abund']].sum()
+        elif DepVar == 4:
+            finalDF = finalDF.groupby(wantedList)[['abund_16S']].sum()
+
+        finalDF.reset_index(drop=False, inplace=True)
+        return finalDF
 
     except:
         if not stop4:

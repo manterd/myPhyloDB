@@ -1,12 +1,20 @@
+#import ast
 import datetime
+#from django import db
 from django.http import HttpResponse
 import logging
+#import multiprocessing as mp
+import numpy as np
 import pandas as pd
 import pickle
-import simplejson
-import numpy as np
 from pyper import *
+import simplejson
+#import threading
+import time
 
+#from database.models import PICRUSt
+#from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
+#from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, stoppableThread
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
@@ -107,24 +115,47 @@ def loopCat(request):
                 path = pickle.loads(request.session['savedDF'])
                 savedDF = pd.read_pickle(path)
 
+                button3 = int(all['button3'])
                 selectAll = int(all["selectAll"])
-                DepVar = int(all["DepVar"])
+                keggAll = int(all["keggAll"])
+                nzAll = int(all["nzAll"])
 
                 result = ''
-                if selectAll == 1:
-                    result += 'Taxa level: Kingdom' + '\n'
-                elif selectAll == 2:
-                    result += 'Taxa level: Phyla' + '\n'
-                elif selectAll == 3:
-                    result += 'Taxa level: Class' + '\n'
-                elif selectAll == 4:
-                    result += 'Taxa level: Order' + '\n'
-                elif selectAll == 5:
-                    result += 'Taxa level: Family' + '\n'
-                elif selectAll == 6:
-                    result += 'Taxa level: Genus' + '\n'
-                elif selectAll == 7:
-                    result += 'Taxa level: Species' + '\n'
+                if button3 == 1:
+                    if selectAll == 1:
+                        result += 'Taxa level: Kingdom' + '\n'
+                    elif selectAll == 2:
+                        result += 'Taxa level: Phyla' + '\n'
+                    elif selectAll == 3:
+                        result += 'Taxa level: Class' + '\n'
+                    elif selectAll == 4:
+                        result += 'Taxa level: Order' + '\n'
+                    elif selectAll == 5:
+                        result += 'Taxa level: Family' + '\n'
+                    elif selectAll == 6:
+                        result += 'Taxa level: Genus' + '\n'
+                    elif selectAll == 7:
+                        result += 'Taxa level: Species' + '\n'
+                elif button3 == 2:
+                    if keggAll == 1:
+                        result += 'KEGG Pathway level: 1' + '\n'
+                    elif keggAll == 2:
+                        result += 'KEGG Pathway level: 2' + '\n'
+                    elif keggAll == 3:
+                        result += 'KEGG Pathway level: 3' + '\n'
+                elif button3 == 3:
+                    if nzAll == 1:
+                        result += 'KEGG Enzyme level: 1' + '\n'
+                    elif nzAll == 2:
+                        result += 'KEGG Enzyme level: 2' + '\n'
+                    elif nzAll == 3:
+                        result += 'KEGG Enzyme level: 3' + '\n'
+                    elif nzAll == 4:
+                        result += 'KEGG Enzyme level: 4' + '\n'
+                    elif keggAll == 5:
+                        result += 'KEGG Enzyme level: GIBBs' + '\n'
+                    elif keggAll == 6:
+                        result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
@@ -161,25 +192,15 @@ def loopCat(request):
                         catSampleIDs.extend(idDictCat[key])
 
                 # Removes samples (rows) that are not in our samplelist
-                metaDF = savedDF.loc[savedDF['sampleid'].isin(catSampleIDs)]
+                tempDF = savedDF.loc[savedDF['sampleid'].isin(catSampleIDs)]
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
-
-                # Create combined metadata column - DiffAbund only
-                if len(catFields_edit) > 1:
-                    for index, row in metaDF.iterrows():
-                        metaDF.ix[index, 'merge'] = "; ".join(row[catFields_edit])
-                else:
-                    metaDF['merge'] = metaDF[catFields_edit[0]]
-
-                # command is unique to DiffAbund
-                metaDF = metaDF.loc[:, ['merge']]
+                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += '===============================================\n'
+                result += '\n===============================================\n'
 
                 base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...done'
 
@@ -189,63 +210,46 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of 5: Selecting your chosen taxa...'
+                base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...'
 
                 # get selected taxa fro each rank selected in the tree
-                taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'abund_16S', 'rich', 'diversity'])
+                DepVar = 1
+                finalDF = pd.DataFrame()
+                if button3 == 1:
+                    DepVar = int(all["DepVar_taxa"])
+                    finalDF = getTaxaDF(selectAll, tempDF, catFields_edit, DepVar, RID)
 
-                if selectAll == 1:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Kingdom'
-                elif selectAll == 2:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Phyla'
-                elif selectAll == 3:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Class'
-                elif selectAll == 4:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Order'
-                elif selectAll == 5:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Family'
-                elif selectAll == 6:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Genus'
-                elif selectAll == 7:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Species'
+                if button3 == 2:
+                    DepVar = int(all["DepVar_kegg"])
+                    finalDF = getKeggDF(keggAll, tempDF, catFields_edit, DepVar, RID)
 
-                finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
-                
-                wantedList = ['sampleid', 'merge', 'rank', 'taxa_name', 'taxa_id']
-                finalDF = finalDF.groupby(wantedList)[['abund', 'abund_16S']].sum()
-
-                finalDF.reset_index(drop=False, inplace=True)
-
-                taxaSums = finalDF.groupby('taxa_id').sum()
-                goodList = taxaSums[taxaSums['abund'] > 0].index.values.tolist()
-                finalDF = finalDF.loc[finalDF['taxa_id'].isin(goodList)]
+                if button3 == 3:
+                    DepVar = int(all["DepVar_nz"])
+                    finalDF = getNZDF(nzAll, tempDF, catFields_edit, DepVar, RID)
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 1:
-                    count_rDF = finalDF.pivot(index='taxa_id', columns='sampleid', values='abund')
+                    finalDF['abund'] = finalDF['abund'].round(0).astype(int)
+                    count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
                 elif DepVar == 4:
-                    count_rDF = finalDF.pivot(index='taxa_id', columns='sampleid', values='abund_16S')
+                    finalDF['abund_16S'] = finalDF['abund_16S'].round(0).astype(int)
+                    count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last=True)
-                wantedList = ['sampleid', 'merge']
-                meta_rDF = meta_rDF[wantedList]
+                temp_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+
+                # Create combined metadata column - DiffAbund only
+                meta_rDF = temp_rDF.copy()
+                if len(catFields) > 1:
+                    for index, row in temp_rDF.iterrows():
+                       meta_rDF.loc[index, 'merge'] = "; ".join(row[catFields])
+                else:
+                    meta_rDF.loc[:, 'merge'] = temp_rDF.loc[:, catFields[0]]
+
+                wantedList = ['sampleid', 'merge', 'sample_name']
+                meta_rDF = meta_rDF.loc[:, wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
-                base[RID] = 'Step 2 of 5: Selecting your chosen taxa...done'
+                base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -298,7 +302,17 @@ def loopCat(request):
                     result += 'DESeq2 cannot run estimateSizeFactors...\n'
                     result += 'Analysis was run without size normalization...\n'
                     result += 'To try again, select a different sample combination or increase the minimum sample size...\n'
-                result += '===============================================\n\n\n'
+                result += '\n===============================================\n'
+
+                if DepVar == 1:
+                    result += 'Dependent Variable: Abundance' + '\n'
+                elif DepVar == 2:
+                    result += 'Dependent Variable: Species Richness' + '\n'
+                elif DepVar == 3:
+                    result += 'Dependent Variable: Species Diversity' + '\n'
+                elif DepVar == 4:
+                    result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
+                result += '\n===============================================\n\n\n'
 
                 mergeList = meta_rDF['merge'].tolist()
                 mergeSet = list(set(mergeList))
@@ -318,20 +332,37 @@ def loopCat(request):
                             nbinom_res = r.get("df")
 
                             names = []
-                            try:
+                            if button3 == 1:
                                 for item in nbinom_res["id"]:
-                                    names.append(findTaxa(item))
-                            except Exception as e:
-                                print("Failed at loop, "+str(e.args))
+                                    match = findTaxa(item)
+                                    if match == 'Not found':
+                                        names.append(item)
+                                    else:
+                                        names.append(match)
 
-                            nbinom_res['Taxa Name'] = names
-                            nbinom_res.rename(columns={'id': 'Taxa ID'}, inplace=True)
-                            stuff = ['Taxa ID', 'Taxa Name', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
+                            if button3 == 2:
+                                for item in nbinom_res["id"]:
+                                    match = findKEGG(item)
+                                    if match == 'Not found':
+                                        names.append(item)
+                                    else:
+                                        names.append(match)
+
+                            if button3 == 3:
+                                for item in nbinom_res["id"]:
+                                    match = findNZ(item)
+                                    if match == 'Not found':
+                                        names.append(item)
+                                    else:
+                                        names.append(match)
+
+                            nbinom_res.loc[:, 'Rank Name'] = names
+                            nbinom_res.rename(columns={'id': 'Rank ID'}, inplace=True)
+                            stuff = ['Rank ID', 'Rank Name', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
                             nbinom_res = nbinom_res.reindex(columns=stuff)
 
                             iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
-
-                            nbinom_res['Comparison'] = iterationName
+                            nbinom_res.loc[:, 'Comparison'] = iterationName
 
                             nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
                             nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
@@ -365,11 +396,6 @@ def loopCat(request):
                 xAxisDict = {}
                 yAxisDict = {}
 
-                '''DESeq2 flags genes with abnormal distribtuions and sets the p-value to NaN
-                We will replace NaN with 1, so they can be converted to floats, but still not
-                be interpreted as significant'''
-                #finalDF.fillna(1, inplace=True)
-
                 grouped = finalDF.groupby('Comparison')
 
                 listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
@@ -378,9 +404,13 @@ def loopCat(request):
                 FdrVal = float(all['FdrVal'])
                 for name, group in grouped:
                     nosigDF = group[group["p-adjusted"] > FdrVal]
-                    nosigData = nosigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
-                    sigDF = group[group["p-adjusted"] <= FdrVal]
-                    sigData = sigDF[["baseMean", "log2FoldChange"]].values.astype(np.float).tolist()
+                    nosigData = []
+                    for index, row in nosigDF.iterrows():
+                        dataDict = {}
+                        dataDict['name'] = row['Rank Name']
+                        dataDict['x'] = float(row['baseMean'])
+                        dataDict['y'] = float(row['log2FoldChange'])
+                        nosigData.append(dataDict)
 
                     seriesDict = {}
                     seriesDict['name'] = "NotSig: " + str(name)
@@ -389,6 +419,15 @@ def loopCat(request):
                     markerDict['symbol'] = listOfShapes[shapeIterator]
                     seriesDict['marker'] = markerDict
                     seriesList.append(seriesDict)
+
+                    sigDF = group[group["p-adjusted"] <= FdrVal]
+                    sigData = []
+                    for index, row in sigDF.iterrows():
+                        dataDict = {}
+                        dataDict['name'] = row['Rank Name']
+                        dataDict['x'] = float(row['baseMean'])
+                        dataDict['y'] = float(row['log2FoldChange'])
+                        sigData.append(dataDict)
 
                     seriesDict = {}
                     seriesDict['name'] = "Sig: " + str(name)
@@ -438,7 +477,7 @@ def loopCat(request):
 
                 base[RID] = 'Step 5 of 5:  Formatting nbinomTest results for display...'
 
-                finalDF = finalDF[['Comparison', 'Taxa ID', 'Taxa Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
+                finalDF = finalDF[['Comparison', 'Rank ID', 'Rank Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
                 res_table = finalDF.to_html(classes="table display")
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
@@ -473,7 +512,6 @@ def findTaxa(id):
         temp = Kingdom.objects.filter(kingdomid=id)
         taxa += temp[0].kingdomName
     except:
-        # not kingdom, try next one
         try:
             temp = Phyla.objects.filter(phylaid=id)
             taxa += temp[0].phylaName
@@ -498,6 +536,120 @@ def findTaxa(id):
                                 temp = Species.objects.filter(speciesid=id)
                                 taxa += temp[0].speciesName
                             except:
-                                # not found, error!
-                                print("Could not find taxa for "+str(id))
+                                return 'Not found'
     return taxa
+
+
+def findKEGG(id):
+    taxa = ""
+    try:
+        temp = ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=id)
+        taxa += temp[0].ko_lvl1_name
+    except:
+        try:
+            temp = ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=id)
+            taxa += temp[0].ko_lvl2_name
+        except:
+            try:
+                temp = ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=id)
+                taxa += temp[0].ko_lvl3_name
+            except:
+                try:
+                    temp = ko_entry.objects.using('picrust').filter(ko_lvl4_id=id)
+                    taxa += temp[0].ko_name
+                except:
+                    return 'Not found'
+    return taxa
+
+
+def findNZ(id):
+    taxa = ""
+    try:
+        temp = nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=id)
+        taxa += temp[0].nz_lvl1_name
+    except:
+        try:
+            temp = nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=id)
+            taxa += temp[0].nz_lvl2_name
+        except:
+            try:
+                temp = nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=id)
+                taxa += temp[0].nz_lvl3_name
+            except:
+                try:
+                    temp = nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=id)
+                    taxa += temp[0].nz_lvl4_name
+                except:
+                    try:
+                        temp = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id)
+                        taxa += temp[0].nz_name
+                    except:
+                        return 'Not found'
+    return taxa
+
+
+def getTaxaDF(selectAll, tempDF, allFields, DepVar, RID):
+    global base, stops, stop2, res
+    try:
+        base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
+        taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'abund', 'abund_16S'])
+
+        if selectAll == 2:
+            taxaDF = tempDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Phyla'
+        elif selectAll == 3:
+            taxaDF = tempDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Class'
+        elif selectAll == 4:
+            taxaDF = tempDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Order'
+        elif selectAll == 5:
+            taxaDF = tempDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Family'
+        elif selectAll == 6:
+            taxaDF = tempDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Genus'
+        elif selectAll == 7:
+            taxaDF = tempDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Species'
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stops[RID]:
+            res = ''
+            return None
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        # Create combined metadata column - DiffAbund only
+        if len(allFields) > 1:
+            for index, row in tempDF.iterrows():
+                tempDF.loc[index, 'merge'] = "; ".join(row.loc[index, allFields])
+        else:
+            tempDF.loc[:, 'merge'] = tempDF.loc[:, allFields[0]]
+
+        metaDF = tempDF.loc[:, ['merge']]
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+
+        wantedList = ['sampleid', 'merge', 'rank', 'rank_name', 'rank_id']
+        if DepVar == 1:
+            finalDF = finalDF.groupby(wantedList)[['abund']].sum()
+        elif DepVar == 4:
+            finalDF = finalDF.groupby(wantedList)[['abund_16S']].sum()
+
+        finalDF.reset_index(drop=False, inplace=True)
+        return finalDF
+
+    except:
+        if not stop2:
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+            myDict = {}
+            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            res = simplejson.dumps(myDict)
+
