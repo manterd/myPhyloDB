@@ -1,15 +1,22 @@
+#import ast
 import datetime
+#from django import db
 from django.http import HttpResponse
 import logging
+#import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import pickle
 from pyper import *
 from scipy import stats
-from scipy.spatial.distance import *
 import simplejson
+#import threading
+
 
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+#from database.models import PICRUSt
+#from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
+#from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, stoppableThread
 
 
@@ -102,13 +109,14 @@ def loopCat(request):
                 stops[RID] = False
 
                 time1[RID] = time.time()
-                base[RID] = 'Step 1 of 8: Selecting your chosen meta-variables...'
+                base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...'
 
                 path = pickle.loads(request.session['savedDF'])
                 savedDF = pd.read_pickle(path)
 
-                DepVar = int(all["DepVar"])
-                selectAll = int(all["taxa"])
+                selectAll = int(all["selectAll"])
+                keggAll = int(all["keggAll"])
+                nzAll = int(all["nzAll"])
 
                 # Select samples and meta-variables from savedDF
                 metaValsQuant = all['metaValsQuant']
@@ -130,30 +138,58 @@ def loopCat(request):
                         quantSampleIDs.extend(idDictQuant[key])
 
                 # Removes samples (rows) that are not in our samplelist
-                metaDF = savedDF.loc[savedDF['sampleid'].isin(quantSampleIDs)]
+                tempDF = savedDF.loc[savedDF['sampleid'].isin(quantSampleIDs)]
 
                 if metaDictQuant:
                     for key in metaDictQuant:
                         valueList = [float(x) for x in metaDictQuant[key]]
-                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
+                        tempDF = tempDF.loc[tempDF[key].isin(valueList)]
 
-                wantedList = quantFields + ['sample_name']
-                metaDF = metaDF[wantedList]
+                wantedList = quantFields + ['sampleid']
+                metaDF = tempDF[wantedList]
 
                 result = ''
-                if DepVar == 1:
-                    result += 'Dependent variable: Abundance\n'
-                if DepVar == 2:
-                    result += 'Dependent variable: Species Richness\n'
-                if DepVar == 3:
-                    result += 'Dependent variable: Species Diversity\n'
-                if DepVar == 4:
-                    result += 'Dependent variable: Abundance (rRNA gene copies)\n'
+                button3 = int(all['button3'])
+                if button3 == 1:
+                    if selectAll == 1:
+                        result += 'Taxa level: Kingdom' + '\n'
+                    elif selectAll == 2:
+                        result += 'Taxa level: Phyla' + '\n'
+                    elif selectAll == 3:
+                        result += 'Taxa level: Class' + '\n'
+                    elif selectAll == 4:
+                        result += 'Taxa level: Order' + '\n'
+                    elif selectAll == 5:
+                        result += 'Taxa level: Family' + '\n'
+                    elif selectAll == 6:
+                        result += 'Taxa level: Genus' + '\n'
+                    elif selectAll == 7:
+                        result += 'Taxa level: Species' + '\n'
+                elif button3 == 2:
+                    if keggAll == 1:
+                        result += 'KEGG Pathway level: 1' + '\n'
+                    elif keggAll == 2:
+                        result += 'KEGG Pathway level: 2' + '\n'
+                    elif keggAll == 3:
+                        result += 'KEGG Pathway level: 3' + '\n'
+                elif button3 == 3:
+                    if nzAll == 1:
+                        result += 'KEGG Enzyme level: 1' + '\n'
+                    elif nzAll == 2:
+                        result += 'KEGG Enzyme level: 2' + '\n'
+                    elif nzAll == 3:
+                        result += 'KEGG Enzyme level: 3' + '\n'
+                    elif nzAll == 4:
+                        result += 'KEGG Enzyme level: 4' + '\n'
+                    elif keggAll == 5:
+                        result += 'KEGG Enzyme level: GIBBs' + '\n'
+                    elif keggAll == 6:
+                        result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
                 result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n'
-                result += '===============================================\n'
+                result += '\n===============================================\n'
 
-                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
+                base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -161,68 +197,23 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of 4: Selecting your chosen taxa...'
+                base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...'
 
-                # get selected taxa fro each rank selected in the tree
-                taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'taxa_id', 'taxa_name', 'abund', 'abund_16S', 'rich', 'diversity'])
+                DepVar = 1
+                finalDF = pd.DataFrame()
+                if button3 == 1:
+                    DepVar = int(all["DepVar_taxa"])
+                    finalDF = getTaxaDF(selectAll, savedDF, metaDF, quantFields, DepVar, RID)
 
-                if selectAll == 1:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'kingdomid': 'taxa_id', 'kingdomName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Kingdom'
-                elif selectAll == 2:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'phylaid': 'taxa_id', 'phylaName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Phyla'
-                elif selectAll == 3:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'classid': 'taxa_id', 'className': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Class'
-                elif selectAll == 4:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'orderid': 'taxa_id', 'orderName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Order'
-                elif selectAll == 5:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'familyid': 'taxa_id', 'familyName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Family'
-                elif selectAll == 6:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'genusid': 'taxa_id', 'genusName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Genus'
-                elif selectAll == 7:
-                    taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
-                    taxaDF.rename(columns={'speciesid': 'taxa_id', 'speciesName': 'taxa_name'}, inplace=True)
-                    taxaDF.loc[:, 'rank'] = 'Species'
+                if button3 == 2:
+                    DepVar = int(all["DepVar_kegg"])
+                    finalDF = getKeggDF(keggAll, savedDF, tempDF, quantFields, DepVar, RID)
 
-                finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+                if button3 == 3:
+                    DepVar = int(all["DepVar_nz"])
+                    finalDF = getNZDF(nzAll, savedDF, tempDF, quantFields, DepVar, RID)
 
-                wantedList = quantFields + ['sampleid', 'sample_name', 'rank', 'taxa_name', 'taxa_id']
-                finalDF = finalDF.groupby(wantedList)[['abund', 'abund_16S', 'rich', 'diversity']].sum()
-
-                finalDF.reset_index(drop=False, inplace=True)
-
-                taxaSums = finalDF.groupby('taxa_id').sum()
-                goodList = taxaSums[taxaSums['abund'] > 0].index.values.tolist()
-                finalDF = finalDF.loc[finalDF['taxa_id'].isin(goodList)]
-
-                count_rDF = pd.DataFrame()
-                if DepVar == 1:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund')
-                elif DepVar == 2:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='rich')
-                elif DepVar == 3:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='diversity')
-                elif DepVar == 4:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='taxa_id', values='abund_16S')
-
-                meta_rDF = finalDF.drop_duplicates(subset='sampleid', take_last=True)
-
-                wantedList = quantFields + ['sampleid']
-                meta_rDF = meta_rDF[wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
-
-                base[RID] = 'Step 2 of 5: Selecting your chosen taxa...done'
+                base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -231,6 +222,31 @@ def loopCat(request):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 5: Calculating sPLS...'
+
+                if DepVar == 1:
+                    result += 'Dependent Variable: Abundance' + '\n'
+                elif DepVar == 2:
+                    result += 'Dependent Variable: Species Richness' + '\n'
+                elif DepVar == 3:
+                    result += 'Dependent Variable: Species Diversity' + '\n'
+                elif DepVar == 4:
+                    result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
+                result += '\n===============================================\n'
+
+                count_rDF = pd.DataFrame()
+                if DepVar == 1:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+                elif DepVar == 2:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
+                elif DepVar == 3:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
+                elif DepVar == 4:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
+
+                meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                wantedList = quantFields + ['sampleid']
+                meta_rDF = meta_rDF[wantedList]
+                meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -243,16 +259,35 @@ def loopCat(request):
                 r("colnames(X) <- names")
 
                 r("library(mixOmics)")
-                r("ZeroVar <- nearZeroVar(X, freqCut=90/10, uniqueCut=25)")
+
+                freqCut = all["freqCut"]
+                num = int(freqCut.split('/')[0])
+                den = int(freqCut.split('/')[1])
+                r.assign("num", num)
+                r.assign("den", den)
+
+                uniqueCut = int(all["uniqueCut"])
+                r.assign("uniqueCut", uniqueCut)
+
+                r("ZeroVar <- nearZeroVar(X, freqCut=num/den, uniqueCut=uniqueCut)")
                 r("List <- row.names(ZeroVar$Metrics)")
                 r("X_new <- X[,-which(names(X) %in% List)]")
+                r("if (length(X_new) == 0) {X_new <- X}")
+                columns = r.get("ncol(X_new)")
+                if columns == 0:
+                    myDict = {}
+                    myDict['error'] = "All predictor variables have zero variance.\nsPLS-Regr was aborted!"
+                    res = simplejson.dumps(myDict)
+                    return None
+
+                r("maxK <- length(Y) - 1")
                 r("X_scaled <- scale(X_new, center=TRUE, scale=TRUE)")
                 r("Y_scaled <- scale(Y, center=TRUE, scale=TRUE)")
                 r("detach('package:mixOmics', unload=TRUE)")
                 r("library(spls)")
                 r("set.seed(1)")
 
-                spls_string = "cv <- cv.spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=seq(0.1, 0.9, 0.1), K=c(1:" + str(len(quantFields)-1) + "), plot.it=FALSE)"
+                spls_string = "cv <- cv.spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=seq(0.1, 0.9, 0.1), K=c(1:maxK), plot.it=FALSE)"
                 r.assign("cmd", spls_string)
                 r("eval(parse(text=cmd))")
 
@@ -266,7 +301,7 @@ def loopCat(request):
                         result += str(i) + '\n'
                 else:
                     result += 'No significant variables were found\n'
-                result += '===============================================\n\n'
+                    result += '\n===============================================\n'
 
                 r("set.seed(1)")
                 r("ci.f <- ci.spls(f, plot.it=FALSE, plot.fix='y')")
@@ -279,7 +314,7 @@ def loopCat(request):
                     result += '\n\nBootstrapped confidence intervals of coefficients:\n'
                     for i in fout:
                         result += str(i) + '\n'
-                    result += '===============================================\n\n'
+                    result += '\n===============================================\n'
 
                 r("coef.f <- coef(f)")
                 r("sum <- sum(coef.f != 0)")
@@ -341,44 +376,107 @@ def loopCat(request):
                     taxIDList = coeffsDF.index.values.tolist()
 
                     namesDF = pd.DataFrame()
-                    if selectAll == 1:
-                        taxNameList = Kingdom.objects.filter(kingdomid__in=taxIDList).values('kingdomid', 'kingdomName')
-                        namesDF = pd.DataFrame(list(taxNameList))
-                        namesDF.set_index('kingdomid', inplace=True)
-                        namesDF.rename(columns={'kingdomName': 'taxa_name'}, inplace=True)
-                    elif selectAll == 2:
-                        taxNameList = Phyla.objects.filter(phylaid__in=taxIDList).values('phylaid', 'phylaName')
-                        namesDF = pd.DataFrame(list(taxNameList))
-                        namesDF.set_index('phylaid', inplace=True)
-                        namesDF.rename(columns={'phylaName': 'taxa_name'}, inplace=True)
-                    elif selectAll == 3:
-                        taxNameList = Class.objects.filter(classid__in=taxIDList).values('classid', 'className')
-                        namesDF = pd.DataFrame(list(taxNameList))
-                        namesDF.set_index('classid', inplace=True)
-                        namesDF.rename(columns={'className': 'taxa_name'}, inplace=True)
-                    elif selectAll == 4:
-                        taxNameList = Order.objects.filter(orderid__in=taxIDList).values('orderid', 'orderName')
-                        namesDF = pd.DataFrame(list(taxNameList))
-                        namesDF.set_index('orderid', inplace=True)
-                        namesDF.rename(columns={'orderName': 'taxa_name'}, inplace=True)
-                    elif selectAll == 5:
-                        taxNameList = Family.objects.filter(familyid__in=taxIDList).values('familyid', 'familyName')
-                        namesDF = pd.DataFrame(list(taxNameList))
-                        namesDF.set_index('familyid', inplace=True)
-                        namesDF.rename(columns={'familyName': 'taxa_name'}, inplace=True)
-                    elif selectAll == 6:
-                        taxNameList = Genus.objects.filter(genusid__in=taxIDList).values('genusid', 'genusName')
-                        namesDF = pd.DataFrame(list(taxNameList))
-                        namesDF.set_index('genusid', inplace=True)
-                        namesDF.rename(columns={'genusName': 'taxa_name'}, inplace=True)
-                    elif selectAll == 7:
-                        taxNameList = Species.objects.filter(speciesid__in=taxIDList).values('speciesid', 'speciesName')
-                        namesDF = pd.DataFrame(list(taxNameList))
-                        namesDF.set_index('speciesid', inplace=True)
-                        namesDF.rename(columns={'speciesName': 'taxa_name'}, inplace=True)
+                    if button3 == 1:
+                        if selectAll == 1:
+                            taxNameList = Kingdom.objects.filter(kingdomid__in=taxIDList).values('kingdomid', 'kingdomName')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'kingdomName': 'rank_name', 'kingdomid': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif selectAll == 2:
+                            taxNameList = Phyla.objects.filter(phylaid__in=taxIDList).values('phylaid', 'phylaName')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'phylaName': 'rank_name', 'phylaid': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif selectAll == 3:
+                            taxNameList = Class.objects.filter(classid__in=taxIDList).values('classid', 'className')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'className': 'rank_name', 'classid': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif selectAll == 4:
+                            taxNameList = Order.objects.filter(orderid__in=taxIDList).values('orderid', 'orderName')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'orderName': 'rank_name', 'orderid': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif selectAll == 5:
+                            taxNameList = Family.objects.filter(familyid__in=taxIDList).values('familyid', 'familyName')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'familyName': 'rank_name', 'familyid': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif selectAll == 6:
+                            taxNameList = Genus.objects.filter(genusid__in=taxIDList).values('genusid', 'genusName')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'genusName': 'rank_name', 'genusid': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif selectAll == 7:
+                            taxNameList = Species.objects.filter(speciesid__in=taxIDList).values('speciesid', 'speciesName')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'speciesName': 'rank_name', 'speciesid': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+
+                    elif button3 == 2:
+                        if keggAll == 1:
+                            taxNameList = ko_lvl1.objects.using('picrust').filter(ko_lvl1_id__in=taxIDList).values('ko_lvl1_id', 'ko_lvl1_name')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'ko_lvl1_name': 'rank_name', 'ko_lvl1_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif keggAll == 2:
+                            taxNameList = ko_lvl2.objects.using('picrust').filter(ko_lvl2_id__in=taxIDList).values('ko_lvl2_id', 'ko_lvl2_name')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'ko_lvl2_name': 'rank_name', 'ko_lvl2_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif keggAll == 3:
+                            taxNameList = ko_lvl3.objects.using('picrust').filter(ko_lvl3_id__in=taxIDList).values('ko_lvl3_id', 'ko_lvl3_name')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'ko_lvl3_name': 'rank_name', 'ko_lvl3_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+
+                    elif button3 == 3:
+                        if nzAll == 1:
+                            taxNameList = nz_lvl1.objects.using('picrust').filter(nz_lvl1_id__in=taxIDList).values('nz_lvl1_id', 'nz_lvl1_name')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'nz_lvl1_name': 'rank_name', 'nz_lvl1_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif nzAll == 2:
+                            taxNameList = nz_lvl2.objects.using('picrust').filter(nz_lvl2_id__in=taxIDList).values('nz_lvl2_id', 'nz_lvl2_name')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'nz_lvl2_name': 'rank_name', 'nz_lvl2_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif nzAll == 3:
+                            taxNameList = nz_lvl3.objects.using('picrust').filter(nz_lvl3_id__in=taxIDList).values('nz_lvl3_id', 'nz_lvl3_name')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'nz_lvl3_name': 'rank_name', 'nz_lvl3_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif nzAll == 4:
+                            taxNameList = nz_lvl4.objects.using('picrust').filter(nz_lvl4_id__in=taxIDList).values('nz_lvl4_id', 'nz_lvl4_name')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'nz_lvl4_name': 'rank_name', 'nz_lvl4_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif nzAll == 5:
+                            taxNameList = nz_lvl4.objects.using('picrust').filter(nz_lvl4_id__in=taxIDList).values('nz_lvl4_id', 'nz_lvl4_name')
+                            df1 = pd.DataFrame(list(taxNameList))
+                            df1.rename(columns={'nz_lvl4_name': 'rank_name', 'nz_lvl4_id': 'rank_id'}, inplace=True)
+                            df1.set_index('rank_id', inplace=True)
+                            taxNameList = nz_entry.objects.using('picrust').filter(nz_lvl5_id__in=taxIDList).values('nz_lvl5_id', 'nz_name')
+                            df2 = pd.DataFrame(list(taxNameList))
+                            df2.rename(columns={'nz_name': 'rank_name', 'nz_lvl5_id': 'rank_id'}, inplace=True)
+                            df2.set_index('rank_id', inplace=True)
+                            namesDF = pd.concat([df1, df2])
+                        elif nzAll == 6:
+                            taxNameList = nz_lvl4.objects.using('picrust').filter(nz_lvl4_id__in=taxIDList).values('nz_lvl4_id', 'nz_lvl4_name')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'nz_lvl1_name': 'rank_name', 'nz_lvl1_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
 
                     namesDF.sort_index(inplace=True)
-                    taxaNameList = namesDF['taxa_name'].values.tolist()
+                    taxNameList = namesDF['rank_name'].values.tolist()
+
+                    if button3 == 2:
+                        if keggAll > 1:
+                            taxNameList[:] = (item[:20] + '...' if len(item) > 20 else item for item in taxNameList)
+
+                    elif button3 == 3:
+                        if nzAll > 1:
+                            taxNameList[:] = (item.split()[0] for item in taxNameList)
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[RID]:
@@ -398,25 +496,6 @@ def loopCat(request):
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                    if selectAll == 2:
-                        clustDF = coeffsDF.drop('phylaid', axis=1)
-                        clustDF.set_index('taxa_name', inplace=True)
-                    elif selectAll == 3:
-                        clustDF = coeffsDF.drop('classid', axis=1)
-                        clustDF.set_index('taxa_name', inplace=True)
-                    elif selectAll == 4:
-                        clustDF = coeffsDF.drop('orderid', axis=1)
-                        clustDF.set_index('taxa_name', inplace=True)
-                    elif selectAll == 5:
-                        clustDF = coeffsDF.drop('familyid', axis=1)
-                        clustDF.set_index('taxa_name', inplace=True)
-                    elif selectAll == 6:
-                        clustDF = coeffsDF.drop('genusid', axis=1)
-                        clustDF.set_index('taxa_name', inplace=True)
-                    elif selectAll == 7:
-                        clustDF = coeffsDF.drop('speciesid', axis=1)
-                        clustDF.set_index('taxa_name', inplace=True)
-
                     resultDF.reset_index(inplace=True)
                     resultDF.rename(columns={'index': 'sampleid'}, inplace=True)
                     pred_table = resultDF.to_html(classes="table display")
@@ -424,7 +503,7 @@ def loopCat(request):
                     finalDict['pred_table'] = str(pred_table)
 
                     xAxisDict = {}
-                    xAxisDict['categories'] = taxaNameList
+                    xAxisDict['categories'] = taxNameList
                     labelsDict = {}
                     labelsDict['rotation'] = 270
                     labelsDict['enabled'] = True
@@ -475,19 +554,8 @@ def loopCat(request):
                     finalDict['series'] = seriesList
 
                     # R clustered heatmap
-                    clustDF = pd.DataFrame()
-                    if selectAll == 2:
-                        clustDF = coeffsDF.drop('phylaid', axis=1)
-                    elif selectAll == 3:
-                        clustDF = coeffsDF.drop('classid', axis=1)
-                    elif selectAll == 4:
-                        clustDF = coeffsDF.drop('orderid', axis=1)
-                    elif selectAll == 5:
-                        clustDF = coeffsDF.drop('familyid', axis=1)
-                    elif selectAll == 6:
-                        clustDF = coeffsDF.drop('genusid', axis=1)
-                    elif selectAll == 7:
-                        clustDF = coeffsDF.drop('speciesid', axis=1)
+                    clustDF = coeffsDF.drop('rank_id', axis=1)
+
                     row, col = clustDF.shape
 
                     method = all['methodVal']
@@ -505,14 +573,15 @@ def loopCat(request):
                         os.makedirs('media/Rplots')
 
                     height = 2.5 + 0.2*row
-                    width = 3 + 0.2*(col-1)
+                    width = 3.5 + 0.2*(col-1)
                     file = "pdf('media/Rplots/" + str(user) + ".spls.pdf', height=" + str(height) + ", width=" + str(width) + ", onefile=FALSE)"
                     r.assign("cmd", file)
                     r("eval(parse(text=cmd))")
 
                     r.assign("df", clustDF[quantFields])
                     r("df <- as.matrix(df)")
-                    r.assign("rows", clustDF.taxa_name.values)
+
+                    r.assign("rows", taxNameList)
                     r("rownames(df) <- rows")
                     r("library(pheatmap)")
                     r("library(RColorBrewer)")
@@ -561,7 +630,61 @@ def loopCat(request):
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
-            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict['error'] = "Error with sPLS-Regr!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            res = simplejson.dumps(myDict)
+        return None
+
+
+def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID):
+    global base, stops, stop5, res
+    try:
+        base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...'
+        taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'abund', 'abund_16S'])
+
+        if selectAll == 2:
+            taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Phyla'
+        elif selectAll == 3:
+            taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Class'
+        elif selectAll == 4:
+            taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Order'
+        elif selectAll == 5:
+            taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Family'
+        elif selectAll == 6:
+            taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Genus'
+        elif selectAll == 7:
+            taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S']]
+            taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'Species'
+
+        taxaDF.drop('sampleid', axis=1, inplace=True)
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+
+        wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
+        if DepVar == 1:
+            finalDF = finalDF.groupby(wantedList)[['abund']].sum()
+        elif DepVar == 4:
+            finalDF = finalDF.groupby(wantedList)[['abund_16S']].sum()
+
+        finalDF.reset_index(drop=False, inplace=True)
+        return finalDF
+
+    except:
+        if not stop5:
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+            myDict = {}
+            myDict['error'] = "Error with sPLS-Regr!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
         return None
 
