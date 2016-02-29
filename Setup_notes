@@ -27,6 +27,7 @@ Install required python packages to virtual environment
 	pip install cherrypy
 	pip install django
 	pip install django-extensions
+	pip install django-pandas
 	pip install django-registration-redux
 	pip install pandas
     pip install pyinstaller
