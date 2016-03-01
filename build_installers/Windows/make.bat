@@ -11,5 +11,8 @@ rem make.bat
 cd C:\Users\daniel.manter.\Documents\GitHub\myPhyloDB
 pyinstaller -D serve-win.spec
 
+copy "C:\Users\daniel.manter\AppData\Local\Continuum\Miniconda2\Library\bin\mkl_avx2.dll" "C:\Users\daniel.manter\Documents\GitHub\myPhyloDB\dist\myPhyloDB\mkl_avx2.dll"
+copy "C:\Users\daniel.manter\AppData\Local\Continuum\Miniconda2\Library\bin\mkl_def.dll" "C:\Users\daniel.manter\Documents\GitHub\myPhyloDB\dist\myPhyloDB\mkl_def.dll"
+
 cd C:\Users\daniel.manter.\Documents\GitHub\myPhyloDB\build_installers\Windows
 "C:\Program Files (x86)\Inno Setup 5\ISCC.exe" "phyloDB.iss"
