@@ -4,7 +4,8 @@ a = Analysis(
             ['serve-win.py'],
             pathex=[
                 'C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB',
-                'C:\\Users\\daniel.manter\\AppData\\Local\\Continuum\\Anaconda2\\Lib\\site-packages'
+                'C:\\Users\\daniel.manter\\AppData\\Local\\Continuum\\Miniconda2\\Library\\bin'
+                'C:\\Users\\daniel.manter\\AppData\\Local\\Continuum\\Miniconda2\\Lib\\site-packages'
                 ],
             hiddenimports=[
                 'django.apps',
