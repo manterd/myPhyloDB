@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 
-<a xmlns="http://www.omegahat.org"
-   xmlns:omegahat="http://www.omegahat.org"
+<a xmlns="http://www.omegahat.net"
+   xmlns:omegahat="http://www.omegahat.net"
    xmlns:r="http://www.r-project.org" 
    id="foo" bob="1">
   <r:b omegahat:foo="myValue" xmlns:r="http://www.r-project.org">

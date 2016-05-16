@@ -1,5 +1,5 @@
 Package: XML
-Version: 3.98-1.3
+Version: 3.98-1.4
 Author: Duncan Temple Lang and the CRAN Team
 Maintainer: Duncan Temple Lang <duncan@r-project.org>
 Title: Tools for Parsing and Generating XML Within R and S-Plus
@@ -16,7 +16,7 @@ Note: In version 2.4.0 of this package, a new approach to garbage
         However, you are encouraged to use this and report problems as
         the results are beneficial and being able to produce any errors
         should they occur will be very helpful.
-URL: http://www.omegahat.org/RSXML
+URL: http://www.omegahat.net/RSXML
 License: BSD_2_clause + file LICENSE
 Collate: AAA.R DTD.R DTDClasses.R DTDRef.R SAXMethods.S XMLClasses.R
         applyDOM.R assignChild.R catalog.R createNode.R dynSupports.R
@@ -32,8 +32,8 @@ Collate: AAA.R DTD.R DTDClasses.R DTDRef.R SAXMethods.S XMLClasses.R
         xincludes.R namespaceHandlers.R tangle1.R htmlLinks.R
         htmlLists.R getDependencies.R getRelativeURL.R xmlIncludes.R
         simplifyPath.R
-Packaged: 2015-06-30 12:25:37 UTC; ripley
+Packaged: 2016-03-01 07:39:47 UTC; ripley
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2015-06-30 14:32:04
-Built: R 3.2.2; x86_64-pc-linux-gnu; 2016-01-31 06:38:35 UTC; unix
+Date/Publication: 2016-03-01 10:54:31
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-12 20:38:01 UTC; unix

@@ -390,7 +390,9 @@ rcsplineFunction	rcspline.restate
 read.xportDataload	Hmisc-internal
 readSAScsv	Hmisc-internal
 redun	redun
+reformM	aregImpute
 reLabelled	label
+relevel.labelled	label
 replace.substring.wild	sedit
 reShape	reShape
 responseSummary	Hmisc-internal

@@ -19,13 +19,14 @@
         $(function () {
 
             $(".display").dataTable({
-                dom: 'Bfrtip',
-                scroller: true,
-                scrollX: 600,
-                scrollY: 600,
-                //fixedHeader: true,
+                dom: 'B<"toolbar">lfrtip',
+                scrollX: true,
+                bSort: true,
+                bPaginate: true,
+                sPaginationType: 'full_numbers',
                 buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
             });
+            $("div.toolbar").html('<br><br>');
 
             $("#tabs").tabs({
                 "activate": function(event, ui) {
@@ -161,6 +162,7 @@
                         clearCookie();
                     }
                 });
+                document.getElementById("drawtable").disabled = false;
             });
 
         });
@@ -751,7 +753,7 @@
     <input id="submit" type="button" value="Save Selection(s)!"/>
     <br><br><br>
     <h2>Project/Sample information for selected samples:</h2>
-    <input id="drawtable" type="button" value="Populate DataTable!"/>
+    <input id="drawtable" type="button" disabled value="Populate DataTable!"/>
     <br><br>
 
     <div id="tabs" style="width: 950px">
@@ -768,7 +770,7 @@
         </ul>
 
         <div id="tabs-1">
-            <table id="projectTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="projectTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project name">project_name</th>
@@ -788,7 +790,7 @@
         </div>
 
         <div id="tabs-2">
-            <table id="referenceTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="referenceTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project name">project_name</th>
@@ -809,7 +811,7 @@
         </div>
 
         <div id="tabs-3">
-            <table id="sampleTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="sampleTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project name">project_name</th>
@@ -844,7 +846,7 @@
         </div>
 
         <div id="tabs-4">
-            <table id="airTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="airTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project name">project_name</th>
@@ -889,7 +891,7 @@
         </div>
 
         <div id="tabs-5">
-            <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project namne">project_name</th>
@@ -949,7 +951,7 @@
         </div>
 
         <div id="tabs-6">
-            <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project namne">project_name</th>
@@ -1031,7 +1033,7 @@
         </div>
 
         <div id="tabs-7">
-            <table id="soilTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="soilTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project name">project_name</th>
@@ -1141,7 +1143,7 @@
         </div>
 
         <div id="tabs-8">
-            <table id="waterTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="waterTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project namne">project_name</th>
@@ -1239,7 +1241,7 @@
         </div>
 
         <div id="tabs-9">
-            <table id="usrTable" cellpadding="0" cellspacing="0" border="0" class="display">
+            <table id="usrTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
                         <th title="Project name">project_name</th>
@@ -1261,4 +1263,5 @@
             </table>
         </div>
     </div>
+    <br><br>
 {% endblock my_content %}

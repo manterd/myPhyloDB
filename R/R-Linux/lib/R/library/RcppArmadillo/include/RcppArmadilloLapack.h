@@ -23,6 +23,6 @@
 #define RcppArmadillo__RcppArmadilloLapack__h
 
 // value on next line may be changed to #define by the configure script
-#define ARMA_CRIPPLED_LAPACK 1
+// #undef ARMA_CRIPPLED_LAPACK
 
 #endif

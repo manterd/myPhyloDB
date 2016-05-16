@@ -139,7 +139,7 @@
         </table>
     </div>
 
-    <div id="Menu" style="background-color: white; height: 600px">
+    <div id="Menu" style="background-color: white; height: 700px">
         {% block user %}{% endblock user %}
         <div class="menuTitle">
            Menu
@@ -162,9 +162,11 @@
             <br>
 
             <div>
-                <hr><p><em><strong>Taxonomy</strong></em></p><hr>
+                <hr><p><em><strong>Data Ref</strong></em></p><hr>
             </div>
-            <a class="Offmouse" href="{% url "taxa" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore taxonomic data in your database.">Search Taxa</li></a>
+            <a class="Offmouse" href="{% url "taxa" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore taxonomic data in your database.">Taxonomy</li></a>
+            <a class="Offmouse" href="{% url "kegg_path" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore KEGG orthology data in your database.">KEGG orthology</li></a>
+            <a class="Offmouse" href="{% url "kegg_enzyme" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore KEGG enzyme data in your database.">KEGG enzyme</li></a>
             <br>
 
             <div>
@@ -174,8 +176,9 @@
                 <a class="Offmouse" href="{% url "upload" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add new projects/samples here.">[Upload]</li></a>
                 <a class="Offmouse" href="{% url "reprocess" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Reprocess uploaded projects with new reference files.">[Reprocess]</li></a>
                 <a class="Offmouse" href="{% url "update" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update/edit metadata for uploaded projects.">[Update]</li></a>
+                <a class="Offmouse" href="{% url "pybake" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update PICRUSt reference files.">[PyBake]</li></a>
+                <br>
             {% endif %}
-
             <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Select projects/samples for analysis.">Select Data</li></a>
             <div id="link5" style="display: none;" >
                 <a class="Offmouse" href="{% url "norm" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Normalize Data</li></a>
@@ -189,16 +192,21 @@
             <p id="link1" style="display: none;"><strong>Univariate</strong></p>
             <div id="link2" style="display: none;" >
                 <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run ANcOVA analyses." >ANcOVA</li></a>
+                <a class="Offmouse" href="{% url "rich" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Calculate Species Accumulation Curves." >SpAccCurve</li></a>
+                <a class="Offmouse" href="{% url "soil_index" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Calculate Soil Health Indices." >SoilHealth</li></a>
             </div>
             <br>
 
             <p id="link3" style="display: none;"><strong>Multivariate</strong></p>
             <div id="link4" style="display: none;">
                 <a class="Offmouse" href="{% url "diffabund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Differential Abundance analysis">Diff Abund</li></a>
+                <a class="Offmouse" href="{% url "gage" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Generally Applicable Gene-set/Pathway Analysis">GAGE</li></a>
             </div>
             <div id="link6" style="display: none;" >
+                <a class="Offmouse" href="{% url "pca" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Principal Components Analysis">PCA</li></a>
                 <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Principal Coordinates Analysis">PCoA</li></a>
                 <a class="Offmouse" href="{% url "spls" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Sparse Partial Least Squares Regression">sPLS-Regr</li></a>
+                <a class="Offmouse" href="{% url "wgcna" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Weighted Correlation Network Analysis">WGCNA</li></a>
             </div>
             <br>
 

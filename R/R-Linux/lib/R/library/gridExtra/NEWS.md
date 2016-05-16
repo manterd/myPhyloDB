@@ -1,3 +1,31 @@
+# gridExtra 2.2.0 (2016-02-27)
+ 
+## NEW FEATURES
+
+* added padding argument to table themes
+* simplified a few theme arguments
+
+## BUG FIX
+
+* recycling logic was flawed for aesthetics in table cells
+
+# gridExtra 2.1.0 (2015-07-27) 
+
+## DOCUMENTATION
+
+* expanded vignettes
+* wiki page features a FAQ section
+
+## NEW FEATURES
+
+* added join function from gtable (with fix)
+* global size and font parameters more accessible in themes
+* added str.gtable method
+
+## BUG FIX
+
+* str.default was causing issues with gtables
+
 # gridExtra 2.0.0 (2015-07-11) 
 
 * removed experimental grobs and functions not widely used (they can be found at https://github.com/baptiste/gridextra if needed)

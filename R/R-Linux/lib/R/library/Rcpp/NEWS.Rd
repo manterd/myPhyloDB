@@ -3,6 +3,44 @@
 \newcommand{\ghpr}{\href{https://github.com/RcppCore/Rcpp/pull/#1}{##1}}
 \newcommand{\ghit}{\href{https://github.com/RcppCore/Rcpp/issues/#1}{##1}}
 
+\section{Changes in Rcpp version 0.12.4 (2016-03-22)}{
+  \itemize{
+    \item Changes in Rcpp API:
+    \itemize{
+      \item New accessors \code{as()} and \code{clone()} were added to the
+      \code{Nullable} class (Dan in PR \ghpr{423} closing \ghit{421})
+      \item The \code{Nullable<>::operator SEXP()} and
+      \code{Nullable<>::get()} now also work for \code{const} objects
+      (Kirill Mueller in PR \ghpr{417}).
+      \item A subsetting error was fixed (Qiang via \ghpr{432} closing
+      \ghit{431}).
+    }
+    \item Changes in Rcpp Sugar:
+    \itemize{
+      \item Added new Sugar function \code{median()} (Nathan in PR \ghpr{425}
+      closing \ghit{424})
+      \item Added new Sugar function \code{cbind()} (Nathan in PR \ghpr{447}
+      closing \ghit{407})
+    }
+    \item Changes in Rcpp Attributes:
+    \itemize{
+      \item A plugin for C++14 was added (Dan in PR \ghpr{427})
+    }
+    \item Changes in Rcpp Documentation:
+    \itemize{
+      \item An entry was added to the Rcpp-FAQ vignette describing the required
+      packages for vignette building (\ghit{422}).
+      \item Use on OS X was further detailed (James Balamuta in \ghpr{433} with
+      further review by Bob Rudis).
+      \item An entry was added concerning the hard-code limit of arguments to
+      some constructor and function (cf \ghit{435}).
+      \item The Rcpp-FAQ vignette now contains a table of content.
+      \item Typos and indentation were corrected in the Rcpp Sugar vignette
+      (\ghpr{445} by Colin Gillespie).
+    }
+  }
+}
+
 \section{Changes in Rcpp version 0.12.3 (2016-01-10)}{
   \itemize{
     \item Changes in Rcpp API:

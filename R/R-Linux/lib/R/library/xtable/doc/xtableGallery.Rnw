@@ -38,12 +38,14 @@ regression check for the package.
 <<include=FALSE>>=
 library(knitr)
 opts_chunk$set(fig.path='figdir/fig', debug=TRUE, echo=TRUE)
+set.seed(1234)
 @
 
 The first step is to load the package and set an option for this document.
 <<results='asis'>>=
 library(xtable)
 options(xtable.floating = FALSE)
+options(xtable.timestamp = "")
 @
 
 \section{Gallery}
@@ -83,6 +85,36 @@ fm2b <- lm(tlimth ~ ethnicty, data = tli)
 xtable(anova(fm2b, fm2))
 @
 
+\subsubsection{Anova list}
+
+<<aovlist>>=
+Block <- gl(8, 4)
+A <- factor(c(0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+              0,1,0,1,0,1,0,1,0,1,0,1))
+B <- factor(c(0,0,1,1,0,0,1,1,0,1,0,1,1,0,1,0,0,0,1,1,
+              0,0,1,1,0,0,1,1,0,0,1,1))
+C <- factor(c(0,1,1,0,1,0,0,1,0,0,1,1,0,0,1,1,0,1,0,1,
+              1,0,1,0,0,0,1,1,1,1,0,0))
+Yield <- c(101, 373, 398, 291, 312, 106, 265, 450, 106, 306, 324, 449,
+           272, 89, 407, 338, 87, 324, 279, 471, 323, 128, 423, 334,
+           131, 103, 445, 437, 324, 361, 302, 272)
+aovdat <- data.frame(Block, A, B, C, Yield)
+
+old <- getOption("contrasts")
+options(contrasts = c("contr.helmert", "contr.poly"))
+(fit <- aov(Yield ~ A*B*C + Error(Block), data = aovdat))
+class(fit)
+summary(fit)
+options(contrasts = old)
+@
+
+\p
+
+<<xtableaovlist, results='asis'>>=
+xtable(fit)
+@
+
+
 \newpage
 \subsection{glm}
 <<results='asis'>>=
@@ -121,6 +153,87 @@ temp.table <- xtable(temp.ts, digits = 0)
 temp.table
 @
 
+\subsection{Flat tables}
+\label{sec:flat-tables}
+
+See the \textbf{Details} section of the help for \code{ftable} for a
+description of these tables, which are flat versions of
+multi-dimensional contingency tables. They require special methods to
+enable them to be printed using \pkg{xtable}
+
+
+<<ftable>>=
+data(mtcars)
+mtcars$cyl <- factor(mtcars$cyl, levels = c("4","6","8"),
+                     labels = c("four","six","eight"))
+tbl <- ftable(mtcars$cyl, mtcars$vs, mtcars$am, mtcars$gear,
+              row.vars = c(2, 4),
+              dnn = c("Cylinders", "V/S", "Transmission", "Gears"))
+tbl
+@ %def
+
+Here is the \LaTeX{} produced:
+
+<<ftablecheck>>=
+xftbl <- xtableFtable(tbl, method = "compact")
+print.xtableFtable(xftbl, booktabs = TRUE)
+@ %def
+
+And here is a basic flat table:
+
+<<ftable1, results = 'asis'>>=
+xftbl <- xtableFtable(tbl)
+print.xtableFtable(xftbl)
+@ %def
+
+This illustrates the \code{method} argument:
+
+<<ftable2, results = 'asis'>>=
+xftbl <- xtableFtable(tbl, method = "col.compact")
+print.xtableFtable(xftbl, rotate.rownames = TRUE)
+@ %def
+
+Booktabs is incompatible with vertical lines in tables, so the
+vertical dividing line is removed.
+
+<<ftable3, results = 'asis'>>=
+xftbl <- xtableFtable(tbl, method = "compact")
+print.xtableFtable(xftbl, booktabs = TRUE)
+@ %def
+\p
+
+Row and column variable names can be formatted specially using
+sanitization, and row and column variable names and labels can be
+rotated.
+
+If special formatting is required for row and column labels, that can
+be done as a workaround by redefining the data and associated labels.
+
+<<ftable4, results = 'asis'>>=
+italic <- function(x){
+  paste0('{\\emph{', x, '}}')
+}
+mtcars$cyl <- factor(mtcars$cyl, levels = c("four","six","eight"),
+                     labels = c("four",italic("six"),"eight"))
+large <- function(x){
+  paste0('{\\Large ', x, '}')
+}
+bold <- function(x){
+  paste0('{\\bfseries ', x, '}')
+}
+tbl <- ftable(mtcars$cyl, mtcars$vs, mtcars$am, mtcars$gear,
+              row.vars = c(2, 4),
+              dnn = c("Cylinders", "V/S", "Transmission", "Gears"))
+xftbl <- xtableFtable(tbl, method = "row.compact")
+print.xtableFtable(xftbl,
+                   sanitize.rownames.function = large,
+                   sanitize.colnames.function = bold,
+                   rotate.colnames = TRUE,
+                   rotate.rownames = TRUE)
+@ %def
+
+
+
 \newpage
 
 <<include=FALSE>>=
@@ -145,11 +258,12 @@ temp.table
 
 \section{Automatic formatting}
 \subsection{Suggest alignment, digits, and display}
-The functions \code{xalign}, \code{xdigits}, and \code{xdisplay} are useful for
-formatting tables in a sensible way. Consider the output produced by the default
-formatting.
+The functions \code{xalign}, \code{xdigits}, and \code{xdisplay} are
+useful for formatting tables in a sensible way. Consider the output
+produced by the default formatting.
 
 <<results='asis'>>=
+data(mtcars)
 dat <- mtcars[1:3, 1:6]
 x <- xtable(dat)
 x
@@ -187,6 +301,24 @@ autoformat(x)
 
 \newpage
 
+\subsection{Math-Style Exponents}
+If you prefer $5 \times 10^5$ in your tables to 5e5, the
+\code{math.style.exponents} option to \code{print.xtable} is useful:
+
+<<results='asis'>>=
+print(xtable(data.frame(text = c("foo","bar"),
+                        googols = c(10e10,50e10),
+                        small = c(8e-24,7e-5),
+                        row.names = c("A","B")),
+             display = c("s","s","g","g")),
+      math.style.exponents = TRUE)
+@
+
+this option also supports the values \code{ensuremath} which uses
+\code{\char`\\ensuremath} instead of \code{\$\$} and \code{UTF-8}
+which uses UTF-8 to approximate the \LaTeX typesetting.
+
+
 \section{Sanitization}
 <<results='asis'>>=
 insane <- data.frame(Name = c("Ampersand","Greater than","Less than",
@@ -202,6 +334,7 @@ xtable(insane)
 \p
 Sometimes you might want to have your own sanitization function.
 
+
 <<results='asis'>>=
 wanttex <- xtable(data.frame(Column =
                              paste("Value_is $10^{-",1:3,"}$", sep = "")))
@@ -209,11 +342,33 @@ print(wanttex, sanitize.text.function =
       function(str) gsub("_", "\\_", str, fixed = TRUE))
 @
 
+\p
+Sanitization can be useful in formatting column headings and row names:
+
+<<sanitize3>>=
+dat <- mtcars[1:3, 1:6]
+large <- function(x){
+  paste0('{\\Large{\\bfseries ', x, '}}')
+}
+italic <- function(x){
+  paste0('{\\emph{ ', x, '}}')
+}
+@ %def
+
+<<sanitize4, results = 'asis'>>=
+print(xtable(dat),
+      sanitize.rownames.function = italic,
+      sanitize.colnames.function = large,
+      booktabs = TRUE)
+@ %def
+
+
+
 \newpage
 
 \subsection{Markup in tables}
-Markup can be included in tables, including in column and row names, by using
-a custom \code{sanitize.text.function}.
+Markup can be included in tables, including in column and row names,
+by using a custom \code{sanitize.text.function}.
 
 <<results='asis'>>=
 mat <- round(matrix(c(0.9, 0.89, 200, 0.045, 2.0), c(1, 5)), 4)
@@ -336,9 +491,9 @@ print(tli.table, include.colnames = FALSE, include.rownames = FALSE)
 \newpage
 
 \subsection{Rotate row/column names}
-The \code{rotate.rownames} and \code{rotate.colnames} arguments can be used to
-rotate the row and/or column names. This requires \verb|\usepackage{rotating}|
-in the \LaTeX\ preamble.
+The \code{rotate.rownames} and \code{rotate.colnames} arguments can be
+used to rotate the row and/or column names. This requires
+\verb|\usepackage{rotating}| in the \LaTeX\ preamble.
 
 <<results='asis'>>=
 print(tli.table, rotate.rownames = TRUE, rotate.colnames = TRUE)
@@ -356,16 +511,17 @@ print(xtable(anova(fm3)), hline.after = c(1))
 @
 
 \subsubsection{Line styles}
-Specifying \code{booktabs = TRUE} will generate three line types. By default,
-when no value is given for \code{hline.after}, a \verb|\toprule| will be drawn
-above the table, a \verb|\midrule| after the table headings and a
-\verb|\bottomrule| below the table. This requires \verb|\usepackage{booktabs}|
-in the \LaTeX\ preamble.
+Specifying \code{booktabs = TRUE} will generate three line types. By
+default, when no value is given for \code{hline.after}, a
+\verb|\toprule| will be drawn above the table, a \verb|\midrule| after
+the table headings and a \verb|\bottomrule| below the table. This
+requires \verb|\usepackage{booktabs}| in the \LaTeX\ preamble.
 
 \p
-The top and bottom rules are slightly thicker than the mid rule. The thickness
-of the lines can be set via the \LaTeX\ lengths \verb|\heavyrulewidth| and
-\verb|\lightrulewidth|.
+
+The top and bottom rules are slightly thicker than the mid rule. The
+thickness of the lines can be set via the \LaTeX\ lengths
+\verb|\heavyrulewidth| and \verb|\lightrulewidth|.
 
 <<results='asis'>>=
 tli.table <- xtable(tli[1:10, ])
@@ -373,6 +529,7 @@ print(tli.table, include.rownames = FALSE, booktabs = TRUE)
 @
 
 \p
+
 If \code{hline.after} includes \code{-1}, a \verb|\toprule| will be
 drawn above the table. If \code{hline.after} includes the number of
 rows in the table, a \verb|\bottomrule| will be drawn below the
@@ -407,39 +564,22 @@ x.big <- xtable(x, caption = "A \\code{longtable} spanning several pages")
 print(x.big, hline.after=c(-1, 0), tabular.environment = "longtable")
 @
 
-%% The column name alignment is off in the following example.
-%% It needs some revision before exposing it. - CR, 7/2/2012
-%
-%% Tried to fix this and got some of the way, but \hlines are wrong
-%% and first column is too wide. - DJS 4/10/2014
-%% \subsubsection{Long tables with the header on each page}
-%% The \code{add.to.row} argument can be used to display the header
-%% for a long table on each page, and to add a "continued" footer
-%% on all pages except the last page.
+Extra features of the \pkg{longtable} \LaTeX{} package can typically
+be activated using \code{add.to.row}, as shown below.
 
-%% \newcommand{\head}[1]{\centercell{\bfseries#1}}
+<<results='asis'>>=
+add.to.row <- list(pos = list(0), command = NULL)
+command <- paste0("\\hline\n\\endhead\n",
+                  "\\hline\n",
+                  "\\multicolumn{", dim(x)[2] + 1, "}{l}",
+                  "{\\footnotesize Continued on next page}\n",
+                  "\\endfoot\n",
+                  "\\endlastfoot\n")
+add.to.row$command <- command
+print(x.big, hline.after=c(-1), add.to.row = add.to.row,
+      tabular.environment = "longtable")
+@
 
-%% <<results='asis'>>=
-%% x <- matrix(rnorm(1000), ncol = 10)
-%% hdr <-  paste(paste("\\multicolumn{1}{c}{",1:9,"} & ", collapse = ""),
-%%               "\\multicolumn{1}{c}{10}\\\\")
-%% addtorow <- list()
-%% addtorow$pos <- list()
-%% addtorow$pos[[1]] <- c(0)
-%% addtorow$command <- c(paste(
-%%     hdr,
-%%     "  \\hline \n",
-%%     "  \\endhead \n",
-%%     "  \\hline \n",
-%%     "  {\\footnotesize Continued on next page} \n",
-%%     "  \\endfoot \n",
-%%     "  \\endlastfoot \n", sep = ""))
-%% x.big2 <- xtable(x, label = "tabbig2", align = "lrrrrrrrrrr",
-%%                  caption = "Example of longtable with the header on each page")
-%% print(x.big2, tabular.environment = "longtable",
-%%       include.rownames = FALSE, include.colnames = FALSE,
-%%       add.to.row = addtorow)
-%% @
 
 \newpage
 
@@ -521,8 +661,8 @@ column formats.
 These allow for very sophisticated cell formatting, namely
 left-aligned, centred, or right-aligned text, with recognition of line
 breaks for the first three new column types. If these lines are
-included along with \verb|\usepackage{array}|, then the following
-is possible.
+included along with \verb|\usepackage{array}|, then the following is
+possible.
 
 \newcolumntype{L}[1]{>{\raggedright\let\newline\\
     \arraybackslash\hspace{0pt}}m{#1}}
@@ -542,10 +682,10 @@ print(xtable(df, align = c("l", "|c", "|R{3cm}", "|L{3cm}", "| p{3cm}|")),
 \newpage
 
 \subsection{Table width}
-The \code{tabularx} environment is for typesetting tables whose overall width is
-fixed. The column alignment code \code{X} denotes columns that will be stretched
-to achieve the desired table width. Requires \verb|\usepackage{tabularx}| in the
-\LaTeX\ preamble.
+The \code{tabularx} environment is for typesetting tables whose
+overall width is fixed. The column alignment code \code{X} denotes
+columns that will be stretched to achieve the desired table
+width. Requires \verb|\usepackage{tabularx}| in the \LaTeX\ preamble.
 
 <<results='asis'>>=
 df.width <- data.frame(One = c("item 1", "A"), Two = c("item 2", "B"),
@@ -556,9 +696,10 @@ print(x.width, tabular.environment = "tabularx", width = "\\textwidth")
 @
 
 \section{Suppressing printing}
-By default the \code{print} method will print the \LaTeX\ or HTML to standard
-output and also return the character strings invisibly.  The printing to
-standard output can be suppressed by specifying \code{print.results = FALSE}.
+By default the \code{print} method will print the \LaTeX\ or HTML to
+standard output and also return the character strings invisibly.  The
+printing to standard output can be suppressed by specifying
+\code{print.results = FALSE}.
 
 <<>>=
 x.out <- print(tli.table, print.results = FALSE)
@@ -573,6 +714,7 @@ x.ltx <- toLatex(tli.table)
 class(x.ltx)
 x.ltx
 @
+
 
 \newpage
 

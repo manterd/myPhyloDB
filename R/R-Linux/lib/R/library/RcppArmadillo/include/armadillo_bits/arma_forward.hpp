@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 National ICT Australia (NICTA)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -78,6 +78,8 @@ class op_normalise_vec;
 class op_clamp;
 class op_cumsum_default;
 class op_cumprod_default;
+class op_shift;
+class op_shift_default;
 class op_shuffle;
 class op_shuffle_default;
 class op_sort;
@@ -190,7 +192,7 @@ template<typename out_eT, typename T1, typename T2, typename  glue_type> class m
 template<typename T1> class Proxy;
 template<typename T1> class ProxyCube;
 
-
+template<typename T1> class diagmat_proxy;
 
 class spop_strans;
 class spop_htrans;
@@ -240,16 +242,17 @@ static const injector_end_of_row<> endr = injector_end_of_row<>();
 enum file_type
   {
   file_type_unknown,
-  auto_detect,  //!< Automatically detect the file type
-  raw_ascii,    //!< ASCII format (text), without any other information.
-  arma_ascii,   //!< Armadillo ASCII format (text), with information about matrix type and size
-  csv_ascii,    //!< comma separated values (CSV), without any other information
-  raw_binary,   //!< raw binary format, without any other information.
-  arma_binary,  //!< Armadillo binary format, with information about matrix type and size
-  pgm_binary,   //!< Portable Grey Map (greyscale image)
-  ppm_binary,   //!< Portable Pixel Map (colour image), used by the field and cube classes
-  hdf5_binary,  //!< Open binary format, not specific to Armadillo, which can store arbitrary data
-  coord_ascii   //!< simple co-ordinate format for sparse matrices
+  auto_detect,        //!< Automatically detect the file type
+  raw_ascii,          //!< ASCII format (text), without any other information.
+  arma_ascii,         //!< Armadillo ASCII format (text), with information about matrix type and size
+  csv_ascii,          //!< comma separated values (CSV), without any other information
+  raw_binary,         //!< raw binary format, without any other information.
+  arma_binary,        //!< Armadillo binary format, with information about matrix type and size
+  pgm_binary,         //!< Portable Grey Map (greyscale image)
+  ppm_binary,         //!< Portable Pixel Map (colour image), used by the field and cube classes
+  hdf5_binary,        //!< Open binary format, not specific to Armadillo, which can store arbitrary data
+  hdf5_binary_trans,  //!< as per hdf5_binary, but save/load the data with columns transposed to rows
+  coord_ascii         //!< simple co-ordinate format for sparse matrices
   };
 
 

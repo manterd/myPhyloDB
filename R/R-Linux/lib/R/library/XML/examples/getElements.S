@@ -16,7 +16,7 @@ function(elementNames)
 
 #
 h =  getElements("a")
-htmlTreeParse("http://www.omegahat.org/RSXML/index.html", handlers = h)
+htmlTreeParse("http://www.omegahat.net/RSXML/index.html", handlers = h)
 
 links = sapply(h$els(), function(x) xmlGetAttr(x, "href"))
 
@@ -32,7 +32,7 @@ getLinks = function() {
 }
 
 # h = getLinks()
-# htmlTreeParse("http://www.omegahat.org/RSXML/index.html", handlers = h)
+# htmlTreeParse("http://www.omegahat.net/RSXML/index.html", handlers = h)
 # h$links()
 
 # If we want the nodes, we can use getElements. Otherwise, we 

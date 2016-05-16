@@ -179,22 +179,40 @@ void test_stop_variadic() {
 }
 
 // [[Rcpp::export]]
-bool testNullableForNull(Nullable<NumericMatrix> M) {
+bool testNullableForNull(const Nullable<NumericMatrix>& M) {
     return M.isNull();
 }
 
 // [[Rcpp::export]]
-bool testNullableForNotNull(Nullable<NumericMatrix> M) {
+bool testNullableForNotNull(const Nullable<NumericMatrix>& M) {
     return M.isNotNull();
 }
 
 // [[Rcpp::export]]
-SEXP testNullableOperator(Nullable<NumericMatrix> M) {
+SEXP testNullableOperator(const Nullable<NumericMatrix>& M) {
     return M;
 }
 
 // [[Rcpp::export]]
-SEXP testNullableGet(Nullable<NumericMatrix> M) {
+SEXP testNullableGet(const Nullable<NumericMatrix>& M) {
     return M.get();
 }
 
+// [[Rcpp::export]]
+NumericMatrix testNullableAs(Nullable<NumericMatrix>& M) {
+    return M.as();
+}
+
+// [[Rcpp::export]]
+NumericMatrix testNullableClone(const Nullable<NumericMatrix>& M) {
+    return M.clone();
+}
+
+// [[Rcpp::export]]
+SEXP testNullableIsUsable(const Nullable<NumericMatrix>& M) {
+    if (M.isUsable()) {
+        return M.clone();
+    } else {
+        return R_NilValue;
+    }
+}

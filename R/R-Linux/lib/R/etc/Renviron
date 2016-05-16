@@ -13,7 +13,7 @@ R_PRINTCMD=${R_PRINTCMD-'lpr'}
 # for Rd2pdf, reference manual
 R_RD4PDF=${R_RD4PDF-'times,inconsolata,hyper'}
 ## used for options("texi2dvi")
-R_TEXI2DVICMD=${R_TEXI2DVICMD-${TEXI2DVI-'texi2dvi'}}
+R_TEXI2DVICMD=${R_TEXI2DVICMD-${TEXI2DVI-'/usr/bin/texi2dvi'}}
 ## used by INSTALL, untar() and installing grDevices
 R_GZIPCMD=${R_GZIPCMD-'/bin/gzip'}
 ## Default zip/unzip commands

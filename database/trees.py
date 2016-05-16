@@ -1,13 +1,18 @@
-import pickle
-import operator
-import simplejson
 from django.http import HttpResponse
 from django.db.models import Q, Sum
+import operator
+import pandas as pd
+import pickle
+from pyper import *
+import simplejson
+
 from models import Project, Sample, Reference
 from models import Kingdom, Class, Order, Family, Genus, Species, Profile
 from models import Air, Human_Associated, Microbial, Soil, Water, UserDefined
-import numpy as np
-import pandas as pd
+from models import ko_lvl1, ko_entry
+from models import nz_lvl1, nz_entry
+
+pd.set_option('display.max_colwidth', -1)
 
 
 def getProjectTree(request):
@@ -1101,6 +1106,245 @@ def getTaxaTreeChildren(request):
                     'isLazy': True
                 }
                 nodes.append(myNode)
+
+        res = simplejson.dumps(nodes, encoding="Latin-1")
+        return HttpResponse(res, content_type='application/json')
+
+
+def getKEGGTree(request):
+    myTree = {'title': 'KEGG Pathway', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
+
+    level1 = ko_lvl1.objects.using('picrust').all().order_by('ko_lvl1_name').distinct()
+    for item in level1:
+        myNode = {
+            'title': item.ko_lvl1_name,
+            'id': item.ko_lvl1_id,
+            'tooltip': "Level1",
+            'kegg': 'Level1',
+            'isFolder': True,
+            'expand': False,
+            'children': []
+        }
+        level2 = item.ko_lvl2_set.all().exclude(ko_lvl2_name='Enzyme families').order_by('ko_lvl2_name').distinct()
+        for thing1 in level2:
+            myNode1 = {
+                'title': thing1.ko_lvl2_name,
+                'id': thing1.ko_lvl2_id,
+                'tooltip': "Level2",
+                'kegg': 'Level2',
+                'isFolder': True,
+                'expand': False,
+                'children': []
+            }
+            level3 = thing1.ko_lvl3_set.all().filter(ko_lvl3_name__contains='[PATH:ko').order_by('ko_lvl3_name').distinct()
+            for thing2 in level3:
+                myNode2 = {
+                    'title': thing2.ko_lvl3_name,
+                    'id': thing2.ko_lvl3_id,
+                    'tooltip': "Level3",
+                    'kegg': 'Level3',
+                    'isFolder': True,
+                    'expand': False,
+                    'isLazy': True
+                }
+                myNode1['children'].append(myNode2)
+            myNode['children'].append(myNode1)
+        myTree['children'].append(myNode)
+
+    # Convert result list to a JSON string
+    res = simplejson.dumps(myTree, encoding="Latin-1")
+
+    # Support for the JSONP protocol.
+    response_dict = {}
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+    response_dict = {}
+    response_dict.update({'children': myTree})
+    return HttpResponse(response_dict, content_type='application/javascript')
+
+
+def getKEGGTreeChildren(request):
+    if request.is_ajax():
+        level = request.GET["tooltip"]
+        id = request.GET["id"]
+
+        nodes = []
+        if level == 'Level3':
+            qs = ko_entry.objects.using('picrust').filter(**{'ko_lvl3_id': id}).order_by('ko_name')
+            for item in qs:
+                myNode = {
+                    'title': str(item.ko_orthology) + ": " + str(item.ko_name),
+                    'id': item.ko_lvl4_id,
+                    'tooltip': item.ko_desc,
+                    'kegg': 'Level4',
+                    'isFolder': False,
+                    'isLazy': True
+                }
+                nodes.append(myNode)
+
+
+        res = simplejson.dumps(nodes, encoding="Latin-1")
+        return HttpResponse(res, content_type='application/json')
+
+
+def getKEGGTree2(request):
+    myTree = {'title': 'KEGG Pathway', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
+
+    if os.name == 'nt':
+        r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+    else:
+        r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+    r("load('media/kegg/kegg.gs.RData')")
+    pathArray = r.get("names(kegg.gs)")
+
+    pathList = []
+    for i in pathArray:
+        pathList.append(i.split()[0])
+
+    level1 = ko_lvl1.objects.using('picrust').all().exclude(ko_lvl1_name='Human Diseases').order_by('ko_lvl1_name').distinct()
+    for item in level1:
+        myNode = {
+            'title': item.ko_lvl1_name,
+            'id': item.ko_lvl1_id,
+            'hideCheckbox': False,
+            'tooltip': "Level1",
+            'kegg': 'Level1',
+            'isFolder': True,
+            'expand': False,
+            'children': []
+        }
+        level2 = item.ko_lvl2_set.all().exclude(ko_lvl2_name='Aging').exclude(ko_lvl2_name='Enzyme families').order_by('ko_lvl2_name').distinct()
+        for thing1 in level2:
+            myNode1 = {
+                'title': thing1.ko_lvl2_name,
+                'id': thing1.ko_lvl2_id,
+                'hideCheckbox': False,
+                'tooltip': "Level2",
+                'kegg': 'Level2',
+                'isFolder': True,
+                'expand': False,
+                'children': []
+            }
+            level3 = thing1.ko_lvl3_set.all().filter(ko_lvl3_name__contains='[PATH:ko').order_by('ko_lvl3_name').distinct()
+            for thing2 in level3:
+                fullName = thing2.ko_lvl3_name
+                path = fullName.split('[PATH:')[1].split(']')[0]
+                if path in pathList:
+                    myNode2 = {
+                        'title': thing2.ko_lvl3_name,
+                        'id': thing2.ko_lvl3_id,
+                        'tooltip': "Level3",
+                        'kegg': 'Level3',
+                        'isFolder': False,
+                        'expand': False
+                    }
+                    myNode1['children'].append(myNode2)
+            myNode['children'].append(myNode1)
+        myTree['children'].append(myNode)
+
+    # Convert result list to a JSON string
+    res = simplejson.dumps(myTree, encoding="Latin-1")
+
+    # Support for the JSONP protocol.
+    response_dict = {}
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+    response_dict = {}
+    response_dict.update({'children': myTree})
+    return HttpResponse(response_dict, content_type='application/javascript')
+
+
+def getNZTree(request):
+    myTree = {'title': 'KEGG Enzyme', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
+
+    level1 = nz_lvl1.objects.using('picrust').all().order_by('nz_lvl1_name').distinct()
+
+    for item in level1:
+        myNode = {
+            'title': item.nz_lvl1_name,
+            'id': item.nz_lvl1_id,
+            'tooltip': "Level1",
+            'kegg': 'Level1',
+            'isFolder': True,
+            'expand': False,
+            'children': []
+        }
+        level2 = item.nz_lvl2_set.all().order_by('nz_lvl2_name').distinct()
+        for thing1 in level2:
+            myNode1 = {
+                'title': thing1.nz_lvl2_name,
+                'id': thing1.nz_lvl2_id,
+                'tooltip': "Level2",
+                'kegg': 'Level2',
+                'isFolder': True,
+                'expand': False,
+                'children': []
+            }
+            level3 = thing1.nz_lvl3_set.all().order_by('nz_lvl3_name').distinct()
+            for thing2 in level3:
+                myNode2 = {
+                    'title': thing2.nz_lvl3_name,
+                    'id': thing2.nz_lvl3_id,
+                    'tooltip': "Level3",
+                    'kegg': 'Level3',
+                    'isFolder': True,
+                    'expand': False,
+                    'children': []
+                }
+                level4 = thing2.nz_lvl4_set.all().order_by('nz_lvl4_name').distinct()
+                for thing3 in level4:
+                    myNode3 = {
+                        'title': thing3.nz_lvl4_name,
+                        'id': thing3.nz_lvl4_id,
+                        'tooltip': "Level4",
+                        'kegg': 'Level4',
+                        'isFolder': True,
+                        'expand': False,
+                        'isLazy': True
+                    }
+                    myNode2['children'].append(myNode3)
+                myNode1['children'].append(myNode2)
+            myNode['children'].append(myNode1)
+        myTree['children'].append(myNode)
+
+    # Convert result list to a JSON string
+    res = simplejson.dumps(myTree, encoding="Latin-1")
+
+    # Support for the JSONP protocol.
+    response_dict = {}
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+    response_dict = {}
+    response_dict.update({'children': myTree})
+    return HttpResponse(response_dict, content_type='application/javascript')
+
+
+def getNZTreeChildren(request):
+    if request.is_ajax():
+        level = request.GET["tooltip"]
+        id = request.GET["id"]
+
+        nodes = []
+        if level == 'Level4':
+            qs = nz_entry.objects.using('picrust').filter(**{'nz_lvl4_id': id}).order_by('nz_name')
+            for item in qs:
+                myNode = {
+                    'title': str(item.nz_orthology) + ": " + str(item.nz_name),
+                    'id': item.nz_lvl5_id,
+                    'tooltip': item.nz_desc,
+                    'kegg': 'Level5',
+                    'isFolder': False,
+                    'isLazy': True
+                }
+                nodes.append(myNode)
+
 
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')

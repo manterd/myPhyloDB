@@ -24,7 +24,7 @@ Please see the 'Setup_notes' file for more details...
 ***Python 2.7.6 or above***
 
 
-* **Modules:** CherryPy 4.0, Django 1.9.1, Django-extensions 1.4.4, Django-registration-redux 1.3, PypeR 1.1.2, numPy 1.8.1, pandas 0.16.0, sciPy 0.14.0, simplejson 3.5.2, xlrd 0.9.4, xlutils 1.7.1
+* **Modules:** CherryPy 4.0, Django 1.9.2, Django-extensions 1.4.4, Django-registration-redux 1.3, PypeR 1.1.2, numPy 1.8.1, pandas 0.16.0, sciPy 0.14.0, simplejson 3.5.2, xlrd 0.9.4, xlutils 1.7.1
 
 
 ***Mothur reference files***
@@ -47,7 +47,7 @@ Please see the 'Setup_notes' file for more details...
 ***Python 2.7.6 or above***
 
 
-* **Modules:** CherryPy 4.0, Django 1.9.1, Django-extensions 1.4.4, Django-registration-redux 1.3, PypeR 1.1.2, numPy 1.8.1, pandas 0.16.0, sciPy 0.14.0, simplejson 3.5.2, xlrd 0.9.4, xlutils 1.7.1
+* **Modules:** CherryPy 4.0, Django 1.9.2, Django-extensions 1.4.4, Django-registration-redux 1.3, PypeR 1.1.2, numPy 1.8.1, pandas 0.16.0, sciPy 0.14.0, simplejson 3.5.2, xlrd 0.9.4, xlutils 1.7.1
 
 
 ***Mothur reference files***

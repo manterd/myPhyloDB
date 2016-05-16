@@ -81,7 +81,9 @@ def Datafiles(*filenames, **kw):
         if os.path.isfile(filename))
 
 
-db = Datafiles('db.Microbe')
+db1 = Datafiles('db.Microbe')
+db2 = Datafiles('db.PICRUSt')
+
 
 def extra_datas(mydir):
     def rec_glob(p, files):
@@ -124,7 +126,8 @@ coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
                a.datas,
-               db,
+               db1,
+               db2,
                strip=None,
                upx=True,
                name='myPhyloDB'

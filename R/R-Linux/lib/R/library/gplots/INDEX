@@ -1,3 +1,4 @@
+angleAxis               Add a Axis to a Plot with Rotated Labels
 balloonplot             Plot a graphical matrix where each cell
                         contains a dot whose size reflects the relative
                         magnitude of the corresponding component.

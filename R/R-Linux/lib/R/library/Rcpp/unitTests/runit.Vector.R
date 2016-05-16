@@ -1,4 +1,4 @@
-#!/usr/bin/r -t
+#!/usr/bin/env r
 #       hey emacs, please make this use  -*- tab-width: 4 -*-
 #
 # Copyright (C) 2010 - 2015  Dirk Eddelbuettel and Romain Francois
@@ -719,6 +719,15 @@ if (.runThisTest) {
         v <- c("a", "b", "c", "d")
         s <- vec_print_character(v)
         checkEquals(s, '"a" "b" "c" "d"')
+    }
+
+    test.IntegerVector.subset.under.gc <- function() {
+        x <- 1:1E6
+        y <- 1:1E6
+        gctorture(TRUE)
+        z <- vec_subset(x, y)
+        gctorture(FALSE)
+        checkEquals(x[y], z)
     }
 }
 

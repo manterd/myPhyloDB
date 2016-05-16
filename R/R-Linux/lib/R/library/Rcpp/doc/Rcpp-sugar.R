@@ -11,7 +11,7 @@ prettyDate <- format(Sys.Date(), "%B %e, %Y")
 ### code chunk number 3: Rcpp-sugar.Rnw:105-108 (eval = FALSE)
 ###################################################
 ## foo <- function(x, y){
-## 	ifelse( x < y, x*x, -(y*y) )
+##     ifelse( x < y, x*x, -(y*y) )
 ## }
 
 

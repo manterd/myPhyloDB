@@ -103,6 +103,11 @@
                 $("#run").css("background-color", "lightgray");
             });
 
+            $("#Lambda").change(function () {
+                chooseDisplay();
+                $("#run").css("background-color", "lightgray");
+            });
+
             $("#MinSize").change(function () {
                 if (document.getElementById('MinSize').checked) {
                     minsize = 1;
@@ -179,6 +184,16 @@
                     node.select(false);
                 });
             });
+
+            $("#TabButton").click(function () {
+                getTab();
+            });
+
+            $("#BiomButton").click(function () {
+                getBiom();
+            });
+
+
         });
 
         function menuUpdate() {
@@ -237,6 +252,7 @@
                 }
             });
         }
+
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
@@ -288,6 +304,7 @@
             if (NormMeth== 1) {
                 $("#NormRow").hide();
                 $("#IterRow").hide();
+                $("#LambdaRow").hide();
                 $("#MinRow").show();
                 $("#VSRow").hide();
                 $("#FilterRow").hide();
@@ -295,6 +312,7 @@
             if (NormMeth == 2) {
                 $("#NormRow").show();
                 $("#IterRow").show();
+                $("#LambdaRow").hide();
                 $("#MinRow").show();
                 $("#VSRow").hide();
                 $("#FilterRow").hide();
@@ -302,6 +320,7 @@
             if (NormMeth == 3) {
                 $("#NormRow").show();
                 $("#IterRow").show();
+                $("#LambdaRow").show();
                 $("#MinRow").show();
                 $("#VSRow").hide();
                 $("#FilterRow").hide();
@@ -309,6 +328,7 @@
             if (NormMeth == 4) {
                 $("#NormRow").hide();
                 $("#IterRow").hide();
+                $("#LambdaRow").hide();
                 $("#MinRow").show();
                 $("#VSRow").hide();
                 $("#FilterRow").hide();
@@ -316,6 +336,7 @@
             if (NormMeth == 5) {
                 $("#NormRow").hide();
                 $("#IterRow").hide();
+                $("#LambdaRow").hide();
                 $("#MinRow").show();
                 $("#VSRow").show();
                 $("#FilterRow").show();
@@ -355,6 +376,7 @@
             myDict['Cutoff'] = document.getElementById("Cutoff").value;
             myDict['NormVal'] = document.getElementById("NormVal").value;
             myDict['Iters'] = document.getElementById("Iters").value;
+            myDict['Lambda'] = document.getElementById("Lambda").value;
             myDict['MinSize'] = minsize;
             myDict['MinVal'] = document.getElementById("MinVal").value;
             myDict['selectAll'] = selectAll;
@@ -386,26 +408,29 @@
 
                         if (res_table == null) {
                             res_table = $('#res_table').dataTable({
-                                dom: 'Bfrtip',
-                                scroller: true,
-                                scrollX: 600,
-                                scrollY: 600,
+                                dom: 'B<"toolbar">lfrtip',
+                                scrollX: true,
+                                bSort: true,
+                                bPaginate: true,
+                                sPaginationType: 'full_numbers',
                                 buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ],
                                 data: rowData,
                                 columns: colData
                             });
                         } else {
                             res_table = $('#res_table').DataTable({
-                                dom: 'Bfrtip',
-                                scroller: true,
-                                scrollX: 600,
-                                scrollY: 600,
+                                dom: 'B<"toolbar">lfrtip',
+                                scrollX: true,
+                                bSort: true,
+                                bPaginate: true,
+                                sPaginationType: 'full_numbers',
                                 buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ],
                                 data: rowData,
                                 columns: colData,
                                 "destroy": true
                             });
                         }
+                        $("div.toolbar").html('<br><br>');
                     }
 
                     if (biome == 1) {
@@ -419,9 +444,59 @@
                     $("#container-1").empty().append(text);
 
                     running = false;
+
+                    document.getElementById("TabButton").disabled = false;
+                    document.getElementById("BiomButton").disabled = false;
                }
             });
         }
+
+        function getTab(){
+            $.ajax({
+                url: '/getTab/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var name = obj['name'];
+                    getFile(name, 'normalized_data.csv');
+                }
+            });
+        }
+
+        function getBiom(){
+            $.ajax({
+                url: '/getBiom/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var name = obj['name'];
+                    getFile(name, 'normalized_data.biom');
+                }
+            });
+        }
+
+        function getFile(name, final) {
+            {% static "" as baseUrl %}
+            var url = {{ baseUrl }}+'/'+name;
+            var anchor = document.createElement('a');
+            anchor.setAttribute('href', url);
+            anchor.setAttribute('download', final);
+
+            var ev = document.createEvent("MouseEvents");
+                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            anchor.dispatchEvent(ev);
+        }
+
     </script>
 {% endblock javascript %}
 
@@ -435,7 +510,7 @@
             <tr id="ProcRow">
                 <td bgcolor="white">
                     <input style="background-color: white" type="text" id="Proc" value="2"/>
-                    &nbsp<-- How many processors would you like to use?
+                    &nbsp<-- Nuumber of processors to use
                 </td>
             </tr>
             <tr id="ProcRow-off" style="display: none">
@@ -456,14 +531,20 @@
             <tr id="NormRow" style="display: none;" bgcolor="white">
                 <td>
                     <input style="background-color: white" type="text" id="NormVal" value=""/>
-                    &nbsp<-- Sub-sample size:
+                    &nbsp<-- Sub-sample size
                 </td>
             </tr>
 
             <tr id="IterRow" style="display: none;" bgcolor="white">
                 <td>
                     <input style="background-color: white" type="text" id="Iters" value="100"/>
-                    &nbsp<-- Iterations:
+                    &nbsp<-- Iterations
+                </td>
+            </tr>
+            <tr id="LambdaRow" style="display: none;" bgcolor="white">
+                <td>
+                    <input style="background-color: white" type="text" id="Lambda" value="0.5"/>
+                    &nbsp<-- Lambda
                 </td>
             </tr>
         </table>
@@ -477,22 +558,32 @@
                 <td>
                     <input type="checkbox" title="Click to turn on/off" id="MinSize"/>
                     <input style="background-color: white"  type="text" id="MinVal" value="0"/>
-                    &nbsp<-- Minimum sample size:
+                    &nbsp<-- Minimum sample size
                 </td>
             </tr>
             <tr id="CutoffRow">
                 <td bgcolor="white">
                     <input type="checkbox" title="Click to turn on/off" id="Remove"/>
                     <input style="background-color: white"  type="text" id="Cutoff" value="0"/>
-                    &nbsp<-- Minimum species size:
+                    &nbsp<-- Minimum species size
                 </td>
             </tr>
         </table>
         <br><br>
-        <h2>Select your output formats (optional):</h2>
-        <input type="checkbox" title="Click to turn on/off" id="Tabular"/>&nbsp<-- Output results in tabular format:
+
+        <h2>Display your output formats (optional):</h2>
+        <input type="checkbox" title="Click to turn on/off" id="Tabular"/>
+        &nbsp<-- Output tabular results to DataTable
         <br>
-        <input type="checkbox" title="Click to turn on/off" id="Biom"/>&nbsp<-- Output results in biom format:
+        <input type="checkbox" title="Click to turn on/off" id="Biom"/>
+        &nbsp<-- Output biom results to text area
+        <br><br>
+
+        <h2>Direct download of your data (optional):</h2>
+        <input id="TabButton" type="button" disabled value="Tabular"/>
+        &nbsp&nbsp&nbsp
+        <input id="BiomButton" type="button" disabled value="BIOM"/>
+        <br>
     </div>
     <br><br>
 
@@ -503,7 +594,7 @@
 
     <div style="width: 950px">
     <h2>Normalized Data (Tabular):</h2>
-    <table id="res_table" class="display"></table>
+    <table id="res_table" class="display nowrap" cellpadding="0" cellspacing="0" width="100%"></table>
     </div>
     <br>
 

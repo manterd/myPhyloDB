@@ -4,11 +4,16 @@ from registration.backends.simple.views import RegistrationView
 
 from database import views, parsers, trees
 from database.anova import anova_graphs
+from database.rich import rich_graphs
 from database.diffabund import diffabund_graphs
+from database.gage import gage_graphs
 from database.norm import norm_graphs
+from database.pca import pca_graphs
 from database.pcoa import pcoa_graphs
 from database.spls import spls_graphs
-
+from database.soil_index import soil_index_graphs
+from database.wgcna import wgcna_graphs
+from database.pybake import pybake
 
 admin.autodiscover()
 
@@ -33,12 +38,23 @@ urlpatterns = [
 
     url(r'^getProjectTree/$', trees.getProjectTree, name='getProjectTree'),
     url(r'^getProjectTreeChildren/$', trees.getProjectTreeChildren, name='getProjectTreeChildren'),
+
     url(r'^getSampleCatTree/$', trees.getSampleCatTree, name='getSampleCatTree'),
     url(r'^getSampleCatTreeChildren/$', trees.getSampleCatTreeChildren, name='getSampleCatTreeChildren'),
     url(r'^getSampleQuantTree/$', trees.getSampleQuantTree, name='getSampleQuantTree'),
     url(r'^getSampleQuantTreeChildren/$', trees.getSampleQuantTreeChildren, name='getSampleQuantTreeChildren'),
+
     url(r'^getTaxaTree/$', trees.getTaxaTree, name='getTaxaTree'),
     url(r'^getTaxaTreeChildren/$', trees.getTaxaTreeChildren, name='getTaxaTreeChildren'),
+
+    url(r'^getKEGGTree/$', trees.getKEGGTree, name='getKEGGTree'),
+    url(r'^getKEGGTreeChildren/$', trees.getKEGGTreeChildren, name='getKEGGTreeChildren'),
+
+    url(r'^getKEGGTree2/$', trees.getKEGGTree2, name='getKEGGTree2'),
+
+    url(r'^getNZTree/$', trees.getNZTree, name='getNZTree'),
+    url(r'^getNZTreeChildren/$', trees.getNZTreeChildren, name='getNZTreeChildren'),
+
     url(r'^makeUpdateTree/$', trees.makeUpdateTree, name='makeUpdateTree'),
     url(r'^makeReproTree/$', trees.makeReproTree, name='makeReproTree'),
 
@@ -46,28 +62,73 @@ urlpatterns = [
     url(r'^statusNorm/$', norm_graphs.statusNorm, name='statusNorm'),
     url(r'^removeRIDNorm/$', norm_graphs.removeRIDNorm, name='removeRIDNorm'),
     url(r'^stopNorm/$', norm_graphs.stopNorm, name='stopNorm'),
+    url(r'^getTab/$', norm_graphs.getTab, name='getTab'),
+    url(r'^getBiom/$', norm_graphs.getBiom, name='getBiome'),
 
     url(r'^getCatUnivData/$', anova_graphs.getCatUnivData, name='getCatUnivData'),
     url(r'^getQuantUnivData/$', anova_graphs.getQuantUnivData, name='getQuantUnivData'),
     url(r'^statusANOVA/$', anova_graphs.statusANOVA, name='statusANOVA'),
     url(r'^removeRIDANOVA/$', anova_graphs.removeRIDANOVA, name='removeRIDANOVA'),
     url(r'^stopANOVA/$', anova_graphs.stopANOVA, name='stopANOVA'),
+    url(r'^getTabANOVA/$', anova_graphs.getTabANOVA, name='getTabANOVA'),
+    url(r'^removeANOVAFiles/$', anova_graphs.removeANOVAFiles, name='removeANOVAFiles'),
+
+    url(r'^getrich/$', rich_graphs.getrich, name='getrich'),
+    url(r'^statusrich/$', rich_graphs.statusrich, name='statusrich'),
+    url(r'^removeRIDrich/$', rich_graphs.removeRIDrich, name='removeRIDrich'),
+    url(r'^removerichFiles/$', rich_graphs.removerichFiles, name='removerichFiles'),
+    url(r'^stoprich/$', rich_graphs.stoprich, name='stoprich'),
+    url(r'^getTabrich/$', rich_graphs.getTabrich, name='getTabrich'),
+
+    url(r'^getsoil_index/$', soil_index_graphs.getsoil_index, name='getsoil_index'),
+    url(r'^statussoil_index/$', soil_index_graphs.statussoil_index, name='statussoil_index'),
+    url(r'^removeRIDsoil_index/$', soil_index_graphs.removeRIDsoil_index, name='removeRIDsoil_index'),
+    url(r'^removesoil_indexFiles/$', soil_index_graphs.removesoil_indexFiles, name='removesoil_indexFiles'),
+    url(r'^stopsoil_index/$', soil_index_graphs.stopsoil_index, name='stopsoil_index'),
+    url(r'^getTabsoil_index/$', soil_index_graphs.getTabsoil_index, name='getTabsoil_index'),
 
     url(r'^getPCoA/$', pcoa_graphs.getPCoA, name='getPCoA'),
     url(r'^statusPCoA/$', pcoa_graphs.statusPCoA, name='statusPCoA'),
     url(r'^removeRIDPCoA/$', pcoa_graphs.removeRIDPCoA, name='removeRIDPCoA'),
-    url(r'^removegraphPCoA/$', pcoa_graphs.removegraphPCoA, name='removegraphPCoA'),
+    url(r'^removePCoAFiles/$', pcoa_graphs.removePCoAFiles, name='removePCoAFiles'),
     url(r'^stopPCoA/$', pcoa_graphs.stopPCoA, name='stopPCoA'),
+    url(r'^getTabPCoA/$', pcoa_graphs.getTabPCoA, name='getTabPCoA'),
+
+    url(r'^getWGCNA/$', wgcna_graphs.getWGCNA, name='getWGCNA'),
+    url(r'^statusWGCNA/$', wgcna_graphs.statusWGCNA, name='statusWGCNA'),
+    url(r'^removeRIDWGCNA/$', wgcna_graphs.removeRIDWGCNA, name='removeRIDWGCNA'),
+    url(r'^removeWGCNAFiles/$', wgcna_graphs.removeWGCNAFiles, name='removeWGCNAFiles'),
+    url(r'^stopWGCNA/$', wgcna_graphs.stopWGCNA, name='stopWGCNA'),
+    url(r'^getTabWGCNA/$', wgcna_graphs.getTabWGCNA, name='getTabWGCNA'),
+
+    url(r'^getPCA/$', pca_graphs.getPCA, name='getPCA'),
+    url(r'^statusPCA/$', pca_graphs.statusPCA, name='statusPCA'),
+    url(r'^removeRIDPCA/$', pca_graphs.removeRIDPCA, name='removeRIDPCA'),
+    url(r'^removePCAFiles/$', pca_graphs.removePCAFiles, name='removePCAFiles'),
+    url(r'^stopPCA/$', pca_graphs.stopPCA, name='stopPCA'),
+    url(r'^getTabPCA/$', pca_graphs.getTabPCA, name='getTabPCA'),
 
     url(r'^getSPLS/$', spls_graphs.getSPLS, name='getSPLS'),
     url(r'^statusSPLS/$', spls_graphs.statusSPLS, name='statusSPLS'),
     url(r'^removeRIDSPLS/$', spls_graphs.removeRIDSPLS, name='removeRIDSPLS'),
-    url(r'^removegraphSPLS/$', spls_graphs.removegraphSPLS, name='removegraphSPLS'),
+    url(r'^removeSPLSFiles/$', spls_graphs.removeSPLSFiles, name='removeSPLSFiles'),
     url(r'^stopSPLS/$', spls_graphs.stopSPLS, name='stopSPLS'),
+    url(r'^getTabSPLS/$', spls_graphs.getTabSPLS, name='getTabSPLS'),
 
     url(r'^updateDiffAbund/$', diffabund_graphs.updateDiffAbund, name='updateDiffAbund'),
     url(r'^getDiffAbund/$', diffabund_graphs.getDiffAbund, name='getDiffAbund'),
     url(r'^removeRIDDIFF/$', diffabund_graphs.removeRIDDIFF, name='removeRIDDIFF'),
     url(r'^stopDiffAbund/$', diffabund_graphs.stopDiffAbund, name='stopDiffAbund'),
+    url(r'^getTabDiffAbund/$', diffabund_graphs.getTabDiffAbund, name='getTabDiffAbund'),
+    url(r'^removeDiffAbundFiles/$', diffabund_graphs.removeDiffAbundFiles, name='removeDiffAbundFiles'),
+
+    url(r'^updateGAGE/$', gage_graphs.updateGAGE, name='updateGAGE'),
+    url(r'^getGAGE/$', gage_graphs.getGAGE, name='getGAGE'),
+    url(r'^removeRIDGAGE/$', gage_graphs.removeRIDGAGE, name='removeRIDGAGE'),
+    url(r'^stopGAGE/$', gage_graphs.stopGAGE, name='stopGAGE'),
+    url(r'^getTabGAGE/$', gage_graphs.getTabGAGE, name='getTabGAGE'),
+    url(r'^removeGAGEFiles/$', gage_graphs.removeGAGEFiles, name='removeGAGEFiles'),
+
+    url(r'^statusPyBake/$', pybake.statusPyBake, name='statusPyBake'),
 
 ]

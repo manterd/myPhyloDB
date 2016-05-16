@@ -1,5 +1,5 @@
-+.gg                    Modify a ggplot or theme object by adding on
-                        new components.
++.gg                    Add a new component to a ggplot or theme
+                        object.
 add_theme               Modify properties of an element in a theme
                         object
 aes                     Define aesthetic mappings.
@@ -128,8 +128,8 @@ position_jitter         Jitter points to avoid overplotting.
 position_jitterdodge    Adjust position by simultaneously dodging and
                         jittering
 position_nudge          Nudge points.
-presidential            Terms of 10 presidents from Eisenhower to Bush
-                        W.
+presidential            Terms of 11 presidents from Eisenhower to
+                        Obama.
 print.ggplot            Draw plot on current graphics device.
 print.ggproto           Print a ggproto object
 qplot                   Quick plot
@@ -161,7 +161,6 @@ stat_summary_bin        Summarise y values at unique/binned x x.
 stat_unique             Remove duplicates.
 theme                   Set theme elements
 theme_update            Get, set and update themes.
-translate_qplot_base    Translating between qplot and base graphics
 translate_qplot_ggplot
                         Translating between qplot and ggplot
 translate_qplot_lattice

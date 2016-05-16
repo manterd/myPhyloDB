@@ -1,4 +1,5 @@
 lsmeans-package	lsmeans-package
+.Last.ref.grid	ref.grid
 as.glht	glht
 as.glht.lsm.list	glht
 as.glht.ref.grid	glht
@@ -8,13 +9,15 @@ auto.noise	auto.noise
 cld	cld
 cld.lsm.list	cld
 cld.ref.grid	cld
+coef.glht.list	glht
 confint	contrast
+confint.glht.list	glht
 confint.ref.grid	contrast
 consec.lsmc	pairwise.lsmc
 contrast	contrast
 contrast.lsm.list	contrast
 contrast.ref.grid	contrast
-defaults	update
+defaults.lsm	update
 del.eff.lsmc	pairwise.lsmc
 dunnett.lsmc	pairwise.lsmc
 eff.lsmc	pairwise.lsmc
@@ -39,6 +42,7 @@ lsmip.default	lsmip
 lsmobj	lsmeans
 lsmobj-class	ref.grid.class
 lstrends	lsmeans
+make.tran	make.tran
 mean_chg.lsmc	pairwise.lsmc
 MOats	MOats
 models	models
@@ -47,6 +51,7 @@ oranges	oranges
 pairs	contrast
 pairs.ref.grid	contrast
 pairwise.lsmc	pairwise.lsmc
+plot.glht.list	glht
 plot.lsmobj	summary
 plot.summary.ref.grid	summary
 pmm	glht
@@ -59,6 +64,7 @@ poly.lsmc	pairwise.lsmc
 predict.ref.grid	summary
 print.ref.grid	summary
 print.summary.ref.grid	summary
+print.xtable.lsm	summary
 rbind	summary
 rbind.ref.grid	summary
 recover.data	extending
@@ -84,5 +90,8 @@ trt.vs.ctrlk.lsmc	pairwise.lsmc
 tukey.lsmc	pairwise.lsmc
 update	update
 update.ref.grid	update
+vcov.glht.list	glht
 vcov.ref.grid	summary
+xtable.ref.grid	summary
+xtable.summary.ref.grid	summary
 [.ref.grid	summary

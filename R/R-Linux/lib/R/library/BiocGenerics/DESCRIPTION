@@ -24,4 +24,4 @@ Collate: S3-classes-as-S4-classes.R normarg-utils.R replaceSlots.R
         testPackage.R test_BiocGenerics_package.R zzz.R
 NeedsCompilation: no
 Packaged: 2015-11-06 03:02:04 UTC; biocbuild
-Built: R 3.2.2; ; 2016-01-31 06:17:13 UTC; unix
+Built: R 3.2.3; ; 2016-04-12 20:44:21 UTC; unix

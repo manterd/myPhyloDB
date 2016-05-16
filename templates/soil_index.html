@@ -1,0 +1,591 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>SoilHealth</title>
+{% endblock pagetitle %}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
+{% block menu_item %}
+    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
+    <br>
+    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
+{% endblock menu_item %}
+
+{% block javascript %}
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var DepVar_taxa = 1, DepVar_kegg = 1, DepVar_nz = 1, selTheme = 0;
+        var nodesCat = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
+        var catOptions = {};
+        var refresh = 0;
+        var running = false;
+        var RID = 0;
+
+        $(function () {
+
+            // remove R plot on close
+            $(window).bind('beforeunload', function(){
+                $.ajax({
+                    url: '/removesoil_indexFiles/',
+                    async: false,
+                    dataType: 'json',
+                    data: {
+                        all: RID
+                    }
+                });
+            });
+
+            // Initialize dynatrees
+            $("#tree_metaCat").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: '/getSampleCatTree/',
+                    dataType: 'jsonp',
+                    data: {}
+                },
+                onLazyRead: function(node) {
+                    node.appendAjax({
+                        url: '/getSampleCatTreeChildren/',
+                        data: {pType: node.data.pType, field: node.data.title},
+                        success: function(node) {
+                            if (node.childList == undefined) {
+                                alert('No samples are available for this variable!');
+                            }
+                        }
+                    });
+                },
+                onSelect: function(flag, node) {
+                    if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            if (node.childList == undefined) {
+                                node.select(false);
+                                node.remove(true);
+                            } else {
+                                node.select(false);
+                                node.select(true);
+                            }
+                        });
+                    }
+                    nodesCat = node.tree.getSelectedNodes();
+                    $("#run").css("background-color", "lightgray");
+                }
+            });
+
+
+            // Start stop and other 'click' functions
+            $("#run").click(function () {
+                if(running == true) {
+                    alert("myPhyloDB is currently running your previous analysis request!");
+                    return false;
+                }
+                $("#my_image").attr("src", "#");
+                $("#container-0").empty().show();
+                $("#container-2").hide();
+                $("#text-1").val('');
+                running = true;
+                chooseData();
+            });
+
+           $("#stop").show().click(function () {
+                running = false;
+                stopThis(RID);
+            });
+
+            $("#clearMeta").click(function(){
+                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                checkButtons();
+            });
+
+            $("#TabButton").click(function () {
+                getTab();
+            });
+
+            // Capture all changes in textboxes, etc.
+            $("#selectTree").change(function () {
+                button3 = $(this).val();
+                checkButtons();
+                if (button3 == 1) {
+                    $('#row_taxa').show();
+                    $('#row_kegg').hide();
+                    $('#row_nz').hide();
+                    $('#cell_taxa').show();
+                    $('#cell_kegg').hide();
+                    $('#cell_nz').hide();
+                    $('#text-1').val('');
+                } else if (button3 == 2) {
+                    $('#row_taxa').hide();
+                    $('#row_kegg').show();
+                    $('#row_nz').hide();
+                    $('#cell_taxa').hide();
+                    $('#cell_kegg').show();
+                    $('#cell_nz').hide();
+                    $('#text-1').val('');
+                } else if (button3 == 3) {
+                    $('#row_taxa').hide();
+                    $('#row_kegg').hide();
+                    $('#row_nz').show();
+                    $('#cell_taxa').hide();
+                    $('#cell_kegg').hide();
+                    $('#cell_nz').show();
+                    $('#text-1').val('');
+                }
+            });
+
+            $("#DepVar_taxa").change(function () {
+                DepVar_taxa = $(this).val();
+                checkButtons();
+            });
+
+            $("#DepVar_kegg").change(function () {
+                DepVar_kegg = $(this).val();
+                checkButtons();
+            });
+
+            $("#DepVar_nz").change(function () {
+                DepVar_nz = $(this).val();
+                checkButtons();
+            });
+
+            $("#selectall-taxa").change(function () {
+                taxaAll = $(this).val();
+                checkButtons();
+            });
+
+            $("#selectall-kegg").change(function () {
+                keggAll = $(this).val();
+                checkButtons();
+                $("#tree_kegg").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+
+            $("#selectall-nz").change(function () {
+                nzAll = $(this).val();
+                checkButtons();
+                $("#tree_nz").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+
+            $("#method").change(function () {
+                checkButtons();
+            });
+
+        });
+
+        function getTab(){
+            $.ajax({
+                url: '/getTabsoil_index/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var name = obj['name'];
+                    getFile(name, 'final_data.csv');
+                }
+            });
+        }
+
+        function getFile(name, final) {
+            {% static "" as baseUrl %}
+            var url = {{ baseUrl }}+'/'+name;
+            var anchor = document.createElement('a');
+            anchor.setAttribute('href', url);
+            anchor.setAttribute('download', final);
+
+            var ev = document.createEvent("MouseEvents");
+                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            anchor.dispatchEvent(ev);
+        }
+
+
+        function checkButtons(){
+            //set all buttons to their proper states given the current state of the independent buttons
+            $("#run").css("background-color", "lightgray");
+            document.getElementById("TabButton").disabled = true;
+
+            if (button3 == 1) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-2").hide();
+                $("#my_image").attr("src", "#");
+            }
+
+            if (button3 == 2) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-2").hide();
+                $("#my_image").attr("src", "#");
+            }
+
+            if (button3 == 3) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-2").hide();
+                $("#my_image").attr("src", "#");
+            }
+
+        }
+
+        function stopThis(RID) {
+            clearInterval(refresh);
+            $.ajax({
+                url: '/stopsoil_index/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['message'];
+                    $('#container-2').hide();
+                    $('#container-0').empty().show().append(stage);
+                }
+            });
+        }
+
+        function updateStatus(RID) {
+            $.ajax({
+                url: '/statussoil_index/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    $('#container-0').empty().append(stage);
+                }
+            });
+        }
+
+        function startTimer(RID) {
+            refresh = setInterval(function(){updateStatus(RID);}, 1000);
+            return refresh;
+        }
+
+        function stopTimer() {
+            clearInterval(refresh);
+
+        }
+
+        function chooseDisplay() {
+            if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
+                {% static "" as baseUrl %}
+                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/soil_index/Rplots/" + RID +"/soil_index_final.pdf");
+                $("#container-2").show();
+                $("#container-0").hide();
+            } else {
+                $("#container-0").show();
+                $("#container-2").hide();
+            }
+        }
+
+        function chooseData() {
+            $("#run").css("background-color", "yellow");
+            $("#container-0").empty().append('Analysis is running...please be patient');
+            getGraphData();
+        }
+
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
+        function getGraphData() {
+            RID = makeGUID();
+            startTimer(RID);
+            var arrayValsCat = [];
+            var arrayIDsCat = [];
+            var key = '';
+            var value = '';
+            var vals = '';
+            var id = '';
+            var ids = '';
+            for (var i = 0; i < nodesCat.length; i++) {
+                if (nodesCat[i].getLevel() == 5) {
+                    if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
+                        key = nodesCat[i].data.field;
+                        value = nodesCat[i].data.value;
+                        id = nodesCat[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayValsCat.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDsCat.push(ids);
+                    }
+                }
+                else if (nodesCat[i].getLevel() == 6) {
+                    if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil') || (nodesCat[i].data.table == 'air') || (nodesCat[i].data.table == 'microbial') || (nodesCat[i].data.table == 'water')) {
+                        key = nodesCat[i].data.field;
+                        value = nodesCat[i].data.value;
+                        id = nodesCat[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayValsCat.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDsCat.push(ids);
+                    }
+                }
+            }
+
+            var metaValsCat = '';
+            if (nodesCat.length > 0) {
+                metaValsCat = "{" + arrayValsCat.join(",") + "}";
+            }
+
+            var metaIDsCat = '';
+            if (nodesCat.length > 0) {
+                metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
+            }
+
+            var myDict = {};
+            myDict['metaValsCat'] = metaValsCat;
+            myDict['metaIDsCat'] = metaIDsCat;
+            myDict['selectAll'] = taxaAll;
+            myDict['keggAll'] = keggAll;
+            myDict['nzAll'] = nzAll;
+            myDict['DepVar_taxa'] = DepVar_taxa;
+            myDict['DepVar_kegg'] = DepVar_kegg;
+            myDict['DepVar_nz'] = DepVar_nz;
+            myDict['button3'] = button3;
+            myDict['RID'] = RID;
+            myDict['method'] = document.getElementById("method").value;
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                url: '/getsoil_index/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: jsonDict
+                },
+                success: function(data) {
+                    running = false;
+                    stopTimer(refresh);
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var xAxis = obj['xAxis'];
+                    var series = obj['series'];
+                    var yAxis = obj['yAxis'];
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    } else {
+                        $("#run").css("background-color", "green");
+                    }
+
+                    var text = obj['text'];
+                    $('#text-1').val(text);
+
+                    $("div.toolbar").html('<br><br>');
+                    document.getElementById("TabButton").disabled = false;
+
+                    chooseDisplay();
+                }
+            });
+        }
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <br>
+    <th>Select Type:
+        <select id="selectTree">
+            <option value="1" selected="selected">Taxa</option>
+            <!--<option value="2" >KEGG orthology</option>
+            <option value="3" >KEGG enzyme</option>-->
+        </select>
+    </th>
+    <!-- tree tables -->
+    <div>
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <th>Select Meta Data:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree_metaCat"></div>
+            </td>
+        </tr>
+    </table>
+
+    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr id="row_taxa">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="selectall-taxa">
+                    <option value="7" selected="selected">Species</option>
+                </select>
+                &nbsp<-- Selected taxa level
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr id="row_kegg" style="display:none">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="selectall-kegg">
+                    <option value="0">Off</option>
+                    <option value="1" selected="selected">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                </select>
+                &nbsp<-- Selected KEGG Pathway level
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr id="row_nz" style="display:none">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="selectall-nz">
+                    <option value="0">Off</option>
+                    <option value="1" selected="selected">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                    <option value="4">Level 4</option>
+                    <option value="5">GIBBs</option>
+                    <option value="6">N cycle</option>
+                </select>
+                &nbsp<-- Selected KEGG Enzyme level
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Accumulation Curve Settings:</strong></em></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="method">
+                        <option value="estaccumR">estaccumR</option>
+                        <option value="poolaccum">poolaccum</option>
+                    </select>
+                    &nbsp<-- Select method
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white"></td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white"></td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <input id="TabButton" type="button" disabled value="Export Data"/>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+    </table>
+    </div>
+    <br>
+
+    <div id="stage"></div>
+    <br><br>
+
+    <table width="950px" border="2" style="table-layout: fixed">
+        <colgroup>
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+        </colgroup>
+        <tr>
+            <th colspan="20" style="padding-right: 10px;">GraphData</th>
+        </tr>
+        <tr>
+            <td id="cell_taxa" colspan="8" style="text-align: center">
+                &nbsp;
+                <!--Dependent variable:
+                <select id="DepVar_taxa">
+                    <option value="1">Abundance</option>
+                    <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
+                </select>-->
+            </td>
+            <td id="cell_kegg" colspan="8" style="text-align: center; display: none">
+                Dependent variable:
+                <select id="DepVar_kegg">
+                    <option value="1">Relative Abundance</option>
+                    <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
+                </select>
+            </td>
+            <td id="cell_nz" colspan="8" style="text-align: center; display: none">
+                Dependent variable:
+                <select id="DepVar_nz">
+                    <option value="1">Relative Abundance</option>
+                    <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
+                </select>
+            </td>
+            <td colspan="4" style="text-align: center"></td>
+            <td colspan="8" style="text-align: center"></td>
+        </tr>
+        <tr>
+            <td colspan="20" style="text-align: left">
+                <div id="container-0" style="height: 425px; width: 950px;">No Data has been selected!</div>
+                <div id="container-2" style="height: 425px; width: 950px; display:none"><iframe id="my_image" src="#" height="100%" width="98%"></iframe></div>
+            </td>
+        </tr>
+        <tr id="highchartButtons">
+            <td colspan="6" style="text-align: center"></td>
+            <td colspan="8" style="text-align: center"></td>
+            <td colspan="6" style="text-align: center"></td>
+        </tr>
+    </table>
+
+    <div id="txt-1">
+        <h2>Test Results:</h2>
+        <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
+        <br>
+    </div>
+    <br>
+
+    <br><br><br>
+{% endblock my_content%}

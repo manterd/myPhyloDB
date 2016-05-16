@@ -5,6 +5,7 @@ from django.http import *
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 import fileinput
+import logging
 import multiprocessing as mp
 import os
 import pandas as pd
@@ -13,13 +14,19 @@ import simplejson
 import xlrd
 import time
 
-from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5
+from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, UploadForm6, UploadForm7, UploadForm8
 from models import Project, Reference, Sample, Species
-from models import addQueue, getQueue, subQueue
+from models import ko_entry, nz_entry
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
+from models import addQueue, getQueue, subQueue
+from database.pybake.pybake import koParse, nzParse
+from database.pybake.pybake import geneParse
+from database.utils import cleanup
 
 rep_project = ''
+pd.set_option('display.max_colwidth', -1)
+LOG_FILENAME = 'error_log.txt'
 
 
 def home(request):
@@ -44,7 +51,9 @@ def upload(request):
             try:
                 p_uuid, pType, num_samp = projectid(file1)
             except:
-                print "myPhyloDB could not parse your project file: " + str(request.FILES['docfile1'])
+                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                logging.exception(myDate)
 
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -74,6 +83,10 @@ def upload(request):
                 handle_uploaded_file(file1, dest, metaName)
                 parse_project(metaFile, p_uuid)
             except:
+                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                logging.exception(myDate)
+
                 remove_proj(dest)
 
                 if request.user.is_superuser:
@@ -109,6 +122,10 @@ def upload(request):
             try:
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
             except:
+                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                logging.exception(myDate)
+
                 remove_proj(dest)
 
                 if request.user.is_superuser:
@@ -131,9 +148,13 @@ def upload(request):
 
                 try:
                     parse_taxonomy(file3)
-                except Exception as err:
+                except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
-                    print("Error: "+str(err))
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
@@ -156,6 +177,10 @@ def upload(request):
                     end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -217,6 +242,10 @@ def upload(request):
                 try:
                     mothur(dest, source)
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -238,9 +267,13 @@ def upload(request):
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except Exception as err:
+                except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
-                    print("Error: "+str(err))
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
@@ -261,7 +294,12 @@ def upload(request):
                             parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
+
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -355,6 +393,10 @@ def upload(request):
                     mothur(dest, source)
 
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -374,9 +416,13 @@ def upload(request):
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except Exception as err:
+                except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
-                    print("Error: "+str(err))
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
@@ -398,6 +444,10 @@ def upload(request):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -447,6 +497,10 @@ def upload(request):
                 try:
                     mothur(dest, source)
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -466,9 +520,13 @@ def upload(request):
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except Exception as err:
+                except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
-                    print("Error: "+str(err))
+
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
@@ -489,6 +547,10 @@ def upload(request):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+
                     remove_proj(dest)
 
                     if request.user.is_superuser:
@@ -567,7 +629,39 @@ def taxa(request):
     )
 
 
+def kegg_path(request):
+    qs1 = ko_entry.objects.using('picrust').values('ko_lvl1_id__ko_lvl1_name', 'ko_lvl1_id', 'ko_lvl2_id__ko_lvl2_name', 'ko_lvl2_id', 'ko_lvl3_id__ko_lvl3_name', 'ko_lvl3_id', 'ko_orthology', 'ko_name', 'ko_desc')
+    df = pd.DataFrame.from_records(qs1)
+    df.rename(columns={'ko_lvl1_id__ko_lvl1_name': 'Level1', 'ko_lvl1_id': 'Level1_ID', 'ko_lvl2_id__ko_lvl2_name': 'Level2', 'ko_lvl2_id': 'Level2_ID', 'ko_lvl3_id__ko_lvl3_name': 'Level3',  'ko_lvl3_id': 'Level3_ID', 'ko_orthology': 'KO', 'ko_name': 'Name', 'ko_desc': 'Description'}, inplace=True)
+
+    table = df.to_html(classes="table display", columns=['Level1', 'Level1_ID', 'Level2', 'Level2_ID', 'Level3', 'Level3_ID', 'KO', 'Name', 'Description'])
+    table = table.replace('border="1"', 'border="0"')
+
+    return render_to_response(
+        'kegg_path.html',
+        {'table': table},
+        context_instance=RequestContext(request)
+    )
+
+
+def kegg_enzyme(request):
+    qs1 = nz_entry.objects.using('picrust').values('nz_lvl1_id__nz_lvl1_name', 'nz_lvl1_id', 'nz_lvl2_id__nz_lvl2_name', 'nz_lvl2_id', 'nz_lvl3_id__nz_lvl3_name', 'nz_lvl3_id', 'nz_lvl4_id__nz_lvl4_name', 'nz_lvl4_id', 'nz_orthology', 'nz_name', 'nz_desc')
+    df = pd.DataFrame.from_records(qs1)
+    df.rename(columns={'nz_lvl1_id__nz_lvl1_name': 'Level1', 'nz_lvl1_id': 'Level1_ID', 'nz_lvl2_id__nz_lvl2_name': 'Level2', 'nz_lvl2_id': 'Level2_ID', 'nz_lvl3_id__nz_lvl3_name': 'Level3', 'nz_lvl3_id': 'Level3_ID', 'nz_lvl4_id__nz_lvl4_name': 'Level4', 'nz_lvl4_id': 'Level4_ID', 'nz_orthology': 'KO', 'nz_name': 'Name', 'nz_desc': 'Description'}, inplace=True)
+
+    table = df.to_html(classes="table display", columns=['Level1', 'Level1_ID', 'Level2', 'Level2_ID', 'Level3', 'Level3_ID', 'Level4', 'Level4_ID', 'KO', 'Name', 'Description'])
+    table = table.replace('border="1"', 'border="0"')
+
+    return render_to_response(
+        'kegg_enzyme.html',
+        {'table': table},
+        context_instance=RequestContext(request)
+    )
+
+
 def norm(request):
+    cleanup('media/temp/norm')
+
     return render_to_response(
         'norm.html',
         context_instance=RequestContext(request)
@@ -575,39 +669,82 @@ def norm(request):
 
 
 def ANOVA(request):
+    cleanup('media/temp/anova')
+
     return render_to_response(
         'anova.html',
         context_instance=RequestContext(request)
     )
 
 
+def rich(request):
+    cleanup('media/temp/rich')
+
+    return render_to_response(
+        'rich.html',
+        context_instance=RequestContext(request)
+    )
+
+
+def soil_index(request):
+    cleanup('media/temp/soil_index')
+
+    return render_to_response(
+        'soil_index.html',
+        context_instance=RequestContext(request)
+    )
+
+
 def DiffAbund(request):
+    cleanup('media/temp/diffabund')
+
     return render_to_response(
         'diff_abund.html',
         context_instance=RequestContext(request)
     )
 
 
+def GAGE(request):
+    cleanup('media/temp/gage')
+
+    return render_to_response(
+        'gage.html',
+        context_instance=RequestContext(request)
+    )
+
+
+def PCA(request):
+    cleanup('media/temp/pca')
+
+    return render_to_response(
+        'pca.html',
+        context_instance=RequestContext(request)
+    )
+
+
 def PCoA(request):
-    name = request.user
-    ip = request.META.get('REMOTE_ADDR')
-    fileStr = str(name) + "." + str(ip)
+    cleanup('media/temp/pcoa')
 
     return render_to_response(
         'pcoa.html',
-        {'fileStr': fileStr},
         context_instance=RequestContext(request)
     )
 
 
 def SPLS(request):
-    name = request.user
-    ip = request.META.get('REMOTE_ADDR')
-    fileStr = str(name) + "." + str(ip)
+    cleanup('media/temp/spls')
 
     return render_to_response(
         'spls.html',
-        {'fileStr': fileStr},
+        context_instance=RequestContext(request)
+    )
+
+
+def WGCNA(request):
+    cleanup('media/temp/wgcna')
+
+    return render_to_response(
+        'wgcna.html',
         context_instance=RequestContext(request)
     )
 
@@ -744,3 +881,31 @@ def update(request):
         context_instance=RequestContext(request)
     )
 
+
+@login_required(login_url='/accounts/login/')
+def pybake(request):
+    form6 = UploadForm6(request.POST, request.FILES)
+    form7 = UploadForm7(request.POST, request.FILES)
+    form8 = UploadForm8(request.POST, request.FILES)
+
+    if form6.is_valid():
+        file1 = request.FILES['taxonomy']
+        file2 = request.FILES['precalc_16S']
+        file3 = request.FILES['precalc_KEGG']
+        geneParse(file1, file2, file3)
+
+    if form7.is_valid():
+        file4 = request.FILES['ko_htext']
+        koParse(file4)
+
+    if form8.is_valid():
+        file5 = request.FILES['nz_htext']
+        nzParse(file5)
+
+    return render_to_response(
+        'pybake.html',
+        {'form6': UploadForm6,
+         'form7': UploadForm7,
+         'form8': UploadForm8},
+        context_instance=RequestContext(request)
+    )

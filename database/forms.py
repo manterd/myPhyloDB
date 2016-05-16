@@ -35,3 +35,15 @@ class UploadForm5(forms.Form):
     docfile11 = forms.FileField(label='Select meta.xls file:')
 
 
+class UploadForm6(forms.Form):
+    taxonomy = forms.FileField(label='Select file (e.g., gg_13_5_99.gg.tax):')
+    precalc_16S = forms.FileField(label='Select zip file (e.g., 16S_13_5_precalculated.tab.gz):')
+    precalc_KEGG = forms.FileField(label='Select zip file (e.g., ko_13_5_precalculated.tab.gz):')
+
+
+class UploadForm7(forms.Form):
+    ko_htext = forms.FileField(label='Select file (e.g., ko00001.keg):')
+
+
+class UploadForm8(forms.Form):
+    nz_htext = forms.FileField(label='Select file (e.g., ko01000.keg):')

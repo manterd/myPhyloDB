@@ -1,3 +1,4 @@
+angleAxis	angleAxis
 balloonplot	balloonplot
 balloonplot.default	balloonplot
 balloonplot.table	balloonplot
@@ -25,8 +26,10 @@ ooplot.default	ooplot
 overplot	overplot
 panel.overplot	overplot
 plot.lm2	gplots-defunct
+plot.lowess	lowess
 plot.venn	venn
 plotCI	plotCI
+plotLowess	lowess
 plotmeans	plotmeans
 print.ci2d	ci2d
 print.hist2d	hist2d
@@ -37,7 +40,7 @@ residplot	residplot
 rich.colors	rich.colors
 rtPCR	rtPCR
 sinkplot	sinkplot
-smartlegend	gplots-deprecated
+smartlegend	gplots-defunct
 space	space
 textplot	textplot
 textplot.character	textplot

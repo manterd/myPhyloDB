@@ -8,9 +8,9 @@
      <system  systemId="http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd"  uri="docbook44/my_version_docbook.dtd"/>
      <system  systemId="docbook4.4.dtd"  uri="docbook44/other_docbook.dtd"/>
   </group>
-  <uri name="http://www.omegahat.org/XSL/article.xsl" uri="/home/duncan/Projects/org/omegahat/Docs/XSL/article.xsl"/>
+  <uri name="http://www.omegahat.net/XSL/article.xsl" uri="/home/duncan/Projects/org/omegahat/Docs/XSL/article.xsl"/>
 
-  <rewriteURI uriStartString="http://www.omegahat.org/XSL/" rewritePrefix="/home/duncan/omegahat/XSLDocs/" />
-  <rewriteSystem systemIdStartString="http://www.omegahat.org/XSL/" rewritePrefix="/home/duncan/omegahat/XSLDocs/" />
+  <rewriteURI uriStartString="http://www.omegahat.net/XSL/" rewritePrefix="/home/duncan/omegahat/XSLDocs/" />
+  <rewriteSystem systemIdStartString="http://www.omegahat.net/XSL/" rewritePrefix="/home/duncan/omegahat/XSLDocs/" />
 
 </catalog>

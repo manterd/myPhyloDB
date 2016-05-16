@@ -3,7 +3,7 @@
 
 
 # Get this from catalog.xml
-catalogResolve("http://www.omegahat.org/XSL/")
+catalogResolve("http://www.omegahat.net/XSL/")
 
 loadCatalogs("~/Classes/StatComputing/XDynDocs/inst/XML/catalog.xml")
 

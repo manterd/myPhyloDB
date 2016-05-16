@@ -13,4 +13,4 @@ biocViews: Visualization
 LazyLoad: yes
 NeedsCompilation: no
 Packaged: 2015-10-14 00:32:26 UTC; biocbuild
-Built: R 3.2.2; ; 2016-01-31 06:38:54 UTC; unix
+Built: R 3.2.3; ; 2016-04-12 20:48:18 UTC; unix

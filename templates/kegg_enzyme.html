@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>KEGG Enzyme</title>
+{% endblock pagetitle%}
+
+{% block javascript %}
+    <script type="text/javascript">
+        var search = "";
+
+        $(function () {
+            $('#dist_table').append('{{ table|escapejs }}').find('.table').DataTable({
+                dom: 'B<?toolbar">lfrtip',
+                scrollX: true,
+                bSort: true,
+                bPaginate: true,
+                sPaginationType: 'full_numbers',
+                buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+            }).draw();
+            $("div.toolbar").html('<br><br>');
+        });
+
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+
+    <div id="dist_table" style="width: 950px;">
+        <h2>KEGG data in database:</h2>
+    </div>
+    <br><br><br>
+{% endblock my_content%}

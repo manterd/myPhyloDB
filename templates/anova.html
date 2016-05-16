@@ -39,6 +39,18 @@
 
         $(function () {
 
+            $(window).bind('beforeunload', function(){
+                $.ajax({
+                    url: '/removeANOVAFiles/',
+                    async: false,
+                    dataType: 'json',
+                    data: {
+                        all: RID
+                    }
+                });
+            });
+
+
             // Initialize dynatrees
             $("#tree_metaCat").dynatree({
                 checkbox: true,
@@ -156,7 +168,6 @@
                     }
                     nodesTaxa = node.tree.getSelectedNodes();
                     $("#run").css("background-color", "lightgray");
-                    searchData();
                 },
                 onClick: function () {
                     taxaAll = 0;
@@ -164,7 +175,6 @@
                 }
             });
 
-            /*
             $("#tree_kegg").dynatree({
                 checkbox: true,
                 selectMode: 2,
@@ -191,7 +201,6 @@
                     }
                     nodesKEGG = node.tree.getSelectedNodes();
                     $("#run").css("background-color", "lightgray");
-                    searchData();
                 },
                 onClick: function () {
                     keggAll = 0;
@@ -225,14 +234,12 @@
                     }
                     nodesNZ = node.tree.getSelectedNodes();
                     $("#run").css("background-color", "lightgray");
-                    searchData();
                 },
                 onClick: function () {
                     nzAll = 0;
                     $("#selectall-nz").val(0);
                 }
             });
-            */
 
             // Initialize highcharts
             Highcharts.setOptions({
@@ -369,9 +376,7 @@
                 $("#text-1").val('');
                 $("#text-2").val('');
                 running = true;
-                checkButtons(); //Probably not necessary
-                //get values from ncycle and gibbs boxes, make sure graph is set to that when displaying
-                //send ALL depvars sets back up with graph, to be swapped around at will without reset, starting with selected var
+                checkButtons();
                 chooseData();
             });
 
@@ -415,6 +420,10 @@
                 nzAll = 0;
 
                 $("#run").css("background-color", "lightgray");
+            });
+
+            $("#TabButton").click(function () {
+                getTab();
             });
 
             // capture all changed in textboxes, etc.
@@ -679,6 +688,35 @@
             });
         });
 
+        function getTab(){
+            $.ajax({
+                url: '/getTabANOVA/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var name = obj['name'];
+                    getFile(name, 'final_data.csv');
+                }
+            });
+        }
+
+        function getFile(name, final) {
+            {% static "" as baseUrl %}
+            var url = {{ baseUrl }}+'/'+name;
+            var anchor = document.createElement('a');
+            anchor.setAttribute('href', url);
+            anchor.setAttribute('download', final);
+
+            var ev = document.createEvent("MouseEvents");
+                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            anchor.dispatchEvent(ev);
+        }
+
         function ncycle(){
             var series = chart1.series;
             if (cat_n == 0) {
@@ -719,43 +757,60 @@
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(true, false);
                 }
-            } else if (cat_gibbs == 1) {    // nitrogenase
+            } else if (cat_gibbs == 1) {    // decomposition - C
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[8].setVisible(true, false);
+                series[9].setVisible(true, false);
+                series[10].setVisible(true, false);
+                series[11].setVisible(true, false);
+                series[12].setVisible(true, false);
+            } else if (cat_gibbs == 2) {    // decomposition - N
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[13].setVisible(true, false);
+                series[14].setVisible(true, false);
+            } else if (cat_gibbs == 3) {    // decomposition - P
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
                 series[4].setVisible(true, false);
-            } else if (cat_gibbs == 2) {    // decomposition
-                for (var i = 0; i < series.length; i++) {
-                    series[i].setVisible(false, false);
-                }
-                series[0].setVisible(true, false);
-                series[1].setVisible(true, false);
-                series[2].setVisible(true, false);
-                series[3].setVisible(true, false);
-            } else if (cat_gibbs == 3) {    // P solubility
-                for (var i = 0; i < series.length; i++) {
-                    series[i].setVisible(false, false);
-                }
                 series[5].setVisible(true, false);
-            } else if (cat_gibbs == 4) {    // Biocontrol
+            } else if (cat_gibbs == 4) {    // decomposition - S
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
                 series[6].setVisible(true, false);
+            } else if (cat_gibbs == 5) {    // nitrogenase
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[1].setVisible(true, false);
+            } else if (cat_gibbs == 6) {    // P solubility
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[2].setVisible(true, false);
+            } else if (cat_gibbs == 7) {    // Biocontrol
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[0].setVisible(true, false);
+                series[3].setVisible(true, false);
                 series[7].setVisible(true, false);
-            } else if (cat_gibbs == 5) {    // Root growth
+            } else if (cat_gibbs == 8) {    // Root growth
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[9].setVisible(true, false);
-                series[10].setVisible(true, false);
-            } else if (cat_gibbs == 6) {    // Siderophore
+                series[15].setVisible(true, false);
+                series[16].setVisible(true, false);
+            } else if (cat_gibbs == 9) {    // Siderophore
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[11].setVisible(true, false);
-                series[12].setVisible(true, false);
-                series[13].setVisible(true, false);
+                series[17].setVisible(true, false);
             }
             chart1.redraw();
         }
@@ -763,6 +818,7 @@
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
+            document.getElementById("TabButton").disabled = true;
 
             if (button3 == 1) {
                 $("#cat_off").show();
@@ -1028,16 +1084,6 @@
 
         }
 
-
-        function searchData() {
-            var search = $.map(nodesTaxa, function(node) {
-                return node.data.title;
-            });
-            $("#MicrobeWiki").attr("href", "https://microbewiki.kenyon.edu/index.php/Special:Search?search=" + search);
-            $("#Wiki").attr("href", "http://en.wikipedia.org/wiki/" + search);
-            $("#Google").attr("href", "http://www.google.com/search?q=" + search);
-        }
-
         function checkDupes(list) {
             var bools = [];
             var firsts = [];
@@ -1229,15 +1275,21 @@
                             $("#container-1").empty().append('No significant tests!');
                         } else {
                             barchart(xAxis, yAxis, series);
-                            if (nzAll == 5) {
-                                gibbs();
-                            }
-                            if (nzAll == 6) {
-                                ncycle();
+                            if (button3 == 3) {
+                                if (nzAll == 5) {
+                                    gibbs();
+                                }
+                                if (nzAll == 6) {
+                                    ncycle();
+                                }
                             }
                         }
+
                         var text = data['text'];
                         $('#text-1').val(text);
+
+                        document.getElementById("TabButton").disabled = false;
+
                     }
                 });
             }
@@ -1414,17 +1466,16 @@
                         }
                         var text = data['text'];
                         $('#text-2').val(text);
+
+                        document.getElementById("TabButton").disabled = false;
                     }
                 });
             }
         }
 
         function barchart(xAxis, yAxis, series) {
-            var width = 550;
             var categories = series[0].data.length;
-            if (categories > 2) {
-                width = categories*100+350;
-            }
+            var width = categories*75+600;
 
             catOptions = {
                 chart: {
@@ -1584,7 +1635,7 @@
     <!-- tree tables -->
     <div>
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
-            <tr style="height:40px;">
+            <tr style="height: 40px;">
                 <th>Select Meta Data:
                     <a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a>
                 </th>
@@ -1597,13 +1648,13 @@
             </tr>
         </table>
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable" style="margin-left:10px;">
-            <tr>
+            <tr style="height: 40px;">
                 <th>Select Tree:
-                    <!--<select id="selectTree">
+                    <select id="selectTree">
                         <option value="1" selected="selected">Taxa</option>
-                        <option value="2" >KEGG pathway</option>
+                        <option value="2" >KEGG orthology</option>
                         <option value="3" >KEGG enzyme</option>
-                    </select>-->
+                    </select>
                     <a href="#" id="clearTaxa" style="font-size: 12px;">-Deselect all-</a>
                 </th>
             </tr>
@@ -1617,10 +1668,7 @@
         </table>
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
-                <th bgcolor="white"></th>
-            </tr>
-            <tr>
-                <td bgcolor="white">
+                <td bgcolor="white" width="350px">
                     <select id="button1">
                         <option value="1" selected="selected">Bar plot (factors)</option>
                         <option value="2" >Scatter plot (regression)</option>
@@ -1667,6 +1715,15 @@
                     &nbsp<-- Selected KEGG level
                 </td>
             </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input id="TabButton" type="button" disabled value="Export Data"/>
+                </td>
+            </tr>
         </table>
     </div>
     <br><br>
@@ -1676,7 +1733,7 @@
         <input type="checkbox" id="sig_box">
     </div>
 
-    <table width="950px" border="2">
+    <table width="950px" border="2" style="table-layout: fixed">
         <colgroup>
             <col width="5%"><col width="5%">
             <col width="5%"><col width="5%">
@@ -1696,7 +1753,7 @@
             <td id="cell_taxa" colspan="8" style="text-align: center">
                 Dependent variable:
                 <select id="DepVar_taxa">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
@@ -1705,15 +1762,19 @@
             <td id="cell_kegg" colspan="8" style="text-align: center; display: none">
                 Dependent variable:
                 <select id="DepVar_kegg">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
                 </select>
             </td>
             <td id="cell_nz" colspan="8" style="text-align: center; display: none">
                 Dependent variable:
                 <select id="DepVar_nz">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
                 </select>
             </td>
             <td colspan="4" style="text-align: center"></td>
@@ -1722,12 +1783,15 @@
                 Category:
                 <select id="GIBBs">
                     <option value="0">All</option>
-                    <option value="1">Nitrogen fixation</option>
-                    <option value="2">Decomposition</option>
-                    <option value="3">Phosphate solubility</option>
-                    <option value="4">Biocontrol</option>
-                    <option value="5">Root growth</option>
-                    <option value="6">Siderophore</option>
+                    <option value="1">C decomposition</option>
+                    <option value="2">N decomposition</option>
+                    <option value="3">P decomposition</option>
+                    <option value="4">S decomposition</option>
+                    <option value="5">Nitrogen fixation</option>
+                    <option value="6">Phosphate solubility</option>
+                    <option value="7">Biocontrol</option>
+                    <option value="8">Root growth</option>
+                    <option value="9">Siderophore</option>
                 </select>
 
             </td>

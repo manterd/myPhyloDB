@@ -1,5 +1,5 @@
-: ${JAVA_HOME=}
-: ${R_JAVA_LD_LIBRARY_PATH=}
+: ${JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/jre}
+: ${R_JAVA_LD_LIBRARY_PATH=${JAVA_HOME}/lib/amd64/server}
 if test -n "/usr/local/lib:/usr/lib/x86_64-linux-gnu"; then
 : ${R_LD_LIBRARY_PATH=${R_HOME}/lib:/usr/local/lib:/usr/lib/x86_64-linux-gnu}
 else

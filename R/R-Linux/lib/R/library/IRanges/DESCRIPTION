@@ -9,7 +9,7 @@ Description: The package provides efficient low-level and highly reusable S4
 	collections of instances of the basic classes. All classes in
 	the package use consistent naming and share the same rich and
 	consistent "Vector API" as much as possible.
-Version: 2.4.6
+Version: 2.4.8
 Author: H. Pages, P. Aboyoun and M. Lawrence
 Maintainer: Bioconductor Package Maintainer <maintainer@bioconductor.org>
 biocViews: Infrastructure, DataRepresentation
@@ -39,5 +39,5 @@ Collate: Vector-class-leftovers.R Hits-class-leftovers.R
         mapCoords-methods.R subsetting-internals.R
         test_IRanges_package.R debug.R zzz.R
 NeedsCompilation: yes
-Packaged: 2015-12-12 01:27:06 UTC; biocbuild
-Built: R 3.2.2; x86_64-pc-linux-gnu; 2016-01-31 06:18:13 UTC; unix
+Packaged: 2016-02-26 01:26:34 UTC; biocbuild
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-12 20:45:01 UTC; unix

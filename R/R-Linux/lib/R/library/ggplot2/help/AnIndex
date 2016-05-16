@@ -290,6 +290,8 @@ scale_color_identity	scale_identity
 scale_color_manual	scale_manual
 scale_colour_brewer	scale_brewer
 scale_colour_continuous	scale_gradient
+scale_colour_date	scale_gradient
+scale_colour_datetime	scale_gradient
 scale_colour_discrete	scale_hue
 scale_colour_distiller	scale_brewer
 scale_colour_gradient	scale_gradient
@@ -303,6 +305,8 @@ scale_continuous	scale_continuous
 scale_date	scale_date
 scale_fill_brewer	scale_brewer
 scale_fill_continuous	scale_gradient
+scale_fill_date	scale_gradient
+scale_fill_datetime	scale_gradient
 scale_fill_discrete	scale_hue
 scale_fill_distiller	scale_brewer
 scale_fill_gradient	scale_gradient
@@ -328,6 +332,8 @@ scale_shape_manual	scale_manual
 scale_size	scale_size
 scale_size_area	scale_size
 scale_size_continuous	scale_size
+scale_size_date	scale_size
+scale_size_datetime	scale_size
 scale_size_discrete	scale_size
 scale_size_identity	scale_identity
 scale_size_manual	scale_manual
@@ -411,11 +417,11 @@ theme_grey	ggtheme
 theme_light	ggtheme
 theme_linedraw	ggtheme
 theme_minimal	ggtheme
+theme_replace	theme_update
 theme_set	theme_update
 theme_update	theme_update
 theme_void	ggtheme
 transform_position	transform_position
-translate_qplot_base	translate_qplot_base
 translate_qplot_ggplot	translate_qplot_ggplot
 translate_qplot_lattice	translate_qplot_lattice
 txhousing	txhousing

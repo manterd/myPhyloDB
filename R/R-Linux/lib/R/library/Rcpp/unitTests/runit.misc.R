@@ -1,4 +1,4 @@
-#!/usr/bin/r -t
+#!/usr/bin/env r
 #
 # Copyright (C) 2010 - 2015  Dirk Eddelbuettel and Romain Francois
 #
@@ -184,5 +184,24 @@ if (.runThisTest) {
     test.NullableAccessGet <- function() {
         M <- matrix(1:4, 2, 2)
         checkEquals( testNullableGet(M), M )
+    }
+
+    test.NullableAccessAs <- function() {
+        M <- matrix(1:4, 2, 2)
+        checkEquals( testNullableAs(M), M )
+    }
+
+    test.NullableAccessClone <- function() {
+        M <- matrix(1:4, 2, 2)
+        checkEquals( testNullableClone(M), M )
+    }
+
+    test.NullableIsUsableTrue <- function() {
+	M <- matrix(1:4, 2, 2)
+        checkEquals( testNullableIsUsable(M), M)
+    }
+
+    test.NullableIsUsableFalse <- function() {
+        checkTrue(is.null(testNullableIsUsable(NULL)))
     }
 }

@@ -1,0 +1,49 @@
+Setting up a Windows install for myPhyloDB development with PyCharm
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Install required base packages:
+	Miniconda-latest-Windows-x86_64.exe [http://conda.pydata.org/miniconda.html]
+    Git-1.9.5-preview20150319.exe [https://git-scm.com/download/win]
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Install required python packages
+	conda install cherrypy [3.8.0]
+	conda install numpy scipy pandas==0.16.0 [1.9.3, 0.16.0, 0.16.0]
+	conda install simplejson [3.8.1]
+	conda install xlrd [0.9.4]
+	conda install xlutils [1.7.1]
+	conda install xlwt [1.0.0]
+
+	pip install django [1.9.2]
+	pip install django-extensions [1.6.1]
+	pip install django-pandas [0.4.1]
+	pip install django-registration-redux [1.3]
+	pip install jsonfield [1.0.3]
+    	pip install pyinstaller [3.1.1]
+	pip install pyper [1.1.2]
+    	pip install -Iv setuptools==19.2 [19.2]
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Install PyCharm
+	www.jetbrains.com/pycharm
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Clone myPhyloDB repository
+	create folder: 'C:\Users\<user_name>\Documents\GitHub\myPhyloDB'
+	cd 'C:\Users\<user_name>\Documents\GitHub\myPhyloDB'
+	git clone https://github.com/manterd/myPhyloDB
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Add mothur reference files - see README.md for more info
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Add R-Portable
+    R-Portable_3.2.2.paf.exe [https://sourceforge.net/projects/rportable/]
+
+    -- install to dir 'C:\Users\<user_name>\Documents\GitHub\myPhyloDB\R\R-Portable'
+    -- install appropriate packages (see R_notes)
+    -- copy following lines to 'R/R-Portable/App/R-Portable/etc/Rprofile.site'
+            .First = function() {
+                .libPaths(.Library)
+            }

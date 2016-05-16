@@ -36,6 +36,17 @@
 
         $(function () {
 
+            $(window).bind('beforeunload', function(){
+                $.ajax({
+                    url: '/removeDiffAbundFiles/',
+                    async: false,
+                    dataType: 'json',
+                    data: {
+                        all: RID
+                    }
+                });
+            });
+
             //Initialize dynatrees
             $("#tree_metaCat").dynatree({
                 checkbox: true,
@@ -144,6 +155,10 @@
 
             $("#FdrVal").change(function () {
                 checkButtons();
+            });
+
+            $("#TabButton").click(function () {
+                getTab();
             });
 
             // Capture all changes in textboxes, etc.
@@ -279,9 +294,39 @@
 
         });
 
+        function getTab(){
+            $.ajax({
+                url: '/getTabDiffAbund/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var name = obj['name'];
+                    getFile(name, 'final_data.csv');
+                }
+            });
+        }
+
+        function getFile(name, final) {
+            {% static "" as baseUrl %}
+            var url = {{ baseUrl }}+'/'+name;
+            var anchor = document.createElement('a');
+            anchor.setAttribute('href', url);
+            anchor.setAttribute('download', final);
+
+            var ev = document.createEvent("MouseEvents");
+                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            anchor.dispatchEvent(ev);
+        }
+
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
+            document.getElementById("TabButton").disabled = true;
 
             if (button3 == 1) {
                 $("#container-1").empty().append('Settings have been changed by the user!');
@@ -388,7 +433,7 @@
         }
 
         function getCatGraphData() {
-            var RID = makeGUID();
+            RID = makeGUID();
             startTimer(RID);
             var arrayValsCat = [];
             var arrayIDsCat = [];
@@ -477,14 +522,16 @@
 
                         var res_table = data['res_table'];
                         $('#res_table').empty().append(res_table).find('.table').DataTable({
-                            dom: 'Bfrtip',
-                            scroller: true,
-                            scrollX: 600,
-                            scrollY: 600,
+                            dom: 'B<"toolbar">lfrtip',
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
                             buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                         }).draw();
-
+                        $("div.toolbar").html('<br><br>');
                         scatter(xAxis, yAxis, series);
+                        document.getElementById("TabButton").disabled = false;
                     }
                 });
             } else {
@@ -573,13 +620,13 @@
 
 {% block my_content %}
     <br>
-    <!--<th>Select Type:
+    <th>Select Type:
         <select id="selectTree">
             <option value="1" selected="selected">Taxa</option>
-            <option value="2" >KEGG pathway</option>
+            <option value="2" >KEGG orthology</option>
             <option value="3" >KEGG enzyme</option>
         </select>
-    </th>-->
+    </th>
     <!-- tree tables -->
     <div>
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
@@ -632,10 +679,19 @@
                     &nbsp<-- Selected KEGG level
                 </td>
             </tr>
+            <tr><td colspan="3" bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray" style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input id="TabButton" type="button" disabled value="Export Data"/>
+                </td>
+            </tr>
         </table>
     </div>
     <br><br>
-    <table width="950px" border="2">
+    <table width="950px" border="2" style="table-layout: fixed">
         <colgroup>
             <col width="5%"><col width="5%">
             <col width="5%"><col width="5%">

@@ -4,7 +4,7 @@
 # Also see ./foo.html as an example with javascript content
 # and a pseudo/fake css node.
 
-doc = htmlParse("http://www.omegahat.org/")
+doc = htmlParse("http://www.omegahat.net/")
 txt = xpathSApply(doc, "//body//text()", xmlValue)
 
 #The result is a character vector that contains all the text.

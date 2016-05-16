@@ -1,0 +1,66 @@
+Setting up a linux install for myPhyloDB development with PyCharm
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Install Linuxmint 17.3 (Ubuntu 14.02 LTS)
+	www.linuxmint.com
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Install required base packages:
+	sudo apt-get install build-essential
+	sudo apt-get install gfortran 
+	sudo apt-get install git
+	sudo apt-get install python-pip
+	sudo apt-get install python-dev 
+	sudo apt-get install libblas-dev liblapack-dev
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Create virtual environment
+	sudo pip install virtualenv
+	sudo pip install virtualenvwrapper	
+	export WORKON_HOME=~/.virtualenvs
+	mkdir $WORKON_HOME
+	echo "export WORKON_HOME=$WORKON_HOME" >> ~/.bashrc
+	echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.bashrc
+	echo "export PIP_VIRTUALENV_BASE=$WORKON_HOME" >> ~/.bashrc
+	source ~/.bashrc
+	mkvirtualenv myphylodb
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Install required python packages to virtual environment
+	workon myphylodb	#to enter virtual environment
+	pip install cherrypy
+	pip install django
+	pip install django-extensions
+	pip install  django-pandas
+	pip install django-registration-redux
+	pip install jsonfield
+	pip install natsort
+	pip install pandas==0.16.0
+    pip install pyinstaller
+	pip install pyper
+	pip install pypdf2
+	pip install scipy
+	pip install simplejson
+	pip install xlrd
+	pip install xlutils
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Install PyCharm
+	www.jetbrains.com/pycharm
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Clone myPhyloDB repository
+	create folder: $HOME/PycharmProjects
+	cd $HOME/PycharmProjects
+	git clone https://github.com/manterd/myPhyloDB
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Install makeself
+    stephanepeter.com/makeself/
+    extract to $HOME/megastep-makeself
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Add mothur reference files - see README.md for more info
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Add R -- see R_notes
