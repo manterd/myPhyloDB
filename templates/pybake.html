@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block pagetitle %}
+    <title>PyBake</title>
+{% endblock pagetitle %}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
+{% block javascript %}
+    <script type="text/javascript">
+        $(function () {
+
+            $("#Upload1").click(function () {
+                var index = prompt("This will replace the current PICRUSt reference data in your database, proceed?", 'yes');
+                if (index == 'yes') {
+                    $("#stage1").show();
+                    setInterval(updateStatus1, 1000);
+                } else {
+                    return false;
+                }
+            });
+
+            $("#Upload2").click(function () {
+                var index = prompt("This will replace the current KEGG Orthology reference data in your database, proceed?", 'yes');
+                if (index == 'yes') {
+                    $("#stage2").show();
+                    setInterval(updateStatus2, 1000);
+                } else {
+                    return false;
+                }
+            });
+            $("#Upload3").click(function () {
+                var index = prompt("This will replace the current KEGG Enzyme reference data in your database, proceed?", 'yes');
+                if (index == 'yes') {
+                    $("#stage3").show();
+                    setInterval(updateStatus3, 1000);
+                } else {
+                    return false;
+                }
+            });
+        });
+
+        function updateStatus1() {
+            $.ajax({
+                url: '/statusPyBake/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    updateStage1(stage);
+                }
+            });
+        }
+
+        function updateStage1(stage) {
+            $("#stage1").empty().append(stage);
+        }
+
+        function updateStatus2() {
+            $.ajax({
+                url: '/statusPyBake/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    updateStage2(stage);
+                }
+            });
+        }
+
+        function updateStage2(stage) {
+            $("#stage2").empty().append(stage);
+        }
+
+        function updateStatus3() {
+            $.ajax({
+                url: '/statusPyBake/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    updateStage3(stage);
+                }
+            });
+        }
+
+        function updateStage3(stage) {
+            $("#stage3").empty().append(stage);
+        }
+
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+
+    <h2>Upload new PICRUSt Files:</h2>
+    <form action="{% url 'pybake' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <label><textarea id="ids" name="refid" style="display:none"></textarea></label>
+
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td colspan="2">1.) Select GreenGenes taxonomy file:</td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table width="100%" border="2" cellspacing="0" cellpadding="1">
+                        <tr>
+                            <td>{{ form6.taxonomy.label_tag }}</td>
+                            <td>{{ form6.taxonomy }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td colspan="2">2.) Select PICRUSt 16S rRNA count file:</td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table width="100%" border="2" cellspacing="0" cellpadding="1">
+                        <tr>
+                            <td>{{ form6.precalc_16S.label_tag }}</td>
+                            <td>{{ form6.precalc_16S }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td colspan="2">3.) Select PICRUSt KO gene predictions file:</td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table width="100%" border="2" cellspacing="0" cellpadding="1">
+                        <tr>
+                            <td>{{ form6.precalc_KEGG.label_tag }}</td>
+                            <td>{{ form6.precalc_KEGG }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <input id="Upload1" type="submit" value="Upload!"/>
+    </form>
+    <br>
+    <div id="stage1" style="display: none"></div>
+    <br>
+    <h2>Upload new KEGG Orthology File:</h2>
+    <form action="{% url 'pybake' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <label><textarea id="ids" name="refid" style="display:none"></textarea></label>
+
+
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td colspan="2">1.) Select KEGG orthology description file:</td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table width="100%" border="2" cellspacing="0" cellpadding="1">
+                        <tr>
+                            <td>{{ form7.ko_htext.label_tag }}</td>
+                            <td>{{ form7.ko_htext }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <input id="Upload2" type="submit" value="Upload!"/>
+    </form>
+    <br>
+    <div id="stage2" style="display: none"></div>
+    <br>
+    <h2>Upload new KEGG Enzyme File:</h2>
+    <form action="{% url 'pybake' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <label><textarea id="ids" name="refid" style="display:none"></textarea></label>
+
+
+        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td colspan="2">1.) Select KEGG enzyme description file:</td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table width="100%" border="2" cellspacing="0" cellpadding="1">
+                        <tr>
+                            <td>{{ form8.nz_htext.label_tag }}</td>
+                            <td>{{ form8.nz_htext }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <input id="Upload3" type="submit" value="Upload!"/>
+    </form>
+    <br>
+    <div id="stage3" style="display: none"></div>
+    <br><br><br>
+{% endblock my_content %}
+

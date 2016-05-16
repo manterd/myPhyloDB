@@ -2,7 +2,7 @@
 
 # Imports
 # From default packages (new req from CRAN, July 2015)
-importFrom("graphics", "pairs")
+importFrom("graphics", "pairs", "plot")
 importFrom("stats", "as.formula", "coef", "complete.cases", "confint", "cov", "cov2cor", "delete.response", "deriv", "family", "lm", "make.link", "model.frame", "model.matrix", "na.omit", "na.pass", "p.adjust", "p.adjust.methods", "pchisq", "pf", "poly", "predict", "pt", "ptukey", "qbeta", "qf", "qt", "qtukey", "reformulate", "terms", "uniroot", "update", "vcov")
 importFrom("utils", "head", "installed.packages", "str")
 importFrom("nlme", "fixef")
@@ -36,17 +36,16 @@ if (requireNamespace("coda", quietly = TRUE)) {
     S3method(as.mcmc, ref.grid)
 }
 
-# When xtable>=1.8-2 is on CRAN, we can uncomment this and remove the xtable support from Rbuildignore
-#if (requireNamespace("xtable", quietly = TRUE)) {
-#    importFrom(xtable, xtable, xtableList)
-#}
+if (requireNamespace("xtable", quietly = TRUE)) {
+    importFrom(xtable, xtable, xtableList)
+}
 
 # Visible exports
 exportPattern("*.lsmc")  #all contrast fcns
 export(
     as.glht,
     contrast,
-    defaults,
+    defaults.lsm,
     get.lsm.option,
     get.pmm.option,
     lsm,
@@ -57,6 +56,7 @@ export(
     lsmip,
     lsm.options,
     lstrends,
+    make.tran,
     pmm,
     pmmeans,
     pmmobj,
@@ -137,6 +137,7 @@ S3method(predict, ref.grid)
 S3method(print, ref.grid)
 S3method(print, summary.ref.grid)
 S3method(print, lsm.list)
+S3method(print, xtable.lsm)
 
 S3method(rbind, ref.grid)
 
@@ -144,7 +145,6 @@ S3method(str, ref.grid)
 S3method(str, lsm.list)
 
 S3method(summary, ref.grid)
-S3method(summary, glht.list)
 S3method(summary, lsm.list)
 
 S3method(test, ref.grid)
@@ -154,8 +154,18 @@ S3method(update, ref.grid)
 
 S3method(vcov, ref.grid)
 
-#S3method(xtable, ref.grid)
-#S3method(xtable, summary.ref.grid)
+S3method(xtable, ref.grid)
+S3method(xtable, summary.ref.grid)
+
+
+# Support for my glht.list objects (cede to Torsten if he wants 'em in multcomp)
+# DOESN'T WORK: S3method(cld, glht.list)
+S3method(coef, glht.list)
+S3method(confint, glht.list)
+S3method(plot, glht.list)
+# NOT NEEDED: S3method(print, glht.list)
+S3method(summary, glht.list)
+S3method(vcov, glht.list)
 
 
 # interim support for old lsmeans function

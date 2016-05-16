@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!DOCTYPE dataframe SYSTEM "RS.dtd">
 <!-- A made up example -->
-<rs:dataframe xmlns:rs="http://www.omegahat.org/RSXML" 
+<rs:dataframe xmlns:rs="http://www.omegahat.net/RSXML" 
   xmlns:lgtdl="http://www.r-project.org/XML/lgtdl"
   numRecords="3"
   numVariables = "2" > 

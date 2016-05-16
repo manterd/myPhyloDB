@@ -12,13 +12,16 @@ in_gamut	in_gamut
 lighter	lighter
 mnsl	mnsl
 mnsl2hex	mnsl
+mnsl2hvc	mnsl2hvc
 mnsl_hues	mnsl_hues
 munsell	munsell
 package-munsell	munsell
+pbgyr	pbgyr
 plot_closest	plot_closest
 plot_hex	plot_hex
 plot_mnsl	plot_mnsl
 rgb2mnsl	rgb2mnsl
+rygbp	rygbp
 saturate	saturate
 seq_mnsl	seq_mnsl
 text_colour	text_colour

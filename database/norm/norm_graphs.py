@@ -28,6 +28,7 @@ stops = {}
 thread0 = stoppableThread()
 res = ''
 LOG_FILENAME = 'error_log.txt'
+pd.set_option('display.max_colwidth', -1)
 
 
 def statusNorm(request):
@@ -117,6 +118,7 @@ def loopCat(request):
                 remove = int(all["Remove"])
                 cutoff = int(all["Cutoff"])
                 Iters = int(all["Iters"])
+                Lambda = float(all["Lambda"])
                 NormVal = all["NormVal"]
                 size_on = int(all["MinSize"])
 
@@ -141,7 +143,10 @@ def loopCat(request):
                 else:
                     for sample in qs1:
                         total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        countList.append(total['count__sum'])
+                        if total['count__sum'] is not None:
+                            countList.append(total['count__sum'])
+                            subList.append(sample.sampleid)
+                    qs1 = qs1.filter(sampleid__in=subList)
 
                 if not countList:
                     myDict = {}
@@ -182,13 +187,13 @@ def loopCat(request):
                 if NormMeth == 2:
                     for sample in qs1:
                         total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None and int(total['count__sum']) >= NormReads:
+                        if int(total['count__sum']) >= NormReads:
                             id = sample.sampleid
                             newList.append(id)
                 else:
                     for sample in qs1:
                         total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                        if total['count__sum'] is not None:
+                        if int(total['count__sum']) > 0:
                             id = sample.sampleid
                             newList.append(id)
 
@@ -215,8 +220,7 @@ def loopCat(request):
                 normRem = len(selected) - lenB
 
                 result += str(lenB) + ' selected sample(s) were included in the final analysis...\n'
-                if normRem > 0:
-                    result += str(normRem) + ' sample(s) did not met the desired normalization criteria...\n'
+                result += str(normRem) + ' sample(s) did not met the desired normalization criteria...\n'
                 result += '\n'
 
                 # Create unique list of samples in meta dataframe (may be different than selected samples)
@@ -240,7 +244,7 @@ def loopCat(request):
 
                 base[RID] = 'Step 2 of 4: Normalizing data...'
 
-                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Proc, RID)
+                normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, Proc, RID)
 
                 normDF['rel_abund'] = normDF['rel_abund'].astype(float)
                 normDF['abund'] = normDF['abund'].round(0).astype(int)
@@ -293,19 +297,12 @@ def loopCat(request):
 
                 if 'rRNA_copies' in finalDF.columns:
                     finalDF['abund_16S'] = finalDF['rel_abund'] * finalDF['rRNA_copies']
+                    finalDF.fillna(0, inplace=True)
                 else:
                     finalDF['abund_16S'] = 0
 
-                if NormMeth == 4:
-                    finalDF.drop('abund', axis=1, inplace=True)
-                    finalDF.rename(columns={'rel_abund': 'abund'}, inplace=True)
-                    finalDF[['abund', 'rich', 'diversity']] = finalDF[['abund', 'rich', 'diversity']].astype(float)
-                    finalDF['abund_16S'] = finalDF['abund_16S'].astype(int)
-
-                else:
-                    finalDF.drop('rel_abund', axis=1, inplace=True)
-                    finalDF[['rich', 'diversity']] = finalDF[['rich', 'diversity']].astype(float)
-                    finalDF[['abund', 'abund_16S']] = finalDF[['abund', 'abund_16S']].astype(int)
+                finalDF[['rel_abund', 'rich', 'diversity']] = finalDF[['rel_abund', 'rich', 'diversity']].astype(float)
+                finalDF[['abund', 'abund_16S']] = finalDF[['abund', 'abund_16S']].astype(int)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -323,14 +320,12 @@ def loopCat(request):
                     if x in metaDFList:
                         metaDFList.remove(x)
                 metaDFList = ['projectid', 'refid', 'sampleid', 'sample_name'] + metaDFList
-                metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']
+                metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
                 finalDF = finalDF[metaDFList]
 
                 # save location info to session
-                myDir = 'database/norm/saved/'
-                name = request.user
-                ip = request.META.get('REMOTE_ADDR')
-                path = str(myDir) + 'savedDF_' + str(name) + '_' + str(ip) + '.pkl'
+                myDir = 'media/temp/norm/'
+                path = str(myDir) + str(RID) + '.pkl'
                 request.session['savedDF'] = pickle.dumps(path)
                 request.session['NormMeth'] = NormMeth
 
@@ -396,6 +391,11 @@ def loopCat(request):
                 if biom_on == 1:
                     biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
                     finalDict['biome'] = str(biome_json)
+
+                myDir = 'media/temp/norm/'
+                path = str(myDir) + str(RID) + '.biom'
+                with open(path, 'w') as outfile:
+                    simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -540,7 +540,7 @@ def UnivMetaDF(sampleList):
     return metaDF
 
 
-def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Proc, RID):
+def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc, RID):
     global res, stops
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
@@ -561,10 +561,10 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Proc, RID):
 
             if os.name == 'nt':
                 numcore = 1
-                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d, RID,)) for x in range(numcore)]
+                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID,)) for x in range(numcore)]
             else:
                 numcore = min(mp.cpu_count(), Proc)
-                processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, mySet, df, meth, d, RID,)) for x in range(numcore)]
+                processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID,)) for x in range(numcore)]
 
             for p in processes:
                 p.start()
@@ -706,7 +706,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Proc, RID):
     return normDF, DESeq_error
 
 
-def weightedProb(x, cores, reads, iters, mySet, df, meth, d, RID):
+def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID):
     global res, stops
     high = mySet.__len__()
     set = mySet[x:high:cores]
@@ -717,7 +717,7 @@ def weightedProb(x, cores, reads, iters, mySet, df, meth, d, RID):
         otus = cols[0]
         sample = arr.astype(dtype=np.float64)
         if meth == 3:
-            prob = (sample + 0.1) / (sample.sum() + otus * 0.1)
+            prob = (sample + Lambda) / (sample.sum() + otus * Lambda)
         else:
             prob = sample / sample.sum()
 
@@ -746,4 +746,34 @@ def weightedProb(x, cores, reads, iters, mySet, df, meth, d, RID):
         d[i] = temp
 
 
+def getTab(request):
+    if request.is_ajax():
+        RID = request.GET["all"]
+
+        path = pickle.loads(request.session['savedDF'])
+        savedDF = pd.read_pickle(path)
+
+        myDir = 'media/temp/norm/'
+        fileName = str(myDir) + str(RID) + '.csv'
+        savedDF.to_csv(fileName)
+
+        myDict = {}
+        myDir = 'temp/norm/'
+        fileName = str(myDir) + str(RID) + '.csv'
+        myDict['name'] = str(fileName)
+        res = simplejson.dumps(myDict)
+
+        return HttpResponse(res, content_type='application/json')
+
+
+def getBiom(request):
+    if request.is_ajax():
+        RID = request.GET["all"]
+
+        myDict = {}
+        myDir = 'temp/norm/'
+        fileName = str(myDir) + str(RID) + '.biom'
+        myDict['name'] = str(fileName)
+        res = simplejson.dumps(myDict)
+        return HttpResponse(res, content_type='application/json')
 

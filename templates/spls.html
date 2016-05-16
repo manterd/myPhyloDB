@@ -39,8 +39,12 @@
             // remove R plot on close
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/removegraphSPLS/',
-                    async: false
+                    url: '/removeSPLSFiles/',
+                    async: false,
+                    dataType: 'json',
+                    data: {
+                        all: RID
+                    }
                 });
             });
 
@@ -114,6 +118,10 @@
 
             $("#methodVal").click(function () {
                  checkButtons();
+            });
+
+            $("#TabButton").click(function () {
+                getTab();
             });
 
             $("#metricVal").change(function () {
@@ -201,9 +209,39 @@
 
         });
 
+        function getTab(){
+            $.ajax({
+                url: '/getTabSPLS/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var name = obj['name'];
+                    getFile(name, 'final_data.csv');
+                }
+            });
+        }
+
+        function getFile(name, final) {
+            {% static "" as baseUrl %}
+            var url = {{ baseUrl }}+'/'+name;
+            var anchor = document.createElement('a');
+            anchor.setAttribute('href', url);
+            anchor.setAttribute('download', final);
+
+            var ev = document.createEvent("MouseEvents");
+                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            anchor.dispatchEvent(ev);
+        }
+
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
+            document.getElementById("TabButton").disabled = true;
 
             if (button3 == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
@@ -291,7 +329,7 @@
                     $("#highchartButtons").hide();
 
                     {% static "" as baseUrl %}
-                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.spls.pdf");
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/spls/Rplots/" + RID + ".spls.pdf");
                 }
             } else {
                 $("#container-0").show();
@@ -323,7 +361,7 @@
         }
 
         function getGraphData() {
-            var RID = makeGUID();
+            RID = makeGUID();
             startTimer(RID);
             var arrayVals = [];
             var arrayIDs = [];
@@ -377,10 +415,8 @@
             myDict['DepVar_kegg'] = DepVar_kegg;
             myDict['DepVar_nz'] = DepVar_nz;
             myDict['button3'] = button3;
-            //myDict['freqCut'] = document.getElementById("freqCut").value;
-            //myDict['uniqueCut'] = document.getElementById("uniqueCut").value;
-            myDict['freqCut'] = '95/5';
-            myDict['uniqueCut'] = '10';
+            myDict['freqCut'] = document.getElementById("freqCut").value;
+            myDict['uniqueCut'] = document.getElementById("uniqueCut").value;
             myDict['methodVal'] = document.getElementById("methodVal").value;
             myDict['metricVal'] = document.getElementById("metricVal").value;
             myDict['RID'] = RID;
@@ -422,21 +458,27 @@
 
                         var res_table = obj['res_table'];
                         $('#res_table').empty().append(res_table).find('.table').DataTable({
-                            dom: 'Bfrtip',
-                            scroller: true,
-                            scrollX: 600,
-                            scrollY: 600,
+                            dom: 'B<"toolbar">lfrtip',
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
                             buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                         }).draw();
 
                         var pred_table = obj['pred_table'];
                         $('#pred_table').empty().append(pred_table).find('.table').DataTable({
-                            dom: 'Bfrtip',
-                            scroller: true,
-                            scrollX: 600,
-                            scrollY: 600,
+                            dom: 'B<"toolbar">lfrtip',
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
                             buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                         }).draw();
+
+                        $("div.toolbar").html('<br><br>');
+                        document.getElementById("TabButton").disabled = false;
+
                     }
                 }
             });
@@ -495,13 +537,13 @@
 
 {% block my_content %}
     <br>
-    <!--<th>Select Type:
+    <th>Select Type:
         <select id="selectTree">
             <option value="1" selected="selected">Taxa</option>
-            <option value="2" >KEGG pathway</option>
+            <option value="2" >KEGG orthology</option>
             <option value="3" >KEGG enzyme</option>
         </select>
-    </th>-->
+    </th>
     <!-- tree tables -->
     <div>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
@@ -516,11 +558,6 @@
     </table>
 
     <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
-        <tr>
-            <th bgcolor="white"></th>
-            <th bgcolor="white"></th>
-            <th bgcolor="white"></th>
-        </tr>
         <tr id="row_taxa">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
@@ -566,35 +603,35 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>sPLS Settings:</em></strong></td>
+        </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <!--<span title="cutoff for the ratio of the most common value to the second most common value">
+                <span title="cutoff for the ratio of the most common value to the second most common value">
                     <input type="text" id="freqCut" value="95/5" style="width:40px; background-color: white"/>
                     &nbsp<-- freqCut for nearZeroVar
-                </span>-->
+                </span>
             </td>
             <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <!--<span title="cutoff for the percentage of distinct values out of the number of total samples" >
+                <span title="cutoff for the percentage of distinct values out of the number of total samples" >
                     <input type="text" id="uniqueCut" value="10" style="width:40px; background-color: white"/>
                     &nbsp<-- uniqueCut for nearZeroVar
-                </span>-->
+                </span>
             </td>
             <td bgcolor="white"></td>
         </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
         <tr>
             <td bgcolor="white"></td>
-            <td bgcolor="white"></td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td bgcolor="white">Optimize R plot:</td>
-            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plot:</em></strong></td>
         </tr>
         <tr>
             <td bgcolor="white"></td>
@@ -628,6 +665,18 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <input id="TabButton" type="button" disabled value="Export Data"/>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
     </table>
     </div>
     <br>
@@ -635,7 +684,7 @@
     <div id="stage"></div>
     <br><br>
 
-    <table width="950px" border="2">
+    <table width="950px" border="2" style="table-layout: fixed">
         <colgroup>
             <col width="5%"><col width="5%">
             <col width="5%"><col width="5%">
@@ -655,7 +704,7 @@
             <td id="cell_taxa" colspan="8" style="text-align: center">
                 Dependent variable:
                 <select id="DepVar_taxa">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
@@ -664,15 +713,19 @@
             <td id="cell_kegg" colspan="8" style="text-align: center; display: none">
                 Dependent variable:
                 <select id="DepVar_kegg">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
                 </select>
             </td>
             <td id="cell_nz" colspan="8" style="text-align: center; display: none">
                 Dependent variable:
                 <select id="DepVar_nz">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
                 </select>
             </td>
             <td colspan="4" style="text-align: center"></td>
@@ -690,11 +743,6 @@
                 <div id="container-1" style="height: 425px; width: 950px; overflow-x: auto; display:none"></div>
                 <div id="container-2" style="height: 425px; width: 950px; display:none"><iframe id="my_image" src="#" height="100%" width="100%"></iframe></div>
             </td>
-        </tr>
-        <tr id="highchartButtons">
-            <td colspan="6" style="text-align: center"></td>
-            <td colspan="8" style="text-align: center"></td>
-            <td colspan="6" style="text-align: center"></td>
         </tr>
     </table>
 

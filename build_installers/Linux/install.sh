@@ -4,7 +4,7 @@
 # To install, please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
 
 
-echo "Installing myPhyloDB v.1.1.2\n"
+echo "Installing myPhyloDB v.1.2.0\n"
 echo "Checking if myPhyloDB exists...\n"
 
 if [ -d "$HOME/myPhyloDB" ]
@@ -20,12 +20,14 @@ fi
 if [ $response = y ]
     then
 	mkdir $HOME/myPhyloDB_temp
-	cp $HOME/myPhyloDB/dbMicrobe $HOME/myPhyloDB_temp/db.Microbe
+	cp $HOME/myPhyloDB/db.Microbe $HOME/myPhyloDB_temp/db.Microbe
+	cp $HOME/myPhyloDB/db.PICRUSt $HOME/myPhyloDB_temp/db.PICRUSt
 	cp -r $HOME/myPhyloDB/uploads $HOME/myPhyloDB_temp/uploads
 	tar -zxf myPhyloDB.tar.gz -C $HOME
 	rm $HOME/myPhyloDB/db.Microbe
 	rm -rf $HOME/myPhyloDB/uploads
-	cp $HOME/myPhyloDB_temp/dbMicrobe $HOME/myPhyloDB/db.Microbe
+	cp $HOME/myPhyloDB_temp/db.Microbe $HOME/myPhyloDB/db.Microbe
+	cp $HOME/myPhyloDB_temp/db.PICRUSt $HOME/myPhyloDB/db.PICRUSt
 	cp -r $HOME/myPhyloDB_temp/uploads $HOME/myPhyloDB/uploads
 	rm -rf $HOME/myPhyloDB_temp
     else
@@ -42,4 +44,4 @@ cp myPhyloDB.desktop $HOME/Desktop/myPhyloDB.desktop
 chmod +x $HOME/Desktop/myPhyloDB.desktop
 
 echo ""
-echo "myPhyloDB v.1.1.2 installation is finished!"
+echo "myPhyloDB v.1.2.0 installation is finished!"

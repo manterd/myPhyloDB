@@ -1,4 +1,4 @@
-#!/usr/bin/r -t
+#!/usr/bin/env r
 #                     -*- mode: R; ess-indent-level: 4; indent-tabs-mode: nil; -*-
 #
 # Copyright (C) 2010 - 2015  Dirk Eddelbuettel and Romain Francois
@@ -775,6 +775,341 @@ if (.runThisTest) {
         x[4] <- NA
         checkEquals(fx(x), cummax(x))
     }
+    
+    
+    ## 18 January 2016: median
+    ## median of integer vector
+    test.sugar.median_int <- function() {
+        fx <- median_int
+        
+        x <- as.integer(rpois(5, 20))
+        checkEquals(fx(x), median(x), 
+                    "median_int / odd length / no NA / na.rm = FALSE")
+        
+        x[4] <- NA
+        checkEquals(fx(x), median(x), 
+                    "median_int / odd length / with NA / na.rm = FALSE")
+        
+        checkEquals(fx(x, TRUE), median(x, TRUE), 
+                    "median_int / odd length / with NA / na.rm = TRUE")
+        
+        ##
+        x <- as.integer(rpois(6, 20))
+        checkEquals(fx(x), median(x), 
+                    "median_int / even length / no NA / na.rm = FALSE")
+        
+        x[4] <- NA
+        checkEquals(fx(x), median(x), 
+                    "median_int / even length / with NA / na.rm = FALSE")
+        
+        checkEquals(fx(x, TRUE), median(x, TRUE), 
+                    "median_int / even length / with NA / na.rm = TRUE")
+    }
+    
+    ## median of numeric vector
+    test.sugar.median_dbl <- function() {
+        fx <- median_dbl
+        
+        x <- rnorm(5)
+        checkEquals(fx(x), median(x), 
+                    "median_dbl / odd length / no NA / na.rm = FALSE")
+        
+        x[4] <- NA
+        checkEquals(fx(x), median(x), 
+                    "median_dbl / odd length / with NA / na.rm = FALSE")
+        
+        checkEquals(fx(x, TRUE), median(x, TRUE), 
+                    "median_dbl / odd length / with NA / na.rm = TRUE")
+        
+        ##
+        x <- rnorm(6)
+        checkEquals(fx(x), median(x), 
+                    "median_dbl / even length / no NA / na.rm = FALSE")
+        
+        x[4] <- NA
+        checkEquals(fx(x), median(x), 
+                    "median_dbl / even length / with NA / na.rm = FALSE")
+        
+        checkEquals(fx(x, TRUE), median(x, TRUE), 
+                    "median_dbl / even length / with NA / na.rm = TRUE")
+    }
+    
+    ## median of complex vector
+    test.sugar.median_cx <- function() {
+        fx <- median_cx
+        
+        x <- rnorm(5) + 2i
+        checkEquals(fx(x), median(x), 
+                    "median_cx / odd length / no NA / na.rm = FALSE")
+        
+        x[4] <- NA
+        checkEquals(fx(x), median(x), 
+                    "median_cx / odd length / with NA / na.rm = FALSE")
+        
+        checkEquals(fx(x, TRUE), median(x, TRUE), 
+                    "median_cx / odd length / with NA / na.rm = TRUE")
+        
+        ##
+        x <- rnorm(6) + 2i
+        checkEquals(fx(x), median(x), 
+                    "median_cx / even length / no NA / na.rm = FALSE")
+        
+        x[4] <- NA
+        checkEquals(fx(x), median(x), 
+                    "median_cx / even length / with NA / na.rm = FALSE")
+        
+        checkEquals(fx(x, TRUE), median(x, TRUE), 
+                    "median_cx / even length / with NA / na.rm = TRUE")
+    }
+    
+    ## median of character vector
+    test.sugar.median_ch <- function() {
+        fx <- median_ch
+        
+        x <- sample(letters, 5)
+        checkEquals(fx(x), median(x), 
+                    "median_ch / odd length / no NA / na.rm = FALSE")
+        
+        x[4] <- NA
+        checkEquals(fx(x), median(x), 
+                    "median_ch / odd length / with NA / na.rm = FALSE")
+        
+        ## median(x, TRUE) returns NA_real_ for character vector input 
+        ## which results in a warning; i.e. if the vector it passes to 
+        ## `mean.default(sort(x, partial = half + 0L:1L)[half + 0L:1L])`
+        ## has ((length(x) %% 2) == 0)
+        
+        checkEquals(fx(x, TRUE), 
+                    as.character(suppressWarnings(median(x, TRUE))), 
+                    "median_ch / odd length / with NA / na.rm = TRUE")
+        
+        ##
+        x <- sample(letters, 6)
+        checkEquals(fx(x), 
+                    as.character(suppressWarnings(median(x))), 
+                    "median_ch / even length / no NA / na.rm = FALSE")
+        
+        x[4] <- NA
+        checkEquals(fx(x), 
+                    as.character(suppressWarnings(median(x))), 
+                    "median_ch / even length / with NA / na.rm = FALSE")
+        
+        checkEquals(fx(x, TRUE), 
+                    as.character(suppressWarnings(median(x, TRUE))), 
+                    "median_ch / even length / with NA / na.rm = TRUE")
+    }
+    
+    
+    ## 12 March 2016
+    ## cbind numeric tests
+    test.sugar.cbind_numeric <- function() {
+        
+        m1 <- matrix(rnorm(9), 3, 3); m2 <- matrix(rnorm(9), 3, 3)
+        v1 <- rnorm(3); v2 <- rnorm(3)
+        s1 <- rnorm(1); s2 <- rnorm(1)
+        
+        cbind <- function(...) {
+            base::cbind(..., deparse.level = 0)
+        }
+        
+        checkEquals(n_cbind_mm(m1, m2), cbind(m1, m2),
+                    "numeric cbind / matrix matrix")
+        
+        checkEquals(n_cbind_mv(m1, v1), cbind(m1, v1),
+                    "numeric cbind / matrix vector")
+        
+        checkEquals(n_cbind_ms(m1, s1), cbind(m1, s1),
+                    "numeric cbind / matrix scalar")
+        
+        checkEquals(n_cbind_vv(v1, v2), cbind(v1, v2),
+                    "numeric cbind / vector vector")
+        
+        checkEquals(n_cbind_vm(v1, m1), cbind(v1, m1),
+                    "numeric cbind / vector matrix")
+        
+        checkEquals(n_cbind_vs(v1, s1), cbind(v1, s1),
+                    "numeric cbind / vector scalar")
+        
+        checkEquals(n_cbind_ss(s1, s2), cbind(s1, s2),
+                    "numeric cbind / scalar scalar")
+        
+        checkEquals(n_cbind_sm(s1, m1), cbind(s1, m1),
+                    "numeric cbind / scalar matrix")
+        
+        checkEquals(n_cbind_sv(s1, v1), cbind(s1, v1),
+                    "numeric cbind / scalar vector")
+        
+        checkEquals(n_cbind9(m1, v1, s1, m2, v2, s2, m1, v1, s1),
+                    cbind(m1, v1, s1, m2, v2, s2, m1, v1, s1),
+                    "numeric cbind 9")
+  
+    }
 
+    ## cbind integer tests
+    test.sugar.cbind_integer <- function() {
+        
+        m1 <- matrix(rpois(9, 20), 3, 3); m2 <- matrix(rpois(9, 20), 3, 3)
+        v1 <- rpois(3, 30); v2 <- rpois(3, 30)
+        s1 <- rpois(1, 40); s2 <- rpois(1, 40)
+        
+        cbind <- function(...) {
+            base::cbind(..., deparse.level = 0)
+        }
+        
+        checkEquals(i_cbind_mm(m1, m2), cbind(m1, m2),
+                    "integer cbind / matrix matrix")
+        
+        checkEquals(i_cbind_mv(m1, v1), cbind(m1, v1),
+                    "integer cbind / matrix vector")
+        
+        checkEquals(i_cbind_ms(m1, s1), cbind(m1, s1),
+                    "integer cbind / matrix scalar")
+        
+        checkEquals(i_cbind_vv(v1, v2), cbind(v1, v2),
+                    "integer cbind / vector vector")
+        
+        checkEquals(i_cbind_vm(v1, m1), cbind(v1, m1),
+                    "integer cbind / vector matrix")
+        
+        checkEquals(i_cbind_vs(v1, s1), cbind(v1, s1),
+                    "integer cbind / vector scalar")
+        
+        checkEquals(i_cbind_ss(s1, s2), cbind(s1, s2),
+                    "integer cbind / scalar scalar")
+        
+        checkEquals(i_cbind_sm(s1, m1), cbind(s1, m1),
+                    "integer cbind / scalar matrix")
+        
+        checkEquals(i_cbind_sv(s1, v1), cbind(s1, v1),
+                    "integer cbind / scalar vector")
+        
+        checkEquals(i_cbind9(m1, v1, s1, m2, v2, s2, m1, v1, s1),
+                    cbind(m1, v1, s1, m2, v2, s2, m1, v1, s1),
+                    "integer cbind 9")
+  
+    }
+    
+    ## cbind complex tests
+    test.sugar.cbind_complex <- function() {
+        
+        m1 <- matrix(rnorm(9), 3, 3) + 2i
+        m2 <- matrix(rnorm(9), 3, 3) + 5i
+        v1 <- rnorm(3) + 3i; v2 <- rnorm(3) + 4i
+        s1 <- rnorm(1) + 4i; s2 <- rnorm(1) + 5i
+        
+        cbind <- function(...) {
+            base::cbind(..., deparse.level = 0)
+        }
+        
+        checkEquals(cx_cbind_mm(m1, m2), cbind(m1, m2),
+                    "complex cbind / matrix matrix")
+        
+        checkEquals(cx_cbind_mv(m1, v1), cbind(m1, v1),
+                    "complex cbind / matrix vector")
+        
+        checkEquals(cx_cbind_ms(m1, s1), cbind(m1, s1),
+                    "complex cbind / matrix scalar")
+        
+        checkEquals(cx_cbind_vv(v1, v2), cbind(v1, v2),
+                    "complex cbind / vector vector")
+        
+        checkEquals(cx_cbind_vm(v1, m1), cbind(v1, m1),
+                    "complex cbind / vector matrix")
+        
+        checkEquals(cx_cbind_vs(v1, s1), cbind(v1, s1),
+                    "complex cbind / vector scalar")
+        
+        checkEquals(cx_cbind_ss(s1, s2), cbind(s1, s2),
+                    "complex cbind / scalar scalar")
+        
+        checkEquals(cx_cbind_sm(s1, m1), cbind(s1, m1),
+                    "complex cbind / scalar matrix")
+        
+        checkEquals(cx_cbind_sv(s1, v1), cbind(s1, v1),
+                    "complex cbind / scalar vector")
+        
+        checkEquals(cx_cbind9(m1, v1, s1, m2, v2, s2, m1, v1, s1),
+                    cbind(m1, v1, s1, m2, v2, s2, m1, v1, s1),
+                    "complex cbind 9")
+  
+    }
+    
+    ## cbind logical tests
+    test.sugar.cbind_logical <- function() {
+        
+        m1 <- matrix(as.logical(rbinom(9, 1, .5)), 3, 3) 
+        m2 <- matrix(as.logical(rbinom(9, 1, .5)), 3, 3) 
+        v1 <- as.logical(rbinom(3, 1, .5)) 
+        v2 <- as.logical(rbinom(3, 1, .5))
+        s1 <- as.logical(rbinom(1, 1, .5))
+        s2 <- as.logical(rbinom(1, 1, .5))
+        
+        cbind <- function(...) {
+            base::cbind(..., deparse.level = 0)
+        }
+        
+        checkEquals(l_cbind_mm(m1, m2), cbind(m1, m2),
+                    "logical cbind / matrix matrix")
+        
+        checkEquals(l_cbind_mv(m1, v1), cbind(m1, v1),
+                    "logical cbind / matrix vector")
+        
+        checkEquals(l_cbind_ms(m1, s1), cbind(m1, s1),
+                    "logical cbind / matrix scalar")
+        
+        checkEquals(l_cbind_vv(v1, v2), cbind(v1, v2),
+                    "logical cbind / vector vector")
+        
+        checkEquals(l_cbind_vm(v1, m1), cbind(v1, m1),
+                    "logical cbind / vector matrix")
+        
+        checkEquals(l_cbind_vs(v1, s1), cbind(v1, s1),
+                    "logical cbind / vector scalar")
+        
+        checkEquals(l_cbind_ss(s1, s2), cbind(s1, s2),
+                    "logical cbind / scalar scalar")
+        
+        checkEquals(l_cbind_sm(s1, m1), cbind(s1, m1),
+                    "logical cbind / scalar matrix")
+        
+        checkEquals(l_cbind_sv(s1, v1), cbind(s1, v1),
+                    "logical cbind / scalar vector")
+        
+        checkEquals(l_cbind9(m1, v1, s1, m2, v2, s2, m1, v1, s1),
+                    cbind(m1, v1, s1, m2, v2, s2, m1, v1, s1),
+                    "logical cbind 9")
+  
+    }
+    
+    ## cbind character tests
+    test.sugar.cbind_character <- function() {
+        
+        m1 <- matrix(sample(letters, 9, TRUE), 3, 3) 
+        m2 <- matrix(sample(LETTERS, 9, TRUE), 3, 3) 
+        v1 <- sample(letters, 3, TRUE) 
+        v2 <- sample(LETTERS, 3, TRUE)
+        
+        cbind <- function(...) {
+            base::cbind(..., deparse.level = 0)
+        }
+        
+        checkEquals(c_cbind_mm(m1, m2), cbind(m1, m2),
+                    "logical cbind / matrix matrix")
+        
+        checkEquals(c_cbind_mv(m1, v1), cbind(m1, v1),
+                    "logical cbind / matrix vector")
+
+        checkEquals(c_cbind_vv(v1, v2), cbind(v1, v2),
+                    "logical cbind / vector vector")
+        
+        checkEquals(c_cbind_vm(v1, m1), cbind(v1, m1),
+                    "logical cbind / vector matrix")
+        
+        checkEquals(c_cbind6(m1, v1, m2, v2, m1, v1),
+                    cbind(m1, v1, m2, v2, m1, v1),
+                    "character cbind 6")
+  
+    }
+    
 }
 

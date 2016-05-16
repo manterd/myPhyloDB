@@ -40,8 +40,12 @@
             // remove R plot on close
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/removegraphPCoA/',
-                    async: false
+                    url: '/removePCoAFiles/',
+                    async: false,
+                    dataType: 'json',
+                    data: {
+                        all: RID
+                    }
                 });
             });
 
@@ -209,6 +213,10 @@
 
             $("#surf").click(function(){
                 checkButtons();
+            });
+
+            $("#TabButton").click(function () {
+                getTab();
             });
 
             // Capture all changes in textboxes, etc.
@@ -394,9 +402,40 @@
 
         });
 
+        function getTab(){
+            $.ajax({
+                url: '/getTabPCoA/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var name = obj['name'];
+                    getFile(name, 'final_data.csv');
+                }
+            });
+        }
+
+        function getFile(name, final) {
+            {% static "" as baseUrl %}
+            var url = {{ baseUrl }}+'/'+name;
+            var anchor = document.createElement('a');
+            anchor.setAttribute('href', url);
+            anchor.setAttribute('download', final);
+
+            var ev = document.createEvent("MouseEvents");
+                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            anchor.dispatchEvent(ev);
+        }
+
+
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
+            document.getElementById("TabButton").disabled = true;
 
             if (button3 == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
@@ -423,65 +462,69 @@
 
         function colorBox() {
             $("#colorVal").empty().prepend('<option selected="selected" value="None">None</option>');
-            for (var i = 0; i < nodesCat.length; i++) {
-                if (nodesCat[i].getLevel() == 3) {
-                    if ((nodesCat[i].data.pType == 'mimark') || (nodesCat[i].data.pType == 'user')) {
-                        if (nodesCat[i].bSelected) {
-                            var title = nodesCat[i].data.title;
-                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
-                        }
-                    }
-                } else if (nodesCat[i].getLevel() == 4) {
-                    if ((nodesCat[i].data.pType == 'human_associated') || (nodesCat[i].data.pType == 'soil') || (nodesCat[i].data.pType == 'air') || (nodesCat[i].data.pType == 'microbial') || (nodesCat[i].data.pType == 'water')) {
-                        if (nodesCat[i].bSelected) {
-                            var title = nodesCat[i].data.title;
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
                             $("#colorVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
-            }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
         }
+
 
         function ellipseBox() {
             $("#ellipseVal").empty().prepend('<option selected="selected" value="None">None</option>');
-            for (var i = 0; i < nodesCat.length; i++) {
-                if (nodesCat[i].getLevel() == 3) {
-                    if ((nodesCat[i].data.pType == 'mimark') || (nodesCat[i].data.pType == 'user')) {
-                        if (nodesCat[i].bSelected) {
-                            var title = nodesCat[i].data.title;
-                            $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
-                        }
-                    }
-                } else if (nodesCat[i].getLevel() == 4) {
-                    if ((nodesCat[i].data.pType == 'human_associated') || (nodesCat[i].data.pType == 'soil') || (nodesCat[i].data.pType == 'air') || (nodesCat[i].data.pType == 'microbial') || (nodesCat[i].data.pType == 'water')) {
-                        if (nodesCat[i].bSelected) {
-                            var title = nodesCat[i].data.title;
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
                             $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
-            }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
         }
 
         function surfBox() {
             $("#surfVal").empty().prepend('<option selected="selected" value="None">None</option>');
-            for (var i = 0; i < nodesQuant.length; i++) {
-                if (nodesQuant[i].getLevel() == 3) {
-                    if ((nodesQuant[i].data.pType == 'mimark') || (nodesQuant[i].data.pType == 'user')) {
-                        if (nodesQuant[i].bSelected) {
-                            var title = nodesQuant[i].data.title;
-                            $("#surfVal").append('<option value='+title+'>'+title+'</option>');
-                        }
-                    }
-                } else if (nodesQuant[i].getLevel() == 4) {
-                    if ((nodesQuant[i].data.pType == 'human_associated') || (nodesQuant[i].data.pType == 'soil') || (nodesQuant[i].data.pType == 'air') || (nodesQuant[i].data.pType == 'microbial') || (nodesQuant[i].data.pType == 'water')) {
-                        if (nodesQuant[i].bSelected) {
-                            var title = nodesCat[i].data.title;
+            $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
                             $("#surfVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
-            }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            $("#surfVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
         }
 
         function stopThis(RID) {
@@ -547,7 +590,7 @@
                     $("#highchartButtons").hide();
 
                     {% static "" as baseUrl %}
-                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/Rplots/{{ fileStr }}.pcoa.pdf");
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/pcoa/Rplots/" + RID +".pcoa.pdf");
                 }
             } else {
                 $("#container-0").show();
@@ -585,7 +628,7 @@
         }
 
         function getGraphData() {
-            var RID = makeGUID();
+            RID = makeGUID();
             startTimer(RID);
             var arrayValsCat = [];
             var arrayIDsCat = [];
@@ -741,21 +784,26 @@
 
                     var res_table = obj['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        dom: 'Bfrtip',
-                        scroller: true,
-                        scrollX: 600,
-                        scrollY: 600,
+                        dom: 'B<"toolbar">lfrtip',
+                        scrollX: true,
+                        bSort: true,
+                        bPaginate: true,
+                        sPaginationType: 'full_numbers',
                         buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                     }).draw();
 
                     var dist_table = obj['dist_table'];
                     $('#dist_table').empty().append(dist_table).find('.table').DataTable({
-                        dom: 'Bfrtip',
-                        scroller: true,
-                        scrollX: 600,
-                        scrollY: 600,
+                        dom: 'B<"toolbar">lfrtip',
+                        scrollX: true,
+                        bSort: true,
+                        bPaginate: true,
+                        sPaginationType: 'full_numbers',
                         buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                     }).draw();
+
+                    $("div.toolbar").html('<br><br>');
+                    document.getElementById("TabButton").disabled = false;
 
                     scatter(xAxis, yAxis, series);
                     chooseDisplay();
@@ -836,13 +884,13 @@
 
 {% block my_content %}
     <br>
-    <!--<th>Select Type:
+    <th>Select Type:
         <select id="selectTree">
             <option value="1" selected="selected">Taxa</option>
-            <option value="2" >KEGG pathway</option>
+            <option value="2" >KEGG orthology</option>
             <option value="3" >KEGG enzyme</option>
         </select>
-    </th>-->
+    </th>
     <!-- tree tables -->
     <div>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
@@ -902,6 +950,11 @@
                 &nbsp<-- Selected KEGG Enzyme level
             </td>
             <td bgcolor="white"></td>
+        </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>PCoA Settings:</strong></em></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
@@ -972,15 +1025,10 @@
                 <div style="background-color: white" id="permutations">permutations: <input type="text" id="perms" value="1000" style="width:40px; background-color: white"/></div>
             </td>
         </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
         <tr>
             <td bgcolor="white"></td>
-            <td bgcolor="white"></td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td bgcolor="white">Optimize R plot:</td>
-            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plot:</em></strong></td>
         </tr>
         <tr>
             <td bgcolor="white"></td>
@@ -1018,6 +1066,18 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <input id="TabButton" type="button" disabled value="Export Data"/>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
     </table>
     </div>
     <br>
@@ -1025,7 +1085,7 @@
     <div id="stage"></div>
     <br><br>
 
-    <table width="950px" border="2">
+    <table width="950px" border="2" style="table-layout: fixed">
         <colgroup>
             <col width="5%"><col width="5%">
             <col width="5%"><col width="5%">
@@ -1045,7 +1105,7 @@
             <td id="cell_taxa" colspan="8" style="text-align: center">
                 Dependent variable:
                 <select id="DepVar_taxa">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
@@ -1054,15 +1114,19 @@
             <td id="cell_kegg" colspan="8" style="text-align: center; display: none">
                 Dependent variable:
                 <select id="DepVar_kegg">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
                 </select>
             </td>
             <td id="cell_nz" colspan="8" style="text-align: center; display: none">
                 Dependent variable:
                 <select id="DepVar_nz">
-                    <option value="1">Abundance</option>
+                    <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
                 </select>
             </td>
             <td colspan="4" style="text-align: center"></td>

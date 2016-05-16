@@ -1,5 +1,5 @@
 <article xmlns:r="http://www.r-project.org"
-         xmlns:omg="http://www.omegahat.org">
+         xmlns:omg="http://www.omegahat.net">
 
 <section id="intro">
 <title>Introduction</title>
@@ -109,7 +109,7 @@ results aggregated quite easily.
 
 <para>
 In this part, we look at the XSL files in the 
-<ulink url="http://www.omegahat.org/IDynDocs">IDynDocs package</ulink>.
+<ulink url="http://www.omegahat.net/IDynDocs">IDynDocs package</ulink>.
 These include our own XSL files for generating HTML, FO, LaTeX from
 our extended Docbook elements, as well as the docbook source 
 for HTML, XHTML and FO.

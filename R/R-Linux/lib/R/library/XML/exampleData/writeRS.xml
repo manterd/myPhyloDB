@@ -8,7 +8,7 @@
 
 <article xmlns:r="http://www.r-project.org"
          xmlns:c="http://www.bell-labs.com"
-         xmlns:rs="http://www.omegahat.org/RS">
+         xmlns:rs="http://www.omegahat.net/RS">
 
 <title>&R; Output Format using XML</title>
 <author><a href="http://cm.bell-labs.com/stat/duncan">Duncan Temple Lang</a></author>

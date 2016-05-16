@@ -1,6 +1,8 @@
-import uuid
 from django.db import models
 from django.contrib.auth.models import User as Users
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from jsonfield import JSONField
 
 
 queue = 0
@@ -572,3 +574,193 @@ class Profile(models.Model):
     genusid = models.ForeignKey(Genus)
     speciesid = models.ForeignKey(Species)
     count = models.IntegerField()
+
+
+class ko_lvl1(models.Model):
+    ko_lvl1_id = models.TextField(primary_key=True)
+    ko_lvl1_name = models.TextField()
+
+
+class ko_lvl2(models.Model):
+    ko_lvl1_id = models.ForeignKey(ko_lvl1)
+    ko_lvl2_id = models.TextField(primary_key=True)
+    ko_lvl2_name = models.TextField()
+
+
+class ko_lvl3(models.Model):
+    ko_lvl1_id = models.ForeignKey(ko_lvl1)
+    ko_lvl2_id = models.ForeignKey(ko_lvl2)
+    ko_lvl3_id = models.TextField(primary_key=True)
+    ko_lvl3_name = models.TextField()
+
+
+class ko_entry(models.Model):
+    ko_lvl1_id = models.ForeignKey(ko_lvl1)
+    ko_lvl2_id = models.ForeignKey(ko_lvl2)
+    ko_lvl3_id = models.ForeignKey(ko_lvl3)
+    ko_lvl4_id = models.TextField(primary_key=True)
+    ko_orthology = models.TextField(blank=True)
+    ko_name = models.TextField(blank=True)
+    ko_desc = models.TextField(blank=True)
+
+
+class nz_lvl1(models.Model):
+    nz_lvl1_id = models.TextField(primary_key=True)
+    nz_lvl1_name = models.TextField()
+
+
+class nz_lvl2(models.Model):
+    nz_lvl1_id = models.ForeignKey(nz_lvl1)
+    nz_lvl2_id = models.TextField(primary_key=True)
+    nz_lvl2_name = models.TextField()
+
+
+class nz_lvl3(models.Model):
+    nz_lvl1_id = models.ForeignKey(nz_lvl1)
+    nz_lvl2_id = models.ForeignKey(nz_lvl2)
+    nz_lvl3_id = models.TextField(primary_key=True)
+    nz_lvl3_name = models.TextField()
+
+
+class nz_lvl4(models.Model):
+    nz_lvl1_id = models.ForeignKey(nz_lvl1)
+    nz_lvl2_id = models.ForeignKey(nz_lvl2)
+    nz_lvl3_id = models.ForeignKey(nz_lvl3)
+    nz_lvl4_id = models.TextField(primary_key=True)
+    nz_lvl4_name = models.TextField()
+
+
+class nz_entry(models.Model):
+    nz_lvl1_id = models.ForeignKey(nz_lvl1)
+    nz_lvl2_id = models.ForeignKey(nz_lvl2)
+    nz_lvl3_id = models.ForeignKey(nz_lvl3)
+    nz_lvl4_id = models.ForeignKey(nz_lvl4)
+    nz_lvl5_id = models.TextField(primary_key=True)
+    nz_orthology = models.TextField(blank=True)
+    nz_name = models.TextField(blank=True)
+    nz_desc = models.TextField(blank=True)
+
+
+class PICRUSt(models.Model):
+    speciesid = models.ForeignKey(Species)
+    rRNACount = models.FloatField(blank=True, null=True)
+    geneCount = JSONField(default={})
+
+
+'''
+class Taxa(models.Model):  # Pseudo-Abstract for taxa classes
+    taxaid = models.TextField(primary_key=True)
+    taxaName = models.CharField(max_length=90, blank=True)
+    taxaLevel = 0  # 0 meaning not assigned, 1 for kingdom, etc
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return ""+str(self.taxaName)+": "+str(self.taxaid)
+
+    def update(self):
+        return
+
+
+class Kingdom(Taxa):
+    kingdomid = models.TextField(primary_key=True)
+    kingdomName = models.CharField(max_length=90, blank=True)
+
+    def update(self):
+        self.taxaid = self.kingdomid
+        self.taxaName = self.kingdomName
+        self.taxaLevel = 1
+
+
+class Phyla(Taxa):
+    kingdomid = models.ForeignKey(Kingdom)
+    phylaid = models.TextField(primary_key=True)
+    phylaName = models.CharField(max_length=90, blank=True)
+
+    def update(self):
+        self.taxaid = self.phylaid
+        self.taxaName = self.phylaName
+        self.taxaLevel = 2
+
+
+class Class(Taxa):
+    kingdomid = models.ForeignKey(Kingdom)
+    phylaid = models.ForeignKey(Phyla)
+    classid = models.TextField(primary_key=True)
+    className = models.CharField(max_length=90, blank=True)
+
+    def update(self):
+        self.taxaid = self.classid
+        self.taxaName = self.className
+        self.taxaLevel = 3
+
+
+class Order(Taxa):
+    kingdomid = models.ForeignKey(Kingdom)
+    phylaid = models.ForeignKey(Phyla)
+    classid = models.ForeignKey(Class)
+    orderid = models.TextField(primary_key=True)
+    orderName = models.CharField(max_length=90, blank=True)
+
+    def update(self):
+        self.taxaid = self.orderid
+        self.taxaName = self.orderName
+        self.taxaLevel = 4
+
+
+class Family(Taxa):
+    kingdomid = models.ForeignKey(Kingdom)
+    phylaid = models.ForeignKey(Phyla)
+    classid = models.ForeignKey(Class)
+    orderid = models.ForeignKey(Order)
+    familyid = models.TextField(primary_key=True)
+    familyName = models.CharField(max_length=90, blank=True)
+
+    def update(self):
+        self.taxaid = self.familyid
+        self.taxaName = self.familyName
+        self.taxaLevel = 5
+
+
+class Genus(Taxa):
+    kingdomid = models.ForeignKey(Kingdom)
+    phylaid = models.ForeignKey(Phyla)
+    classid = models.ForeignKey(Class)
+    orderid = models.ForeignKey(Order)
+    familyid = models.ForeignKey(Family)
+    genusid = models.TextField(primary_key=True)
+    genusName = models.CharField(max_length=90, blank=True)
+
+    def update(self):
+        self.taxaid = self.genusid
+        self.taxaName = self.genusName
+        self.taxaLevel = 6
+
+
+class Species(Taxa):
+    kingdomid = models.ForeignKey(Kingdom)
+    phylaid = models.ForeignKey(Phyla)
+    classid = models.ForeignKey(Class)
+    orderid = models.ForeignKey(Order)
+    familyid = models.ForeignKey(Family)
+    genusid = models.ForeignKey(Genus)
+    speciesid = models.TextField(primary_key=True)
+    speciesName = models.CharField(max_length=90, blank=True)
+
+    def update(self):
+        self.taxaid = self.speciesid
+        self.taxaName = self.speciesName
+        self.taxaLevel = 7
+
+
+class PLFA(models.Model):
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    taxaKey = GenericForeignKey('content_type', 'object_id')  # contains type and content of taxa data
+    label = models.TextField(blank=True)  # label/flag/id for PLFA (not sure what this looks like)
+'''
+
+
+
+

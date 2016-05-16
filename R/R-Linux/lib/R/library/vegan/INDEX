@@ -172,7 +172,7 @@ varpart                 Partition the Variation of Community Matrix by
 vegan-deprecated        Deprecated Functions in vegan package
 vegan-package           Community Ecology Package: Ordination,
                         Diversity and Dissimilarities
-vegandocs               Display Package Documentation
+vegandocs               Display vegan Documentation
 vegdist                 Dissimilarity Indices for Community Ecologists
 vegemite                Display Compact Ordered Community Tables
 wascores                Weighted Averages Scores for Species

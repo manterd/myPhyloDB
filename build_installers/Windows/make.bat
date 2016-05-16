@@ -5,7 +5,7 @@ rem If you are looking for a pre-built installer
 rem Please download the installer at: http://www.ars.usda.gov/services/software/download.htm?softwareid=472
 
 rem To run this file type the following in your terminal
-rem cd C:\Users\daniel.manter.\Documents\GitHub\myPhyloDB
+rem cd C:\Users\daniel.manter\Documents\GitHub\myPhyloDB\build_installers\Windows
 rem make.bat
 
 cd C:\Users\daniel.manter.\Documents\GitHub\myPhyloDB

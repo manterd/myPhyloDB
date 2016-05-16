@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 National ICT Australia (NICTA)
+// Copyright (C) 2008-2016 National ICT Australia (NICTA)
 // 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -202,14 +202,19 @@ Mat<eT>::init_cold()
   
   if(n_elem <= arma_config::mat_prealloc)
     {
-    arma_extra_debug_print("Mat::init(): using local memory");
-    
-    access::rw(mem) = mem_local;
+    if(n_elem == 0)
+      {
+      access::rw(mem) = NULL;
+      }
+    else
+      {
+      arma_extra_debug_print("Mat::init(): using local memory");
+      access::rw(mem) = mem_local;
+      }
     }
   else
     {
     arma_extra_debug_print("Mat::init(): acquiring memory");
-    
     access::rw(mem) = memory::acquire<eT>(n_elem);
     }
   }
@@ -292,8 +297,15 @@ Mat<eT>::init_warm(uword in_n_rows, uword in_n_cols)
           memory::release( access::rw(mem) );
           }
         
-        arma_extra_debug_print("Mat::init(): using local memory");
-        access::rw(mem) = mem_local;
+        if(new_n_elem == 0)
+          {
+          access::rw(mem) = NULL;
+          }
+        else
+          {
+          arma_extra_debug_print("Mat::init(): using local memory");
+          access::rw(mem) = mem_local;
+          }
         }
       else
         {
@@ -6881,6 +6893,16 @@ Mat<eT>::save(const std::string name, const file_type type, const bool print_sta
       save_okay = diskio::save_hdf5_binary(*this, name);
       break;
     
+    case hdf5_binary_trans:
+      {
+      Mat<eT> tmp;
+      
+      op_strans::apply_mat_noalias(tmp, *this);
+      
+      save_okay = diskio::save_hdf5_binary(tmp, name);
+      }
+      break;
+    
     default:
       if(print_status)  { arma_debug_warn("Mat::save(): unsupported file type"); }
       save_okay = false;
@@ -6984,6 +7006,16 @@ Mat<eT>::load(const std::string name, const file_type type, const bool print_sta
     
     case hdf5_binary:
       load_okay = diskio::load_hdf5_binary(*this, name, err_msg);
+      break;
+
+    case hdf5_binary_trans:
+      {
+      Mat<eT> tmp;
+      
+      load_okay = diskio::load_hdf5_binary(tmp, name, err_msg);
+      
+      if(load_okay)  { op_strans::apply_mat_noalias(*this, tmp); }
+      }
       break;
 
     default:

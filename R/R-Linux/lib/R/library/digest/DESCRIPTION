@@ -36,4 +36,4 @@ NeedsCompilation: yes
 Packaged: 2016-01-08 04:03:12.108104 UTC; edd
 Repository: CRAN
 Date/Publication: 2016-01-08 08:49:46
-Built: R 3.2.2; x86_64-pc-linux-gnu; 2016-01-31 06:10:51 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-12 20:21:39 UTC; unix

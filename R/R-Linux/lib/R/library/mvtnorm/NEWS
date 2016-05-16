@@ -1,4 +1,8 @@
 
+Changes in version 1.0-5 (2016-02-02)
+
+  o  improvements in quantile estimation
+
 Changes in version 1.0-4 (2016-01-19)
 
   o  a new algorithm for quantile estimation, again. Quantiles are 

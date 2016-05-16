@@ -11,6 +11,7 @@ lsmeans                 Least-squares means (or predicted marginal
 lsmeans-package         Least-squares means
 lsmip                   Least-squares (predicted marginal) means
                         interaction plot
+make.tran               Response transformations
 models                  Models supported in 'lsmeans'
 nutrition               Nutrition data
 oranges                 Orange sales

@@ -27,6 +27,16 @@ lay <- rbind(c(1,1,1,2,3),
              c(6,7,8,9,9))
 grid.arrange(grobs = gs, layout_matrix = lay)
 
+## ----holes---------------------------------------------------------------
+hlay <- rbind(c(1,1,NA,2,3),
+              c(1,1,NA,4,NA),
+              c(NA,7,8,9,NA))
+select_grobs <- function(lay) {
+  id <- unique(c(t(lay))) 
+  id[!is.na(id)]
+} 
+grid.arrange(grobs=gs[select_grobs(hlay)], layout_matrix=hlay)
+
 ## ----sizes, fig.height=2-------------------------------------------------
 grid.arrange(grobs=gs[1:3], ncol=2, widths = 1:2, 
              heights=unit(c(1,10), c("in", "mm")))

@@ -3,6 +3,39 @@
 \newcommand{\ghpr}{\href{https://github.com/RcppCore/RcppArmadillo/pull/#1}{##1}}
 \newcommand{\ghit}{\href{https://github.com/RcppCore/RcppArmadillo/issues/#1}{##1}}
 
+\section{Changes in RcppArmadillo version 0.6.700.3.0 (2016-04-05)}{
+  \itemize{
+    \item Upgraded to Armadillo 6.700.3 (Catabolic Amalgamator Deluxe)
+    \itemize{
+      \item added \code{logmat()} for calcuating the matrix logarithm
+      \item added \code{regspace()} for generating vectors with
+      regularly spaced elements
+      \item added \code{logspace()} for generating vectors with
+      logarithmically spaced elements
+      \item added \code{approx_equal()} for determining approximate equality
+      \item added \code{trapz()} for numerical integration
+      \item expanded \code{.save()} and \code{.load()} with
+      hdf5_binary_trans file type, to save/load data with columns
+      transposed to rows
+    }
+  }
+}
+
+\section{Changes in RcppArmadillo version 0.6.600.4.0 (2016-03-15)}{
+  \itemize{
+    \item Upgraded to Armadillo 6.600.4 (Catabolic Amalgamator)
+    \itemize{
+      \item expanded \code{sum()}, \code{mean()}, \code{min()}, \code{max()} to handle cubes
+      \item expanded \code{Cube} class to handle arbitrarily sized empty cubes (eg. 0x5x2)
+      \item added \code{shift()} for circular shifts of elements
+      \item added \code{sqrtmat()} for finding the square root of a matrix
+      \item fix for \code{gmm_diag} when using Mahalanobis distance
+    }
+    \item The \code{configure} script now reflects the full LAPACK
+    fallback offered by R 3.3.0 or later (PR \ghpr{81})
+  }
+}
+
 \section{Changes in RcppArmadillo version 0.6.500.4.0 (2016-01-26)}{
   \itemize{
     \item Upgraded to Armadillo 6.500.4 (Gourmet Electron Jumper)

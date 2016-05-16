@@ -3,82 +3,73 @@ This is for development purposes only...
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 1: Download R source file
 
-    R-3.2.2.tar.gz
-    unzip to $HOME/R-3.2.2
+    R-3.2.5.tar.gz
+    unzip to $HOME/R-3.2.5
     open terminal and navigate to your temporary folder
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 2: Make sure the following R dependencies are installed (all may not be needed!?)
+Step 2: Make sure the following R dependencies are installed
 
-    sudo apt-get install xorg xopenbox libX11-dev libxt-dev
-    sudo apt-get install sudo apt-get install tcl8.4-dev tk8.4-dev bison groff-base
-        libncurses5-dev libreadline6-dev debhelper texi2html libbz2-dev libpcre3-dev
-        zlib1g-dev libpng12-dev libjpeg62-dev libx11-dev libxt-dev xpdf rds-tools libxml2-dev
-        mesa-common-dev libglu1-mesa-dev libtiff4-dev
+    sudo su
+    echo "deb http://01.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb http://01.archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb http://01.archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb http://stat.ethz.ch/CRAN/bin/linux/ubuntu trusty/ " >> /etc/apt/sources.list
+    exit
+
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+
+    sudo apt-get update
+
+    sudo apt-get build-dep r-base
+
+    sudo apt-get install libcurl4-openssl-dev
+
+    sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+
+    sudo apt-get install libxml2-dev
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 3: Build new R installation
 
-    ./configure --prefix=$HOME/R/R-Linux
-    make prefix=$HOME/R/R-Linux install
+    ./configure --prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux --with-x=yes --with-cairo=yes --with-lapack=yes --with-blas=yes --enable-R-shlib
+    make prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux
+    make prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux install
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 4: Install required packages
 
-    open terminal and navigate to '$HOME/R/R-Linux/bin'
+    open terminal and navigate to '/home/manterd/PycharmProjects/myPhyloDB/R/R-Linux/bin'
 
     type "./R"
 
-    install.packages("lsmeans")
+    install.packages(c("lsmeans", "vegan", "spls", "mixOmics", "DMwR", "pheatmap", "RColorBrewer", "lme4", "FactoMineR", "ggplot2", "stringi", "devtools", "fpc", "png", "pbkrtest"))
 
-    install.packages("vegan")
-
-    install.packages("spls")
-
-    install.packages("mixOmics")
-
-    install.packages("DMwR")
-
-    install.packages("pheatmap")
-
-    install.packages("RColorBrewer")
+    library("devtools")
+    install_github("kassambara/factoextra")
+    install_github("guiastrennec/ggplus")
 
     source("http://bioconductor.org/biocLite.R")
 
-    biocLite("DESeq2")
-        update: none
+    biocLite("XML")
+    biocLite(c("DESeq2", "GO.db", "impute", "preprocessCore", "gage", "pathview"))
+
+    install.packages("WGCNA")
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 5:
 
-    edit the "$HOME/R/R-Linux/bin/R" file
-        replace "$HOME/R/R-Linux/lib/R"
-        with "R/R-Linux/lib/R"
+    edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/bin/R" file
+        replace all instances of "$HOME/PycharmProjects/myPhyloDB"
+        with "${PWD}"
 
-    edit the "$HOME/R/R-Linux/lib/R/bin/R" file
-        replace "$HOME/R/R-Linux/lib/R"
-        with "R/R-Linux/lib/R/bin/R"
+        For example, line 4 should now be:
+            R_HOME_DIR=${PWD}/R/R-Linux/lib/R
 
-
+    edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/pkgconfig/libR.pc" file
+        replace all instances of "$HOME/PycharmProjects/myPhyloDB"
+        with "${PWD}"
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 6:
-
-    copy new R installation to:
-        "$HOME/PycharmProjects/myPhyloDB/R/R-Linux"
-    or
-        your development folder of choice
-
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 7:
-
-    make sure all program files are executable:
-        R/R-Linux/bin/R
-
-        R/R-Linux/lib/R/bin/exec/R
-
-        R/R-Linux/lib/R/bin/f77_f2c
-        R/R-Linux/lib/R/bin/libtool
-        R/R-Linux/lib/R/bin/mkinstalldirs
-        R/R-Linux/lib/R/bin/pager
-        R/R-Linux/lib/R/bin/R
-        R/R-Linux/lib/R/bin/Rcmd

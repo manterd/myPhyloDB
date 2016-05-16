@@ -4,8 +4,7 @@ a = Analysis(
             ['serve-win.py'],
             pathex=[
                 'C:\\Users\\daniel.manter\\Documents\\GitHub\\myPhyloDB',
-                'C:\\Users\\daniel.manter\\AppData\\Local\\Continuum\\Miniconda2\\Library\\bin'
-                'C:\\Users\\daniel.manter\\AppData\\Local\\Continuum\\Miniconda2\\Lib\\site-packages'
+                'C:\\Users\\daniel.manter\\AppData\\Local\\Continuum\\Anaconda2\\Lib\\site-packages'
                 ],
             hiddenimports=[
                 'django.apps',
@@ -82,7 +81,10 @@ def Datafiles(*filenames, **kw):
         for filename in filenames
         if os.path.isfile(filename))
 
-db = Datafiles('db.Microbe')
+
+db1 = Datafiles('db.Microbe')
+db2 = Datafiles('db.PICRUSt')
+
 
 def extra_datas(mydir):
     def rec_glob(p, files):
@@ -125,7 +127,8 @@ coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
                a.datas,
-               db,
+               db1,
+               db2,
                strip=None,
                upx=True,
                name='myPhyloDB'

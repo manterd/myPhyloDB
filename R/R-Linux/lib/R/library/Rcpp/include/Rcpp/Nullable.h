@@ -76,7 +76,7 @@ namespace Rcpp {
          *
          * @throw 'not initialized' if object has not been set
          */
-        inline operator SEXP() {
+        inline operator SEXP() const {
             checkIfSet();
             return m_sexp;
         }
@@ -86,9 +86,16 @@ namespace Rcpp {
          *
          * @throw 'not initialized' if object has not been set
          */
-        inline SEXP get() {
+        inline SEXP get() const {
             checkIfSet();
             return m_sexp;
+        }
+
+        /**
+         * Boolean test for usability as a T
+         */
+        inline bool isUsable() const {
+            return m_set && !Rf_isNull(m_sexp);
         }
 
         /**
@@ -115,6 +122,16 @@ namespace Rcpp {
          *
          */
         inline bool isSet(void) const { return m_set; }
+
+        /**
+         * Returns m_sexp as a T
+         */
+        inline T as() { return get(); }
+
+        /**
+         * Return a clone of m_sexp as a T
+         */
+        inline T clone() const { return Rcpp::clone(get()); }
 
     private:
         SEXP m_sexp;

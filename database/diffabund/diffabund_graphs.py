@@ -1,20 +1,22 @@
-#import ast
+import ast
 import datetime
-#from django import db
+from django import db
 from django.http import HttpResponse
+from django_pandas.io import read_frame
 import logging
-#import multiprocessing as mp
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import pickle
 from pyper import *
 import simplejson
-#import threading
+import shutil
+import threading
 import time
 
-#from database.models import PICRUSt
-#from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
-#from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
+from database.models import PICRUSt
+from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
+from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, stoppableThread
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
@@ -29,6 +31,7 @@ stops = {}
 thread2 = stoppableThread()
 res = ''
 LOG_FILENAME = 'error_log.txt'
+pd.set_option('display.max_colwidth', -1)
 
 
 def updateDiffAbund(request):
@@ -227,6 +230,15 @@ def loopCat(request):
                     DepVar = int(all["DepVar_nz"])
                     finalDF = getNZDF(nzAll, tempDF, catFields_edit, DepVar, RID)
 
+                # save location info to session
+                myDir = 'media/temp/diffabund/'
+                path = str(myDir) + str(RID) + '.pkl'
+
+                # now save file to computer
+                if not os.path.exists(myDir):
+                    os.makedirs(myDir)
+                finalDF.to_pickle(path)
+
                 count_rDF = pd.DataFrame()
                 if DepVar == 1:
                     finalDF['abund'] = finalDF['abund'].round(0).astype(int)
@@ -236,19 +248,24 @@ def loopCat(request):
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
                 temp_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                # Removes samples (rows) that are not in our samplelist
+                temp_rDF = temp_rDF.loc[temp_rDF['sampleid'].isin(catSampleIDs)]
+
+                if metaDictCat:
+                    for key in metaDictCat:
+                        temp_rDF = temp_rDF.loc[temp_rDF[key].isin(metaDictCat[key])]
 
                 # Create combined metadata column - DiffAbund only
                 meta_rDF = temp_rDF.copy()
                 if len(catFields) > 1:
                     for index, row in temp_rDF.iterrows():
-                       meta_rDF.loc[index, 'merge'] = "; ".join(row[catFields])
+                       meta_rDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
                 else:
-                    meta_rDF.loc[:, 'merge'] = temp_rDF.loc[:, catFields[0]]
+                    meta_rDF.loc[:, 'merge'] = temp_rDF.loc[:, catFields_edit[0]]
 
                 wantedList = ['sampleid', 'merge', 'sample_name']
                 meta_rDF = meta_rDF.loc[:, wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
-
                 base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -276,33 +293,14 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                DESeq_error = ''
                 r("library(DESeq2)")
                 r("colData <- data.frame(row.names=colnames(count), trt=trt)")
-                r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design= ~ trt)")
+                r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design = ~ trt)")
 
-                r("dds <- estimateSizeFactors(dds)")
-                pycds = r.get("sizeFactors(dds)")
-
-                if pycds is not None:
-                    DESeq_error = 'no'
-                    r("dds <- estimateDispersions(dds)")
-                    r("dds <- nbinomWaldTest(dds)")
-
-                elif pycds is None:
-                    DESeq_error = 'yes'
-                    r("sizeFactor <- rep(1, length(trt))")
-                    r("dds$sizeFactor <- sizeFactor")
-                    r("dds <- estimateDispersions(dds)")
-                    r("dds <- nbinomWaldTest(dds)")
-
-                if DESeq_error == 'no':
-                    result += 'Data were normalized by DESeq2...\n'
-                elif DESeq_error == 'yes':
-                    result += 'DESeq2 cannot run estimateSizeFactors...\n'
-                    result += 'Analysis was run without size normalization...\n'
-                    result += 'To try again, select a different sample combination or increase the minimum sample size...\n'
-                result += '\n===============================================\n'
+                r("sizeFactor <- rep(1, length(trt))")
+                r("dds$sizeFactor <- sizeFactor")
+                r("dds <- estimateDispersions(dds)")
+                r("dds <- nbinomWaldTest(dds)")
 
                 if DepVar == 1:
                     result += 'Dependent Variable: Abundance' + '\n'
@@ -328,41 +326,108 @@ def loopCat(request):
                             r("res <- results(dds, contrast=c('trt', trt1, trt2))")
                             r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
                             r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
-                            r("df <- data.frame(id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                            r("df <- data.frame(rank_id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
                             nbinom_res = r.get("df")
 
-                            names = []
+                            zipped = []
                             if button3 == 1:
-                                for item in nbinom_res["id"]:
-                                    match = findTaxa(item)
-                                    if match == 'Not found':
-                                        names.append(item)
-                                    else:
-                                        names.append(match)
+                                zipped = getFullTaxonomy(selectAll, nbinom_res['rank_id'])
+                            elif button3 == 2:
+                                zipped = getFullKO(keggAll, nbinom_res['rank_id'])
+                            elif button3 == 3:
+                                zipped = getFullNZ(nzAll, nbinom_res['rank_id'])
 
+                            if button3 == 1:
+                                if selectAll == 2:
+                                    k, p = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Kingdom', k)
+                                    nbinom_res.insert(2, 'Phyla', p)
+                                elif selectAll == 3:
+                                    k, p, c = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Kingdom', k)
+                                    nbinom_res.insert(2, 'Phyla', p)
+                                    nbinom_res.insert(3, 'Class', c)
+                                elif selectAll == 4:
+                                    k, p, c, o = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Kingdom', k)
+                                    nbinom_res.insert(2, 'Phyla', p)
+                                    nbinom_res.insert(3, 'Class', c)
+                                    nbinom_res.insert(4, 'Order', o)
+                                elif selectAll == 5:
+                                    k, p, c, o, f = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Kingdom', k)
+                                    nbinom_res.insert(2, 'Phyla', p)
+                                    nbinom_res.insert(3, 'Class', c)
+                                    nbinom_res.insert(4, 'Order', o)
+                                    nbinom_res.insert(5, 'Family', f)
+                                elif selectAll == 6:
+                                    k, p, c, o, f, g = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Kingdom', k)
+                                    nbinom_res.insert(2, 'Phyla', p)
+                                    nbinom_res.insert(3, 'Class', c)
+                                    nbinom_res.insert(4, 'Order', o)
+                                    nbinom_res.insert(5, 'Family', f)
+                                    nbinom_res.insert(6, 'Genus', g)
+                                elif selectAll == 7:
+                                    k, p, c, o, f, g, s = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Kingdom', k)
+                                    nbinom_res.insert(2, 'Phyla', p)
+                                    nbinom_res.insert(3, 'Class', c)
+                                    nbinom_res.insert(4, 'Order', o)
+                                    nbinom_res.insert(5, 'Family', f)
+                                    nbinom_res.insert(6, 'Genus', g)
+                                    nbinom_res.insert(7, 'Species', s)
                             if button3 == 2:
-                                for item in nbinom_res["id"]:
-                                    match = findKEGG(item)
-                                    if match == 'Not found':
-                                        names.append(item)
-                                    else:
-                                        names.append(match)
-
+                                if keggAll == 1:
+                                    L1 = [x[0] for x in zipped]
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                if keggAll == 2:
+                                    L1, L2 = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                    nbinom_res.insert(2, 'Level_2', L2)
+                                if keggAll == 3:
+                                    L1, L2, L3 = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                    nbinom_res.insert(2, 'Level_2', L2)
+                                    nbinom_res.insert(3, 'Level_3', L3)
                             if button3 == 3:
-                                for item in nbinom_res["id"]:
-                                    match = findNZ(item)
-                                    if match == 'Not found':
-                                        names.append(item)
-                                    else:
-                                        names.append(match)
+                                if nzAll == 1:
+                                    L1 = [x[0] for x in zipped]
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                if nzAll == 2:
+                                    L1, L2 = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                    nbinom_res.insert(2, 'Level_2', L2)
+                                if nzAll == 3:
+                                    L1, L2, L3 = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                    nbinom_res.insert(2, 'Level_2', L2)
+                                    nbinom_res.insert(3, 'Level_3', L3)
+                                if nzAll == 4:
+                                    L1, L2, L3, L4 = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                    nbinom_res.insert(2, 'Level_2', L2)
+                                    nbinom_res.insert(3, 'Level_3', L3)
+                                    nbinom_res.insert(4, 'Level_4', L4)
+                                if nzAll == 5:
+                                    L1, L2, L3, L4 = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                    nbinom_res.insert(2, 'Level_2', L2)
+                                    nbinom_res.insert(3, 'Level_3', L3)
+                                    nbinom_res.insert(4, 'Level_4', L4)
+                                if nzAll == 6:
+                                    L1, L2, L3, L4 = map(None, *zipped)
+                                    nbinom_res.insert(1, 'Level_1', L1)
+                                    nbinom_res.insert(2, 'Level_2', L2)
+                                    nbinom_res.insert(3, 'Level_3', L3)
+                                    nbinom_res.insert(4, 'Level_4', L4)
 
-                            nbinom_res.loc[:, 'Rank Name'] = names
-                            nbinom_res.rename(columns={'id': 'Rank ID'}, inplace=True)
-                            stuff = ['Rank ID', 'Rank Name', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' log2FoldChange ', ' stderr ', ' stat ', ' pval ', ' padj ']
-                            nbinom_res = nbinom_res.reindex(columns=stuff)
+                                nbinom_res.fillna(value=1, inplace=True)
+
+                            nbinom_res.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
 
                             iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
-                            nbinom_res.loc[:, 'Comparison'] = iterationName
+                            nbinom_res.insert(1, 'Comparison', iterationName)
 
                             nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
                             nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
@@ -407,7 +472,7 @@ def loopCat(request):
                     nosigData = []
                     for index, row in nosigDF.iterrows():
                         dataDict = {}
-                        dataDict['name'] = row['Rank Name']
+                        dataDict['name'] = row['Rank ID']
                         dataDict['x'] = float(row['baseMean'])
                         dataDict['y'] = float(row['log2FoldChange'])
                         nosigData.append(dataDict)
@@ -424,7 +489,7 @@ def loopCat(request):
                     sigData = []
                     for index, row in sigDF.iterrows():
                         dataDict = {}
-                        dataDict['name'] = row['Rank Name']
+                        dataDict['name'] = row['Rank ID']
                         dataDict['x'] = float(row['baseMean'])
                         dataDict['y'] = float(row['log2FoldChange'])
                         sigData.append(dataDict)
@@ -477,7 +542,6 @@ def loopCat(request):
 
                 base[RID] = 'Step 5 of 5:  Formatting nbinomTest results for display...'
 
-                finalDF = finalDF[['Comparison', 'Rank ID', 'Rank Name', 'baseMean', 'baseMeanA', 'baseMeanB', 'log2FoldChange', 'StdErr', 'Stat', 'p-value', 'p-adjusted']]
                 res_table = finalDF.to_html(classes="table display")
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
@@ -628,7 +692,7 @@ def getTaxaDF(selectAll, tempDF, allFields, DepVar, RID):
         # Create combined metadata column - DiffAbund only
         if len(allFields) > 1:
             for index, row in tempDF.iterrows():
-                tempDF.loc[index, 'merge'] = "; ".join(row.loc[index, allFields])
+                tempDF.loc[index, 'merge'] = "; ".join(row[allFields])
         else:
             tempDF.loc[:, 'merge'] = tempDF.loc[:, allFields[0]]
 
@@ -653,3 +717,658 @@ def getTaxaDF(selectAll, tempDF, allFields, DepVar, RID):
             myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
 
+
+def getKeggDF(keggAll, tempDF, allFields, DepVar, RID):
+    global base, stops, stop2, res
+    try:
+        base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
+        koDict = {}
+        if keggAll == 1:
+            keys = ko_lvl1.objects.using('picrust').values_list('ko_lvl1_id', flat=True)
+            for key in keys:
+                koList = ko_entry.objects.using('picrust').filter(ko_lvl1_id_id=key).values_list('ko_orthology', flat=True)
+                if koList:
+                    koDict[key] = koList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        elif keggAll == 2:
+            keys = ko_lvl2.objects.using('picrust').values_list('ko_lvl2_id', flat=True)
+            for key in keys:
+                koList = ko_entry.objects.using('picrust').filter(ko_lvl2_id_id=key).values_list('ko_orthology', flat=True)
+                if koList:
+                    koDict[key] = koList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        elif keggAll == 3:
+            keys = ko_lvl3.objects.using('picrust').values_list('ko_lvl3_id', flat=True)
+            for key in keys:
+                koList = ko_entry.objects.using('picrust').filter(ko_lvl3_id_id=key).values_list('ko_orthology', flat=True)
+                if koList:
+                    koDict[key] = koList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        if stops[RID]:
+            res = ''
+            return None
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        # create sample and species lists based on meta data selection
+        wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
+        profileDF = tempDF.loc[:, wanted]
+        profileDF.set_index('speciesid', inplace=True)
+
+        # get PICRUSt data for species
+        speciesList = pd.unique(profileDF.index.ravel().tolist())
+        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
+        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
+        picrustDF.set_index('speciesid__speciesid', inplace=True)
+
+        path = 'media/temp/diffabund/' + str(RID)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        if os.name == 'nt':
+            numcore = 1
+            listDF = np.array_split(picrustDF, numcore)
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x)) for x in xrange(numcore)]
+        else:
+            numcore = mp.cpu_count()
+            listDF = np.array_split(picrustDF, numcore)
+            processes = [mp.Process(target=sumStuff, args=(listDF[x], koDict, RID, x)) for x in xrange(numcore)]
+
+        for p in processes:
+            p.start()
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        for p in processes:
+            p.join()
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        levelList = []
+        for key in koDict:
+            levelList.append(key)
+
+        picrustDF = pd.DataFrame()
+        for i in xrange(numcore):
+            path = 'media/temp/diffabund/'+str(RID)+'/file%d.temp' % i
+            frame = pd.read_csv(path)
+            picrustDF = picrustDF.append(frame, ignore_index=True)
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        shutil.rmtree('media/temp/diffabund/'+str(RID))
+        picrustDF.set_index('speciesid', inplace=True)
+
+        # merge to get final gene counts for all selected samples
+        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+
+        for level in levelList:
+            if DepVar == 1:
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
+            elif DepVar == 4:
+                taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
+        taxaDF.reset_index(drop=False, inplace=True)
+
+        if DepVar == 1:
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
+        elif DepVar == 4:
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
+
+        # Create combined metadata column - DiffAbund only
+        if len(allFields) > 1:
+            for index, row in tempDF.iterrows():
+                tempDF.loc[index, 'merge'] = "; ".join(row[allFields])
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        else:
+            tempDF.loc[:, 'merge'] = tempDF.loc[:, allFields[0]]
+
+        metaDF = tempDF.loc[:, ['sampleid', 'merge']]
+        metaDF.set_index('sampleid', drop=True, inplace=True)
+        grouped = metaDF.groupby(level=0)
+        metaDF = grouped.last()
+
+        taxaDF.set_index('sampleid', drop=True, inplace=True)
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+
+        finalDF.reset_index(drop=False, inplace=True)
+
+        finalDF['rank'] = ''
+        finalDF['rank_name'] = ''
+        for index, row in finalDF.iterrows():
+            if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl1'
+                finalDF.loc[index, 'rank_name'] = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=row['rank_id']).ko_lvl1_name
+            elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl2'
+                finalDF.loc[index, 'rank_name'] = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=row['rank_id']).ko_lvl2_name
+            elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl3'
+                finalDF.loc[index, 'rank_name'] = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=row['rank_id']).ko_lvl3_name
+            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl4'
+                finalDF.loc[index, 'rank_name'] = ko_entry.objects.using('picrust').get(ko_lvl4_id=row['rank_id']).ko_name
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        return finalDF
+
+    except:
+        if not stop2:
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+            myDict = {}
+            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            res = simplejson.dumps(myDict)
+
+
+def getNZDF(nzAll, tempDF, allFields, DepVar, RID):
+    global base, stops, stop2, res
+    try:
+        nzDict = {}
+        if nzAll == 1:
+            keys = nz_lvl1.objects.using('picrust').values_list('nz_lvl1_id', flat=True)
+            for key in keys:
+                nzList = nz_entry.objects.using('picrust').filter(nz_lvl1_id_id=key).values_list('nz_orthology', flat=True)
+                if nzList:
+                    nzDict[key] = nzList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        elif nzAll == 2:
+            keys = nz_lvl2.objects.using('picrust').values_list('nz_lvl2_id', flat=True)
+            for key in keys:
+                nzList = nz_entry.objects.using('picrust').filter(nz_lvl2_id_id=key).values_list('nz_orthology', flat=True)
+                if nzList:
+                    nzDict[key] = nzList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        elif nzAll == 3:
+            keys = nz_lvl3.objects.using('picrust').values_list('nz_lvl3_id', flat=True)
+            for key in keys:
+                nzList = nz_entry.objects.using('picrust').filter(nz_lvl3_id_id=key).values_list('nz_orthology', flat=True)
+                if nzList:
+                    nzDict[key] = nzList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        elif nzAll == 4:
+            keys = nz_lvl4.objects.using('picrust').values_list('nz_lvl4_id', flat=True)
+            for key in keys:
+                nzList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=key).values_list('nz_orthology', flat=True)
+                if nzList:
+                    nzDict[key] = nzList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        elif nzAll == 5:
+            # 1.18.6.1  nitrogenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.3.3.11  pyrroloquinoline-quinone synthase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.3.3.11  pyrroloquinoline-quinone synthase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.4.99.5  glycine dehydrogenase (cyanide-forming)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.99.5  glycine dehydrogenase (cyanide-forming)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.1.1.76  (S,S)-butanediol dehydrogenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.1.1.76  (S,S)-butanediol dehydrogenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.14  chitinase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.14  chitinase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 4.1.1.74  indolepyruvate decarboxylase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.74  indolepyruvate decarboxylase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 6.3.2.39  aerobactin synthase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.39  aerobactin synthase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.4  cellulase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.4  cellulase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.21  beta-glucosidase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.21  beta-glucosidase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.8  endo-1,4-beta-xylanase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.8  endo-1,4-beta-xylanase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.37  xylan 1,4-beta-xylosidase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.37  xylan 1,4-beta-xylosidase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.5.1.4  amidase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.5.1.5  urease
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.5  urease').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.1.3.1  alkaline phosphatase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.1  alkaline phosphatase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.1.3.2  acid phosphatase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.2  acid phosphatase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.1.6.1  arylsulfatase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+        elif nzAll == 6:
+            # 1.18.6.1  nitrogenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.5.1.5  urease
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.1.5  urease').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.14.99.39  ammonia monooxygenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.6  hydroxylamine dehydrogenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.99.4  nitrate reductase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.1  nitrite reductase (NO-forming)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.5  nitric oxide reductase (cytochrome c)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.4  nitrous-oxide reductase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+        # create sample and species lists based on meta data selection
+        wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
+        profileDF = tempDF.loc[:, wanted]
+        profileDF.set_index('speciesid', inplace=True)
+
+        # get PICRUSt data for species
+        speciesList = pd.unique(profileDF.index.ravel().tolist())
+        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
+        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
+        picrustDF.set_index('speciesid__speciesid', inplace=True)
+
+        path = 'media/temp/diffabund/' + str(RID)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        if os.name == 'nt':
+            numcore = 1
+            listDF = np.array_split(picrustDF, numcore)
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x)) for x in xrange(numcore)]
+        else:
+            numcore = mp.cpu_count()
+            listDF = np.array_split(picrustDF, numcore)
+            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x)) for x in xrange(numcore)]
+
+        for p in processes:
+            p.start()
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        for p in processes:
+            p.join()
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        levelList = []
+        for key in nzDict:
+            levelList.append(key)
+
+        picrustDF = pd.DataFrame()
+        for i in xrange(numcore):
+            path = 'media/temp/diffabund/'+str(RID)+'/file%d.temp' % i
+            frame = pd.read_csv(path)
+            picrustDF = picrustDF.append(frame, ignore_index=True)
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        shutil.rmtree('media/temp/diffabund/'+str(RID))
+        picrustDF.set_index('speciesid', inplace=True)
+
+        # merge to get final gene counts for all selected samples
+        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+
+        for level in levelList:
+            if DepVar == 1:
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
+            elif DepVar == 4:
+                taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
+        taxaDF.reset_index(drop=False, inplace=True)
+
+        if DepVar == 1:
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
+        elif DepVar == 4:
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
+
+        # Create combined metadata column - DiffAbund only
+        if len(allFields) > 1:
+            for index, row in tempDF.iterrows():
+                tempDF.loc[index, 'merge'] = "; ".join(row[allFields])
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[RID]:
+                    res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        else:
+            tempDF.loc[:, 'merge'] = tempDF.loc[:, allFields[0]]
+
+        metaDF = tempDF.loc[:, ['sampleid', 'merge']]
+        metaDF.set_index('sampleid', drop=True, inplace=True)
+        grouped = metaDF.groupby(level=0)
+        metaDF = grouped.last()
+
+        taxaDF.set_index('sampleid', drop=True, inplace=True)
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+
+        finalDF.reset_index(drop=False, inplace=True)
+        finalDF['rank'] = ''
+        finalDF['rank_name'] = ''
+        for index, row in finalDF.iterrows():
+            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl1'
+                finalDF.loc[index, 'rank_name'] = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=row['rank_id']).nz_lvl1_name
+            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl2'
+                finalDF.loc[index, 'rank_name'] = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=row['rank_id']).nz_lvl2_name
+            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl3'
+                finalDF.loc[index, 'rank_name'] = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=row['rank_id']).nz_lvl3_name
+            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl4'
+                finalDF.loc[index, 'rank_name'] = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=row['rank_id']).nz_lvl4_name
+            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=row['rank_id']).exists():
+                finalDF.loc[index, 'rank'] = 'Lvl5'
+                finalDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_name
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[RID]:
+                res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        return finalDF
+
+    except:
+        if not stop2:
+            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+            logging.exception(myDate)
+            myDict = {}
+            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            res = simplejson.dumps(myDict)
+
+
+def sumStuff(slice, koDict, RID, num):
+    global base, stops, res
+    db.close_old_connections()
+
+    f = open('media/temp/diffabund/'+str(RID)+'/file'+str(num)+".temp", 'w')
+
+    keyList = []
+    for key in koDict:
+        keyList.append(key)
+
+    f.write('speciesid,'+",".join(keyList)+'\n')
+
+    for index, row in slice.iterrows():
+        d = ast.literal_eval(row['geneCount'])
+
+        f.write(str(index)+',')
+        sumList = []
+        for key in koDict:
+            sum = 0.0
+            myList = koDict[key]
+            for k in myList:
+                if k in d:
+                    sum += d[k]
+            sumList.append(sum)
+
+        f.write(','.join(map(str, sumList)))
+        f.write('\n')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stops[RID]:
+            res = ''
+            return None
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+    f.close()
+
+
+def getTabDiffAbund(request):
+    if request.is_ajax():
+        RID = request.GET["all"]
+
+        myDir = 'media/temp/diffabund/'
+        fileName = str(myDir) + str(RID) + '.pkl'
+        savedDF = pd.read_pickle(fileName)
+
+        myDir = 'media/temp/diffabund/'
+        fileName = str(myDir) + str(RID) + '.csv'
+        savedDF.to_csv(fileName)
+
+        myDict = {}
+        myDir = 'temp/diffabund/'
+        fileName = str(myDir) + str(RID) + '.csv'
+        myDict['name'] = str(fileName)
+        res = simplejson.dumps(myDict)
+
+        return HttpResponse(res, content_type='application/json')
+
+
+def removeDiffAbundFiles(request):
+    if request.is_ajax():
+        RID = request.GET["all"]
+
+        file = "media/temp/diffabund/" + str(RID) + ".pkl"
+        if os.path.exists(file):
+            os.remove(file)
+
+        file = "media/temp/diffabund/" + str(RID) + ".csv"
+        if os.path.exists(file):
+            os.remove(file)
+
+        return HttpResponse()
+
+
+def getFullTaxonomy(level, id):
+    record = []
+
+    if level == 2:
+        record = Phyla.objects.all().filter(phylaid__in=id).values_list('kingdomid_id__kingdomName', 'phylaName')
+    elif level == 3:
+        record = Class.objects.all().filter(classid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
+    elif level == 4:
+        record = Order.objects.all().filter(orderid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
+    elif level == 5:
+        record = Family.objects.all().filter(familyid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
+    elif level == 6:
+        record = Genus.objects.all().filter(genusid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
+    elif level == 7:
+        record = Species.objects.all().filter(speciesid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
+
+    return record
+
+
+def getFullKO(level, id):
+    record = []
+
+    if level == 1:
+        record = ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id__in=id).values_list('ko_lvl1_name')
+    elif level == 2:
+        record = ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id__in=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_name')
+    elif level == 3:
+        record = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id__in=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
+
+    return record
+
+
+def getFullNZ(level, id):
+    record = []
+
+    if level == 1:
+        record = nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id__in=id).values_list('nz_lvl1_name')
+    elif level == 2:
+        record = nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_name')
+    elif level == 3:
+        record = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
+    elif level == 4:
+        record = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
+    elif level == 5:
+        for item in id:
+            if nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=item).exists():
+                qs = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
+                record.extend(qs)
+            elif nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=item).exists():
+                qs = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
+                record.extend(qs)
+            elif nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=item).exists():
+                qs = nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_id_id__nz_lvl4_name')
+                record.extend(qs)
+    elif level == 6:
+        record = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
+
+    return record

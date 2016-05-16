@@ -5,7 +5,6 @@ import os.path
 import signal
 import webbrowser
 
-
 from myPhyloDB.wsgi import application
 cherrypy.tree.graft(application)
 

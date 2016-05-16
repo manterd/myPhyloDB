@@ -2,6 +2,7 @@ from collections import defaultdict
 import ctypes
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 import inspect
 import numpy as np
 import os
@@ -12,6 +13,8 @@ import threading
 import time
 
 from models import Project, Reference, Profile
+
+pd.set_option('display.max_colwidth', -1)
 
 
 def ordered_set(seq, idfun=None):
@@ -79,7 +82,8 @@ def multidict(ordered_pairs):
 def taxaProfileDF(mySet):
     qs1 = Profile.objects.filter(sampleid__in=mySet).values('sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'count')
     df = pd.DataFrame.from_records(qs1, columns=['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'count'])
-    df.set_index(['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid'], drop=True, inplace=True)
+    df = df.groupby(['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid'])['count'].sum()
+    df = df.to_frame(name='count')
     df2 = df.unstack(['sampleid']).fillna(0).stack(['sampleid'])
     df3 = df2.unstack(['sampleid'])
     taxaDF = df3['count']
@@ -164,7 +168,6 @@ class MultiFileField(forms.FileField):
             num_files = 0
         if num_files < self.min_num:
             raise ValidationError(self.error_messages['min_num'] % {'min_num': self.min_num, 'num_files': num_files})
-            return
         elif self.max_num and num_files > self.max_num:
             raise ValidationError(self.error_messages['max_num'] % {'max_num': self.max_num, 'num_files': num_files})
         for uploaded_file in data:
@@ -231,24 +234,6 @@ def remove(path):
             print "Unable to remove file: %s" % path
 
 
-def cleanup(number_of_days, path):
-    """
-    Removes files from the passed in path that are older than or equal
-    to the number_of_days
-    """
-    time_in_secs = time.time() - (number_of_days * 24 * 60 * 60)
-    for root, dirs, files in os.walk(path, topdown=False):
-        for file_ in files:
-            full_path = os.path.join(root, file_)
-            stat = os.stat(full_path)
-
-            if stat.st_mtime <= time_in_secs:
-                remove(full_path)
-
-        if not os.listdir(root):
-            remove(root)
-
-
 def wOdum(data, alpha):
     length = data.__len__()
     numrows, numcols = np.shape(data)
@@ -258,18 +243,39 @@ def wOdum(data, alpha):
         for j in xrange(length):
             dist = 0.0
             if i == j:
-                dists[i,j] = dist
-                dists[j,i] = dist
+                dists[i, j] = dist
+                dists[j, i] = dist
             else:
                 num, den = 0.0, 0.0
                 otus = data[i].__len__()
                 for l in xrange(otus):
-                    u = data[i,l]
-                    v = data[j,l]
-                    if u > 0 or v > 0:
+                    u = data[i, l]
+                    v = data[j, l]
+                    if u + v > 0:
                         num += abs(u-v)/(u+v)*(u+v)**alpha
                         den += (u+v)**alpha
                 dist = num / den
-                dists[i,j] = dist
-                dists[j,i] = dist
+                dists[i, j] = dist
+                dists[j, i] = dist
     return dists
+
+
+def dictSum(*dicts):
+    ret = defaultdict(int)
+    for d in dicts:
+        for k, v in d.items():
+            ret[k] += v
+    return dict(ret)
+
+
+def cleanup(path):
+    age = 3 * 60 * 60 * 24
+
+    if os.path.exists(path):
+        for file in os.listdir(path):
+            now = time.time()
+            filepath = os.path.join(path, file)
+            modified = os.stat(filepath).st_mtime
+            if modified < now - age:
+                if os.path.isfile(filepath):
+                    os.remove(filepath)

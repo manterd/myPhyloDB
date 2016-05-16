@@ -1,5 +1,5 @@
 Package: scales
-Version: 0.3.0
+Version: 0.4.0
 Authors@R: c(
     person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")),
     person("RStudio", role = "cph")
@@ -14,14 +14,15 @@ Depends: R (>= 2.13)
 Imports: RColorBrewer, dichromat, plyr, munsell (>= 0.2), labeling,
         methods, Rcpp
 LinkingTo: Rcpp
-Suggests: testthat (>= 0.8)
+Suggests: testthat (>= 0.8), covr
 License: MIT + file LICENSE
 LazyLoad: yes
+RoxygenNote: 5.0.1
 NeedsCompilation: yes
-Packaged: 2015-08-24 18:41:17 UTC; hadley
+Packaged: 2016-02-26 13:10:16 UTC; hadley
 Author: Hadley Wickham [aut, cre],
   RStudio [cph]
 Maintainer: Hadley Wickham <hadley@rstudio.com>
 Repository: CRAN
-Date/Publication: 2015-08-25 00:48:31
-Built: R 3.2.2; x86_64-pc-linux-gnu; 2016-01-31 06:11:15 UTC; unix
+Date/Publication: 2016-02-26 15:45:07
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-12 20:28:59 UTC; unix

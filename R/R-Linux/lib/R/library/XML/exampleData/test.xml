@@ -5,7 +5,7 @@
 
   <!ENTITY testEnt "test entity bar">
   <!ENTITY logo SYSTEM "images/logo.gif" NDATA gif>
-  <!ENTITY % extEnt SYSTEM "http://www.omegahat.org">   <!-- include the contents of the README file in the same directory as this one. -->
+  <!ENTITY % extEnt SYSTEM "http://www.omegahat.net">   <!-- include the contents of the README file in the same directory as this one. -->
 
   <!ELEMENT x  (#PCDATA) >
   <!ELEMENT y  (x)* >

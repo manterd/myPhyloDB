@@ -1,6 +1,6 @@
 [Setup]
 AppName=myPhyloDB
-AppVersion=1.1.2
+AppVersion=1.2.0
 DefaultDirName={code:DefDirRoot}\myPhyloDB
 DefaultGroupName=myPhyloDB
 Compression=lzma2
@@ -8,10 +8,12 @@ SolidCompression=yes
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=lowest
-OutputBaseFilename=myPhyloDB_v.1.1.2_Win_x64_install
+OutputBaseFilename=myPhyloDB_v.1.2.0_Win_x64_install
+
 
 [Files]
 Source: "..\..\dist\myPhyloDB\db.Microbe"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
+Source: "..\..\dist\myPhyloDB\db.PICRUSt"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
 
 Source: "..\..\dist\myPhyloDB\*.pyd"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\*.dll"; DestDir: "{app}"; Components: Main

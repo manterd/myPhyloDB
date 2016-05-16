@@ -1,0 +1,599 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>GAGE</title>
+{% endblock pagetitle%}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
+{% block menu_item %}
+    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
+    <br>
+    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
+{% endblock menu_item %}
+
+{% block javascript %}
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var DepVar = 1, i = 0;
+        var nodesCat = "", nodesKEGG = "";
+        var chart1 = {};
+        var catOptions = {};
+        var refresh;
+        var running = false;
+        var RID = 0;
+
+        $(function () {
+
+            $(window).bind('beforeunload', function(){
+                $.ajax({
+                    url: '/removeGAGEFiles/',
+                    async: false,
+                    dataType: 'json',
+                    data: {
+                        all: RID
+                    }
+                });
+            });
+
+            //Initialize dynatrees
+            $("#tree_metaCat").dynatree({
+                checkbox: true,
+                rootVisible: false,
+                selectMode: 3,
+                initAjax: {
+                    url: '/getSampleCatTree/',
+                    dataType: 'jsonp',
+                    data: {}
+                },
+                onLazyRead: function (node) {
+                    node.appendAjax({
+                        url: '/getSampleCatTreeChildren/',
+                        data: {pType: node.data.pType, field: node.data.title},
+                        success: function (node) {
+                            if (node.childList == undefined) {
+                                alert('No samples are available for this variable!');
+                            }
+                        }
+                    });
+                },
+                onSelect: function (flag, node) {
+                    if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            if (node.childList == undefined) {
+                                node.select(false);
+                                node.remove(true);
+                            } else {
+                                node.select(false);
+                                node.select(true);
+                            }
+                        });
+                    }
+                    nodesCat = node.tree.getSelectedNodes();
+                    $("#run").css("background-color", "lightgray");
+                }
+            });
+
+            $("#tree_kegg").dynatree({
+                checkbox: true,
+                selectMode: 2,
+                initAjax: {
+                    url: '/getKEGGTree2/',
+                    dataType: 'jsonp',
+                    data: {}
+                },
+                onSelect: function (flag, node) {
+                    nodesKEGG = node.tree.getSelectedNodes();
+                    $("#run").css("background-color", "lightgray");
+                }
+            });
+
+            // Initialize highcharts
+            Highcharts.setOptions({
+                lang: {
+                    numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
+                }
+            });
+
+            var $button = $('#hide');
+            $button.click(function() {
+                var series = chart1.series[0];
+                if (series.visible) {
+                    $(chart1.series).each(function(){
+                        this.setVisible(false, false);
+                    });
+                    chart1.redraw();
+                    $button.html('Show series');
+                } else {
+                    $(chart1.series).each(function(){
+                        this.setVisible(true, false);
+                    });
+                    chart1.redraw();
+                    $button.html('Hide series');
+                }
+            });
+
+            $('#button').click(function() {
+                var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
+                var color = prompt("Please enter your desired color:", "#008800");
+                var marker = prompt("Please enter your desired symbol:", "square");
+                var series = chart1.series[index];
+                if (color != '') {
+                    series.options.color = color;
+                    series.options.states.hover.color = color;
+                }
+                if (marker != '') {
+                    series.options.marker.symbol = marker;
+                }
+                if ((color != '') || (marker != '')) {
+                    series.update(series.options);
+                    chart1.redraw();
+                }
+            });
+
+            // Start stop and other 'click' functions
+            $("#run").show().click(function () {
+                if(running == true) {
+                    alert("myPhyloDB is currently running your previous analysis request!");
+                    return false;
+                }
+                $("#my_image").attr("src", "#");
+                $("#container-0").empty().show();
+                $("#container-2").hide();
+                $("#text-1").val('');
+                $("#gage_table").empty();
+                $("#diff_table").empty();
+                running = true;
+                chooseData();
+            });
+
+            $("#stop").show().click(function () {
+                running = false;
+                stopThis(RID);
+            });
+
+            $("#clearMeta").click(function () {
+                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+                checkButtons();
+            });
+
+            $("#TabButton").click(function () {
+                getTab();
+            });
+
+            // Capture all changes in textboxes, etc.
+            $("#DepVar").change(function () {
+                DepVar = $(this).val();
+                checkButtons();
+            });
+
+        });
+
+        function getTab(){
+            $.ajax({
+                url: '/getTabGAGE/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var name = obj['name'];
+                    getFile(name, 'final_data.csv');
+                }
+            });
+        }
+
+        function getFile(name, final) {
+            {% static "" as baseUrl %}
+            var url = {{ baseUrl }}+'/'+name;
+            var anchor = document.createElement('a');
+            anchor.setAttribute('href', url);
+            anchor.setAttribute('download', final);
+
+            var ev = document.createEvent("MouseEvents");
+                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            anchor.dispatchEvent(ev);
+        }
+
+        function chooseDisplay() {
+            if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
+                $("#container-0").hide();
+                $("#container-2").show();
+                $("#highchartButtons").hide();
+                {% static "" as baseUrl %}
+                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/gage/Rplots/" + RID + "/gage_final.pdf");
+            } else {
+                $("#container-0").show();
+                $("#container-2").hide();
+            }
+        }
+
+        function checkButtons(){
+            //set all buttons to their proper states given the current state of the independent buttons
+            $("#run").css("background-color", "lightgray");
+            document.getElementById("TabButton").disabled = true;
+
+            $("#container-0").empty().show().append('Settings have been changed by the user!');
+            $("#container-2").hide();
+            $("#my_image").attr("src", "#");
+
+        }
+
+        function stopThis(RID) {
+            clearInterval(refresh);
+            $.ajax({
+                url: '/stopGAGE/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['message'];
+                    $('#container-2').hide();
+                    $('#container-0').empty().show().append(stage);
+                }
+            });
+        }
+
+        function updateStatus(RID) {
+            $.ajax({
+                url: '/updateGAGE/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    $('#container-0').empty().append(stage);
+                }
+            });
+        }
+
+        function startTimer(RID) {
+            refresh = setInterval(function(){updateStatus(RID);}, 1000);
+            return refresh;
+        }
+
+        function stopTimer() {
+            clearInterval(refresh)
+        }
+
+        function chooseData() {
+            if (nodesCat == "") {
+                $("#container-0").empty().append('Please choose your meta variable(s)!');
+                $("#text-1").val('No data selected');
+                $("#text-raw").val('No data selected');
+                $("#run").css("background-color", "red");
+                running = false;
+            }
+            if (nodesCat != "")  {
+                $("#run").css("background-color", "yellow");
+                $("#container-0").empty().append('Analysis is running...please be patient');
+                getCatGraphData();
+            }
+        }
+
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
+        function checkDupes(list) {
+            var bools = [];
+            var firsts = [];
+            for (var i=0; i<list.length; i++) {
+                var sub = list[i].split(':');
+                var found = firsts.indexOf(sub[0]);
+                if (found==-1) {
+                    firsts.push(sub[0]);
+                    bools.push(false);
+                } else {
+                    bools[found] = true;
+                }
+            }
+            return (bools.indexOf(false)==-1);
+        }
+
+        function getCatGraphData() {
+            RID = makeGUID();
+            startTimer(RID);
+            var arrayValsCat = [];
+            var arrayIDsCat = [];
+            var key = '';
+            var value = '';
+            var vals = '';
+            var id = '';
+            var ids = '';
+            for (var i = 0; i < nodesCat.length; i++) {
+                if (nodesCat[i].getLevel() == 5) {
+                    if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
+                        key = nodesCat[i].data.field;
+                        value = nodesCat[i].data.value;
+                        id = nodesCat[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayValsCat.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDsCat.push(ids);
+                    }
+                }
+                else if (nodesCat[i].getLevel() == 6) {
+                    if ((nodesCat[i].data.table == 'human_associated') || (nodesCat[i].data.table == 'soil') || (nodesCat[i].data.table == 'air') || (nodesCat[i].data.table == 'microbial') || (nodesCat[i].data.table == 'water')) {
+                        key = nodesCat[i].data.field;
+                        value = nodesCat[i].data.value;
+                        id = nodesCat[i].data.id;
+                        vals = '"' + key + '" : "' + value + '"';
+                        arrayValsCat.push(vals);
+                        ids = '"' + key + '" : "' + id + '"';
+                        arrayIDsCat.push(ids);
+                    }
+                }
+            }
+
+            if (checkDupes(arrayValsCat)) {
+                var metaValsCat = '';
+                if (nodesCat.length > 0) {
+                    metaValsCat = "{" + arrayValsCat.join(",") + "}";
+                }
+
+                var metaIDsCat = '';
+                if (nodesCat.length > 0) {
+                    metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
+                }
+
+                var array3 = [];
+                for (i = 0; i < nodesKEGG.length; i++) {
+                    key = nodesKEGG[i].data.kegg;
+                    value = nodesKEGG[i].data.title;
+                    if (nodesKEGG[i].getLevel() > 3) {
+                        var next = '"' + key + '" : "' + value + '"';
+                        array3.push(next);
+                    }
+                }
+
+                var kegg = "{" + array3.join(",") + "}";
+
+                var myDict = {};
+                myDict['metaValsCat'] = metaValsCat;
+                myDict['metaIDsCat'] = metaIDsCat;
+                myDict['DepVar'] = DepVar;
+                myDict['kegg'] = kegg;
+                myDict['RID'] = RID;
+                var jsonDict = JSON.stringify(myDict);
+
+                $.ajax({
+                    url: '/getGAGE/',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        all: jsonDict
+                    },
+                    success: function(data) {
+                        running = false;
+                        stopTimer();
+                        var xAxis = data['xAxis'];
+                        var series = data['series'];
+                        var yAxis = data['yAxis'];
+                        var empty = data['empty'];
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
+                        if (empty == 0) {
+                            alert('No significant tests!');
+                        }
+
+                        var text = data['text'];
+                        $('#text-1').val(text);
+
+                        var gage_table = data['gage_table'];
+                        $('#gage_table').empty().append(gage_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var diff_table = data['diff_table'];
+                        $('#diff_table').empty().append(diff_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        $("div.toolbar").html('<br><br>');
+
+                        chooseDisplay();
+                    }
+                });
+            } else {
+                stopTimer();
+                $("#run").css("background-color", "lightgray");
+                $("#container-1").empty().append('Analysis has been cancelled!');
+                alert("Selected meta data only has one level.\nPlease select a different variable.");
+            }
+        }
+
+        function scatter(xAxis, yAxis, series) {
+           catOptions = {
+                chart: {
+                    renderTo: 'container-1',
+                    height: 400,
+                    width: 850,
+                    spacingRight: 50,
+                    type: 'scatter',
+                    zoomType: 'xy',
+                    events: {
+                        load: function () {
+                            var chart = this,
+                                    legend = chart.legend;
+                            for (var i = 0, len=legend.allItems.length; i< len; i++) {
+                                (function(i) {
+                                    var item = legend.allItems[i].legendItem;
+                                    var color = chart.series[i].color;
+                                    var symbol = chart.series[i].symbol;
+                                    item.on('mouseover', function (e) {
+                                        $(this).qtip({
+                                            content: {
+                                                text: 'Index: ' + i + '<br>' + 'Color: ' + color + '<br>' + 'Symbol: ' + symbol
+                                            },
+                                            style: {
+                                                classes: 'qtip-jtools'
+                                            },
+                                            show: {
+                                                ready: true
+                                            }
+                                        });
+                                    });
+                                })(i);
+                            }
+                        }
+                    }
+                },
+                colors: ['rgba(0,0,0,.5)', 'rgba(255,0,0,.5)'],
+                title: { text: null },
+                legend: {
+                    itemStyle: {
+                        fontSize: '10px',
+                        font: '10pt Trebuchet MS, Verdana, sans-serif',
+                        width: 250
+                    },
+                    align: 'right',
+                    verticalAlign: 'top',
+                    layout: 'vertical',
+                    x: -25,
+                    y: 25,
+                    labelFormatter: function () {
+                        return this.name + '<br/>'
+                    }
+                },
+                xAxis: xAxis,
+                yAxis: yAxis,
+                series: series,
+                tooltip: {
+                    formatter: function () {
+                        return this.point.name + '<br/>' +
+                            'Value: (' + Math.round(this.x*1000)/1000 + ',' + Math.round(1000*this.y)/1000 + ')<br/>';
+                    }
+                },
+                plotOptions: {
+                    series: {
+                        marker: {
+                            radius: 6
+                        }
+                    }
+                },
+                credits: { enabled: false }
+            };
+            chart1 = new Highcharts.Chart(catOptions);
+        }
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <br>
+    <!-- tree tables -->
+    <div>
+        <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+            <tr>
+                <th>Select Meta Data:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            </tr>
+            <tr>
+                <td style="padding-right: 10px; vertical-align: top">
+                    <div id="tree_metaCat"></div>
+                </td>
+            </tr>
+        </table>
+        <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+            <tr>
+                <th>Select Pathway (graphing only):<a href="#" id="clearTaxa" style="font-size: 12px;">-Deselect all-</a></th>
+            </tr>
+            <tr>
+                <td style="padding-right: 10px; vertical-align: top">
+                    <div id="tree_kegg"></div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <br><br>
+    <table width="950px" border="2" style="table-layout: fixed">
+        <colgroup>
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+            <col width="5%"><col width="5%">
+        </colgroup>
+        <tr>
+            <th colspan="20" style="padding-right: 10px;">GraphData</th>
+        </tr>
+        <tr>
+            <td id="cell" colspan="8" style="text-align: center">
+                Dependent variable:
+                <select id="DepVar">
+                    <option value="1">Relative Abundance</option>
+                    <option value="4">Abundance (rRNA gene copies)</option>
+                </select>
+            </td>
+            <td colspan="4" style="text-align: center">
+            <td colspan="8" style="text-align: center;"></td>
+        </tr>
+        <tr>
+            <td colspan="20" style="text-align: left;">
+                <div id="container-0" style="height: 425px; width: 950px;">No Data has been selected!</div>
+                <div id="container-2" style="height: 650px; width: 935px; display:none"><iframe id="my_image" src="#" height="100%" width="100%"></iframe></div>
+            </td>
+    </table>
+
+    <div id="txt-1">
+        <h2>Test Results:</h2>
+        <textarea style="width: 950px;" wrap="off" id="text-1" rows="15"></textarea>
+        <br>
+    </div>
+
+    <h2>GAGE Results:</h2>
+    <div id="gage_table" style="width: 950px; overflow-x: auto;"></div>
+    <br><br>
+
+    <h2>Diff Abund Results:</h2>
+    <div id="diff_table" style="width: 950px; overflow-x: auto;"></div>
+    <br><br>
+
+{% endblock my_content%}

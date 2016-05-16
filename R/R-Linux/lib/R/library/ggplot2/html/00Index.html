@@ -11,7 +11,7 @@
 <div style="text-align: center;">
 <a href="../../../doc/html/packages.html"><img class="arrow" src="../../../doc/html/left.jpg" alt="[Up]" /></a>
 <a href="../../../doc/html/index.html"><img class="arrow" src="../../../doc/html/up.jpg" alt="[Top]" /></a>
-</div><h2>Documentation for package &lsquo;ggplot2&rsquo; version 2.0.0</h2>
+</div><h2>Documentation for package &lsquo;ggplot2&rsquo; version 2.1.0</h2>
 
 <ul><li><a href="../DESCRIPTION">DESCRIPTION file</a>.</li>
 <li><a href="../doc/index.html">User guides, package vignettes and other documentation.</a></li>
@@ -413,7 +413,7 @@
 <tr><td style="width: 25%;"><a href="position_stack.html">position_stack</a></td>
 <td>Stack overlapping objects on top of one another.</td></tr>
 <tr><td style="width: 25%;"><a href="presidential.html">presidential</a></td>
-<td>Terms of 10 presidents from Eisenhower to Bush W.</td></tr>
+<td>Terms of 11 presidents from Eisenhower to Obama.</td></tr>
 <tr><td style="width: 25%;"><a href="print.ggplot.html">print.ggplot</a></td>
 <td>Draw plot on current graphics device.</td></tr>
 <tr><td style="width: 25%;"><a href="print.ggproto.html">print.ggproto</a></td>
@@ -477,6 +477,10 @@
 <td>Sequential, diverging and qualitative colour scales from colorbrewer.org</td></tr>
 <tr><td style="width: 25%;"><a href="scale_gradient.html">scale_colour_continuous</a></td>
 <td>Smooth gradient between two colours</td></tr>
+<tr><td style="width: 25%;"><a href="scale_gradient.html">scale_colour_date</a></td>
+<td>Smooth gradient between two colours</td></tr>
+<tr><td style="width: 25%;"><a href="scale_gradient.html">scale_colour_datetime</a></td>
+<td>Smooth gradient between two colours</td></tr>
 <tr><td style="width: 25%;"><a href="scale_hue.html">scale_colour_discrete</a></td>
 <td>Qualitative colour scale with evenly spaced hues.</td></tr>
 <tr><td style="width: 25%;"><a href="scale_brewer.html">scale_colour_distiller</a></td>
@@ -502,6 +506,10 @@
 <tr><td style="width: 25%;"><a href="scale_brewer.html">scale_fill_brewer</a></td>
 <td>Sequential, diverging and qualitative colour scales from colorbrewer.org</td></tr>
 <tr><td style="width: 25%;"><a href="scale_gradient.html">scale_fill_continuous</a></td>
+<td>Smooth gradient between two colours</td></tr>
+<tr><td style="width: 25%;"><a href="scale_gradient.html">scale_fill_date</a></td>
+<td>Smooth gradient between two colours</td></tr>
+<tr><td style="width: 25%;"><a href="scale_gradient.html">scale_fill_datetime</a></td>
 <td>Smooth gradient between two colours</td></tr>
 <tr><td style="width: 25%;"><a href="scale_hue.html">scale_fill_discrete</a></td>
 <td>Qualitative colour scale with evenly spaced hues.</td></tr>
@@ -552,6 +560,10 @@
 <tr><td style="width: 25%;"><a href="scale_size.html">scale_size_area</a></td>
 <td>Scale size (area or radius).</td></tr>
 <tr><td style="width: 25%;"><a href="scale_size.html">scale_size_continuous</a></td>
+<td>Scale size (area or radius).</td></tr>
+<tr><td style="width: 25%;"><a href="scale_size.html">scale_size_date</a></td>
+<td>Scale size (area or radius).</td></tr>
+<tr><td style="width: 25%;"><a href="scale_size.html">scale_size_datetime</a></td>
 <td>Scale size (area or radius).</td></tr>
 <tr><td style="width: 25%;"><a href="scale_size.html">scale_size_discrete</a></td>
 <td>Scale size (area or radius).</td></tr>
@@ -672,14 +684,14 @@
 <td>ggplot2 themes</td></tr>
 <tr><td style="width: 25%;"><a href="ggtheme.html">theme_minimal</a></td>
 <td>ggplot2 themes</td></tr>
+<tr><td style="width: 25%;"><a href="theme_update.html">theme_replace</a></td>
+<td>Get, set and update themes.</td></tr>
 <tr><td style="width: 25%;"><a href="theme_update.html">theme_set</a></td>
 <td>Get, set and update themes.</td></tr>
 <tr><td style="width: 25%;"><a href="theme_update.html">theme_update</a></td>
 <td>Get, set and update themes.</td></tr>
 <tr><td style="width: 25%;"><a href="ggtheme.html">theme_void</a></td>
 <td>ggplot2 themes</td></tr>
-<tr><td style="width: 25%;"><a href="translate_qplot_base.html">translate_qplot_base</a></td>
-<td>Translating between qplot and base graphics</td></tr>
 <tr><td style="width: 25%;"><a href="translate_qplot_ggplot.html">translate_qplot_ggplot</a></td>
 <td>Translating between qplot and ggplot</td></tr>
 <tr><td style="width: 25%;"><a href="translate_qplot_lattice.html">translate_qplot_lattice</a></td>
@@ -737,11 +749,11 @@
 
 <table width="100%">
 <tr><td style="width: 25%;"><a href="gg-add.html">%+%</a></td>
-<td>Modify a ggplot or theme object by adding on new components.</td></tr>
+<td>Add a new component to a ggplot or theme object.</td></tr>
 <tr><td style="width: 25%;"><a href="gg-add.html">%+replace%</a></td>
-<td>Modify a ggplot or theme object by adding on new components.</td></tr>
+<td>Add a new component to a ggplot or theme object.</td></tr>
 <tr><td style="width: 25%;"><a href="gg-add.html">+.gg</a></td>
-<td>Modify a ggplot or theme object by adding on new components.</td></tr>
+<td>Add a new component to a ggplot or theme object.</td></tr>
 <tr><td style="width: 25%;"><a href="graphical-units.html">.pt</a></td>
 <td>Graphical units</td></tr>
 <tr><td style="width: 25%;"><a href="graphical-units.html">.stroke</a></td>

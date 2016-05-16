@@ -4,7 +4,7 @@
 #
 # R was configured using the following call
 # (not including env. vars and site configuration)
-# configure  'prefix=/home/manterd/R/R-Linux'
+# configure  '--prefix=/home/manterd/PycharmProjects/myPhyloDB/R/R-Linux' '--with-x=yes' '--with-cairo=yes' '--with-lapack=yes' '--with-blas=yes' '--enable-R-shlib'
 
 ## This fails if it contains spaces, or if it is quoted
 include $(R_SHARE_DIR)/make/vars.mk
@@ -12,7 +12,7 @@ include $(R_SHARE_DIR)/make/vars.mk
 AR = ar
 ## Used by packages 'maps' and 'mapdata'
 AWK = gawk
-BLAS_LIBS = -L$(R_HOME)/lib$(R_ARCH) -lRblas
+BLAS_LIBS = -lblas
 C_VISIBILITY = -fvisibility=hidden
 CC = gcc -std=gnu99
 CFLAGS = -g -O2 $(LTO)
@@ -47,24 +47,24 @@ FCPICFLAGS = -fpic
 FPICFLAGS = -fpic
 FOUNDATION_CPPFLAGS = 
 FOUNDATION_LIBS = 
-JAR = 
-JAVA = 
-JAVAC = 
-JAVAH = 
+JAR = /usr/bin/jar
+JAVA = /usr/bin/java
+JAVAC = /usr/bin/javac
+JAVAH = /usr/bin/javah
 ## JAVA_HOME might be used in the next three.  
 ## They are for packages 'JavaGD' and 'rJava'
-JAVA_HOME = 
-JAVA_CPPFLAGS = 
-JAVA_LIBS = 
-JAVA_LD_LIBRARY_PATH = 
-LAPACK_LIBS = -L$(R_HOME)/lib$(R_ARCH) -lRlapack
+JAVA_HOME = /usr/lib/jvm/java-7-openjdk-amd64/jre
+JAVA_CPPFLAGS = -I$(JAVA_HOME)/../include
+JAVA_LIBS = -L$(JAVA_HOME)/lib/amd64/server -ljvm
+JAVA_LD_LIBRARY_PATH = $(JAVA_HOME)/lib/amd64/server
+LAPACK_LIBS = -llapack
 ## we only need this is if it is external, as otherwise link to R
 LIBINTL= 
 LIBM = -lm
-LIBR0 = 
-LIBR1 = 
-LIBR =  
-LIBS =  -lpcre -lbz2 -lz -lrt -ldl -lm
+LIBR0 = -L$(R_HOME)/lib$(R_ARCH)
+LIBR1 = -lR
+LIBR = -L$(R_HOME)/lib$(R_ARCH) -lR
+LIBS =  -lpcre -llzma -lbz2 -lz -lrt -ldl -lm -licuuc -licui18n
 ## needed by R CMD config
 LIBnn = lib
 LIBTOOL = $(SHELL) "$(R_HOME)/bin/libtool"
@@ -106,8 +106,8 @@ SHLIB_OPENMP_FCFLAGS = -fopenmp
 SHLIB_OPENMP_FFLAGS = -fopenmp
 STRIP_LIBS = strip --strip-unneeded
 STRIP_STATIC_LIBS = strip --strip-debug
-TCLTK_CPPFLAGS = -I/usr/include/tcl8.4 -I/usr/include/tcl8.4 
-TCLTK_LIBS = -L/usr/lib/x86_64-linux-gnu -ltcl8.4 -L/usr/lib/x86_64-linux-gnu -ltk8.4 -lX11
+TCLTK_CPPFLAGS = -I/usr/include/tcl8.5 -I/usr/include/tcl8.5 
+TCLTK_LIBS = -L/usr/lib/x86_64-linux-gnu -ltcl8.5 -L/usr/lib/x86_64-linux-gnu -ltk8.5 -lX11 -lXss -lXext
 YACC = bison -y
 
 ## for linking to libR.a
