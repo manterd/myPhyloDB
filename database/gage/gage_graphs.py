@@ -208,6 +208,7 @@ def loopCat(request):
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+
                 finalDF = getKeggDF(savedDF, tempDF, DepVar, RID)
 
                 base[RID] = 'Step 3 of 4: Performing GAGE analysis...'
@@ -223,8 +224,8 @@ def loopCat(request):
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 1:
-                    finalDF['rel_abund'] = finalDF['rel_abund'].round(0).astype(int)
-                    count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='rel_abund')
+                    finalDF['abund'] = finalDF['abund'].round(0).astype(int)
+                    count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
                 elif DepVar == 4:
                     finalDF['abund_16S'] = finalDF['abund_16S'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
@@ -307,6 +308,7 @@ def loopCat(request):
                         r.assign("trt2", trt2)
 
                         # get sign based on log2FoldChange
+                        #print r("results(dds, contrast=c('trt', trt1, trt2))")
                         r("res <- results(dds, contrast=c('trt', trt1, trt2))")
                         r("change <- -res$log2FoldChange")
                         r("names(change) <- row.names(res)")
@@ -314,11 +316,12 @@ def loopCat(request):
                         # output DiffAbund to DataTable
                         r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
                         r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
+                        #print r("data.frame(kegg=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
                         r("df <- data.frame(kegg=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
 
                         compDF = r.get("df")
                         comparison = str(trt1) + ' vs. ' + str(trt2)
-                        compDF.insert(0, 'comparison', comparison)
+                        compDF.insert(0, 'comparison', comparison)  # nonetype! compDF can be null?
                         diffDF = diffDF.append(compDF, ignore_index=True)
                         all_columns = compDF.columns
                         diffDF = diffDF.ix[:, all_columns]
@@ -343,7 +346,9 @@ def loopCat(request):
                         r("sig <- sig * binary")
                         r("names(sig) <- row.names(res)")
 
+
                         for key in keggDict.iterkeys():
+
                             r.assign("pathway", key)
                             r("pid <- substr(pathway, start=1, stop=7)")
                             r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../../media/kegg/pathways', kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
@@ -421,7 +426,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID):
     global base, stops, stop8, res
     try:
         # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'rel_abund', 'abund_16S']
+        wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
         profileDF = tempDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -464,7 +469,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID):
 
         for key in finalKeys:
             if DepVar == 1:
-                taxaDF[key] = taxaDF['rel_abund'] * taxaDF[key]
+                taxaDF[key] = taxaDF['abund'] * taxaDF[key]
             elif DepVar == 4:
                 taxaDF[key] = taxaDF['abund_16S'] * taxaDF[key]
 
@@ -478,7 +483,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID):
         taxaDF.reset_index(drop=False, inplace=True)
 
         if DepVar == 1:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='rel_abund')
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 4:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
 

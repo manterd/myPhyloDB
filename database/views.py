@@ -678,10 +678,10 @@ def ANOVA(request):
 
 
 def rich(request):
-    cleanup('media/temp/rich')
+    cleanup('media/temp/spac')
 
     return render_to_response(
-        'rich.html',
+        'SpAC.html',
         context_instance=RequestContext(request)
     )
 

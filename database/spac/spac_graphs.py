@@ -27,15 +27,15 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-stop_rich = False
+stop_SpAC = False
 stops = {}
-thread_rich = stoppableThread()
+thread_SpAC = stoppableThread()
 res = ''
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def statusrich(request):
+def statusSpAC(request):
     global base, stage, time1, time2, TimeDiff
     if request.is_ajax():
         RID = request.GET["all"]
@@ -55,7 +55,7 @@ def statusrich(request):
         return HttpResponse(json_data, content_type='application/json')
 
 
-def removeRIDrich(request):
+def removeRIDSpAC(request):
     global base, stage, time1, time2, TimeDiff
     try:
         if request.is_ajax():
@@ -73,15 +73,15 @@ def removeRIDrich(request):
         return False
 
 
-def stoprich(request):
-    global thread_rich, stops, stop_rich, res
+def stopSpAC(request):
+    global thread_SpAC, stops, stop_SpAC, res
     if request.is_ajax():
         RID = request.GET["all"]
         stops[RID] = True
-        stop_rich = True
-        thread_rich.terminate()
-        thread_rich.join()
-        removeRIDrich(request)
+        stop_SpAC = True
+        thread_SpAC.terminate()
+        thread_SpAC.join()
+        removeRIDSpAC(request)
 
         res = ''
         myDict = {}
@@ -91,19 +91,19 @@ def stoprich(request):
         return HttpResponse(stop, content_type='application/json')
 
 
-def getrich(request):
-    global res, thread_rich, stop_rich
+def getSpAC(request):
+    global res, thread_SpAC, stop_SpAC
     if request.is_ajax():
-        stop_rich = False
-        thread_rich = stoppableThread(target=loopCat, args=(request,))
-        thread_rich.start()
-        thread_rich.join()
-        removeRIDrich(request)
+        stop_SpAC = False
+        thread_SpAC = stoppableThread(target=loopCat, args=(request,))
+        thread_SpAC.start()
+        thread_SpAC.join()
+        removeRIDSpAC(request)
         return HttpResponse(res, content_type='application/json')
 
 
 def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stops, stop_rich
+    global res, base, stage, time1, TimeDiff, stops, stop_SpAC
     try:
         while True:
             if request.is_ajax():
@@ -113,7 +113,7 @@ def loopCat(request):
                 stops[RID] = False
 
                 time1[RID] = time.time()
-                base[RID] = 'Step 1 of X: Selecting your chosen meta-variables...'
+                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
 
                 path = pickle.loads(request.session['savedDF'])
                 savedDF = pd.read_pickle(path)
@@ -208,7 +208,7 @@ def loopCat(request):
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n'
 
-                base[RID] = 'Step 1 of X: Selecting your chosen meta-variables...done'
+                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -216,7 +216,7 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of X: Selecting your chosen taxa or KEGG level...'
+                base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
 
                 DepVar = 1
                 finalDF = pd.DataFrame()
@@ -233,7 +233,7 @@ def loopCat(request):
                     finalDF = getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID)
 
                 # save location info to session
-                myDir = 'media/temp/rich/'
+                myDir = 'media/temp/spac/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -243,7 +243,7 @@ def loopCat(request):
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 1:
-                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
                 elif DepVar == 2:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
                 elif DepVar == 3:
@@ -264,7 +264,7 @@ def loopCat(request):
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
-                base[RID] = 'Step 2 of X: Selecting your chosen taxa...done'
+                base[RID] = 'Step 2 of 4: Selecting your chosen taxa...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -272,14 +272,14 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 3 of X: Calculating Species Accumulation Curves...'
+                base[RID] = 'Step 3 of 4: Calculating Species Accumulation Curves...'
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                path = os.path.join('media', 'temp', 'rich', 'Rplots', RID)
+                path = os.path.join('media', 'temp', 'spac', 'Rplots', RID)
                 if not os.path.exists(path):
                     os.makedirs(path)
 
@@ -303,8 +303,9 @@ def loopCat(request):
                         data = count_rDF.ix[IDs]
                         r.assign("data", data)
 
-                        r("pdf(paste('rich_temp', pdf_counter, '.pdf', sep=''))")
+                        r("pdf(paste('SpAC_temp', pdf_counter, '.pdf', sep=''))")
                         if method == 'estaccumR':
+                            print r("estaccumR(data)")
                             r("x <- estaccumR(data)")
                         if method == 'poolaccum':
                             r("x <- poolaccum(data)")
@@ -335,7 +336,7 @@ def loopCat(request):
                 else:
                     r.assign("data", count_rDF)
 
-                    r("pdf(paste('rich_temp', pdf_counter, '.pdf', sep=''))")
+                    r("pdf(paste('SpAC_temp', pdf_counter, '.pdf', sep=''))")
                     if method == 'estaccumR':
                         r("x <- estaccumR(data)")
                     if method == 'poolaccum':
@@ -349,12 +350,12 @@ def loopCat(request):
                     r("dev.off()")
                     r("pdf_counter <- pdf_counter + 1")
 
-                base[RID] = 'Step 3 of X: Calculating Species Accumulation Curves...done!'
+                base[RID] = 'Step 3 of 4: Calculating Species Accumulation Curves...done!'
 
-                base[RID] = 'Step 4 of X: Pooling pdf files for display...'
+                base[RID] = 'Step 4 of 4: Pooling pdf files for display...'
 
                 # Combining Pdf files
-                finalFile = 'media/temp/rich/Rplots/' + str(RID) + '/rich_final.pdf'
+                finalFile = 'media/temp/spac/Rplots/' + str(RID) + '/SpAC_final.pdf'
 
                 pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
                 pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
@@ -379,44 +380,44 @@ def loopCat(request):
                 return None
 
     except:
-        if not stop_rich:
+        if not stop_SpAC:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
-            myDict['error'] = "Error with rich!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict['error'] = "Error with SpAC!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
         return None
 
 
 def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID):
-    global base, stops, stop_rich, res
+    global base, stops, stop_SpAC, res
     try:
         base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
-        taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'rel_abund', 'abund_16S', 'rich', 'diversity'])
+        taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'abund', 'abund_16S', 'rich', 'diversity'])
 
         if selectAll == 2:
-            taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Phyla'
         elif selectAll == 3:
-            taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Class'
         elif selectAll == 4:
-            taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Order'
         elif selectAll == 5:
-            taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Family'
         elif selectAll == 6:
-            taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Genus'
         elif selectAll == 7:
-            taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Species'
 
@@ -431,7 +432,7 @@ def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID):
 
         wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
         if DepVar == 1:
-            finalDF = finalDF.groupby(wantedList)[['rel_abund']].sum()
+            finalDF = finalDF.groupby(wantedList)[['abund']].sum()
         elif DepVar == 2:
             finalDF = finalDF.groupby(wantedList)[['rich']].sum()
         elif DepVar == 3:
@@ -443,18 +444,18 @@ def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID):
         return finalDF
 
     except:
-        if not stop_rich:
+        if not stop_SpAC:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
-            myDict['error'] = "Error with rich!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict['error'] = "Error with SpAC!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
         return None
 
 
 def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
-    global base, stops, stop_rich, res
+    global base, stops, stop_SpAC, res
     try:
         base[RID] = 'Step 2 of 8: Selecting your chosen taxa or KEGG level...'
         koDict = {}
@@ -503,7 +504,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+        wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S', 'rich', 'diversity']
         profileDF = tempDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -513,7 +514,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/rich/' + str(RID)
+        path = 'media/temp/spac/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -550,7 +551,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/rich/'+str(RID)+'/file%d.temp' % i
+            path = 'media/temp/spac/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -560,7 +561,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/rich/'+str(RID))
+        shutil.rmtree('media/temp/spac/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
 
         # merge to get final gene counts for all selected samples
@@ -568,11 +569,11 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
 
         for level in levelList:
             if DepVar == 1:
-                taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
             elif DepVar == 2:
-                taxaDF[level] = np.where(taxaDF['rel_abund'] * taxaDF[level] > 0, 1, 0)
+                taxaDF[level] = np.where(taxaDF['abund'] * taxaDF[level] > 0, 1, 0)
             elif DepVar == 3:
-                taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
                 taxaDF[level] = taxaDF[level].div(taxaDF[level].sum(), axis=0)
                 taxaDF[level] = taxaDF[level].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
             elif DepVar == 4:
@@ -588,7 +589,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
         taxaDF.reset_index(drop=False, inplace=True)
 
         if DepVar == 1:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='rel_abund')
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 4:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
         elif DepVar == 2:
@@ -631,18 +632,18 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
         return finalDF
 
     except:
-        if not stop_rich:
+        if not stop_SpAC:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
-            myDict['error'] = "Error with rich!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict['error'] = "Error with SpAC!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
         return None
 
 
 def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
-    global base, stops, stop_rich, res
+    global base, stops, stop_SpAC, res
     try:
         nzDict = {}
         if nzAll == 1:
@@ -830,7 +831,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
             nzDict[id] = idList
 
         # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+        wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S', 'rich', 'diversity']
         profileDF = tempDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -840,7 +841,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/rich/' + str(RID)
+        path = 'media/temp/spac/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -877,7 +878,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/rich/'+str(RID)+'/file%d.temp' % i
+            path = 'media/temp/spac/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -887,18 +888,18 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/rich/'+str(RID))
+        shutil.rmtree('media/temp/spac/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
         for level in levelList:
             if DepVar == 1:
-                taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
             elif DepVar == 2:
-                taxaDF[level] = np.where(taxaDF['rel_abund'] * taxaDF[level] > 0, 1, 0)
+                taxaDF[level] = np.where(taxaDF['abund'] * taxaDF[level] > 0, 1, 0)
             elif DepVar == 3:
-                taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
                 taxaDF[level] = taxaDF[level].div(taxaDF[level].sum(), axis=0)
                 taxaDF[level] = taxaDF[level].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
             elif DepVar == 4:
@@ -914,7 +915,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
         taxaDF.reset_index(drop=False, inplace=True)
 
         if DepVar == 1:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='rel_abund')
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 4:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
         elif DepVar == 2:
@@ -960,12 +961,12 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
         return finalDF
 
     except:
-        if not stop_rich:
+        if not stop_SpAC:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
-            myDict['error'] = "Error with rich!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict['error'] = "Error with spac!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
         return None
 
@@ -974,7 +975,7 @@ def sumStuff(slice, koDict, RID, num):
     global base, stops, res
     db.close_old_connections()
 
-    f = open('media/temp/rich/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('media/temp/spac/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -1007,38 +1008,38 @@ def sumStuff(slice, koDict, RID, num):
     f.close()
 
 
-def removerichFiles(request):
+def removeSpACFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/rich/Rplots/" + str(RID) + ".rich.pdf"
+        file = "media/temp/spac/Rplots/" + str(RID) + ".spac.pdf"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/rich/" + str(RID) + ".pkl"
+        file = "media/temp/spac/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/rich/" + str(RID) + ".csv"
+        file = "media/temp/spac/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 
         return HttpResponse()
 
 
-def getTabrich(request):
+def getTabSpAC(request):
     if request.is_ajax():
         RID = request.GET["all"]
-        myDir = 'media/temp/rich/'
+        myDir = 'media/temp/spac/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/rich/'
+        myDir = 'media/temp/spac/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/rich/'
+        myDir = 'temp/spac/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

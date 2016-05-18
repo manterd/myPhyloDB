@@ -4,7 +4,7 @@ from registration.backends.simple.views import RegistrationView
 
 from database import views, parsers, trees
 from database.anova import anova_graphs
-from database.rich import rich_graphs
+from database.spac import spac_graphs
 from database.diffabund import diffabund_graphs
 from database.gage import gage_graphs
 from database.norm import norm_graphs
@@ -73,12 +73,12 @@ urlpatterns = [
     url(r'^getTabANOVA/$', anova_graphs.getTabANOVA, name='getTabANOVA'),
     url(r'^removeANOVAFiles/$', anova_graphs.removeANOVAFiles, name='removeANOVAFiles'),
 
-    url(r'^getrich/$', rich_graphs.getrich, name='getrich'),
-    url(r'^statusrich/$', rich_graphs.statusrich, name='statusrich'),
-    url(r'^removeRIDrich/$', rich_graphs.removeRIDrich, name='removeRIDrich'),
-    url(r'^removerichFiles/$', rich_graphs.removerichFiles, name='removerichFiles'),
-    url(r'^stoprich/$', rich_graphs.stoprich, name='stoprich'),
-    url(r'^getTabrich/$', rich_graphs.getTabrich, name='getTabrich'),
+    url(r'^getSpAC/$', spac_graphs.getSpAC, name='getSpAC'),
+    url(r'^statusSpAC/$', spac_graphs.statusSpAC, name='statusSpAC'),
+    url(r'^removeRIDSpAC/$', spac_graphs.removeRIDSpAC, name='removeRIDSpAC'),
+    url(r'^removeSpACFiles/$', spac_graphs.removeSpACFiles, name='removeSpACFiles'),
+    url(r'^stopSpAC/$', spac_graphs.stopSpAC, name='stopSpAC'),
+    url(r'^getTabSpAC/$', spac_graphs.getTabSpAC, name='getTabSpAC'),
 
     url(r'^getsoil_index/$', soil_index_graphs.getsoil_index, name='getsoil_index'),
     url(r'^statussoil_index/$', soil_index_graphs.statussoil_index, name='statussoil_index'),

@@ -221,12 +221,13 @@ def loopCat(request):
                 rnaDF.ix[(rnaDF.rRNACount > 8) & (rnaDF.rRNACount <= 9), 'bins'] = 'bin9'
                 rnaDF.ix[(rnaDF.rRNACount > 9) & (rnaDF.rRNACount <= 10), 'bins'] = 'bin10'
                 rnaDF.ix[rnaDF.rRNACount > 10, 'bins'] = 'bin11'
+                myBins = list(set(rnaDF['bins'].tolist()))
 
                 binDF = rnaDF.groupby(['sampleid', 'bins'])['rel_abund'].sum()
                 binDF = binDF.unstack(level=-1)
                 binDF.fillna(0.0, axis=1, inplace=True)
                 binDF.reset_index(drop=False, inplace=True)
-                sumDF1 = binDF.groupby('sampleid')['bin1', 'bin2', 'bin3', 'bin4', 'bin5', 'bin6', 'bin7', 'bin8', 'bin9', 'bin10', 'bin11'].sum()
+                sumDF1 = binDF.groupby('sampleid')[myBins].sum()
 
                 sumDF2 = finalDF.groupby('sampleid')['abund_16S', 'rich', 'diversity'].sum()
                 allDF = pd.merge(sumDF2, sumDF1, left_index=True, right_index=True, how='outer')
@@ -235,10 +236,35 @@ def loopCat(request):
                 allDF = pd.merge(allDF, kegg_rDF, left_index=True, right_index=True, how='outer')
 
                 allDF = pd.merge(allDF, meta_rDF, left_index=True, right_index=True, how='outer')
-                bytrt = allDF.groupby(catFields_edit)[['abund_16S', 'rich', 'diversity', 'bin1', 'bin2', 'bin3', 'bin4', 'bin5', 'bin6', 'bin7', 'bin8', 'bin9', 'bin10', 'bin11']]
-                print bytrt.mean()
+                wantList = ['abund_16S', 'rich', 'diversity'] + myBins
+                bytrt1 = allDF.groupby(catFields_edit)[wantList]
+                #print bytrt1.mean()  # means by other means
 
-                result += str(bytrt.describe())
+                nzDF = keggDF.groupby(['sampleid', 'rank_name'])['rel_abund'].sum()
+                nzDF = nzDF.unstack(level=-1)
+                starDF = pd.merge(nzDF, meta_rDF, left_index=True, right_index=True, how='outer')
+                bytrt2 = starDF.groupby(catFields_edit)
+
+                myList = [u'1.1.1.76  (S,S)-butanediol dehydrogenase', u'1.18.6.1  nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)', u'3.1.3.1  alkaline phosphatase', u'3.1.3.2  acid phosphatase', u'3.1.6.1  arylsulfatase', u'3.2.1.14  chitinase', u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase', u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase', u'3.5.1.5  urease', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase', u'6.3.2.39  aerobactin synthase']
+                newList = [u'(S,S)-butanediol dehydrogenase', u'nitrogenase', u'pyrroloquinoline-quinone synthase', u'glycine dehydrogenase (cyanide-forming)', u'alkaline phosphatase', u'3.1.3.2  acid phosphatase', u'3.1.6.1  arylsulfatase', u'3.2.1.14  chitinase', u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase', u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase', u'3.5.1.5  urease', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase', u'6.3.2.39  aerobactin synthase']
+                ### rename and reorder bytrt2
+
+                df = bytrt2.mean()
+                print df
+                enzymes = df.columns.values.tolist()
+
+                print enzymes
+
+                if os.name == 'nt':
+                    r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                else:
+                    r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+                r.assign('data', bytrt2.mean())
+                r('max <- apply(data, 2, max)')
+                r('final <- scale(data, center=F, scale=max)')
+                r('trt <- row.names(final)')
+                r.assign('enzymes', enzymes)
 
 
 
@@ -254,10 +280,6 @@ def loopCat(request):
 
                 base[RID] = 'Step 3 of X: Calculating Species Accumulation Curves...'
 
-                if os.name == 'nt':
-                    r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
-                else:
-                    r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
                 path = os.path.join('media', 'temp', 'soil_index', 'Rplots', RID)
                 if not os.path.exists(path):

@@ -21,4 +21,4 @@ Collate: ACCNUMStats.R Amat.R AnnMaps.R chromLocation.R
 biocViews: Annotation, Pathways, GO
 Packaged: 2015-10-14 00:33:28 UTC; biocbuild
 NeedsCompilation: no
-Built: R 3.2.3; ; 2016-04-12 20:47:04 UTC; unix
+Built: R 3.2.3; ; 2016-04-06 22:43:42 UTC; unix

@@ -64,7 +64,7 @@ LIBM = -lm
 LIBR0 = -L$(R_HOME)/lib$(R_ARCH)
 LIBR1 = -lR
 LIBR = -L$(R_HOME)/lib$(R_ARCH) -lR
-LIBS =  -lpcre -llzma -lbz2 -lz -lrt -ldl -lm -licuuc -licui18n
+LIBS =  -lpcre -llzma -lbz2 -lz -lrt -ldl -lm
 ## needed by R CMD config
 LIBnn = lib
 LIBTOOL = $(SHELL) "$(R_HOME)/bin/libtool"
