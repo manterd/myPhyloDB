@@ -24,4 +24,4 @@ Collate: Assays-class.R SummarizedExperiment0-class.R
         readKallisto.R zzz.R
 NeedsCompilation: no
 Packaged: 2016-01-01 05:02:51 UTC; biocbuild
-Built: R 3.2.3; ; 2016-04-12 20:48:04 UTC; unix
+Built: R 3.2.3; ; 2016-04-06 22:44:18 UTC; unix

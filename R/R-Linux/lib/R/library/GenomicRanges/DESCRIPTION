@@ -47,4 +47,4 @@ Collate: utils.R phicoef.R transcript-utils.R constraint.R
         tile-methods.R genomicvars.R test_GenomicRanges_package.R zzz.R
 NeedsCompilation: yes
 Packaged: 2016-01-30 02:18:29 UTC; biocbuild
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-12 20:47:28 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:43:57 UTC; unix
