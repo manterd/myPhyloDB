@@ -232,42 +232,98 @@ def loopCat(request):
                 sumDF2 = finalDF.groupby('sampleid')['abund_16S', 'rich', 'diversity'].sum()
                 allDF = pd.merge(sumDF2, sumDF1, left_index=True, right_index=True, how='outer')
 
-                kegg_rDF = keggDF.pivot(index='sampleid', columns='rank_name', values='rel_abund')
-                allDF = pd.merge(allDF, kegg_rDF, left_index=True, right_index=True, how='outer')
-
                 allDF = pd.merge(allDF, meta_rDF, left_index=True, right_index=True, how='outer')
                 wantList = ['abund_16S', 'rich', 'diversity'] + myBins
                 bytrt1 = allDF.groupby(catFields_edit)[wantList]
                 #print bytrt1.mean()  # means by other means
+                '''will need this data later'''
 
-                nzDF = keggDF.groupby(['sampleid', 'rank_name'])['rel_abund'].sum()
+                nzDF = keggDF.groupby(['sampleid', 'rank_name'])['abund'].sum()
                 nzDF = nzDF.unstack(level=-1)
                 starDF = pd.merge(nzDF, meta_rDF, left_index=True, right_index=True, how='outer')
                 bytrt2 = starDF.groupby(catFields_edit)
 
-                myList = [u'1.1.1.76  (S,S)-butanediol dehydrogenase', u'1.18.6.1  nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)', u'3.1.3.1  alkaline phosphatase', u'3.1.3.2  acid phosphatase', u'3.1.6.1  arylsulfatase', u'3.2.1.14  chitinase', u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase', u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase', u'3.5.1.5  urease', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase', u'6.3.2.39  aerobactin synthase']
-                newList = [u'(S,S)-butanediol dehydrogenase', u'nitrogenase', u'pyrroloquinoline-quinone synthase', u'glycine dehydrogenase (cyanide-forming)', u'alkaline phosphatase', u'3.1.3.2  acid phosphatase', u'3.1.6.1  arylsulfatase', u'3.2.1.14  chitinase', u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase', u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase', u'3.5.1.5  urease', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase', u'6.3.2.39  aerobactin synthase']
-                ### rename and reorder bytrt2
-
-                df = bytrt2.mean()
-                print df
-                enzymes = df.columns.values.tolist()
-
-                print enzymes
+                myList = [u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase', u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase', u'3.5.1.5  urease', u'3.1.3.1  alkaline phosphatase', u'3.1.3.2  acid phosphatase', u'3.1.6.1  arylsulfatase', u'1.18.6.1  nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase', u'6.3.2.39  aerobactin synthase', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase', u'1.1.1.76  (S,S)-butanediol dehydrogenase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase']
+                newList = [u'cellulase', u'endo-1,4-beta-xylanase', u'beta-glucosidase', u'xylan 1,4-beta-xylosidase', u'cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'amidase', u'urease', u'alkaline phosphatase', u'acid phosphatase', u'arylsulfatase', u'nitrogenase', u'pyrroloquinoline-quinone synthase', u'aerobactin synthase', u'1-aminocyclopropane-1-carboxylate deaminase', u'indolepyruvate decarboxylase', u'(S,S)-butanediol dehydrogenase', u'glycine dehydrogenase (cyanide-forming)', u'chitinase']
+                df = bytrt2[myList].mean()
+                df.rename(columns={u'3.2.1.4  cellulase': 'cellulase', u'3.2.1.8  endo-1,4-beta-xylanase': 'endo-1,4-beta-xylanase', u'3.2.1.21  beta-glucosidase': 'beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase': 'xylan 1,4-beta-xylosidase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': 'cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase': 'amidase', u'3.5.1.5  urease': 'urease', u'3.1.3.1  alkaline phosphatase': 'alkaline phosphatase', u'3.1.3.2  acid phosphatase': 'acid phosphatase', u'3.1.6.1  arylsulfatase': 'arylsulfatase', u'1.18.6.1  nitrogenase': 'nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase': 'pyrroloquinoline-quinone synthase', u'6.3.2.39  aerobactin synthase': 'aerobactin synthase', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase': '1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase': 'indolepyruvate decarboxylase', u'1.1.1.76  (S,S)-butanediol dehydrogenase': '(S,S)-butanediol dehydrogenase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase': 'chitinase'}, inplace=True)
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                r.assign('data', bytrt2.mean())
-                r('max <- apply(data, 2, max)')
-                r('final <- scale(data, center=F, scale=max)')
-                r('trt <- row.names(final)')
-                r.assign('enzymes', enzymes)
+                path = os.path.join('media', 'temp', 'soil_index', 'Rplots', RID)
+                if not os.path.exists(path):
+                    os.makedirs(path)
 
+                r.assign("path", path)
+                r("setwd(path)")
+                r("options('width'=5000)")
+                r.assign("RID", RID)
 
+                df.reset_index(drop=False, inplace=True)
+                if len(catFields_edit) > 1:
+                    for index, row in df.iterrows():
+                        df.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                else:
+                    df.loc[:, 'merge'] = df.loc[:, catFields_edit[0]]
 
+                df.set_index('merge', inplace=True)
+                df = df[newList]
+                result += str(df)
+
+                maxDict = {
+                    'cellulase': 1e9,
+                    'endo-1,4-beta-xylanase': 1e9,
+                    'beta-glucosidase': 1e9,
+                    'xylan 1,4-beta-xylosidase': 1e9,
+                    'cellulose 1,4-beta-cellobiosidase (non-reducing end)': 1e9,
+                    'amidase': 1e9,
+                    'urease': 1e9,
+                    'alkaline phosphatase': 1e9,
+                    'acid phosphatase': 1e9,
+                    'arylsulfatase': 1e9,
+                    'nitrogenase': 1e9,
+                    'pyrroloquinoline-quinone synthase': 1e9,
+                    'aerobactin synthase': 1e9,
+                    '1-aminocyclopropane-1-carboxylate deaminase': 1e9,
+                    'indolepyruvate decarboxylase': 1e9,
+                    '(S,S)-butanediol dehydrogenase': 1e9,
+                    'glycine dehydrogenase (cyanide-forming)': 1e9,
+                    'chitinase': 1e9
+                }
+
+                scaleDF = df.copy()
+                for key in maxDict:
+                    maxVal = float(maxDict[key])
+                    scaleDF[key] = scaleDF[key] / maxVal
+
+                r.assign('data', scaleDF)
+                r('trt <- row.names(data)')
+                r.assign('enzymes', newList)
+
+                r("col <- c('blue', 'blue', 'blue', 'blue', 'blue', \
+                    'green', 'green', 'red', 'red', 'turquoise', \
+                    'magenta', 'yellow', 'salmon', 'darkgray', 'darkgray', \
+                    'brown', 'brown', 'brown')")
+
+                r("pdf(paste('soil_index_final', '.pdf', sep=''), height=4, width=4)")
+
+                r('sloc <- stars(data, lwd=1, draw.segments=T, \
+                    col.segments=col, scale=F, full=T, labels=trt, flip.labels=F, \
+                    cex=0.6, ncol=3, mar=c(1,1,1,1))')
+
+                r('Map(function(x,y) stars(matrix(1, ncol=ncol(data), nrow=nrow(data)), \
+                    key.loc=c(x,y), add=T, lty=3, len=1, full=T), sloc$Var1, sloc$Var2)')
+                r('Map(function(x,y) stars(matrix(1, ncol=ncol(data), nrow=nrow(data)), \
+                    key.loc=c(x,y), add=T, lty=3, len=0.75, full=T), sloc$Var1, sloc$Var2)')
+                r('Map(function(x,y) stars(matrix(1, ncol=ncol(data), nrow=nrow(data)), \
+                    key.loc=c(x,y), add=T, lty=3, len=0.5, full=T), sloc$Var1, sloc$Var2)')
+                r('Map(function(x,y) stars(matrix(1, ncol=ncol(data), nrow=nrow(data)), \
+                    key.loc=c(x,y), add=T, lty=3, len=0.25, full=T), sloc$Var1, sloc$Var2)')
+
+                r('dev.off()')
 
 
                 base[RID] = 'Step 2 of X: Selecting your chosen taxa...done'
@@ -281,19 +337,12 @@ def loopCat(request):
                 base[RID] = 'Step 3 of X: Calculating Species Accumulation Curves...'
 
 
-                path = os.path.join('media', 'temp', 'soil_index', 'Rplots', RID)
-                if not os.path.exists(path):
-                    os.makedirs(path)
-
-                r.assign("path", path)
-                r("setwd(path)")
-                r("options('width'=5000)")
-                r.assign("RID", RID)
 
                 base[RID] = 'Step 3 of X: Calculating Species Accumulation Curves...done!'
 
                 base[RID] = 'Step 4 of X: Pooling pdf files for display...'
 
+                '''
                 # Combining Pdf files
                 finalFile = 'media/temp/soil_index/Rplots/' + str(RID) + '/soil_index_final.pdf'
 
@@ -311,6 +360,7 @@ def loopCat(request):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 merger.write(finalFile)
+                '''
 
                 finalDict = {}
                 finalDict['text'] = result
@@ -529,7 +579,7 @@ def getNZDF(metaDF, finalDF, RID):
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
 
         for level in levelList:
-            taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
+            taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[RID]:
@@ -540,7 +590,7 @@ def getNZDF(metaDF, finalDF, RID):
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
 
-        taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='rel_abund')
+        taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
 
         metaDF.set_index('sampleid', drop=True, inplace=True)
         grouped = metaDF.groupby(level=0)
