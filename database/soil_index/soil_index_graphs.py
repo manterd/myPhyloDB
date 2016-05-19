@@ -303,28 +303,80 @@ def loopCat(request):
                 r('trt <- row.names(data)')
                 r.assign('enzymes', newList)
 
+                rowcount = len(scaleDF)
+                r.assign('rowcount', rowcount)
+
+                r.assign('odat', bytrt1.mean())  # other data
+                r.assign('maxAbund', 1000000000)
+                r.assign('maxRich', 1000)
+                r.assign('maxDiversity', 10)
+
+                # biological?
+                # abundance, abund_16s
+                r('odat[,1] <- odat[,1]/maxAbund')
+                # richness, rich
+                r('odat[,2] <- odat[,2]/maxRich')
+                # diversity, diversity
+                r('odat[,3] <- odat[,3]/maxDiversity')
+
                 r("col <- c('blue', 'blue', 'blue', 'blue', 'blue', \
                     'green', 'green', 'red', 'red', 'turquoise', \
                     'magenta', 'yellow', 'salmon', 'darkgray', 'darkgray', \
                     'brown', 'brown', 'brown')")
 
-                r("pdf(paste('soil_index_final', '.pdf', sep=''), height=4, width=4)")
+                r("pdf_counter <- 1")
+                r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), h=2, w=8)")
 
-                r('sloc <- stars(data, lwd=1, draw.segments=T, \
-                    col.segments=col, scale=F, full=T, labels=trt, flip.labels=F, \
-                    cex=0.6, ncol=3, mar=c(1,1,1,1))')
+                for row in range(1, rowcount):
+                    r.assign('off', row)
+                    r('layout(matrix(c(1,2,3,4), 1, 4, byrow=T))')  # main layout definition, modify when adding third and fourth graphs
 
-                r('Map(function(x,y) stars(matrix(1, ncol=ncol(data), nrow=nrow(data)), \
-                    key.loc=c(x,y), add=T, lty=3, len=1, full=T), sloc$Var1, sloc$Var2)')
-                r('Map(function(x,y) stars(matrix(1, ncol=ncol(data), nrow=nrow(data)), \
-                    key.loc=c(x,y), add=T, lty=3, len=0.75, full=T), sloc$Var1, sloc$Var2)')
-                r('Map(function(x,y) stars(matrix(1, ncol=ncol(data), nrow=nrow(data)), \
-                    key.loc=c(x,y), add=T, lty=3, len=0.5, full=T), sloc$Var1, sloc$Var2)')
-                r('Map(function(x,y) stars(matrix(1, ncol=ncol(data), nrow=nrow(data)), \
-                    key.loc=c(x,y), add=T, lty=3, len=0.25, full=T), sloc$Var1, sloc$Var2)')
+                    # GIBBs
+                    r('stars(matrix(1, ncol=ncol(data), nrow=1), \
+                        col.segments=col, scale=F, full=T, labels=trt[off], flip.labels=F, \
+                        cex=0.8, ncol=1, mar=c(1,1,1,1), lty=3, len=1, \
+                        main="GIBBs")')
+
+                    r('stars(matrix(1, ncol=ncol(data), nrow=1), \
+                        col.segments=col, scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.75)')
+
+                    r('stars(matrix(1, ncol=ncol(data), nrow=1), \
+                        col.segments=col, scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.5)')
+
+                    r('stars(matrix(1, ncol=ncol(data), nrow=1), \
+                        col.segments=col, scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.25)')
+
+                    r('stars(data[off,], lwd=1, draw.segments=T, \
+                        col.segments=col, scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(5,1,1,1), add=T)')
+                    # other graphs
+
+                    #print r('names(odat)')
+                    r('vals <- c(odat[off,"diversity"], odat[off,"rich"], odat[off,"abund_16S"])')
+
+                    r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
+                        ylim=c(0,1), horiz=T, space=0, \
+                        names.arg=c("Diversity", "Richness", "Abundance"),\
+                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), \
+                        main="Soil Biology", mar=c(5,1,1,1))')
+                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                    r('text(x=vals+0.2, y=bar, labels=as.character(round(vals, 4)), cex=0.8, xpd=TRUE)')  # should draw values onto bars after package is installed (UI may need some tuning beyond that though)
+
+                    # Label for second page's graph not working for some reason, despite using trt[i]
+
+                    # chemical?
+
+                    #r('barplot(height=(odat[1,2]/maxRich), ylim=c(0,1), horiz=T)')
+
+                    # physical?
+
+                    #r('barplot(height=(odat[1,3]/maxDiversity), ylim=c(0,1), horiz=T)')
 
                 r('dev.off()')
-
+                r("pdf_counter <- pdf_counter + 1")
 
                 base[RID] = 'Step 2 of X: Selecting your chosen taxa...done'
 
@@ -342,7 +394,6 @@ def loopCat(request):
 
                 base[RID] = 'Step 4 of X: Pooling pdf files for display...'
 
-                '''
                 # Combining Pdf files
                 finalFile = 'media/temp/soil_index/Rplots/' + str(RID) + '/soil_index_final.pdf'
 
@@ -360,7 +411,6 @@ def loopCat(request):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 merger.write(finalFile)
-                '''
 
                 finalDict = {}
                 finalDict['text'] = result

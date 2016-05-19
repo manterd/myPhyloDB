@@ -308,7 +308,6 @@ def loopCat(request):
                         r.assign("trt2", trt2)
 
                         # get sign based on log2FoldChange
-                        #print r("results(dds, contrast=c('trt', trt1, trt2))")
                         r("res <- results(dds, contrast=c('trt', trt1, trt2))")
                         r("change <- -res$log2FoldChange")
                         r("names(change) <- row.names(res)")
@@ -316,7 +315,6 @@ def loopCat(request):
                         # output DiffAbund to DataTable
                         r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
                         r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
-                        #print r("data.frame(kegg=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
                         r("df <- data.frame(kegg=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
 
                         compDF = r.get("df")
@@ -348,7 +346,6 @@ def loopCat(request):
 
 
                         for key in keggDict.iterkeys():
-
                             r.assign("pathway", key)
                             r("pid <- substr(pathway, start=1, stop=7)")
                             r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../../media/kegg/pathways', kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
