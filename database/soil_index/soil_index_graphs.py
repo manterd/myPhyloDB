@@ -210,17 +210,9 @@ def loopCat(request):
                 rnaDF = finalDF.replace(r'\s+', np.nan, regex=True)
                 rnaDF.fillna(0.0, axis=1, inplace=True)
                 rnaDF['bins'] = 'bin1'
-                rnaDF.ix[rnaDF.rRNACount == 1, 'bins'] = 'bin1'
-                rnaDF.ix[(rnaDF.rRNACount > 1) & (rnaDF.rRNACount <= 2), 'bins'] = 'bin2'
-                rnaDF.ix[(rnaDF.rRNACount > 2) & (rnaDF.rRNACount <= 3), 'bins'] = 'bin3'
-                rnaDF.ix[(rnaDF.rRNACount > 3) & (rnaDF.rRNACount <= 4), 'bins'] = 'bin4'
-                rnaDF.ix[(rnaDF.rRNACount > 4) & (rnaDF.rRNACount <= 5), 'bins'] = 'bin5'
-                rnaDF.ix[(rnaDF.rRNACount > 5) & (rnaDF.rRNACount <= 6), 'bins'] = 'bin6'
-                rnaDF.ix[(rnaDF.rRNACount > 6) & (rnaDF.rRNACount <= 7), 'bins'] = 'bin7'
-                rnaDF.ix[(rnaDF.rRNACount > 7) & (rnaDF.rRNACount <= 8), 'bins'] = 'bin8'
-                rnaDF.ix[(rnaDF.rRNACount > 8) & (rnaDF.rRNACount <= 9), 'bins'] = 'bin9'
-                rnaDF.ix[(rnaDF.rRNACount > 9) & (rnaDF.rRNACount <= 10), 'bins'] = 'bin10'
-                rnaDF.ix[rnaDF.rRNACount > 10, 'bins'] = 'bin11'
+                rnaDF.ix[(rnaDF.rRNACount > 0) & (rnaDF.rRNACount <= 2), 'bins'] = 'bin1'
+                rnaDF.ix[(rnaDF.rRNACount > 2) & (rnaDF.rRNACount < 4), 'bins'] = 'bin2'
+                rnaDF.ix[rnaDF.rRNACount >= 4, 'bins'] = 'bin3'
                 myBins = list(set(rnaDF['bins'].tolist()))
 
                 binDF = rnaDF.groupby(['sampleid', 'bins'])['rel_abund'].sum()
@@ -235,8 +227,15 @@ def loopCat(request):
                 allDF = pd.merge(allDF, meta_rDF, left_index=True, right_index=True, how='outer')
                 wantList = ['abund_16S', 'rich', 'diversity'] + myBins
                 bytrt1 = allDF.groupby(catFields_edit)[wantList]
-                #print bytrt1.mean()  # means by other means
-                '''will need this data later'''
+                df1 = bytrt1.mean()  # means by other means
+                df1.reset_index(drop=False, inplace=True)
+                if len(catFields_edit) > 1:
+                    for index, row in df1.iterrows():
+                        df1.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                else:
+                    df1.loc[:, 'merge'] = df1.loc[:, catFields_edit[0]]
+
+                df1.set_index('merge', inplace=True)
 
                 nzDF = keggDF.groupby(['sampleid', 'rank_name'])['abund'].sum()
                 nzDF = nzDF.unstack(level=-1)
@@ -245,8 +244,8 @@ def loopCat(request):
 
                 myList = [u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase', u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase', u'3.5.1.5  urease', u'3.1.3.1  alkaline phosphatase', u'3.1.3.2  acid phosphatase', u'3.1.6.1  arylsulfatase', u'1.18.6.1  nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase', u'6.3.2.39  aerobactin synthase', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase', u'1.1.1.76  (S,S)-butanediol dehydrogenase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase']
                 newList = [u'cellulase', u'endo-1,4-beta-xylanase', u'beta-glucosidase', u'xylan 1,4-beta-xylosidase', u'cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'amidase', u'urease', u'alkaline phosphatase', u'acid phosphatase', u'arylsulfatase', u'nitrogenase', u'pyrroloquinoline-quinone synthase', u'aerobactin synthase', u'1-aminocyclopropane-1-carboxylate deaminase', u'indolepyruvate decarboxylase', u'(S,S)-butanediol dehydrogenase', u'glycine dehydrogenase (cyanide-forming)', u'chitinase']
-                df = bytrt2[myList].mean()
-                df.rename(columns={u'3.2.1.4  cellulase': 'cellulase', u'3.2.1.8  endo-1,4-beta-xylanase': 'endo-1,4-beta-xylanase', u'3.2.1.21  beta-glucosidase': 'beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase': 'xylan 1,4-beta-xylosidase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': 'cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase': 'amidase', u'3.5.1.5  urease': 'urease', u'3.1.3.1  alkaline phosphatase': 'alkaline phosphatase', u'3.1.3.2  acid phosphatase': 'acid phosphatase', u'3.1.6.1  arylsulfatase': 'arylsulfatase', u'1.18.6.1  nitrogenase': 'nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase': 'pyrroloquinoline-quinone synthase', u'6.3.2.39  aerobactin synthase': 'aerobactin synthase', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase': '1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase': 'indolepyruvate decarboxylase', u'1.1.1.76  (S,S)-butanediol dehydrogenase': '(S,S)-butanediol dehydrogenase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase': 'chitinase'}, inplace=True)
+                df2 = bytrt2[myList].mean()
+                df2.rename(columns={u'3.2.1.4  cellulase': 'cellulase', u'3.2.1.8  endo-1,4-beta-xylanase': 'endo-1,4-beta-xylanase', u'3.2.1.21  beta-glucosidase': 'beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase': 'xylan 1,4-beta-xylosidase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': 'cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase': 'amidase', u'3.5.1.5  urease': 'urease', u'3.1.3.1  alkaline phosphatase': 'alkaline phosphatase', u'3.1.3.2  acid phosphatase': 'acid phosphatase', u'3.1.6.1  arylsulfatase': 'arylsulfatase', u'1.18.6.1  nitrogenase': 'nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase': 'pyrroloquinoline-quinone synthase', u'6.3.2.39  aerobactin synthase': 'aerobactin synthase', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase': '1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase': 'indolepyruvate decarboxylase', u'1.1.1.76  (S,S)-butanediol dehydrogenase': '(S,S)-butanediol dehydrogenase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase': 'chitinase'}, inplace=True)
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -262,16 +261,16 @@ def loopCat(request):
                 r("options('width'=5000)")
                 r.assign("RID", RID)
 
-                df.reset_index(drop=False, inplace=True)
+                df2.reset_index(drop=False, inplace=True)
                 if len(catFields_edit) > 1:
-                    for index, row in df.iterrows():
-                        df.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                    for index, row in df2.iterrows():
+                        df2.loc[index, 'merge'] = "; ".join(row[catFields_edit])
                 else:
-                    df.loc[:, 'merge'] = df.loc[:, catFields_edit[0]]
+                    df2.loc[:, 'merge'] = df2.loc[:, catFields_edit[0]]
 
-                df.set_index('merge', inplace=True)
-                df = df[newList]
-                result += str(df)
+                df2.set_index('merge', inplace=True)
+                df2 = df2[newList]
+                result += str(df2)
 
                 maxDict = {
                     'cellulase': 1e9,
@@ -294,7 +293,7 @@ def loopCat(request):
                     'chitinase': 1e9
                 }
 
-                scaleDF = df.copy()
+                scaleDF = df2.copy()
                 for key in maxDict:
                     maxVal = float(maxDict[key])
                     scaleDF[key] = scaleDF[key] / maxVal
@@ -306,18 +305,19 @@ def loopCat(request):
                 rowcount = len(scaleDF)
                 r.assign('rowcount', rowcount)
 
-                r.assign('odat', bytrt1.mean())  # other data
-                r.assign('maxAbund', 1000000000)
-                r.assign('maxRich', 1000)
-                r.assign('maxDiversity', 10)
+                r.assign('dat', df1)
+                r('odat <- dat')
 
-                # biological?
-                # abundance, abund_16s
-                r('odat[,1] <- odat[,1]/maxAbund')
-                # richness, rich
-                r('odat[,2] <- odat[,2]/maxRich')
-                # diversity, diversity
-                r('odat[,3] <- odat[,3]/maxDiversity')
+                r('dat$rich <- round(dat$rich, 0)')
+                r('dat$diversity <- round(dat$diversity, 3)')
+
+                r.assign('maxAbund', 1e9)
+                r.assign('maxRich', 500)
+                r.assign('maxDiversity', 6)
+
+                r('odat$abund_16S <- odat$abund_16S / maxAbund')
+                r('odat$rich <- odat$rich / maxRich')
+                r('odat$diversity <- odat$diversity / maxDiversity')
 
                 r("col <- c('blue', 'blue', 'blue', 'blue', 'blue', \
                     'green', 'green', 'red', 'red', 'turquoise', \
@@ -325,58 +325,63 @@ def loopCat(request):
                     'brown', 'brown', 'brown')")
 
                 r("pdf_counter <- 1")
-                r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), h=2, w=8)")
-
-                for row in range(1, rowcount):
+                for row in range(1, rowcount+1):
+                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=2, width=8.5)")
                     r.assign('off', row)
-                    r('layout(matrix(c(1,2,3,4), 1, 4, byrow=T))')  # main layout definition, modify when adding third and fourth graphs
+                    r('layout(matrix(c(1,2,4,5,1,3,4,5), 2, 4, byrow=T), widths=c(2,2.5,2,2))')
 
                     # GIBBs
-                    r('stars(matrix(1, ncol=ncol(data), nrow=1), \
+                    r('stars(matrix(1, ncol=18, nrow=1), \
                         col.segments=col, scale=F, full=T, labels=trt[off], flip.labels=F, \
-                        cex=0.8, ncol=1, mar=c(1,1,1,1), lty=3, len=1, \
-                        main="GIBBs")')
-
-                    r('stars(matrix(1, ncol=ncol(data), nrow=1), \
+                        cex=0.8, ncol=1, mar=c(1,1,1,1), lty=3, len=1)')
+                    r('title("GIBBs", line=3)')
+                    r('stars(matrix(1, ncol=18, nrow=1), \
                         col.segments=col, scale=F, full=T, labels=NA, \
                         cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.75)')
-
-                    r('stars(matrix(1, ncol=ncol(data), nrow=1), \
+                    r('stars(matrix(1, ncol=18, nrow=1), \
                         col.segments=col, scale=F, full=T, labels=NA, \
                         cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.5)')
-
-                    r('stars(matrix(1, ncol=ncol(data), nrow=1), \
+                    r('stars(matrix(1, ncol=18, nrow=1), \
                         col.segments=col, scale=F, full=T, labels=NA, \
                         cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.25)')
-
                     r('stars(data[off,], lwd=1, draw.segments=T, \
                         col.segments=col, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(5,1,1,1), add=T)')
-                    # other graphs
+                        cex=0.8, ncol=1, mar=c(1,1,1,1), add=T)')
 
-                    #print r('names(odat)')
-                    r('vals <- c(odat[off,"diversity"], odat[off,"rich"], odat[off,"abund_16S"])')
-
+                    # Biological
+                    r('vals <- as.numeric(odat[off, c("diversity", "rich", "abund_16S")])')
+                    r('par(mar=c(0,5,0,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("Diversity", "Richness", "Abundance"),\
-                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), \
-                        main="Soil Biology", mar=c(5,1,1,1))')
+                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('text(x=vals+0.2, y=bar, labels=as.character(round(vals, 4)), cex=0.8, xpd=TRUE)')  # should draw values onto bars after package is installed (UI may need some tuning beyond that though)
+                    r('values <- dat[off, c("diversity", "rich", "abund_16S")]')
+                    r('text(x=vals+0.2, y=bar, labels=values, cex=0.8, xpd=TRUE)')
+                    r('title("Biological", line=-1)')
 
-                    # Label for second page's graph not working for some reason, despite using trt[i]
+                    r.assign('myBins', myBins)
+                    r('vals <- as.matrix(t(odat[off, myBins]))')
+                    r('par(mar=c(2.5,5,0,5))')
+                    r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
+                        ylim=c(0,1), horiz=T, space=0, \
+                        names.arg=c("rRNA Copy Number"), \
+                        cex.names=0.8, las=2, axes=F, col=c("red", "darkgray", "green"), beside=F)')
+                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                    r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=round(vals, 3), cex=0.8, xpd=TRUE)')
+                    r('par(xpd=T)')
+                    r('legend(1, 0.5, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
 
-                    # chemical?
+                    # Chemical
+                    r('plot.new()')
+                    r('title("Chemical", line=-1)')
 
-                    #r('barplot(height=(odat[1,2]/maxRich), ylim=c(0,1), horiz=T)')
+                    # Physical
+                    r('plot.new()')
+                    r('title("Physical", line=-1)')
 
-                    # physical?
-
-                    #r('barplot(height=(odat[1,3]/maxDiversity), ylim=c(0,1), horiz=T)')
-
-                r('dev.off()')
-                r("pdf_counter <- pdf_counter + 1")
+                    r('dev.off()')
+                    r("pdf_counter <- pdf_counter + 1")
 
                 base[RID] = 'Step 2 of X: Selecting your chosen taxa...done'
 
