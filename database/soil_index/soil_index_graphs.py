@@ -117,16 +117,14 @@ def loopCat(request):
                 path = pickle.loads(request.session['savedDF'])
                 savedDF = pd.read_pickle(path)
 
-                selectAll = int(all["selectAll"])
-                keggAll = int(all["keggAll"])
-                nzAll = int(all["nzAll"])
-
                 result = ''
-                button3 = int(all['button3'])
 
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
+
+                # Get maxvals for plotting
+                maxVals = all['maxVals']
 
                 metaDictCat = {}
                 catFields = []
@@ -196,8 +194,83 @@ def loopCat(request):
 
                 meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
 
-                # Removes samples (rows) that are not in our samplelist
+                # Removes samples (rows) that are not in our sampleeta_rlist
                 meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]
+
+                bioDF  = meta_rDF[catFields_edit].copy()
+                chemDF = meta_rDF[catFields_edit].copy()
+                physDF = meta_rDF[catFields_edit].copy()
+
+                # replace NaN's with 0's
+                bioDF = bioDF.fillna(0)
+                chemDF = chemDF.fillna(0)
+                physDF = physDF.fillna(0)
+
+                # check for null columns, fill with blanks if found (0's, not nulls)
+                if 'microbial_biomass_C' in meta_rDF.columns:
+                    bioDF['microbial_biomass_C'] = meta_rDF['microbial_biomass_C']
+                else:
+                    bioDF['microbial_biomass_C'] = 0.0
+
+                if 'microbial_biomass_N' in meta_rDF.columns:
+                    bioDF['microbial_biomass_N'] = meta_rDF['microbial_biomass_N']
+                else:
+                    bioDF['microbial_biomass_N'] = 0.0
+
+                if 'microbial_respiration' in meta_rDF.columns:
+                    bioDF['microbial_respiration'] = meta_rDF['microbial_respiration']
+                else:
+                    bioDF['microbial_respiration'] = 0.0
+
+                if 'soil_pH' in meta_rDF.columns:
+                    chemDF['soil_pH'] = meta_rDF['soil_pH']
+                else:
+                    chemDF['soil_pH'] = 0.0
+                if 'soil_C' in meta_rDF.columns:
+                    chemDF['soil_C'] = meta_rDF['soil_C']
+                else:
+                    chemDF['soil_C'] = 0.0
+                if 'soil_OM' in meta_rDF.columns:
+                    chemDF['soil_OM'] = meta_rDF['soil_OM']
+                else:
+                    chemDF['soil_OM'] = 0.0
+                if 'soil_EC' in meta_rDF.columns:
+                    chemDF['soil_EC'] = meta_rDF['soil_EC']
+                else:
+                    chemDF['soil_EC'] = 0.0
+                if 'soil_N' in meta_rDF.columns:
+                    chemDF['soil_N'] = meta_rDF['soil_N']
+                else:
+                    chemDF['soil_N'] = 0.0
+                if 'soil_P' in meta_rDF.columns:
+                    chemDF['soil_P'] = meta_rDF['soil_P']
+                else:
+                    chemDF['soil_P'] = 0.0
+                if 'soil_K' in meta_rDF.columns:
+                    chemDF['soil_K'] = meta_rDF['soil_K']
+                else:
+                    chemDF['soil_K'] = 0.0
+
+                if 'water_content_soil' in meta_rDF.columns:
+                    physDF['water_content_soil'] = meta_rDF['water_content_soil']
+                else:
+                    physDF['water_content_soil'] = 0.0
+                if 'bulk_density' in meta_rDF.columns:
+                    physDF['bulk_density'] = meta_rDF['bulk_density']
+                else:
+                    physDF['bulk_density'] = 0.0
+                if 'porosity' in meta_rDF.columns:
+                    physDF['porosity'] = meta_rDF['porosity']
+                else:
+                    physDF['porosity'] = 0.0
+
+                # get means
+                bioDF  = bioDF.groupby(catFields_edit)
+                bioDF = bioDF.mean()
+                chemDF = chemDF.groupby(catFields_edit)
+                chemDF = chemDF.mean()
+                physDF = physDF.groupby(catFields_edit)
+                physDF = physDF.mean()
 
                 if metaDictCat:
                     for key in metaDictCat:
@@ -305,9 +378,25 @@ def loopCat(request):
                 rowcount = len(scaleDF)
                 r.assign('rowcount', rowcount)
 
+                # actual values to map with
+                r.assign('biodat', bioDF)
+                r.assign('chemdat', chemDF)
+                r.assign('physdat', physDF)
+
+                # values to display
+                r.assign('dispBio', bioDF)
+                r.assign('dispChem', chemDF)
+                r.assign('dispPhys', physDF)
+
+                # rounding, doesn't appear to work properly
+                # r('format(dat[\'abund_16s\'], scientific=TRUE, digits=4)')
+                # r('format(dispChem, scientific=TRUE, digits=4)')
+                # r('format(dispPhys, scientific=TRUE, digits=4)')
+
                 r.assign('dat', df1)
                 r('odat <- dat')
 
+                #r('dat$abund_16s <- format(dat$abund_16s, scientific=TRUE, digits=3)')
                 r('dat$rich <- round(dat$rich, 0)')
                 r('dat$diversity <- round(dat$diversity, 3)')
 
@@ -315,9 +404,33 @@ def loopCat(request):
                 r.assign('maxRich', 500)
                 r.assign('maxDiversity', 6)
 
-                r('odat$abund_16S <- odat$abund_16S / maxAbund')
+                r.assign('myBins', myBins)  # moved for redundancy during loop
+
+                # bio
+                '''r('odat$abund_16S <- odat$abund_16S / maxAbund')
                 r('odat$rich <- odat$rich / maxRich')
-                r('odat$diversity <- odat$diversity / maxDiversity')
+                r('odat$diversity <- odat$diversity / maxDiversity')'''
+
+                # chem
+                '''r('maxPH <- 14')
+                r('chemdat$soil_pH <- chemdat$soil_pH / maxPH')
+                r('Cmax <- max(chemdat$soil_C)')
+                r('if(Cmax==0) Cmax=1')
+                r('chemdat$soil_C <- chemdat$soil_C / Cmax')
+                r('OMmax <- max(chemdat$soil_OM)')
+                r('if(OMmax==0) OMmax=1')  # really cheesy way to avoid NaN's on the next line
+                r('chemdat$soil_OM <- chemdat$soil_OM / OMmax')'''
+
+                # phys
+                '''r('WCSmax <- max(physdat$water_content_soil)')
+                r('if(WCSmax==0) WCSmax=1')
+                r('physdat$water_content_soil <- physdat$water_content_soil / WCSmax')
+                r('BDmax <- max(physdat$bulk_density)')
+                r('if(BDSmax==0) BDmax=1')
+                r('physdat$bulk_density <- physdat$bulk_density / BDmax')
+                r('POROmax <- max(physdat$porosity)')
+                r('if(POROmax==0) POROmax=1')
+                r('physdat$porosity <- physdat$porosity / POROmax')'''
 
                 r("col <- c('blue', 'blue', 'blue', 'blue', 'blue', \
                     'green', 'green', 'red', 'red', 'turquoise', \
@@ -326,9 +439,9 @@ def loopCat(request):
 
                 r("pdf_counter <- 1")
                 for row in range(1, rowcount+1):
-                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=2, width=8.5)")
+                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=2, width=8)")
                     r.assign('off', row)
-                    r('layout(matrix(c(1,2,4,5,1,3,4,5), 2, 4, byrow=T), widths=c(2,2.5,2,2))')
+                    r('layout(matrix(c(1,2,4,6,1,3,5,7), 2, 4, byrow=T), widths=c(2,2,2,2))')
 
                     # GIBBs
                     r('stars(matrix(1, ncol=18, nrow=1), \
@@ -348,8 +461,8 @@ def loopCat(request):
                         col.segments=col, scale=F, full=T, labels=NA, \
                         cex=0.8, ncol=1, mar=c(1,1,1,1), add=T)')
 
-                    # Biological
-                    r('vals <- as.numeric(odat[off, c("diversity", "rich", "abund_16S")])')
+                    # Biological, needs all 4? (organic matter, ACE soil protein index, respiration, active carbon)
+                    r('vals <- as.numeric(odat[off, c("diversity", "rich", "abund_16S")])')  # needs biodat as well somehow
                     r('par(mar=c(0,5,0,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
@@ -359,8 +472,6 @@ def loopCat(request):
                     r('values <- dat[off, c("diversity", "rich", "abund_16S")]')
                     r('text(x=vals+0.2, y=bar, labels=values, cex=0.8, xpd=TRUE)')
                     r('title("Biological", line=-1)')
-
-                    r.assign('myBins', myBins)
                     r('vals <- as.matrix(t(odat[off, myBins]))')
                     r('par(mar=c(2.5,5,0,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
@@ -372,14 +483,31 @@ def loopCat(request):
                     r('par(xpd=T)')
                     r('legend(1, 0.5, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
 
-                    # Chemical
-                    r('plot.new()')
+                    # Chemical, needs 'Minor Elements'
+                    r('vals <- as.numeric(chemdat[off, c("soil_pH", "soil_C", "soil_OM")])')
+                    r('par(mar=c(0,5,0,5))')
+                    r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
+                        ylim=c(0,1), horiz=T, space=0, \
+                        names.arg=c("pH", "Carbon", "Organic Matter"),\
+                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
+                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                    r('values <- dispChem[off, c("soil_pH", "soil_C", "soil_OM")]')
+                    r('text(x=vals+0.2, y=bar, labels=values, cex=0.8, xpd=TRUE)')
                     r('title("Chemical", line=-1)')
-
-                    # Physical
                     r('plot.new()')
-                    r('title("Physical", line=-1)')
 
+                    # Physical, needs 'Aggregate Stability'
+                    r('vals <- as.numeric(physdat[off, c("water_content_soil", "bulk_density", "porosity")])')
+                    r('par(mar=c(0,5,0,5))')
+                    r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
+                        ylim=c(0,1), horiz=T, space=0, \
+                        names.arg=c("Water Content", "Bulk Density", "Porosity"),\
+                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
+                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                    r('values <- dispPhys[off, c("water_content_soil", "bulk_density", "porosity")]')
+                    r('text(x=vals+0.2, y=bar, labels=values, cex=0.8, xpd=TRUE)')
+                    r('title("Physical", line=-1)')
+                    r('plot.new()')
                     r('dev.off()')
                     r("pdf_counter <- pdf_counter + 1")
 
@@ -391,13 +519,7 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 3 of X: Calculating Species Accumulation Curves...'
-
-
-
-                base[RID] = 'Step 3 of X: Calculating Species Accumulation Curves...done!'
-
-                base[RID] = 'Step 4 of X: Pooling pdf files for display...'
+                base[RID] = 'Step 3 of X: Pooling pdf files for display...'
 
                 # Combining Pdf files
                 finalFile = 'media/temp/soil_index/Rplots/' + str(RID) + '/soil_index_final.pdf'

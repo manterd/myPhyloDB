@@ -26,14 +26,20 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar_taxa = 1, DepVar_kegg = 1, DepVar_nz = 1, selTheme = 0;
-        var nodesCat = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
+        var nodesCat = "";
         var catOptions = {};
         var refresh = 0;
         var running = false;
         var RID = 0;
+        var hiding = 1;
 
         $(function () {
+
+            var table = $('#myTable').DataTable();
+
+            table.MakeCellsEditable({
+                "onUpdate": myCallbackFunction
+            });
 
             // remove R plot on close
             $(window).bind('beforeunload', function(){
@@ -111,82 +117,13 @@
                 checkButtons();
             });
 
-            $("#TabButton").click(function () {
-                getTab();
-            });
-
-            // Capture all changes in textboxes, etc.
-            $("#selectTree").change(function () {
-                button3 = $(this).val();
-                checkButtons();
-                if (button3 == 1) {
-                    $('#row_taxa').show();
-                    $('#row_kegg').hide();
-                    $('#row_nz').hide();
-                    $('#cell_taxa').show();
-                    $('#cell_kegg').hide();
-                    $('#cell_nz').hide();
-                    $('#text-1').val('');
-                } else if (button3 == 2) {
-                    $('#row_taxa').hide();
-                    $('#row_kegg').show();
-                    $('#row_nz').hide();
-                    $('#cell_taxa').hide();
-                    $('#cell_kegg').show();
-                    $('#cell_nz').hide();
-                    $('#text-1').val('');
-                } else if (button3 == 3) {
-                    $('#row_taxa').hide();
-                    $('#row_kegg').hide();
-                    $('#row_nz').show();
-                    $('#cell_taxa').hide();
-                    $('#cell_kegg').hide();
-                    $('#cell_nz').show();
-                    $('#text-1').val('');
-                }
-            });
-
-            $("#DepVar_taxa").change(function () {
-                DepVar_taxa = $(this).val();
-                checkButtons();
-            });
-
-            $("#DepVar_kegg").change(function () {
-                DepVar_kegg = $(this).val();
-                checkButtons();
-            });
-
-            $("#DepVar_nz").change(function () {
-                DepVar_nz = $(this).val();
-                checkButtons();
-            });
-
-            $("#selectall-taxa").change(function () {
-                taxaAll = $(this).val();
-                checkButtons();
-            });
-
-            $("#selectall-kegg").change(function () {
-                keggAll = $(this).val();
-                checkButtons();
-                $("#tree_kegg").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            });
-
-            $("#selectall-nz").change(function () {
-                nzAll = $(this).val();
-                checkButtons();
-                $("#tree_nz").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            });
-
-            $("#method").change(function () {
-                checkButtons();
-            });
-
         });
+
+        function myCallbackFunction(updatedCell, updatedRow, oldValue) {
+            console.log("The new value for the cell is: " + updatedCell.data());
+            console.log("The old value for that cell was: " + oldValue);
+            console.log("The values for each cell in that row are: " + updatedRow.data());
+        }
 
         function getTab(){
             $.ajax({
@@ -221,25 +158,10 @@
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
-            document.getElementById("TabButton").disabled = true;
 
-            if (button3 == 1) {
-                $("#container-0").empty().show().append('Settings have been changed by the user!');
-                $("#container-2").hide();
-                $("#my_image").attr("src", "#");
-            }
-
-            if (button3 == 2) {
-                $("#container-0").empty().show().append('Settings have been changed by the user!');
-                $("#container-2").hide();
-                $("#my_image").attr("src", "#");
-            }
-
-            if (button3 == 3) {
-                $("#container-0").empty().show().append('Settings have been changed by the user!');
-                $("#container-2").hide();
-                $("#my_image").attr("src", "#");
-            }
+            $("#container-0").empty().show().append('Settings have been changed by the user!');
+            $("#container-2").hide();
+            $("#my_image").attr("src", "#");
 
         }
 
@@ -315,6 +237,19 @@
             })
         }
 
+        function displayTable() {
+            if (hiding == 1) {
+                $("#maxValBox").show();
+                document.getElementById("show").value = "Hide";
+                hiding = 0;
+            }
+            else {
+                $("#maxValBox").hide();
+                document.getElementById("show").value = "Show";
+                hiding = 1;
+            }
+        }
+
         function getGraphData() {
             RID = makeGUID();
             startTimer(RID);
@@ -360,18 +295,14 @@
                 metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
             }
 
+            var maxVals = [1];
+            //maxVals.push(stuff) to get maxVals over to python from new text fields
+
             var myDict = {};
+            myDict['maxVals'] = maxVals;
             myDict['metaValsCat'] = metaValsCat;
             myDict['metaIDsCat'] = metaIDsCat;
-            myDict['selectAll'] = taxaAll;
-            myDict['keggAll'] = keggAll;
-            myDict['nzAll'] = nzAll;
-            myDict['DepVar_taxa'] = DepVar_taxa;
-            myDict['DepVar_kegg'] = DepVar_kegg;
-            myDict['DepVar_nz'] = DepVar_nz;
-            myDict['button3'] = button3;
             myDict['RID'] = RID;
-            myDict['method'] = document.getElementById("method").value;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -386,10 +317,8 @@
                     stopTimer(refresh);
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var xAxis = obj['xAxis'];
-                    var series = obj['series'];
-                    var yAxis = obj['yAxis'];
-                    var error = data['error'];
+
+                    var error = obj['error'];
                     if (error != "none") {
                         alert(error);
                         $("#run").css("background-color", "red");
@@ -400,9 +329,6 @@
                     var text = obj['text'];
                     $('#text-1').val(text);
 
-                    $("div.toolbar").html('<br><br>');
-                    document.getElementById("TabButton").disabled = false;
-
                     chooseDisplay();
                 }
             });
@@ -412,13 +338,6 @@
 
 {% block my_content %}
     <br>
-    <th>Select Type:
-        <select id="selectTree">
-            <option value="1" selected="selected">Taxa</option>
-            <!--<option value="2" >KEGG orthology</option>
-            <option value="3" >KEGG enzyme</option>-->
-        </select>
-    </th>
     <!-- tree tables -->
     <div>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
@@ -433,60 +352,60 @@
     </table>
 
     <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
-        <tr id="row_taxa">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <select id="selectall-taxa">
-                    <option value="7" selected="selected">Species</option>
-                </select>
-                &nbsp<-- Selected taxa level
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr id="row_kegg" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <select id="selectall-kegg">
-                    <option value="0">Off</option>
-                    <option value="1" selected="selected">Level 1</option>
-                    <option value="2">Level 2</option>
-                    <option value="3">Level 3</option>
-                </select>
-                &nbsp<-- Selected KEGG Pathway level
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr id="row_nz" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <select id="selectall-nz">
-                    <option value="0">Off</option>
-                    <option value="1" selected="selected">Level 1</option>
-                    <option value="2">Level 2</option>
-                    <option value="3">Level 3</option>
-                    <option value="4">Level 4</option>
-                    <option value="5">GIBBs</option>
-                    <option value="6">N cycle</option>
-                </select>
-                &nbsp<-- Selected KEGG Enzyme level
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
         <tr><td colspan="3" bgcolor="white"></td></tr>
         <tr>
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Accumulation Curve Settings:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Reference Values:</strong></em></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <select id="method">
-                        <option value="estaccumR">estaccumR</option>
-                        <option value="poolaccum">poolaccum</option>
-                    </select>
-                    &nbsp<-- Select method
+                    <input type="button" value="Show" id="show" onclick="displayTable();">
+                    </input>
                 </div>
+                <div style="display: none;" id="maxValBox">
+                    <table>
+                        <tr>GIBBs</tr>
+                        <tr>
+                            <td>cellulase<input type="text" value=2.03e10 id="maxval1"/></td>
+                            <td>endo-1.4-beta xylanase<input type="text" value=1.13e10 id="maxval2"/></td>
+                        </tr>
+                        <tr>
+                            <td>beta-glucosidase<input type="text" value=5.51e10 id="maxval3"/></td>
+                            <td>xylan-1.4-beta-xylosidase<input type="text" value=9.85e9 id="maxval4"/></td>
+                        </tr>
+                        <tr>
+                            <td>cellulose 1-4-beta-cellobiosidase<input type="text" value=1.10e8 id="maxval5"/></td>
+                            <td>amidase<input type="text" value=4.04e10 id="maxval6"/></td>
+                        </tr>
+                        <tr>
+                            <td>urease<input type="text" value=1.56e10 id="maxval7"/></td>
+                            <td>alkaline phosphatase<input type="text" value=1.99e10 id="maxval8"/></td>
+                        </tr>
+                        <tr>
+                            <td>acid phosphatase<input type="text" value=2.33e10 id="maxval9"/></td>
+                            <td>arylsulfatase<input type="text" value=1.82e10 id="maxval10"/></td>
+                        </tr>
+                        <tr>
+                            <td>nitrogenase<input type="text" value=9.65e9 id="maxval11"/></td>
+                            <td>pyrroloquinoline-quinone synthase<input type="text" value=8.05e9 id="maxval12"/></td>
+                        </tr>
+                        <tr>
+                            <td>aerobactin synthase<input type="text" value=5.17e8 id="maxval13"/></td>
+                            <td>1-aminocyclopropane-1-carboxylate deaminase<input type="text" value=3.77e9 id="maxval14"/></td>
+                        </tr>
+                        <tr>
+                            <td>indolepyruvate decarboxylase<input type="text" value=1.80e9 id="maxval15"/></td>
+                            <td>(S,S)-butanediol dehydrogenase<input type="text" value=2.77e9 id="maxval16"/></td>
+                        </tr>
+                        <tr>
+                            <td>glycine dehydrogenase (cyanide-forming)<input type="text" value=5.94e7 id="maxval17"/></td>
+                            <td>chitinase<input type="text" value=1.26e10 id="maxval18"/></td>
+                        </tr>
+                    </table>
+                </div>
+
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -501,17 +420,6 @@
             <td bgcolor="white"></td>
         </tr>
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
-        </tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td bgcolor="white">
-                <input id="TabButton" type="button" disabled value="Export Data"/>
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
     </table>
     </div>
     <br>
@@ -536,34 +444,7 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td id="cell_taxa" colspan="8" style="text-align: center">
-                &nbsp;
-                <!--Dependent variable:
-                <select id="DepVar_taxa">
-                    <option value="1">Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                    <option value="2">Species Richness</option>
-                    <option value="3">Species Diversity</option>
-                </select>-->
-            </td>
-            <td id="cell_kegg" colspan="8" style="text-align: center; display: none">
-                Dependent variable:
-                <select id="DepVar_kegg">
-                    <option value="1">Relative Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                    <option value="2">Species Richness</option>
-                    <option value="3">Species Diversity</option>
-                </select>
-            </td>
-            <td id="cell_nz" colspan="8" style="text-align: center; display: none">
-                Dependent variable:
-                <select id="DepVar_nz">
-                    <option value="1">Relative Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                    <option value="2">Species Richness</option>
-                    <option value="3">Species Diversity</option>
-                </select>
-            </td>
+            <td id="cell_taxa" colspan="8" style="text-align: center"></td>
             <td colspan="4" style="text-align: center"></td>
             <td colspan="8" style="text-align: center"></td>
         </tr>
@@ -586,6 +467,48 @@
         <br>
     </div>
     <br>
+    <br>
 
+    <table id="myTable" class="stripe">
+        <thead>
+            <tr>
+                <th>Group</th>
+                <th>Name</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>GIBBs</td>
+                <td>cellulase</td>
+                <td>2.03e10</td>
+            </tr>
+            <tr>
+                <td>Joe</td>
+                <td>Dirt</td>
+                <td>Joe@example.com</td>
+            </tr>
+            <tr>
+                <td>John</td>
+                <td>Doe</td>
+                <td>John@example.com</td>
+            </tr>
+            <tr>
+                <td>Jane</td>
+                <td>Doe</td>
+                <td>Jane@example.com</td>
+            </tr>
+            <tr>
+                <td>Billy</td>
+                <td>Bob</td>
+                <td>Billy@example.com</td>
+            </tr>
+            <tr>
+                <td>Bobby</td>
+                <td>Axlerod</td>
+                <td>Bobby@axecapital.com</td>
+            </tr>
+        </tbody>
+    </table>
     <br><br><br>
 {% endblock my_content%}
