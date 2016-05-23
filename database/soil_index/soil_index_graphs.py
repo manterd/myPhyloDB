@@ -126,6 +126,7 @@ def loopCat(request):
                 # Get maxvals for plotting
                 maxVals = all['maxVals']
 
+
                 metaDictCat = {}
                 catFields = []
                 catValues = []
@@ -368,8 +369,9 @@ def loopCat(request):
 
                 scaleDF = df2.copy()
                 for key in maxDict:
-                    maxVal = float(maxDict[key])
-                    scaleDF[key] = scaleDF[key] / maxVal
+                    print("key: ", key)
+                    maxVal = float(maxVals[key])
+                    scaleDF[key] /= maxVal
 
                 r.assign('data', scaleDF)
                 r('trt <- row.names(data)')
@@ -400,37 +402,36 @@ def loopCat(request):
                 r('dat$rich <- round(dat$rich, 0)')
                 r('dat$diversity <- round(dat$diversity, 3)')
 
-                r.assign('maxAbund', 1e9)
-                r.assign('maxRich', 500)
-                r.assign('maxDiversity', 6)
+                # load max vals from maxVals dictionary into R
+                # bio
+                r.assign('maxAbund', float(maxVals['Abundance']))
+                r.assign('maxRich', float(maxVals['Richness']))
+                r.assign('maxDiversity', float(maxVals['Diversity']))
+                # chem
+                r.assign('maxC', float(maxVals['Carbon']))
+                r.assign('maxOM', float(maxVals['Organic Matter']))
+                r.assign('maxPH', float(maxVals['pH']))
+                # physical
+                r.assign('maxWCS', float(maxVals['Water Content']))
+                r.assign('maxBD', float(maxVals['Bulk Density']))
+                r.assign('maxPORO', float(maxVals['Porosity']))
 
-                r.assign('myBins', myBins)  # moved for redundancy during loop
+                r.assign('myBins', myBins)  # load bins
 
                 # bio
-                '''r('odat$abund_16S <- odat$abund_16S / maxAbund')
+                r('odat$abund_16S <- odat$abund_16S / maxAbund')
                 r('odat$rich <- odat$rich / maxRich')
-                r('odat$diversity <- odat$diversity / maxDiversity')'''
+                r('odat$diversity <- odat$diversity / maxDiversity')
 
                 # chem
-                '''r('maxPH <- 14')
                 r('chemdat$soil_pH <- chemdat$soil_pH / maxPH')
-                r('Cmax <- max(chemdat$soil_C)')
-                r('if(Cmax==0) Cmax=1')
-                r('chemdat$soil_C <- chemdat$soil_C / Cmax')
-                r('OMmax <- max(chemdat$soil_OM)')
-                r('if(OMmax==0) OMmax=1')  # really cheesy way to avoid NaN's on the next line
-                r('chemdat$soil_OM <- chemdat$soil_OM / OMmax')'''
+                r('chemdat$soil_C <- chemdat$soil_C / maxC')
+                r('chemdat$soil_OM <- chemdat$soil_OM / maxOM')
 
                 # phys
-                '''r('WCSmax <- max(physdat$water_content_soil)')
-                r('if(WCSmax==0) WCSmax=1')
-                r('physdat$water_content_soil <- physdat$water_content_soil / WCSmax')
-                r('BDmax <- max(physdat$bulk_density)')
-                r('if(BDSmax==0) BDmax=1')
-                r('physdat$bulk_density <- physdat$bulk_density / BDmax')
-                r('POROmax <- max(physdat$porosity)')
-                r('if(POROmax==0) POROmax=1')
-                r('physdat$porosity <- physdat$porosity / POROmax')'''
+                r('physdat$water_content_soil <- physdat$water_content_soil / maxWCS')
+                r('physdat$bulk_density <- physdat$bulk_density / maxBD')
+                r('physdat$porosity <- physdat$porosity / maxPORO')
 
                 r("col <- c('blue', 'blue', 'blue', 'blue', 'blue', \
                     'green', 'green', 'red', 'red', 'turquoise', \
@@ -472,6 +473,7 @@ def loopCat(request):
                     r('values <- dat[off, c("diversity", "rich", "abund_16S")]')
                     r('text(x=vals+0.2, y=bar, labels=values, cex=0.8, xpd=TRUE)')
                     r('title("Biological", line=-1)')
+
                     r('vals <- as.matrix(t(odat[off, myBins]))')
                     r('par(mar=c(2.5,5,0,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
@@ -479,7 +481,7 @@ def loopCat(request):
                         names.arg=c("rRNA Copy Number"), \
                         cex.names=0.8, las=2, axes=F, col=c("red", "darkgray", "green"), beside=F)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=round(vals, 3), cex=0.8, xpd=TRUE)')
+                    r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=round(round(vals, 3), 3), cex=0.8, xpd=TRUE)')
                     r('par(xpd=T)')
                     r('legend(1, 0.5, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
 
@@ -492,7 +494,7 @@ def loopCat(request):
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- dispChem[off, c("soil_pH", "soil_C", "soil_OM")]')
-                    r('text(x=vals+0.2, y=bar, labels=values, cex=0.8, xpd=TRUE)')
+                    r('text(x=vals+0.2, y=bar, labels=round(values, 2), cex=0.8, xpd=TRUE)')
                     r('title("Chemical", line=-1)')
                     r('plot.new()')
 
@@ -505,7 +507,7 @@ def loopCat(request):
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- dispPhys[off, c("water_content_soil", "bulk_density", "porosity")]')
-                    r('text(x=vals+0.2, y=bar, labels=values, cex=0.8, xpd=TRUE)')
+                    r('text(x=vals+0.2, y=bar, labels=round(values, 2), cex=0.8, xpd=TRUE)')
                     r('title("Physical", line=-1)')
                     r('plot.new()')
                     r('dev.off()')
