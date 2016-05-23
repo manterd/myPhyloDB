@@ -16,7 +16,7 @@ import time
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, UploadForm6, UploadForm7, UploadForm8
 from models import Project, Reference, Sample, Species
-from models import ko_entry, nz_entry
+from models import ko_entry, nz_entry, nz_lvl1
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 from models import addQueue, getQueue, subQueue
@@ -609,52 +609,47 @@ def select(request):
     )
 
 
-def taxa(request):
-    qs1 = Species.objects.values('kingdomid__kingdomName', 'kingdomid', 'phylaid__phylaName', 'phylaid', 'classid__className', 'classid', 'orderid__orderName', 'orderid', 'familyid__familyName', 'familyid', 'genusid__genusName', 'genusid', 'speciesName', 'speciesid')
-    df = pd.DataFrame.from_records(qs1)
-    df.rename(columns={'kingdomid__kingdomName': 'Kingdom Name', 'kingdomid': 'Kingdom ID'}, inplace=True)
-    df.rename(columns={'phylaid__phylaName': 'Phylum Name', 'phylaid': 'Phylum ID'}, inplace=True)
-    df.rename(columns={'classid__className': 'Class Name', 'classid': 'Class ID'}, inplace=True)
-    df.rename(columns={'orderid__orderName': 'Order Name', 'orderid': 'Order ID'}, inplace=True)
-    df.rename(columns={'familyid__familyName': 'Family Name', 'familyid': 'Family ID'}, inplace=True)
-    df.rename(columns={'genusid__genusName': 'Genus Name', 'genusid': 'Genus ID'}, inplace=True)
-    df.rename(columns={'speciesName': 'Species Name', 'speciesid': 'Species ID'}, inplace=True)
-    table = df.to_html(classes="table display", columns=['Kingdom Name', 'Kingdom ID', 'Phylum Name', 'Phylum ID', 'Class Name', 'Class ID', 'Order Name', 'Order ID', 'Family Name', 'Family ID', 'Genus Name', 'Genus ID', 'Species Name', 'Species ID'])
-    table = table.replace('border="1"', 'border="0"')
+def taxaJSON(request):
+    results = {}
+    qs1 = Species.objects.values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesName')
+    results['data'] = list(qs1)
+    myJson = simplejson.dumps(results, ensure_ascii=False)
+    return HttpResponse(myJson)
 
+
+def taxa(request):
     return render_to_response(
         'taxa.html',
-        {'table': table},
         context_instance=RequestContext(request)
     )
+
+
+def pathJSON(request):
+    results = {}
+    qs1 = ko_entry.objects.using('picrust').values_list('ko_lvl1_id__ko_lvl1_name', 'ko_lvl1_id', 'ko_lvl2_id__ko_lvl2_name', 'ko_lvl2_id', 'ko_lvl3_id__ko_lvl3_name', 'ko_lvl3_id', 'ko_lvl4_id', 'ko_orthology', 'ko_name', 'ko_desc')
+    results['data'] = list(qs1)
+    myJson = simplejson.dumps(results, ensure_ascii=False)
+    return HttpResponse(myJson)
 
 
 def kegg_path(request):
-    qs1 = ko_entry.objects.using('picrust').values('ko_lvl1_id__ko_lvl1_name', 'ko_lvl1_id', 'ko_lvl2_id__ko_lvl2_name', 'ko_lvl2_id', 'ko_lvl3_id__ko_lvl3_name', 'ko_lvl3_id', 'ko_orthology', 'ko_name', 'ko_desc')
-    df = pd.DataFrame.from_records(qs1)
-    df.rename(columns={'ko_lvl1_id__ko_lvl1_name': 'Level1', 'ko_lvl1_id': 'Level1_ID', 'ko_lvl2_id__ko_lvl2_name': 'Level2', 'ko_lvl2_id': 'Level2_ID', 'ko_lvl3_id__ko_lvl3_name': 'Level3',  'ko_lvl3_id': 'Level3_ID', 'ko_orthology': 'KO', 'ko_name': 'Name', 'ko_desc': 'Description'}, inplace=True)
-
-    table = df.to_html(classes="table display", columns=['Level1', 'Level1_ID', 'Level2', 'Level2_ID', 'Level3', 'Level3_ID', 'KO', 'Name', 'Description'])
-    table = table.replace('border="1"', 'border="0"')
-
     return render_to_response(
         'kegg_path.html',
-        {'table': table},
         context_instance=RequestContext(request)
     )
 
 
+def nzJSON(request):
+    qs1 = nz_entry.objects.using('picrust').values_list('nz_lvl1_id__nz_lvl1_name', 'nz_lvl1_id', 'nz_lvl2_id__nz_lvl2_name', 'nz_lvl2_id', 'nz_lvl3_id__nz_lvl3_name', 'nz_lvl3_id', 'nz_lvl4_id__nz_lvl4_name', 'nz_lvl4_id', 'nz_lvl5_id', 'nz_orthology', 'nz_name', 'nz_desc')
+    results = {}
+    results['data'] = list(qs1)
+    myJson = simplejson.dumps(results, ensure_ascii=False)
+    return HttpResponse(myJson)
+
+
 def kegg_enzyme(request):
-    qs1 = nz_entry.objects.using('picrust').values('nz_lvl1_id__nz_lvl1_name', 'nz_lvl1_id', 'nz_lvl2_id__nz_lvl2_name', 'nz_lvl2_id', 'nz_lvl3_id__nz_lvl3_name', 'nz_lvl3_id', 'nz_lvl4_id__nz_lvl4_name', 'nz_lvl4_id', 'nz_orthology', 'nz_name', 'nz_desc')
-    df = pd.DataFrame.from_records(qs1)
-    df.rename(columns={'nz_lvl1_id__nz_lvl1_name': 'Level1', 'nz_lvl1_id': 'Level1_ID', 'nz_lvl2_id__nz_lvl2_name': 'Level2', 'nz_lvl2_id': 'Level2_ID', 'nz_lvl3_id__nz_lvl3_name': 'Level3', 'nz_lvl3_id': 'Level3_ID', 'nz_lvl4_id__nz_lvl4_name': 'Level4', 'nz_lvl4_id': 'Level4_ID', 'nz_orthology': 'KO', 'nz_name': 'Name', 'nz_desc': 'Description'}, inplace=True)
-
-    table = df.to_html(classes="table display", columns=['Level1', 'Level1_ID', 'Level2', 'Level2_ID', 'Level3', 'Level3_ID', 'Level4', 'Level4_ID', 'KO', 'Name', 'Description'])
-    table = table.replace('border="1"', 'border="0"')
-
     return render_to_response(
         'kegg_enzyme.html',
-        {'table': table},
         context_instance=RequestContext(request)
     )
 

@@ -131,4 +131,7 @@ urlpatterns = [
 
     url(r'^statusPyBake/$', pybake.statusPyBake, name='statusPyBake'),
 
+    url(r'^taxaJSON/$', views.taxaJSON, name='taxaJSON'),
+    url(r'^nzJSON/$', views.nzJSON, name='nzJSON'),
+    url(r'^pathJSON/$', views.pathJSON, name='pathJSON'),
 ]
