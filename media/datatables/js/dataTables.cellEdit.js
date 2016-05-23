@@ -68,15 +68,17 @@ jQuery.fn.DataTable.Api.register('MakeCellsEditable()', function (settings) {
             }
 
             //Redraw table
+            bResetDisplay = false;  // added to keep current page - dkm
             table.draw();
         },
         // CANCEL
         cancelEditableCell: function (callingElement) {
             var cell = table.cell($(callingElement).parent());
             // Set cell to it's original value
-            cell.data(cell.data())
+            cell.data(cell.data());
 
             // Redraw table
+            bResetDisplay = false;  // added to keep current page - dkm
             table.draw();
         }
     });
@@ -111,7 +113,7 @@ jQuery.fn.DataTable.Api.register('MakeCellsEditable()', function (settings) {
 function getInputHtml(currentColumnIndex, settings) {
     var inputSetting, inputType, input, inputCss, confirmCss, cancelCss;
 
-    input = {"focus":true,"html":null}
+    input = {"focus":true,"html":null};
 
     $.each(settings.inputTypes, function (index, setting) {
         if (setting.column == currentColumnIndex) {

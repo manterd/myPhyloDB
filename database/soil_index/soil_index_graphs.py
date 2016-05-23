@@ -440,31 +440,31 @@ def loopCat(request):
 
                 r("pdf_counter <- 1")
                 for row in range(1, rowcount+1):
-                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=2, width=8)")
+                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=3, width=8)")
                     r.assign('off', row)
                     r('layout(matrix(c(1,2,4,6,1,3,5,7), 2, 4, byrow=T), widths=c(2,2,2,2))')
 
                     # GIBBs
                     r('stars(matrix(1, ncol=18, nrow=1), \
                         col.segments=col, scale=F, full=T, labels=trt[off], flip.labels=F, \
-                        cex=0.8, ncol=1, mar=c(1,1,1,1), lty=3, len=1)')
-                    r('title("GIBBs", line=3)')
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), lty=3, len=1)')
+                    r('title("GIBBs", line=-2)')
                     r('stars(matrix(1, ncol=18, nrow=1), \
                         col.segments=col, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.75)')
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3, len=0.75)')
                     r('stars(matrix(1, ncol=18, nrow=1), \
                         col.segments=col, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.5)')
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3, len=0.5)')
                     r('stars(matrix(1, ncol=18, nrow=1), \
                         col.segments=col, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,1,1), add=T, lty=3, len=0.25)')
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3, len=0.25)')
                     r('stars(data[off,], lwd=1, draw.segments=T, \
                         col.segments=col, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,1,1), add=T)')
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T)')
 
                     # Biological, needs all 4? (organic matter, ACE soil protein index, respiration, active carbon)
                     r('vals <- as.numeric(odat[off, c("diversity", "rich", "abund_16S")])')  # needs biodat as well somehow
-                    r('par(mar=c(0,5,0,5))')
+                    r('par(mar=c(0,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("Diversity", "Richness", "Abundance"),\
@@ -475,7 +475,7 @@ def loopCat(request):
                     r('title("Biological", line=-1)')
 
                     r('vals <- as.matrix(t(odat[off, myBins]))')
-                    r('par(mar=c(2.5,5,0,5))')
+                    r('par(mar=c(5,5,1,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("rRNA Copy Number"), \
@@ -483,11 +483,11 @@ def loopCat(request):
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=round(round(vals, 3), 3), cex=0.8, xpd=TRUE)')
                     r('par(xpd=T)')
-                    r('legend(1, 0.5, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
+                    r('legend(1, 0.25, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
 
                     # Chemical, needs 'Minor Elements'
                     r('vals <- as.numeric(chemdat[off, c("soil_pH", "soil_C", "soil_OM")])')
-                    r('par(mar=c(0,5,0,5))')
+                    r('par(mar=c(0,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("pH", "Carbon", "Organic Matter"),\
@@ -500,7 +500,7 @@ def loopCat(request):
 
                     # Physical, needs 'Aggregate Stability'
                     r('vals <- as.numeric(physdat[off, c("water_content_soil", "bulk_density", "porosity")])')
-                    r('par(mar=c(0,5,0,5))')
+                    r('par(mar=c(0,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("Water Content", "Bulk Density", "Porosity"),\
