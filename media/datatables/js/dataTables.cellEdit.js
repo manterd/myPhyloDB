@@ -21,7 +21,7 @@
  * For details please refer to: http://www.datatables.net
  */
 
-jQuery.fn.dataTable.Api.register('MakeCellsEditable()', function (settings) {
+jQuery.fn.DataTable.Api.register('MakeCellsEditable()', function (settings) {
     var table = this.table();
 
     jQuery.fn.extend({

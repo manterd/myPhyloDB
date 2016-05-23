@@ -32,13 +32,53 @@
         var running = false;
         var RID = 0;
         var hiding = 1;
+        var table;
+
+        var dataSet =  [["1", "GIBBS", "cellulase", "2.03e10"],
+                        ["2", "GIBBS", "endo-1,4-beta-xylanase", "1.13e10"],
+                        ["3", "GIBBS", "beta-glucosidase", "5.51e10"],
+                        ["4", "GIBBS", "xylan 1,4-beta-xylosidase", "9.85e9"],
+                        ["5", "GIBBS", "cellulose 1,4-beta-cellobiosidase (non-reducing end)", "1.10e8"],
+                        ["6", "GIBBS", "amidase", "4.04e10"],
+                        ["7", "GIBBS", "urease", "1.56e10"],
+                        ["8", "GIBBS", "alkaline phosphatase", "1.99e10"],
+                        ["9", "GIBBS", "acid phosphatase", "2.33e10"],
+                        ["10", "GIBBS", "arylsulfatase", "1.82e10"],
+                        ["11", "GIBBS", "nitrogenase", "9.65e9"],
+                        ["12", "GIBBS", "pyrroloquinoline-quinone synthase", "8.05e9"],
+                        ["13", "GIBBS", "aerobactin synthase", "5.17e8"],
+                        ["14", "GIBBS", "1-aminocyclopropane-1-carboxylate deaminase", "3.77e9"],
+                        ["15", "GIBBS", "indolepyruvate decarboxylase", "1.80e9"],
+                        ["16", "GIBBS", "(S,S)-butanediol dehydrogenase", "2.77e9"],
+                        ["17", "GIBBS", "glycine dehydrogenase (cyanide-forming)", "5.94e7"],
+                        ["18", "GIBBS", "chitinase", "1.26e10"],
+                        ["19", "Biological", "Abundance", "1e9"],
+                        ["20", "Biological", "Richness", "1"],
+                        ["21", "Biological", "Diversity", "1"],
+                        ["22", "Chemical", "Organic Matter", "20"],
+                        ["23", "Chemical", "Carbon", "10"],
+                        ["24", "Chemical", "pH", "14"],
+                        ["25", "Physical", "Porosity", "1"],
+                        ["26", "Physical", "Bulk Density", "2.65"],
+                        ["27", "Physical", "Water Content", "1"]];
 
         $(function () {
 
-            var table = $('#myTable').DataTable();
+            table = $('#example').DataTable( {
+                data: dataSet,
+                columns: [
+                    { title: "Index" },
+                    { title: "Type" },
+                    { title: "Name" },
+                    { title: "Reference" }
+                ]
+            } );
 
+            //var table = $('#example').DataTable();
             table.MakeCellsEditable({
-                "onUpdate": myCallbackFunction
+                "columns": [3],
+                "onUpdate": myCallbackFunction,
+                "confirmationButton": true
             });
 
             // remove R plot on close
@@ -295,8 +335,109 @@
                 metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
             }
 
-            var maxVals = [1];
-            //maxVals.push(stuff) to get maxVals over to python from new text fields
+            var maxVals = {};
+            var names = table.column(2).data();
+            var vals = table.column(3).data();
+            for (var c=0; c<names.length; c++) {
+                maxVals[names[c]] = vals[c];
+            }
+
+            //Check if max value is valid
+            var stop = false;
+            if (maxVals['cellulase'] <= 0) {
+                alert("Max values must be greater than zero (check cellulase)");
+                document.getElementById("maxval1").value = "2.03e10";
+                stop = true;
+            }
+            if (maxVals['endo-1,4-beta-xylanase'] <= 0) {
+                alert("Max values must be greater than zero (check endo-1.4-beta xylanase)");
+                document.getElementById("maxval2").value = "1.13e10";
+                stop = true;
+            }
+            if (maxVals['beta-glucosidase'] <= 0) {
+                alert("Max values must be greater than zero (check beta-glucosidase)");
+                document.getElementById("maxval3").value = "5.51e10";
+                stop = true;
+            }
+            if (maxVals['xylan 1,4-beta-xylosidase'] <= 0) {
+                alert("Max values must be greater than zero (check xylan-1.4-beta-xylosidase)");
+                document.getElementById("maxval4").value = "9.85e9";
+               stop = true;
+            }
+            if (maxVals['cellulose 1,4-beta-cellobiosidase (non-reducing end)'] <= 0) {
+                alert("Max values must be greater than zero (check cellulose 1-4-beta-cellobiosidase)");
+                document.getElementById("maxval5").value = "1.10e8";
+                stop = true;
+            }
+            if (maxVals['amidase'] <= 0) {
+                alert("Max values must be greater than zero (check amidase)");
+                document.getElementById("maxval6").value = "4.04e10";
+                stop = true;
+            }
+            if (maxVals['urease'] <= 0) {
+                alert("Max values must be greater than zero (check urease)");
+                document.getElementById("maxval7").value = "1.56e10";
+                stop = true;
+            }
+            if (maxVals['alkaline phosphatase'] <= 0) {
+                alert("Max values must be greater than zero (check alkaline phosphatase)");
+                document.getElementById("maxval8").value = "1.99e10";
+                stop = true;
+            }
+            if (maxVals['acid phosphatase'] <= 0) {
+                alert("Max values must be greater than zero (check acid phosphatase)");
+                document.getElementById("maxval9").value = "2.33e10";
+                stop = true;
+            }
+            if (maxVals['arylsulfatase'] <= 0) {
+                alert("Max values must be greater than zero (check arylsulfatase)");
+                document.getElementById("maxval10").value = "1.82e10";
+                stop = true;
+            }
+            if (maxVals['nitrogenase'] <= 0) {
+                alert("Max values must be greater than zero (check nitrogenase)");
+                document.getElementById("maxval11").value = "9.65e9";
+                stop = true;
+            }
+            if (maxVals['pyrroloquinoline-quinone synthase'] <= 0) {
+                alert("Max values must be greater than zero (check pyrroloquinoline-quinone synthase)");
+                document.getElementById("maxval12").value = "8.05e9";
+                stop = true;
+            }
+            if (maxVals['aerobactin synthase'] <= 0) {
+                alert("Max values must be greater than zero (check aerobactin synthase)");
+                document.getElementById("maxval13").value = "5.17e8";
+                stop = true;
+            }
+            if (maxVals['1-aminocyclopropane-1-carboxylate deaminase'] <= 0) {
+                alert("Max values must be greater than zero (check 1-aminocyclopropane-1-carboxylate deaminase)");
+                document.getElementById("maxval14").value = "3.77e9";
+                stop = true;
+            }
+            if (maxVals['indolepyruvate decarboxylase'] <= 0) {
+                alert("Max values must be greater than zero (check indolepyruvate decarboxylase)");
+                document.getElementById("maxval15").value = "1.80e9";
+                stop = true;
+            }
+            if (maxVals['(S,S)-butanediol dehydrogenase'] <= 0) {
+                alert("Max values must be greater than zero (check (S,S)-butanediol dehydrogenase)");
+                document.getElementById("maxval16").value = "2.77e9";
+                stop = true;
+            }
+            if (maxVals['glycine dehydrogenase (cyanide-forming)'] <= 0) {
+                alert("Max values must be greater than zero (check glycine dehydrogenase (cyanide-forming))");
+                document.getElementById("maxval17").value = "5.94e7";
+                stop = true;
+            }
+            if (maxVals['chitinase'] <= 0) {
+                alert("Max values must be greater than zero (check chitinase)");
+                document.getElementById("maxval18").value = "1.26e10";
+                stop = true;
+            }
+
+            if (stop) {
+                stopThis(RID);
+            }
 
             var myDict = {};
             myDict['maxVals'] = maxVals;
@@ -365,45 +506,46 @@
                     </input>
                 </div>
                 <div style="display: none;" id="maxValBox">
-                    <table>
+                    <!--<table>
                         <tr>GIBBs</tr>
                         <tr>
-                            <td>cellulase<input type="text" value=2.03e10 id="maxval1"/></td>
-                            <td>endo-1.4-beta xylanase<input type="text" value=1.13e10 id="maxval2"/></td>
+                            <td>cellulase</td><td><input type="text" value=2.03e10 id="maxval1"/></td>
+                            <td>endo-1.4-beta xylanase</td><td><input type="text" value=1.13e10 id="maxval2"/></td>
                         </tr>
                         <tr>
-                            <td>beta-glucosidase<input type="text" value=5.51e10 id="maxval3"/></td>
-                            <td>xylan-1.4-beta-xylosidase<input type="text" value=9.85e9 id="maxval4"/></td>
+                            <td>beta-glucosidase</td><td><input type="text" value=5.51e10 id="maxval3"/></td>
+                            <td>xylan-1.4-beta-xylosidase</td><td><input type="text" value=9.85e9 id="maxval4"/></td>
                         </tr>
                         <tr>
-                            <td>cellulose 1-4-beta-cellobiosidase<input type="text" value=1.10e8 id="maxval5"/></td>
-                            <td>amidase<input type="text" value=4.04e10 id="maxval6"/></td>
+                            <td>cellulose 1-4-beta-cellobiosidase</td><td><input type="text" value=1.10e8 id="maxval5"/></td>
+                            <td>amidase</td><td><input type="text" value=4.04e10 id="maxval6"/></td>
                         </tr>
                         <tr>
-                            <td>urease<input type="text" value=1.56e10 id="maxval7"/></td>
-                            <td>alkaline phosphatase<input type="text" value=1.99e10 id="maxval8"/></td>
+                            <td>urease</td><td><input type="text" value=1.56e10 id="maxval7"/></td>
+                            <td>alkaline phosphatase</td><td><input type="text" value=1.99e10 id="maxval8"/></td>
                         </tr>
                         <tr>
-                            <td>acid phosphatase<input type="text" value=2.33e10 id="maxval9"/></td>
-                            <td>arylsulfatase<input type="text" value=1.82e10 id="maxval10"/></td>
+                            <td>acid phosphatase</td><td><input type="text" value=2.33e10 id="maxval9"/></td>
+                            <td>arylsulfatase</td><td><input type="text" value=1.82e10 id="maxval10"/></td>
                         </tr>
                         <tr>
-                            <td>nitrogenase<input type="text" value=9.65e9 id="maxval11"/></td>
-                            <td>pyrroloquinoline-quinone synthase<input type="text" value=8.05e9 id="maxval12"/></td>
+                            <td>nitrogenase</td><td><input type="text" value=9.65e9 id="maxval11"/></td>
+                            <td>pyrroloquinoline-quinone synthase</td><td><input type="text" value=8.05e9 id="maxval12"/></td>
                         </tr>
                         <tr>
-                            <td>aerobactin synthase<input type="text" value=5.17e8 id="maxval13"/></td>
-                            <td>1-aminocyclopropane-1-carboxylate deaminase<input type="text" value=3.77e9 id="maxval14"/></td>
+                            <td>aerobactin synthase</td><td><input type="text" value=5.17e8 id="maxval13"/></td>
+                            <td>1-aminocyclopropane-1-carboxylate deaminase</td><td><input type="text" value=3.77e9 id="maxval14"/></td>
                         </tr>
                         <tr>
-                            <td>indolepyruvate decarboxylase<input type="text" value=1.80e9 id="maxval15"/></td>
-                            <td>(S,S)-butanediol dehydrogenase<input type="text" value=2.77e9 id="maxval16"/></td>
+                            <td>indolepyruvate decarboxylase</td><td><input type="text" value=1.80e9 id="maxval15"/></td>
+                            <td>(S,S)-butanediol dehydrogenase</td><td><input type="text" value=2.77e9 id="maxval16"/></td>
                         </tr>
                         <tr>
-                            <td>glycine dehydrogenase (cyanide-forming)<input type="text" value=5.94e7 id="maxval17"/></td>
-                            <td>chitinase<input type="text" value=1.26e10 id="maxval18"/></td>
+                            <td>glycine dehydrogenase (cyanide-forming)</td><td><input type="text" value=5.94e7 id="maxval17"/></td>
+                            <td>chitinase</td><td><input type="text" value=1.26e10 id="maxval18"/></td>
                         </tr>
-                    </table>
+                    </table>-->
+                    <table id="example" class="display" width="100%"></table>
                 </div>
 
             </td>
@@ -469,7 +611,7 @@
     <br>
     <br>
 
-    <table id="myTable" class="stripe">
+    <!--<table id="myTable" class="stripe">
         <thead>
             <tr>
                 <th>Group</th>
@@ -509,6 +651,6 @@
                 <td>Bobby@axecapital.com</td>
             </tr>
         </tbody>
-    </table>
+    </table>-->
     <br><br><br>
 {% endblock my_content%}
