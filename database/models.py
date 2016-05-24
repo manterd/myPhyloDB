@@ -236,6 +236,14 @@ class Soil(models.Model):
     soil_Na = models.FloatField(blank=True, null=True)
     soil_B = models.FloatField(blank=True, null=True)
 
+    # new stuff from health assessment
+    soil_water_cap = models.FloatField(blank=True, null=True)
+    soil_surf_hard = models.FloatField(blank=True, null=True)
+    soil_subsurf_hard = models.FloatField(blank=True, null=True)
+    soil_agg_stability = models.FloatField(blank=True, null=True)
+    soil_ACE_protein = models.FloatField(blank=True, null=True)
+    soil_active_C = models.FloatField(blank=True, null=True)
+
     plant_C = models.FloatField(blank=True, null=True)
     plant_N = models.FloatField(blank=True, null=True)
     plant_P = models.FloatField(blank=True, null=True)
