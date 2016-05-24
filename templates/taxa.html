@@ -19,6 +19,7 @@
 
             $('#myTable').DataTable({
                 dom: 'B<"toolbar">lfrtip',
+                deferRender: true,
                 ajax: {
                     url: '/taxaJSON/'
                 },

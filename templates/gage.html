@@ -416,6 +416,7 @@
                         var gage_table = data['gage_table'];
                         $('#gage_table').empty().append(gage_table).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
                             scrollX: true,
                             bSort: true,
                             bPaginate: true,
@@ -426,6 +427,7 @@
                         var diff_table = data['diff_table'];
                         $('#diff_table').empty().append(diff_table).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
                             scrollX: true,
                             bSort: true,
                             bPaginate: true,
