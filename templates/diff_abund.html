@@ -523,6 +523,7 @@
                         var res_table = data['res_table'];
                         $('#res_table').empty().append(res_table).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
                             scrollX: true,
                             bSort: true,
                             bPaginate: true,

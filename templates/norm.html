@@ -409,6 +409,7 @@
                         if (res_table == null) {
                             res_table = $('#res_table').dataTable({
                                 dom: 'B<"toolbar">lfrtip',
+                                deferRender: true,
                                 scrollX: true,
                                 bSort: true,
                                 bPaginate: true,
@@ -420,6 +421,7 @@
                         } else {
                             res_table = $('#res_table').DataTable({
                                 dom: 'B<"toolbar">lfrtip',
+                                deferRender: true,
                                 scrollX: true,
                                 bSort: true,
                                 bPaginate: true,
@@ -427,7 +429,7 @@
                                 buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ],
                                 data: rowData,
                                 columns: colData,
-                                "destroy": true
+                                destroy: true
                             });
                         }
                         $("div.toolbar").html('<br><br><br>');

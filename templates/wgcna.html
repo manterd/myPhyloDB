@@ -603,6 +603,7 @@
                     var legend = obj['legend'];
                     $('#legend').empty().append(legend).find('.table').DataTable({
                         dom: 'B<"toolbar">lfrtip',
+                        deferRender: true,
                         scrollX: true,
                         bSort: true,
                         bPaginate: true,
@@ -613,6 +614,7 @@
                     var res_table = obj['res_table'];
                     $('#res_table').empty().append(res_table).find('.table').DataTable({
                         dom: 'B<"toolbar">lfrtip',
+                        deferRender: true,
                         scrollX: true,
                         bSort: true,
                         bPaginate: true,
@@ -623,6 +625,7 @@
                     var dist_table = obj['dist_table'];
                     $('#dist_table').empty().append(dist_table).find('.table').DataTable({
                         dom: 'B<"toolbar">lfrtip',
+                        deferRender: true,
                         scrollX: true,
                         bSort: true,
                         bPaginate: true,
@@ -633,6 +636,7 @@
                     var kme_table = obj['kme_table'];
                     $('#kme_table').empty().append(kme_table).find('.table').DataTable({
                         dom: 'B<"toolbar">lfrtip',
+                        deferRender: true,
                         scrollX: true,
                         bSort: true,
                         bPaginate: true,
