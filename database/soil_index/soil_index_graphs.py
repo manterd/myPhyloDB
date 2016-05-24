@@ -126,6 +126,8 @@ def loopCat(request):
                 # Get maxvals for plotting
                 maxVals = all['maxVals']
 
+                locMax = all['locMax']
+
 
                 metaDictCat = {}
                 catFields = []
@@ -369,8 +371,10 @@ def loopCat(request):
 
                 scaleDF = df2.copy()
                 for key in maxDict:
-                    print("key: ", key)
-                    maxVal = float(maxVals[key])
+                    if locMax:
+                        maxVal = max(scaleDF[key])
+                    else:
+                        maxVal = float(maxVals[key])
                     scaleDF[key] /= maxVal
 
                 r.assign('data', scaleDF)
@@ -398,23 +402,48 @@ def loopCat(request):
                 r.assign('dat', df1)
                 r('odat <- dat')
 
-                #r('dat$abund_16s <- format(dat$abund_16s, scientific=TRUE, digits=3)')
+                r('dat$abund_16S <- format(dat$abund_16S, scientific=TRUE, digits=3)')
                 r('dat$rich <- round(dat$rich, 0)')
                 r('dat$diversity <- round(dat$diversity, 3)')
 
                 # load max vals from maxVals dictionary into R
-                # bio
-                r.assign('maxAbund', float(maxVals['Abundance']))
-                r.assign('maxRich', float(maxVals['Richness']))
-                r.assign('maxDiversity', float(maxVals['Diversity']))
-                # chem
-                r.assign('maxC', float(maxVals['Carbon']))
-                r.assign('maxOM', float(maxVals['Organic Matter']))
-                r.assign('maxPH', float(maxVals['pH']))
-                # physical
-                r.assign('maxWCS', float(maxVals['Water Content']))
-                r.assign('maxBD', float(maxVals['Bulk Density']))
-                r.assign('maxPORO', float(maxVals['Porosity']))
+                if locMax:
+                    # bio
+                    r('maxAbund <- max(odat$abund_16S)')
+                    r('if(maxAbund==0) maxAbund=1')
+                    r('maxRich <- max(odat$rich)')
+                    r('if(maxRich==0) maxRich=1')
+                    r('maxDiversity <- max(odat$diversity)')
+                    r('if(maxDiversity==0) maxDiversity=1')
+
+                    # chem
+                    r('maxPH <- 14')
+                    r('maxC <- max(chemdat$soil_C)')
+                    r('if(maxC==0) maxC=1')
+                    r('maxOM <- max(chemdat$soil_OM)')
+                    r('if(maxOM==0) maxOM=1')
+
+                    # phys
+                    r('maxWCS <- max(physdat$water_content_soil)')
+                    r('if(maxWCS==0) maxWCS=1')
+                    r('maxBD <- max(physdat$bulk_density)')
+                    r('if(maxBD==0) maxBD=1')
+                    r('maxPORO <- max(physdat$porosity)')
+                    r('if(maxPORO==0) maxPORO=1')
+
+                else:
+                    # bio
+                    r.assign('maxAbund', float(maxVals['Abundance']))
+                    r.assign('maxRich', float(maxVals['Richness']))
+                    r.assign('maxDiversity', float(maxVals['Diversity']))
+                    # chem
+                    r.assign('maxC', float(maxVals['Carbon']))
+                    r.assign('maxOM', float(maxVals['Organic Matter']))
+                    r.assign('maxPH', float(maxVals['pH']))
+                    # physical
+                    r.assign('maxWCS', float(maxVals['Water Content']))
+                    r.assign('maxBD', float(maxVals['Bulk Density']))
+                    r.assign('maxPORO', float(maxVals['Porosity']))
 
                 r.assign('myBins', myBins)  # load bins
 

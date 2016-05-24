@@ -409,6 +409,7 @@ def loopCat(request):
                 if tabular_on == 1:
                     data = finalDF.values.tolist()
                     cols = finalDF.columns.values.tolist()
+                    print "cols: ", len(cols)
                     colList = []
                     for item in cols:
                         colDict = {}
@@ -417,7 +418,7 @@ def loopCat(request):
                     finalDict['data'] = data
                     finalDict['columns'] = colList
 
-                #base[RID] = 'Step 4 of 5: Formatting result table...done!'
+                base[RID] = 'Step 4 of 4: Formatting result table...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
