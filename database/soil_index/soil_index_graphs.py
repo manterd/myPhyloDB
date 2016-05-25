@@ -112,7 +112,7 @@ def loopCat(request):
                 stops[RID] = False
 
                 time1[RID] = time.time()
-                base[RID] = 'Step 1 of X: Selecting your chosen meta-variables...'
+                base[RID] = 'Step 1 of 3: Selecting your chosen meta-variables...'
 
                 path = pickle.loads(request.session['savedDF'])
                 savedDF = pd.read_pickle(path)
@@ -173,7 +173,7 @@ def loopCat(request):
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n'
 
-                base[RID] = 'Step 1 of X: Selecting your chosen meta-variables...done'
+                base[RID] = 'Step 1 of 3: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -181,10 +181,17 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of X: Selecting your chosen taxa or KEGG level...'
+                base[RID] = 'Step 2 of 3: Selecting your chosen taxa or KEGG level...'
 
                 finalDF, keggDF, levelList = getTaxaDF(savedDF, metaDF, RID)
                 finalDF = finalDF[finalDF.rel_abund != 0]
+
+                count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+                count_rDF.fillna(0, inplace=True)
+                count_rDF['sum'] = count_rDF[count_rDF.gt(0)].count(axis=1)
+                count_rDF['singletons'] = count_rDF[count_rDF.lt(2)].sum(axis=1)
+                count_rDF['coverage'] = 1 - count_rDF['singletons'] / count_rDF['sum']
+                count_rDF['total'] = count_rDF.sum(axis=1)
 
                 # save location info to session
                 myDir = 'media/temp/soil_index/'
@@ -266,6 +273,14 @@ def loopCat(request):
                     physDF['porosity'] = meta_rDF['porosity']
                 else:
                     physDF['porosity'] = 0.0
+                if 'soil_surf_hard' in meta_rDF.columns:
+                    physDF['soil_surf_hard'] = meta_rDF['soil_surf_hard']
+                else:
+                    physDF['soil_surf_hard'] = 0.0
+                if 'soil_subsurf_hard' in meta_rDF.columns:
+                    physDF['soil_subsurf_hard'] = meta_rDF['soil_subsurf_hard']
+                else:
+                    physDF['soil_subsurf_hard'] = 0.0
 
                 # get means
                 bioDF  = bioDF.groupby(catFields_edit)
@@ -301,9 +316,18 @@ def loopCat(request):
                 allDF = pd.merge(sumDF2, sumDF1, left_index=True, right_index=True, how='outer')
 
                 allDF = pd.merge(allDF, meta_rDF, left_index=True, right_index=True, how='outer')
-                wantList = ['abund_16S', 'rich', 'diversity'] + myBins
+                allDF = pd.merge(allDF, count_rDF, left_index=True, right_index=True, how='inner')
+
+                wantList = ['abund_16S', 'rich', 'diversity', 'coverage'] + myBins
+
                 bytrt1 = allDF.groupby(catFields_edit)[wantList]
-                df1 = bytrt1.mean()  # means by other means
+                df1 = bytrt1.mean()
+
+                # merge with other df's before sending to R
+                df1 = pd.merge(df1, bioDF, left_index=True, right_index=True, how='outer')
+                df1 = pd.merge(df1, chemDF, left_index=True, right_index=True, how='outer')
+                df1 = pd.merge(df1, physDF, left_index=True, right_index=True, how='outer')
+
                 df1.reset_index(drop=False, inplace=True)
                 if len(catFields_edit) > 1:
                     for index, row in df1.iterrows():
@@ -318,10 +342,44 @@ def loopCat(request):
                 starDF = pd.merge(nzDF, meta_rDF, left_index=True, right_index=True, how='outer')
                 bytrt2 = starDF.groupby(catFields_edit)
 
-                myList = [u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase', u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase', u'3.5.1.5  urease', u'3.1.3.1  alkaline phosphatase', u'3.1.3.2  acid phosphatase', u'3.1.6.1  arylsulfatase', u'1.18.6.1  nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase', u'6.3.2.39  aerobactin synthase', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase', u'1.1.1.76  (S,S)-butanediol dehydrogenase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase']
-                newList = [u'cellulase', u'endo-1,4-beta-xylanase', u'beta-glucosidase', u'xylan 1,4-beta-xylosidase', u'cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'amidase', u'urease', u'alkaline phosphatase', u'acid phosphatase', u'arylsulfatase', u'nitrogenase', u'pyrroloquinoline-quinone synthase', u'aerobactin synthase', u'1-aminocyclopropane-1-carboxylate deaminase', u'indolepyruvate decarboxylase', u'(S,S)-butanediol dehydrogenase', u'glycine dehydrogenase (cyanide-forming)', u'chitinase']
+                myList = [u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase',
+                          u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase',
+                          u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)',
+                          u'3.5.1.4  amidase', u'3.5.1.5  urease', u'3.1.3.1  alkaline phosphatase',
+                          u'3.1.3.2  acid phosphatase', u'3.1.6.1  arylsulfatase', u'1.18.6.1  nitrogenase',
+                          u'1.3.3.11  pyrroloquinoline-quinone synthase', u'6.3.2.39  aerobactin synthase',
+                          u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase',
+                          u'4.1.1.74  indolepyruvate decarboxylase',
+                          u'1.1.1.76  (S,S)-butanediol dehydrogenase',
+                          u'1.4.99.5  glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase']
+
+                newList = [u'cellulase', u'endo-1,4-beta-xylanase', u'beta-glucosidase',
+                           u'xylan 1,4-beta-xylosidase',
+                           u'cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'amidase', u'urease',
+                           u'alkaline phosphatase', u'acid phosphatase', u'arylsulfatase', u'nitrogenase',
+                           u'pyrroloquinoline-quinone synthase', u'aerobactin synthase',
+                           u'1-aminocyclopropane-1-carboxylate deaminase', u'indolepyruvate decarboxylase',
+                           u'(S,S)-butanediol dehydrogenase', u'glycine dehydrogenase (cyanide-forming)',
+                           u'chitinase']
+
                 df2 = bytrt2[myList].mean()
-                df2.rename(columns={u'3.2.1.4  cellulase': 'cellulase', u'3.2.1.8  endo-1,4-beta-xylanase': 'endo-1,4-beta-xylanase', u'3.2.1.21  beta-glucosidase': 'beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase': 'xylan 1,4-beta-xylosidase', u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': 'cellulose 1,4-beta-cellobiosidase (non-reducing end)', u'3.5.1.4  amidase': 'amidase', u'3.5.1.5  urease': 'urease', u'3.1.3.1  alkaline phosphatase': 'alkaline phosphatase', u'3.1.3.2  acid phosphatase': 'acid phosphatase', u'3.1.6.1  arylsulfatase': 'arylsulfatase', u'1.18.6.1  nitrogenase': 'nitrogenase', u'1.3.3.11  pyrroloquinoline-quinone synthase': 'pyrroloquinoline-quinone synthase', u'6.3.2.39  aerobactin synthase': 'aerobactin synthase', u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase': '1-aminocyclopropane-1-carboxylate deaminase', u'4.1.1.74  indolepyruvate decarboxylase': 'indolepyruvate decarboxylase', u'1.1.1.76  (S,S)-butanediol dehydrogenase': '(S,S)-butanediol dehydrogenase', u'1.4.99.5  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase': 'chitinase'}, inplace=True)
+                df2.rename(columns={u'3.2.1.4  cellulase': 'cellulase',
+                                    u'3.2.1.8  endo-1,4-beta-xylanase': 'endo-1,4-beta-xylanase',
+                                    u'3.2.1.21  beta-glucosidase': 'beta-glucosidase',
+                                    u'3.2.1.37  xylan 1,4-beta-xylosidase': 'xylan 1,4-beta-xylosidase',
+                                    u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': 'cellulose 1,4-beta-cellobiosidase (non-reducing end)',
+                                    u'3.5.1.4  amidase': 'amidase', u'3.5.1.5  urease': 'urease',
+                                    u'3.1.3.1  alkaline phosphatase': 'alkaline phosphatase',
+                                    u'3.1.3.2  acid phosphatase': 'acid phosphatase',
+                                    u'3.1.6.1  arylsulfatase': 'arylsulfatase',
+                                    u'1.18.6.1  nitrogenase': 'nitrogenase',
+                                    u'1.3.3.11  pyrroloquinoline-quinone synthase': 'pyrroloquinoline-quinone synthase',
+                                    u'6.3.2.39  aerobactin synthase': 'aerobactin synthase',
+                                    u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase': '1-aminocyclopropane-1-carboxylate deaminase',
+                                    u'4.1.1.74  indolepyruvate decarboxylase': 'indolepyruvate decarboxylase',
+                                    u'1.1.1.76  (S,S)-butanediol dehydrogenase': '(S,S)-butanediol dehydrogenase',
+                                    u'1.4.99.5  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)',
+                                    u'3.2.1.14  chitinase': 'chitinase'}, inplace=True)
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -377,6 +435,7 @@ def loopCat(request):
                         maxVal = float(maxVals[key])
                     scaleDF[key] /= maxVal
 
+
                 r.assign('data', scaleDF)
                 r('trt <- row.names(data)')
                 r.assign('enzymes', newList)
@@ -384,27 +443,13 @@ def loopCat(request):
                 rowcount = len(scaleDF)
                 r.assign('rowcount', rowcount)
 
-                # actual values to map with
-                r.assign('biodat', bioDF)
-                r.assign('chemdat', chemDF)
-                r.assign('physdat', physDF)
+                r.assign('dat', df1)  # use dat for displaying rounded data
+                r('odat <- dat')  # use odat for calculating graphs with more precision
 
-                # values to display
-                r.assign('dispBio', bioDF)
-                r.assign('dispChem', chemDF)
-                r.assign('dispPhys', physDF)
-
-                # rounding, doesn't appear to work properly
-                # r('format(dat[\'abund_16s\'], scientific=TRUE, digits=4)')
-                # r('format(dispChem, scientific=TRUE, digits=4)')
-                # r('format(dispPhys, scientific=TRUE, digits=4)')
-
-                r.assign('dat', df1)
-                r('odat <- dat')
-
-                r('dat$abund_16S <- format(dat$abund_16S, scientific=TRUE, digits=3)')
-                r('dat$rich <- round(dat$rich, 0)')
-                r('dat$diversity <- round(dat$diversity, 3)')
+                r('dat$abund_16S <- signif(dat$abund_16S, 3)')
+                r('dat$rich <- signif(dat$rich, 3)')
+                r('dat$diversity <- signif(dat$diversity, 3)')
+                r('dat$coverage <- signif(dat$coverage, 3)')
 
                 # load max vals from maxVals dictionary into R
                 if locMax:
@@ -418,18 +463,26 @@ def loopCat(request):
 
                     # chem
                     r('maxPH <- 14')
-                    r('maxC <- max(chemdat$soil_C)')
+                    r('maxC <- max(odat$soil_C)')
                     r('if(maxC==0) maxC=1')
-                    r('maxOM <- max(chemdat$soil_OM)')
+                    r('maxOM <- max(odat$soil_OM)')
                     r('if(maxOM==0) maxOM=1')
+                    r('maxP <- max(odat$soil_P)')
+                    r('if(maxP==0) maxP=1')
+                    r('maxK <- max(odat$soil_K)')
+                    r('if(maxK==0) maxK=1')
 
                     # phys
-                    r('maxWCS <- max(physdat$water_content_soil)')
+                    r('maxWCS <- max(odat$water_content_soil)')
                     r('if(maxWCS==0) maxWCS=1')
-                    r('maxBD <- max(physdat$bulk_density)')
+                    r('maxBD <- max(odat$bulk_density)')
                     r('if(maxBD==0) maxBD=1')
-                    r('maxPORO <- max(physdat$porosity)')
+                    r('maxPORO <- max(odat$porosity)')
                     r('if(maxPORO==0) maxPORO=1')
+                    r('maxSH <- max(odat$soil_surf_hard)')
+                    r('if(maxSH==0) maxSH=1')
+                    r('maxSSH <- max(odat$soil_subsurf_hard)')
+                    r('if(maxSSH==0) maxSSH=1')
 
                 else:
                     # bio
@@ -440,6 +493,8 @@ def loopCat(request):
                     r.assign('maxC', float(maxVals['Carbon']))
                     r.assign('maxOM', float(maxVals['Organic Matter']))
                     r.assign('maxPH', float(maxVals['pH']))
+                    r.assign('maxP', float(maxVals['Phosphorus']))
+                    r.assign('maxK', float(maxVals['Potassium']))
                     # physical
                     r.assign('maxWCS', float(maxVals['Water Content']))
                     r.assign('maxBD', float(maxVals['Bulk Density']))
@@ -453,14 +508,18 @@ def loopCat(request):
                 r('odat$diversity <- odat$diversity / maxDiversity')
 
                 # chem
-                r('chemdat$soil_pH <- chemdat$soil_pH / maxPH')
-                r('chemdat$soil_C <- chemdat$soil_C / maxC')
-                r('chemdat$soil_OM <- chemdat$soil_OM / maxOM')
+                r('odat$soil_pH <- odat$soil_pH / maxPH')
+                r('odat$soil_C <- odat$soil_C / maxC')
+                r('odat$soil_OM <- odat$soil_OM / maxOM')
+                r('odat$soil_P <- odat$soil_P / maxP')
+                r('odat$soil_K <- odat$soil_K / maxK')
 
                 # phys
-                r('physdat$water_content_soil <- physdat$water_content_soil / maxWCS')
-                r('physdat$bulk_density <- physdat$bulk_density / maxBD')
-                r('physdat$porosity <- physdat$porosity / maxPORO')
+                r('odat$water_content_soil <- odat$water_content_soil / maxWCS')
+                r('odat$bulk_density <- odat$bulk_density / maxBD')
+                r('odat$porosity <- odat$porosity / maxPORO')
+                r('odat$soil_surf_hard <- odat$odat$soil_surf_hard / maxSH')
+                r('odat$soil_subsurf_hard <- odat$soil_subsurf_hard / maxSSH')
 
                 r("col <- c('blue', 'blue', 'blue', 'blue', 'blue', \
                     'green', 'green', 'red', 'red', 'turquoise', \
@@ -491,17 +550,17 @@ def loopCat(request):
                         col.segments=col, scale=F, full=T, labels=NA, \
                         cex=0.8, ncol=1, mar=c(1,1,5,1), add=T)')
 
-                    # Biological, needs all 4? (organic matter, ACE soil protein index, respiration, active carbon)
-                    r('vals <- as.numeric(odat[off, c("diversity", "rich", "abund_16S")])')  # needs biodat as well somehow
+                    # Biological
+                    r('vals <- as.numeric(odat[off, c("microbial_respiration", "coverage", "diversity", "rich", "abund_16S")])')
                     r('par(mar=c(0,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
-                        names.arg=c("Diversity", "Richness", "Abundance"),\
+                        names.arg=c("Microbial Respiration", "Coverage", "Diversity", "Richness", "Abundance"),\
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('values <- dat[off, c("diversity", "rich", "abund_16S")]')
-                    r('text(x=vals+0.2, y=bar, labels=values, cex=0.8, xpd=TRUE)')
-                    r('title("Biological", line=-1)')
+                    r('values <- c(dat[off, c("microbial_respiration", "coverage", "diversity", "rich", "abund_16S")])')
+                    r('text(x=vals+0.27, y=bar, labels=values, cex=0.8, xpd=TRUE)')
+                    r('title("Biological", line=0)')
 
                     r('vals <- as.matrix(t(odat[off, myBins]))')
                     r('par(mar=c(5,5,1,5))')
@@ -510,39 +569,39 @@ def loopCat(request):
                         names.arg=c("rRNA Copy Number"), \
                         cex.names=0.8, las=2, axes=F, col=c("red", "darkgray", "green"), beside=F)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=round(round(vals, 3), 3), cex=0.8, xpd=TRUE)')
+                    r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=signif(vals, 3), cex=0.8, xpd=TRUE)')
                     r('par(xpd=T)')
                     r('legend(1, 0.25, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
 
                     # Chemical, needs 'Minor Elements'
-                    r('vals <- as.numeric(chemdat[off, c("soil_pH", "soil_C", "soil_OM")])')
+                    r('vals <- as.numeric(odat[off, c("soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")])')
                     r('par(mar=c(0,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
-                        names.arg=c("pH", "Carbon", "Organic Matter"),\
+                        names.arg=c("Potassium", "Phosphorus", "pH", "Carbon", "Organic Matter"),\
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('values <- dispChem[off, c("soil_pH", "soil_C", "soil_OM")]')
-                    r('text(x=vals+0.2, y=bar, labels=round(values, 2), cex=0.8, xpd=TRUE)')
-                    r('title("Chemical", line=-1)')
+                    r('values <- dat[off, c("soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")]')
+                    r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
+                    r('title("Chemical", line=0)')
                     r('plot.new()')
 
                     # Physical, needs 'Aggregate Stability'
-                    r('vals <- as.numeric(physdat[off, c("water_content_soil", "bulk_density", "porosity")])')
+                    r('vals <- as.numeric(odat[off, c("soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")])')
                     r('par(mar=c(0,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
-                        names.arg=c("Water Content", "Bulk Density", "Porosity"),\
+                        names.arg=c("Subsurface Hardness", "Surface Hardness", "Water Content", "Bulk Density", "Porosity"),\
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('values <- dispPhys[off, c("water_content_soil", "bulk_density", "porosity")]')
-                    r('text(x=vals+0.2, y=bar, labels=round(values, 2), cex=0.8, xpd=TRUE)')
-                    r('title("Physical", line=-1)')
+                    r('values <- dat[off, c("soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")]')
+                    r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
+                    r('title("Physical", line=0)')
                     r('plot.new()')
                     r('dev.off()')
                     r("pdf_counter <- pdf_counter + 1")
 
-                base[RID] = 'Step 2 of X: Selecting your chosen taxa...done'
+                base[RID] = 'Step 2 of 3: Selecting your chosen taxa...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[RID]:
@@ -550,7 +609,7 @@ def loopCat(request):
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 3 of X: Pooling pdf files for display...'
+                base[RID] = 'Step 3 of 3: Pooling pdf files for display...'
 
                 # Combining Pdf files
                 finalFile = 'media/temp/soil_index/Rplots/' + str(RID) + '/soil_index_final.pdf'
@@ -591,9 +650,8 @@ def loopCat(request):
 def getTaxaDF(savedDF, metaDF, RID):
     global base, stops, stop_soil_index, res
     try:
-        base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
-
-        taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+        base[RID] = 'Step 2 of 3: Selecting your chosen taxa or KEGG level...'
+        taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
         taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
