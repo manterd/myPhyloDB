@@ -351,7 +351,12 @@ def loopCat(request):
                           u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase',
                           u'4.1.1.74  indolepyruvate decarboxylase',
                           u'1.1.1.76  (S,S)-butanediol dehydrogenase',
-                          u'1.4.99.5  glycine dehydrogenase (cyanide-forming)', u'3.2.1.14  chitinase']
+                          u'1.4.99.5  glycine dehydrogenase (cyanide-forming)',
+                          u'3.2.1.14  chitinase', u'1.14.99.39  ammonia monooxygenase',
+                          u'1.7.2.6  hydroxylamine dehydrogenase', u'1.7.99.4  nitrate reductase',
+                          u'1.7.2.1  nitrite reductase (NO-forming)',
+                          u'1.7.2.5  nitric oxide reductase (cytochrome c)',
+                          u'1.7.2.4  nitrous-oxide reductase']
 
                 newList = [u'cellulase', u'endo-1,4-beta-xylanase', u'beta-glucosidase',
                            u'xylan 1,4-beta-xylosidase',
@@ -360,7 +365,9 @@ def loopCat(request):
                            u'pyrroloquinoline-quinone synthase', u'aerobactin synthase',
                            u'1-aminocyclopropane-1-carboxylate deaminase', u'indolepyruvate decarboxylase',
                            u'(S,S)-butanediol dehydrogenase', u'glycine dehydrogenase (cyanide-forming)',
-                           u'chitinase']
+                           u'chitinase', u'ammonia monooxygenase', u'hydroxylamine dehydrogenase', u'nitrate reductase',
+                           u'nitrite reductase (NO-forming)', u'nitric oxide reductase (cytochrome c)',
+                           u'nitrous-oxide reductase']
 
                 df2 = bytrt2[myList].mean()
                 df2.rename(columns={u'3.2.1.4  cellulase': 'cellulase',
@@ -368,7 +375,8 @@ def loopCat(request):
                                     u'3.2.1.21  beta-glucosidase': 'beta-glucosidase',
                                     u'3.2.1.37  xylan 1,4-beta-xylosidase': 'xylan 1,4-beta-xylosidase',
                                     u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': 'cellulose 1,4-beta-cellobiosidase (non-reducing end)',
-                                    u'3.5.1.4  amidase': 'amidase', u'3.5.1.5  urease': 'urease',
+                                    u'3.5.1.4  amidase': 'amidase',
+                                    u'3.5.1.5  urease': 'urease',
                                     u'3.1.3.1  alkaline phosphatase': 'alkaline phosphatase',
                                     u'3.1.3.2  acid phosphatase': 'acid phosphatase',
                                     u'3.1.6.1  arylsulfatase': 'arylsulfatase',
@@ -379,7 +387,13 @@ def loopCat(request):
                                     u'4.1.1.74  indolepyruvate decarboxylase': 'indolepyruvate decarboxylase',
                                     u'1.1.1.76  (S,S)-butanediol dehydrogenase': '(S,S)-butanediol dehydrogenase',
                                     u'1.4.99.5  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)',
-                                    u'3.2.1.14  chitinase': 'chitinase'}, inplace=True)
+                                    u'3.2.1.14  chitinase': 'chitinase',
+                                    u'1.14.99.39  ammonia monooxygenase': 'ammonia monooxygenase',
+                                    u'1.7.2.6  hydroxylamine dehydrogenase': 'hydroxylamine dehydrogenase',
+                                    u'1.7.99.4  nitrate reductase': 'nitrate reductase',
+                                    u'1.7.2.1  nitrite reductase (NO-forming)': 'nitrite reductase (NO-forming)',
+                                    u'1.7.2.5  nitric oxide reductase (cytochrome c)': 'nitric oxide reductase (cytochrome c)',
+                                    u'1.7.2.4  nitrous-oxide reductase': 'nitrous-oxide reductase'}, inplace=True)
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -424,7 +438,13 @@ def loopCat(request):
                     'indolepyruvate decarboxylase': 1e9,
                     '(S,S)-butanediol dehydrogenase': 1e9,
                     'glycine dehydrogenase (cyanide-forming)': 1e9,
-                    'chitinase': 1e9
+                    'chitinase': 1e9,
+                    'ammonia monooxygenase': 1e9,
+                    'hydroxylamine dehydrogenase': 1e9,
+                    'nitrate reductase': 1e9,
+                    'nitrite reductase (NO-forming)': 1e9,
+                    'nitric oxide reductase (cytochrome c)': 1e9,
+                    'nitrous-oxide reductase': 1e9
                 }
 
                 scaleDF = df2.copy()
@@ -433,8 +453,9 @@ def loopCat(request):
                         maxVal = max(scaleDF[key])
                     else:
                         maxVal = float(maxVals[key])
+                    if maxVal == 0:
+                        maxVal = 1
                     scaleDF[key] /= maxVal
-
 
                 r.assign('data', scaleDF)
                 r('trt <- row.names(data)')
@@ -521,33 +542,71 @@ def loopCat(request):
                 r('odat$soil_surf_hard <- odat$odat$soil_surf_hard / maxSH')
                 r('odat$soil_subsurf_hard <- odat$soil_subsurf_hard / maxSSH')
 
-                r("col <- c('blue', 'blue', 'blue', 'blue', 'blue', \
+                r("colGIBBs <- c('blue', 'blue', 'blue', 'blue', 'blue', \
                     'green', 'green', 'red', 'red', 'turquoise', \
                     'magenta', 'yellow', 'salmon', 'darkgray', 'darkgray', \
                     'brown', 'brown', 'brown')")
 
+                r("colN <- c('blue', 'green', 'red', 'turquoise', \
+                    'magenta', 'yellow')")
+
                 r("pdf_counter <- 1")
                 for row in range(1, rowcount+1):
-                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=3, width=8)")
+                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=4, width=8.5)")
                     r.assign('off', row)
-                    r('layout(matrix(c(1,2,4,6,1,3,5,7), 2, 4, byrow=T), widths=c(2,2,2,2))')
+                    r('curName <- row.names(data)[off]')
+                    print r('curName')
+                    r('layout(matrix(c(1,3,5,6,2,4,4,4), 2, 4, byrow=T), widths=c(2.5,2,2,2))')
 
                     # GIBBs
                     r('stars(matrix(1, ncol=18, nrow=1), \
-                        col.segments=col, scale=F, full=T, labels=trt[off], flip.labels=F, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), lty=3, len=1)')
-                    r('title("GIBBs", line=-2)')
-                    r('stars(matrix(1, ncol=18, nrow=1), \
-                        col.segments=col, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3, len=0.75)')
-                    r('stars(matrix(1, ncol=18, nrow=1), \
-                        col.segments=col, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3, len=0.5)')
-                    r('stars(matrix(1, ncol=18, nrow=1), \
-                        col.segments=col, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3, len=0.25)')
-                    r('stars(data[off,], lwd=1, draw.segments=T, \
-                        col.segments=col, scale=F, full=T, labels=NA, \
+                        draw.segments=T, col.segments=rep("white", 18), scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), lty=3)')
+                    r('title("GIBBs", line=0)')
+                    r('stars(matrix(0.75, ncol=18, nrow=1), \
+                        draw.segments=T, col.segments=rep("white", 18), scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
+                    r('stars(matrix(0.5, ncol=18, nrow=1), \
+                        draw.segments=T, col.segments=rep("white", 18), scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
+                    r('stars(matrix(0.25, ncol=18, nrow=1), \
+                        draw.segments=T, col.segments=rep("white", 18), scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
+
+                    r("gibbs <- data[,c('cellulase', 'endo.1.4.beta.xylanase', 'beta.glucosidase', \
+                        'xylan.1.4.beta.xylosidase', 'cellulose.1.4.beta.cellobiosidase..non.reducing.end.', \
+                        'amidase', 'urease','alkaline.phosphatase', 'acid.phosphatase', 'arylsulfatase', \
+                        'nitrogenase', 'pyrroloquinoline.quinone.synthase', 'aerobactin.synthase', \
+                        'X1.aminocyclopropane.1.carboxylate.deaminase', 'indolepyruvate.decarboxylase', \
+                        'X.S.S..butanediol.dehydrogenase', 'glycine.dehydrogenase..cyanide.forming.', \
+                        'chitinase')]")
+
+                    r('stars(gibbs[off,], lwd=1, draw.segments=T, \
+                        col.segments=colGIBBs, scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T)')
+
+                    # N cycle
+                    r('stars(matrix(1, ncol=6, nrow=1), \
+                        draw.segments=T, col.segments=rep("white", 6), scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), lty=3)')
+                    r('title("N cycle", line=0)')
+                    r('stars(matrix(0.75, ncol=6, nrow=1), \
+                        draw.segments=T, col.segments=rep("white", 6), scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
+                    r('stars(matrix(0.5, ncol=6, nrow=1), \
+                        draw.segments=T, col.segments=rep("white", 6), scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
+                    r('stars(matrix(0.25, ncol=6, nrow=1), \
+                        draw.segments=T, col.segments=rep("white", 6), scale=F, full=T, labels=NA, \
+                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
+
+
+                    r("ncycle <- data[,c('ammonia.monooxygenase', 'hydroxylamine.dehydrogenase', \
+                        'nitrate.reductase', 'nitrite.reductase..NO.forming.', \
+                         'nitric.oxide.reductase..cytochrome.c.', 'nitrous.oxide.reductase')]")
+
+                    r('stars(ncycle[off,], lwd=1, draw.segments=T, \
+                        col.segments=colN, scale=F, full=T, labels=NA, \
                         cex=0.8, ncol=1, mar=c(1,1,5,1), add=T)')
 
                     # Biological
@@ -560,16 +619,16 @@ def loopCat(request):
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- c(dat[off, c("microbial_respiration", "coverage", "diversity", "rich", "abund_16S")])')
                     r('text(x=vals+0.27, y=bar, labels=values, cex=0.8, xpd=TRUE)')
-                    r('title("Biological", line=0)')
+                    r('title("Biological", line=1)')
 
                     r('vals <- as.matrix(t(odat[off, myBins]))')
-                    r('par(mar=c(5,5,1,5))')
+                    r('par(mar=c(5,15,1,18))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("rRNA Copy Number"), \
                         cex.names=0.8, las=2, axes=F, col=c("red", "darkgray", "green"), beside=F)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=signif(vals, 3), cex=0.8, xpd=TRUE)')
+                    r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=round(vals, 3), cex=0.8, xpd=TRUE)')
                     r('par(xpd=T)')
                     r('legend(1, 0.25, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
 
@@ -583,8 +642,7 @@ def loopCat(request):
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- dat[off, c("soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")]')
                     r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
-                    r('title("Chemical", line=0)')
-                    r('plot.new()')
+                    r('title("Chemical", line=1)')
 
                     # Physical, needs 'Aggregate Stability'
                     r('vals <- as.numeric(odat[off, c("soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")])')
@@ -596,8 +654,7 @@ def loopCat(request):
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- dat[off, c("soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")]')
                     r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
-                    r('title("Physical", line=0)')
-                    r('plot.new()')
+                    r('title("Physical", line=1)')
                     r('dev.off()')
                     r("pdf_counter <- pdf_counter + 1")
 
@@ -777,6 +834,36 @@ def getNZDF(metaDF, finalDF, RID):
 
         # 3.1.6.1  arylsulfatase
         id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
+        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+        nzDict[id] = idList
+
+        # 1.14.99.39  ammonia monooxygenase
+        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
+        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+        nzDict[id] = idList
+
+        # 1.7.2.6  hydroxylamine dehydrogenase
+        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
+        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+        nzDict[id] = idList
+
+        # 1.7.99.4  nitrate reductase
+        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
+        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+        nzDict[id] = idList
+
+        # 1.7.2.1  nitrite reductase (NO-forming)
+        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
+        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+        nzDict[id] = idList
+
+        # 1.7.2.5  nitric oxide reductase (cytochrome c)
+        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
+        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+        nzDict[id] = idList
+
+        # 1.7.2.4  nitrous-oxide reductase
+        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
         idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
         nzDict[id] = idList
 
