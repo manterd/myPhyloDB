@@ -58,9 +58,8 @@ urlpatterns = [
     url(r'^makeUpdateTree/$', trees.makeUpdateTree, name='makeUpdateTree'),
     url(r'^makeReproTree/$', trees.makeReproTree, name='makeReproTree'),
 
-    url(r'^getNormCatData/$', norm_graphs.getNormCatData, name='getNormCatData'),
+    url(r'^getNorm/$', norm_graphs.getNorm, name='getNorm'),
     url(r'^statusNorm/$', norm_graphs.statusNorm, name='statusNorm'),
-    url(r'^removeRIDNorm/$', norm_graphs.removeRIDNorm, name='removeRIDNorm'),
     url(r'^stopNorm/$', norm_graphs.stopNorm, name='stopNorm'),
     url(r'^getTab/$', norm_graphs.getTab, name='getTab'),
     url(r'^getBiom/$', norm_graphs.getBiom, name='getBiome'),

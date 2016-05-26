@@ -71,7 +71,7 @@
             });
 
             $("#stop").show().click(function () {
-                //document.getElementById("stop").value = "Stopping...";
+                $("#container-1").empty().append('Stop requested has been received...');
                 running = false;
                 stopThis(RID);
             });
@@ -385,7 +385,7 @@
             myDict['RID'] = RID;
             var jsonDict = JSON.stringify(myDict);
             $.ajax({
-                url: '/getNormCatData/',
+                url: '/getNorm/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

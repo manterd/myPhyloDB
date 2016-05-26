@@ -183,7 +183,7 @@ def _async_raise(tid, exctype):
     if res == 0:
         raise ValueError("invalid thread id")
     elif res != 1:
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), 0)
         raise SystemError("PyThreadState_SetAsyncExc failed")
 
 
