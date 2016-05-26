@@ -217,21 +217,23 @@ def loopCat(request):
                 physDF = physDF.fillna(0)
 
                 # check for null columns, fill with blanks if found (0's, not nulls)
-                if 'microbial_biomass_C' in meta_rDF.columns:
-                    bioDF['microbial_biomass_C'] = meta_rDF['microbial_biomass_C']
-                else:
-                    bioDF['microbial_biomass_C'] = 0.0
-
-                if 'microbial_biomass_N' in meta_rDF.columns:
-                    bioDF['microbial_biomass_N'] = meta_rDF['microbial_biomass_N']
-                else:
-                    bioDF['microbial_biomass_N'] = 0.0
-
+                # Biological
                 if 'microbial_respiration' in meta_rDF.columns:
                     bioDF['microbial_respiration'] = meta_rDF['microbial_respiration']
                 else:
                     bioDF['microbial_respiration'] = 0.0
 
+                if 'soil_active_c' in meta_rDF.columns:
+                    bioDF['soil_active_c'] = meta_rDF['soil_active_c']
+                else:
+                    bioDF['soil_active_c'] = 0.0
+
+                if 'soil_ACE_protein' in meta_rDF.columns:
+                    bioDF['soil_ACE_protein'] = meta_rDF['soil_ACE_protein']
+                else:
+                    bioDF['soil_ACE_protein'] = 0.0
+
+                # Chemical
                 if 'soil_pH' in meta_rDF.columns:
                     chemDF['soil_pH'] = meta_rDF['soil_pH']
                 else:
@@ -244,10 +246,6 @@ def loopCat(request):
                     chemDF['soil_OM'] = meta_rDF['soil_OM']
                 else:
                     chemDF['soil_OM'] = 0.0
-                if 'soil_EC' in meta_rDF.columns:
-                    chemDF['soil_EC'] = meta_rDF['soil_EC']
-                else:
-                    chemDF['soil_EC'] = 0.0
                 if 'soil_N' in meta_rDF.columns:
                     chemDF['soil_N'] = meta_rDF['soil_N']
                 else:
@@ -261,6 +259,7 @@ def loopCat(request):
                 else:
                     chemDF['soil_K'] = 0.0
 
+                # Physical
                 if 'water_content_soil' in meta_rDF.columns:
                     physDF['water_content_soil'] = meta_rDF['water_content_soil']
                 else:
@@ -273,6 +272,10 @@ def loopCat(request):
                     physDF['porosity'] = meta_rDF['porosity']
                 else:
                     physDF['porosity'] = 0.0
+                if 'soil_EC' in meta_rDF.columns:
+                    physDF['soil_EC'] = meta_rDF['soil_EC']
+                else:
+                    physDF['soil_EC'] = 0.0
                 if 'soil_surf_hard' in meta_rDF.columns:
                     physDF['soil_surf_hard'] = meta_rDF['soil_surf_hard']
                 else:
@@ -281,6 +284,24 @@ def loopCat(request):
                     physDF['soil_subsurf_hard'] = meta_rDF['soil_subsurf_hard']
                 else:
                     physDF['soil_subsurf_hard'] = 0.0
+                if 'microbial_biomass_C' in meta_rDF.columns:
+                    physDF['microbial_biomass_C'] = meta_rDF['microbial_biomass_C']
+                else:
+                    physDF['microbial_biomass_C'] = 0.0
+                if 'microbial_biomass_N' in meta_rDF.columns:
+                    physDF['microbial_biomass_N'] = meta_rDF['microbial_biomass_N']
+                else:
+                    physDF['microbial_biomass_N'] = 0.0
+
+                if 'soil_agg_stability' in meta_rDF.columns:
+                    physDF['soil_agg_stability'] = meta_rDF['soil_agg_stability']
+                else:
+                    physDF['soil_agg_stability'] = 0.0
+
+                if 'soil_water_cap' in meta_rDF.columns:
+                    physDF['soil_water_cap'] = meta_rDF['soil_water_cap']
+                else:
+                    physDF['soil_water_cap'] = 0.0
 
                 # get means
                 bioDF  = bioDF.groupby(catFields_edit)
@@ -331,7 +352,7 @@ def loopCat(request):
                 df1.reset_index(drop=False, inplace=True)
                 if len(catFields_edit) > 1:
                     for index, row in df1.iterrows():
-                        df1.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                        df1.loc[index, 'merge'] = " & ".join(row[catFields_edit])
                 else:
                     df1.loc[:, 'merge'] = df1.loc[:, catFields_edit[0]]
 
@@ -412,7 +433,7 @@ def loopCat(request):
                 df2.reset_index(drop=False, inplace=True)
                 if len(catFields_edit) > 1:
                     for index, row in df2.iterrows():
-                        df2.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                        df2.loc[index, 'merge'] = " & ".join(row[catFields_edit])
                 else:
                     df2.loc[:, 'merge'] = df2.loc[:, catFields_edit[0]]
 
@@ -504,6 +525,16 @@ def loopCat(request):
                     r('if(maxSH==0) maxSH=1')
                     r('maxSSH <- max(odat$soil_subsurf_hard)')
                     r('if(maxSSH==0) maxSSH=1')
+                    r('maxEC <- max(odat$soil_EC)')
+                    r('if(maxEC==0) maxEC=1')
+                    r('maxAGGSTAB <- max(odat$soil_agg_stability)')
+                    r('if(maxAGGSTAB==0) maxAGGSTAB=1')
+                    r('maxWC <- max(odat$soil_water_cap)')
+                    r('if(maxWC==0) maxWC=1')
+                    r('maxBIOC <- max(odat$microbial_biomass_C)')
+                    r('if(maxBIOC==0) maxBIOC=1')
+                    r('maxBION <- max(odat$microbial_biomass_N)')
+                    r('if(maxBION==0) maxBION=1')
 
                 else:
                     # bio
@@ -520,6 +551,13 @@ def loopCat(request):
                     r.assign('maxWCS', float(maxVals['Water Content']))
                     r.assign('maxBD', float(maxVals['Bulk Density']))
                     r.assign('maxPORO', float(maxVals['Porosity']))
+                    r.assign('maxEC', float(maxVals['Electric Conductivity']))
+                    r.assign('maxBIOC', float(maxVals['Microbial Biomass C']))
+                    r.assign('maxBION', float(maxVals['Microbial Biomass N']))
+                    r.assign('maxWC', float(maxVals['Available Water Capacity']))
+                    r.assign('maxSH', float(maxVals['Surface Hardness']))
+                    r.assign('maxSSH', float(maxVals['Subsurface Hardness']))
+                    r.assign('maxAGGSTAB', float(maxVals['Aggregate Stability']))
 
                 r.assign('myBins', myBins)  # load bins
 
@@ -541,6 +579,11 @@ def loopCat(request):
                 r('odat$porosity <- odat$porosity / maxPORO')
                 r('odat$soil_surf_hard <- odat$odat$soil_surf_hard / maxSH')
                 r('odat$soil_subsurf_hard <- odat$soil_subsurf_hard / maxSSH')
+                r('odat$soil_EC <- odat$soil_EC / maxEC')
+                r('odat$soil_agg_stability <- odat$soil_agg_stability / maxAGGSTAB')
+                r('odat$soil_water_cap <- odat$soil_water_cap / maxWC')
+                r('odat$microbial_biomass_C <- odat$microbial_biomass_C / maxBIOC')
+                r('odat$microbial_biomass_N <- odat$microbial_biomass_N / maxBION')
 
                 r("colGIBBs <- c('blue', 'blue', 'blue', 'blue', 'blue', \
                     'green', 'green', 'red', 'red', 'turquoise', \
@@ -553,68 +596,105 @@ def loopCat(request):
                 r("pdf_counter <- 1")
                 for row in range(1, rowcount+1):
                     r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=4, width=8.5)")
+                    r('par(oma=c(0,2.5,0,0))')
                     r.assign('off', row)
                     r('curName <- row.names(data)[off]')
-                    print r('curName')
                     r('layout(matrix(c(1,3,5,6,2,4,4,4), 2, 4, byrow=T), widths=c(2.5,2,2,2))')
 
                     # GIBBs
-                    r('stars(matrix(1, ncol=18, nrow=1), \
-                        draw.segments=T, col.segments=rep("white", 18), scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), lty=3)')
-                    r('title("GIBBs", line=0)')
-                    r('stars(matrix(0.75, ncol=18, nrow=1), \
-                        draw.segments=T, col.segments=rep("white", 18), scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
-                    r('stars(matrix(0.5, ncol=18, nrow=1), \
-                        draw.segments=T, col.segments=rep("white", 18), scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
-                    r('stars(matrix(0.25, ncol=18, nrow=1), \
-                        draw.segments=T, col.segments=rep("white", 18), scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
-
-                    r("gibbs <- data[,c('cellulase', 'endo.1.4.beta.xylanase', 'beta.glucosidase', \
+                    r("GIBBsList <- c('cellulase', 'endo.1.4.beta.xylanase', 'beta.glucosidase', \
                         'xylan.1.4.beta.xylosidase', 'cellulose.1.4.beta.cellobiosidase..non.reducing.end.', \
                         'amidase', 'urease','alkaline.phosphatase', 'acid.phosphatase', 'arylsulfatase', \
                         'nitrogenase', 'pyrroloquinoline.quinone.synthase', 'aerobactin.synthase', \
                         'X1.aminocyclopropane.1.carboxylate.deaminase', 'indolepyruvate.decarboxylase', \
                         'X.S.S..butanediol.dehydrogenase', 'glycine.dehydrogenase..cyanide.forming.', \
-                        'chitinase')]")
+                        'chitinase')")
 
-                    r('stars(gibbs[off,], lwd=1, draw.segments=T, \
-                        col.segments=colGIBBs, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T)')
+                    r("legList <- c('EC3.2.1.4', 'EC3.2.1.8', 'EC3.2.1.21', 'EC3.2.1.37', \
+                          'EC3.2.1.91', 'EC3.5.1.4', 'EC3.5.1.5', 'EC3.1.3.1', 'EC3.1.3.2', \
+                          'EC3.1.6.1', 'EC1.18.6.1', 'EC1.3.3.11', 'EC6.3.2.39', 'EC3.5.99.7', \
+                          'EC4.1.1.74', 'EC1.1.1.76', 'EC1.4.99.5', 'EC3.2.1.14')")
+
+                    r("gibbs <- data[,GIBBsList]")
+                    r('stars(matrix(1, ncol=18, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=1), 18), \
+                        scale=F, full=T, labels=NULL, len=1, axes=F, \
+                        cex=0.5, mar=c(1,1,5,1), add=F, lty=2, \
+                        key.vpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
+
+                    r('title("GIBBs     ", line=0)')
+                    r('mtext(curName, side=2, cex=1.2, outer=T, font=2)')
+
+                    r('stars(gibbs[off,], \
+                        draw.segments=T, col.segments=colGIBBs, \
+                        ncol=1, scale=F, full=T, labels=NULL, \
+                        cex=0.5, mar=c(1,1,5,1), add=T, lty=1, \
+                        key.xpd=F)')
+
+                    r('stars(matrix(0.75, ncol=18, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 18), \
+                        scale=F, full=T, labels=NULL, len=1, axes=F, \
+                        cex=0.5, mar=c(1,1,5,1), add=T, lty=2, \
+                        key.vpd=F)')
+
+                    r('stars(matrix(0.5, ncol=18, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 18), \
+                        scale=F, full=T, labels=NULL, len=1, axes=F, \
+                        cex=0.5, mar=c(1,1,5,1), add=T, lty=2, \
+                        key.vpd=F)')
+
+                    r('stars(matrix(0.25, ncol=18, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 18), \
+                        scale=F, full=T, labels=NULL, len=1, axes=F, \
+                        cex=0.5, mar=c(1,1,5,1), add=T, lty=2, \
+                        key.vpd=F)')
 
                     # N cycle
-                    r('stars(matrix(1, ncol=6, nrow=1), \
-                        draw.segments=T, col.segments=rep("white", 6), scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), lty=3)')
-                    r('title("N cycle", line=0)')
-                    r('stars(matrix(0.75, ncol=6, nrow=1), \
-                        draw.segments=T, col.segments=rep("white", 6), scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
-                    r('stars(matrix(0.5, ncol=6, nrow=1), \
-                        draw.segments=T, col.segments=rep("white", 6), scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
-                    r('stars(matrix(0.25, ncol=6, nrow=1), \
-                        draw.segments=T, col.segments=rep("white", 6), scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T, lty=3)')
-
-
-                    r("ncycle <- data[,c('ammonia.monooxygenase', 'hydroxylamine.dehydrogenase', \
+                    r("NList <- c('ammonia.monooxygenase', 'hydroxylamine.dehydrogenase', \
                         'nitrate.reductase', 'nitrite.reductase..NO.forming.', \
-                         'nitric.oxide.reductase..cytochrome.c.', 'nitrous.oxide.reductase')]")
+                         'nitric.oxide.reductase..cytochrome.c.', 'nitrous.oxide.reductase')")
 
-                    r('stars(ncycle[off,], lwd=1, draw.segments=T, \
-                        col.segments=colN, scale=F, full=T, labels=NA, \
-                        cex=0.8, ncol=1, mar=c(1,1,5,1), add=T)')
+                    r("colN <- c('magenta', 'magenta', 'magenta', 'green', 'green', 'green')")
+                    r("ncycle <- data[,NList]")
+                    r('stars(matrix(1, ncol=6, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 6), \
+                        scale=F, full=T, labels=NULL, len=1, axes=F, \
+                        cex=0.5, mar=c(3,1,3,1), add=F, lty=2, \
+                        key.vpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
+
+                    r('title("N Cycle     ", line=2)')
+                    r('mtext(curName, side=2, cex=1.2, outer=T, font=2)')
+
+                    r('stars(ncycle[off,], \
+                        draw.segments=T, col.segments=colN, \
+                        ncol=1, scale=F, full=T, labels=NULL, \
+                        cex=0.5, mar=c(3,1,3,1), add=T, lty=1, \
+                        key.xpd=F)')
+
+                    r('stars(matrix(0.75, ncol=6, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 6), \
+                        scale=F, full=T, labels=NULL, len=1, axes=F, \
+                        cex=0.5, mar=c(3,1,3,1), add=T, lty=2, \
+                        key.vpd=F)')
+
+                    r('stars(matrix(0.5, ncol=6, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 6), \
+                        scale=F, full=T, labels=NULL, len=1, axes=F, \
+                        cex=0.5, mar=c(3,1,3,1), add=T, lty=2, \
+                        key.vpd=F)')
+
+                    r('stars(matrix(0.25, ncol=6, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 6), \
+                        scale=F, full=T, labels=NULL, len=1, axes=F, \
+                        cex=0.5, mar=c(3,1,3,1), add=T, lty=2, \
+                        key.vpd=F)')
 
                     # Biological
                     r('vals <- as.numeric(odat[off, c("microbial_respiration", "coverage", "diversity", "rich", "abund_16S")])')
-                    r('par(mar=c(0,5,5,5))')
+                    r('par(mar=c(2,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
-                        names.arg=c("Microbial Respiration", "Coverage", "Diversity", "Richness", "Abundance"),\
+                        names.arg=c("Respiration", "Coverage", "Diversity", "Richness", "Abundance"),\
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- c(dat[off, c("microbial_respiration", "coverage", "diversity", "rich", "abund_16S")])')
@@ -634,7 +714,7 @@ def loopCat(request):
 
                     # Chemical, needs 'Minor Elements'
                     r('vals <- as.numeric(odat[off, c("soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")])')
-                    r('par(mar=c(0,5,5,5))')
+                    r('par(mar=c(2,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("Potassium", "Phosphorus", "pH", "Carbon", "Organic Matter"),\
@@ -644,15 +724,15 @@ def loopCat(request):
                     r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
                     r('title("Chemical", line=1)')
 
-                    # Physical, needs 'Aggregate Stability'
-                    r('vals <- as.numeric(odat[off, c("soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")])')
-                    r('par(mar=c(0,5,5,5))')
+                    # Physical
+                    r('vals <- as.numeric(odat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")])')
+                    r('par(mar=c(2,5,5,5))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
-                        names.arg=c("Subsurface Hardness", "Surface Hardness", "Water Content", "Bulk Density", "Porosity"),\
+                        names.arg=c("Aggregate Stability", "Available Water Capacity", "Microbial Biomass N", "Microbial Biomass C", "Electric Conductivity", "Subsurface Hardness", "Surface Hardness", "Water Content", "Bulk Density", "Porosity"),\
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('values <- dat[off, c("soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")]')
+                    r('values <- dat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")]')
                     r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
                     r('title("Physical", line=1)')
                     r('dev.off()')
