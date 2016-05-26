@@ -51,6 +51,152 @@
     </style>
 
     <script type="text/javascript">
+
+    function presetFunc(val) {
+            var maxValDict = {};
+            table.order([0, 'asc']).draw(); //reset sorting because these tables are buggy as heck
+            var names = table.column(4).data();
+            if (val == 1) {
+                //Use current data set to find max values
+                locMax = true;
+            }
+            else if (val == 2) {
+                //Agriculture
+                locMax = false;
+                //initialize maxValDict with agriculture pairs
+                maxValDict = {
+                    //GIBBS
+                    'cellulase': "6.43e09",
+                    'endo-1,4-beta-xylanase': "2.36e09",
+                    'beta-glucosidase': "1.18e10",
+                    'xylan 1,4-beta-xylosidase': "1.04e09",
+                    'cellulose 1,4-beta-cellobiosidase (non-reducing end)': "3.80e07",
+                    'amidase': "1.21e10",
+                    'urease': "4.54e09",
+                    'alkaline phosphatase': "6.68e09",
+                    'acid phosphatase': "2.11e09",
+                    'arylsulfatase': "3.30e09",
+                    'nitrogenase': "2.14e09",
+                    'pyrroloquinoline-quinone synthase': "1.43e09",
+                    'aerobactin synthase': "1.06e08",
+                    '1-aminocyclopropane-1-carboxylate deaminase': "6.16e08",
+                    'indolepyruvate decarboxylase': "5.12e08",
+                    '(S,S)-butanediol dehydrogenase': "1.16e09",
+                    'glycine dehydrogenase (cyanide-forming)': "5.94e07",
+                    'chitinase': "3.22e09",
+
+                    //Biological
+                    'Abundance': "1e9",
+                    'Richness': "1000",
+                    'Diversity': "6",
+                    'ACE Soil Protein Index': "10",
+                    'Respiration': "1.0",
+                    'Active Carbon': "500",
+
+                    //Chemical
+                    'Organic Matter': "40",
+                    'Carbon': "20",
+                    'pH': "14",
+                    'Phosphorus': "10",
+                    'Potassium': "100",
+
+                    //Physical
+                    'Porosity': "1",
+                    'Bulk Density': "2.65",
+                    'Electric Conductivity': "10",
+                    'Water Content': "100",
+                    'Available Water Capacity': "1",
+                    'Aggregate Stability': "100",
+                    'Surface Hardness': "500",
+                    'Subsurface Hardness': "500",
+
+                    //N cycle
+                    'ammonia monooxygenase': "1.0e08",
+                    'hydroxylamine dehydrogenase': "1.0e08",
+                    'nitrate reductase': "1.0e09",
+                    'nitrite reductase (NO-forming)': "1.0e08",
+                    'nitric oxide reductase (cytochrome c)': "1.0e08",
+                    'nitrous-oxide reductase': "1.0e08"
+
+                };
+                //set column 4 value at row c to value of maxValDict with entry names[c]
+                for (var c=0; c<names.length; c++) {
+                    if (maxValDict[names[c]]!=null) {
+                        table.cell(c, 5).data(maxValDict[names[c]]);
+                    }
+                }
+            }
+            else if (val == 3) {
+                //Forest
+                locMax = false;
+                //initialize maxValDict with forest pairs
+                maxValDict = {
+                    //GIBBS
+                    'cellulase': "2.03e10",
+                    'endo-1,4-beta-xylanase': "1.13e10",
+                    'beta-glucosidase': "5.51e10",
+                    'xylan 1,4-beta-xylosidase': "9.85e9",
+                    'cellulose 1,4-beta-cellobiosidase (non-reducing end)': "1.10e8",
+                    'amidase': "4.04e10",
+                    'urease': "1.56e10",
+                    'alkaline phosphatase': "1.99e10",
+                    'acid phosphatase': "2.33e10",
+                    'arylsulfatase': "1.82e10",
+                    'nitrogenase': "9.65e9",
+                    'pyrroloquinoline-quinone synthase': "8.05e9",
+                    'aerobactin synthase': "5.17e8",
+                    '1-aminocyclopropane-1-carboxylate deaminase': "3.77e9",
+                    'indolepyruvate decarboxylase': "1.80e9",
+                    '(S,S)-butanediol dehydrogenase': "2.77e9",
+                    'glycine dehydrogenase (cyanide-forming)': "2.39e7",
+                    'chitinase': "1.26e10",
+
+                    //Biological
+                    'Abundance': "1e9",
+                    'Richness': "1000",
+                    'Diversity': "6",
+                    'ACE Soil Protein Index': "10",
+                    'Respiration': "1.0",
+                    'Active Carbon': "500",
+
+                    //Chemical
+                    'Organic Matter': "40",
+                    'Carbon': "20",
+                    'pH': "14",
+                    'Phosphorus': "10",
+                    'Potassium': "100",
+
+                    //Physical
+                    'Porosity': "1",
+                    'Bulk Density': "2.65",
+                    'Electric Conductivity': "10",
+                    'Water Content': "100",
+                    'Available Water Capacity': "1",
+                    'Aggregate Stability': "100",
+                    'Surface Hardness': "500",
+                    'Subsurface Hardness': "500",
+
+                    //N cycle
+                    'ammonia monooxygenase': "1.0e08",
+                    'hydroxylamine dehydrogenase': "1.0e08",
+                    'nitrate reductase': "1.0e09",
+                    'nitrite reductase (NO-forming)': "1.0e08",
+                    'nitric oxide reductase (cytochrome c)': "1.0e08",
+                    'nitrous-oxide reductase': "1.0e08"
+
+                };
+                //set column 4 value at row d to value of maxValDict with entry names[d]
+                for (var d=0; d<names.length; d++) {
+                    if (maxValDict[names[d]]!=null) {
+                        table.cell(d, 5).data(maxValDict[names[d]]);
+                    }
+                }
+            }
+            else {
+                //Do nothing?
+            }
+        }
+
         var nodesCat = "";
         var catOptions = {};
         var refresh = 0;
@@ -63,51 +209,68 @@
         //Forest
         var dataSet =  [
                 //GIBBS
-            ["1", "GIBBS", "C decomposition", "cellulase", "2.03e10"],
-            ["2", "GIBBS", "C decomposition", "endo-1,4-beta-xylanase", "1.13e10"],
-            ["3", "GIBBS", "C decomposition", "beta-glucosidase", "5.51e10"],
-            ["4", "GIBBS", "C decomposition", "xylan 1,4-beta-xylosidase", "9.85e9"],
-            ["5", "GIBBS", "C decomposition", "cellulose 1,4-beta-cellobiosidase (non-reducing end)", "1.10e8"],
-            ["6", "GIBBS", "N decomposition", "amidase", "4.04e10"],
-            ["7", "GIBBS", "N decomposition", "urease", "1.56e10"],
-            ["8", "GIBBS", "P decomposition", "alkaline phosphatase", "1.99e10"],
-            ["9", "GIBBS", "P decomposition", "acid phosphatase", "2.33e10"],
-            ["10", "GIBBS", "S decomposition", "arylsulfatase", "1.82e10"],
-            ["11", "GIBBS", "N-fixation", "nitrogenase", "9.65e9"],
-            ["12", "GIBBS", "P-solubility", "pyrroloquinoline-quinone synthase", "8.05e9"],
-            ["13", "GIBBS", "Siderophore", "aerobactin synthase", "5.17e8"],
-            ["14", "GIBBS", "Root-growth", "1-aminocyclopropane-1-carboxylate deaminase", "3.77e9"],
-            ["15", "GIBBS", "Root-growth", "indolepyruvate decarboxylase", "1.80e9"],
-            ["16", "GIBBS", "Biocontrol", "(S,S)-butanediol dehydrogenase", "2.77e9"],
-            ["17", "GIBBS", "Biocontrol", "glycine dehydrogenase (cyanide-forming)", "5.94e7"],
-            ["18", "GIBBS", "Biocontrol", "chitinase", "1.26e10"],
+            ["1", "GIBBS", "C decomposition", "3.2.1.4", "cellulase", "2.03e10"],
+            ["2", "GIBBS", "C decomposition", "3.2.1.8", "endo-1,4-beta-xylanase", "1.13e10"],
+            ["3", "GIBBS", "C decomposition", "3.2.1.21", "beta-glucosidase", "5.51e10"],
+            ["4", "GIBBS", "C decomposition", "3.2.1.37", "xylan 1,4-beta-xylosidase", "9.85e9"],
+            ["5", "GIBBS", "C decomposition", "3.2.1.91", "cellulose 1,4-beta-cellobiosidase (non-reducing end)", "1.10e8"],
+            ["6", "GIBBS", "N decomposition", "3.5.1.4", "amidase", "4.04e10"],
+            ["7", "GIBBS", "N decomposition", "3.5.1.5", "urease", "1.56e10"],
+            ["8", "GIBBS", "P decomposition", "3.1.3.1", "alkaline phosphatase", "1.99e10"],
+            ["9", "GIBBS", "P decomposition", "3.1.3.2", "acid phosphatase", "2.33e10"],
+            ["10", "GIBBS", "S decomposition", "3.1.6.1", "arylsulfatase", "1.82e10"],
+            ["11", "GIBBS", "N-fixation", "1.18.6.1", "nitrogenase", "9.65e9"],
+            ["12", "GIBBS", "P-solubility", "1.3.3.11", "pyrroloquinoline-quinone synthase", "8.05e9"],
+            ["13", "GIBBS", "Siderophore", "6.3.2.39", "aerobactin synthase", "5.17e8"],
+            ["14", "GIBBS", "Root-growth", "3.5.99.7", "1-aminocyclopropane-1-carboxylate deaminase", "3.77e9"],
+            ["15", "GIBBS", "Root-growth", "4.1.1.74", "indolepyruvate decarboxylase", "1.80e9"],
+            ["16", "GIBBS", "Biocontrol", "1.1.1.76", "(S,S)-butanediol dehydrogenase", "2.77e9"],
+            ["17", "GIBBS", "Biocontrol", "1.4.99.5", "glycine dehydrogenase (cyanide-forming)", "5.94e7"],
+            ["18", "GIBBS", "Biocontrol", "3.2.1.14", "chitinase", "1.26e10"],
 
                 //Biological
-            ["19", "Biological", "", "Abundance", "1e9"],
-            ["20", "Biological", "", "Richness", "1000"],
-            ["21", "Biological", "", "Diversity", "6"],
-            ["22", "Biological", "", "ACE Soil Protein Index", "10"],
-            ["23", "Biological", "", "Active Carbon", "500"],
-            ["24", "Biological", "", "Respiration", "1.0"],
+            ["19", "Biological", "", "", "Abundance", "1e9"],
+            ["20", "Biological", "", "", "Richness", "1000"],
+            ["21", "Biological", "", "", "Diversity", "6"],
+            ["22", "Biological", "", "", "ACE Soil Protein Index", "10"], //new
+            ["23", "Biological", "", "", "Active Carbon", "500"], //new
+            ["24", "Biological", "", "", "Respiration", "1.0"],
 
                 //Chemical
-            ["25", "Chemical", "", "Organic Matter", "40"],
-            ["26", "Chemical", "", "Carbon", "20"],
-            ["27", "Chemical", "", "pH", "14"],
-            ["28", "Chemical", "", "Phosphorus", "10"],
-            ["29", "Chemical", "", "Potassium", "100"],
+            ["25", "Chemical", "", "", "Organic Matter", "40"],
+            ["26", "Chemical", "", "", "Carbon", "20"],
+            ["27", "Chemical", "", "", "pH", "14"],
+            ["28", "Chemical", "", "", "Phosphorus", "10"],
+            ["29", "Chemical", "", "", "Potassium", "100"],
+            ["31", "Chemical", "", "", "Nitrogen", "100"],
+
 
                 //Physical
-            ["30", "Physical", "", "Porosity", "1"],
-            ["31", "Physical", "", "Bulk Density", "2.65"],
-            ["32", "Physical", "", "Water Content", "100"],
-            ["33", "Physical", "", "Electric Conductivity", "10"],
-            ["34", "Physical", "", "Microbial Biomass C", "100"],
-            ["35", "Physical", "", "Available Water Capacity", "1.0"],
-            ["36", "Physical", "", "Surface Hardness", "500"],
-            ["37", "Physical", "", "Subsurface Hardness", "500"],
-            ["38", "Physical", "", "Aggregate Stability", "100"]
+            ["31", "Physical", "", "", "Porosity", "1"], //
+            ["32", "Physical", "", "", "Bulk Density", "2.65"], //
+            ["33", "Physical", "", "", "Water Content", "100"], //
+            ["34", "Physical", "", "", "Electric Conductivity", "10"],
+            ["35", "Physical", "", "", "Microbial Biomass C", "100"],
+            ["36", "Physical", "", "", "Microbial Biomass N", "100"],
+            ["37", "Physical", "", "", "Available Water Capacity", "1.0"],
+            ["38", "Physical", "", "", "Surface Hardness", "500"], //
+            ["39", "Physical", "", "", "Subsurface Hardness", "500"], //
+            ["40", "Physical", "", "", "Aggregate Stability", "100"],
+
+                //N cycle
+            ["41", "N cycle", "", "1.14.99.39", "ammonia monooxygenase", "1.0e08"],
+            ["42", "N cycle", "", "1.7.2.6", "hydroxylamine dehydrogenase", "1.0e08"],
+            ["43", "N cycle", "", "1.7.99.4", "nitrate reductase", "1.0e09"],
+            ["44", "N cycle", "", "1.7.2.1", "nitrite reductase (NO-forming)", "1.0e08"],
+            ["45", "N cycle", "", "1.7.2.5", "nitric oxide reductase (cytochrome c)", "1.0e08"],
+            ["46", "N cycle", "", "1.7.2.4", "nitrous-oxide reductase", "1.0e08"]
         ];
+
+        //alert("About to break");
+        //var num = document.getElementById("theme");
+        //alert(num);
+        //presetFunc();
+        //alert("Nevermind?");
 
         $(function () {
             table = $('#example').DataTable( {
@@ -116,6 +279,7 @@
                     { title: "Index" },
                     { title: "Category" },
                     { title: "Sub-Category" },
+                    { title: "EC ID" },
                     { title: "Name" },
                     { title: "Value" }
                 ]
@@ -124,7 +288,7 @@
             table.MakeCellsEditable({
                 //"onUpdate": myCallbackFunction,
                 "inputCss": 'my-input-class',
-                "columns": [4],
+                "columns": [5],
                 "confirmationButton": {
                     "confirmCss": "my-confirm-class",
                     "cancelCss": "my-cancel-class"
@@ -292,135 +456,6 @@
             });
         }
 
-        function presetFunc(val) {
-            var maxValDict = {};
-            table.order([0, 'asc']).draw(); //reset sorting because these tables are buggy as heck
-            var names = table.column(3).data();
-            if (val == 1) {
-                //Use current data set to find max values
-                locMax = true;
-            }
-            else if (val == 2) {
-                //Agriculture
-                locMax = false;
-                //initialize maxValDict with agriculture pairs
-                maxValDict = {
-                    //GIBBS
-                    'cellulase': "6.43e09",
-                    'endo-1,4-beta-xylanase': "2.36e09",
-                    'beta-glucosidase': "1.18e10",
-                    'xylan 1,4-beta-xylosidase': "1.04e09",
-                    'cellulose 1,4-beta-cellobiosidase (non-reducing end)': "3.80e07",
-                    'amidase': "1.21e10",
-                    'urease': "4.54e09",
-                    'alkaline phosphatase': "6.68e09",
-                    'acid phosphatase': "2.11e09",
-                    'arylsulfatase': "3.30e09",
-                    'nitrogenase': "2.14e09",
-                    'pyrroloquinoline-quinone synthase': "1.43e09",
-                    'aerobactin synthase': "1.06e08",
-                    '1-aminocyclopropane-1-carboxylate deaminase': "6.16e08",
-                    'indolepyruvate decarboxylase': "5.12e08",
-                    '(S,S)-butanediol dehydrogenase': "1.16e09",
-                    'glycine dehydrogenase (cyanide-forming)': "5.94e07",
-                    'chitinase': "3.22e09",
-
-                    //Biological
-                    'Abundance': "1e9",
-                    'Richness': "1000",
-                    'Diversity': "6",
-                    'ACE Soil Protein Index': "10",
-                    'Respiration': "1.0",
-                    'Active Carbon': "500",
-
-                    //Chemical
-                    'Organic Matter': "40",
-                    'Carbon': "20",
-                    'pH': "14",
-                    'Phosphorus': "10",
-                    'Potassium': "100",
-
-                    //Physical
-                    'Porosity': "1",
-                    'Bulk Density': "2.65",
-                    'Electric Conductivity': "10",
-                    'Water Content': "100",
-                    'Available Water Capacity': "1",
-                    'Aggregate Stability': "100",
-                    'Surface Hardness': "500",
-                    'Subsurface Hardness': "500"
-
-                };
-                //set column 4 value at row c to value of maxValDict with entry names[c]
-                for (var c=0; c<names.length; c++) {
-                    if (maxValDict[names[c]]!=null) {
-                        table.cell(c, 4).data(maxValDict[names[c]]);
-                    }
-                }
-            }
-            else if (val == 3) {
-                //Forest
-                locMax = false;
-                //initialize maxValDict with forest pairs
-                maxValDict = {
-                    //GIBBS
-                    'cellulase': "2.03e10",
-                    'endo-1,4-beta-xylanase': "1.13e10",
-                    'beta-glucosidase': "5.51e10",
-                    'xylan 1,4-beta-xylosidase': "9.85e9",
-                    'cellulose 1,4-beta-cellobiosidase (non-reducing end)': "1.10e8",
-                    'amidase': "4.04e10",
-                    'urease': "1.56e10",
-                    'alkaline phosphatase': "1.99e10",
-                    'acid phosphatase': "2.33e10",
-                    'arylsulfatase': "1.82e10",
-                    'nitrogenase': "9.65e9",
-                    'pyrroloquinoline-quinone synthase': "8.05e9",
-                    'aerobactin synthase': "5.17e8",
-                    '1-aminocyclopropane-1-carboxylate deaminase': "3.77e9",
-                    'indolepyruvate decarboxylase': "1.80e9",
-                    '(S,S)-butanediol dehydrogenase': "2.77e9",
-                    'glycine dehydrogenase (cyanide-forming)': "2.39e7",
-                    'chitinase': "1.26e10",
-
-                    //Biological
-                    'Abundance': "1e9",
-                    'Richness': "1000",
-                    'Diversity': "6",
-                    'ACE Soil Protein Index': "10",
-                    'Respiration': "1.0",
-                    'Active Carbon': "500",
-
-                    //Chemical
-                    'Organic Matter': "40",
-                    'Carbon': "20",
-                    'pH': "14",
-                    'Phosphorus': "10",
-                    'Potassium': "100",
-
-                    //Physical
-                    'Porosity': "1",
-                    'Bulk Density': "2.65",
-                    'Electric Conductivity': "10",
-                    'Water Content': "100",
-                    'Available Water Capacity': "1",
-                    'Aggregate Stability': "100",
-                    'Surface Hardness': "500",
-                    'Subsurface Hardness': "500"
-
-                };
-                //set column 4 value at row d to value of maxValDict with entry names[d]
-                for (var d=0; d<names.length; d++) {
-                    if (maxValDict[names[d]]!=null) {
-                        table.cell(d, 4).data(maxValDict[names[d]]);
-                    }
-                }
-            }
-            else {
-                //Do nothing?
-            }
-        }
-
         function startTimer(RID) {
             refresh = setInterval(function(){updateStatus(RID);}, 1000);
             return refresh;
@@ -516,8 +551,8 @@
 
             var maxVals = {};
             if (!locMax) {
-                var names = table.column(3).data();
-                var colvals = table.column(4).data();
+                var names = table.column(4).data();
+                var colvals = table.column(5).data();
                 for (var c=0; c<names.length; c++) {
                     maxVals[names[c]] = colvals[c];
                 }
@@ -703,7 +738,7 @@
                 </div>
                 <br>
                 <div style="display: none;" id="maxValBox">
-                    <table id="example" class="display" width="100%"></table>
+                    <table id="example" class="display" width="120%"></table>
                 </div>
             </td>
             <td bgcolor="white"></td>
