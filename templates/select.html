@@ -734,6 +734,25 @@
                     {% endfor %}
             });
         }
+
+        function uploadNorm() {
+            alert("You pressed the button!");
+            var normFiles = document.getElementById("uploadNorm").files;
+            alert("You selected "+normFiles.length+" files");
+            var dict = {};
+            dict['hi'] = "hi";
+            $.ajax({
+                url: '/uploadNorm/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: 'hi'
+                },
+                success: function (data) {
+                    alert("Success!");
+                }
+            });
+        }
     </script>
 {% endblock javascript %}
 
@@ -749,10 +768,22 @@
             </td>
         </tr>
     </table>
-
     <br>
     <input id="submit" type="button" value="Save Selection(s)!"/>
-    <br><br><br>
+    <br>
+
+    <form action="{% url 'uploadNorm' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <table width="100%" border="2" cellspacing="5" cellpadding="5">
+            <tr>
+                <td>{{ form9.normFile.label_tag }}</td>
+                <td>{{ form9.normFile }}</td>
+            </tr>
+        </table>
+        <input id="submit" type="submit" value="Upload!"/>
+    </form>
+
+    <br><br>
     <h2>Project/Sample information for selected samples:</h2>
     <input id="drawtable" type="button" disabled value="Populate DataTable!"/>
     <br><br>

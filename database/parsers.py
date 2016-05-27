@@ -738,3 +738,9 @@ def reanalyze(request):
             simplejson.dumps({"error": "yes"}),
             content_type="application/json"
         )
+
+
+def parseNormDat(request):
+    # read file, save data to dataframe(best option?)
+    #  store data as mini database for use with analysis, set data as selected
+    return

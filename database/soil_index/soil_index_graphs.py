@@ -502,6 +502,15 @@ def loopCat(request):
                     r('if(maxRich==0) maxRich=1')
                     r('maxDiversity <- max(odat$diversity)')
                     r('if(maxDiversity==0) maxDiversity=1')
+                    r('maxACE <- max(odat$soil_ACE_protein)')
+                    r('if(maxACE==0) maxACE=1')
+                    r('maxActC <- max(odat$soil_active_c)')
+                    r('if(maxActC==0) maxActC=1')
+                    r('maxResp <- max(odat$microbial_respiration)')
+                    r('if(maxResp==0) maxResp=1')
+                    # soil_ACE_protein
+                    # soil_active_c
+                    # microbial_respiration
 
                     # chem
                     r('maxPH <- 14')
@@ -513,6 +522,8 @@ def loopCat(request):
                     r('if(maxP==0) maxP=1')
                     r('maxK <- max(odat$soil_K)')
                     r('if(maxK==0) maxK=1')
+                    r('maxN <- max(odat$soil_N)')
+                    r('if(maxN==0) maxN=1')
 
                     # phys
                     r('maxWCS <- max(odat$water_content_soil)')
@@ -541,12 +552,16 @@ def loopCat(request):
                     r.assign('maxAbund', float(maxVals['Abundance']))
                     r.assign('maxRich', float(maxVals['Richness']))
                     r.assign('maxDiversity', float(maxVals['Diversity']))
+                    r.assign('maxACE', float(maxVals['ACE Soil Protein Index']))
+                    r.assign('maxActC', float(maxVals['Active Carbon']))
+                    r.assign('maxResp', float(maxVals['Respiration']))
                     # chem
                     r.assign('maxC', float(maxVals['Carbon']))
                     r.assign('maxOM', float(maxVals['Organic Matter']))
                     r.assign('maxPH', float(maxVals['pH']))
                     r.assign('maxP', float(maxVals['Phosphorus']))
                     r.assign('maxK', float(maxVals['Potassium']))
+                    r.assign('maxN', float(maxVals['Nitrogen']))
                     # physical
                     r.assign('maxWCS', float(maxVals['Water Content']))
                     r.assign('maxBD', float(maxVals['Bulk Density']))
@@ -565,6 +580,9 @@ def loopCat(request):
                 r('odat$abund_16S <- odat$abund_16S / maxAbund')
                 r('odat$rich <- odat$rich / maxRich')
                 r('odat$diversity <- odat$diversity / maxDiversity')
+                r('odat$soil_ACE_protein <- odat$soil_ACE_protein / maxACE')
+                r('odat$soil_active_c <- odat$soil_active_c / maxActC')
+                r('odat$microbial_respiration <- odat$microbial_respiration / maxResp')
 
                 # chem
                 r('odat$soil_pH <- odat$soil_pH / maxPH')
@@ -572,6 +590,7 @@ def loopCat(request):
                 r('odat$soil_OM <- odat$soil_OM / maxOM')
                 r('odat$soil_P <- odat$soil_P / maxP')
                 r('odat$soil_K <- odat$soil_K / maxK')
+                r('odat$soil_N <- odat$soil_N / maxN')
 
                 # phys
                 r('odat$water_content_soil <- odat$water_content_soil / maxWCS')
@@ -595,12 +614,14 @@ def loopCat(request):
 
                 r("pdf_counter <- 1")
                 for row in range(1, rowcount+1):
-                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=4, width=8.5)")
-                    r('par(oma=c(0,2.5,0,0))')
+                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=4, width=8)")
+                    r('par(oma=c(2,5,2,2))')
                     r.assign('off', row)
                     r('curName <- row.names(data)[off]')
-                    r('layout(matrix(c(1,3,5,6,2,4,4,4), 2, 4, byrow=T), widths=c(2.5,2,2,2))')
-
+                    r('layout(matrix(c(1,4,5,6,2,4,5,6,3,4,5,6), 3, 4, byrow=T), widths=c(2.5,2,2,2), heights=c(1,1,0.5))')
+                    #1,4,5,6
+                    #2,4,5,6
+                    #3,4,5,6
                     # GIBBs
                     r("GIBBsList <- c('cellulase', 'endo.1.4.beta.xylanase', 'beta.glucosidase', \
                         'xylan.1.4.beta.xylosidase', 'cellulose.1.4.beta.cellobiosidase..non.reducing.end.', \
@@ -689,20 +710,10 @@ def loopCat(request):
                         cex=0.5, mar=c(3,1,3,1), add=T, lty=2, \
                         key.vpd=F)')
 
-                    # Biological
-                    r('vals <- as.numeric(odat[off, c("microbial_respiration", "coverage", "diversity", "rich", "abund_16S")])')
-                    r('par(mar=c(2,5,5,5))')
-                    r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
-                        ylim=c(0,1), horiz=T, space=0, \
-                        names.arg=c("Respiration", "Coverage", "Diversity", "Richness", "Abundance"),\
-                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
-                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('values <- c(dat[off, c("microbial_respiration", "coverage", "diversity", "rich", "abund_16S")])')
-                    r('text(x=vals+0.27, y=bar, labels=values, cex=0.8, xpd=TRUE)')
-                    r('title("Biological", line=1)')
-
+                    # RNA bins
                     r('vals <- as.matrix(t(odat[off, myBins]))')
-                    r('par(mar=c(5,15,1,18))')
+                    #r('par(mar=c(5,5,1,8))')
+                    r('par(mar=c(5.1,4.1,1,2.1))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("rRNA Copy Number"), \
@@ -712,29 +723,43 @@ def loopCat(request):
                     r('par(xpd=T)')
                     r('legend(1, 0.25, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
 
-                    # Chemical, needs 'Minor Elements'
-                    r('vals <- as.numeric(odat[off, c("soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")])')
-                    r('par(mar=c(2,5,5,5))')
-                    r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
+                    # Biological
+                    r('vals <- as.numeric(odat[off, c("microbial_respiration", "soil_active_c", "soil_ACE_protein", "coverage", "diversity", "rich", "abund_16S")])')
+                    print r('par(mar=c(0,0,0,0), pin=c(1,3))')
+                    #r('par(mar=c(5,2,28.7,6))')  # configured for 7 vars
+                    r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
-                        names.arg=c("Potassium", "Phosphorus", "pH", "Carbon", "Organic Matter"),\
+                        names.arg=c("Respiration", "Active Carbon", "ACE Soil Protein Index", "Coverage", "Diversity", "Richness", "Abundance"),\
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('values <- dat[off, c("soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")]')
+                    r('values <- c(dat[off, c("microbial_respiration", "soil_active_c", "soil_ACE_protein", "coverage", "diversity", "rich", "abund_16S")])')
+                    r('text(x=vals+0.27, y=bar, labels=values, cex=0.8, xpd=TRUE)')
+                    r('title("Biological", line=24.6)')
+
+                    # Chemical, needs 'Minor Elements'
+                    r('vals <- as.numeric(odat[off, c("soil_N", "soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")])')
+                    #r('par(mar=c(5,2,28,6))')  # configured for 6 vars
+                    r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
+                        ylim=c(0,1), horiz=T, space=0, \
+                        names.arg=c("Nitrogen", "Potassium", "Phosphorus", "pH", "Carbon", "Organic Matter"),\
+                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
+                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                    r('values <- dat[off, c("soil_N", "soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")]')
                     r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
-                    r('title("Chemical", line=1)')
+                    r('title("Chemical", line=23.9)')
 
                     # Physical
                     r('vals <- as.numeric(odat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")])')
-                    r('par(mar=c(2,5,5,5))')
-                    r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
+                    #r('par(mar=c(5,2,29.95,6))')  # configured for 10 vars
+                    #print r('vals')
+                    r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("Aggregate Stability", "Available Water Capacity", "Microbial Biomass N", "Microbial Biomass C", "Electric Conductivity", "Subsurface Hardness", "Surface Hardness", "Water Content", "Bulk Density", "Porosity"),\
                         cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- dat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")]')
                     r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
-                    r('title("Physical", line=1)')
+                    r('title("Physical", line=25.9)')
                     r('dev.off()')
                     r("pdf_counter <- pdf_counter + 1")
 
