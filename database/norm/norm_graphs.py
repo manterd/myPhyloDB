@@ -25,6 +25,8 @@ pd.set_option('display.max_colwidth', -1)
 def getNorm(request):
     thread = methNorm(request)
     thread.start()
+    time.sleep(1)
+    thread.terminate()
     thread.join()
     return HttpResponse(thread.res, content_type='application/json')
 
@@ -65,9 +67,12 @@ def stopNorm(request):
                     continue
                 else:
                     t.stop = True
+                    print t.stop
+                    print t.RID
                     t.terminate()
                     print 'myPhyloDB is trying to terminate your thread...'
                     t.join()
+                    print 'myPhyloDB has terminated your thread.'
                     break
         myDict = {}
         myDict['error'] = 'none'
@@ -346,7 +351,6 @@ class methNorm(stoppableThread):
 
             finalDict['error'] = 'none'
             self.res = simplejson.dumps(finalDict)
-
             return
 
         except:
@@ -598,6 +602,7 @@ def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID):
     high = mySet.__len__()
     set = mySet[x:high:cores]
 
+    iter = 1
     for i in set:
         arr = asarray(df[i])
         cols = np.ma.shape(arr)

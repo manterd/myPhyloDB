@@ -14,7 +14,8 @@ import simplejson
 import xlrd
 import time
 
-from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, UploadForm6, UploadForm7, UploadForm8
+from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9
 from models import Project, Reference, Sample, Species
 from models import ko_entry, nz_entry, nz_lvl1
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
@@ -602,7 +603,8 @@ def select(request):
 
     return render_to_response(
         'select.html',
-        {'projects': projects,
+        {'form9': UploadForm9,
+         'projects': projects,
          'refs': refs,
          'samples': samples},
         context_instance=RequestContext(request)
@@ -904,3 +906,22 @@ def pybake(request):
          'form8': UploadForm8},
         context_instance=RequestContext(request)
     )
+
+
+def uploadNorm(request):
+    print "Hey look it's python!"
+    uploaded = request.FILES["normFile"]
+    print uploaded.name
+
+    # get file from page
+    # parse file into database
+    # select this data?
+    # count selection as normalized (asserting that it is)
+
+    # OR
+
+    # parse data on selection page
+    # keep normalized data set as a project, remembering normalization?
+    # allow selection and such, allowing all but normalization with the data
+
+    return

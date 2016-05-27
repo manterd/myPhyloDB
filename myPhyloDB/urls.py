@@ -133,4 +133,6 @@ urlpatterns = [
     url(r'^taxaJSON/$', views.taxaJSON, name='taxaJSON'),
     url(r'^nzJSON/$', views.nzJSON, name='nzJSON'),
     url(r'^pathJSON/$', views.pathJSON, name='pathJSON'),
+
+    url(r'^uploadNorm/$', views.uploadNorm, name='uploadNorm')
 ]

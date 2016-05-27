@@ -47,3 +47,7 @@ class UploadForm7(forms.Form):
 
 class UploadForm8(forms.Form):
     nz_htext = forms.FileField(label='Select file (e.g., ko01000.keg):')
+
+
+class UploadForm9(forms.Form):
+    normFile = forms.FileField(label='Select file (e.g., norm.csv):')
