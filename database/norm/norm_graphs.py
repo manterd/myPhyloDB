@@ -25,8 +25,6 @@ pd.set_option('display.max_colwidth', -1)
 def getNorm(request):
     thread = methNorm(request)
     thread.start()
-    time.sleep(1)
-    thread.terminate()
     thread.join()
     return HttpResponse(thread.res, content_type='application/json')
 

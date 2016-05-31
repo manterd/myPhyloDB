@@ -102,20 +102,28 @@
                         $("#link5").hide();
                         $("#link6").hide();
                     } else if ((select == 'yes') && ( norm != 'no')) {
-                        if (NormMeth != '4') {
+                        if (NormMeth == '4') {
+                            $("#link0").show();
+                            $("#link1").show();
+                            $("#link2").show();
+                            $("#link3").show();
+                            $("#link4").hide();
+                            $("#link5").show();
+                            $("#link6").show();
+                        } else if (NormMeth == '-1') {
                             $("#link0").show();
                             $("#link1").show();
                             $("#link2").show();
                             $("#link3").show();
                             $("#link4").show();
-                            $("#link5").show();
+                            $("#link5").hide();
                             $("#link6").show();
                         } else {
                             $("#link0").show();
                             $("#link1").show();
                             $("#link2").show();
                             $("#link3").show();
-                            $("#link4").hide();
+                            $("#link4").show();
                             $("#link5").show();
                             $("#link6").show();
                         }
