@@ -713,7 +713,7 @@ def loopCat(request):
                     # RNA bins
                     r('vals <- as.matrix(t(odat[off, myBins]))')
                     #r('par(mar=c(5,5,1,8))')
-                    r('par(mar=c(5.1,4.1,1,2.1))')
+                    r('par(mar=c(2.1,3.1,0,2.1))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("rRNA Copy Number"), \
@@ -725,7 +725,7 @@ def loopCat(request):
 
                     # Biological
                     r('vals <- as.numeric(odat[off, c("microbial_respiration", "soil_active_c", "soil_ACE_protein", "coverage", "diversity", "rich", "abund_16S")])')
-                    print r('par(mar=c(0,0,0,0), pin=c(1,3))')
+                    r('par(mar=c(2.1,5,22,5))')
                     #r('par(mar=c(5,2,28.7,6))')  # configured for 7 vars
                     r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
@@ -734,11 +734,13 @@ def loopCat(request):
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- c(dat[off, c("microbial_respiration", "soil_active_c", "soil_ACE_protein", "coverage", "diversity", "rich", "abund_16S")])')
                     r('text(x=vals+0.27, y=bar, labels=values, cex=0.8, xpd=TRUE)')
-                    r('title("Biological", line=24.6)')
+                    #r('title("Biological", line=24.6)')
+                    r('title("Biological", line=20)')
 
                     # Chemical, needs 'Minor Elements'
                     r('vals <- as.numeric(odat[off, c("soil_N", "soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")])')
                     #r('par(mar=c(5,2,28,6))')  # configured for 6 vars
+                    r('par(mar=c(2.1,5,22,5))')
                     r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("Nitrogen", "Potassium", "Phosphorus", "pH", "Carbon", "Organic Matter"),\
@@ -746,11 +748,13 @@ def loopCat(request):
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- dat[off, c("soil_N", "soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")]')
                     r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
-                    r('title("Chemical", line=23.9)')
+                    #r('title("Chemical", line=23.9)')
+                    r('title("Chemical", line=20)')
 
                     # Physical
                     r('vals <- as.numeric(odat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")])')
                     #r('par(mar=c(5,2,29.95,6))')  # configured for 10 vars
+                    r('par(mar=c(2.1,5,22,5))')
                     #print r('vals')
                     r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
@@ -759,7 +763,8 @@ def loopCat(request):
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('values <- dat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")]')
                     r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
-                    r('title("Physical", line=25.9)')
+                    #r('title("Physical", line=25.9)')
+                    r('title("Physical", line=20)')
                     r('dev.off()')
                     r("pdf_counter <- pdf_counter + 1")
 

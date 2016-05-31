@@ -606,7 +606,8 @@ def select(request):
         {'form9': UploadForm9,
          'projects': projects,
          'refs': refs,
-         'samples': samples},
+         'samples': samples,
+         'normpost': False},
         context_instance=RequestContext(request)
     )
 
@@ -909,19 +910,46 @@ def pybake(request):
 
 
 def uploadNorm(request):
-    print "Hey look it's python!"
+    RID = str(request.POST['RID'])
     uploaded = request.FILES["normFile"]
-    print uploaded.name
+    savedDF = pd.read_csv(uploaded, index_col=0)
 
-    # get file from page
-    # parse file into database
-    # select this data?
-    # count selection as normalized (asserting that it is)
+    selList = list(savedDF['sampleid'])
+    qs = Sample.objects.all().filter(sampleid__in=selList).values_list('sampleid')
+    request.session['selected_samples'] = pickle.dumps(qs.query)
 
-    # OR
+    NormMeth = -1
 
-    # parse data on selection page
-    # keep normalized data set as a project, remembering normalization?
-    # allow selection and such, allowing all but normalization with the data
+    # save location info to session
+    myDir = 'media/temp/norm/'
+    path = str(myDir) + str(RID) + '.pkl'
+    request.session['savedDF'] = pickle.dumps(path)
+    request.session['NormMeth'] = NormMeth
 
-    return
+    # now save file to computer
+    if not os.path.exists(myDir):
+        os.makedirs(myDir)
+    savedDF.to_pickle(path)
+
+    # stuff from main select
+    projects = Project.objects.none()
+    if request.user.is_superuser:
+        projects = Project.objects.all()
+    elif request.user.is_authenticated():
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        projects = Project.objects.all().filter( Q(status='public') )
+
+    refs = Reference.objects.filter(projectid__in=projects)
+    samples = Sample.objects.filter(projectid__in=projects)
+
+    return render_to_response(
+        'select.html',
+        {'form9': UploadForm9,
+         'projects': projects,
+         'refs': refs,
+         'samples': samples,
+         'normpost': True},
+        context_instance=RequestContext(request)
+    )

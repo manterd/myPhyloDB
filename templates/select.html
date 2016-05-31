@@ -12,11 +12,20 @@
 {% endblock user %}
 
 {% block javascript %}
+    <style>
+        .inlineTable {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
     <script type="text/javascript">
         var selKeys = "";
         var table1, table2, table3, table4, table5, table6, table7, table8, table9;
+        var RID = 0;
 
         $(function () {
+
+            if ("{{ normpost }}" == "True") alert("Uploaded normalized data set successfully");
 
             $(".display").dataTable({
                 dom: 'B<"toolbar">lfrtip',
@@ -166,7 +175,20 @@
                 document.getElementById("drawtable").disabled = false;
             });
 
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'RID',
+                value: makeGUID()
+            }).appendTo('form');
+
         });
+
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
 
         function clearCookie() {
             $.ajax({
@@ -735,30 +757,14 @@
             });
         }
 
-        function uploadNorm() {
-            alert("You pressed the button!");
-            var normFiles = document.getElementById("uploadNorm").files;
-            alert("You selected "+normFiles.length+" files");
-            var dict = {};
-            dict['hi'] = "hi";
-            $.ajax({
-                url: '/uploadNorm/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: 'hi'
-                },
-                success: function (data) {
-                    alert("Success!");
-                }
-            });
-        }
     </script>
 {% endblock javascript %}
 
 {% block my_content %}
     <br>
-    <table border="2" cellspacing="0" cellpadding="5">
+    <div>
+    <h2>Select new combination of sample(s)</h2>
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
             <th>Select any combination of data for analysis:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
         </tr>
@@ -772,17 +778,19 @@
     <input id="submit" type="button" value="Save Selection(s)!"/>
     <br>
 
-    <form action="{% url 'uploadNorm' %}" method="post" enctype="multipart/form-data">
+    <form id='form' action="{% url 'uploadNorm' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <table width="100%" border="2" cellspacing="5" cellpadding="5">
+        <h2>Upload previously normalized sample set</h2>
+        <table width="430px" border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr>
                 <td>{{ form9.normFile.label_tag }}</td>
                 <td>{{ form9.normFile }}</td>
             </tr>
         </table>
+        <br>
         <input id="submit" type="submit" value="Upload!"/>
     </form>
-
+    </div>
     <br><br>
     <h2>Project/Sample information for selected samples:</h2>
     <input id="drawtable" type="button" disabled value="Populate DataTable!"/>
