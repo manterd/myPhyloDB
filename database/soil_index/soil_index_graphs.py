@@ -614,14 +614,12 @@ def loopCat(request):
 
                 r("pdf_counter <- 1")
                 for row in range(1, rowcount+1):
-                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=4, width=8)")
-                    r('par(oma=c(2,5,2,2))')
+                    r("pdf(paste('soil_index_temp', pdf_counter, '.pdf', sep=''), height=6, width=8)")
+                    r('par(omi=rep(0.5, 4))')
                     r.assign('off', row)
                     r('curName <- row.names(data)[off]')
-                    r('layout(matrix(c(1,4,5,6,2,4,5,6,3,4,5,6), 3, 4, byrow=T), widths=c(2.5,2,2,2), heights=c(1,1,0.5))')
-                    #1,4,5,6
-                    #2,4,5,6
-                    #3,4,5,6
+                    r('layout(matrix(c(1,1,1,2,2,2,3,3,4,4,5,5), 2, 6, byrow=T), widths=c(1,1,1,1,1,1), heights=c(1,1))')
+
                     # GIBBs
                     r("GIBBsList <- c('cellulase', 'endo.1.4.beta.xylanase', 'beta.glucosidase', \
                         'xylan.1.4.beta.xylosidase', 'cellulose.1.4.beta.cellobiosidase..non.reducing.end.', \
@@ -640,35 +638,31 @@ def loopCat(request):
                     r('stars(matrix(1, ncol=18, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=1), 18), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, mar=c(1,1,5,1), add=F, lty=2, \
+                        cex=0.7, mar=c(1,1,2,1), add=F, lty=2, \
                         key.vpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
-
-                    r('title("GIBBs     ", line=0)')
+                    r('mtext("GIBBs", side=3, line=0, at=0.25, cex=1, outer=T, font=2)')
+                    r('mtext("N cycle", side=3, line=0, at=0.75, cex=1, outer=T, font=2)')
                     r('mtext(curName, side=2, cex=1.2, outer=T, font=2)')
 
                     r('stars(gibbs[off,], \
                         draw.segments=T, col.segments=colGIBBs, \
                         ncol=1, scale=F, full=T, labels=NULL, \
-                        cex=0.5, mar=c(1,1,5,1), add=T, lty=1, \
-                        key.xpd=F)')
+                        cex=0.5, add=T, lty=1, key.xpd=F)')
 
                     r('stars(matrix(0.75, ncol=18, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 18), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, mar=c(1,1,5,1), add=T, lty=2, \
-                        key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.vpd=F)')
 
                     r('stars(matrix(0.5, ncol=18, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 18), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, mar=c(1,1,5,1), add=T, lty=2, \
-                        key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.vpd=F)')
 
                     r('stars(matrix(0.25, ncol=18, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 18), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, mar=c(1,1,5,1), add=T, lty=2, \
-                        key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.vpd=F)')
 
                     # N cycle
                     r("NList <- c('ammonia.monooxygenase', 'hydroxylamine.dehydrogenase', \
@@ -680,40 +674,33 @@ def loopCat(request):
                     r('stars(matrix(1, ncol=6, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 6), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, mar=c(3,1,3,1), add=F, lty=2, \
+                        cex=0.7, mar=c(1,1,2,1), add=F, lty=2, \
                         key.vpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
-
-                    r('title("N Cycle     ", line=2)')
-                    r('mtext(curName, side=2, cex=1.2, outer=T, font=2)')
 
                     r('stars(ncycle[off,], \
                         draw.segments=T, col.segments=colN, \
                         ncol=1, scale=F, full=T, labels=NULL, \
-                        cex=0.5, mar=c(3,1,3,1), add=T, lty=1, \
-                        key.xpd=F)')
+                        cex=0.5, add=T, lty=1, key.xpd=F)')
 
                     r('stars(matrix(0.75, ncol=6, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 6), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, mar=c(3,1,3,1), add=T, lty=2, \
-                        key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.vpd=F)')
 
                     r('stars(matrix(0.5, ncol=6, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 6), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, mar=c(3,1,3,1), add=T, lty=2, \
-                        key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.vpd=F)')
 
                     r('stars(matrix(0.25, ncol=6, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 6), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, mar=c(3,1,3,1), add=T, lty=2, \
-                        key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.vpd=F)')
 
                     # RNA bins
+                    """
                     r('vals <- as.matrix(t(odat[off, myBins]))')
-                    #r('par(mar=c(5,5,1,8))')
-                    r('par(mar=c(2.1,3.1,0,2.1))')
+                    r('par(mai=c(0,0,0,0), pin=c(1,1))')
                     r('bar <- barplot(height=vals, width=0.2, xlim=c(0,1), \
                         ylim=c(0,1), horiz=T, space=0, \
                         names.arg=c("rRNA Copy Number"), \
@@ -722,49 +709,44 @@ def loopCat(request):
                     r('text(x=c(0.2, 0.5, 0.8), y=bar+0.2, labels=round(vals, 3), cex=0.8, xpd=TRUE)')
                     r('par(xpd=T)')
                     r('legend(1, 0.25, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"))')
+                    """
 
                     # Biological
                     r('vals <- as.numeric(odat[off, c("microbial_respiration", "soil_active_c", "soil_ACE_protein", "coverage", "diversity", "rich", "abund_16S")])')
-                    r('par(mar=c(2.1,5,22,5))')
-                    #r('par(mar=c(5,2,28.7,6))')  # configured for 7 vars
-                    r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
-                        ylim=c(0,1), horiz=T, space=0, \
+                    r('par(mai=c(0,0,0,0), pin=c(1,0.15*length(vals)))')
+                    r('bar <- barplot(vals, space=0, horiz=T, cex.names=0.8, \
                         names.arg=c("Respiration", "Active Carbon", "ACE Soil Protein Index", "Coverage", "Diversity", "Richness", "Abundance"),\
-                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
-                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                        xpd=T, xlim=c(0,1), las=2, axes=T, col=seq(1:10), beside=T)')
+                    #r('axis(1, pos=0, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                    r('grid(col="black", lwd=1)')
                     r('values <- c(dat[off, c("microbial_respiration", "soil_active_c", "soil_ACE_protein", "coverage", "diversity", "rich", "abund_16S")])')
-                    r('text(x=vals+0.27, y=bar, labels=values, cex=0.8, xpd=TRUE)')
-                    #r('title("Biological", line=24.6)')
-                    r('title("Biological", line=20)')
+                    r('text(x=1, y=bar, labels=values, pos=4, cex=0.8, xpd=TRUE)')
+                    r('title("Biological", line=0)')
 
-                    # Chemical, needs 'Minor Elements'
+                    # Chemical
                     r('vals <- as.numeric(odat[off, c("soil_N", "soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")])')
-                    #r('par(mar=c(5,2,28,6))')  # configured for 6 vars
-                    r('par(mar=c(2.1,5,22,5))')
-                    r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
-                        ylim=c(0,1), horiz=T, space=0, \
+                    r('par(mai=c(0,2,0,0), pin=c(1,0.15*length(vals)))')
+                    r('bar <- barplot(vals, space=0, horiz=T, cex.names=0.8, \
                         names.arg=c("Nitrogen", "Potassium", "Phosphorus", "pH", "Carbon", "Organic Matter"),\
-                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
-                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                        xpd=T, xlim=c(0,1), las=2, axes=T, col=seq(1:10), beside=T)')
+                    #r('axis(1, pos=0, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                    r('grid(col="black", at=c(0, 0.25, 0.5, 0.75, 1), lwd=1)')
                     r('values <- dat[off, c("soil_N", "soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")]')
-                    r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
-                    #r('title("Chemical", line=23.9)')
-                    r('title("Chemical", line=20)')
+                    r('text(x=1, y=bar, labels=signif(values,3), pos=4, cex=0.8, xpd=TRUE)')
+                    r('title("Chemical", line=0)')
 
                     # Physical
                     r('vals <- as.numeric(odat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")])')
-                    #r('par(mar=c(5,2,29.95,6))')  # configured for 10 vars
-                    r('par(mar=c(2.1,5,22,5))')
-                    #print r('vals')
-                    r('bar <- barplot(xpd=T, height=vals, xlim=c(0,1), \
-                        ylim=c(0,1), horiz=T, space=0, \
+                    r('par(mai=c(0,8,0,0), pin=c(1,0.15*length(vals)))')
+                    r('bar <- barplot(vals, space=0, horiz=T, cex.names=0.8, \
                         names.arg=c("Aggregate Stability", "Available Water Capacity", "Microbial Biomass N", "Microbial Biomass C", "Electric Conductivity", "Subsurface Hardness", "Surface Hardness", "Water Content", "Bulk Density", "Porosity"),\
-                        cex.names=0.8, las=2, axes=F, col=c(2,3,4), beside=T)')
-                    r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                        xpd=T, xlim=c(0,1), las=2, axes=T, col=seq(1:10), beside=T)')
+                    #r('axis(1, pos=0, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
+                    r('grid(col="black", lwd=1)')
                     r('values <- dat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")]')
-                    r('text(x=vals+0.2, y=bar, labels=signif(values, 3), cex=0.8, xpd=TRUE)')
-                    #r('title("Physical", line=25.9)')
-                    r('title("Physical", line=20)')
+                    r('text(x=1, y=bar, labels=values, pos=4, cex=0.8, xpd=TRUE)')
+                    r('title("Physical", line=0)')
+
                     r('dev.off()')
                     r("pdf_counter <- pdf_counter + 1")
 
