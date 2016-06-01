@@ -4,10 +4,13 @@ import multiprocessing as mp
 import os.path
 import signal
 import webbrowser
+from database.queue import process, funcCall, stop
+from threading import Thread
 
 from myPhyloDB.wsgi import application
 cherrypy.tree.graft(application)
 
+args = ['Nope']
 
 class Server(object):
     def __init__(self):
@@ -73,10 +76,17 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 
 def signal_handler(signal, frame):
     print 'Exiting...'
+    args[0] = 'False'
     cherrypy.engine.exit()
 
 
 signal.signal(signal.SIGINT, signal_handler)
 if __name__ == '__main__':
     mp.freeze_support()
+    args[0] = 'True'
+    thread = Thread(target=process, args=(args,))
+    thread.start()
+    stop(1)
+    print "funcCall: " + str(funcCall(1, 'testing', 4))
     Server().run()
+    thread.join()
