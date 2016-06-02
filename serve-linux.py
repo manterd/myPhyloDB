@@ -4,10 +4,12 @@ import multiprocessing as mp
 import os.path
 import signal
 import webbrowser
-from database.queue import process, funcCall, stop
 from threading import Thread
 
 from myPhyloDB.wsgi import application
+
+from database.queue import process
+
 cherrypy.tree.graft(application)
 
 args = ['Nope']
@@ -85,9 +87,9 @@ signal.signal(signal.SIGINT, signal_handler)
 if __name__ == '__main__':
     mp.freeze_support()
     args[0] = 'True'
-    thread = Thread(target=process, args=(args,))
-    thread.start()
-    stop(1)
-    print 'funcCall: ' + str(funcCall(1, 'testing', 4))
+
+    for i in xrange(3):
+        thread = Thread(target=process, args=(args,))
+        thread.start()
     Server().run()
-    thread.join()
+
