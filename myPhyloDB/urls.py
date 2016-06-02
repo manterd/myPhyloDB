@@ -2,7 +2,7 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from registration.backends.simple.views import RegistrationView
 
-from database import views, parsers, trees
+from database import views, parsers, trees, queue
 from database.anova import anova_graphs
 from database.spac import spac_graphs
 from database.diffabund import diffabund_graphs
@@ -134,5 +134,9 @@ urlpatterns = [
     url(r'^nzJSON/$', views.nzJSON, name='nzJSON'),
     url(r'^pathJSON/$', views.pathJSON, name='pathJSON'),
 
-    url(r'^uploadNorm/$', views.uploadNorm, name='uploadNorm')
+    url(r'^uploadNorm/$', views.uploadNorm, name='uploadNorm'),
+
+    # queue caller
+    url(r'^funcCall/$', queue.funcCall, name='funcCall'),
+    url(r'^stop/$', queue.stop, name='stop')
 ]

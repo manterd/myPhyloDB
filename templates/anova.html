@@ -890,7 +890,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopANOVA/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -1247,10 +1247,11 @@
                 myDict['nzAll'] = nzAll;
                 myDict['RID'] = RID;
                 myDict['button3'] = button3;
+                myDict['funcName'] = "getCatUnivData";
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
-                    url: '/getCatUnivData/',
+                    url: '/funcCall/',
                     type: 'GET',
                     dataType: 'json',
                     data: {
@@ -1435,11 +1436,12 @@
                 myDict['nz'] = nz;
                 myDict['nzAll'] = nzAll;
                 myDict['button3'] = button3;
+                myDict['funcName'] = "getQuantUnivData";
 
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
-                    url: '/getQuantUnivData/',
+                    url: '/funcCall/',
                     type: 'GET',
                     dataType: 'json',
                     data: {

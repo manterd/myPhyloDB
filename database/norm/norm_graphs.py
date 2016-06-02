@@ -192,7 +192,7 @@ class methNorm(stoppableThread):
             normRem = len(selected) - lenB
 
             result += str(lenB) + ' selected sample(s) were included in the final analysis...\n'
-            result += str(normRem) + ' sample(s) did not met the desired normalization criteria...\n'
+            result += str(normRem) + ' sample(s) did not meet the desired normalization criteria...\n'
             result += '\n'
 
             # Create unique list of samples in meta dataframe (may be different than selected samples)
