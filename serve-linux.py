@@ -12,6 +12,7 @@ cherrypy.tree.graft(application)
 
 args = ['Nope']
 
+
 class Server(object):
     def __init__(self):
         self.base_dir = os.path.join(os.path.abspath(os.getcwd()), "myPhyloDB")
@@ -87,6 +88,6 @@ if __name__ == '__main__':
     thread = Thread(target=process, args=(args,))
     thread.start()
     stop(1)
-    print "funcCall: " + str(funcCall(1, 'testing', 4))
+    print 'funcCall: ' + str(funcCall(1, 'testing', 4))
     Server().run()
     thread.join()

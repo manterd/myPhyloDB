@@ -13,6 +13,7 @@ import pickle
 import simplejson
 import xlrd
 import time
+from uuid import uuid4
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9
@@ -914,9 +915,12 @@ def uploadNorm(request):
     uploaded = request.FILES["normFile"]
     savedDF = pd.read_csv(uploaded, index_col=0)
 
-    selList = list(savedDF['sampleid'])
-    qs = Sample.objects.all().filter(sampleid__in=selList).values_list('sampleid')
+    samples = list(set(savedDF['sampleid']))
+    """ What if samples don't exist? Following query only looks for existing samples in DB """
+    qs = Sample.objects.all().filter(sampleid__in=samples).values_list('sampleid')
     request.session['selected_samples'] = pickle.dumps(qs.query)
+
+    projects = list(set(savedDF['projectid']))
 
     NormMeth = -1
 
@@ -931,18 +935,10 @@ def uploadNorm(request):
         os.makedirs(myDir)
     savedDF.to_pickle(path)
 
-    # stuff from main select
-    projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all()
-    elif request.user.is_authenticated():
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
-    if not request.user.is_superuser and not request.user.is_authenticated():
-        projects = Project.objects.all().filter( Q(status='public') )
-
-    refs = Reference.objects.filter(projectid__in=projects)
-    samples = Sample.objects.filter(projectid__in=projects)
+    if Reference.objects.filter(projectid__in=projects).exists():
+        refs = Reference.objects.filter(projectid__in=projects).values_list('refid', flat=True)
+    else:
+        refs = uuid4().hex
 
     return render_to_response(
         'select.html',
