@@ -352,16 +352,25 @@ def loopCat(request):
                 df1.reset_index(drop=False, inplace=True)
                 if len(catFields_edit) > 1:
                     for index, row in df1.iterrows():
-                        df1.loc[index, 'merge'] = " & ".join(row[catFields_edit])
+                        df1.loc[index, 'Treatment'] = " & ".join(row[catFields_edit])
                 else:
-                    df1.loc[:, 'merge'] = df1.loc[:, catFields_edit[0]]
+                    df1.loc[:, 'Treatment'] = df1.loc[:, catFields_edit[0]]
 
-                df1.set_index('merge', inplace=True)
+                df1.set_index('Treatment', inplace=True)
 
                 nzDF = keggDF.groupby(['sampleid', 'rank_name'])['abund'].sum()
                 nzDF = nzDF.unstack(level=-1)
-                starDF = pd.merge(nzDF, meta_rDF, left_index=True, right_index=True, how='outer')
+                starDF = pd.merge(meta_rDF, nzDF, left_index=True, right_index=True, how='outer')
                 bytrt2 = starDF.groupby(catFields_edit)
+
+                print sumDF1.columns.values
+                print sumDF2.columns.values
+                print bioDF.columns.values
+                print chemDF.columns.values
+                print physDF.columns.values
+                print starDF.columns.values
+                #TODO: rename sumDF1 columns
+                #TODO: merge all DFs and send to DataTable on webpage
 
                 myList = [u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase',
                           u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase',
@@ -433,13 +442,13 @@ def loopCat(request):
                 df2.reset_index(drop=False, inplace=True)
                 if len(catFields_edit) > 1:
                     for index, row in df2.iterrows():
-                        df2.loc[index, 'merge'] = " & ".join(row[catFields_edit])
+                        df2.loc[index, 'Treatment'] = " & ".join(row[catFields_edit])
                 else:
-                    df2.loc[:, 'merge'] = df2.loc[:, catFields_edit[0]]
+                    df2.loc[:, 'Treatment'] = df2.loc[:, catFields_edit[0]]
 
-                df2.set_index('merge', inplace=True)
+                df2.set_index('Treatment', inplace=True)
                 df2 = df2[newList]
-                result += str(df2)
+                #result += str(df2)
 
                 maxDict = {
                     'cellulase': 1e9,
@@ -488,7 +497,7 @@ def loopCat(request):
                 r.assign('dat', df1)  # use dat for displaying rounded data
                 r('odat <- dat')  # use odat for calculating graphs with more precision
 
-                r('dat$abund_16S <- signif(dat$abund_16S, 3)')
+                r('dat$abund_16S <- round(dat$abund_16S, 0)')
                 r('dat$rich <- signif(dat$rich, 3)')
                 r('dat$diversity <- signif(dat$diversity, 3)')
                 r('dat$coverage <- signif(dat$coverage, 3)')
@@ -508,9 +517,6 @@ def loopCat(request):
                     r('if(maxActC==0) maxActC=1')
                     r('maxResp <- max(odat$microbial_respiration)')
                     r('if(maxResp==0) maxResp=1')
-                    # soil_ACE_protein
-                    # soil_active_c
-                    # microbial_respiration
 
                     # chem
                     r('maxPH <- 14')
@@ -703,7 +709,6 @@ def loopCat(request):
                     r('bar <- barplot(vals, space=0, horiz=T, cex.names=0.8, \
                         names.arg=c("Respiration", "Active Carbon", "ACE Soil Protein Index", "Coverage", "Diversity", "Richness", "Abundance"),\
                         xpd=T, xlim=c(0,1), las=2, axes=T, col=seq(1:10), beside=T, yaxs="i", xaxs="i")')
-                    #r('axis(1, pos=0, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('grid(col="black", lwd=1)')
                     r('values <- c(dat[off, c("microbial_respiration", "soil_active_c", "soil_ACE_protein", "coverage", "diversity", "rich", "abund_16S")])')
                     r('text(x=1, y=bar, labels=values, pos=4, cex=0.8, xpd=TRUE)')
@@ -715,7 +720,6 @@ def loopCat(request):
                     r('bar <- barplot(vals, space=0, horiz=T, cex.names=0.8, \
                         names.arg=c("Nitrogen", "Potassium", "Phosphorus", "pH", "Carbon", "Organic Matter"),\
                         xpd=T, xlim=c(0,1), las=2, axes=T, col=seq(1:10), beside=T, yaxs="i", xaxs="i")')
-                    #r('axis(1, pos=0, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('grid(col="black", lwd=1)')
                     r('values <- dat[off, c("soil_N", "soil_K", "soil_P", "soil_pH", "soil_C", "soil_OM")]')
                     r('text(x=1, y=bar, labels=signif(values,3), pos=4, cex=0.8, xpd=TRUE)')
@@ -727,7 +731,6 @@ def loopCat(request):
                     r('bar <- barplot(vals, space=0, horiz=T, cex.names=0.8, \
                         names.arg=c("Aggregate Stability", "Available Water Capacity", "Microbial Biomass N", "Microbial Biomass C", "Electric Conductivity", "Subsurface Hardness", "Surface Hardness", "Water Content", "Bulk Density", "Porosity"),\
                         xpd=T, xlim=c(0,1), las=2, axes=T, col=seq(1:10), beside=T, yaxs="i", xaxs="i")')
-                    #r('axis(1, pos=0, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
                     r('grid(col="black", lwd=1)')
                     r('values <- dat[off, c("soil_agg_stability", "soil_water_cap", "microbial_biomass_N", "microbial_biomass_C", "soil_EC", "soil_subsurf_hard", "soil_surf_hard", "water_content_soil", "bulk_density", "porosity")]')
                     r('text(x=1, y=bar, labels=values, pos=4, cex=0.8, xpd=TRUE)')

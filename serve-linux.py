@@ -93,7 +93,7 @@ if __name__ == '__main__':
     args[0] = 'True'
 
     for i in xrange(3):
-        thread = Thread(target=process, args=(args,))
+        thread = Thread(target=process, args=(args, i, ))
         thread.start()
     Server().run()
 

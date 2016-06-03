@@ -18,6 +18,7 @@ from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, stoppableThread, wOdum
+import database.queue
 
 
 base = {}
@@ -26,7 +27,6 @@ time1 = {}
 time2 = {}
 TimeDiff = {}
 stop4 = False
-stops = {}
 thread4 = stoppableThread()
 res = ''
 LOG_FILENAME = 'error_log.txt'
@@ -44,9 +44,15 @@ def statusPCoA(request):
             TimeDiff[RID] = 0
         myDict = {}
         try:
-            stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            if TimeDiff[RID] == 0:
+                stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.stat(RID))+' others in front of you.'
+            else:
+                stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         except:
-            stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            if TimeDiff[RID] == 0:
+                stage[RID] = 'In queue'
+            else:
+                stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         myDict['stage'] = stage[RID]
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
@@ -62,7 +68,6 @@ def removeRIDPCoA(request):
             time1.pop(RID, None)
             time2.pop(RID, None)
             TimeDiff.pop(RID, None)
-            stops.pop(RID, None)
             return True
         else:
             return False
@@ -71,10 +76,9 @@ def removeRIDPCoA(request):
 
 
 def stopPCoA(request):
-    global thread4, stops, stop4, res
+    global thread4, stop4, res
     if request.is_ajax():
         RID = request.GET["all"]
-        stops[RID] = True
         stop4 = True
         thread4.terminate()
         thread4.join()
@@ -88,27 +92,24 @@ def stopPCoA(request):
         return HttpResponse(stop, content_type='application/json')
 
 
-def getPCoA(request):
+def getPCoA(request, stops, RID, PID):
     global res, thread4, stop4
     if request.is_ajax():
         stop4 = False
-        thread4 = stoppableThread(target=loopCat, args=(request,))
+        thread4 = stoppableThread(target=loopCat, args=(request, stops, RID, PID, ))
         thread4.start()
         thread4.join()
         removeRIDPCoA(request)
         return HttpResponse(res, content_type='application/json')
 
 
-def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stops, stop4
+def loopCat(request, stops, RID, PID):
+    global res, base, stage, time1, TimeDiff, stop4
     try:
         while True:
             if request.is_ajax():
                 allJson = request.GET["all"]
                 all = simplejson.loads(allJson)
-
-                RID = str(all["RID"])
-                stops[RID] = False
 
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 8: Selecting your chosen meta-variables...'
@@ -127,7 +128,6 @@ def loopCat(request):
                 alpha = float(all["alpha"])
                 perms = int(all["perms"])
 
-                result = ''
                 result = ''
                 button3 = int(all['button3'])
                 if button3 == 1:
@@ -276,7 +276,7 @@ def loopCat(request):
                 base[RID] = 'Step 1 of 8: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -287,15 +287,15 @@ def loopCat(request):
                 finalDF = pd.DataFrame()
                 if button3 == 1:
                     DepVar = int(all["DepVar_taxa"])
-                    finalDF = getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID)
+                    finalDF = getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
-                    finalDF = getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID)
+                    finalDF = getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
-                    finalDF = getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID)
+                    finalDF = getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'media/temp/pcoa/'
@@ -337,7 +337,7 @@ def loopCat(request):
                 base[RID] = 'Step 2 of 8: Selecting your chosen taxa...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -395,7 +395,7 @@ def loopCat(request):
                 base[RID] = 'Step 3 of 8: Calculating distance matrix...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -495,7 +495,7 @@ def loopCat(request):
                     base[RID] = 'Step 4 of 8: Principal coordinates analysis...done!'
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[RID]:
+                    if stops[PID]:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -514,7 +514,7 @@ def loopCat(request):
                                 r("eval(parse(text=cmd))")
 
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                                if stops[RID]:
+                                if stops[PID]:
                                     res = ''
                                     return None
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -543,7 +543,7 @@ def loopCat(request):
                                 r("eval(parse(text=cmd))")
 
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                                if stops[RID]:
+                                if stops[PID]:
                                     res = ''
                                     return None
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -564,7 +564,7 @@ def loopCat(request):
                                 base[RID] = 'Step 5 of 8: Performing BetaDisper...done!'
 
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                                if stops[RID]:
+                                if stops[PID]:
                                     res = ''
                                     return None
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -576,7 +576,7 @@ def loopCat(request):
                     res = simplejson.dumps(myDict)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -652,7 +652,7 @@ def loopCat(request):
                         colors_idx += 1
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[RID]:
+                        if stops[PID]:
                             res = ''
                             return None
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -703,7 +703,7 @@ def loopCat(request):
                 base[RID] = 'Step 6 of 8: Formatting graph data for display...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -717,7 +717,7 @@ def loopCat(request):
                 base[RID] = 'Step 7 of 8: Formatting PCoA table...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -733,7 +733,7 @@ def loopCat(request):
                 base[RID] = 'Step 8 of 8: Formatting distance score table...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -753,8 +753,8 @@ def loopCat(request):
         return None
 
 
-def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID):
-    global base, stops, stop4, res
+def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
+    global base, stop4, res
     try:
         base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
         taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'rel_abund', 'abund_16S', 'rich', 'diversity'])
@@ -785,7 +785,7 @@ def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID):
             taxaDF.loc[:, 'rank'] = 'Species'
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[RID]:
+        if stops[PID]:
             res = ''
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -817,8 +817,8 @@ def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID):
         return None
 
 
-def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
-    global base, stops, stop4, res
+def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
+    global base, stop4, res
     try:
         base[RID] = 'Step 2 of 8: Selecting your chosen taxa or KEGG level...'
         koDict = {}
@@ -830,7 +830,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -843,7 +843,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -856,12 +856,12 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        if stops[RID]:
+        if stops[PID]:
             res = ''
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -884,17 +884,17 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
             numcore = mp.cpu_count()
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], koDict, RID, x)) for x in xrange(numcore)]
+            processes = [mp.Process(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -903,7 +903,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
             p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -919,7 +919,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -943,7 +943,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
                 taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -987,7 +987,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
                 finalDF.loc[index, 'rank_name'] = ko_entry.objects.using('picrust').get(ko_lvl4_id=row['rank_id']).ko_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1005,8 +1005,8 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID):
         return None
 
 
-def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
-    global base, stops, stop4, res
+def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
+    global base, stop4, res
     try:
         nzDict = {}
         if nzAll == 1:
@@ -1017,7 +1017,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1030,7 +1030,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1043,7 +1043,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1056,7 +1056,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1211,17 +1211,17 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
             numcore = mp.cpu_count()
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x)) for x in xrange(numcore)]
+            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1230,7 +1230,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
             p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1246,7 +1246,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1269,7 +1269,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
                 taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1316,7 +1316,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
                 finalDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1334,8 +1334,8 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID):
         return None
 
 
-def sumStuff(slice, koDict, RID, num):
-    global base, stops, res
+def sumStuff(slice, koDict, RID, num, stops, PID):
+    global base, res
     db.close_old_connections()
 
     f = open('media/temp/pcoa/'+str(RID)+'/file'+str(num)+".temp", 'w')
@@ -1363,7 +1363,7 @@ def sumStuff(slice, koDict, RID, num):
         f.write('\n')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[RID]:
+        if stops[PID]:
             res = ''
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

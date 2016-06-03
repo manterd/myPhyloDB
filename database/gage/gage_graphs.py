@@ -17,6 +17,7 @@ from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, stoppableThread
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+import database.queue
 
 
 base = {}
@@ -25,7 +26,6 @@ time1 = {}
 time2 = {}
 TimeDiff = {}
 stop8 = False
-stops = {}
 thread8 = stoppableThread()
 res = ''
 LOG_FILENAME = 'error_log.txt'
@@ -43,9 +43,15 @@ def updateGAGE(request):
             TimeDiff[RID] = 0
         myDict = {}
         try:
-            stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            if TimeDiff[RID] == 0:
+                stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.stat(RID))+' others in front of you.'
+            else:
+                stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         except:
-            stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            if TimeDiff[RID] == 0:
+                stage[RID] = 'In queue'
+            else:
+                stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         myDict['stage'] = stage[RID]
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
@@ -73,7 +79,6 @@ def stopGAGE(request):
     global thread8, stops, stop8, res
     if request.is_ajax():
         RID = request.GET["all"]
-        stops[RID] = True
         stop8 = True
         thread8.terminate()
         thread8.join()
@@ -87,28 +92,25 @@ def stopGAGE(request):
         return HttpResponse(stop, content_type='application/json')
 
 
-def getGAGE(request):
+def getGAGE(request, stops, RID, PID):
     global res, thread8, stop8
     if request.is_ajax():
         stop8 = False
-        thread8 = stoppableThread(target=loopCat, args=(request,))
+        thread8 = stoppableThread(target=loopCat, args=(request, stops, RID, PID,))
         thread8.start()
         thread8.join()
         removeRIDGAGE(request)
         return HttpResponse(res, content_type='application/json')
 
 
-def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stops, stop8
+def loopCat(request, stops, RID, PID):
+    global res, base, stage, time1, TimeDiff, stop8
     try:
         while True:
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.GET["all"]
                 all = simplejson.loads(allJson)
-
-                RID = str(all["RID"])
-                stops[RID] = False
 
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
@@ -166,7 +168,7 @@ def loopCat(request):
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -203,13 +205,13 @@ def loopCat(request):
                     r("selPaths <- append(selPaths, names(selPath))")
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[RID]:
+                    if stops[PID]:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
 
-                finalDF = getKeggDF(savedDF, tempDF, DepVar, RID)
+                finalDF = getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID)
 
                 base[RID] = 'Step 3 of 4: Performing GAGE analysis...'
 
@@ -243,7 +245,7 @@ def loopCat(request):
                 meta_rDF = temp_rDF.copy()
                 if len(catFields_edit) > 1:
                     for index, row in temp_rDF.iterrows():
-                       meta_rDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                        meta_rDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
                 else:
                     meta_rDF.loc[:, 'merge'] = temp_rDF.loc[:, catFields_edit[0]]
 
@@ -252,7 +254,7 @@ def loopCat(request):
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -362,13 +364,13 @@ def loopCat(request):
                         base[RID] = 'Step 3 of 4: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(trt2) + ' is done!'
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[RID]:
+                        if stops[PID]:
                             res = ''
                             return None
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[RID]:
+                    if stops[PID]:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -386,7 +388,7 @@ def loopCat(request):
                     merger.append(PdfFileReader(os.path.join(path, filename), 'rb'))
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[RID]:
+                    if stops[PID]:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -419,8 +421,8 @@ def loopCat(request):
         return None
 
 
-def getKeggDF(savedDF, tempDF, DepVar, RID):
-    global base, stops, stop8, res
+def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
+    global base, stop8, res
     try:
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
@@ -444,7 +446,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID):
                     finalKeys.append(x)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID]:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -453,7 +455,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID):
             base[RID] = 'Step 2 of 4: Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is done!'
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -471,7 +473,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID):
                 taxaDF[key] = taxaDF['abund_16S'] * taxaDF[key]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID]:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

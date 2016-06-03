@@ -345,7 +345,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopDiffAbund/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -490,10 +490,11 @@
                 myDict['button3'] = button3;
                 myDict['RID'] = RID;
                 myDict['FdrVal'] = document.getElementById("FdrVal").value;
+                myDict['funcName'] = "getDiffAbund";
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
-                    url: '/getDiffAbund/',
+                    url: '/funcCall/',
                     type: 'GET',
                     dataType: 'json',
                     data: {
