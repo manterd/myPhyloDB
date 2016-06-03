@@ -1,6 +1,12 @@
 import Queue
 from time import sleep
 from anova import anova_graphs
+from pcoa import pcoa_graphs
+from pca import pca_graphs
+from diffabund import diffabund_graphs
+from gage import gage_graphs
+from spls import spls_graphs
+from wgcna import wgcna_graphs
 import simplejson
 from django.http import HttpResponse
 
@@ -8,37 +14,38 @@ from django.http import HttpResponse
 myQueue = Queue.Queue()  # so many vowels!
 recent = {}
 stopDict = {}
-stopList = [False]
+stopList = []
 activeList = []
 statDict = {}
+stopped = 0
 
 
 def funcCall(request):
+    global stopDict
     allJson = request.GET["all"]
     data = simplejson.loads(allJson)
     RID = data['RID']
     funcName = data['funcName']
     stopDict[RID] = False
-    # print "RID: ", RID
-    # print "funcName: ", funcName
-    # print "request: ", request
     queueDict = {'RID': RID, 'funcName': funcName, 'request': request}
     myQueue.put(queueDict, True)
-    statDict[RID] = myQueue.qsize()
+    statDict[RID] = myQueue.qsize() - stopped
     while True:
-        if stopDict[RID]:
-            myDict = {}
-            myDict['error'] = 'none'
-            myDict['message'] = 'Your analysis has been stopped!'
-            stop = simplejson.dumps(myDict)
-            return HttpResponse(stop, content_type='application/json')
         try:
             results = recent[RID]
             recent.pop(RID, 0)
+            stopDict.pop(RID, 0)
+            statDict.pop(RID, 0)
             return results
-        except Exception as e:
-            pass
+        except KeyError:
+            if RID not in activeList and stopDict[RID]:
+                stopDict.pop(RID, 0)
+                myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
+                stop = simplejson.dumps(myDict)
+                statDict.pop(RID, 0)
+                return HttpResponse(stop, content_type='application/json')
         sleep(1)
+        #print "I'm tired, RID: "+str(RID)+", funcName: "+str(funcName)
 
 
 def stat(RID):
@@ -46,21 +53,21 @@ def stat(RID):
 
 
 def stop(request):
+    global stopped
     # find index of RID in activeList, set stopList at same index to True
     RID = str(request.GET["all"])
-    # print "RID: ", RID
     try:
         if RID in activeList:
             stopList[activeList.index(RID)] = True
+        stopDict[RID] = True
     except:
-        pass
+        stopped += 1
 
-    stopDict[RID] = True
-    # print "stop! ", stopDict
     myDict = {}
     myDict['error'] = 'none'
     myDict['message'] = 'Your analysis has been stopped!'
     stop = simplejson.dumps(myDict)
+
     return HttpResponse(stop, content_type='application/json')
 
 
@@ -69,43 +76,42 @@ def decQueue():
         statDict[key] -= 1
 
 
-def process(stop):
+def process(stop, PID):
+    global stopped
+    stopList.append(False)
+    activeList.append(0)
     while stop[0] == 'True':
         try:
             curDict = myQueue.get(False)
-            # print "Found something to run"
             decQueue()
-            # get main values
             myRID = curDict['RID']
             myFunc = curDict['funcName']
             myRequest = curDict['request']
 
-            PID = 0  # which active process is about to be started?
-
-            # check RID stops for skip
-            # print "? ", stopDict[myRID]
-            if stopDict[myRID]:
-                stopDict.pop(myRID, 0)
-            else:
-                # run func
-                # print "Not skipping"
-                activeList.append(myRID)
+            if not stopDict[myRID]:
+                activeList[PID] = myRID
+                # standard args are: data, stop, request ID, process ID
                 if myFunc == "getCatUnivData":
-                    # run cat anova
-                    # print "Starting Anova Cat"
                     recent[curDict['RID']] = anova_graphs.getCatUnivData(myRequest, stopList, myRID, PID)
-                    # print "Finished AC"
-                    stopList[0] = False
-                    # standard args are: data, stop, request ID, process ID
                 if myFunc == "getQuantUnivData":
-                    # print "Starting Anova Quant"
                     recent[curDict['RID']] = anova_graphs.getQuantUnivData(myRequest, stopList, myRID, PID)
-                    # print "Finished AQ"
-                    stopList[0] = False
-                activeList.remove(myRID)
-            # print "Finished a loop"
+                if myFunc == "getPCoA":
+                    recent[curDict['RID']] = pcoa_graphs.getPCoA(myRequest, stopList, myRID, PID)
+                if myFunc == "getPCA":
+                    recent[curDict['RID']] = pca_graphs.getPCA(myRequest, stopList, myRID, PID)
+                if myFunc == "getDiffAbund":
+                    recent[curDict['RID']] = diffabund_graphs.getDiffAbund(myRequest, stopList, myRID, PID)
+                if myFunc == "getGAGE":
+                    recent[curDict['RID']] = gage_graphs.getGAGE(myRequest, stopList, myRID, PID)
+                if myFunc == "getSPLS":
+                    recent[curDict['RID']] = spls_graphs.getSPLS(myRequest, stopList, myRID, PID)
+                if myFunc == "getWGCNA":
+                    recent[curDict['RID']] = wgcna_graphs.getWGCNA(myRequest, stopList, myRID, PID)
+                stopList[PID] = False
+                activeList[PID] = 0
+            else:
+                stopped -= 1
         except:
             sleep(1)
     return
-# I changed a thing
 

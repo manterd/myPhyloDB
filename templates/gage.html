@@ -238,7 +238,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopGAGE/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -383,10 +383,11 @@
                 myDict['DepVar'] = DepVar;
                 myDict['kegg'] = kegg;
                 myDict['RID'] = RID;
+                myDict['funcName'] = "getGAGE";
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
-                    url: '/getGAGE/',
+                    url: '/funcCall/',
                     type: 'GET',
                     dataType: 'json',
                     data: {

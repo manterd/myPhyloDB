@@ -269,7 +269,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopSPLS/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -420,11 +420,12 @@
             myDict['methodVal'] = document.getElementById("methodVal").value;
             myDict['metricVal'] = document.getElementById("metricVal").value;
             myDict['RID'] = RID;
+            myDict['funcName'] = "getSPLS";
 
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getSPLS/',
+                url: '/funcName/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

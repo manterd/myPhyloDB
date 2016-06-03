@@ -368,7 +368,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopWGCNA/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -572,10 +572,11 @@
             myDict['maxNGenes'] = maxNGenes;
             myDict['graphLayout'] = graphLayout;
             myDict['RID'] = RID;
+            myDict['funcName'] = "gewWGCNA";
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getWGCNA/',
+                url: '/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

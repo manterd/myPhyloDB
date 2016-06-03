@@ -530,7 +530,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopPCoA/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -754,10 +754,11 @@
             myDict['colorVal'] = document.getElementById("colorVal").value;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
             myDict['surfVal'] = document.getElementById("surfVal").value;
+            myDict['funcName'] = "getPCoA";
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getPCoA/',
+                url: '/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

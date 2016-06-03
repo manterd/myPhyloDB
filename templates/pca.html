@@ -369,7 +369,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopPCA/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -502,6 +502,7 @@
             myDict['colorVal'] = document.getElementById("colorVal").value;
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['vecScale'] = vecScale;
+            myDict['funcName'] = "getPCA";
 
             myDict['contribVal'] = document.getElementById("contribVal").value;
             if ($("#contrib").is(':checked')) {
@@ -520,7 +521,7 @@
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getPCA/',
+                url: '/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

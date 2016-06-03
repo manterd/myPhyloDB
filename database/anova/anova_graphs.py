@@ -1570,7 +1570,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = mp.cpu_count()
+            numcore = int(round(mp.cpu_count()/3, 0))
             listDF = np.array_split(picrustDF, numcore)
             processes = [mp.Process(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
