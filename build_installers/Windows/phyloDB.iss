@@ -31,6 +31,8 @@ Source: "..\..\dist\myPhyloDB\mothur\reference\zip\*"; DestDir: "{app}\mothur\re
 Source: "..\..\dist\myPhyloDB\pytz\*"; DestDir: "{app}\pytz"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Main
+Source: "..\..\dist\myPhyloDB\database\migrations\*"; DestDir: "{app}\database\migrations"; Flags: recursesubdirs; Components: Main
+Source: "..\..\dist\myPhyloDB\registration\migrations\*"; DestDir: "{app}\registration\migrations"; Flags: recursesubdirs; Components: Main
 
 
 [Icons]

@@ -3,14 +3,18 @@ from cherrypy.process import plugins
 import multiprocessing as mp
 import os.path
 import signal
+import sys
 import webbrowser
-from database.queue import process
 from threading import Thread
 
 from myPhyloDB.wsgi import application
+
+from database.queue import process
+
 cherrypy.tree.graft(application)
 
 args = ['Nope']
+
 
 class Server(object):
     def __init__(self):
@@ -88,9 +92,14 @@ def signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 if __name__ == '__main__':
+    from django.core.management import execute_from_command_line
+    execute_from_command_line(sys.argv)
+
     mp.freeze_support()
     args[0] = 'True'
-    thread = Thread(target=process, args=(args,))
-    thread.start()
+
+    for i in xrange(3):
+        thread = Thread(target=process, args=(args,))
+        thread.start()
     Server().run()
-    thread.join()
+

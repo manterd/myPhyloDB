@@ -3,6 +3,7 @@ from cherrypy.process import plugins
 import multiprocessing as mp
 import os.path
 import signal
+import sys
 import webbrowser
 from threading import Thread
 
@@ -85,6 +86,9 @@ def signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 if __name__ == '__main__':
+    from django.core.management import execute_from_command_line
+    execute_from_command_line(sys.argv)
+
     mp.freeze_support()
     args[0] = 'True'
 

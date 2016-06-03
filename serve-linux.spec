@@ -83,7 +83,6 @@ def Datafiles(*filenames, **kw):
 
 db1 = Datafiles('db.Microbe')
 db2 = Datafiles('db.PICRUSt')
-manage = Datafiles('manage.py')
 
 def extra_datas(mydir):
     def rec_glob(p, files):
@@ -103,6 +102,7 @@ def extra_datas(mydir):
 
 a.datas += extra_datas('config')
 a.datas += extra_datas('database/migrations')
+a.datas += extra_datas('registration/migrations')
 a.datas += extra_datas('instructions/current')
 a.datas += extra_datas('media')
 a.datas += extra_datas('mothur/mothur-linux')
@@ -129,7 +129,6 @@ coll = COLLECT(exe,
                a.datas,
                db1,
                db2,
-               manage,
                strip=None,
                upx=True,
                name='myPhyloDB'
