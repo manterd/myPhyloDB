@@ -1,9 +1,10 @@
 import Queue
 from time import sleep
 from anova import anova_graphs
+from diffabund import diffabund_graphs
+from norm import norm_graphs
 from pcoa import pcoa_graphs
 from pca import pca_graphs
-from diffabund import diffabund_graphs
 from gage import gage_graphs
 from spls import spls_graphs
 from wgcna import wgcna_graphs
@@ -91,6 +92,8 @@ def process(stop, PID):
             if not stopDict[myRID]:
                 activeList[PID] = myRID
                 # standard args are: data, stop, request ID, process ID
+                if myFunc == "getNorm":
+                    recent[curDict['RID']] = norm_graphs.getNorm(myRequest, stopList, myRID, PID)
                 if myFunc == "getCatUnivData":
                     recent[curDict['RID']] = anova_graphs.getCatUnivData(myRequest, stopList, myRID, PID)
                 if myFunc == "getQuantUnivData":

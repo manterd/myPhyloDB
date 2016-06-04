@@ -83,23 +83,6 @@ def removeRIDWGCNA(request):
         return False
 
 
-def stopWGCNA(request):
-    global thread4, stop6, res
-    if request.is_ajax():
-        RID = request.GET["all"]
-        stop6 = True
-        thread4.terminate()
-        thread4.join()
-        removeRIDWGCNA(request)
-
-        res = ''
-        myDict = {}
-        myDict['error'] = 'none'
-        myDict['message'] = 'Your analysis has been stopped!'
-        stop = simplejson.dumps(myDict)
-        return HttpResponse(stop, content_type='application/json')
-
-
 def getWGCNA(request, stops, RID, PID):
     global res, thread4, stop6
     if request.is_ajax():

@@ -60,7 +60,7 @@ urlpatterns = [
 
     url(r'^getNorm/$', norm_graphs.getNorm, name='getNorm'),
     url(r'^statusNorm/$', norm_graphs.statusNorm, name='statusNorm'),
-    url(r'^stopNorm/$', norm_graphs.stopNorm, name='stopNorm'),
+    #url(r'^stopNorm/$', norm_graphs.stopNorm, name='stopNorm'),
     url(r'^getTab/$', norm_graphs.getTab, name='getTab'),
     url(r'^getBiom/$', norm_graphs.getBiom, name='getBiome'),
 
@@ -68,7 +68,7 @@ urlpatterns = [
     url(r'^getQuantUnivData/$', anova_graphs.getQuantUnivData, name='getQuantUnivData'),
     url(r'^statusANOVA/$', anova_graphs.statusANOVA, name='statusANOVA'),
     url(r'^removeRIDANOVA/$', anova_graphs.removeRIDANOVA, name='removeRIDANOVA'),
-    url(r'^stopANOVA/$', anova_graphs.stopANOVA, name='stopANOVA'),
+    #url(r'^stopANOVA/$', anova_graphs.stopANOVA, name='stopANOVA'),
     url(r'^getTabANOVA/$', anova_graphs.getTabANOVA, name='getTabANOVA'),
     url(r'^removeANOVAFiles/$', anova_graphs.removeANOVAFiles, name='removeANOVAFiles'),
 
@@ -90,41 +90,35 @@ urlpatterns = [
     url(r'^statusPCoA/$', pcoa_graphs.statusPCoA, name='statusPCoA'),
     url(r'^removeRIDPCoA/$', pcoa_graphs.removeRIDPCoA, name='removeRIDPCoA'),
     url(r'^removePCoAFiles/$', pcoa_graphs.removePCoAFiles, name='removePCoAFiles'),
-    url(r'^stopPCoA/$', pcoa_graphs.stopPCoA, name='stopPCoA'),
     url(r'^getTabPCoA/$', pcoa_graphs.getTabPCoA, name='getTabPCoA'),
 
     url(r'^getWGCNA/$', wgcna_graphs.getWGCNA, name='getWGCNA'),
     url(r'^statusWGCNA/$', wgcna_graphs.statusWGCNA, name='statusWGCNA'),
     url(r'^removeRIDWGCNA/$', wgcna_graphs.removeRIDWGCNA, name='removeRIDWGCNA'),
     url(r'^removeWGCNAFiles/$', wgcna_graphs.removeWGCNAFiles, name='removeWGCNAFiles'),
-    url(r'^stopWGCNA/$', wgcna_graphs.stopWGCNA, name='stopWGCNA'),
     url(r'^getTabWGCNA/$', wgcna_graphs.getTabWGCNA, name='getTabWGCNA'),
 
     url(r'^getPCA/$', pca_graphs.getPCA, name='getPCA'),
     url(r'^statusPCA/$', pca_graphs.statusPCA, name='statusPCA'),
     url(r'^removeRIDPCA/$', pca_graphs.removeRIDPCA, name='removeRIDPCA'),
     url(r'^removePCAFiles/$', pca_graphs.removePCAFiles, name='removePCAFiles'),
-    url(r'^stopPCA/$', pca_graphs.stopPCA, name='stopPCA'),
     url(r'^getTabPCA/$', pca_graphs.getTabPCA, name='getTabPCA'),
 
     url(r'^getSPLS/$', spls_graphs.getSPLS, name='getSPLS'),
     url(r'^statusSPLS/$', spls_graphs.statusSPLS, name='statusSPLS'),
     url(r'^removeRIDSPLS/$', spls_graphs.removeRIDSPLS, name='removeRIDSPLS'),
     url(r'^removeSPLSFiles/$', spls_graphs.removeSPLSFiles, name='removeSPLSFiles'),
-    url(r'^stopSPLS/$', spls_graphs.stopSPLS, name='stopSPLS'),
     url(r'^getTabSPLS/$', spls_graphs.getTabSPLS, name='getTabSPLS'),
 
     url(r'^updateDiffAbund/$', diffabund_graphs.updateDiffAbund, name='updateDiffAbund'),
     url(r'^getDiffAbund/$', diffabund_graphs.getDiffAbund, name='getDiffAbund'),
     url(r'^removeRIDDIFF/$', diffabund_graphs.removeRIDDIFF, name='removeRIDDIFF'),
-    url(r'^stopDiffAbund/$', diffabund_graphs.stopDiffAbund, name='stopDiffAbund'),
     url(r'^getTabDiffAbund/$', diffabund_graphs.getTabDiffAbund, name='getTabDiffAbund'),
     url(r'^removeDiffAbundFiles/$', diffabund_graphs.removeDiffAbundFiles, name='removeDiffAbundFiles'),
 
     url(r'^updateGAGE/$', gage_graphs.updateGAGE, name='updateGAGE'),
     url(r'^getGAGE/$', gage_graphs.getGAGE, name='getGAGE'),
     url(r'^removeRIDGAGE/$', gage_graphs.removeRIDGAGE, name='removeRIDGAGE'),
-    url(r'^stopGAGE/$', gage_graphs.stopGAGE, name='stopGAGE'),
     url(r'^getTabGAGE/$', gage_graphs.getTabGAGE, name='getTabGAGE'),
     url(r'^removeGAGEFiles/$', gage_graphs.removeGAGEFiles, name='removeGAGEFiles'),
 

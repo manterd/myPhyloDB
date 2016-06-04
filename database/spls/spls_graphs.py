@@ -78,23 +78,6 @@ def removeRIDSPLS(request):
         return False
 
 
-def stopSPLS(request):
-    global thread5, stop5, res
-    if request.is_ajax():
-        RID = request.GET["all"]
-        stop5 = True
-        thread5.terminate()
-        thread5.join()
-        removeRIDSPLS(request)
-
-        res = ''
-        myDict = {}
-        myDict['error'] = 'none'
-        myDict['message'] = 'Your analysis has been stopped!'
-        stop = simplejson.dumps(myDict)
-        return HttpResponse(stop, content_type='application/json')
-
-
 def getSPLS(request, stops, RID, PID):
     global res, thread5, stop5
     if request.is_ajax():

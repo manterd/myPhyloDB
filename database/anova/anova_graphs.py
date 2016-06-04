@@ -76,10 +76,6 @@ def removeRIDANOVA(request):
         return False
 
 
-def stopANOVA(request):
-    return
-
-
 def getCatUnivData(request, stops, RID, PID):
     global res, thread1
     if request.is_ajax():
@@ -1948,23 +1944,21 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x)) for x in xrange(numcore)]
+            processes = [stoppableThread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
             numcore = mp.cpu_count()
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x)) for x in xrange(numcore)]
+            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
 
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
-                return None
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
         for p in processes:
-            p.join()
+            if stops[PID]:
+                p.terminate()
+                p.join()
+            else:
+                p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID]:
@@ -2073,7 +2067,6 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
 
 def sumStuff(slice, koDict, RID, num, stops, PID):
-    global base, res
     db.close_old_connections()
 
     f = open('media/temp/anova/'+str(RID)+'/file'+str(num)+".temp", 'w')
@@ -2102,7 +2095,6 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID]:
-            res = ''
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
