@@ -22,8 +22,8 @@ LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def getNorm(request):
-    thread = methNorm(request)
+def getNorm(request, stops, RID, PID):
+    thread = methNorm(request, stops, RID, PID)
     thread.start()
     thread.join()
     return HttpResponse(thread.res, content_type='application/json')
@@ -52,39 +52,14 @@ def statusNorm(request):
         return HttpResponse(json_data, content_type='application/json')
 
 
-def stopNorm(request):
-    if request.is_ajax():
-        RID = str(request.GET["all"])
-        threads = threading.enumerate()
-
-        for t in threads:
-            if not isinstance(t, methNorm):
-                continue
-            else:
-                if not t.RID == RID:
-                    continue
-                else:
-                    t.stop = True
-                    print t.stop
-                    print t.RID
-                    t.terminate()
-                    print 'myPhyloDB is trying to terminate your thread...'
-                    t.join()
-                    print 'myPhyloDB has terminated your thread.'
-                    break
-        myDict = {}
-        myDict['error'] = 'none'
-        myDict['message'] = 'Your analysis has been stopped!'
-        stop = simplejson.dumps(myDict)
-        return HttpResponse(stop, content_type='application/json')
-
-
 class methNorm(stoppableThread):
-    def __init__(self, request):
+    def __init__(self, request, stops, RID, PID):
         self.request = request
         self.allJson = request.GET["all"]
         self.all = simplejson.loads(self.allJson)
-        self.RID = str(self.all['RID'])
+        self.stops = stops
+        self.RID = RID
+        self.PID = PID
         self.res = ''
         self.stop = False
         self.startTime = time.time()
@@ -181,7 +156,7 @@ class methNorm(stoppableThread):
                 self.res = simplejson.dumps(myDict)
                 return
 
-            metaDF = UnivMetaDF(newList)
+            metaDF = self.UnivMetaDF(newList)
 
             # remove emptycols
             metaDF.replace('nan', np.nan, inplace=True)
@@ -208,9 +183,15 @@ class methNorm(stoppableThread):
 
             self.step = 'Step 1 of 4: Querying database...done!'
 
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
             self.step = 'Step 2 of 4: Normalizing data...'
 
-            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, Proc, self.RID)
+            normDF, DESeq_error = self.normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, Proc, self.RID)
 
             normDF['rel_abund'] = normDF['rel_abund'].astype(float)
             normDF['abund'] = normDF['abund'].round(0).astype(int)
@@ -224,6 +205,12 @@ class methNorm(stoppableThread):
                     if group['abund'].sum() > cutoff:
                         goodIDs.append(name)
                 normDF = normDF.loc[normDF['speciesid'].isin(goodIDs)]
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             finalDict = {}
             if NormMeth == 1:
@@ -289,6 +276,13 @@ class methNorm(stoppableThread):
             finalDF.to_pickle(path)
 
             self.step = 'Step 2 of 4: Normalizing data...done!'
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
             self.step = 'Step 3 of 4: Formatting biome data...'
 
             biome = {}
@@ -313,6 +307,12 @@ class methNorm(stoppableThread):
                 metaDict['taxonomy'] = row[0]
                 taxaList.append({"id": index, "metadata": metaDict})
 
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stops[self.PID]:
+                    self.res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
             biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
             biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
             biome['type'] = 'OTU table'
@@ -334,6 +334,13 @@ class methNorm(stoppableThread):
                 simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
             self.step = 'Step 3 of 4: Formatting biome data...done!'
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
             self.step = 'Step 4 of 4: Formatting result table...'
 
             if tabular_on == 1:
@@ -344,6 +351,13 @@ class methNorm(stoppableThread):
                     colDict = {}
                     colDict['title'] = item
                     colList.append(colDict)
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if self.stops[self.PID]:
+                        self.res = ''
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                 finalDict['data'] = data
                 finalDict['columns'] = colList
 
@@ -352,7 +366,7 @@ class methNorm(stoppableThread):
             return
 
         except:
-            if not self.stop:
+            if not self.stops[self.PID]:
                 logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                 myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                 logging.exception(myDate)
@@ -360,268 +374,321 @@ class methNorm(stoppableThread):
                 myDict['error'] = "Error with Normalization!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
                 self.res = simplejson.dumps(myDict)
 
+    def UnivMetaDF(self, sampleList):
+        tableNames = ['project', 'reference', 'sample', 'air', 'human_associated', 'microbial', 'soil', 'water', 'userdefined', 'profile']
+        idList = ['projectid', 'refid', u'id']
 
-def UnivMetaDF(sampleList):
-    tableNames = ['project', 'reference', 'sample', 'air', 'human_associated', 'microbial', 'soil', 'water', 'userdefined', 'profile']
-    idList = ['projectid', 'refid', u'id']
+        your_fields = Sample._meta.local_fields
+        sampleTableList = [f.name for f in your_fields]
+        for x in tableNames:
+            if x in sampleTableList:
+                sampleTableList.remove(x)
 
-    your_fields = Sample._meta.local_fields
-    sampleTableList = [f.name for f in your_fields]
-    for x in tableNames:
-        if x in sampleTableList:
-            sampleTableList.remove(x)
+        your_fields = Air._meta.local_fields
+        airTableList = [f.name for f in your_fields]
+        for x in tableNames:
+            if x in airTableList:
+                airTableList.remove(x)
+        for x in idList:
+            if x in airTableList:
+                airTableList.remove(x)
 
-    your_fields = Air._meta.local_fields
-    airTableList = [f.name for f in your_fields]
-    for x in tableNames:
-        if x in airTableList:
-            airTableList.remove(x)
-    for x in idList:
-        if x in airTableList:
-            airTableList.remove(x)
+        your_fields = Human_Associated._meta.local_fields
+        humanAssocTableList = [f.name for f in your_fields]
+        for x in tableNames:
+            if x in humanAssocTableList:
+                humanAssocTableList.remove(x)
+        for x in idList:
+            if x in humanAssocTableList:
+                humanAssocTableList.remove(x)
 
-    your_fields = Human_Associated._meta.local_fields
-    humanAssocTableList = [f.name for f in your_fields]
-    for x in tableNames:
-        if x in humanAssocTableList:
-            humanAssocTableList.remove(x)
-    for x in idList:
-        if x in humanAssocTableList:
-            humanAssocTableList.remove(x)
+        your_fields = Microbial._meta.local_fields
+        microbialTableList = [f.name for f in your_fields]
+        for x in tableNames:
+            if x in microbialTableList:
+                microbialTableList.remove(x)
+        for x in idList:
+            if x in microbialTableList:
+                microbialTableList.remove(x)
 
-    your_fields = Microbial._meta.local_fields
-    microbialTableList = [f.name for f in your_fields]
-    for x in tableNames:
-        if x in microbialTableList:
-            microbialTableList.remove(x)
-    for x in idList:
-        if x in microbialTableList:
-            microbialTableList.remove(x)
+        your_fields = Soil._meta.local_fields
+        soilTableList = [f.name for f in your_fields]
+        for x in tableNames:
+            if x in soilTableList:
+                soilTableList.remove(x)
+        for x in idList:
+            if x in soilTableList:
+                soilTableList.remove(x)
 
-    your_fields = Soil._meta.local_fields
-    soilTableList = [f.name for f in your_fields]
-    for x in tableNames:
-        if x in soilTableList:
-            soilTableList.remove(x)
-    for x in idList:
-        if x in soilTableList:
-            soilTableList.remove(x)
+        your_fields = Water._meta.local_fields
+        waterTableList = [f.name for f in your_fields]
+        for x in tableNames:
+            if x in waterTableList:
+                waterTableList.remove(x)
+        for x in idList:
+            if x in waterTableList:
+                waterTableList.remove(x)
 
-    your_fields = Water._meta.local_fields
-    waterTableList = [f.name for f in your_fields]
-    for x in tableNames:
-        if x in waterTableList:
-            waterTableList.remove(x)
-    for x in idList:
-        if x in waterTableList:
-            waterTableList.remove(x)
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-    your_fields = UserDefined._meta.local_fields
-    usrTableList = [f.name for f in your_fields]
-    for x in tableNames:
-        if x in usrTableList:
-            usrTableList.remove(x)
-    for x in idList:
-        if x in usrTableList:
-            usrTableList.remove(x)
+        your_fields = UserDefined._meta.local_fields
+        usrTableList = [f.name for f in your_fields]
+        for x in tableNames:
+            if x in usrTableList:
+                usrTableList.remove(x)
+        for x in idList:
+            if x in usrTableList:
+                usrTableList.remove(x)
 
-    metaDF = pd.DataFrame(list(Sample.objects.all().filter(sampleid__in=sampleList).values(*sampleTableList)))
-    metaDF.set_index('sampleid', drop=True, inplace=True)
+        metaDF = pd.DataFrame(list(Sample.objects.all().filter(sampleid__in=sampleList).values(*sampleTableList)))
+        metaDF.set_index('sampleid', drop=True, inplace=True)
 
-    tempDF = pd.DataFrame(list(Air.objects.all().filter(sampleid_id__in=sampleList).values(*airTableList)))
-    if not tempDF.empty:
-        tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        tempDF = pd.DataFrame(list(Air.objects.all().filter(sampleid_id__in=sampleList).values(*airTableList)))
+        if not tempDF.empty:
+            tempDF.set_index('sampleid', drop=True, inplace=True)
+            metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
 
-    tempDF = pd.DataFrame(list(Human_Associated.objects.all().filter(sampleid_id__in=sampleList).values(*humanAssocTableList)))
-    if not tempDF.empty:
-        tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        tempDF = pd.DataFrame(list(Human_Associated.objects.all().filter(sampleid_id__in=sampleList).values(*humanAssocTableList)))
+        if not tempDF.empty:
+            tempDF.set_index('sampleid', drop=True, inplace=True)
+            metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
 
-    tempDF = pd.DataFrame(list(Microbial.objects.all().filter(sampleid_id__in=sampleList).values(*microbialTableList)))
-    if not tempDF.empty:
-        tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        tempDF = pd.DataFrame(list(Microbial.objects.all().filter(sampleid_id__in=sampleList).values(*microbialTableList)))
+        if not tempDF.empty:
+            tempDF.set_index('sampleid', drop=True, inplace=True)
+            metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
 
-    tempDF = pd.DataFrame(list(Soil.objects.all().filter(sampleid_id__in=sampleList).values(*soilTableList)))
-    if not tempDF.empty:
-        tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        tempDF = pd.DataFrame(list(Soil.objects.all().filter(sampleid_id__in=sampleList).values(*soilTableList)))
+        if not tempDF.empty:
+            tempDF.set_index('sampleid', drop=True, inplace=True)
+            metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
 
-    tempDF = pd.DataFrame(list(Water.objects.all().filter(sampleid_id__in=sampleList).values(*waterTableList)))
-    if not tempDF.empty:
-        tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        tempDF = pd.DataFrame(list(Water.objects.all().filter(sampleid_id__in=sampleList).values(*waterTableList)))
+        if not tempDF.empty:
+            tempDF.set_index('sampleid', drop=True, inplace=True)
+            metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
 
-    tempDF = pd.DataFrame(list(UserDefined.objects.all().filter(sampleid_id__in=sampleList).values(*usrTableList)))
-    if not tempDF.empty:
-        tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        tempDF = pd.DataFrame(list(UserDefined.objects.all().filter(sampleid_id__in=sampleList).values(*usrTableList)))
+        if not tempDF.empty:
+            tempDF.set_index('sampleid', drop=True, inplace=True)
+            metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
 
-    return metaDF
+        return metaDF
 
+    def normalizeUniv(self, df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc, RID):
+        df2 = df.reset_index()
+        taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
-def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc, RID):
-    df2 = df.reset_index()
-    taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
+        countDF = pd.DataFrame()
+        DESeq_error = 'no'
+        if meth == 1 or meth == 4:
+            countDF = df2.reset_index(drop=True)
 
-    countDF = pd.DataFrame()
-    DESeq_error = 'no'
-    if meth == 1 or meth == 4:
-        countDF = df2.reset_index(drop=True)
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-    elif meth == 2 or meth == 3:
-        if reads >= 0:
+        elif meth == 2 or meth == 3:
+            if reads >= 0:
+                countDF = df2[taxaID].reset_index(drop=True)
+                manager = mp.Manager()
+                d = manager.dict()
+
+                if Proc < 1:
+                    Proc = 1
+
+                if os.name == 'nt':
+                    numcore = 1
+                    processes = [stoppableThread(target=self.weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d)) for x in range(numcore)]
+                else:
+                    numcore = min(mp.cpu_count(), Proc)
+                    processes = [mp.Process(target=self.weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d)) for x in range(numcore)]
+
+                for p in processes:
+                    p.start()
+
+                for p in processes:
+                    if self.stops[self.PID]:
+                        p.terminate()
+                        p.join()
+                    else:
+                        p.join()
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stops[self.PID]:
+                    self.res = ''
+                    return None
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                for key, value in d.items():
+                    countDF[key] = value/iters
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if self.stops[self.PID]:
+                        self.res = ''
+                        return None
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            elif reads < 0:
+                countDF = df2.reset_index(drop=True)
+
+        elif meth == 5:
             countDF = df2[taxaID].reset_index(drop=True)
-            manager = mp.Manager()
-            d = manager.dict()
-
-            if Proc < 1:
-                Proc = 1
-
             if os.name == 'nt':
-                numcore = 1
-                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID,)) for x in range(numcore)]
+                r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
             else:
-                numcore = min(mp.cpu_count(), Proc)
-                processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID,)) for x in range(numcore)]
+                r = R(RCMD="R/R-Linux/bin/R")
+            df3 = df2.drop(taxaID, axis=1)
 
-            for p in processes:
-                p.start()
+            r.assign("count", df3)
+            r.assign("metaDF", metaDF)
 
-            for p in processes:
-                p.join()
+            #R adds Xs to colnames that begin with a number, need to replace
+            r("rows <- rownames(metaDF)")
+            r("colnames(count) <- rows")
 
-            for key, value in d.items():
-                countDF[key] = value/iters
+            r("trt <- factor(metaDF$merge)")
 
-        elif reads < 0:
-            countDF = df2.reset_index(drop=True)
+            r("library(DESeq2)")
+            r("dds <- DESeqDataSetFromMatrix(countData = count, colData = metaDF, design = ~ sample_name)")
 
-    elif meth == 5:
-        countDF = df2[taxaID].reset_index(drop=True)
-        if os.name == 'nt':
-            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
-        else:
-            r = R(RCMD="R/R-Linux/bin/R")
-        df3 = df2.drop(taxaID, axis=1)
+            r("dds <- estimateSizeFactors(dds)")
+            pycds = r.get("sizeFactors(dds)")
+            colList = df3.columns.tolist()
 
-        r.assign("count", df3)
-        r.assign("metaDF", metaDF)
-
-        #R adds Xs to colnames that begin with a number, need to replace
-        r("rows <- rownames(metaDF)")
-        r("colnames(count) <- rows")
-
-        r("trt <- factor(metaDF$merge)")
-
-        r("library(DESeq2)")
-        r("dds <- DESeqDataSetFromMatrix(countData = count, colData = metaDF, design = ~ sample_name)")
-
-        r("dds <- estimateSizeFactors(dds)")
-        pycds = r.get("sizeFactors(dds)")
-        colList = df3.columns.tolist()
-
-        found = False
-        if pycds is list:
-            for thing in pycds:
-                if str(thing) == "None":
+            found = False
+            if pycds is list:
+                for thing in pycds:
+                    if str(thing) == "None":
+                        found = True
+            else:
+                if pycds is None:
                     found = True
-        else:
-            if pycds is None:
-                found = True
 
-        if not found:
-            DESeq_error = 'no'
-            cdsDF = pd.DataFrame(r.get("counts(dds, normalize=TRUE)"), columns=[colList])
-            countDF[colList] = cdsDF[colList]
-        else:
-            DESeq_error = 'yes'
-            countDF = df2.reset_index(drop=True)
+            if not found:
+                DESeq_error = 'no'
+                cdsDF = pd.DataFrame(r.get("counts(dds, normalize=TRUE)"), columns=[colList])
+                countDF[colList] = cdsDF[colList]
+            else:
+                DESeq_error = 'yes'
+                countDF = df2.reset_index(drop=True)
 
-    relabundDF = pd.DataFrame(countDF[taxaID])
-    binaryDF = pd.DataFrame(countDF[taxaID])
-    diversityDF = pd.DataFrame(countDF[taxaID])
-    for i in mySet:
-        relabundDF[i] = countDF[i].div(countDF[i].sum(), axis=0)
-        binaryDF[i] = countDF[i].apply(lambda x: 1 if x != 0 else 0)
-        diversityDF[i] = relabundDF[i].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-    field = 'speciesid'
-    taxaList = taxaDict['Species']
+        relabundDF = pd.DataFrame(countDF[taxaID])
+        binaryDF = pd.DataFrame(countDF[taxaID])
+        diversityDF = pd.DataFrame(countDF[taxaID])
+        for i in mySet:
+            relabundDF[i] = countDF[i].div(countDF[i].sum(), axis=0)
+            binaryDF[i] = countDF[i].apply(lambda x: 1 if x != 0 else 0)
+            diversityDF[i] = relabundDF[i].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
 
-    qs = Species.objects.filter(speciesid__in=taxaList)
-    namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid'])
-    namesDF.rename(columns={'kingdomid__kingdomid': 'kingdomid', 'phylaid__phylaid': 'phylaid', 'classid__classid' : 'classid', 'orderid__orderid' : 'orderid', 'familyid__familyid' : 'familyid', 'genusid__genusid' : 'genusid'}, inplace=True)
-    namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName'}, inplace=True)
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-    normDF = pd.DataFrame()
-    for item in mySet:
-        rowsList = []
-        groupRelAbund = relabundDF.groupby(field)[item].sum()
-        groupAbund = countDF.groupby(field)[item].sum()
-        groupRich = binaryDF.groupby(field)[item].sum()
-        groupDiversity = diversityDF.groupby(field)[item].sum()
+        field = 'speciesid'
+        taxaList = taxaDict['Species']
 
-        if isinstance(taxaList, unicode):
-            myDict = {}
-            myDict['sampleid'] = item
-            myDict['taxa_id'] = taxaList
-            myDict['rel_abund'] = groupRelAbund[taxaList]
-            myDict['abund'] = groupAbund[taxaList]
-            myDict['rich'] = groupRich[taxaList]
-            myDict['diversity'] = groupDiversity[taxaList]
-            rowsList.append(myDict)
-        else:
-            for taxa in taxaList:
+        qs = Species.objects.filter(speciesid__in=taxaList)
+        namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid'])
+        namesDF.rename(columns={'kingdomid__kingdomid': 'kingdomid', 'phylaid__phylaid': 'phylaid', 'classid__classid' : 'classid', 'orderid__orderid' : 'orderid', 'familyid__familyid' : 'familyid', 'genusid__genusid' : 'genusid'}, inplace=True)
+        namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName'}, inplace=True)
+
+        normDF = pd.DataFrame()
+        for item in mySet:
+            rowsList = []
+            groupRelAbund = relabundDF.groupby(field)[item].sum()
+            groupAbund = countDF.groupby(field)[item].sum()
+            groupRich = binaryDF.groupby(field)[item].sum()
+            groupDiversity = diversityDF.groupby(field)[item].sum()
+
+            if isinstance(taxaList, unicode):
                 myDict = {}
                 myDict['sampleid'] = item
-                myDict['taxa_id'] = taxa
-                myDict['rel_abund'] = groupRelAbund[taxa]
-                myDict['abund'] = groupAbund[taxa]
-                myDict['rich'] = groupRich[taxa]
-                myDict['diversity'] = groupDiversity[taxa]
+                myDict['taxa_id'] = taxaList
+                myDict['rel_abund'] = groupRelAbund[taxaList]
+                myDict['abund'] = groupAbund[taxaList]
+                myDict['rich'] = groupRich[taxaList]
+                myDict['diversity'] = groupDiversity[taxaList]
                 rowsList.append(myDict)
-
-        DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'taxa_id', 'rel_abund', 'abund', 'rich', 'diversity'])
-
-        DF1.rename(columns={'taxa_id': 'speciesid'}, inplace=True)
-        DF1 = DF1.merge(namesDF, on='speciesid', how='outer')
-
-        if normDF.empty:
-            normDF = DF1
-        else:
-            normDF = normDF.append(DF1)
-
-    return normDF, DESeq_error
-
-
-def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID):
-    high = mySet.__len__()
-    set = mySet[x:high:cores]
-
-    iter = 1
-    for i in set:
-        arr = asarray(df[i])
-        cols = np.ma.shape(arr)
-        otus = cols[0]
-        sample = arr.astype(dtype=np.float64)
-        if meth == 3:
-            prob = (sample + Lambda) / (sample.sum() + otus * Lambda)
-        else:
-            prob = sample / sample.sum()
-
-        temp = np.zeros((otus,), dtype=np.int)
-        for n in range(reads*iters):
-            if meth == 3:
-                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
             else:
-                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
-            temp2 = np.zeros((otus,), dtype=np.int)
-            np.put(temp2, sub, [1])
-            temp = np.core.umath.add(temp, temp2)
+                for taxa in taxaList:
+                    myDict = {}
+                    myDict['sampleid'] = item
+                    myDict['taxa_id'] = taxa
+                    myDict['rel_abund'] = groupRelAbund[taxa]
+                    myDict['abund'] = groupAbund[taxa]
+                    myDict['rich'] = groupRich[taxa]
+                    myDict['diversity'] = groupDiversity[taxa]
+                    rowsList.append(myDict)
 
-        d[i] = temp
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'taxa_id', 'rel_abund', 'abund', 'rich', 'diversity'])
+
+            DF1.rename(columns={'taxa_id': 'speciesid'}, inplace=True)
+            DF1 = DF1.merge(namesDF, on='speciesid', how='outer')
+
+            if normDF.empty:
+                normDF = DF1
+            else:
+                normDF = normDF.append(DF1)
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stops[self.PID]:
+                self.res = ''
+                return None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        return normDF, DESeq_error
+
+    def weightedProb(self, x, cores, reads, iters, Lambda, mySet, df, meth, d):
+        high = mySet.__len__()
+        mySet = mySet[x:high:cores]
+
+        for i in mySet:
+            arr = asarray(df[i])
+            cols = np.ma.shape(arr)
+            otus = cols[0]
+            sample = arr.astype(dtype=np.float64)
+            if meth == 3:
+                prob = (sample + Lambda) / (sample.sum() + otus * Lambda)
+            else:
+                prob = sample / sample.sum()
+
+            temp = np.zeros((otus,), dtype=np.int)
+            for n in range(reads*iters):
+                if meth == 3:
+                    sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
+                else:
+                    sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
+                temp2 = np.zeros((otus,), dtype=np.int)
+                np.put(temp2, sub, [1])
+                temp = np.core.umath.add(temp, temp2)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stops[self.PID]:
+                    break
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            d[i] = temp
 
 
 def getTab(request):

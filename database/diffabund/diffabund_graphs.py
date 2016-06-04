@@ -77,23 +77,6 @@ def removeRIDDIFF(request):
         return False
 
 
-def stopDiffAbund(request):
-    global thread2, stop2, res
-    if request.is_ajax():
-        RID = request.GET["all"]
-        stop2 = True
-        thread2.terminate()
-        thread2.join()
-        removeRIDDIFF(request)
-
-        res = ''
-        myDict = {}
-        myDict['error'] = 'none'
-        myDict['message'] = 'Your analysis has been stopped!'
-        stop = simplejson.dumps(myDict)
-        return HttpResponse(stop, content_type='application/json')
-
-
 def getDiffAbund(request, stops, RID, PID):
     global res, thread2, stop2
     if request.is_ajax():

@@ -75,23 +75,6 @@ def removeRIDGAGE(request):
         return False
 
 
-def stopGAGE(request):
-    global thread8, stops, stop8, res
-    if request.is_ajax():
-        RID = request.GET["all"]
-        stop8 = True
-        thread8.terminate()
-        thread8.join()
-        removeRIDGAGE(request)
-
-        res = ''
-        myDict = {}
-        myDict['error'] = 'none'
-        myDict['message'] = 'Your analysis has been stopped!'
-        stop = simplejson.dumps(myDict)
-        return HttpResponse(stop, content_type='application/json')
-
-
 def getGAGE(request, stops, RID, PID):
     global res, thread8, stop8
     if request.is_ajax():

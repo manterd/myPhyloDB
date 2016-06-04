@@ -78,23 +78,6 @@ def removeRIDPCA(request):
         return False
 
 
-def stopPCA(request):
-    global thread4, stops, stop6, res
-    if request.is_ajax():
-        RID = request.GET["all"]
-        stop6 = True
-        thread4.terminate()
-        thread4.join()
-        removeRIDPCA(request)
-
-        res = ''
-        myDict = {}
-        myDict['error'] = 'none'
-        myDict['message'] = 'Your analysis has been stopped!'
-        stop = simplejson.dumps(myDict)
-        return HttpResponse(stop, content_type='application/json')
-
-
 def getPCA(request, stops, RID, PID):
     global res, thread4, stop6
     if request.is_ajax():

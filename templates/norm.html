@@ -256,7 +256,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopNorm/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -383,9 +383,10 @@
             myDict['NormMeth'] = NormMeth;
             myDict['Proc'] = Proc;
             myDict['RID'] = RID;
+            myDict['funcName'] = "getNorm";
             var jsonDict = JSON.stringify(myDict);
             $.ajax({
-                url: '/getNorm/',
+                url: '/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
