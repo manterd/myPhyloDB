@@ -28,8 +28,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-thread1 = stoppableThread()
-res = ''
+
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
@@ -43,10 +42,9 @@ def statusANOVA(request):
             TimeDiff[RID] = time2[RID] - time1[RID]
         except:
             TimeDiff[RID] = 0
-        myDict = {}
         try:
             if TimeDiff[RID] == 0:
-                stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.stat(RID))+' others in front of you.'
+                stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.q.qsize())+' others in front of you.'
             else:
                 stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         except:
@@ -54,7 +52,7 @@ def statusANOVA(request):
                 stage[RID] = 'In queue'
             else:
                 stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-        myDict['stage'] = stage[RID]
+        myDict = {'stage': stage[RID]}
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
@@ -76,28 +74,8 @@ def removeRIDANOVA(request):
         return False
 
 
-def getCatUnivData(request, stops, RID, PID):
-    global res, thread1
-    if request.is_ajax():
-        thread1 = stoppableThread(target=loopCat, args=(request, stops, RID, PID, ))
-        thread1.start()
-        thread1.join()
-        removeRIDANOVA(request)
-        return HttpResponse(res, content_type='application/json')
-
-
-def getQuantUnivData(request, stops, RID, PID):
-    global res, thread1
-    if request.is_ajax():
-        thread1 = stoppableThread(target=loopQuant, args=(request, stops, RID, PID, ))
-        thread1.start()
-        thread1.join()
-        removeRIDANOVA(request)
-        return HttpResponse(res, content_type='application/json')
-
-
-def loopCat(request, stops, RID, PID):
-    global res, base, stage, time1, TimeDiff
+def getCatUnivData(request, RID, PID):
+    global base, stage, time1, TimeDiff
     try:
         while True:
             if request.is_ajax():
@@ -144,7 +122,7 @@ def loopCat(request, stops, RID, PID):
                     myDict = {}
                     myDict['error'] = "Selected meta data only has one level.\nPlease select different variable(s)."
                     res = simplejson.dumps(myDict)
-                    return None
+                    return HttpResponse(res, content_type='application/json')
 
                 catSampleIDs = []
                 if metaIDsCat:
@@ -193,9 +171,9 @@ def loopCat(request, stops, RID, PID):
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if database.queue.stopList[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
@@ -207,19 +185,19 @@ def loopCat(request, stops, RID, PID):
                     DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, PID)
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, PID)
 
                 # save location info to session
                 myDir = 'media/temp/anova/'
@@ -233,9 +211,9 @@ def loopCat(request, stops, RID, PID):
                 base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if database.queue.stopList[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 4: Performing statistical test...'
@@ -342,9 +320,9 @@ def loopCat(request, stops, RID, PID):
                                     fList.append(part1[0])
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID]:
+                        if database.queue.stopList[PID] == RID:
                             res = ''
-                            return None
+                            return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                         D += "\nLSmeans & Tukey's HSD post-hoc test:\n\n"
@@ -375,9 +353,9 @@ def loopCat(request, stops, RID, PID):
                                             D += tempStuff[i] + '\n'
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID]:
+                        if database.queue.stopList[PID] == RID:
                             res = ''
-                            return None
+                            return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     else:
@@ -409,9 +387,9 @@ def loopCat(request, stops, RID, PID):
                     counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if database.queue.stopList[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 4: Performing statistical test...done!'
@@ -452,9 +430,9 @@ def loopCat(request, stops, RID, PID):
                                 dataList = list(grouped2)
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if database.queue.stopList[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     seriesDict = {}
@@ -485,9 +463,9 @@ def loopCat(request, stops, RID, PID):
                         xAxisDict['categories'] = [labelTree]
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if database.queue.stopList[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 yTitle = {}
@@ -520,24 +498,23 @@ def loopCat(request, stops, RID, PID):
                 base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if database.queue.stopList[PID] == RID:
                     res = ''
-                    return None
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    return HttpResponse(res, content_type='application/json')
 
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                return None
+                return HttpResponse(res, content_type='application/json')
 
     except:
-        if not stops[PID]:
+        if not database.queue.stopList[PID]:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-        return None
+            return HttpResponse(res, content_type='application/json')
 
 
 def recLabels(lists, level):
@@ -591,8 +568,8 @@ def makeLabels(name, list):
     return retDict
 
 
-def loopQuant(request, stops, RID, PID):
-    global res, base, stage, time1, TimeDiff
+def getQuantUnivData(request, RID, PID):
+    global base, stage, time1, TimeDiff
     try:
         while True:
             if request.is_ajax():
@@ -681,9 +658,9 @@ def loopQuant(request, stops, RID, PID):
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[PID]:
+                if database.queue.stopList[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 2 of 4: Selecting your chosen taxa or kegg level...'
@@ -695,19 +672,19 @@ def loopQuant(request, stops, RID, PID):
                     DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, PID)
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, PID)
 
                 # save location info to session
                 myDir = 'media/temp/anova/'
@@ -721,9 +698,9 @@ def loopQuant(request, stops, RID, PID):
                 base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[PID]:
+                if database.queue.stopList[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 3 of 4: Performing statistical test...!'
@@ -848,17 +825,17 @@ def loopQuant(request, stops, RID, PID):
                     counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                    if stops[PID]:
+                    if database.queue.stopList[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 3 of 4: Performing statistical test...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stops[PID]:
+                if database.queue.stopList[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 base[RID] = 'Step 4 of 4: Formatting graph data for display...'
@@ -1227,9 +1204,9 @@ def loopQuant(request, stops, RID, PID):
                         colors_idx = 0
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                    if stops[PID]:
+                    if database.queue.stopList[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 xAxisDict = {}
@@ -1269,29 +1246,29 @@ def loopQuant(request, stops, RID, PID):
                 base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if database.queue.stopList[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                return None
+                return HttpResponse(res, content_type='application/json')
 
     except:
-        if not stops[PID]:
+        if not database.queue.stopList[PID]:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-        return None
+            return HttpResponse(res, content_type='application/json')
 
 
-def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
-    global base, res
+def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, PID):
+    global base
     try:
         base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
         taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'rel_abund', 'abund_16S', 'rich', 'diversity'])
@@ -1386,8 +1363,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
                         taxaDF = taxaDF.append(tempDF)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1421,10 +1397,10 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             taxaDF.loc[:, 'rank'] = 'Species'
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[PID]:
-            res = ''
+        if database.queue.stopList[PID] == RID:
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
 
         wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
@@ -1442,18 +1418,17 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         return finalDF
 
     except:
-        if not stops[PID]:
+        if not database.queue.stopList[PID]:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict = {'error': "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = simplejson.dumps(myDict)
-        return None
+            return HttpResponse(res, content_type='application/json')
 
 
-def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
-    global base, res
+def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, PID):
+    global base
     try:
         base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
         koDict = {}
@@ -1497,8 +1472,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
                                 koDict[i] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1510,8 +1484,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1523,8 +1496,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1536,13 +1508,12 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        if stops[PID]:
-            res = ''
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if database.queue.stopList[PID] == RID:
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1564,18 +1535,17 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, PID)) for x in xrange(numcore)]
         else:
             numcore = int(round(mp.cpu_count()/3, 0))
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
+            processes = [mp.Process(target=sumStuff, args=(listDF[x], koDict, RID, x, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1583,8 +1553,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
             p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1599,8 +1568,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1623,8 +1591,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
                 taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1667,26 +1634,24 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
                 finalDF.loc[index, 'rank_name'] = ko_entry.objects.using('picrust').get(ko_lvl4_id=row['rank_id']).ko_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         return finalDF
 
     except:
-        if not stops[PID]:
+        if not database.queue.stopList[PID]:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict = {'error': "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = simplejson.dumps(myDict)
-        return None
+            return HttpResponse(res, content_type='application/json')
 
 
-def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
-    global base, res
+def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, PID):
+    global base
     try:
         nzDict = {}
         if nzAll == 0:
@@ -1737,8 +1702,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                                 nzDict[i] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1750,8 +1714,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1763,8 +1726,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1776,8 +1738,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1789,8 +1750,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
-                    res = ''
+                if database.queue.stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1944,25 +1904,24 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
-            processes = [stoppableThread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
+            processes = [stoppableThread(target=sumStuff, args=(listDF[x], nzDict, RID, x, PID)) for x in xrange(numcore)]
         else:
             numcore = mp.cpu_count()
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
+            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
 
         for p in processes:
-            if stops[PID]:
+            if database.queue.stopList[PID] == RID:
                 p.terminate()
                 p.join()
             else:
                 p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1977,8 +1936,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2000,8 +1958,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2048,25 +2005,23 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 finalDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
-                res = ''
+            if database.queue.stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         return finalDF
 
     except:
-        if not stops[PID]:
+        if not database.queue.stopList[PID]:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict = {'error': "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = simplejson.dumps(myDict)
-        return None
+            return HttpResponse(res, content_type='application/json')
 
 
-def sumStuff(slice, koDict, RID, num, stops, PID):
+def sumStuff(slice, koDict, RID, num, PID):
     db.close_old_connections()
 
     f = open('media/temp/anova/'+str(RID)+'/file'+str(num)+".temp", 'w')
@@ -2094,7 +2049,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
         f.write('\n')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[PID]:
+        if database.queue.stopList[PID] == RID:
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 

@@ -61,8 +61,8 @@ urlpatterns = [
     url(r'^getNorm/$', norm_graphs.getNorm, name='getNorm'),
     url(r'^statusNorm/$', norm_graphs.statusNorm, name='statusNorm'),
     #url(r'^stopNorm/$', norm_graphs.stopNorm, name='stopNorm'),
-    url(r'^getTab/$', norm_graphs.getTab, name='getTab'),
-    url(r'^getBiom/$', norm_graphs.getBiom, name='getBiome'),
+    #url(r'^getTab/$', norm_graphs.getTab, name='getTab'),
+    #url(r'^getBiom/$', norm_graphs.getBiom, name='getBiome'),
 
     url(r'^getCatUnivData/$', anova_graphs.getCatUnivData, name='getCatUnivData'),
     url(r'^getQuantUnivData/$', anova_graphs.getQuantUnivData, name='getQuantUnivData'),
