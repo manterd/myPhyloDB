@@ -246,7 +246,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopSpAC/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -371,11 +371,12 @@
             myDict['DepVar_nz'] = DepVar_nz;
             myDict['button3'] = button3;
             myDict['RID'] = RID;
+            myDict['funcName'] = "getSpAC";
             myDict['method'] = document.getElementById("method").value;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getSpAC/',
+                url: '/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
