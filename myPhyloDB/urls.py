@@ -60,15 +60,13 @@ urlpatterns = [
 
     url(r'^getNorm/$', norm_graphs.getNorm, name='getNorm'),
     url(r'^statusNorm/$', norm_graphs.statusNorm, name='statusNorm'),
-    #url(r'^stopNorm/$', norm_graphs.stopNorm, name='stopNorm'),
-    #url(r'^getTab/$', norm_graphs.getTab, name='getTab'),
-    #url(r'^getBiom/$', norm_graphs.getBiom, name='getBiome'),
+    url(r'^getTab/$', norm_graphs.getTab, name='getTab'),
+    url(r'^getBiom/$', norm_graphs.getBiom, name='getBiome'),
 
     url(r'^getCatUnivData/$', anova_graphs.getCatUnivData, name='getCatUnivData'),
     url(r'^getQuantUnivData/$', anova_graphs.getQuantUnivData, name='getQuantUnivData'),
     url(r'^statusANOVA/$', anova_graphs.statusANOVA, name='statusANOVA'),
     url(r'^removeRIDANOVA/$', anova_graphs.removeRIDANOVA, name='removeRIDANOVA'),
-    #url(r'^stopANOVA/$', anova_graphs.stopANOVA, name='stopANOVA'),
     url(r'^getTabANOVA/$', anova_graphs.getTabANOVA, name='getTabANOVA'),
     url(r'^removeANOVAFiles/$', anova_graphs.removeANOVAFiles, name='removeANOVAFiles'),
 

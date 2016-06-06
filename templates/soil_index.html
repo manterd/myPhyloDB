@@ -422,7 +422,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stopsoil_index/',
+                url: '/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -663,10 +663,11 @@
             myDict['metaValsCat'] = metaValsCat;
             myDict['metaIDsCat'] = metaIDsCat;
             myDict['RID'] = RID;
+            myDict['funcName'] = "getsoil_index";
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/getsoil_index/',
+                url: '/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

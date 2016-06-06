@@ -67,7 +67,6 @@ def removeRIDGAGE(request):
             time1.pop(RID, None)
             time2.pop(RID, None)
             TimeDiff.pop(RID, None)
-            stops.pop(RID, None)
             return True
         else:
             return False
@@ -76,17 +75,6 @@ def removeRIDGAGE(request):
 
 
 def getGAGE(request, stops, RID, PID):
-    global res, thread8, stop8
-    if request.is_ajax():
-        stop8 = False
-        thread8 = stoppableThread(target=loopCat, args=(request, stops, RID, PID,))
-        thread8.start()
-        thread8.join()
-        removeRIDGAGE(request)
-        return HttpResponse(res, content_type='application/json')
-
-
-def loopCat(request, stops, RID, PID):
     global res, base, stage, time1, TimeDiff, stop8
     try:
         while True:
@@ -151,7 +139,7 @@ def loopCat(request, stops, RID, PID):
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -188,11 +176,10 @@ def loopCat(request, stops, RID, PID):
                     r("selPaths <- append(selPaths, names(selPath))")
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if stops[PID] == RID:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
 
                 finalDF = getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID)
 
@@ -237,7 +224,7 @@ def loopCat(request, stops, RID, PID):
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -347,13 +334,13 @@ def loopCat(request, stops, RID, PID):
                         base[RID] = 'Step 3 of 4: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(trt2) + ' is done!'
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID]:
+                        if stops[PID] == RID:
                             res = ''
                             return None
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if stops[PID] == RID:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -371,7 +358,7 @@ def loopCat(request, stops, RID, PID):
                     merger.append(PdfFileReader(os.path.join(path, filename), 'rb'))
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if stops[PID] == RID:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -390,8 +377,8 @@ def loopCat(request, stops, RID, PID):
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-
-                return None
+                removeRIDGAGE(request)
+                return HttpResponse(res, content_type='application/json')
 
     except:
         if not stop8:
@@ -429,7 +416,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
                     finalKeys.append(x)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -438,7 +425,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
             base[RID] = 'Step 2 of 4: Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is done!'
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -456,7 +443,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
                 taxaDF[key] = taxaDF['abund_16S'] * taxaDF[key]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

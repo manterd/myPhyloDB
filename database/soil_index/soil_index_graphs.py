@@ -19,6 +19,7 @@ import threading
 from database.models import PICRUSt
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, stoppableThread
+import database.queue
 
 
 base = {}
@@ -46,9 +47,15 @@ def statussoil_index(request):
             TimeDiff[RID] = 0
         myDict = {}
         try:
-            stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            if TimeDiff[RID] == 0:
+                stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.stat(RID))+' others in front of you.'
+            else:
+                stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
         except:
-            stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            if TimeDiff[RID] == 0:
+                stage[RID] = 'In queue'
+            else:
+                stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         myDict['stage'] = stage[RID]
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
@@ -76,7 +83,6 @@ def stopsoil_index(request):
     global thread_soil_index, stops, stop_soil_index, res
     if request.is_ajax():
         RID = request.GET["all"]
-        stops[RID] = True
         stop_soil_index = True
         thread_soil_index.terminate()
         thread_soil_index.join()
@@ -90,26 +96,13 @@ def stopsoil_index(request):
         return HttpResponse(stop, content_type='application/json')
 
 
-def getsoil_index(request):
-    global res, thread_soil_index, stop_soil_index
-    if request.is_ajax():
-        stop_soil_index = False
-        thread_soil_index = stoppableThread(target=loopCat, args=(request,))
-        thread_soil_index.start()
-        thread_soil_index.join()
-        removeRIDsoil_index(request)
-        return HttpResponse(res, content_type='application/json')
-
-
-def loopCat(request):
-    global res, base, stage, time1, TimeDiff, stops, stop_soil_index
+def getsoil_index(request, stops, RID, PID):
+    global res, base, stage, time1, TimeDiff, stop_soil_index
     try:
         while True:
             if request.is_ajax():
                 allJson = request.GET["all"]
                 all = simplejson.loads(allJson)
-                RID = str(all["RID"])
-                stops[RID] = False
 
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 3: Selecting your chosen meta-variables...'
@@ -176,14 +169,14 @@ def loopCat(request):
                 base[RID] = 'Step 1 of 3: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 2 of 3: Selecting your chosen taxa or KEGG level...'
 
-                finalDF, keggDF, levelList = getTaxaDF(savedDF, metaDF, RID)
+                finalDF, keggDF, levelList = getTaxaDF(savedDF, metaDF, RID, stops, PID)
                 finalDF = finalDF[finalDF.rel_abund != 0]
 
                 count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
@@ -756,7 +749,7 @@ def loopCat(request):
                 base[RID] = 'Step 2 of 3: Selecting your chosen taxa...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[RID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -774,7 +767,7 @@ def loopCat(request):
                     merger.append(PdfFileReader(os.path.join(path, filename), 'rb'))
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[RID]:
+                    if stops[PID] == RID:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -786,7 +779,8 @@ def loopCat(request):
 
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                return None
+                removeRIDsoil_index(request)
+                return HttpResponse(res, content_type='application/json')
 
     except:
         if not stop_soil_index:
@@ -799,15 +793,15 @@ def loopCat(request):
         return None
 
 
-def getTaxaDF(savedDF, metaDF, RID):
-    global base, stops, stop_soil_index, res
+def getTaxaDF(savedDF, metaDF, RID, stops, PID):
+    global base, stop_soil_index, res
     try:
         base[RID] = 'Step 2 of 3: Selecting your chosen taxa or KEGG level...'
         taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
         taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[RID]:
+        if stops[PID] == RID:
             res = ''
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -822,7 +816,7 @@ def getTaxaDF(savedDF, metaDF, RID):
         df.rename(columns={'speciesid__speciesid': 'rank_id'}, inplace=True)
         finalDF = pd.merge(finalDF, df, left_on='rank_id', right_on='rank_id', how='outer')
 
-        keggDF, levelList = getNZDF(metaDF, finalDF, RID)
+        keggDF, levelList = getNZDF(metaDF, finalDF, RID, stops, PID)
 
         return finalDF, keggDF, levelList
 
@@ -837,8 +831,8 @@ def getTaxaDF(savedDF, metaDF, RID):
         return None
 
 
-def getNZDF(metaDF, finalDF, RID):
-    global base, stops, stop_soil_index, res
+def getNZDF(metaDF, finalDF, RID, stops, PID):
+    global base, stop_soil_index, res
 
     try:
         nzDict = {}
@@ -980,17 +974,17 @@ def getNZDF(metaDF, finalDF, RID):
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
             numcore = mp.cpu_count()
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x)) for x in xrange(numcore)]
+            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -999,7 +993,7 @@ def getNZDF(metaDF, finalDF, RID):
             p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1015,7 +1009,7 @@ def getNZDF(metaDF, finalDF, RID):
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1030,7 +1024,7 @@ def getNZDF(metaDF, finalDF, RID):
             taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1069,7 +1063,7 @@ def getNZDF(metaDF, finalDF, RID):
                 keggDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[RID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1087,8 +1081,8 @@ def getNZDF(metaDF, finalDF, RID):
         return None
 
 
-def sumStuff(slice, koDict, RID, num):
-    global base, stops, res
+def sumStuff(slice, koDict, RID, num, stops, PID):
+    global base, res
     db.close_old_connections()
 
     f = open('media/temp/soil_index/'+str(RID)+'/file'+str(num)+".temp", 'w')
@@ -1116,7 +1110,7 @@ def sumStuff(slice, koDict, RID, num):
         f.write('\n')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[RID]:
+        if stops[PID] == RID:
             res = ''
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

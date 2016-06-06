@@ -79,17 +79,6 @@ def removeRIDSPLS(request):
 
 
 def getSPLS(request, stops, RID, PID):
-    global res, thread5, stop5
-    if request.is_ajax():
-        stop5 = False
-        thread5 = stoppableThread(target=loopCat, args=(request, stops, RID, PID,))
-        thread5.start()
-        thread5.join()
-        removeRIDSPLS(request)
-        return HttpResponse(res, content_type='application/json')
-
-
-def loopCat(request, stops, RID, PID):
     global res, base, stage, time1, TimeDiff, stop5
     try:
         while True:
@@ -180,7 +169,7 @@ def loopCat(request, stops, RID, PID):
                 base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -191,15 +180,15 @@ def loopCat(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if button3 == 1:
                     DepVar = int(all["DepVar_taxa"])
-                    finalDF = getTaxaDF(selectAll, savedDF, metaDF, quantFields, DepVar, RID)
+                    finalDF = getTaxaDF(selectAll, savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
-                    finalDF = getKeggDF(keggAll, savedDF, tempDF, quantFields, DepVar, RID)
+                    finalDF = getKeggDF(keggAll, savedDF, tempDF, quantFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
-                    finalDF = getNZDF(nzAll, savedDF, tempDF, quantFields, DepVar, RID)
+                    finalDF = getNZDF(nzAll, savedDF, tempDF, quantFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'media/temp/spls/'
@@ -213,7 +202,7 @@ def loopCat(request, stops, RID, PID):
                 base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -326,7 +315,7 @@ def loopCat(request, stops, RID, PID):
                 base[RID] = 'Step 3 of 5: Calculating sPLS...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -363,7 +352,7 @@ def loopCat(request, stops, RID, PID):
                         result += 'Std Error: ' + str(se) + '\n\n\n'
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID]:
+                        if stops[PID] == RID:
                             res = ''
                             return None
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -481,7 +470,7 @@ def loopCat(request, stops, RID, PID):
                             taxNameList[:] = (item.split()[0] for item in taxNameList)
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if stops[PID] == RID:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -493,7 +482,7 @@ def loopCat(request, stops, RID, PID):
                     finalDict['res_table'] = str(res_table)
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if stops[PID] == RID:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -533,13 +522,13 @@ def loopCat(request, stops, RID, PID):
                             dataList.append(obsList)
 
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                            if stops[PID]:
+                            if stops[PID] == RID:
                                 res = ''
                                 return None
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID]:
+                    if stops[PID] == RID:
                         res = ''
                         return None
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -613,14 +602,15 @@ def loopCat(request, stops, RID, PID):
                 base[RID] = 'Step 5 of 5: Formatting sPLS coefficient table...'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                return None
+                removeRIDSPLS(request)
+                return HttpResponse(res, content_type='application/json')
 
     except:
         if not stop5:
@@ -630,6 +620,8 @@ def loopCat(request, stops, RID, PID):
             myDict = {}
             myDict['error'] = "Error with sPLS-Regr!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
+            removeRIDSPLS(request)
+            return HttpResponse(res, content_type='application/json')
         return None
 
 
@@ -692,6 +684,8 @@ def getTaxaDF(selectAll, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
             myDict = {}
             myDict['error'] = "Error with sPLS-Regr!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
+            # removeRIDSPLS(request)
+            return HttpResponse(res, content_type='application/json')
         return None
 
 
@@ -709,7 +703,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -722,7 +716,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -735,12 +729,12 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        if stops[PID]:
+        if stops[PID] == RID:
             res = ''
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -773,7 +767,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             p.start()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -782,7 +776,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -798,7 +792,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -860,7 +854,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 finalDF.loc[index, 'rank_name'] = ko_entry.objects.using('picrust').get(ko_lvl4_id=row['rank_id']).ko_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -890,7 +884,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -903,7 +897,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -916,7 +910,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -929,7 +923,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID]:
+                if stops[PID] == RID:
                     res = ''
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1094,7 +1088,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             p.start()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1103,7 +1097,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1119,7 +1113,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1183,7 +1177,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 finalDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID]:
+            if stops[PID] == RID:
                 res = ''
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1230,7 +1224,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
         f.write('\n')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[PID]:
+        if stops[PID] == RID:
             res = ''
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

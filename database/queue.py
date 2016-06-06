@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from Queue import Queue
 import simplejson
 from time import sleep
@@ -12,14 +12,8 @@ from pca import pca_graphs
 from gage import gage_graphs
 from spls import spls_graphs
 from wgcna import wgcna_graphs
-
-"""
-This still doesn't work quite right.
-
-Check out the following pages.
-http://eli.thegreenplace.net/2011/05/18/code-sample-socket-client-thread-in-python/
-http://eli.thegreenplace.net/2011/12/27/python-threads-communication-and-stopping
-"""
+from spac import spac_graphs
+from soil_index import soil_index_graphs
 
 
 q = Queue()
@@ -29,47 +23,80 @@ stopList = [0] * num_threads
 recent = {}
 qList = []
 threadDict = {}
+statDict = {}
+stopDict = {}
 
 
 def stop(request):
-    global activeList, stopList, threadDict
+    global activeList, stopList, threadDict, stopDict
     RID = str(request.GET['all'])
-    pid = activeList.index(RID)
-    stopList[pid] = RID
-    activeList[pid] = 0
-    threadName = threadDict[RID]
-    threads = threading.enumerate()
-    for thread in threads:
-        if thread.name == threadName:
-            thread.terminate()
-            stopList[pid] = RID
-            myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
-            stop = simplejson.dumps(myDict)
-            return HttpResponse(stop, content_type='application/json')
+    stopDict[RID] = True
+    try:
+        pid = activeList.index(RID)
+        stopList[pid] = RID
+        activeList[pid] = 0
+        threadName = threadDict[RID]
+        threads = threading.enumerate()
+        for thread in threads:
+            if thread.name == threadName:
+                thread.terminate()
+                stopList[pid] = RID
+                myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
+                stop = simplejson.dumps(myDict)
+                return HttpResponse(stop, content_type='application/json')
+    except:
+        myDict = {'error': 'Analysis not running'}
+        stop = simplejson.dumps(myDict)
+        return HttpResponse(stop, content_type='application/json')
+
+
+def decremQ():
+    for thing in statDict:
+        statDict[thing] -= 1
 
 
 def process(pid):
-    global activeList, stopList, threadDict
+    global activeList, threadDict, stopped
     while True:
         data = q.get(block=True, timeout=None)
+        decremQ()
         RID = data['RID']
-        funcName = data['funcName']
-        request = data['request']
-        activeList[pid] = RID
-        thread = threading.current_thread()
-        threadDict[RID] = thread.name
-        if activeList[pid] == RID:
-            if funcName == "getNorm":
-                recent[RID] = norm_graphs.getNorm(request, RID, pid)
-            if funcName == "getCatUnivData":
-                recent[RID] = anova_graphs.getCatUnivData(request, RID, pid)
+        if RID in stopDict:
+            stopDict.pop(RID, 0)
+        else:
+            funcName = data['funcName']
+            request = data['request']
+            activeList[pid] = RID
+            thread = threading.current_thread()
+            threadDict[RID] = thread.name
+            if activeList[pid] == RID:
+                if funcName == "getNorm":
+                    recent[RID] = norm_graphs.getNorm(request, RID, stopList, pid)
+                if funcName == "getCatUnivData":
+                    recent[RID] = anova_graphs.getCatUnivData(request, RID, stopList, pid)
+                if funcName == "getPCA":
+                    recent[RID] = pca_graphs.getPCA(request, stopList, RID, pid)
+                if funcName == "getPCoA":
+                    recent[RID] = pcoa_graphs.getPCoA(request, stopList, RID, pid)
+                if funcName == "getDiffAbund":
+                    recent[RID] = diffabund_graphs.getDiffAbund(request, stopList, RID, pid)
+                if funcName == "getGAGE":
+                    recent[RID] = gage_graphs.getGAGE(request, stopList, RID, pid)
+                if funcName == "getSPLS":
+                    recent[RID] = spls_graphs.getSPLS(request, stopList, RID, pid)
+                if funcName == "getWGCNA":
+                    recent[RID] = wgcna_graphs.getWGCNA(request, stopList, RID, pid)
+                if funcName == "getSpAC":
+                    recent[RID] = spac_graphs.getSpAC(request, stopList, RID, pid)
+                if funcName == "getsoil_index":
+                    recent[RID] = soil_index_graphs.getsoil_index(request, stopList, RID, pid)
+            activeList[pid] = ''
+            threadDict.pop(RID, 0)
         sleep(1)
-        activeList[pid] = ''
-        threadDict.pop(RID, 0)
 
 
 def funcCall(request):
-    global activeList, stopList
+    global activeList, stopList, stopDict, statDict
     allJson = request.GET["all"]
     data = simplejson.loads(allJson)
     RID = data['RID']
@@ -77,19 +104,29 @@ def funcCall(request):
     qDict = {'RID': RID, 'funcName': funcName, 'request': request}
     qList.append(qDict)
     q.put(qDict, True)
+    statDict[RID] = int(q.qsize())
 
     while True:
         try:
             results = recent[RID]
             recent.pop(RID, 0)
+            statDict.pop(RID, 0)
+            stopDict.pop(RID, 0)
             return results
         except KeyError:
             if RID in stopList:
-                pid = stopList.index(RID)
-                stopList[pid] = 0
-                return HttpResponse('')
+                try:
+                    pid = stopList.index(RID)
+                    stopList[pid] = 0
+                except:
+                    pass
+                statDict.pop(RID, 0)
+                return HttpResponseNotFound()
         sleep(1)
-        print "active:", activeList
-        print "stop:", stopList
+        # print "active:", activeList
+        # print "stop:", stopList
 
+
+def stat(RID):
+    return statDict[RID] - stopped
 

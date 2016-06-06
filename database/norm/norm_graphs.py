@@ -70,7 +70,7 @@ def removeRIDNorm(request):
         return False
 
 
-def getNorm(request, RID, PID):
+def getNorm(request, RID, stopList, PID):
     global base, stage, time1, TimeDiff
     try:
         if request.is_ajax():
@@ -166,7 +166,7 @@ def getNorm(request, RID, PID):
                 res = simplejson.dumps(myDict)
                 return None
 
-            metaDF = UnivMetaDF(newList, RID, PID)
+            metaDF = UnivMetaDF(newList, RID, stopList, PID)
 
             # remove emptycols
             metaDF.replace('nan', np.nan, inplace=True)
@@ -194,14 +194,14 @@ def getNorm(request, RID, PID):
             base[RID] = 'Step 1 of 4: Querying database...done!'
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if database.queue.stopList[PID] == RID:
+            if stopList[PID] == RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             base[RID] = 'Step 2 of 4: Normalizing data...'
 
-            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, Proc, RID, PID)
+            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, Proc, RID, stopList, PID)
 
             normDF['rel_abund'] = normDF['rel_abund'].astype(float)
             normDF['abund'] = normDF['abund'].round(0).astype(int)
@@ -282,7 +282,7 @@ def getNorm(request, RID, PID):
             base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if database.queue.stopList[PID] == RID:
+            if stopList[PID] == RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -334,7 +334,7 @@ def getNorm(request, RID, PID):
             base[RID] = 'Step 3 of 4: Formatting biome data...done!'
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if database.queue.stopList[PID] == RID:
+            if stopList[PID] == RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -344,7 +344,7 @@ def getNorm(request, RID, PID):
             if tabular_on == 1:
                 data = finalDF.values.tolist()
                 cols = finalDF.columns.values.tolist()
-                print "cols: ", len(cols)
+                # print "cols: ", len(cols)
                 colList = []
                 for item in cols:
                     colDict = {}
@@ -356,7 +356,7 @@ def getNorm(request, RID, PID):
             base[RID] = 'Step 4 of 4: Formatting result table...done!'
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if database.queue.stopList[PID] == RID:
+            if stopList[PID] == RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -366,7 +366,7 @@ def getNorm(request, RID, PID):
             return HttpResponse(res, content_type='application/json')
 
     except:
-        if not database.queue.stopList[PID] == RID:
+        if not stopList[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
@@ -376,7 +376,7 @@ def getNorm(request, RID, PID):
             return HttpResponse(res, content_type='application/json')
 
 
-def UnivMetaDF(sampleList, RID, PID):
+def UnivMetaDF(sampleList, RID, stopList, PID):
     tableNames = ['project', 'reference', 'sample', 'air', 'human_associated', 'microbial', 'soil', 'water', 'userdefined', 'profile']
     idList = ['projectid', 'refid', u'id']
 
@@ -387,7 +387,7 @@ def UnivMetaDF(sampleList, RID, PID):
             sampleTableList.remove(x)
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-    if database.queue.stopList[PID] == RID:
+    if stopList[PID] == RID:
         return None
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -401,7 +401,7 @@ def UnivMetaDF(sampleList, RID, PID):
             airTableList.remove(x)
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-    if database.queue.stopList[PID] == RID:
+    if stopList[PID] == RID:
         return None
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -415,7 +415,7 @@ def UnivMetaDF(sampleList, RID, PID):
             humanAssocTableList.remove(x)
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-    if database.queue.stopList[PID] == RID:
+    if stopList[PID] == RID:
         return None
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -429,7 +429,7 @@ def UnivMetaDF(sampleList, RID, PID):
             microbialTableList.remove(x)
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-    if database.queue.stopList[PID] == RID:
+    if stopList[PID] == RID:
         return None
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -443,7 +443,7 @@ def UnivMetaDF(sampleList, RID, PID):
             soilTableList.remove(x)
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-    if database.queue.stopList[PID] == RID:
+    if stopList[PID] == RID:
         return None
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -457,7 +457,7 @@ def UnivMetaDF(sampleList, RID, PID):
             waterTableList.remove(x)
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-    if database.queue.stopList[PID] == RID:
+    if stopList[PID] == RID:
         return None
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -506,7 +506,7 @@ def UnivMetaDF(sampleList, RID, PID):
     return metaDF
 
 
-def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc, RID, PID):
+def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc, RID, stopList, PID):
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
@@ -526,16 +526,16 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
 
             if os.name == 'nt':
                 numcore = 1
-                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, PID,)) for x in range(numcore)]
+                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
             else:
                 numcore = min(mp.cpu_count(), Proc)
-                processes = [mp.Process(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, PID,)) for x in range(numcore)]
+                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
 
             for p in processes:
                 p.start()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if database.queue.stopList[PID] == RID:
+            if stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -634,12 +634,12 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
                 rowsList.append(myDict)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if database.queue.stopList[PID] == RID:
+                if stopList[PID] == RID:
                     return None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if database.queue.stopList[PID] == RID:
+        if stopList[PID] == RID:
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -656,7 +656,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
     return normDF, DESeq_error
 
 
-def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID, PID):
+def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID):
     high = mySet.__len__()
     set = mySet[x:high:cores]
 
@@ -673,21 +673,20 @@ def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID, PID):
         temp = np.zeros((otus,), dtype=np.int)
         for n in range(reads*iters):
             if meth == 3:
-                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
-            else:
                 sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
+            else:
+                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
             temp2 = np.zeros((otus,), dtype=np.int)
             np.put(temp2, sub, [1])
             temp = np.core.umath.add(temp, temp2)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if database.queue.stopList[PID] == RID:
+            if stopList[PID] == RID:
                 return None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        print database.queue.stopList
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if database.queue.stopList[PID] == RID:
+        if stopList[PID] == RID:
             return None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
