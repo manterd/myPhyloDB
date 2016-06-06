@@ -5,15 +5,15 @@ import os.path
 import signal
 import sys
 import webbrowser
-from threading import Thread
 
 from myPhyloDB.wsgi import application
 
 from database.queue import process
+from database.utils import stoppableThread
+
 
 cherrypy.tree.graft(application)
-
-args = ['Nope']
+num_threads = 3
 
 
 class Server(object):
@@ -80,7 +80,6 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 
 def signal_handler(signal, frame):
     print 'Exiting...'
-    args[0] = 'False'
     cherrypy.engine.exit()
 
 
@@ -90,10 +89,10 @@ if __name__ == '__main__':
     execute_from_command_line(sys.argv)
 
     mp.freeze_support()
-    args[0] = 'True'
 
-    for i in xrange(3):
-        thread = Thread(target=process, args=(args, i, ))
+    for pid in xrange(num_threads):
+        thread = stoppableThread(target=process, args=(pid, ))
+        thread.setDaemon(True)
         thread.start()
     Server().run()
 

@@ -1,5 +1,9 @@
-import Queue
+from django.http import HttpResponse
+from Queue import Queue
+import simplejson
 from time import sleep
+import threading
+
 from anova import anova_graphs
 from diffabund import diffabund_graphs
 from norm import norm_graphs
@@ -8,113 +12,84 @@ from pca import pca_graphs
 from gage import gage_graphs
 from spls import spls_graphs
 from wgcna import wgcna_graphs
-import simplejson
-from django.http import HttpResponse
+
+"""
+This still doesn't work quite right.
+
+Check out the following pages.
+http://eli.thegreenplace.net/2011/05/18/code-sample-socket-client-thread-in-python/
+http://eli.thegreenplace.net/2011/12/27/python-threads-communication-and-stopping
+"""
 
 
-myQueue = Queue.Queue()  # so many vowels!
+q = Queue()
+num_threads = 3
+activeList = [0] * num_threads
+stopList = [0] * num_threads
 recent = {}
-stopDict = {}
-stopList = []
-activeList = []
-statDict = {}
-stopped = 0
+qList = []
+threadDict = {}
+
+
+def stop(request):
+    global activeList, stopList, threadDict
+    RID = str(request.GET['all'])
+    pid = activeList.index(RID)
+    stopList[pid] = RID
+    activeList[pid] = 0
+    threadName = threadDict[RID]
+    threads = threading.enumerate()
+    for thread in threads:
+        if thread.name == threadName:
+            thread.terminate()
+            stopList[pid] = RID
+            myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
+            stop = simplejson.dumps(myDict)
+            return HttpResponse(stop, content_type='application/json')
+
+
+def process(pid):
+    global activeList, stopList, threadDict
+    while True:
+        data = q.get(block=True, timeout=None)
+        RID = data['RID']
+        funcName = data['funcName']
+        request = data['request']
+        activeList[pid] = RID
+        thread = threading.current_thread()
+        threadDict[RID] = thread.name
+        if activeList[pid] == RID:
+            if funcName == "getNorm":
+                recent[RID] = norm_graphs.getNorm(request, RID, pid)
+            if funcName == "getCatUnivData":
+                recent[RID] = anova_graphs.getCatUnivData(request, RID, pid)
+        sleep(1)
+        activeList[pid] = ''
+        threadDict.pop(RID, 0)
 
 
 def funcCall(request):
-    global stopDict
+    global activeList, stopList
     allJson = request.GET["all"]
     data = simplejson.loads(allJson)
     RID = data['RID']
     funcName = data['funcName']
-    stopDict[RID] = False
-    queueDict = {'RID': RID, 'funcName': funcName, 'request': request}
-    myQueue.put(queueDict, True)
-    statDict[RID] = myQueue.qsize() - stopped
+    qDict = {'RID': RID, 'funcName': funcName, 'request': request}
+    qList.append(qDict)
+    q.put(qDict, True)
+
     while True:
         try:
             results = recent[RID]
             recent.pop(RID, 0)
-            stopDict.pop(RID, 0)
-            statDict.pop(RID, 0)
             return results
         except KeyError:
-            if RID not in activeList and stopDict[RID]:
-                stopDict.pop(RID, 0)
-                myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
-                stop = simplejson.dumps(myDict)
-                statDict.pop(RID, 0)
-                return HttpResponse(stop, content_type='application/json')
+            if RID in stopList:
+                pid = stopList.index(RID)
+                stopList[pid] = 0
+                return HttpResponse('')
         sleep(1)
-        #print "I'm tired, RID: "+str(RID)+", funcName: "+str(funcName)
+        print "active:", activeList
+        print "stop:", stopList
 
-
-def stat(RID):
-    return statDict[RID]
-
-
-def stop(request):
-    global stopped
-    # find index of RID in activeList, set stopList at same index to True
-    RID = str(request.GET["all"])
-    try:
-        if RID in activeList:
-            stopList[activeList.index(RID)] = True
-        stopDict[RID] = True
-    except:
-        stopped += 1
-
-    myDict = {}
-    myDict['error'] = 'none'
-    myDict['message'] = 'Your analysis has been stopped!'
-    stop = simplejson.dumps(myDict)
-
-    return HttpResponse(stop, content_type='application/json')
-
-
-def decQueue():
-    for key in statDict:
-        statDict[key] -= 1
-
-
-def process(stop, PID):
-    global stopped
-    stopList.append(False)
-    activeList.append(0)
-    while stop[0] == 'True':
-        try:
-            curDict = myQueue.get(False)
-            decQueue()
-            myRID = curDict['RID']
-            myFunc = curDict['funcName']
-            myRequest = curDict['request']
-
-            if not stopDict[myRID]:
-                activeList[PID] = myRID
-                # standard args are: data, stop, request ID, process ID
-                if myFunc == "getNorm":
-                    recent[curDict['RID']] = norm_graphs.getNorm(myRequest, stopList, myRID, PID)
-                if myFunc == "getCatUnivData":
-                    recent[curDict['RID']] = anova_graphs.getCatUnivData(myRequest, stopList, myRID, PID)
-                if myFunc == "getQuantUnivData":
-                    recent[curDict['RID']] = anova_graphs.getQuantUnivData(myRequest, stopList, myRID, PID)
-                if myFunc == "getPCoA":
-                    recent[curDict['RID']] = pcoa_graphs.getPCoA(myRequest, stopList, myRID, PID)
-                if myFunc == "getPCA":
-                    recent[curDict['RID']] = pca_graphs.getPCA(myRequest, stopList, myRID, PID)
-                if myFunc == "getDiffAbund":
-                    recent[curDict['RID']] = diffabund_graphs.getDiffAbund(myRequest, stopList, myRID, PID)
-                if myFunc == "getGAGE":
-                    recent[curDict['RID']] = gage_graphs.getGAGE(myRequest, stopList, myRID, PID)
-                if myFunc == "getSPLS":
-                    recent[curDict['RID']] = spls_graphs.getSPLS(myRequest, stopList, myRID, PID)
-                if myFunc == "getWGCNA":
-                    recent[curDict['RID']] = wgcna_graphs.getWGCNA(myRequest, stopList, myRID, PID)
-                stopList[PID] = False
-                activeList[PID] = 0
-            else:
-                stopped -= 1
-        except:
-            sleep(1)
-    return
 
