@@ -451,7 +451,9 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var stage = obj['stage'];
-                    $('#container-0').empty().append(stage);
+                    if (running) {
+                        $('#container-0').empty().append(stage);
+                    }
                 }
             });
         }

@@ -16,7 +16,7 @@ from spac import spac_graphs
 from soil_index import soil_index_graphs
 
 
-q = Queue()
+q = Queue(maxsize=0)
 num_threads = 3
 activeList = [0] * num_threads
 stopList = [0] * num_threads
@@ -25,6 +25,7 @@ qList = []
 threadDict = {}
 statDict = {}
 stopDict = {}
+stopped = 0
 
 
 def stop(request):
@@ -96,7 +97,7 @@ def process(pid):
 
 
 def funcCall(request):
-    global activeList, stopList, stopDict, statDict
+    global activeList, stopList, stopDict, statDict, qList
     allJson = request.GET["all"]
     data = simplejson.loads(allJson)
     RID = data['RID']
@@ -105,13 +106,14 @@ def funcCall(request):
     qList.append(qDict)
     q.put(qDict, True)
     statDict[RID] = int(q.qsize())
-
     while True:
         try:
             results = recent[RID]
             recent.pop(RID, 0)
             statDict.pop(RID, 0)
             stopDict.pop(RID, 0)
+            if results is None:  # if stopped as active process
+                return HttpResponseNotFound()  # return rnf (better than None)
             return results
         except KeyError:
             if RID in stopList:
@@ -121,6 +123,7 @@ def funcCall(request):
                 except:
                     pass
                 statDict.pop(RID, 0)
+                # print "funcCall returning NF"
                 return HttpResponseNotFound()
         sleep(1)
         # print "active:", activeList
@@ -128,5 +131,6 @@ def funcCall(request):
 
 
 def stat(RID):
+    # print "statDict[RID]: "+str(statDict[RID])+", full: "+str(statDict)
     return statDict[RID] - stopped
 
