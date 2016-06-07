@@ -25,7 +25,8 @@
 
         $(function () {
 
-            if ("{{ normpost }}" == "True") alert("Uploaded normalized data set successfully");
+            if ("{{ normpost }}" == "Success") alert("Uploaded samples were found in your database.\nYou may proceed directly to the Analysis section.");
+            if ("{{ normpost }}" == "Fail") alert("Uploaded samples were not found in your database.\nPlease upload the raw data to myPhyloDB.");
 
             $(".display").dataTable({
                 dom: 'B<"toolbar">lfrtip',
