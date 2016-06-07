@@ -922,10 +922,12 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var stage = obj['stage'];
-                    if (button1 == 1) {
-                        $('#container-1').empty().append(stage);
-                    } else if (button1 == 2) {
-                        $('#container-2').empty().append(stage);
+                    if (running) {
+                        if (button1 == 1) {
+                            $('#container-1').empty().append(stage);
+                        } else if (button1 == 2) {
+                            $('#container-2').empty().append(stage);
+                        }
                     }
                 }
             });
@@ -1258,8 +1260,8 @@
                         all: jsonDict
                     },
                     success: function (data) {
-                        running = false;
                         stopTimer(refresh);
+                        running = false;
                         var xAxis = data['xAxis'];
                         var series = data['series'];
                         var yAxis = data['yAxis'];
@@ -1285,7 +1287,6 @@
                                 }
                             }
                         }
-
                         var text = data['text'];
                         $('#text-1').val(text);
 
