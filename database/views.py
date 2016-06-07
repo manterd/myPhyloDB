@@ -755,9 +755,14 @@ def saveSampleCookie(request):
         qs = Sample.objects.all().filter(sampleid__in=selList).values_list('sampleid')
         request.session['selected_samples'] = pickle.dumps(qs.query)
 
-        text = 'Selected sample(s) have been recorded!'
-        res = simplejson.dumps(text, encoding="Latin-1")
-        return HttpResponse(res, content_type='application/json')
+        if request.session['selected_samples']:
+            text = 'Selected sample(s) have been recorded!'
+            res = simplejson.dumps(text, encoding="Latin-1")
+            return HttpResponse(res, content_type='application/json')
+        else:
+            text = 'Samples were not recorded! Please try again.'
+            res = simplejson.dumps(text, encoding="Latin-1")
+            return HttpResponse(res, content_type='application/json')
 
 
 def getSampleCookie(request):
@@ -916,8 +921,19 @@ def uploadNorm(request):
     savedDF = pd.read_csv(uploaded, index_col=0)
 
     samples = list(set(savedDF['sampleid']))
-    """ What if samples don't exist? Following query only looks for existing samples in DB """
     qs = Sample.objects.all().filter(sampleid__in=samples).values_list('sampleid')
+
+    if not qs:
+        return render_to_response(
+            'select.html',
+            {'form9': UploadForm9,
+             'projects': None,
+             'refs': None,
+             'samples': None,
+             'normpost': 'Fail'},
+            context_instance=RequestContext(request)
+        )
+
     request.session['selected_samples'] = pickle.dumps(qs.query)
 
     projects = list(set(savedDF['projectid']))
@@ -946,6 +962,6 @@ def uploadNorm(request):
          'projects': projects,
          'refs': refs,
          'samples': samples,
-         'normpost': True},
+         'normpost': 'Success'},
         context_instance=RequestContext(request)
     )
