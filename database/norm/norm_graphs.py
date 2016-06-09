@@ -53,19 +53,15 @@ def statusNorm(request):
         return HttpResponse(json_data, content_type='application/json')
 
 
-def removeRIDNorm(request):
+def removeRIDNorm(RID):
     global base, stage, time1, time2, TimeDiff
     try:
-        if request.is_ajax():
-            RID = request.GET["all"]
-            base.pop(RID, None)
-            stage.pop(RID, None)
-            time1.pop(RID, None)
-            time2.pop(RID, None)
-            TimeDiff.pop(RID, None)
-            return True
-        else:
-            return False
+        base.pop(RID, None)
+        stage.pop(RID, None)
+        time1.pop(RID, None)
+        time2.pop(RID, None)
+        TimeDiff.pop(RID, None)
+        return True
     except:
         return False
 
@@ -91,10 +87,12 @@ def getNorm(request, RID, stopList, PID):
             NormVal = all["NormVal"]
             size_on = int(all["MinSize"])
 
-            # Get selected samples from cookie and query database for sample info
-            samples = Sample.objects.all()
-            samples.query = pickle.loads(request.session['selected_samples'])
-            selected = samples.values_list('sampleid')
+            # Get selected samples from user's folder and query database for sample info
+            myDir = 'media/usr_temp/' + str(request.user) + '/'
+            path = str(myDir) + 'usr_sel_samples.pkl'
+            with open(path, 'rb') as f:
+                selected = pickle.load(f)
+
             qs1 = Sample.objects.all().filter(sampleid__in=selected)
 
             # Generate a list of sequence reads per sample and filter samples if minimum samplesize
@@ -268,16 +266,23 @@ def getNorm(request, RID, stopList, PID):
             metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
             finalDF = finalDF[metaDFList]
 
-            # save location info to session
+            # save location info to session and save in temp/norm
             myDir = 'media/temp/norm/'
             path = str(myDir) + str(RID) + '.pkl'
             request.session['savedDF'] = pickle.dumps(path)
             request.session['NormMeth'] = NormMeth
 
-            # now save file to computer
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
             finalDF.to_pickle(path)
+
+            # save file to users temp/ folder
+            myDir = 'media/usr_temp/' + str(request.user) + '/'
+            path = str(myDir) + 'usr_norm_data.csv'
+
+            if not os.path.exists(myDir):
+                os.makedirs(myDir)
+            finalDF.to_csv(path, sep='\t')
 
             base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
@@ -326,8 +331,8 @@ def getNorm(request, RID, stopList, PID):
                 biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
                 finalDict['biome'] = str(biome_json)
 
-            myDir = 'media/temp/norm/'
-            path = str(myDir) + str(RID) + '.biom'
+            myDir = 'media/usr_temp/' + str(request.user) + '/'
+            path = str(myDir) + 'usr_norm_data.biom'
             with open(path, 'w') as outfile:
                 simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
@@ -363,6 +368,7 @@ def getNorm(request, RID, stopList, PID):
 
             finalDict['error'] = 'none'
             res = simplejson.dumps(finalDict)
+            removeRIDNorm(RID)
             return HttpResponse(res, content_type='application/json')
 
     except:
@@ -373,6 +379,7 @@ def getNorm(request, RID, stopList, PID):
             myDict = {}
             myDict['error'] = "Error with Normalization!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
+            removeRIDNorm(RID)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -529,6 +536,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
                 processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
             else:
                 numcore = min(mp.cpu_count(), Proc)
+                print numcore
                 processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
 
             for p in processes:
@@ -695,31 +703,19 @@ def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID, stopLi
 
 def getTab(request):
     if request.is_ajax():
-        RID = request.GET["all"]
-
-        path = pickle.loads(request.session['savedDF'])
-        savedDF = pd.read_pickle(path)
-
-        myDir = 'media/temp/norm/'
-        fileName = str(myDir) + str(RID) + '.csv'
-        savedDF.to_csv(fileName)
-
         myDict = {}
-        myDir = 'temp/norm/'
-        fileName = str(myDir) + str(RID) + '.csv'
+        myDir = 'usr_temp/' + str(request.user) + '/'
+        fileName = str(myDir) + 'usr_norm_data.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)
-
         return HttpResponse(res, content_type='application/json')
 
 
 def getBiom(request):
     if request.is_ajax():
-        RID = request.GET["all"]
-
         myDict = {}
-        myDir = 'temp/norm/'
-        fileName = str(myDir) + str(RID) + '.biom'
+        myDir = 'usr_temp/' + str(request.user) + '/'
+        fileName = str(myDir) + 'usr_norm_data.biom'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')

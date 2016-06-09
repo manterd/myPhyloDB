@@ -14,12 +14,12 @@ from spls import spls_graphs
 from wgcna import wgcna_graphs
 from spac import spac_graphs
 from soil_index import soil_index_graphs
+from database.utils import threads
 
 
 q = Queue(maxsize=0)
-num_threads = 3
-activeList = [0] * num_threads
-stopList = [0] * num_threads
+activeList = [0] * threads()
+stopList = [0] * threads()
 recent = {}
 qList = []
 threadDict = {}
@@ -75,6 +75,8 @@ def process(pid):
                     recent[RID] = norm_graphs.getNorm(request, RID, stopList, pid)
                 if funcName == "getCatUnivData":
                     recent[RID] = anova_graphs.getCatUnivData(request, RID, stopList, pid)
+                if funcName == "getQuantUnivData":
+                    recent[RID] = anova_graphs.getQuantUnivData(request, RID, stopList, pid)
                 if funcName == "getPCA":
                     recent[RID] = pca_graphs.getPCA(request, stopList, RID, pid)
                 if funcName == "getPCoA":
@@ -126,11 +128,8 @@ def funcCall(request):
                 # print "funcCall returning NF"
                 return HttpResponseNotFound()
         sleep(1)
-        # print "active:", activeList
-        # print "stop:", stopList
 
 
 def stat(RID):
-    # print "statDict[RID]: "+str(statDict[RID])+", full: "+str(statDict)
     return statDict[RID] - stopped
 

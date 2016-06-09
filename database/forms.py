@@ -22,6 +22,7 @@ class UploadForm2(forms.Form):
     source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed mothur files'), ('454_sff', 'sff files'), ('454_fastq', 'fna/qual files'), ('miseq', 'fastq files')))
     processors = forms.IntegerField(initial=2, min_value=1, max_value=100)
 
+
 class UploadForm4(forms.Form):
     docfile8 = forms.FileField(label='Select alignment file (e.g., silva.seed_v119.align):')
     docfile9 = forms.FileField(label='Select template file (e.g., gg_13_5_99.fasta):')

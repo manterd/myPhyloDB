@@ -196,63 +196,6 @@
 
         });
 
-        function menuUpdate() {
-            $.ajax({
-                type: 'GET',
-                url: '/getSampleCookie/',
-                dataType: 'json',
-                data: {},
-                success: function (data) {
-                    var select = data['select'];
-                    var norm = data['norm'];
-                    var NormMeth = data['NormMeth'];
-                    if ((select == 'no') && (norm == 'no')) {
-                        $("#link0").hide();
-                        $("#link1").hide();
-                        $("#link2").hide();
-                        $("#link3").hide();
-                        $("#link4").hide();
-                        $("#link5").hide();
-                        $("#link6").hide();
-                    } else if ((select == 'yes') && (norm == 'no')) {
-                        $("#link0").hide();
-                        $("#link1").hide();
-                        $("#link2").hide();
-                        $("#link3").hide();
-                        $("#link4").hide();
-                        $("#link5").show();
-                        $("#link6").hide();
-                    } else if ((select == 'no') && ( norm != 'no')) {
-                        $("#link0").hide();
-                        $("#link1").hide();
-                        $("#link2").hide();
-                        $("#link3").hide();
-                        $("#link4").hide();
-                        $("#link5").hide();
-                        $("#link6").hide();
-                    } else if ((select == 'yes') && ( norm != 'no')) {
-                        if (NormMeth != '4') {
-                            $("#link0").show();
-                            $("#link1").show();
-                            $("#link2").show();
-                            $("#link3").show();
-                            $("#link4").show();
-                            $("#link5").show();
-                            $("#link6").show();
-                        } else {
-                            $("#link0").show();
-                            $("#link1").show();
-                            $("#link2").show();
-                            $("#link3").show();
-                            $("#link4").hide();
-                            $("#link5").show();
-                            $("#link6").show();
-                        }
-                    }
-                }
-            });
-        }
-
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
@@ -393,7 +336,6 @@
                     all: jsonDict
                 },
                 success: function(data) {
-                    menuUpdate();
 
                     var error = data['error'];
                     if (error != "none") {
@@ -450,6 +392,8 @@
 
                     document.getElementById("TabButton").disabled = false;
                     document.getElementById("BiomButton").disabled = false;
+
+                    location.reload();
                }
             });
         }

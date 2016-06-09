@@ -4,10 +4,8 @@ from django import db
 from django.http import HttpResponse
 from django_pandas.io import read_frame
 import logging
-import multiprocessing as mp
 import numpy as np
 import pandas as pd
-import pickle
 from pyper import *
 import simplejson
 import shutil
@@ -17,9 +15,10 @@ import time
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
-from database.utils import multidict, stoppableThread
+from database.utils import multidict
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 import database.queue
+from config import local_cfg
 
 
 base = {}
@@ -27,9 +26,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-stop2 = False
-thread2 = stoppableThread()
-res = ''
+
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
@@ -59,25 +56,21 @@ def updateDiffAbund(request):
         return HttpResponse(json_data, content_type='application/json')
 
 
-def removeRIDDIFF(request):
+def removeRIDDIFF(RID):
     global base, stage, time1, time2, TimeDiff
     try:
-        if request.is_ajax():
-            RID = request.GET["all"]
-            base.pop(RID, None)
-            stage.pop(RID, None)
-            time1.pop(RID, None)
-            time2.pop(RID, None)
-            TimeDiff.pop(RID, None)
-            return True
-        else:
-            return False
+        base.pop(RID, None)
+        stage.pop(RID, None)
+        time1.pop(RID, None)
+        time2.pop(RID, None)
+        TimeDiff.pop(RID, None)
+        return True
     except:
         return False
 
 
 def getDiffAbund(request, stops, RID, PID):
-    global res, base, stage, time1, TimeDiff, stop2
+    global base, stage, time1, TimeDiff
     try:
         while True:
             if request.is_ajax():
@@ -85,12 +78,14 @@ def getDiffAbund(request, stops, RID, PID):
                 allJson = request.GET["all"]
                 all = simplejson.loads(allJson)
 
-
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...'
 
-                path = pickle.loads(request.session['savedDF'])
-                savedDF = pd.read_pickle(path)
+                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                path = str(myDir) + 'usr_norm_data.csv'
+
+                with open(path, 'rb') as f:
+                    savedDF = pd.read_csv(f, index_col=0, sep='\t')
 
                 button3 = int(all['button3'])
                 selectAll = int(all["selectAll"])
@@ -184,7 +179,7 @@ def getDiffAbund(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...'
@@ -245,7 +240,7 @@ def getDiffAbund(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 5: Performing statistical test...'
@@ -264,7 +259,7 @@ def getDiffAbund(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 r("library(DESeq2)")
@@ -419,13 +414,14 @@ def getDiffAbund(request, stops, RID, PID):
 
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                             if stops[PID] == RID:
-                                return None
+                                res = ''
+                                return HttpResponse(res, content_type='application/json')
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 5: Performing statistical test...done!'
@@ -483,7 +479,7 @@ def getDiffAbund(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 xTitle = {}
@@ -511,7 +507,7 @@ def getDiffAbund(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 5 of 5:  Formatting nbinomTest results for display...'
@@ -526,23 +522,24 @@ def getDiffAbund(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                removeRIDDIFF(request)
+                removeRIDDIFF(RID)
                 return HttpResponse(res, content_type='application/json')
 
     except:
-        if not stop2:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-        return None
+            removeRIDDIFF(RID)
+            return HttpResponse(res, content_type='application/json')
 
 
 def findTaxa(id):
@@ -628,7 +625,7 @@ def findNZ(id):
 
 
 def getTaxaDF(selectAll, tempDF, allFields, DepVar, RID, stops, PID):
-    global base, stop2, res
+    global base
     try:
         base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
         taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'abund', 'abund_16S'])
@@ -661,7 +658,7 @@ def getTaxaDF(selectAll, tempDF, allFields, DepVar, RID, stops, PID):
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
             res = ''
-            return None
+            return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # Create combined metadata column - DiffAbund only
@@ -684,17 +681,18 @@ def getTaxaDF(selectAll, tempDF, allFields, DepVar, RID, stops, PID):
         return finalDF
 
     except:
-        if not stop2:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
+            return HttpResponse(res, content_type='application/json')
 
 
 def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
-    global base, stop2, res
+    global base
     try:
         base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
         koDict = {}
@@ -708,7 +706,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 2:
@@ -721,7 +719,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 3:
@@ -734,12 +732,12 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         if stops[PID] == RID:
             res = ''
-            return None
+            return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # create sample and species lists based on meta data selection
@@ -762,9 +760,9 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = mp.cpu_count()
+            numcore = local_cfg.usr_numcore
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
@@ -772,7 +770,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         for p in processes:
@@ -781,7 +779,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         levelList = []
@@ -797,7 +795,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         shutil.rmtree('media/temp/diffabund/'+str(RID))
@@ -815,7 +813,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -834,7 +832,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         else:
@@ -869,23 +867,24 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         return finalDF
 
     except:
-        if not stop2:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
+            return HttpResponse(res, content_type='application/json')
 
 
 def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
-    global base, stop2, res
+    global base
     try:
         nzDict = {}
         if nzAll == 1:
@@ -898,7 +897,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 2:
@@ -911,7 +910,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 3:
@@ -924,7 +923,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 4:
@@ -937,7 +936,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 5:
@@ -1092,9 +1091,9 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = mp.cpu_count()
+            numcore = local_cfg.usr_numcore
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
@@ -1102,7 +1101,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         for p in processes:
@@ -1111,7 +1110,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         levelList = []
@@ -1127,7 +1126,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         shutil.rmtree('media/temp/diffabund/'+str(RID))
@@ -1145,7 +1144,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -1164,7 +1163,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         else:
@@ -1201,23 +1200,24 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         return finalDF
 
     except:
-        if not stop2:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
+            return HttpResponse(res, content_type='application/json')
 
 
 def sumStuff(slice, koDict, RID, num, stops, PID):
-    global base, res
+    global base
     db.close_old_connections()
 
     f = open('media/temp/diffabund/'+str(RID)+'/file'+str(num)+".temp", 'w')
@@ -1247,7 +1247,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
             res = ''
-            return None
+            return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     f.close()

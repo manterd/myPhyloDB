@@ -4,12 +4,9 @@ from django import db
 from django.http import HttpResponse
 from django_pandas.io import read_frame
 import logging
-import math
-import multiprocessing as mp
 from natsort import natsorted
 import numpy as np
 import pandas as pd
-import pickle
 from pyper import *
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import simplejson
@@ -18,8 +15,9 @@ import threading
 
 from database.models import PICRUSt
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
-from database.utils import multidict, stoppableThread
+from database.utils import multidict
 import database.queue
+from config import local_cfg
 
 
 base = {}
@@ -27,10 +25,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-stop_soil_index = False
-stops = {}
-thread_soil_index = stoppableThread()
-res = ''
+
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
@@ -55,49 +50,27 @@ def statussoil_index(request):
             if TimeDiff[RID] == 0:
                 stage[RID] = 'In queue'
             else:
-                stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+                stage[RID] = 'Analysis has been running for %.1f seconds' % TimeDiff[RID]
         myDict['stage'] = stage[RID]
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
-def removeRIDsoil_index(request):
+def removeRIDsoil_index(RID):
     global base, stage, time1, time2, TimeDiff
     try:
-        if request.is_ajax():
-            RID = request.GET["all"]
-            base.pop(RID, None)
-            stage.pop(RID, None)
-            time1.pop(RID, None)
-            time2.pop(RID, None)
-            TimeDiff.pop(RID, None)
-            stops.pop(RID, None)
-            return True
-        else:
-            return False
+        base.pop(RID, None)
+        stage.pop(RID, None)
+        time1.pop(RID, None)
+        time2.pop(RID, None)
+        TimeDiff.pop(RID, None)
+        return True
     except:
         return False
 
 
-def stopsoil_index(request):
-    global thread_soil_index, stops, stop_soil_index, res
-    if request.is_ajax():
-        RID = request.GET["all"]
-        stop_soil_index = True
-        thread_soil_index.terminate()
-        thread_soil_index.join()
-        removeRIDsoil_index(request)
-
-        res = ''
-        myDict = {}
-        myDict['error'] = 'none'
-        myDict['message'] = 'Your analysis has been stopped!'
-        stop = simplejson.dumps(myDict)
-        return HttpResponse(stop, content_type='application/json')
-
-
 def getsoil_index(request, stops, RID, PID):
-    global res, base, stage, time1, TimeDiff, stop_soil_index
+    global base, stage, time1, TimeDiff
     try:
         while True:
             if request.is_ajax():
@@ -107,8 +80,11 @@ def getsoil_index(request, stops, RID, PID):
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 3: Selecting your chosen meta-variables...'
 
-                path = pickle.loads(request.session['savedDF'])
-                savedDF = pd.read_pickle(path)
+                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                path = str(myDir) + 'usr_norm_data.csv'
+
+                with open(path, 'rb') as f:
+                    savedDF = pd.read_csv(f, index_col=0, sep='\t')
 
                 result = ''
 
@@ -171,10 +147,10 @@ def getsoil_index(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of 3: Selecting your chosen taxa or KEGG level...'
+                base[RID] = 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n'
 
                 finalDF, keggDF, levelList = getTaxaDF(savedDF, metaDF, RID, stops, PID)
                 finalDF = finalDF[finalDF.rel_abund != 0]
@@ -200,17 +176,14 @@ def getsoil_index(request, stops, RID, PID):
                 # Removes samples (rows) that are not in our sampleeta_rlist
                 meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]
 
-                bioDF  = meta_rDF[catFields_edit].copy()
-                chemDF = meta_rDF[catFields_edit].copy()
-                physDF = meta_rDF[catFields_edit].copy()
-
-                # replace NaN's with 0's
-                bioDF = bioDF.fillna(0)
-                chemDF = chemDF.fillna(0)
-                physDF = physDF.fillna(0)
+                want = catFields_edit + ['sampleid']
+                bioDF = meta_rDF[want].copy()
+                chemDF = meta_rDF[want].copy()
+                physDF = meta_rDF[want].copy()
 
                 # check for null columns, fill with blanks if found (0's, not nulls)
                 # Biological
+
                 if 'microbial_respiration' in meta_rDF.columns:
                     bioDF['microbial_respiration'] = meta_rDF['microbial_respiration']
                 else:
@@ -296,12 +269,22 @@ def getsoil_index(request, stops, RID, PID):
                 else:
                     physDF['soil_water_cap'] = 0.0
 
+                # replace NaN's with 0's
+                bioDF = bioDF.fillna(0)
+                chemDF = chemDF.fillna(0)
+                physDF = physDF.fillna(0)
+
+                dataDF = pd.merge(chemDF, bioDF, left_index=True, right_index=True, how='outer')
+                dataDF = pd.merge(dataDF, physDF, left_index=True, right_index=True, how='outer')
+                dataDF.set_index('sampleid', drop=True, inplace=True)
+
                 # get means
-                bioDF  = bioDF.groupby(catFields_edit)
-                bioDF = bioDF.mean()
+                bioDF = bioDF.groupby(catFields_edit)
                 chemDF = chemDF.groupby(catFields_edit)
-                chemDF = chemDF.mean()
                 physDF = physDF.groupby(catFields_edit)
+
+                bioDF = bioDF.mean()
+                chemDF = chemDF.mean()
                 physDF = physDF.mean()
 
                 if metaDictCat:
@@ -356,13 +339,17 @@ def getsoil_index(request, stops, RID, PID):
                 starDF = pd.merge(meta_rDF, nzDF, left_index=True, right_index=True, how='outer')
                 bytrt2 = starDF.groupby(catFields_edit)
 
-                print sumDF1.columns.values
+                dataDF = pd.merge(dataDF, sumDF1, left_index=True, right_index=True, how='outer')
+                dataDF = pd.merge(dataDF, sumDF2, left_index=True, right_index=True, how='outer')
+                dataDF = pd.merge(dataDF, starDF, left_index=True, right_index=True, how='outer')
+                dataDF = pd.merge(dataDF, meta_rDF, left_index=True, right_index=True, how='outer')
+                dataDF.reset_index(drop=False, inplace=True)
+                '''print sumDF1.columns.values
                 print sumDF2.columns.values
                 print bioDF.columns.values
                 print chemDF.columns.values
                 print physDF.columns.values
-                print starDF.columns.values
-                #TODO: rename sumDF1 columns
+                print starDF.columns.values'''
                 #TODO: merge all DFs and send to DataTable on webpage
 
                 myList = [u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase',
@@ -751,7 +738,7 @@ def getsoil_index(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 3 of 3: Pooling pdf files for display...'
@@ -769,41 +756,45 @@ def getsoil_index(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 merger.write(finalFile)
-
                 finalDict = {}
+
+                res_table = dataDF.to_html(classes="table display")
+                res_table = res_table.replace('border="1"', 'border="0"')
+                finalDict['res_table'] = str(res_table)
+
                 finalDict['text'] = result
 
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                removeRIDsoil_index(request)
+                removeRIDsoil_index(RID)
                 return HttpResponse(res, content_type='application/json')
 
     except:
-        if not stop_soil_index:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "Error with soil_index!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict = {'error': "Error with soil_index!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = simplejson.dumps(myDict)
-        return None
+            removeRIDsoil_index(RID)
+            return HttpResponse(res, content_type='application/json')
 
 
 def getTaxaDF(savedDF, metaDF, RID, stops, PID):
-    global base, stop_soil_index, res
+    global base
     try:
-        base[RID] = 'Step 2 of 3: Selecting your chosen taxa or KEGG level...'
+        base[RID] = 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n'
         taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
         taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
             res = ''
-            return None
+            return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         taxaDF.drop('sampleid', axis=1, inplace=True)
@@ -821,18 +812,18 @@ def getTaxaDF(savedDF, metaDF, RID, stops, PID):
         return finalDF, keggDF, levelList
 
     except:
-        if not stop_soil_index:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with soil_index!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-        return None
+            return HttpResponse(res, content_type='application/json')
 
 
 def getNZDF(metaDF, finalDF, RID, stops, PID):
-    global base, stop_soil_index, res
+    global base
 
     try:
         nzDict = {}
@@ -976,9 +967,9 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = mp.cpu_count()
+            numcore = local_cfg.usr_numcore
             listDF = np.array_split(picrustDF, numcore)
-            processes = [mp.Process(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
@@ -986,7 +977,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         for p in processes:
@@ -995,7 +986,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         levelList = []
@@ -1011,7 +1002,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         shutil.rmtree('media/temp/soil_index/'+str(RID))
@@ -1026,7 +1017,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -1065,24 +1056,24 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         return keggDF, levelList
 
     except:
-        if not stop_soil_index:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with soil_index!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-        return None
+            return HttpResponse(res, content_type='application/json')
 
 
 def sumStuff(slice, koDict, RID, num, stops, PID):
-    global base, res
+    global base
     db.close_old_connections()
 
     f = open('media/temp/soil_index/'+str(RID)+'/file'+str(num)+".temp", 'w')
@@ -1112,7 +1103,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
             res = ''
-            return None
+            return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     f.close()

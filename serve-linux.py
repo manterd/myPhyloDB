@@ -4,16 +4,15 @@ import multiprocessing as mp
 import os.path
 import signal
 import sys
+import threading
 import webbrowser
-
 from myPhyloDB.wsgi import application
 
 from database.queue import process
-from database.utils import stoppableThread
+from database.utils import threads
 
 
 cherrypy.tree.graft(application)
-num_threads = 3
 
 
 class Server(object):
@@ -84,14 +83,18 @@ def signal_handler(signal, frame):
 
 
 signal.signal(signal.SIGINT, signal_handler)
+num_threads = threads()
+
+
 if __name__ == '__main__':
-    from django.core.management import execute_from_command_line
-    execute_from_command_line(sys.argv)
+    import django.core.management
+    #from django.core.management import execute_from_command_line
+    #execute_from_command_line(sys.argv)
 
     mp.freeze_support()
 
     for pid in xrange(num_threads):
-        thread = stoppableThread(target=process, args=(pid, ))
+        thread = threading.Thread(target=process, args=(pid, ))
         thread.setDaemon(True)
         thread.start()
     Server().run()
