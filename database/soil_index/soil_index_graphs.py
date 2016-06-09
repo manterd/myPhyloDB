@@ -274,8 +274,8 @@ def getsoil_index(request, stops, RID, PID):
                 chemDF = chemDF.fillna(0)
                 physDF = physDF.fillna(0)
 
-                dataDF = pd.merge(chemDF, bioDF, left_index=True, right_index=True, how='outer')
-                dataDF = pd.merge(dataDF, physDF, left_index=True, right_index=True, how='outer')
+                dataDF = pd.merge(chemDF, bioDF, on=want, how='outer')
+                dataDF = pd.merge(dataDF, physDF, on=want, how='outer')
                 dataDF.set_index('sampleid', drop=True, inplace=True)
 
                 # get means
@@ -341,16 +341,6 @@ def getsoil_index(request, stops, RID, PID):
 
                 dataDF = pd.merge(dataDF, sumDF1, left_index=True, right_index=True, how='outer')
                 dataDF = pd.merge(dataDF, sumDF2, left_index=True, right_index=True, how='outer')
-                dataDF = pd.merge(dataDF, starDF, left_index=True, right_index=True, how='outer')
-                dataDF = pd.merge(dataDF, meta_rDF, left_index=True, right_index=True, how='outer')
-                dataDF.reset_index(drop=False, inplace=True)
-                '''print sumDF1.columns.values
-                print sumDF2.columns.values
-                print bioDF.columns.values
-                print chemDF.columns.values
-                print physDF.columns.values
-                print starDF.columns.values'''
-                #TODO: merge all DFs and send to DataTable on webpage
 
                 myList = [u'3.2.1.4  cellulase', u'3.2.1.8  endo-1,4-beta-xylanase',
                           u'3.2.1.21  beta-glucosidase', u'3.2.1.37  xylan 1,4-beta-xylosidase',
@@ -378,6 +368,9 @@ def getsoil_index(request, stops, RID, PID):
                            u'chitinase', u'ammonia monooxygenase', u'hydroxylamine dehydrogenase', u'nitrate reductase',
                            u'nitrite reductase (NO-forming)', u'nitric oxide reductase (cytochrome c)',
                            u'nitrous-oxide reductase']
+
+                dataDF = pd.merge(dataDF, starDF[myList], left_index=True, right_index=True, how='outer')
+                dataDF.reset_index(drop=False, inplace=True)
 
                 df2 = bytrt2[myList].mean()
                 df2.rename(columns={u'3.2.1.4  cellulase': 'cellulase',
