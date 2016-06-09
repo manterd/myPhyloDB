@@ -14,6 +14,7 @@ from database.spls import spls_graphs
 from database.soil_index import soil_index_graphs
 from database.wgcna import wgcna_graphs
 from database.pybake import pybake
+from database import dataqueue
 
 admin.autodiscover()
 
@@ -126,5 +127,9 @@ urlpatterns = [
 
     # queue caller
     url(r'^funcCall/$', queue.funcCall, name='funcCall'),
-    url(r'^stop/$', queue.stop, name='stop')
+    url(r'^stop/$', queue.stop, name='stop'),
+
+    # data queue
+    url(r'^datfuncCall/$', dataqueue.datfuncCall, name='datfuncCall'),
+    url(r'^datstop/$', dataqueue.datstop, name='datstop')
 ]

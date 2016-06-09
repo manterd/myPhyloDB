@@ -70,6 +70,17 @@
                 refresh = setInterval(updateStatus, 1000);
                 analyze(selKeys);
             });
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'RID',
+                value: RID
+            }).appendTo('form');
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'funcName',
+                value: 'reprocess'
+            }).appendTo('form');
         });
 
         function analyze(selKeys){
@@ -106,6 +117,9 @@
                 url: '/status/',
                 type: 'GET',
                 dataType: 'json',
+                data: {
+                    all: RID
+                },
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
@@ -131,7 +145,7 @@
 {% endblock javascript %}
 {% block my_content %}
     <h2>Upload New Taxonomy Reference Files:</h2>
-    <form action="{% url 'reprocess' %}" method="post" enctype="multipart/form-data">
+    <form id='form' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
             <tr>

@@ -48,6 +48,10 @@ def upload(request):
         source = str(request.POST['source'])
         userID = str(request.user.id)
         processors = int(request.POST['processors'])
+        RID = request.POST['RID']
+        stopList = request.POST['stopList']
+        PID = 0  # change if adding additional data threads
+        # print "rid: "+str(RID)+", stopList: "+str(stopList)
 
         if form1.is_valid():
             file1 = request.FILES['docfile1']

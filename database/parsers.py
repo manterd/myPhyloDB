@@ -23,6 +23,7 @@ from models import Project, Reference, Sample, Soil, Human_Associated, UserDefin
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import purge, handle_uploaded_file
 from models import addQueue, getQueue, subQueue
+import database.dataqueue
 
 
 stage = ''
@@ -121,10 +122,17 @@ def mothur(dest, source):
 
 def status(request):
     if request.is_ajax():
+        RID = request.GET['all']
+        queuePos = database.dataqueue.datstat(RID)
         dict = {}
-        dict['stage'] = stage
-        dict['perc'] = perc
-        dict['project'] = rep_project
+        if queuePos == 0:
+            dict['stage'] = stage
+            dict['perc'] = perc
+            dict['project'] = rep_project
+        else:
+            dict['stage'] = "In queue for upload, "+str(queuePos)+" requests in front of you"
+            dict['perc'] = 0
+            dict['project'] = rep_project
         json_data = simplejson.dumps(dict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
