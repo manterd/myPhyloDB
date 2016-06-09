@@ -370,6 +370,8 @@ def getsoil_index(request, stops, RID, PID):
                            u'nitrous-oxide reductase']
 
                 dataDF = pd.merge(dataDF, starDF[myList], left_index=True, right_index=True, how='outer')
+                want = ['sample_name']
+                dataDF = pd.merge(meta_rDF[want], dataDF, left_index=True, right_index=True, how='outer')
                 dataDF.reset_index(drop=False, inplace=True)
 
                 df2 = bytrt2[myList].mean()
@@ -960,7 +962,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = local_cfg.usr_numcore
+            numcore = local_cfg.usr_numcore()
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
 

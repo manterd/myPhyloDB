@@ -494,7 +494,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = local_cfg.usr_numcore
+            numcore = local_cfg.usr_numcore()
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
@@ -821,7 +821,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = local_cfg.usr_numcore
+            numcore = local_cfg.usr_numcore()
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
 

@@ -30,7 +30,7 @@
     </style>
 
     <script type="text/javascript">
-
+        var RID = makeGUID();
         var source = 'mothur';
         $(function () {
             var test = '{{ error }}';
@@ -74,7 +74,20 @@
                     $("#miseq").show();
                     $("#proc_table").show();
                 }
-            })
+            });
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'RID',
+                value: RID
+            }).appendTo('form').appendTo('form2');
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'funcName',
+                value: 'upload'
+            }).appendTo('form').appendTo('form2');
+
         });
 
         function makeGUID(){
@@ -89,6 +102,9 @@
                 url: '/status/',
                 type: 'GET',
                 dataType: 'json',
+                data: {
+                    all: RID
+                },
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
@@ -114,7 +130,7 @@
 
     <h2>Upload new data files:</h2>
 
-    <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
+    <form id="form" action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <table width="100%" border="0" cellspacing="0" cellpadding="5">
@@ -245,7 +261,7 @@
     <div id="progressBar" style="display: none"><div></div></div>
 
     <h2>List of previous uploads:</h2>
-    <form method="post" action="{% url 'upload' %}">
+    <form id="form2" method="post" action="{% url 'datfuncCall' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <table>
             <td>

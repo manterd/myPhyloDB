@@ -10,6 +10,7 @@ from myPhyloDB.wsgi import application
 
 from database.queue import process
 from database.utils import threads
+from database.dataqueue import dataprocess
 
 
 cherrypy.tree.graft(application)
@@ -97,5 +98,10 @@ if __name__ == '__main__':
         thread = threading.Thread(target=process, args=(pid, ))
         thread.setDaemon(True)
         thread.start()
+
+    dataThread = threading.Thread(target=dataprocess, args=(0, ))
+    dataThread.setDaemon(True)
+    dataThread.start()
+
     Server().run()
 

@@ -273,11 +273,36 @@ def cleanup(path):
 
 
 def threads():
-    usr_threads = int(local_cfg.usr_num_threads)
-    if usr_threads == 0:
+    try:
+        usr_threads = int(local_cfg.usr_num_threads)
+    except:
+        usr_threads = 1
+
+    if usr_threads <= 0:
         num_threads = 1
     elif usr_threads > mp.cpu_count():
-        num_threads = mp.cpu_count()
+        num_threads = int(mp.cpu_count())
     else:
         num_threads = usr_threads
-    return num_threads
+    return int(num_threads)
+
+
+def numcore():
+    """
+    For the hosted version, this should probably
+    be changed to cpu_count / threads.  For a
+    personal version this does not provide maximum
+    control and unnecessarily limits performance.
+    """
+    try:
+        usr_core = int(local_cfg.usr_numcore)
+    except:
+        usr_core = 1
+
+    if usr_core <= 0:
+        numcore = 1
+    elif usr_core > mp.cpu_count():
+        numcore = int(mp.cpu_count())
+    else:
+        numcore = usr_core
+    return int(numcore)
