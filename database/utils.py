@@ -2,8 +2,8 @@ from collections import defaultdict
 import ctypes
 from django import forms
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
 import inspect
+import multiprocessing as mp
 import numpy as np
 import os
 import pandas as pd
@@ -13,6 +13,8 @@ import threading
 import time
 
 from models import Project, Reference, Profile
+from config import local_cfg
+
 
 pd.set_option('display.max_colwidth', -1)
 
@@ -268,3 +270,14 @@ def cleanup(path):
             if modified < now - age:
                 if os.path.isfile(filepath):
                     os.remove(filepath)
+
+
+def threads():
+    usr_threads = int(local_cfg.usr_num_threads)
+    if usr_threads == 0:
+        num_threads = 1
+    elif usr_threads > mp.cpu_count():
+        num_threads = mp.cpu_count()
+    else:
+        num_threads = usr_threads
+    return num_threads

@@ -5,7 +5,6 @@ from django.http import HttpResponse
 from django_pandas.io import read_frame
 import logging
 import math
-import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import pickle
@@ -21,6 +20,7 @@ from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict
 import database.queue
+from config import local_cfg
 
 
 base = {}
@@ -70,7 +70,7 @@ def statusANOVA(request):
     return HttpResponse(json_data, content_type='application/json')
 
 
-def getCatUnivData(request, RID, stopList, PID):
+def getCatUnivData(request, RID, stops, PID):
     global base, stage, time1, TimeDiff
     try:
         while True:
@@ -82,8 +82,11 @@ def getCatUnivData(request, RID, stopList, PID):
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
 
-                path = pickle.loads(request.session['savedDF'])
-                savedDF = pd.read_pickle(path)
+                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                path = str(myDir) + 'usr_norm_data.csv'
+
+                with open(path, 'rb') as f:
+                    savedDF = pd.read_csv(f, index_col=0, sep='\t')
 
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
@@ -167,7 +170,7 @@ def getCatUnivData(request, RID, stopList, PID):
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
+                if stops[PID] == RID:
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -181,19 +184,19 @@ def getCatUnivData(request, RID, stopList, PID):
                     DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stopList, PID)
+                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PID)
+                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PID)
+                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'media/temp/anova/'
@@ -207,7 +210,7 @@ def getCatUnivData(request, RID, stopList, PID):
                 base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
+                if stops[PID] == RID:
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -316,7 +319,7 @@ def getCatUnivData(request, RID, stopList, PID):
                                     fList.append(part1[0])
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stopList[PID] == RID:
+                        if stops[PID] == RID:
                             res = ''
                             return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -349,7 +352,7 @@ def getCatUnivData(request, RID, stopList, PID):
                                             D += tempStuff[i] + '\n'
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stopList[PID] == RID:
+                        if stops[PID] == RID:
                             res = ''
                             return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -383,7 +386,7 @@ def getCatUnivData(request, RID, stopList, PID):
                     counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stopList[PID] == RID:
+                    if stops[PID] == RID:
                         res = ''
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -426,7 +429,7 @@ def getCatUnivData(request, RID, stopList, PID):
                                 dataList = list(grouped2)
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stopList[PID] == RID:
+                    if stops[PID] == RID:
                         res = ''
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -459,7 +462,7 @@ def getCatUnivData(request, RID, stopList, PID):
                         xAxisDict['categories'] = [labelTree]
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stopList[PID] == RID:
+                    if stops[PID] == RID:
                         res = ''
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -494,7 +497,7 @@ def getCatUnivData(request, RID, stopList, PID):
                 base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
+                if stops[PID] == RID:
                     res = ''
                     return HttpResponse(res, content_type='application/json')
 
@@ -504,7 +507,7 @@ def getCatUnivData(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
 
     except:
-        if not stopList[PID]:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
@@ -566,7 +569,7 @@ def makeLabels(name, list):
     return retDict
 
 
-def getQuantUnivData(request, RID, stopList, PID):
+def getQuantUnivData(request, RID, stops, PID):
     global base, stage, time1, TimeDiff
     try:
         while True:
@@ -656,7 +659,7 @@ def getQuantUnivData(request, RID, stopList, PID):
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stopList[PID] == RID:
+                if stops[PID] == RID:
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
@@ -670,19 +673,19 @@ def getQuantUnivData(request, RID, stopList, PID):
                     DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stopList, PID)
+                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PID)
+                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PID)
+                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'media/temp/anova/'
@@ -696,7 +699,7 @@ def getQuantUnivData(request, RID, stopList, PID):
                 base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stopList[PID] == RID:
+                if stops[PID] == RID:
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
@@ -823,7 +826,7 @@ def getQuantUnivData(request, RID, stopList, PID):
                     counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                    if stopList[PID] == RID:
+                    if stops[PID] == RID:
                         res = ''
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
@@ -831,7 +834,7 @@ def getQuantUnivData(request, RID, stopList, PID):
                 base[RID] = 'Step 3 of 4: Performing statistical test...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                if stopList[PID] == RID:
+                if stops[PID] == RID:
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
@@ -1202,7 +1205,7 @@ def getQuantUnivData(request, RID, stopList, PID):
                         colors_idx = 0
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                    if stopList[PID] == RID:
+                    if stops[PID] == RID:
                         res = ''
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
@@ -1244,7 +1247,7 @@ def getQuantUnivData(request, RID, stopList, PID):
                 base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
+                if stops[PID] == RID:
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1252,20 +1255,21 @@ def getQuantUnivData(request, RID, stopList, PID):
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
+                removeRIDANOVA(RID)
                 return HttpResponse(res, content_type='application/json')
 
     except:
-        if not stopList[PID]:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
+            myDict = {'error': "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = simplejson.dumps(myDict)
+            removeRIDANOVA(RID)
             return HttpResponse(res, content_type='application/json')
 
 
-def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stopList, PID):
+def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     global base
     try:
         base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
@@ -1361,8 +1365,9 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
                         taxaDF = taxaDF.append(tempDF)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif selectAll == 1:
@@ -1395,8 +1400,9 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             taxaDF.loc[:, 'rank'] = 'Species'
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stopList[PID] == RID:
-            return None
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
@@ -1416,7 +1422,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         return finalDF
 
     except:
-        if not stopList[PID]:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
@@ -1425,7 +1431,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return HttpResponse(res, content_type='application/json')
 
 
-def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PID):
+def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
     global base
     try:
         base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
@@ -1470,8 +1476,9 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
                                 koDict[i] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 1:
@@ -1482,8 +1489,9 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 2:
@@ -1494,8 +1502,9 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 3:
@@ -1506,13 +1515,15 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
                     koDict[key] = koList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stopList[PID] == RID:
-            return None
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # create sample and species lists based on meta data selection
@@ -1535,7 +1546,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, PID)) for x in xrange(numcore)]
         else:
-            numcore = int(round(mp.cpu_count()/3, 0))
+            numcore = local_cfg.usr_numcore
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, PID)) for x in xrange(numcore)]
 
@@ -1543,16 +1554,18 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
             p.start()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         for p in processes:
             p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         levelList = []
@@ -1566,8 +1579,9 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         shutil.rmtree('media/temp/anova/'+str(RID))
@@ -1589,8 +1603,9 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
                 taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -1632,14 +1647,15 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
                 finalDF.loc[index, 'rank_name'] = ko_entry.objects.using('picrust').get(ko_lvl4_id=row['rank_id']).ko_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         return finalDF
 
     except:
-        if not stopList[PID]:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
@@ -1648,7 +1664,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stopLi
             return HttpResponse(res, content_type='application/json')
 
 
-def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PID):
+def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
     global base
     try:
         nzDict = {}
@@ -1700,8 +1716,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
                                 nzDict[i] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 1:
@@ -1712,8 +1729,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 2:
@@ -1724,8 +1742,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 3:
@@ -1736,8 +1755,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 4:
@@ -1748,8 +1768,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
                     nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    return None
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 5:
@@ -1902,11 +1923,11 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, PID, stopList)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, PID, stops)) for x in xrange(numcore)]
         else:
-            numcore = mp.cpu_count()
+            numcore = local_cfg.usr_numcore
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, PID, stopList)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, PID, stops)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()
@@ -1915,8 +1936,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
             p.join()
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         levelList = []
@@ -1930,8 +1952,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         shutil.rmtree('media/temp/anova/'+str(RID))
@@ -1952,8 +1975,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
                 taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -1999,14 +2023,15 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
                 finalDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_name
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                return None
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         return finalDF
 
     except:
-        if not stopList[PID]:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
@@ -2015,7 +2040,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stopList, PI
             return HttpResponse(res, content_type='application/json')
 
 
-def sumStuff(slice, koDict, RID, num, PID, stopList):
+def sumStuff(slice, koDict, RID, num, PID, stops):
     db.close_old_connections()
 
     f = open('media/temp/anova/'+str(RID)+'/file'+str(num)+".temp", 'w')
@@ -2043,8 +2068,9 @@ def sumStuff(slice, koDict, RID, num, PID, stopList):
         f.write('\n')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stopList[PID] == RID:
-            return None
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     f.close()

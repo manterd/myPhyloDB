@@ -4,19 +4,17 @@ from django.http import HttpResponse
 from django_pandas.io import read_frame
 import logging
 from natsort import natsorted
-import numpy as np
 import pandas as pd
 from PyPDF2 import PdfFileReader, PdfFileMerger
-import pickle
 from pyper import *
 import simplejson
 import time
 
 from database.models import PICRUSt
-from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
+from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
-from database.utils import multidict, stoppableThread
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+from database.utils import multidict
+from database.models import Phyla, Class, Order, Family, Genus, Species
 import database.queue
 
 
@@ -25,9 +23,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-stop8 = False
-thread8 = stoppableThread()
-res = ''
+
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
@@ -57,25 +53,21 @@ def updateGAGE(request):
         return HttpResponse(json_data, content_type='application/json')
 
 
-def removeRIDGAGE(request):
+def removeRIDGAGE(RID):
     global base, stage, time1, time2, TimeDiff
     try:
-        if request.is_ajax():
-            RID = request.GET["all"]
-            base.pop(RID, None)
-            stage.pop(RID, None)
-            time1.pop(RID, None)
-            time2.pop(RID, None)
-            TimeDiff.pop(RID, None)
-            return True
-        else:
-            return False
+        base.pop(RID, None)
+        stage.pop(RID, None)
+        time1.pop(RID, None)
+        time2.pop(RID, None)
+        TimeDiff.pop(RID, None)
+        return True
     except:
         return False
 
 
 def getGAGE(request, stops, RID, PID):
-    global res, base, stage, time1, TimeDiff, stop8
+    global base, stage, time1, TimeDiff
     try:
         while True:
             if request.is_ajax():
@@ -86,8 +78,11 @@ def getGAGE(request, stops, RID, PID):
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
 
-                path = pickle.loads(request.session['savedDF'])
-                savedDF = pd.read_pickle(path)
+                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                path = str(myDir) + 'usr_norm_data.csv'
+
+                with open(path, 'rb') as f:
+                    savedDF = pd.read_csv(f, index_col=0, sep='\t')
 
                 result = ''
 
@@ -141,7 +136,7 @@ def getGAGE(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 2 of 4: Mapping phylotypes to KEGG pathways...'
@@ -178,7 +173,7 @@ def getGAGE(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDF = getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID)
@@ -226,7 +221,7 @@ def getGAGE(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict = {}
@@ -336,13 +331,13 @@ def getGAGE(request, stops, RID, PID):
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                         if stops[PID] == RID:
                             res = ''
-                            return None
+                            return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 base[RID] = 'Step 4 of 4: Pooling pdf files for display...'
@@ -360,7 +355,7 @@ def getGAGE(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
-                        return None
+                        return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 merger.write(finalFile)
@@ -377,22 +372,23 @@ def getGAGE(request, stops, RID, PID):
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                removeRIDGAGE(request)
+                removeRIDGAGE(RID)
                 return HttpResponse(res, content_type='application/json')
 
     except:
-        if not stop8:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with GAGE Analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-        return None
+            removeRIDGAGE(RID)
+            return HttpResponse(res, content_type='application/json')
 
 
 def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
-    global base, stop8, res
+    global base
     try:
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
@@ -418,7 +414,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
                     res = ''
-                    return None
+                    return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             counter += 1
@@ -427,7 +423,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         picrustDF.drop('geneCount', axis=1, inplace=True)
@@ -445,7 +441,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
-                return None
+                return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         taxaDF = taxaDF.groupby('sampleid')[finalKeys].agg('sum')
@@ -470,13 +466,14 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
         return finalDF
 
     except:
-        if not stop8:
+        if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "Error with GAGE Analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
+            return HttpResponse(res, content_type='application/json')
 
 
 def getTabGAGE(request):

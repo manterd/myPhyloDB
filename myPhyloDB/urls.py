@@ -29,9 +29,7 @@ urlpatterns = [
     url(r'^myPhyloDB/register/$', MyRegistrationView.as_view(), name='registration_register'),
     url(r'^myPhyloDB/', include('database.urls')),
 
-    url(r'^saveSampleCookie/$', views.saveSampleCookie, name='saveSampleCookie'),
-    url(r'^getSampleCookie/$', views.getSampleCookie, name='getSampleCookie'),
-    url(r'^clearNormCookie/$', views.clearNormCookie, name='clearNormCookie'),
+    url(r'^saveSampleList/$', views.saveSampleList, name='saveSampleList'),
 
     url(r'^status/$', parsers.status, name='status'),
     url(r'^reanalyze/$', parsers.reanalyze, name='reanalyze'),
@@ -74,14 +72,12 @@ urlpatterns = [
     url(r'^statusSpAC/$', spac_graphs.statusSpAC, name='statusSpAC'),
     url(r'^removeRIDSpAC/$', spac_graphs.removeRIDSpAC, name='removeRIDSpAC'),
     url(r'^removeSpACFiles/$', spac_graphs.removeSpACFiles, name='removeSpACFiles'),
-    url(r'^stopSpAC/$', spac_graphs.stopSpAC, name='stopSpAC'),
     url(r'^getTabSpAC/$', spac_graphs.getTabSpAC, name='getTabSpAC'),
 
     url(r'^getsoil_index/$', soil_index_graphs.getsoil_index, name='getsoil_index'),
     url(r'^statussoil_index/$', soil_index_graphs.statussoil_index, name='statussoil_index'),
     url(r'^removeRIDsoil_index/$', soil_index_graphs.removeRIDsoil_index, name='removeRIDsoil_index'),
     url(r'^removesoil_indexFiles/$', soil_index_graphs.removesoil_indexFiles, name='removesoil_indexFiles'),
-    url(r'^stopsoil_index/$', soil_index_graphs.stopsoil_index, name='stopsoil_index'),
     url(r'^getTabsoil_index/$', soil_index_graphs.getTabsoil_index, name='getTabsoil_index'),
 
     url(r'^getPCoA/$', pcoa_graphs.getPCoA, name='getPCoA'),
@@ -126,7 +122,7 @@ urlpatterns = [
     url(r'^nzJSON/$', views.nzJSON, name='nzJSON'),
     url(r'^pathJSON/$', views.pathJSON, name='pathJSON'),
 
-    url(r'^uploadNorm/$', views.uploadNorm, name='uploadNorm'),
+    url(r'^myPhyloDB/select$', views.uploadNorm, name='uploadNorm'),
 
     # queue caller
     url(r'^funcCall/$', queue.funcCall, name='funcCall'),

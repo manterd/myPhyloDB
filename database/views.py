@@ -1,8 +1,9 @@
 import datetime
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.signals import user_logged_in
 from django.db.models import Q
 from django.http import *
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, HttpResponseRedirect
 from django.template import RequestContext
 import fileinput
 import logging
@@ -589,6 +590,7 @@ def upload(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def select(request):
     projects = Project.objects.none()
     if request.user.is_superuser:
@@ -607,8 +609,7 @@ def select(request):
         {'form9': UploadForm9,
          'projects': projects,
          'refs': refs,
-         'samples': samples,
-         'normpost': False},
+         'samples': samples},
         context_instance=RequestContext(request)
     )
 
@@ -658,6 +659,7 @@ def kegg_enzyme(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def norm(request):
     cleanup('media/temp/norm')
 
@@ -667,6 +669,7 @@ def norm(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def ANOVA(request):
     cleanup('media/temp/anova')
 
@@ -676,6 +679,7 @@ def ANOVA(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def rich(request):
     cleanup('media/temp/spac')
 
@@ -685,6 +689,7 @@ def rich(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def soil_index(request):
     cleanup('media/temp/soil_index')
 
@@ -694,6 +699,7 @@ def soil_index(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def DiffAbund(request):
     cleanup('media/temp/diffabund')
 
@@ -703,6 +709,7 @@ def DiffAbund(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def GAGE(request):
     cleanup('media/temp/gage')
 
@@ -712,6 +719,7 @@ def GAGE(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def PCA(request):
     cleanup('media/temp/pca')
 
@@ -721,6 +729,7 @@ def PCA(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def PCoA(request):
     cleanup('media/temp/pcoa')
 
@@ -730,6 +739,7 @@ def PCoA(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def SPLS(request):
     cleanup('media/temp/spls')
 
@@ -739,6 +749,7 @@ def SPLS(request):
     )
 
 
+@login_required(login_url='/accounts/login/')
 def WGCNA(request):
     cleanup('media/temp/wgcna')
 
@@ -748,45 +759,30 @@ def WGCNA(request):
     )
 
 
-def saveSampleCookie(request):
+def saveSampleList(request):
     if request.is_ajax():
         allJson = request.GET["all"]
         selList = simplejson.loads(allJson)
-        qs = Sample.objects.all().filter(sampleid__in=selList).values_list('sampleid')
-        request.session['selected_samples'] = pickle.dumps(qs.query)
 
-        if request.session['selected_samples']:
-            text = 'Selected sample(s) have been recorded!'
-            res = simplejson.dumps(text, encoding="Latin-1")
-            return HttpResponse(res, content_type='application/json')
-        else:
-            text = 'Samples were not recorded! Please try again.'
-            res = simplejson.dumps(text, encoding="Latin-1")
-            return HttpResponse(res, content_type='application/json')
+        # save file to users temp/ folder
+        myDir = 'media/usr_temp/' + str(request.user) + '/'
+        path = str(myDir) + 'usr_sel_samples.pkl'
 
+        if not os.path.exists(myDir):
+            os.makedirs(myDir)
 
-def getSampleCookie(request):
-    myDict = {}
-    if "selected_samples" in request.session:
-        myDict['select'] = 'yes'
-    else:
-        myDict['select'] = 'no'
-    if "savedDF" in request.session:
-        myDict['norm'] = 'yes'
-    else:
-        myDict['norm'] = 'no'
-    if "NormMeth" in request.session:
-        myDict['NormMeth'] = request.session['NormMeth']
-    else:
-        myDict['NormMeth'] = 'no'
-    res = simplejson.dumps(myDict, encoding="Latin-1")
-    return HttpResponse(res, content_type='application/json')
+        with open(path, 'wb') as f:
+            pickle.dump(selList, f)
 
+        # remove normalized file
+        try:
+            os.remove('media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
+        except OSError:
+            pass
 
-def clearNormCookie(request):
-    request.session.pop('NormMeth', None)
-    request.session.pop('savedDF', None)
-    return HttpResponse()
+        text = 'Selected sample(s) have been recorded!'
+        res = simplejson.dumps(text, encoding="Latin-1")
+        return HttpResponse(res, content_type='application/json')
 
 
 @login_required(login_url='/accounts/login/')
@@ -916,52 +912,107 @@ def pybake(request):
 
 
 def uploadNorm(request):
-    RID = str(request.POST['RID'])
     uploaded = request.FILES["normFile"]
-    savedDF = pd.read_csv(uploaded, index_col=0)
+    savedDF = pd.read_csv(uploaded, index_col=0, sep='\t')
+    selList = list(set(savedDF['sampleid']))
 
-    samples = list(set(savedDF['sampleid']))
-    qs = Sample.objects.all().filter(sampleid__in=samples).values_list('sampleid')
+    # save selected samples file to users temp/ folder
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_sel_samples.pkl'
 
-    if not qs:
-        return render_to_response(
-            'select.html',
-            {'form9': UploadForm9,
-             'projects': None,
-             'refs': None,
-             'samples': None,
-             'normpost': 'Fail'},
-            context_instance=RequestContext(request)
-        )
-
-    request.session['selected_samples'] = pickle.dumps(qs.query)
-
-    projects = list(set(savedDF['projectid']))
-
-    NormMeth = -1
-
-    # save location info to session
-    myDir = 'media/temp/norm/'
-    path = str(myDir) + str(RID) + '.pkl'
-    request.session['savedDF'] = pickle.dumps(path)
-    request.session['NormMeth'] = NormMeth
-
-    # now save file to computer
     if not os.path.exists(myDir):
         os.makedirs(myDir)
-    savedDF.to_pickle(path)
+
+    with open(path, 'wb') as f:
+        pickle.dump(selList, f)
+
+    # save normalized file to users temp/ folder
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_norm_data.csv'
+
+    if not os.path.exists(myDir):
+        os.makedirs(myDir)
+    savedDF.to_csv(path, sep='\t')
+
+    projects = list(set(savedDF['projectid']))
 
     if Reference.objects.filter(projectid__in=projects).exists():
         refs = Reference.objects.filter(projectid__in=projects).values_list('refid', flat=True)
     else:
         refs = uuid4().hex
 
+    biome = {}
+    tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+    tempDF.set_index('sampleid', drop=True, inplace=True)
+
+    metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
+    myList = list(tempDF.index.values)
+
+    nameList = []
+    for i in myList:
+        nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
+
+    # get list of lists with abundances
+    taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
+    taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
+    dataList = taxaOnlyDF.values.tolist()
+
+    # get list of taxa
+    namesDF = savedDF.loc[:, ['sampleid', 'speciesid']]
+    namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
+    namesDF = namesDF.pivot(index='speciesid', columns='sampleid', values='taxa')
+
+    taxaList = []
+    for index, row in namesDF.iterrows():
+        metaDict = {}
+        metaDict['taxonomy'] = row[0]
+        taxaList.append({"id": index, "metadata": metaDict})
+
+    biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
+    biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
+    biome['type'] = 'OTU table'
+    biome['generated_by'] = 'myPhyloDB'
+    biome['date'] = str(datetime.datetime.now())
+    biome['matrix_type'] = 'dense'
+    biome['matrix_element_type'] = 'float'
+    biome['rows'] = taxaList
+    biome['columns'] = nameList
+    biome['data'] = dataList
+
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_norm_data.biom'
+    with open(path, 'w') as outfile:
+        simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
+
     return render_to_response(
         'select.html',
         {'form9': UploadForm9,
          'projects': projects,
          'refs': refs,
-         'samples': samples,
+         'samples': selList,
          'normpost': 'Success'},
         context_instance=RequestContext(request)
     )
+
+
+# Function to create a user folder at login
+def login_usr_callback(sender, user, request, **kwargs):
+    user = request.user
+    if not os.path.exists('media/usr_temp/'+str(user)):
+        os.makedirs('media/usr_temp/'+str(user))
+    cleanup('media/usr_temp/'+str(user))
+
+user_logged_in.connect(login_usr_callback)
+
+
+# Add info on user files to base
+# Function needs to be added to settings file
+def usrFiles(request):
+
+    selFiles = os.path.exists('media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
+    normFiles = os.path.exists('media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
+
+    return {
+        'selFiles': selFiles,
+        'normFiles': normFiles
+    }

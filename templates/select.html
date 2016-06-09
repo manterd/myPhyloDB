@@ -26,7 +26,6 @@
         $(function () {
 
             if ("{{ normpost }}" == "Success") alert("Uploaded samples were found in your database.\nYou may proceed directly to the Analysis section.");
-            if ("{{ normpost }}" == "Fail") alert("Uploaded samples were not found in your database.\nPlease upload the raw data to myPhyloDB.");
 
             $(".display").dataTable({
                 dom: 'B<"toolbar">lfrtip',
@@ -157,7 +156,7 @@
                 var jsonDict = JSON.stringify(selKeys);
                 $.ajax({
                     type: 'GET',
-                    url: '/saveSampleCookie/',
+                    url: '/saveSampleList/',
                     dataType: 'json',
                     data: {all: jsonDict},
                     success: function (data) {
@@ -170,7 +169,6 @@
                         $("#link4").hide();
                         $("#link5").show();
                         $("#link6").hide();
-                        clearCookie();
                     }
                 });
                 document.getElementById("drawtable").disabled = false;
@@ -189,13 +187,6 @@
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             })
-        }
-
-        function clearCookie() {
-            $.ajax({
-                type: 'GET',
-                url: '/clearNormCookie/'
-            });
         }
 
         function updateProjectTable(selKeys) {
@@ -778,7 +769,7 @@
     <br>
     <input id="submit" type="button" value="Save Selection(s)!"/>
     <br>
-
+    <br>
     <form id='form' action="{% url 'uploadNorm' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <h2>Upload previously normalized sample set</h2>

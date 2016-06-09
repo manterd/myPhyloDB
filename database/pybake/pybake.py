@@ -21,8 +21,7 @@ pd.set_option('display.max_colwidth', -1)
 def statusPyBake(request):
     global base, perc
     if request.is_ajax():
-        myDict = {}
-        myDict['stage'] = stage
+        myDict = {'stage': stage}
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 

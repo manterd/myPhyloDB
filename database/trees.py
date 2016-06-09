@@ -72,15 +72,21 @@ def getProjectTreeChildren(request):
 
 
 def getSampleCatTree(request):
-    samples = Sample.objects.all()
-    samples.query = pickle.loads(request.session['selected_samples'])
+
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_sel_samples.pkl'
+    with open(path, 'rb') as f:
+        samples = pickle.load(f)
+
+    # convert samples list into django queryset based on id's in current list
+    samples = Sample.objects.all().filter(sampleid__in=samples)  # this seems to work
 
     projectList = samples.values_list('projectid').distinct()
-
     projectType = Project.objects.all().filter(projectid__in=projectList)
     typeList = []
     for p in projectType:
         typeList.append(p.projectType)
+
 
     myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'isFolder': True,  'hideCheckbox': True, 'children': []}
@@ -270,8 +276,12 @@ def getSampleCatTree(request):
 
 
 def getSampleCatTreeChildren(request):
-    samples = Sample.objects.all()
-    samples.query = pickle.loads(request.session['selected_samples'])
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_sel_samples.pkl'
+    with open(path, 'rb') as f:
+        samples = pickle.load(f)
+
+    samples = Sample.objects.all().filter(sampleid__in=samples)  # no children are loading
     selected = samples.values_list('sampleid')
 
     filterList = []
@@ -521,8 +531,12 @@ def getSampleCatTreeChildren(request):
 
 
 def getSampleQuantTree(request):
-    samples = Sample.objects.all()
-    samples.query = pickle.loads(request.session['selected_samples'])
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_sel_samples.pkl'
+    with open(path, 'rb') as f:
+        samples = pickle.load(f)
+
+    samples = Sample.objects.all().filter(sampleid__in=samples)
 
     projectList = samples.values_list('projectid').distinct()
 
@@ -719,8 +733,12 @@ def getSampleQuantTree(request):
 
 
 def getSampleQuantTreeChildren(request):
-    samples = Sample.objects.all()
-    samples.query = pickle.loads(request.session['selected_samples'])
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_sel_samples.pkl'
+    with open(path, 'rb') as f:
+        samples = pickle.load(f)
+
+    samples = Sample.objects.all().filter(sampleid__in=samples)
     selected = samples.values_list('sampleid')
 
     filterList = []
@@ -977,8 +995,12 @@ def getSampleQuantTreeChildren(request):
 
 
 def getTaxaTree(request):
-    samples = Sample.objects.all()
-    samples.query = pickle.loads(request.session['selected_samples'])
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_sel_samples.pkl'
+    with open(path, 'rb') as f:
+        samples = pickle.load(f)
+
+    samples = Sample.objects.all().filter(sampleid__in=samples)
     selected = samples.values_list('sampleid')
 
     filterList = []
@@ -1030,8 +1052,12 @@ def getTaxaTree(request):
 
 
 def getTaxaTreeChildren(request):
-    samples = Sample.objects.all()
-    samples.query = pickle.loads(request.session['selected_samples'])
+    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    path = str(myDir) + 'usr_sel_samples.pkl'
+    with open(path, 'rb') as f:
+        samples = pickle.load(f)
+
+    samples = Sample.objects.all().filter(sampleid__in=samples)
     selected = samples.values_list('sampleid')
 
     filterList = []
@@ -1209,7 +1235,7 @@ def getKEGGTree2(request):
         myNode = {
             'title': item.ko_lvl1_name,
             'id': item.ko_lvl1_id,
-            'hideCheckbox': False,
+            'hideCheckbox': True,
             'tooltip': "Level1",
             'kegg': 'Level1',
             'isFolder': True,
@@ -1221,7 +1247,7 @@ def getKEGGTree2(request):
             myNode1 = {
                 'title': thing1.ko_lvl2_name,
                 'id': thing1.ko_lvl2_id,
-                'hideCheckbox': False,
+                'hideCheckbox': True,
                 'tooltip': "Level2",
                 'kegg': 'Level2',
                 'isFolder': True,
