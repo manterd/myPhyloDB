@@ -12,6 +12,7 @@
 
 {% block javascript %}
     <script>
+        var RID = makeGUID();
         var selNodes = "";
         var selKeys = "";
         $(function () {
@@ -32,12 +33,58 @@
                 }
             });
 
+            $("#submit").click(function() {
+                $("#stage").show();
+                setInterval(updateStatus, 1000);
+            });
+
             $("#clearMeta").click(function () {
                 $("#tree").dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
             });
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'RID',
+                value: RID
+            }).appendTo('form');
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'funcName',
+                value: 'update'
+            }).appendTo('form');
+
         });
+
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
+        function updateStatus() {
+            $.ajax({
+                url: '/status/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    updateStage(stage);
+                }
+            });
+        }
+
+        function updateStage(stage) {
+            $("#stage").empty().append(stage);
+        }
 
     </script>
 {% endblock javascript %}
@@ -55,7 +102,7 @@
     </table>
     <br><br>
 
-    <form action="{% url 'update' %}" method="post" enctype="multipart/form-data">
+    <form id='form' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <label><textarea id="ids" name="refid" style="display:none"></textarea></label>
@@ -78,6 +125,8 @@
     </form>
     <br>
     <div>{{ state }}</div>
-    <br><br>
+    <br>
+    <div id="stage" style="display: none"></div>
+    <br>
 {% endblock my_content %}
 

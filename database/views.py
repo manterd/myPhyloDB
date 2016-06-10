@@ -51,7 +51,13 @@ def upload(request):
         RID = request.POST['RID']
         stopList = request.POST['stopList']
         PID = 0  # change if adding additional data threads
-        # print "rid: "+str(RID)+", stopList: "+str(stopList)
+
+        print "PRE: RID: "+str(RID)+", stopList: "+str(stopList)+", PID: "+str(PID)
+        time.sleep(5)
+        if stopList[PID] == RID:
+            print "woot!"
+
+        print "POST: RID: "+str(RID)+", stopList: "+str(stopList)+", PID: "+str(PID)
 
         if form1.is_valid():
             file1 = request.FILES['docfile1']
@@ -843,8 +849,8 @@ def update(request):
             metaFile = '/'.join([dest, file1.name])
             handle_uploaded_file(file1, dest, file1.name)
             parse_project(metaFile, p_uuid)
-        except:
-            state = "There was an error parsing your metafile: " + str(file1.name)
+        except Exception as e:
+            state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
             return render_to_response(
                 'update.html',
                 {'form5': UploadForm5,
@@ -864,11 +870,15 @@ def update(request):
             source = reference.source
             userID = str(request.user.id)
 
-            with open(batPath, 'rb') as batFile:
-                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+            if os.path.exists(batPath):
+                with open(batPath, 'rb') as batFile:
+                    parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+            else:
+                batFile = 'you do not really need me'
+                parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
 
         except Exception as e:
-            state = "There was an error parsing your metafile: " + str(file1.name)
+            state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
             return render_to_response(
                 'update.html',
                 {'form5': UploadForm5,

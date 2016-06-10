@@ -17,14 +17,13 @@ import xlrd
 from xlutils.copy import copy
 import xlwt
 from xlwt import Style
-import zipfile
 
 from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import purge, handle_uploaded_file
 from models import addQueue, getQueue, subQueue
 import database.dataqueue
-
+from forms import UploadForm4
 
 stage = ''
 perc = 0
@@ -47,26 +46,6 @@ def mothur(dest, source):
 
         if not os.path.exists('mothur/reference/template'):
             os.makedirs('mothur/reference/template')
-
-        if not os.path.exists('mothur/reference/align/silva.gold.align'):
-            ref = zipfile.ZipFile('mothur/reference/zip/silva.gold.align.zip', 'r')
-            ref.extractall('mothur/reference/align')
-            ref.close()
-
-        if not os.path.exists('mothur/reference/align/silva.seed_v119.align'):
-            ref = zipfile.ZipFile('mothur/reference/zip/silva.seed_v119.align.zip', 'r')
-            ref.extractall('mothur/reference/align')
-            ref.close()
-
-        if not os.path.exists('mothur/reference/taxonomy/gg_13_5_99.pds.tax'):
-            ref = zipfile.ZipFile('mothur/reference/zip/gg_13_5_99.pds.tax.zip', 'r')
-            ref.extractall('mothur/reference/taxonomy')
-            ref.close()
-
-        if not os.path.exists('mothur/reference/template/gg_13_5_99.fasta'):
-            ref = zipfile.ZipFile('mothur/reference/zip/gg_13_5_99.fasta.zip', 'r')
-            ref.extractall('mothur/reference/template')
-            ref.close()
 
         if os.name == 'nt':
             try:
@@ -548,195 +527,200 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
 
 def reanalyze(request):
+    ##form4
     try:
         global rep_project
 
-        if request.is_ajax():
-            mothurdest = 'mothur/temp/'
-            if not os.path.exists(mothurdest):
-                os.makedirs(mothurdest)
+        mothurdest = 'mothur/temp/'
+        if not os.path.exists(mothurdest):
+            os.makedirs(mothurdest)
+        ids = request.POST["ids"]
+        processors = request.POST["processors"]
 
-            allJson = request.GET["all"]
-            all = simplejson.loads(allJson)
-            ids = all["ids"]
-            new_align = 'reference=mothur/reference/align/' + str(all['alignDB'])
-            new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(all['taxonomyDB'])
-            new_tax = str(all['taxonomyDB'])
-            new_tax_tag = str(new_tax.split('.')[-2:-1][0])
-            new_template = 'template=mothur/reference/template/' + str(all['templateDB'])
+        new_align = 'reference=mothur/reference/align/' + str(request.POST['alignDB'])
+        new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(request.POST['taxonomyDB'])
+        new_tax = str(request.POST['taxonomyDB'])
+        new_tax_tag = str(new_tax.split('.')[-2:-1][0])
+        new_template = 'template=mothur/reference/template/' + str(request.POST['templateDB'])
+
+        if isinstance(ids, list):
             projects = Reference.objects.all().filter(refid__in=ids)
+        else:
+            projects = Reference.objects.all().filter(refid=ids)
 
-            for project in projects:
-                rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
-                dest = project.path
-                source = project.source
+        for project in projects:
+            rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
+            dest = project.path
+            source = project.source
 
-                if source == '454_sff':
-                    ls_dir = os.listdir(dest)
-                    for afile in ls_dir:
-                        srcStr = str(dest) + '/' + str(afile)
-                        destStr = str(mothurdest) + '/' + str(afile)
-                        shutil.copyfile(srcStr, destStr)
+            if source == '454_sff':
+                ls_dir = os.listdir(dest)
+                for afile in ls_dir:
+                    srcStr = str(dest) + '/' + str(afile)
+                    destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
-                if source == '454_fastq':
-                    file_list = []
-                    for afile in glob.glob(r'% s/*.fna' % dest):
-                        file_list.append(afile)
+            if source == '454_fastq':
+                file_list = []
+                for afile in glob.glob(r'% s/*.fna' % dest):
+                    file_list.append(afile)
 
-                    tempList = []
-                    if file_list.__len__() > 1:
-                        for each in file_list:
-                            file = each
-                            handle_uploaded_file(file, mothurdest, each)
-                            handle_uploaded_file(file, dest, each)
-                            if os.name == 'nt':
-                                myStr = "mothur\\temp\\" + str(file.name)
-                            else:
-                                myStr = "mothur/temp/" + str(file.name)
-                            tempList.append(myStr)
-                        inputList = "-".join(tempList)
+                tempList = []
+                if file_list.__len__() > 1:
+                    for each in file_list:
+                        file = each
+                        handle_uploaded_file(file, mothurdest, each)
+                        handle_uploaded_file(file, dest, each)
                         if os.name == 'nt':
-                            os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
+                            myStr = "mothur\\temp\\" + str(file.name)
                         else:
-                            os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
+                            myStr = "mothur/temp/" + str(file.name)
+                        tempList.append(myStr)
+                    inputList = "-".join(tempList)
+                    if os.name == 'nt':
+                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
                     else:
-                        for each in file_list:
-                            file = each
-                            fasta = 'temp.fasta'
-                            handle_uploaded_file(file, mothurdest, fasta)
-                            handle_uploaded_file(file, dest, each)
+                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
+                else:
+                    for each in file_list:
+                        file = each
+                        fasta = 'temp.fasta'
+                        handle_uploaded_file(file, mothurdest, fasta)
+                        handle_uploaded_file(file, dest, each)
 
-                    file_list = []
-                    for afile in glob.glob(r'% s/*.qual' % dest):
-                        file_list.append(afile)
+                file_list = []
+                for afile in glob.glob(r'% s/*.qual' % dest):
+                    file_list.append(afile)
 
-                    tempList = []
-                    if file_list.__len__() > 1:
-                        for each in file_list:
-                            file = each
-                            handle_uploaded_file(file, mothurdest, each)
-                            handle_uploaded_file(file, dest, each)
-                            if os.name == 'nt':
-                                myStr = "mothur\\temp\\" + str(file.name)
-                            else:
-                                myStr = "mothur/temp/" + str(file.name)
-                            tempList.append(myStr)
-                        inputList = "-".join(tempList)
+                tempList = []
+                if file_list.__len__() > 1:
+                    for each in file_list:
+                        file = each
+                        handle_uploaded_file(file, mothurdest, each)
+                        handle_uploaded_file(file, dest, each)
                         if os.name == 'nt':
-                            os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
+                            myStr = "mothur\\temp\\" + str(file.name)
                         else:
-                            os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
+                            myStr = "mothur/temp/" + str(file.name)
+                        tempList.append(myStr)
+                    inputList = "-".join(tempList)
+                    if os.name == 'nt':
+                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
                     else:
-                        for each in file_list:
-                            file = each
-                            qual = 'temp.qual'
-                            handle_uploaded_file(file, mothurdest, qual)
-                            handle_uploaded_file(file, dest, each)
+                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
+                else:
+                    for each in file_list:
+                        file = each
+                        qual = 'temp.qual'
+                        handle_uploaded_file(file, mothurdest, qual)
+                        handle_uploaded_file(file, dest, each)
 
-                    for afile in glob.glob(r'% s/*.oligos' % dest):
-                        srcStr = str(dest) + '/' + str(afile)
-                        destStr = str(mothurdest) + '/' + str(afile)
-                        shutil.copyfile(srcStr, destStr)
+                for afile in glob.glob(r'% s/*.oligos' % dest):
+                    srcStr = str(dest) + '/' + str(afile)
+                    destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
-                    for afile in glob.glob(r'% s/*.batch' % dest):
-                        srcStr = str(dest) + '/' + str(afile)
-                        destStr = str(mothurdest) + '/' + str(afile)
-                        shutil.copyfile(srcStr, destStr)
+                for afile in glob.glob(r'% s/*.batch' % dest):
+                    srcStr = str(dest) + '/' + str(afile)
+                    destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
-                if source == 'miseq':
-                    ls_dir = os.listdir(dest)
-                    for afile in ls_dir:
-                        srcStr = str(dest) + '/' + str(afile)
-                        destStr = str(mothurdest) + '/' + str(afile)
-                        shutil.copyfile(srcStr, destStr)
+            if source == 'miseq':
+                ls_dir = os.listdir(dest)
+                for afile in ls_dir:
+                    srcStr = str(dest) + '/' + str(afile)
+                    destStr = str(mothurdest) + '/' + str(afile)
+                    shutil.copyfile(srcStr, destStr)
 
-                orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
-                orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
-                orig_tax = str(project.taxonomyDB)
-                orig_tax_tag = str(orig_tax.split('.')[-2:-1][0])
-                orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
+            orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
+            orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
+            orig_tax = str(project.taxonomyDB)
+            orig_tax_tag = str(orig_tax.split('.')[-2:-1][0])
+            orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
 
-                try:
-                    with open("% s/mothur.batch" % dest, 'r+') as bat:
-                        with open("% s/mothur.batch" % mothurdest, 'wb+') as destination:
-                            method = 'wang'
-                            foundClassify = False
-                            orig_tag_meth = ''
-                            new_tag_meth = ''
-                            for line in bat:
-                                if "align.seqs" in line:
-                                    line = line.replace(str(orig_align), str(new_align))
-                                if "classify.seqs" in line:
-                                    line = line.replace(str(orig_template), str(new_template))
-                                    line = line.replace(str(orig_taxonomy), str(new_taxonomy))
-                                    cmds = line.split(',')
-                                    for item in cmds:
-                                        if "method=" in item:
-                                            method = item.split('=')[1]
-                                    orig_tag_meth = str(orig_tax_tag) + "." + str(method)
-                                    new_tag_meth = str(new_tax_tag) + "." + str(method)
-                                    foundClassify = True
-                                if (str(orig_tag_meth) in line) and foundClassify:
-                                    line = line.replace(str(orig_tag_meth), str(new_tag_meth))
-                                destination.write(line)
-                except Exception as e:
-                    print("Error with batch file: ", e)
+            try:
+                with open("% s/mothur.batch" % dest, 'r+') as bat:
+                    with open("% s/mothur.batch" % mothurdest, 'wb+') as destination:
+                        method = 'wang'
+                        foundClassify = False
+                        orig_tag_meth = ''
+                        new_tag_meth = ''
+                        for line in bat:
+                            if "processors" in line:
+                                line = line.replace('processors=X', 'processors='+str(processors))
+                            if "align.seqs" in line:
+                                line = line.replace(str(orig_align), str(new_align))
+                            if "classify.seqs" in line:
+                                line = line.replace(str(orig_template), str(new_template))
+                                line = line.replace(str(orig_taxonomy), str(new_taxonomy))
+                                cmds = line.split(',')
+                                for item in cmds:
+                                    if "method=" in item:
+                                        method = item.split('=')[1]
+                                orig_tag_meth = str(orig_tax_tag) + "." + str(method)
+                                new_tag_meth = str(new_tax_tag) + "." + str(method)
+                                foundClassify = True
+                            if (str(orig_tag_meth) in line) and foundClassify:
+                                line = line.replace(str(orig_tag_meth), str(new_tag_meth))
+                            destination.write(line)
+            except Exception as e:
+                print("Error with batch file: ", e)
 
-                p_uuid = project.projectid.projectid
+            p_uuid = project.projectid.projectid
 
-                dest = project.path
-                pType = project.projectid.projectType
+            dest = project.path
+            pType = project.projectid.projectType
 
-                shutil.copy('% s/final_meta.xls' % dest, '% s/final_meta.xls' % mothurdest)
+            shutil.copy('% s/final_meta.xls' % dest, '% s/final_meta.xls' % mothurdest)
 
-                Reference.objects.get(path=dest).delete()
+            Reference.objects.get(path=dest).delete()
 
-                if not os.path.exists(dest):
-                    os.makedirs(dest)
+            if not os.path.exists(dest):
+                os.makedirs(dest)
 
-                shutil.copy('% s/final_meta.xls' % mothurdest, '% s/final_meta.xls' % dest)
+            shutil.copy('% s/final_meta.xls' % mothurdest, '% s/final_meta.xls' % dest)
 
-                addQueue()
-                while getQueue() > 1:
-                    time.sleep(5)
+            addQueue()
+            while getQueue() > 1:
+                time.sleep(5)
 
-                try:
-                    mothur(dest, source)
-                except Exception as e:
-                    print("Error with mothur: " + str(e))
-                    return HttpResponse(
-                        simplejson.dumps({"error": "yes"}),
-                        content_type="application/json"
-                    )
+            try:
+                mothur(dest, source)
+            except Exception as e:
+                print("Error with mothur: " + str(e))
+                return HttpResponse(
+                    simplejson.dumps({"error": "yes"}),
+                    content_type="application/json"
+                )
 
-                subQueue()
+            subQueue()
 
-                metaName = 'final_meta.xls'
-                metaFile = '/'.join([dest, metaName])
+            metaName = 'final_meta.xls'
+            metaFile = '/'.join([dest, metaName])
 
-                parse_project(metaFile, p_uuid)
+            parse_project(metaFile, p_uuid)
 
-                with open('% s/mothur.batch' % dest, 'rb') as file7:
-                    raw = True
-                    userID = str(request.user.id)
+            with open('% s/mothur.batch' % dest, 'rb') as file7:
+                raw = True
+                userID = str(request.user.id)
 
-                    f = xlrd.open_workbook(metaFile)
-                    sheet = f.sheet_by_name('Project')
-                    num_samp = int(sheet.cell_value(rowx=5, colx=0))
+                f = xlrd.open_workbook(metaFile)
+                sheet = f.sheet_by_name('Project')
+                num_samp = int(sheet.cell_value(rowx=5, colx=0))
 
-                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
 
-                with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                    parse_taxonomy(file3)
+            with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                parse_taxonomy(file3)
 
-                with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                    with open('% s/final.shared' % dest, 'rb') as file4:
-                        parse_profile(file3, file4, p_uuid, refDict)
+            with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                with open('% s/final.shared' % dest, 'rb') as file4:
+                    parse_profile(file3, file4, p_uuid, refDict)
 
-            return HttpResponse(
-                simplejson.dumps({"error": "no"}),
-                content_type="application/json"
-            )
+        return HttpResponse(
+            simplejson.dumps({"error": "no"}),
+            content_type="application/json"
+        )
 
     except:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)

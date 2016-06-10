@@ -27,7 +27,7 @@ Source: "..\..\dist\myPhyloDB\django\*"; DestDir: "{app}\django"; Flags: recurse
 Source: "..\..\dist\myPhyloDB\instructions\current\*"; DestDir: "{app}\instructions\current"; Flags: recursesubdirs; Components: Manual
 Source: "..\..\dist\myPhyloDB\media\*"; DestDir: "{app}\media"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\mothur-win\*"; DestDir: "{app}\mothur\mothur-win"; Flags: recursesubdirs; Components: Main
-Source: "..\..\dist\myPhyloDB\mothur\reference\zip\*"; DestDir: "{app}\mothur\reference\zip"; Flags: recursesubdirs; Components: Main
+Source: "..\..\dist\myPhyloDB\mothur\reference\*"; DestDir: "{app}\mothur\reference"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\pytz\*"; DestDir: "{app}\pytz"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Main

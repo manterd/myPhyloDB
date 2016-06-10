@@ -30,7 +30,7 @@ class UploadForm4(forms.Form):
     alignFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
     templateFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
     taxonomyFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
-
+    processors = forms.IntegerField(initial=2, min_value=1, max_value=100)
 
 class UploadForm5(forms.Form):
     docfile11 = forms.FileField(label='Select meta.xls file:')
