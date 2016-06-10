@@ -38,6 +38,7 @@
         var selNodes = "";
         var selKeys = "";
         var refresh = 0;
+        var RID = "";
 
         $(function () {
             $("#tree").dynatree({
@@ -63,53 +64,58 @@
                 selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
                     return node.data.id;
                 });
+                RID = makeGUID();
 
                 $("#project").show();
                 $("#stage").show();
                 $("#progressBar").show();
                 refresh = setInterval(updateStatus, 1000);
-                analyze(selKeys);
-            });
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'RID',
-                value: RID
-            }).appendTo('form');
 
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'funcName',
-                value: 'reprocess'
-            }).appendTo('form');
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'RID',
+                    value: RID
+                }).appendTo('form').appendTo('form2');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'ids',
+                    value: selKeys
+                }).appendTo('form').appendTo('form2');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'funcName',
+                    value: 'reanalyze'
+                }).appendTo('form').appendTo('form2');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'alignDB',
+                    value: $("#align").val()
+                }).appendTo('form').appendTo('form2');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'templateDB',
+                    value: $("#template").val()
+                }).appendTo('form').appendTo('form2');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'taxonomyDB',
+                    value: $("#taxonomy").val()
+                }).appendTo('form').appendTo('form2');
+
+            });
+
         });
 
-        function analyze(selKeys){
-            var myDict = {};
-            myDict['ids'] = selKeys;
-            myDict['alignDB'] = $("#align").val();
-            myDict['templateDB'] = $("#template").val();
-            myDict['taxonomyDB'] = $("#taxonomy").val();
-            var jsonDict = JSON.stringify(myDict);
-
-            $.ajax({
-                type: 'GET',
-                url: '/reanalyze/',
-                dataType: 'json',
-                data: {all: jsonDict},
-                success: function(data) {
-                    clearInterval(refresh);
-                    $("#project").hide();
-                    $("#stage").hide();
-                    $("#progressBar").hide();
-                    $("#tree").dynatree("getTree").reload();
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var error = obj['error'];
-                    if (error == "yes") {
-                        alert("myPhyloDB encountered an error, please check your terminal!");
-                    }
-                }
-            });
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
         }
 
         function updateStatus(){
@@ -143,9 +149,10 @@
         }
     </script>
 {% endblock javascript %}
+
 {% block my_content %}
     <h2>Upload New Taxonomy Reference Files:</h2>
-    <form id='form' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
+    <form id='form' action="{% url 'reprocess' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
             <tr>
@@ -216,6 +223,24 @@
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
     <br>
-    <input id="reprocess" type="button" value="Reprocess!"/>
+    <form id='form2' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <table id="proc_table" width="100%" border="0" cellspacing="0" cellpadding="5">
+            <tr>
+                <td width="100">How many processors would you like to use?</td>
+            </tr>
+            <tr>
+                <td>
+                    <table border="2">
+                    <tr>
+                        <td>Processors: </td>
+                        <td>{{ form4.processors }}</td>
+                    </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <input id="reprocess" name="reprocess" type="submit" value="Reprocess!"/>
+    </form>
     <br><br><br>
 {% endblock my_content %}

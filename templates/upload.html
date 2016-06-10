@@ -32,6 +32,7 @@
     <script type="text/javascript">
         var RID = makeGUID();
         var source = 'mothur';
+
         $(function () {
             var test = '{{ error }}';
             if (test != "") {
@@ -118,6 +119,23 @@
 
         function updateStage(stage) {
             $("#stage").empty().append(stage);
+        }
+
+        function stop() {
+            $.ajax({
+                url: '/datstop/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var mstage = obj['message'];
+                    $('#stage').empty().append(mstage);
+                }
+            });
         }
 
         function progressBar(percent, $element) {
@@ -253,7 +271,16 @@
             </tr>
         </table>
         <br>
-        <input id='Upload' name='Upload' type="submit" value="Upload Files"/>
+        <table>
+            <tr>
+                <td>
+                    <input id='Upload' name='Upload' type="submit" value="Upload Files"/>
+                </td>
+                <td>
+                    <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop"/>
+                </td>
+            </tr>
+        </table>
     </form>
 
     <br>
