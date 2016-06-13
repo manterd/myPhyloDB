@@ -4,7 +4,7 @@ import simplejson
 from time import sleep
 import threading
 
-from views import upload, update, pybake
+from views import uploadFunc, update, pybake
 from parsers import reanalyze
 from database.utils import threads
 
@@ -23,13 +23,10 @@ stopped = 0
 def datstop(request):
     global activeList, stopList, threadDict, stopDict
     RID = str(request.GET['all'])
-    print "Stopping "+str(RID)
     stopDict[RID] = True
     try:
         pid = activeList.index(RID)
-        print "StopList: "+str(stopList)
         stopList[pid] = RID
-        print "StopList: "+str(stopList)
         activeList[pid] = 0
         threadName = threadDict[RID]
         threads = threading.enumerate()
@@ -67,9 +64,7 @@ def dataprocess(pid):
             threadDict[RID] = thread.name
             if activeList[pid] == RID:
                 if funcName == "upload":
-                    recent[RID] = upload(request)
-                #if funcName == "reprocess":
-                #   recent[RID] = reprocess(request)
+                    recent[RID] = uploadFunc(request, stopList)
                 if funcName == "reanalyze":
                     recent[RID] = reanalyze(request)
                 if funcName == "update":
@@ -103,7 +98,6 @@ def datfuncCall(request):
             if RID in stopList:
                 try:
                     pid = stopList.index(RID)
-                    stopList[pid] = 0
                 except:
                     pass
                 statDict.pop(RID, 0)
@@ -114,4 +108,8 @@ def datfuncCall(request):
 
 def datstat(RID):
     return statDict[RID] - stopped
+
+
+def getStops():
+    return stopList
 

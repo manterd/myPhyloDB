@@ -121,7 +121,8 @@ def funcCall(request):
             if RID in stopList:
                 try:
                     pid = stopList.index(RID)
-                    stopList[pid] = 0
+                    # stopList[pid] = 0
+                    # set stopList back to 0 after it is read in primary methods, here relies on timing to work
                 except:
                     pass
                 statDict.pop(RID, 0)

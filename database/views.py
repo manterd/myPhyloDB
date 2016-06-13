@@ -27,6 +27,8 @@ from database.pybake.pybake import koParse, nzParse
 from database.pybake.pybake import geneParse
 from database.utils import cleanup
 
+# from database import dataqueue
+
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
@@ -42,6 +44,23 @@ def home(request):
 @login_required(login_url='/accounts/login/')
 def upload(request):
     projects = Reference.objects.none()
+
+    if request.user.is_superuser:
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+    elif request.user.is_authenticated():
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+
+    return render_to_response(
+        'upload.html',
+        {'projects': projects,
+         'form1': UploadForm1,
+         'form2': UploadForm2,
+         'error': ""},
+        context_instance=RequestContext(request)
+    )
+
+def uploadFunc(request, stopList):
+    projects = Reference.objects.none()
     if request.method == 'POST' and 'Upload' in request.POST:
         start = datetime.datetime.now()
         form1 = UploadForm1(request.POST, request.FILES)
@@ -49,15 +68,20 @@ def upload(request):
         userID = str(request.user.id)
         processors = int(request.POST['processors'])
         RID = request.POST['RID']
-        stopList = request.POST['stopList']
+        # print "Stops? stopList: "+str(dataqueue.getStops())
         PID = 0  # change if adding additional data threads
 
-        print "PRE: RID: "+str(RID)+", stopList: "+str(stopList)+", PID: "+str(PID)
-        time.sleep(5)
         if stopList[PID] == RID:
-            print "woot!"
+            stopList[PID] = 0
+            return render_to_response(
+                    'upload.html',
+                    {'form1': UploadForm1,
+                     'form2': UploadForm2,
+                     'error': "Upload stopped"
+                     },
+                    context_instance=RequestContext(request)
+                )
 
-        print "POST: RID: "+str(RID)+", stopList: "+str(stopList)+", PID: "+str(PID)
 
         if form1.is_valid():
             file1 = request.FILES['docfile1']
@@ -132,6 +156,18 @@ def upload(request):
                 raw = False
                 batch = ''
 
+            if stopList[PID] == RID:
+                stopList[PID] = 0
+                remove_proj(dest)
+                return render_to_response(
+                        'upload.html',
+                        {'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "Upload stopped"
+                         },
+                        context_instance=RequestContext(request)
+                    )
+
             try:
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
             except:
@@ -154,6 +190,18 @@ def upload(request):
                      },
                     context_instance=RequestContext(request)
                 )
+
+            if stopList[PID] == RID:
+                stopList[PID] = 0
+                remove_proj(dest)
+                return render_to_response(
+                        'upload.html',
+                        {'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "Upload stopped"
+                         },
+                        context_instance=RequestContext(request)
+                    )
 
             if source == 'mothur':
                 file3 = request.FILES['docfile3']
@@ -181,6 +229,18 @@ def upload(request):
                          },
                         context_instance=RequestContext(request)
                     )
+
+                if stopList[PID] == RID:
+                    stopList[PID] = 0
+                    remove_proj(dest)
+                    return render_to_response(
+                            'upload.html',
+                            {'form1': UploadForm1,
+                             'form2': UploadForm2,
+                             'error': "Upload stopped"
+                             },
+                            context_instance=RequestContext(request)
+                        )
 
                 file4 = request.FILES['docfile4']
                 handle_uploaded_file(file4, dest, file4.name)
@@ -210,11 +270,35 @@ def upload(request):
                         context_instance=RequestContext(request)
                     )
 
+                if stopList[PID] == RID:
+                    stopList[PID] = 0
+                    remove_proj(dest)
+                    return render_to_response(
+                            'upload.html',
+                            {'form1': UploadForm1,
+                             'form2': UploadForm2,
+                             'error': "Upload stopped"
+                             },
+                            context_instance=RequestContext(request)
+                        )
+
             elif source == '454_sff':
                 mothurdest = 'mothur/temp'
 
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
+
+                if stopList[PID] == RID:
+                    stopList[PID] = 0
+                    remove_proj(dest)
+                    return render_to_response(
+                            'upload.html',
+                            {'form1': UploadForm1,
+                             'form2': UploadForm2,
+                             'error': "Upload stopped"
+                             },
+                            context_instance=RequestContext(request)
+                        )
 
                 file_list = request.FILES.getlist('sff_files')
                 for each in file_list:
@@ -222,11 +306,35 @@ def upload(request):
                     handle_uploaded_file(file, mothurdest, each)
                     handle_uploaded_file(file, dest, each)
 
+                if stopList[PID] == RID:
+                    stopList[PID] = 0
+                    remove_proj(dest)
+                    return render_to_response(
+                            'upload.html',
+                            {'form1': UploadForm1,
+                             'form2': UploadForm2,
+                             'error': "Upload stopped"
+                             },
+                            context_instance=RequestContext(request)
+                        )
+
                 file_list = request.FILES.getlist('oligo_files')
                 for each in file_list:
                     file = each
                     handle_uploaded_file(file, mothurdest, each)
                     handle_uploaded_file(file, dest, each)
+
+                if stopList[PID] == RID:
+                    stopList[PID] = 0
+                    remove_proj(dest)
+                    return render_to_response(
+                            'upload.html',
+                            {'form1': UploadForm1,
+                             'form2': UploadForm2,
+                             'error': "Upload stopped"
+                             },
+                            context_instance=RequestContext(request)
+                        )
 
                 file5 = request.FILES['docfile5']
                 handle_uploaded_file(file5, mothurdest, 'temp.txt')
@@ -598,6 +706,7 @@ def upload(request):
          'error': ""},
         context_instance=RequestContext(request)
     )
+
 
 
 @login_required(login_url='/accounts/login/')
