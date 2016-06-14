@@ -148,7 +148,7 @@
 
     <h2>Upload new data files:</h2>
 
-    <form id="form" action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
+    <form id="form" action="{% url 'datfuncCall' %}" method="post" onclick="RID = makeGUID();" enctype="multipart/form-data">
         {% csrf_token %}
 
         <table width="100%" border="0" cellspacing="0" cellpadding="5">
