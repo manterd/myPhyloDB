@@ -49,7 +49,7 @@ def decremQ():
 
 
 def dataprocess(pid):
-    global activeList, threadDict, stopped
+    global activeList, threadDict, stopped, recent
     while True:
         data = q.get(block=True, timeout=None)
         decremQ()
@@ -66,7 +66,7 @@ def dataprocess(pid):
                 if funcName == "upload":
                     recent[RID] = uploadFunc(request, stopList)
                 if funcName == "reanalyze":
-                    recent[RID] = reanalyze(request)
+                    recent[RID] = reanalyze(request, stopList)
                 if funcName == "update":
                     recent[RID] = update(request)
                 if funcName == "pybake":
@@ -91,23 +91,23 @@ def datfuncCall(request):
             recent.pop(RID, 0)
             statDict.pop(RID, 0)
             stopDict.pop(RID, 0)
-            if results is None:  # if stopped as active process
-                return HttpResponseNotFound()  # return rnf (better than None)
+            # if results is None:  # if stopped as active process
+            #     return HttpResponseNotFound()  # return rnf (better than None)
             return results
         except KeyError:
             if RID in stopList:
-                try:
-                    pid = stopList.index(RID)
-                except:
-                    pass
                 statDict.pop(RID, 0)
-                # print "funcCall returning NF"
-                return HttpResponseNotFound()
+        except Exception as e:
+            print "Unexpected exception: "+str(e)
         sleep(1)
 
 
 def datstat(RID):
-    return statDict[RID] - stopped
+    try:
+        stopDict[RID] = stopDict[RID]
+        return -1024
+    except:
+        return statDict[RID] - stopped
 
 
 def getStops():

@@ -143,6 +143,23 @@
             $("#stage").empty().append(stage);
         }
 
+        function stop() {
+            $.ajax({
+                url: '/datstop/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var mstage = obj['message'];
+                    $('#stage').empty().append(mstage);
+                }
+            });
+        }
+
         function progressBar(percent, $element) {
            var progressBarWidth = percent * $element.width() / 100;
             $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
@@ -240,7 +257,17 @@
                 </td>
             </tr>
         </table>
-        <input id="reprocess" name="reprocess" type="submit" value="Reprocess!"/>
+
+        <table>
+            <tr>
+                <td>
+                    <input id="reprocess" name="reprocess" type="submit" value="Reprocess!"/>
+                </td>
+                <td>
+                    <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop"/>
+                </td>
+            </tr>
+        </table>
     </form>
     <br><br><br>
 {% endblock my_content %}

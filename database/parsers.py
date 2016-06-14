@@ -109,7 +109,10 @@ def status(request):
             dict['perc'] = perc
             dict['project'] = rep_project
         else:
-            dict['stage'] = "In queue for upload, "+str(queuePos)+" requests in front of you"
+            if (queuePos == -1024):
+                dict['stage'] = "Stopping..."
+            else:
+                dict['stage'] = "In queue for upload, "+str(queuePos)+" requests in front of you"
             dict['perc'] = 0
             dict['project'] = rep_project
         json_data = simplejson.dumps(dict, encoding="Latin-1")
@@ -526,7 +529,15 @@ def parse_profile(file3, file4, p_uuid, refDict):
         logging.exception(myDate)
 
 
-def reanalyze(request):
+def repStop(request):
+    thing = HttpResponse(
+            simplejson.dumps({"error": "Reprocessing stopped successfully"}),
+            content_type="application/json"
+            )
+    return thing
+
+
+def reanalyze(request, stopList):
     ##form4
     try:
         global rep_project
@@ -536,6 +547,11 @@ def reanalyze(request):
             os.makedirs(mothurdest)
         ids = request.POST["ids"]
         processors = request.POST["processors"]
+        RID = request.POST['RID']
+        PID = 0  # change if adding additional data threads
+
+        if stopList[PID] == RID:
+            return repStop(request)
 
         new_align = 'reference=mothur/reference/align/' + str(request.POST['alignDB'])
         new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(request.POST['taxonomyDB'])
@@ -548,14 +564,22 @@ def reanalyze(request):
         else:
             projects = Reference.objects.all().filter(refid=ids)
 
+        if stopList[PID] == RID:
+            return repStop(request)
+
         for project in projects:
             rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
             dest = project.path
             source = project.source
 
+            if stopList[PID] == RID:
+                return repStop(request)
+
             if source == '454_sff':
                 ls_dir = os.listdir(dest)
                 for afile in ls_dir:
+                    if stopList[PID] == RID:
+                        return repStop(request)
                     srcStr = str(dest) + '/' + str(afile)
                     destStr = str(mothurdest) + '/' + str(afile)
                     shutil.copyfile(srcStr, destStr)
@@ -563,11 +587,15 @@ def reanalyze(request):
             if source == '454_fastq':
                 file_list = []
                 for afile in glob.glob(r'% s/*.fna' % dest):
+                    if stopList[PID] == RID:
+                        return repStop(request)
                     file_list.append(afile)
 
                 tempList = []
                 if file_list.__len__() > 1:
                     for each in file_list:
+                        if stopList[PID] == RID:
+                            return repStop(request)
                         file = each
                         handle_uploaded_file(file, mothurdest, each)
                         handle_uploaded_file(file, dest, each)
@@ -577,12 +605,16 @@ def reanalyze(request):
                             myStr = "mothur/temp/" + str(file.name)
                         tempList.append(myStr)
                     inputList = "-".join(tempList)
+                    if stopList[PID] == RID:
+                        return repStop(request)
                     if os.name == 'nt':
                         os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
                     else:
                         os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
                 else:
                     for each in file_list:
+                        if stopList[PID] == RID:
+                            return repStop(request)
                         file = each
                         fasta = 'temp.fasta'
                         handle_uploaded_file(file, mothurdest, fasta)
@@ -632,11 +664,17 @@ def reanalyze(request):
                     destStr = str(mothurdest) + '/' + str(afile)
                     shutil.copyfile(srcStr, destStr)
 
+            if stopList[PID] == RID:
+                return repStop(request)
+
             orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
             orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
             orig_tax = str(project.taxonomyDB)
             orig_tax_tag = str(orig_tax.split('.')[-2:-1][0])
             orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
+
+            if stopList[PID] == RID:
+                return repStop(request)
 
             try:
                 with open("% s/mothur.batch" % dest, 'r+') as bat:
@@ -668,6 +706,9 @@ def reanalyze(request):
 
             p_uuid = project.projectid.projectid
 
+            if stopList[PID] == RID:
+                return repStop(request)
+
             dest = project.path
             pType = project.projectid.projectType
 
@@ -684,6 +725,9 @@ def reanalyze(request):
             while getQueue() > 1:
                 time.sleep(5)
 
+            if stopList[PID] == RID:
+                return repStop(request)
+
             try:
                 mothur(dest, source)
             except Exception as e:
@@ -693,12 +737,18 @@ def reanalyze(request):
                     content_type="application/json"
                 )
 
+            if stopList[PID] == RID:
+                return repStop(request)
+
             subQueue()
 
             metaName = 'final_meta.xls'
             metaFile = '/'.join([dest, metaName])
 
             parse_project(metaFile, p_uuid)
+
+            if stopList[PID] == RID:
+                return repStop(request)
 
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
@@ -716,6 +766,9 @@ def reanalyze(request):
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 with open('% s/final.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid, refDict)
+
+        if stopList[PID] == RID:
+            return repStop(request)
 
         return HttpResponse(
             simplejson.dumps({"error": "no"}),
