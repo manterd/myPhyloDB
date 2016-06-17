@@ -53,7 +53,7 @@
             $('<input>').attr({
                 type: 'hidden',
                 name: 'funcName',
-                value: 'update'
+                value: 'updateFunc'
             }).appendTo('form');
 
         });
@@ -63,6 +63,23 @@
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             })
+        }
+
+        function stop() {
+            $.ajax({
+                url: '/datstop/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var mstage = obj['message'];
+                    $('#stage').empty().append(mstage);
+                }
+            });
         }
 
         function updateStatus() {
@@ -121,7 +138,16 @@
             </tr>
         </table>
         <br>
-        <input id="submit" type="submit" value="Update!"/>
+        <table>
+            <tr>
+                <td>
+                    <input id="submit" type="submit" value="Update!"/>
+                </td>
+                <td>
+                    <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop"/>
+                </td>
+            </tr>
+        </table>
     </form>
     <br>
     <div>{{ state }}</div>

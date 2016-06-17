@@ -386,6 +386,7 @@
                     stopTimer(refresh);
 
                     var text = data['text'];
+                    //alert("Done normalizing. Text: "+text);
                     $("#container-1").empty().append(text);
 
                     running = false;
@@ -393,7 +394,9 @@
                     document.getElementById("TabButton").disabled = false;
                     document.getElementById("BiomButton").disabled = false;
 
-                    location.reload();
+                    //location.reload();
+                    menu();
+                    //alert("menu?");
                }
             });
         }

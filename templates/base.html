@@ -53,8 +53,6 @@
     {% block javascript %}{% endblock javascript %}
 
     <script type="text/javascript">
-        var selFiles = "{{ selFiles }}";
-        var normFiles = "{{ normFiles }}";
 
         $(function () {
 
@@ -75,6 +73,11 @@
 
 
         function menu () {
+        //alert("Menu!");
+        var selFiles = "{{ selFiles }}";
+        var normFiles = "{{ normFiles }}";
+            //alert("selFiles: "+selFiles);
+            //alert("normFiles: "+normFiles);
 
             if ((selFiles == "True") && (normFiles == "True"))  {
                 $("#link0").show();
