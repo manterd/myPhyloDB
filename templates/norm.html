@@ -336,7 +336,7 @@
                     all: jsonDict
                 },
                 success: function(data) {
-
+                    //location.reload();
                     var error = data['error'];
                     if (error != "none") {
                         alert(error);
@@ -394,7 +394,7 @@
                     document.getElementById("TabButton").disabled = false;
                     document.getElementById("BiomButton").disabled = false;
 
-                    //location.reload();
+                    setNorm(true);
                     menu();
                     //alert("menu?");
                }

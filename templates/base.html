@@ -51,9 +51,10 @@
     <script src="{% static "highcharts/heatmap.js" %}" type="text/javascript"></script>
 
     {% block javascript %}{% endblock javascript %}
-
     <script type="text/javascript">
-
+        var selFiles = false;
+        var normFiles = false;
+        var normNorm = false;
         $(function () {
 
             $('[title]').qtip({
@@ -72,14 +73,21 @@
         });
 
 
+        function setNorm(arg) {
+            normNorm = arg;
+        }
+
         function menu () {
         //alert("Menu!");
         var selFiles = "{{ selFiles }}";
         var normFiles = "{{ normFiles }}";
+            if (normNorm == true) normFiles = "True";
+            normNorm = false;
             //alert("selFiles: "+selFiles);
             //alert("normFiles: "+normFiles);
 
             if ((selFiles == "True") && (normFiles == "True"))  {
+                //alert("Showing!");
                 $("#link0").show();
                 $("#link1").show();
                 $("#link2").show();
