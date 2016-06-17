@@ -206,6 +206,7 @@ def getNorm(request, RID, stopList, PID):
             normDF['rich'] = normDF['rich'].round(0).astype(int)
             normDF['diversity'] = normDF['diversity'].astype(float)
 
+
             if remove == 1:
                 grouped = normDF.groupby('speciesid')
                 goodIDs = []
@@ -253,6 +254,7 @@ def getNorm(request, RID, stopList, PID):
             finalDF[['rel_abund', 'rich', 'diversity']] = finalDF[['rel_abund', 'rich', 'diversity']].astype(float)
             finalDF[['abund', 'abund_16S']] = finalDF[['abund', 'abund_16S']].astype(int)
 
+
             finalDF.reset_index(drop=False, inplace=True)
             finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
@@ -283,6 +285,7 @@ def getNorm(request, RID, stopList, PID):
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
             finalDF.to_csv(path, sep='\t')
+
 
             base[RID] = 'Step 2 of 4: Normalizing data...done!'
 
@@ -349,7 +352,6 @@ def getNorm(request, RID, stopList, PID):
             if tabular_on == 1:
                 data = finalDF.values.tolist()
                 cols = finalDF.columns.values.tolist()
-                # print "cols: ", len(cols)
                 colList = []
                 for item in cols:
                     colDict = {}
@@ -536,7 +538,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
                 processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
             else:
                 numcore = min(mp.cpu_count(), Proc)
-                print numcore
                 processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
 
             for p in processes:
@@ -607,6 +608,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
 
     field = 'speciesid'
     taxaList = taxaDict['Species']
+
 
     qs = Species.objects.filter(speciesid__in=taxaList)
     namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid'])

@@ -257,7 +257,6 @@ def uploadFunc(request, stopList):
 
             elif source == '454_sff':
                 mothurdest = 'mothur/temp'
-
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
@@ -307,7 +306,7 @@ def uploadFunc(request, stopList):
                 while getQueue() > 1:
                     time.sleep(5)
                 try:
-                    mothur(dest, source)
+                    mothur(dest, source)  # cannot find mothur/mothur-linux/IDSTRING
                 except:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -889,16 +888,48 @@ def reprocess(request):
 
 @login_required(login_url='/accounts/login/')
 def update(request):
+    state = ''
+    return render_to_response(
+        'update.html',
+        {'form5': UploadForm5,
+         'state': state},
+        context_instance=RequestContext(request)
+    )
+
+
+def updaStop(request):
+    state = "Update stopped"
+    return render_to_response(
+        'update.html',
+        {'form5': UploadForm5,
+         'state': state},
+        context_instance=RequestContext(request)
+    )
+
+
+def updateFunc(request, stopList):
     form5 = UploadForm5(request.POST, request.FILES)
     state = ''
+
+    PID = 0
+    RID = request.POST['RID']
+
+    if stopList[PID] == RID:
+        return updaStop(request)
 
     if form5.is_valid():
         refid = request.POST['refid']
         file1 = request.FILES['docfile11']
 
+        if stopList[PID] == RID:
+            return updaStop(request)
+
         ref = Reference.objects.get(refid=refid)
         dest = ref.path
         p_uuid, pType, num_samp = projectid(file1)
+
+        if stopList[PID] == RID:
+            return updaStop(request)
 
         try:
             metaFile = '/'.join([dest, file1.name])
@@ -913,6 +944,9 @@ def update(request):
                 context_instance=RequestContext(request)
             )
 
+        if stopList[PID] == RID:
+            return updaStop(request)
+
         try:
             f = xlrd.open_workbook(metaFile)
             sheet = f.sheet_by_name('Project')
@@ -925,6 +959,7 @@ def update(request):
             source = reference.source
             userID = str(request.user.id)
 
+            # add stops to parse functions?
             if os.path.exists(batPath):
                 with open(batPath, 'rb') as batFile:
                     parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
@@ -941,7 +976,14 @@ def update(request):
                 context_instance=RequestContext(request)
             )
 
+        if stopList[PID] == RID:
+            return updaStop(request)
+
+        print "done!"
         state = 'Path: ' + str(dest) + ' is finished parsing!'
+
+    if stopList[PID] == RID:
+        return updaStop(request)
 
     return render_to_response(
         'update.html',
