@@ -13,6 +13,7 @@ from pyper import *
 import simplejson
 import threading
 
+from django.template import RequestContext
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from database.models import Species, Profile
 from database.utils import taxaProfileDF
@@ -40,7 +41,7 @@ def statusNorm(request):
             TimeDiff[RID] = 0
         try:
             if TimeDiff[RID] == 0:
-                stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.q.qsize())+' others in front of you.'
+                stage[RID] = 'Normalization has been placed in queue, there are '+str(database.queue.q.qsize())+' others in front of you.'
             else:
                 stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
         except:

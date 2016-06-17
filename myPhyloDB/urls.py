@@ -131,5 +131,8 @@ urlpatterns = [
 
     # data queue
     url(r'^datfuncCall/$', dataqueue.datfuncCall, name='datfuncCall'),
-    url(r'^datstop/$', dataqueue.datstop, name='datstop')
+    url(r'^datstop/$', dataqueue.datstop, name='datstop'),
+
+    # usrFiles
+    url(r'^usrFiles/$', views.usrFiles, name='usrFiles')
 ]
