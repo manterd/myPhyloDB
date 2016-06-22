@@ -1,17 +1,18 @@
 from django.http import HttpResponse, HttpResponseNotFound
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from Queue import Queue
 import simplejson
 from time import sleep
 import threading
 
-from views import uploadFunc, updateFunc, pybake
-from parsers import reanalyze
-from database.utils import threads
+from views import uploadFunc, updateFunc, pybake, upload, reprocess, update
+from parsers import reanalyze, termP
 
 
 q = Queue(maxsize=0)
 activeList = [0]
-stopList = [0]  # change if adding more data threads
+stopList = [0]
 recent = {}
 qList = []
 threadDict = {}
@@ -21,7 +22,6 @@ stopped = 0
 
 
 def datstop(request):
-    print "Told to stop a thing"
     global activeList, stopList, threadDict, stopDict
     RID = str(request.GET['all'])
     stopDict[RID] = True
@@ -30,6 +30,7 @@ def datstop(request):
         stopList[pid] = RID
         activeList[pid] = 0
         threadName = threadDict[RID]
+        termP()  # kill active mothur process if it's running
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == threadName:
@@ -67,7 +68,10 @@ def dataprocess(pid):
                 if funcName == "uploadFunc":
                     recent[RID] = uploadFunc(request, stopList)
                 if funcName == "reanalyze":
-                    recent[RID] = reanalyze(request, stopList)
+                    resp = reanalyze(request, stopList)
+                    if resp is None:
+                        resp = reprocess(request)
+                    recent[RID] = resp
                 if funcName == "updateFunc":
                     recent[RID] = updateFunc(request, stopList)
                 if funcName == "pybake":
@@ -98,6 +102,24 @@ def datfuncCall(request):
         except KeyError:
             if RID in stopList:
                 statDict.pop(RID, 0)
+            try:
+                if stopDict[RID]:
+                    response = HttpResponseNotFound()
+                    if funcName == "uploadFunc":
+                        response = upload(request)
+                        response['error'] = "Upload stopped"
+                    if funcName == "reanalyze":
+                        response = reprocess(request)
+                        response['error'] = "Reprocessing stopped"
+                    if funcName == "updateFunc":
+                        response = update(request)
+                        response['error'] = "Update stopped"
+                    if funcName == "pybake":
+                        response = pybake(request)
+                        response['error'] = "Pybake stopped"
+                    return response
+            except KeyError:
+                pass
         except Exception as e:
             print "Unexpected exception: "+str(e)
         sleep(1)

@@ -1,10 +1,12 @@
 import ast
 import datetime
+import math
 from django import db
 from django.http import HttpResponse
 from django_pandas.io import read_frame
 import logging
 from natsort import natsorted
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from pyper import *
@@ -1405,12 +1407,18 @@ def getKeggDF(keggAll, savedDF, tempDF, DepVar, RID, stops, PID):
         if not os.path.exists(path):
             os.makedirs(path)
 
+        maxCPU = mp.cpu_count()
+        maxCPU /= 3
+        maxCPU = math.trunc(maxCPU)
+        if maxCPU < 1:
+            maxCPU = 1
+
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = local_cfg.usr_numcore()
+            numcore = min(local_cfg.usr_numcore(), maxCPU)
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
 
@@ -1722,12 +1730,18 @@ def getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID):
         if not os.path.exists(path):
             os.makedirs(path)
 
+        maxCPU = mp.cpu_count()
+        maxCPU /= 3
+        maxCPU = math.trunc(maxCPU)
+        if maxCPU < 1:
+            maxCPU = 1
+
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
         else:
-            numcore = local_cfg.usr_numcore()
+            numcore = min(local_cfg.usr_numcore(), maxCPU)
             listDF = np.array_split(picrustDF, numcore)
             processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
 

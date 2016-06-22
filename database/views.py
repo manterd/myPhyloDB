@@ -20,7 +20,7 @@ from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9
 from models import Project, Reference, Sample, Species
 from models import ko_entry, nz_entry, nz_lvl1
-from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
+from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile, termP
 from utils import handle_uploaded_file, remove_list, remove_proj
 from models import addQueue, getQueue, subQueue
 from database.pybake.pybake import koParse, nzParse
@@ -61,6 +61,9 @@ def upload(request):
 
 
 def upStop(request):
+
+    # cleanup mid upload project!
+
     projects = Reference.objects.none()
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -166,6 +169,7 @@ def uploadFunc(request, stopList):
                 batch = ''
 
             if stopList[PID] == RID:
+                remove_proj(dest)
                 return upStop(request)
 
             try:
@@ -192,6 +196,7 @@ def uploadFunc(request, stopList):
                 )
 
             if stopList[PID] == RID:
+                remove_proj(dest)
                 return upStop(request)
 
             if source == 'mothur':
@@ -222,6 +227,7 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
+                    remove_proj(dest)
                     return upStop(request)
 
                 file4 = request.FILES['docfile4']
@@ -253,6 +259,7 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
+                    remove_proj(dest)
                     return upStop(request)
 
             elif source == '454_sff':
@@ -261,6 +268,7 @@ def uploadFunc(request, stopList):
                     os.makedirs(mothurdest)
 
                 if stopList[PID] == RID:
+                    remove_proj(dest)
                     return upStop(request)
 
                 file_list = request.FILES.getlist('sff_files')
@@ -270,6 +278,7 @@ def uploadFunc(request, stopList):
                     handle_uploaded_file(file, dest, each)
 
                 if stopList[PID] == RID:
+                    remove_proj(dest)
                     return upStop(request)
 
                 file_list = request.FILES.getlist('oligo_files')
@@ -279,6 +288,7 @@ def uploadFunc(request, stopList):
                     handle_uploaded_file(file, dest, each)
 
                 if stopList[PID] == RID:
+                    remove_proj(dest)
                     return upStop(request)
 
                 file5 = request.FILES['docfile5']
@@ -306,7 +316,7 @@ def uploadFunc(request, stopList):
                 while getQueue() > 1:
                     time.sleep(5)
                 try:
-                    mothur(dest, source)  # cannot find mothur/mothur-linux/IDSTRING
+                    mothur(dest, source)
                 except:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"

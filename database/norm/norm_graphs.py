@@ -534,11 +534,17 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
             if Proc < 1:
                 Proc = 1
 
+            maxCPU = mp.cpu_count()
+            maxCPU /= 3
+            maxCPU = math.trunc(maxCPU)
+            if maxCPU < 1:
+                maxCPU = 1
+
             if os.name == 'nt':
                 numcore = 1
                 processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
             else:
-                numcore = min(mp.cpu_count(), Proc)
+                numcore = min(maxCPU, Proc)
                 processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
 
             for p in processes:
