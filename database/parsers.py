@@ -1,17 +1,21 @@
 import csv
 import datetime
 from django.contrib.auth.models import User
+from django.shortcuts import render_to_response
 from django.http import HttpResponse
 import glob
 import logging
 import numpy as np
 from numpy import *
 import os
+import signal
+import psutil
 import pandas as pd
 import re
 import shutil
 import simplejson
 import time
+import subprocess
 from uuid import uuid4
 import xlrd
 from xlutils.copy import copy
@@ -23,7 +27,7 @@ from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import purge, handle_uploaded_file
 from models import addQueue, getQueue, subQueue
 import database.dataqueue
-from forms import UploadForm4
+
 
 stage = ''
 perc = 0
@@ -31,8 +35,11 @@ rep_project = ''
 pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
 
+term = False
+
 
 def mothur(dest, source):
+    global term
     try:
         global stage, perc
         stage = "Step 3 of 5: Running mothur...please check your host terminal for progress!"
@@ -47,7 +54,7 @@ def mothur(dest, source):
         if not os.path.exists('mothur/reference/template'):
             os.makedirs('mothur/reference/template')
 
-        if os.name == 'nt':
+        '''if os.name == 'nt':  # actually startup mothur
             try:
                 os.system('"mothur\\mothur-win\\mothur.exe mothur\\temp\\mothur.batch"')
             except Exception as e:
@@ -56,7 +63,28 @@ def mothur(dest, source):
             try:
                 os.system("mothur/mothur-linux/mothur mothur/temp/mothur.batch")
             except Exception as e:
-                print "Mothur failed: " + str(e)
+                print "Mothur failed: " + str(e)'''
+
+        filepath=""
+        if os.name == 'nt':
+            filepath = "mothur\\mothur-win\\mothur.exe mothur\\temp\\mothur.batch"
+        else:
+            filepath = "mothur/mothur-linux/mothur mothur/temp/mothur.batch"
+        try:
+            p = subprocess.Popen("exec " + filepath, shell=True, stdout=subprocess.PIPE)
+            while p.poll() is None:
+                if term:
+                    parent = psutil.Process(p.pid)
+                    children = parent.children(recursive=True)
+                    for process in children:
+                        process.send_signal(signal.SIGTERM)
+                    os.kill(p.pid, signal.SIGTERM)
+                    term = False
+                time.sleep(1)
+            print p.communicate()  # async output check? this only prints when finished
+        except Exception as e:
+            print "Mothur failed: " + str(e)
+
 
         if source == '454_sff':
             shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
@@ -99,6 +127,16 @@ def mothur(dest, source):
         logging.exception(myDate)
 
 
+def termP():  # attempt to terminate subprocess p
+    global term
+    print "Trying to terminate"
+    try:
+        term = True
+    except:
+        print "Error with terminate"
+        pass
+
+
 def status(request):
     if request.is_ajax():
         RID = request.GET['all']
@@ -112,7 +150,7 @@ def status(request):
             if (queuePos == -1024):
                 dict['stage'] = "Stopping..."
             else:
-                dict['stage'] = "In queue for upload, "+str(queuePos)+" requests in front of you"
+                dict['stage'] = "In queue for processing, "+str(queuePos)+" requests in front of you"
             dict['perc'] = 0
             dict['project'] = rep_project
         json_data = simplejson.dumps(dict, encoding="Latin-1")
@@ -530,11 +568,14 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
 
 def repStop(request):
-    thing = HttpResponse(
-            simplejson.dumps({"error": "Reprocessing stopped successfully"}),
-            content_type="application/json"
-            )
-    return thing
+
+    # cleanup in repro project!
+
+    return render_to_response(
+        'reprocess.html',
+        {"error": "Reprocessing stopped successfully"},
+        content_type="application/json"
+    )
 
 
 def reanalyze(request, stopList):
@@ -770,22 +811,15 @@ def reanalyze(request, stopList):
         if stopList[PID] == RID:
             return repStop(request)
 
-        return HttpResponse(
-            simplejson.dumps({"error": "no"}),
-            content_type="application/json"
-        )
+        return None
 
     except:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
-        return HttpResponse(
-            simplejson.dumps({"error": "yes"}),
+        return render_to_response(
+            'reprocess.html',
+            {"error": "yes"},
             content_type="application/json"
         )
 
-
-def parseNormDat(request):
-    # read file, save data to dataframe(best option?)
-    #  store data as mini database for use with analysis, set data as selected
-    return
