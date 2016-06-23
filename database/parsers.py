@@ -35,11 +35,11 @@ rep_project = ''
 pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
 
-term = False
+p = None
 
 
 def mothur(dest, source):
-    global term
+    global p
     try:
         global stage, perc
         stage = "Step 3 of 5: Running mothur...please check your host terminal for progress!"
@@ -65,23 +65,14 @@ def mothur(dest, source):
             except Exception as e:
                 print "Mothur failed: " + str(e)'''
 
-        filepath=""
         if os.name == 'nt':
             filepath = "mothur\\mothur-win\\mothur.exe mothur\\temp\\mothur.batch"
         else:
             filepath = "mothur/mothur-linux/mothur mothur/temp/mothur.batch"
         try:
-            p = subprocess.Popen("exec " + filepath, shell=True, stdout=subprocess.PIPE)
-            while p.poll() is None:
-                if term:
-                    parent = psutil.Process(p.pid)
-                    children = parent.children(recursive=True)
-                    for process in children:
-                        process.send_signal(signal.SIGTERM)
-                    os.kill(p.pid, signal.SIGTERM)
-                    term = False
-                time.sleep(1)
-            print p.communicate()  # async output check? this only prints when finished
+            p = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            print out
         except Exception as e:
             print "Mothur failed: " + str(e)
 
@@ -128,10 +119,13 @@ def mothur(dest, source):
 
 
 def termP():  # attempt to terminate subprocess p
-    global term
-    print "Trying to terminate"
+    global p
     try:
-        term = True
+        parent = psutil.Process(p.pid)
+        children = parent.children(recursive=True)
+        for process in children:
+            process.send_signal(signal.SIGTERM)
+        os.kill(p.pid, signal.SIGTERM)
     except:
         print "Error with terminate"
         pass
@@ -571,9 +565,8 @@ def repStop(request):
 
     # cleanup in repro project!
 
-    return render_to_response(
-        'reprocess.html',
-        {"error": "Reprocessing stopped successfully"},
+    return HttpResponse(
+        simplejson.dumps({"error": "yes"}),
         content_type="application/json"
     )
 
@@ -581,6 +574,11 @@ def repStop(request):
 def reanalyze(request, stopList):
     ##form4
     try:
+        # TODO
+        # duplicate files and database entries into temp directory
+        # in case of error or stop command, restore temp directory files
+        # if successful, delete temp backups
+
         global rep_project
 
         mothurdest = 'mothur/temp/'
@@ -755,7 +753,11 @@ def reanalyze(request, stopList):
 
             shutil.copy('% s/final_meta.xls' % dest, '% s/final_meta.xls' % mothurdest)
 
-            Reference.objects.get(path=dest).delete()
+            backup = Reference.objects.get(path=dest)  # save before deleting in case of error? how to reinsert...
+            Reference.objects.get(path=dest).delete()  # removes project from database
+
+            # alternatively, edit existing project data rather than removing and replacing, save edits for end of
+            # reprocess, such that data is in the same state as before reprocess if it fails
 
             if not os.path.exists(dest):
                 os.makedirs(dest)
@@ -767,7 +769,10 @@ def reanalyze(request, stopList):
                 time.sleep(5)
 
             if stopList[PID] == RID:
+                Reference.objects.add(backup)  # does not work
                 return repStop(request)
+
+
 
             try:
                 mothur(dest, source)
@@ -779,6 +784,7 @@ def reanalyze(request, stopList):
                 )
 
             if stopList[PID] == RID:
+                Reference.objects.add(backup)
                 return repStop(request)
 
             subQueue()
@@ -789,6 +795,7 @@ def reanalyze(request, stopList):
             parse_project(metaFile, p_uuid)
 
             if stopList[PID] == RID:
+                Reference.objects.add(backup)
                 return repStop(request)
 
             with open('% s/mothur.batch' % dest, 'rb') as file7:
@@ -807,9 +814,6 @@ def reanalyze(request, stopList):
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 with open('% s/final.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid, refDict)
-
-        if stopList[PID] == RID:
-            return repStop(request)
 
         return None
 

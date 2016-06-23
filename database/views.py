@@ -309,6 +309,10 @@ def uploadFunc(request, stopList):
 
                 handle_uploaded_file(file7, dest, batch)
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 # check queue for mothur availability, then run or wait
                 # if mothur is available, run it
                 # else sleep, loop back to check again
@@ -338,6 +342,10 @@ def uploadFunc(request, stopList):
                         context_instance=RequestContext(request)
                     )
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 subQueue()
 
                 try:
@@ -363,6 +371,10 @@ def uploadFunc(request, stopList):
                          },
                         context_instance=RequestContext(request)
                     )
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
@@ -391,6 +403,10 @@ def uploadFunc(request, stopList):
                          },
                         context_instance=RequestContext(request)
                     )
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
 
             elif source == '454_fastq':
                 mothurdest = 'mothur/temp'
@@ -422,6 +438,10 @@ def uploadFunc(request, stopList):
                         handle_uploaded_file(file, mothurdest, fasta)
                         handle_uploaded_file(file, dest, each)
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 file_list = request.FILES.getlist('qual_files')
                 tempList = []
                 if len(file_list) > 1:
@@ -446,10 +466,23 @@ def uploadFunc(request, stopList):
                         handle_uploaded_file(file, mothurdest, qual)
                         handle_uploaded_file(file, dest, each)
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 oligo = 'temp.oligos'
                 file6 = request.FILES['docfile6']
                 handle_uploaded_file(file6, mothurdest, oligo)
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 handle_uploaded_file(file6, dest, file6.name)
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
 
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
@@ -460,10 +493,18 @@ def uploadFunc(request, stopList):
 
                 handle_uploaded_file(file7, mothurdest, batch)
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
                     print line.replace("processors=X", actual_proc),
 
                 handle_uploaded_file(file7, dest, batch)
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
 
                 try:
                     mothur(dest, source)
@@ -489,6 +530,10 @@ def uploadFunc(request, stopList):
                         context_instance=RequestContext(request)
                     )
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
@@ -512,6 +557,10 @@ def uploadFunc(request, stopList):
                          },
                         context_instance=RequestContext(request)
                     )
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
@@ -540,6 +589,10 @@ def uploadFunc(request, stopList):
                         context_instance=RequestContext(request)
                     )
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
             elif source == 'miseq':
                 mothurdest = 'mothur/temp'
                 if not os.path.exists(mothurdest):
@@ -548,13 +601,28 @@ def uploadFunc(request, stopList):
                 fastq = 'temp.files'
                 file13 = request.FILES['docfile13']
                 handle_uploaded_file(file13, mothurdest, fastq)
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 handle_uploaded_file(file13, dest, fastq)
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
 
                 file_list = request.FILES.getlist('fastq_files')
                 for each in file_list:
                     file = each
                     handle_uploaded_file(file, mothurdest, each)
+                    if stopList[PID] == RID:
+                        remove_proj(dest)
+                        return upStop(request)
                     handle_uploaded_file(file, dest, each)
+                    if stopList[PID] == RID:
+                        remove_proj(dest)
+                        return upStop(request)
 
                 batch = 'mothur.batch'
                 file15 = request.FILES['docfile15']
@@ -565,10 +633,18 @@ def uploadFunc(request, stopList):
 
                 handle_uploaded_file(file15, mothurdest, batch)
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
                     print line.replace("processors=X", actual_proc),
 
                 handle_uploaded_file(file15, dest, batch)
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
 
                 try:
                     mothur(dest, source)
@@ -593,6 +669,10 @@ def uploadFunc(request, stopList):
                         context_instance=RequestContext(request)
                     )
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
@@ -615,6 +695,10 @@ def uploadFunc(request, stopList):
                          'error': "There was an error parsing taxonomy file: final.taxonomy"},
                         context_instance=RequestContext(request)
                     )
+
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
@@ -642,11 +726,16 @@ def uploadFunc(request, stopList):
                         context_instance=RequestContext(request)
                     )
 
+                if stopList[PID] == RID:
+                    remove_proj(dest)
+                    return upStop(request)
+
             else:
                 print ('Please check that all necessary files have been selected.')
 
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)
+
 
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
