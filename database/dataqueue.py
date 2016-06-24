@@ -71,6 +71,9 @@ def dataprocess(pid):
                     resp = reanalyze(request, stopList)
                     if resp is None:
                         resp = reprocess(request)
+                    if resp == "Stopped":
+                        resp = reprocess(request)
+                        resp['error'] = "Reprocessing stopped"
                     recent[RID] = resp
                 if funcName == "updateFunc":
                     recent[RID] = updateFunc(request, stopList)

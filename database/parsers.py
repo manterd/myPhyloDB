@@ -126,8 +126,8 @@ def termP():  # attempt to terminate subprocess p
         for process in children:
             process.send_signal(signal.SIGTERM)
         os.kill(p.pid, signal.SIGTERM)
-    except:
-        print "Error with terminate"
+    except Exception as e:
+        print "Error with terminate: "+str(e)
         pass
 
 
@@ -565,10 +565,7 @@ def repStop(request):
 
     # cleanup in repro project!
 
-    return HttpResponse(
-        simplejson.dumps({"error": "yes"}),
-        content_type="application/json"
-    )
+    return "Stopped"
 
 
 def reanalyze(request, stopList):
@@ -748,6 +745,7 @@ def reanalyze(request, stopList):
             if stopList[PID] == RID:
                 return repStop(request)
 
+
             dest = project.path
             pType = project.projectid.projectType
 
@@ -763,20 +761,15 @@ def reanalyze(request, stopList):
                 os.makedirs(dest)
 
             shutil.copy('% s/final_meta.xls' % mothurdest, '% s/final_meta.xls' % dest)
-
-            addQueue()
-            while getQueue() > 1:
-                time.sleep(5)
-
             if stopList[PID] == RID:
-                Reference.objects.add(backup)  # does not work
+                backup.save()  # works! sometimes
                 return repStop(request)
-
 
 
             try:
                 mothur(dest, source)
             except Exception as e:
+                backup.save()
                 print("Error with mothur: " + str(e))
                 return HttpResponse(
                     simplejson.dumps({"error": "yes"}),
@@ -784,10 +777,10 @@ def reanalyze(request, stopList):
                 )
 
             if stopList[PID] == RID:
-                Reference.objects.add(backup)
+                backup.save()
                 return repStop(request)
 
-            subQueue()
+            # subQueue()
 
             metaName = 'final_meta.xls'
             metaFile = '/'.join([dest, metaName])
@@ -795,7 +788,7 @@ def reanalyze(request, stopList):
             parse_project(metaFile, p_uuid)
 
             if stopList[PID] == RID:
-                Reference.objects.add(backup)
+                backup.save()
                 return repStop(request)
 
             with open('% s/mothur.batch' % dest, 'rb') as file7:
@@ -820,6 +813,10 @@ def reanalyze(request, stopList):
     except:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+        try:
+            backup.save()
+        except:
+            pass
         logging.exception(myDate)
         return render_to_response(
             'reprocess.html',
