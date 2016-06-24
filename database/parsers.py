@@ -14,7 +14,6 @@ import pandas as pd
 import re
 import shutil
 import simplejson
-import time
 import subprocess
 from uuid import uuid4
 import xlrd
@@ -25,7 +24,6 @@ from xlwt import Style
 from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
 from utils import purge, handle_uploaded_file
-from models import addQueue, getQueue, subQueue
 import database.dataqueue
 
 
@@ -71,8 +69,8 @@ def mothur(dest, source):
             filepath = "mothur/mothur-linux/mothur mothur/temp/mothur.batch"
         try:
             p = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            print out
+            for line in iter(p.stdout.readline, ''):
+                print line
         except Exception as e:
             print "Mothur failed: " + str(e)
 
@@ -569,12 +567,8 @@ def repStop(request):
 
 
 def reanalyze(request, stopList):
-    ##form4
+    # form4
     try:
-        # TODO
-        # duplicate files and database entries into temp directory
-        # in case of error or stop command, restore temp directory files
-        # if successful, delete temp backups
 
         global rep_project
 

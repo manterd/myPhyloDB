@@ -1078,7 +1078,6 @@ def updateFunc(request, stopList):
         if stopList[PID] == RID:
             return updaStop(request)
 
-        print "done!"
         state = 'Path: ' + str(dest) + ' is finished parsing!'
 
     if stopList[PID] == RID:
