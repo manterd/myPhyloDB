@@ -21,7 +21,7 @@ def getProjectTree(request):
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all().order_by('project_name')
-    if request.user.is_authenticated():
+    elif request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
     if not request.user.is_superuser and not request.user.is_authenticated():
@@ -247,6 +247,13 @@ def getSampleCatTree(request):
             myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             ghg['children'].append(myNode)
         soil['children'].append(ghg)
+
+        health = {'title': 'Soil Health', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+        list = ['soil_water_cap', 'soil_surf_hard', 'soil_subsurf_hard', 'soil_agg_stability', 'soil_ACE_protein', 'soil_active_C']
+        for i in range(len(list)):
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
+            health['children'].append(myNode)
+        soil['children'].append(health)
 
     list = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6']
     for i in range(len(list)):
@@ -704,6 +711,13 @@ def getSampleQuantTree(request):
             myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
             ghg['children'].append(myNode)
         soil['children'].append(ghg)
+
+        health = {'title': 'Soil Health', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+        list = ['soil_water_cap', 'soil_surf_hard', 'soil_subsurf_hard', 'soil_agg_stability', 'soil_ACE_protein', 'soil_active_C']
+        for i in range(len(list)):
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
+            health['children'].append(myNode)
+        soil['children'].append(health)
 
     list = ['usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6']
     for i in range(len(list)):
@@ -1382,7 +1396,7 @@ def makeUpdateTree(request):
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all()
-    if request.user.is_authenticated():
+    elif request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) )
 
@@ -1429,7 +1443,7 @@ def makeReproTree(request):
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all().filter(reference__raw=True)
-    if request.user.is_authenticated():
+    elif request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) ).filter(reference__raw=True)
 

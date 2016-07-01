@@ -1,5 +1,0 @@
-90.1.sff	90.1.oligos
-90.2.sff	90.2.oligos
-90.3.sff	90.3.oligos
-90.4.sff	90.4.oligos
-90.5.sff	90.5.oligos

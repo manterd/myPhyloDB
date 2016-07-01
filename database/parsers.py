@@ -116,7 +116,7 @@ def mothur(dest, source):
         logging.exception(myDate)
 
 
-def termP():  # attempt to terminate subprocess p
+def termP():
     global p
     try:
         parent = psutil.Process(p.pid)
