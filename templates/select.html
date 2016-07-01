@@ -606,7 +606,14 @@
                                     "{{ Soil.ghg_chamber_placement }}",
                                     "{{ Soil.ghg_N2O }}",
                                     "{{ Soil.ghg_CO2 }}",
-                                    "{{ Soil.ghg_NH4 }}"
+                                    "{{ Soil.ghg_NH4 }}",
+                                     //New
+                                    "{{ Soil.soil_water_cap }}",
+                                    "{{ Soil.soil_surf_hard }}",
+                                    "{{ Soil.soil_subsurf_hard }}",
+                                    "{{ Soil.soil_agg_stability }}",
+                                    "{{ Soil.soil_ACE_protein }}",
+                                    "{{ Soil.soil_active_C }}"
                                  ]).draw();
                             }
                         {% endfor %}
@@ -1169,6 +1176,12 @@
                         <th title="Greenhouse gas emissions: N2O">ghg_N2O</th>
                         <th title="Greenhouse gas emission: CO2">ghg_CO2</th>
                         <th title="Greenhouse gas emission: NH4">ghg_NH4</th>
+                        <th title="Soil Health: water capacity">soil_water_cap</th>
+                        <th title="Soil Health: surface hardness">soil_surf_hard</th>
+                        <th title="Soil Health: subsurface hardness">soil_subsurf_hard</th>
+                        <th title="Soil Health: aggregate stability">soil_agg_stability</th>
+                        <th title="Soil Health: ACE protein index">soil_ACE_protein</th>
+                        <th title="Soil Health: active Carbon">soil_active_C</th>
                     </tr>
                 </thead>
             </table>

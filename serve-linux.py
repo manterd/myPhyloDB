@@ -3,7 +3,6 @@ from cherrypy.process import plugins
 import multiprocessing as mp
 import os.path
 import signal
-import sys
 import threading
 import webbrowser
 from myPhyloDB.wsgi import application

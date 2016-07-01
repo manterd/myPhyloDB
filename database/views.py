@@ -19,15 +19,14 @@ from uuid import uuid4
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9
 from models import Project, Reference, Sample, Species
-from models import ko_entry, nz_entry, nz_lvl1
-from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile, termP
+from models import ko_entry, nz_entry
+from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 from models import addQueue, getQueue, subQueue
 from database.pybake.pybake import koParse, nzParse
 from database.pybake.pybake import geneParse
 from database.utils import cleanup
 
-# from database import dataqueue
 
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
@@ -735,7 +734,6 @@ def uploadFunc(request, stopList):
 
     elif request.method == 'POST' and 'clickMe' in request.POST:
         remove_list(request)
-
 
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')

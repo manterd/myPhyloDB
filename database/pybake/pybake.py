@@ -35,7 +35,7 @@ def geneParse(file1, file2, file3):
 
     #taxonomy file
     stage = 'Step 1 of 4: Parsing taxonomy file...'
-    df1 = pd.read_csv(file1, header=0, sep='\t', index_col=0)
+    df1 = pd.read_csv(file1, header=None, names=['Taxonomy'], sep='\t', index_col=0)
     file1.close()
 
     # rRNA count file
@@ -85,11 +85,17 @@ def geneParse(file1, file2, file3):
     total, col = finalDF_KO.shape
     counter = 0
     for index, row in finalDF_KO.iterrows():
-        subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', '', row['Taxonomy'])
-        subbed = re.sub(r';;', 'unclassified', subbed)
+        subbed = re.sub(r'(\(.*?\))', '', row['Taxonomy'])
+        subbed = re.sub(r'k__;', 'k__unclassified;', subbed)
+        subbed = re.sub(r'p__;', 'p__unclassified;', subbed)
+        subbed = re.sub(r'c__;', 'c__unclassified;', subbed)
+        subbed = re.sub(r'o__;', 'o__unclassified;', subbed)
+        subbed = re.sub(r'f__;', 'f__unclassified;', subbed)
+        subbed = re.sub(r'g__;', 'g__unclassified;', subbed)
+        subbed = re.sub(r's__;', 's__unclassified;', subbed)
+        subbed = re.sub(r'k__|p__|c__|o__|f__|g__|s__', '', subbed)
         subbed = subbed[:-1]
         taxon = subbed.split(';')
-
         if not Kingdom.objects.using('default').filter(kingdomName=taxon[0]).exists():
             kid = uuid4().hex
             Kingdom.objects.using('default').create(kingdomid=kid, kingdomName=taxon[0])

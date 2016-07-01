@@ -1,13 +1,9 @@
-from django.http import HttpResponse, HttpResponseNotFound
-from django.shortcuts import render_to_response
-from django.template import RequestContext
 from Queue import Queue
-import simplejson
 from time import sleep
 import threading
 
-from views import uploadFunc, updateFunc, pybake, upload, reprocess, update
-from parsers import reanalyze, termP
+from views import *
+from parsers import *
 
 
 q = Queue(maxsize=0)
@@ -30,7 +26,7 @@ def datstop(request):
         stopList[pid] = RID
         activeList[pid] = 0
         threadName = threadDict[RID]
-        termP()  # kill active mothur process if it's running
+        termP()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == threadName:
@@ -99,8 +95,6 @@ def datfuncCall(request):
             recent.pop(RID, 0)
             statDict.pop(RID, 0)
             stopDict.pop(RID, 0)
-            # if results is None:  # if stopped as active process
-            #     return HttpResponseNotFound()  # return rnf (better than None)
             return results
         except KeyError:
             if RID in stopList:
