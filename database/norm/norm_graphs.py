@@ -172,7 +172,6 @@ def getNorm(request, RID, stopList, PID):
             metaDF.dropna(axis=1, how='all', inplace=True)
             metaDF.dropna(axis=0, how='all', inplace=True)
             lenB, col = metaDF.shape
-
             normRem = len(selected) - lenB
 
             result += str(lenB) + ' selected sample(s) were included in the final analysis...\n'

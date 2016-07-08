@@ -428,6 +428,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
 
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF.fillna(0, inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')

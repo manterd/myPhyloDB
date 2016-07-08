@@ -442,8 +442,9 @@
 
                     var error = data['error'];
                     if (error != "none") {
-                        alert(error);
                         $("#run").css("background-color", "red");
+                        $("#container-0").empty().append('Analysis was aborted!');
+                        alert(error);
                     } else {
                         $("#run").css("background-color", "green");
                     }
@@ -452,7 +453,7 @@
                     $('#text-1').val(text);
 
                     if (series == undefined) {
-                        $('#container-1').empty().append('No significant regresssions!');
+                        $("#container-0").empty().append('No significant regressions!');
                     } else {
                         var xAxis = obj['xAxis'];
                         var yAxis = obj['yAxis'];

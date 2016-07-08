@@ -263,8 +263,7 @@ def getSPLS(request, stops, RID, PID):
                 r("if (length(X_new) == 0) {X_new <- X}")
                 columns = r.get("ncol(X_new)")
                 if columns == 0:
-                    myDict = {}
-                    myDict['error'] = "All predictor variables have zero variance.\nsPLS-Regr was aborted!"
+                    myDict = {'error': "All predictor variables have zero variance.\nsPLS-Regr was aborted!"}
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
@@ -288,8 +287,10 @@ def getSPLS(request, stops, RID, PID):
                     for i in fout:
                         result += str(i) + '\n'
                 else:
-                    result += 'No significant variables were found\n'
-                    result += '\n===============================================\n'
+                    myDict = {'error': "Analysis did not converge.\nsPLS-Regr was aborted!"}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
 
                 r("set.seed(1)")
                 r("ci.f <- ci.spls(f, plot.it=FALSE, plot.fix='y')")
@@ -361,7 +362,7 @@ def getSPLS(request, stops, RID, PID):
                     coeffsDF = coeffsDF.loc[(coeffsDF != 0).any(axis=1)]
                     coeffsDF.sort_index(inplace=True)
                     taxIDList = coeffsDF.index.values.tolist()
-
+                    print 'button3:', button3
                     namesDF = pd.DataFrame()
                     if button3 == 1:
                         if selectAll == 1:
@@ -403,6 +404,7 @@ def getSPLS(request, stops, RID, PID):
                     elif button3 == 2:
                         if keggAll == 1:
                             taxNameList = ko_lvl1.objects.using('picrust').filter(ko_lvl1_id__in=taxIDList).values('ko_lvl1_id', 'ko_lvl1_name')
+                            print taxNameList
                             namesDF = pd.DataFrame(list(taxNameList))
                             namesDF.rename(columns={'ko_lvl1_name': 'rank_name', 'ko_lvl1_id': 'rank_id'}, inplace=True)
                             namesDF.set_index('rank_id', inplace=True)
@@ -440,14 +442,9 @@ def getSPLS(request, stops, RID, PID):
                             namesDF.set_index('rank_id', inplace=True)
                         elif nzAll == 5:
                             taxNameList = nz_lvl4.objects.using('picrust').filter(nz_lvl4_id__in=taxIDList).values('nz_lvl4_id', 'nz_lvl4_name')
-                            df1 = pd.DataFrame(list(taxNameList))
-                            df1.rename(columns={'nz_lvl4_name': 'rank_name', 'nz_lvl4_id': 'rank_id'}, inplace=True)
-                            df1.set_index('rank_id', inplace=True)
-                            taxNameList = nz_entry.objects.using('picrust').filter(nz_lvl5_id__in=taxIDList).values('nz_lvl5_id', 'nz_name')
-                            df2 = pd.DataFrame(list(taxNameList))
-                            df2.rename(columns={'nz_name': 'rank_name', 'nz_lvl5_id': 'rank_id'}, inplace=True)
-                            df2.set_index('rank_id', inplace=True)
-                            namesDF = pd.concat([df1, df2])
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'nz_lvl4_name': 'rank_name', 'nz_lvl4_id': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
                         elif nzAll == 6:
                             taxNameList = nz_lvl4.objects.using('picrust').filter(nz_lvl4_id__in=taxIDList).values('nz_lvl4_id', 'nz_lvl4_name')
                             namesDF = pd.DataFrame(list(taxNameList))
@@ -797,6 +794,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         shutil.rmtree('media/temp/spls/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
@@ -1124,6 +1122,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         shutil.rmtree('media/temp/spls/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')

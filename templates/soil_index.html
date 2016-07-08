@@ -701,6 +701,17 @@
                         buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                     }).draw();
 
+                    var scale_table = obj['scale_table'];
+                    $('#scale_table').empty().append(scale_table).find('.table').DataTable({
+                        dom: 'B<"toolbar">lfrtip',
+                        deferRender: true,
+                        scrollX: true,
+                        bSort: true,
+                        bPaginate: true,
+                        sPaginationType: 'full_numbers',
+                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                    }).draw();
+
                     chooseDisplay();
                 }
             });
@@ -808,9 +819,12 @@
         <br>
     </div>
     <br>
-    <h2>Soil Health Data:</h2>
+    <h2>Soil Health Data (Raw):</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br>
+    <br>
+    <h2>Soil Health Data (Scaled Means):</h2>
+    <div id="scale_table" style="width: 950px; overflow-x: auto;"></div>
 
     <br>
     <br><br><br>

@@ -3,6 +3,7 @@ from cherrypy.process import plugins
 import multiprocessing as mp
 import os.path
 import signal
+import sys
 import threading
 import webbrowser
 from myPhyloDB.wsgi import application
@@ -23,13 +24,16 @@ class Server(object):
         DjangoAppPlugin(cherrypy.engine, self.base_dir).subscribe()
 
     def browse(self):
-        url = ''
         f = open("config/server.cfg")
         lines = f.readlines()
+        ip = ''
+        port = ''
         for line in lines:
-            if "server.socket_port: " in line:
+            if line.startswith('server.socket_host:'):
+                ip = line.split('"')[1]
+            if line.startswith('server.socket_port:'):
                 port = line.split(' ')[1]
-                url = "http://127.0.0.1:" + str(port.rstrip('\n')) + "/myPhyloDB/home/"
+        url = "http://" + str(ip.rstrip('\n')) + ":" + str(port.rstrip('\n')) + '/myPhyloDB/home/'
         webbrowser.open_new(url)
 
     def run(self):
@@ -88,8 +92,8 @@ num_threads = threads()
 
 if __name__ == '__main__':
     import django.core.management
-    #from django.core.management import execute_from_command_line
-    #execute_from_command_line(sys.argv)
+    from django.core.management import execute_from_command_line
+    execute_from_command_line(sys.argv)
 
     mp.freeze_support()
 
