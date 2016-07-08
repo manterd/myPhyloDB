@@ -151,7 +151,9 @@
 
             $("#submit").click(function () {
                 selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
-                    return node.data.id;
+                    if (node.getLevel() == 3) {
+                        return node.data.id;
+                    }
                 });
                 var jsonDict = JSON.stringify(selKeys);
                 $.ajax({

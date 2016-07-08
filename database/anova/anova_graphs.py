@@ -274,7 +274,7 @@ def getCatUnivData(request, RID, stops, PID):
                     r.assign("df", group1)
                     trtString = " * ".join(allFields)
                     if DepVar == 1:
-                        anova_string = "fit <- aov(abund ~ " + str(trtString) + ", data=df)"
+                        anova_string = "fit <- aov(rel_abund ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
                     elif DepVar == 2:
@@ -291,7 +291,6 @@ def getCatUnivData(request, RID, stops, PID):
                         r("eval(parse(text=cmd))")
 
                     aov = r("summary(fit)")
-
                     pString = r("summary(fit)[[1]][['Pr(>F)']]")
 
                     tempStuff = pString.split(' ')
@@ -1593,6 +1592,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
 
         shutil.rmtree('media/temp/anova/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
@@ -1972,6 +1972,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         shutil.rmtree('media/temp/anova/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')

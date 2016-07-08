@@ -682,11 +682,15 @@ def getPCA(request, stops, RID, PID):
                     r("df <- data.frame(ind$coord)")
 
                 tempDF = r.get("df")
-                tempDF['id'] = meta_rDF.index.values.tolist()
-                tempDF.set_index('id', inplace=True)
-                indCoordDF = pd.merge(meta_rDF, tempDF, left_index=True, right_index=True, how='inner')
-                indCoordDF.reset_index(drop=False, inplace=True)
-                indCoordDF.rename(columns={'index': 'rank_id', ' km.cluster ': 'k-means cluster'}, inplace=True)
+                if not meta_rDF.empty:
+                    tempDF['id'] = meta_rDF.index.values.tolist()
+                    tempDF.set_index('id', inplace=True)
+                    indCoordDF = pd.merge(meta_rDF, tempDF, left_index=True, right_index=True, how='inner')
+                    indCoordDF.reset_index(drop=False, inplace=True)
+                    indCoordDF.rename(columns={'index': 'rank_id', ' km.cluster ': 'k-means cluster'}, inplace=True)
+                else:
+                    indCoordDF = tempDF.copy()
+                    indCoordDF.rename(columns={' km.cluster ': 'k-means cluster'}, inplace=True)
                 table = indCoordDF.to_html(classes="table display")
                 table = table.replace('border="1"', 'border="0"')
                 finalDict['indCoordDF'] = str(table)
@@ -699,11 +703,14 @@ def getPCA(request, stops, RID, PID):
 
                 r("df <- data.frame(ind$contrib)")
                 tempDF = r.get("df")
-                tempDF['id'] = meta_rDF.index.values
-                tempDF.set_index('id', inplace=True)
-                indContribDF = pd.merge(meta_rDF, tempDF, left_index=True, right_index=True, how='inner')
-                indContribDF.reset_index(drop=False, inplace=True)
-                indContribDF.rename(columns={'index': 'rank_id'}, inplace=True)
+                if not meta_rDF.empty:
+                    tempDF['id'] = meta_rDF.index.values
+                    tempDF.set_index('id', inplace=True)
+                    indContribDF = pd.merge(meta_rDF, tempDF, left_index=True, right_index=True, how='inner')
+                    indContribDF.reset_index(drop=False, inplace=True)
+                    indContribDF.rename(columns={'index': 'rank_id'}, inplace=True)
+                else:
+                    indContribDF = tempDF.copy()
                 table = indContribDF.to_html(classes="table display")
                 table = table.replace('border="1"', 'border="0"')
                 finalDict['indContribDF'] = str(table)
@@ -909,6 +916,7 @@ def getKeggDF(keggAll, savedDF, tempDF, DepVar, RID, stops, PID):
 
         shutil.rmtree('media/temp/pca/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
@@ -1242,6 +1250,7 @@ def getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID):
 
         shutil.rmtree('media/temp/pca/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')

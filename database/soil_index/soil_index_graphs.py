@@ -175,7 +175,7 @@ def getsoil_index(request, stops, RID, PID):
 
                 meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
 
-                # Removes samples (rows) that are not in our sampleeta_rlist
+                # Removes samples (rows) that are not in our sample_rlist
                 meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]
 
                 want = catFields_edit + ['sampleid']
@@ -425,7 +425,6 @@ def getsoil_index(request, stops, RID, PID):
 
                 df2.set_index('Treatment', inplace=True)
                 df2 = df2[newList]
-                #result += str(df2)
 
                 maxDict = {
                     'cellulase': 1e9,
@@ -763,6 +762,38 @@ def getsoil_index(request, stops, RID, PID):
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
 
+                mean1 = r.get('odat')
+                mean2 = r.get('data')
+                mean2.rename(columns={' cellulase ': '3.2.1.4  cellulase',
+                                    ' endo.1.4.beta.xylanase ': '3.2.1.8  endo-1,4-beta-xylanase',
+                                    ' beta.glucosidase ': '3.2.1.21  beta-glucosidase',
+                                    ' xylan.1.4.beta.xylosidase ': '3.2.1.37  xylan 1,4-beta-xylosidase',
+                                    ' cellulose.1.4.beta.cellobiosidase..non.reducing.end. ': '3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)',
+                                    ' amidase ': '3.5.1.4  amidase',
+                                    ' urease ': '3.5.1.5  urease',
+                                    ' alkaline.phosphatase ': '3.1.3.1  alkaline phosphatase',
+                                    ' acid.phosphatase ': '3.1.3.2  acid phosphatase',
+                                    ' arylsulfatase ': '3.1.6.1  arylsulfatase',
+                                    ' nitrogenase ': '1.18.6.1  nitrogenase',
+                                    ' pyrroloquinoline.quinone.synthase ': '1.3.3.11  pyrroloquinoline-quinone synthase',
+                                    ' aerobactin.synthase ': '6.3.2.39  aerobactin synthase',
+                                    ' 1.aminocyclopropane.1.carboxylate.deaminase ': '3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase',
+                                    ' indolepyruvate.decarboxylase ': '4.1.1.74  indolepyruvate decarboxylase',
+                                    ' .S.S..butanediol.dehydrogenase ': '1.1.1.76  (S,S)-butanediol dehydrogenase',
+                                    ' glycine.dehydrogenase..cyanide.forming. ': '1.4.99.5  glycine dehydrogenase (cyanide-forming)',
+                                    ' chitinase ': '3.2.1.14  chitinase',
+                                    ' ammonia.monooxygenase ': '1.14.99.39  ammonia monooxygenase',
+                                    ' hydroxylamine.dehydrogenase ': '1.7.2.6  hydroxylamine dehydrogenase',
+                                    ' nitrate.reductase ': '1.7.99.4  nitrate reductase',
+                                    ' nitrite.reductase..NO.forming. ': '1.7.2.1  nitrite reductase (NO-forming)',
+                                    ' nitric.oxide.reductase..cytochrome.c. ': '1.7.2.5  nitric oxide reductase (cytochrome c)',
+                                    ' nitrous.oxide.reductase ': '1.7.2.4  nitrous-oxide reductase'}, inplace=True)
+
+                scaleDF = pd.merge(mean1, mean2, left_index=True, right_index=True)
+                scale_table = scaleDF.to_html(classes="table display")
+                scale_table = scale_table.replace('border="1"', 'border="0"')
+                finalDict['scale_table'] = str(scale_table)
+
                 finalDict['text'] = result
 
                 finalDict['error'] = 'none'
@@ -1010,6 +1041,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
 
         shutil.rmtree('media/temp/soil_index/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')

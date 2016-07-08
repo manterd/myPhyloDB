@@ -541,6 +541,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         shutil.rmtree('media/temp/spac/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
@@ -874,6 +875,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         shutil.rmtree('media/temp/spac/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
+        picrustDF[picrustDF > 0] = 1
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
