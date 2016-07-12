@@ -34,6 +34,7 @@ LOG_FILENAME = 'error_log.txt'
 
 
 def home(request):
+    print 'This is Home'
     return render_to_response(
         'home.html',
         context_instance=RequestContext(request)
@@ -754,16 +755,9 @@ def uploadFunc(request, stopList):
 @login_required(login_url='/accounts/login/')
 def select(request):
     projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all()
-    elif request.user.is_authenticated():
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
-    if not request.user.is_superuser and not request.user.is_authenticated():
-        projects = Project.objects.all().filter( Q(status='public') )
 
-    refs = Reference.objects.filter(projectid__in=projects)
-    samples = Sample.objects.filter(projectid__in=projects)
+    refs = Reference.objects.none()
+    samples = Sample.objects.none()
 
     return render_to_response(
         'select.html',
@@ -771,8 +765,7 @@ def select(request):
          'projects': projects,
          'refs': refs,
          'samples': samples},
-        context_instance=RequestContext(request)
-    )
+        context_instance=RequestContext(request))
 
 
 def taxaJSON(request):
@@ -1223,3 +1216,28 @@ def usrFiles(request):
         'selFiles': selFiles,
         'normFiles': normFiles
     }
+
+
+def refreshData(request):
+    projects = Project.objects.none()
+    if request.user.is_superuser:
+        projects = Project.objects.all().order_by('project_name')
+    elif request.user.is_authenticated():
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
+
+    refs = Reference.objects.filter(projectid__in=projects)
+    samples = Sample.objects.filter(projectid__in=projects)
+
+    print "Projects: ", projects
+    print "Refs: ", refs
+    print "Samples: ", samples
+
+    return render_to_response(
+        'select.html',
+        {'form9': UploadForm9,
+         'projects': projects,
+         'refs': refs,
+         'samples': samples},
+        context_instance=RequestContext(request)
+    )

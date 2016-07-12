@@ -22,11 +22,9 @@
         var selKeys = "";
         var table1, table2, table3, table4, table5, table6, table7, table8, table9;
         var RID = 0;
-
         $(function () {
 
             if ("{{ normpost }}" == "Success") alert("Uploaded samples were found in your database.\nYou may proceed directly to the Analysis section.");
-
             $(".display").dataTable({
                 dom: 'B<"toolbar">lfrtip',
                 deferRender: true,
@@ -47,6 +45,7 @@
             });
 
             $("#drawtable").click(function () {
+                refreshData();
                 updateProjectTable(selKeys);
                 updateReferenceTable(selKeys);
                 updateSampleTable(selKeys);
@@ -104,7 +103,6 @@
                 }
             });
 
-
             $("#tree").dynatree({
                 checkbox: true,
                 selectMode: 3,
@@ -138,6 +136,7 @@
                 $("#tree").dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
+                refreshData();
                 updateProjectTable();
                 updateSampleTable();
                 updateReferenceTable();
@@ -191,12 +190,27 @@
             })
         }
 
+        function refreshData() {
+            $.ajax({
+                    type: 'GET',
+                    url: '/refreshData/',
+                    success: function (data) {
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    }
+
+                });
+        }
+
         function updateProjectTable(selKeys) {
             table1 = $('#projectTable').DataTable();
             table1.clear().draw();
             $.each(selKeys, function (index, value) {
+                //alert("Key!");
                 {% for project in projects %}
+                    //alert("Project!");
                     {% for sample in project.sample_set.all %}
+                        //alert("Sample!");
                         var id = "{{ sample.sampleid }}";
                         if (id == value) {
                             table1.row.add([
@@ -935,7 +949,7 @@
             <table id="humassoTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
-                        <th title="Project namne">project_name</th>
+                        <th title="Project name">project_name</th>
                         <th title="Sample name (Mothur group name)">sample_name</th>
                         <th title="Sample: collection device">samp_collect_device</th>
                         <th title="Sample: material processing">samp_mat_process</th>
@@ -995,7 +1009,7 @@
             <table id="microbialTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
-                        <th title="Project namne">project_name</th>
+                        <th title="Project name">project_name</th>
                         <th title="Sample name (Mothur group name)">sample_name</th>
                         <th>alkalinity</th>
                         <th>alkyl_diethers</th>
@@ -1193,7 +1207,7 @@
             <table id="waterTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
-                        <th title="Project namne">project_name</th>
+                        <th title="Project name">project_name</th>
                         <th title="Sample name (Mothur group name)">sample_name</th>
                         <th>alkalinity</th>
                         <th>alkyl_diethers</th>

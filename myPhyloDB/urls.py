@@ -124,6 +124,7 @@ urlpatterns = [
     url(r'^pathJSON/$', views.pathJSON, name='pathJSON'),
 
     url(r'^myPhyloDB/select$', views.uploadNorm, name='uploadNorm'),
+    url(r'^refreshData/$', views.refreshData, name='refreshData'),
 
     # queue caller
     url(r'^funcCall/$', queue.funcCall, name='funcCall'),

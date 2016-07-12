@@ -14,7 +14,7 @@ from models import nz_lvl1, nz_entry
 
 pd.set_option('display.max_colwidth', -1)
 
-
+time1 = time.time()
 def getProjectTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
@@ -24,8 +24,8 @@ def getProjectTree(request):
     elif request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
-    if not request.user.is_superuser and not request.user.is_authenticated():
-        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
+    # if not request.user.is_superuser and not request.user.is_authenticated():
+    #    projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
 
     for project in projects:
         myNode = {
@@ -36,7 +36,6 @@ def getProjectTree(request):
             'isLazy': True
         }
         myTree['children'].append(myNode)
-
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
@@ -44,14 +43,14 @@ def getProjectTree(request):
     response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
-    return HttpResponse(response_dict, content_type='application/json')
+        return HttpResponse(response_dict, content_type='application/json')
 
-    response_dict = {}
     response_dict.update({'children': myTree})
     return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getProjectTreeChildren(request):
+    # get project children which are visible to current user (check
     if request.is_ajax():
         projectid = request.GET["id"]
         samples = Sample.objects.filter(projectid=projectid)
