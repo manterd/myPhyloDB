@@ -13,8 +13,9 @@ from models import ko_lvl1, ko_entry
 from models import nz_lvl1, nz_entry
 
 pd.set_option('display.max_colwidth', -1)
-
 time1 = time.time()
+
+
 def getProjectTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
@@ -24,8 +25,8 @@ def getProjectTree(request):
     elif request.user.is_authenticated():
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
-    # if not request.user.is_superuser and not request.user.is_authenticated():
-    #    projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
 
     for project in projects:
         myNode = {

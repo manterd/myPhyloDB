@@ -78,7 +78,7 @@ def getGAGE(request, stops, RID, PID):
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -157,7 +157,7 @@ def getGAGE(request, stops, RID, PID):
                         nameList.append(value)
 
                 r("library(gage)")
-                r("load('media/kegg/kegg.gs.RData')")
+                r("load('myPhyloDB/media/kegg/kegg.gs.RData')")
 
                 keggDict = {}
                 r("selPaths <- vector()")
@@ -181,7 +181,7 @@ def getGAGE(request, stops, RID, PID):
                 base[RID] = 'Step 3 of 4: Performing GAGE analysis...'
 
                 # save location info to session
-                myDir = 'media/temp/gage/'
+                myDir = 'myPhyloDB/media/temp/gage/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -256,7 +256,7 @@ def getGAGE(request, stops, RID, PID):
                 r("library(grid)")
                 r("pdf_counter <- 1")
 
-                path = os.path.join('media', 'temp', 'gage', 'Rplots', RID)
+                path = os.path.join('myPhyloDB', 'media', 'temp', 'gage', 'Rplots', RID)
                 if not os.path.exists(path):
                     os.makedirs(path)
 
@@ -315,7 +315,7 @@ def getGAGE(request, stops, RID, PID):
                         for key in keggDict.iterkeys():
                             r.assign("pathway", key)
                             r("pid <- substr(pathway, start=1, stop=7)")
-                            r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../../media/kegg/pathways', kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
+                            r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../../myPhyloDB/media/kegg/pathways', kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
 
                             # convert to pdf
                             r("pdf(paste('gage_temp', pdf_counter, '.pdf', sep=''))")
@@ -343,7 +343,7 @@ def getGAGE(request, stops, RID, PID):
                 base[RID] = 'Step 4 of 4: Pooling pdf files for display...'
 
                 # Combining Pdf files
-                finalFile = 'media/temp/gage/Rplots/' + str(RID) + '/gage_final.pdf'
+                finalFile = 'myPhyloDB/media/temp/gage/Rplots/' + str(RID) + '/gage_final.pdf'
 
                 pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
                 pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
@@ -481,11 +481,11 @@ def getTabGAGE(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        myDir = 'media/temp/gage/'
+        myDir = 'myPhyloDB/media/temp/gage/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/gage/'
+        myDir = 'myPhyloDB/media/temp/gage/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 
@@ -502,11 +502,11 @@ def removeGAGEFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/gage/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/gage/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/gage/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/gage/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 

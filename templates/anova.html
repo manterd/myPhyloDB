@@ -41,7 +41,7 @@
 
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/removeANOVAFiles/',
+                    url: '/myPhyloDB/removeANOVAFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
@@ -57,13 +57,13 @@
                 rootVisible: false,
                 selectMode: 3,
                 initAjax: {
-                    url: '/getSampleCatTree/',
+                    url: '/myPhyloDB/getSampleCatTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function (node) {
                     node.appendAjax({
-                        url: '/getSampleCatTreeChildren/',
+                        url: '/myPhyloDB/getSampleCatTreeChildren/',
                         data: {pType: node.data.pType, field: node.data.title},
                         success: function (node) {
                             if (node.childList == undefined) {
@@ -93,13 +93,13 @@
                 checkbox: true,
                 selectMode: 3,
                 initAjax: {
-                    url: '/getSampleQuantTree/',
+                    url: '/myPhyloDB/getSampleQuantTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function (node) {
                     node.appendAjax({
-                        url: '/getSampleQuantTreeChildren/',
+                        url: '/myPhyloDB/getSampleQuantTreeChildren/',
                         data: {pType: node.data.pType, field: node.data.title},
                         success: function (node) {
                             if (node.childList == undefined) {
@@ -141,13 +141,13 @@
                 checkbox: true,
                 selectMode: 2,
                 initAjax: {
-                    url: '/getTaxaTree/',
+                    url: '/myPhyloDB/getTaxaTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function (node) {
                     node.appendAjax({
-                        url: '/getTaxaTreeChildren/',
+                        url: '/myPhyloDB/getTaxaTreeChildren/',
                         data: {
                             tooltip: node.data.tooltip,
                             id: node.data.id
@@ -179,13 +179,13 @@
                 checkbox: true,
                 selectMode: 2,
                 initAjax: {
-                    url: '/getKEGGTree/',
+                    url: '/myPhyloDB/getKEGGTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function (node) {
                     node.appendAjax({
-                        url: '/getKEGGTreeChildren/',
+                        url: '/myPhyloDB/getKEGGTreeChildren/',
                         data: {
                             tooltip: node.data.tooltip,
                             id: node.data.id
@@ -212,13 +212,13 @@
                 checkbox: true,
                 selectMode: 2,
                 initAjax: {
-                    url: '/getNZTree/',
+                    url: '/myPhyloDB/getNZTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function (node) {
                     node.appendAjax({
-                        url: '/getNZTreeChildren/',
+                        url: '/myPhyloDB/getNZTreeChildren/',
                         data: {
                             tooltip: node.data.tooltip,
                             id: node.data.id
@@ -690,7 +690,7 @@
 
         function getTab(){
             $.ajax({
-                url: '/getTabANOVA/',
+                url: '/myPhyloDB/getTabANOVA/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -890,7 +890,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stop/',
+                url: '/myPhyloDB/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -912,7 +912,7 @@
 
         function updateStatus(RID) {
             $.ajax({
-                url: '/statusANOVA/',
+                url: '/myPhyloDB/statusANOVA/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -1253,7 +1253,7 @@
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
-                    url: '/funcCall/',
+                    url: '/myPhyloDB/funcCall/',
                     type: 'GET',
                     dataType: 'json',
                     data: {
@@ -1442,7 +1442,7 @@
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
-                    url: '/funcCall/',
+                    url: '/myPhyloDB/funcCall/',
                     type: 'GET',
                     dataType: 'json',
                     data: {

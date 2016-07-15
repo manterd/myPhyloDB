@@ -199,7 +199,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stop/',
+                url: '/myPhyloDB/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -217,7 +217,7 @@
 
         function updateStatus(RID) {
             $.ajax({
-                url: '/statusNorm/',
+                url: '/myPhyloDB/statusNorm/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -244,7 +244,7 @@
         }
 
         function chooseDisplay() {
-            if (NormMeth== 1) {
+            if (NormMeth == 1) {
                 $("#NormRow").hide();
                 $("#IterRow").hide();
                 $("#LambdaRow").hide();
@@ -329,14 +329,13 @@
             myDict['funcName'] = "getNorm";
             var jsonDict = JSON.stringify(myDict);
             $.ajax({
-                url: '/funcCall/',
+                url: '/myPhyloDB/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
                     all: jsonDict
                 },
                 success: function(data) {
-                    //location.reload();
                     var error = data['error'];
                     if (error != "none") {
                         alert(error);
@@ -386,7 +385,6 @@
                     stopTimer(refresh);
 
                     var text = data['text'];
-                    //alert("Done normalizing. Text: "+text);
                     $("#container-1").empty().append(text);
 
                     running = false;
@@ -394,16 +392,15 @@
                     document.getElementById("TabButton").disabled = false;
                     document.getElementById("BiomButton").disabled = false;
 
-                    setNorm(true);
+                    //setNorm(true);
                     menu();
-                    //alert("menu?");
                }
             });
         }
 
         function getTab(){
             $.ajax({
-                url: '/getTab/',
+                url: '/myPhyloDB/getTab/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -420,7 +417,7 @@
 
         function getBiom(){
             $.ajax({
-                url: '/getBiom/',
+                url: '/myPhyloDB/getBiom/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -437,7 +434,7 @@
 
         function getFile(name, final) {
             {% static "" as baseUrl %}
-            var url = {{ baseUrl }}+'/'+name;
+            var url = {{ baseUrl }} + '/' + name;
             var anchor = document.createElement('a');
             anchor.setAttribute('href', url);
             anchor.setAttribute('download', final);
@@ -448,6 +445,7 @@
         }
 
     </script>
+
 {% endblock javascript %}
 
 {% block my_content %}

@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.signals import user_logged_in
 from django.db.models import Q
 from django.http import *
-from django.shortcuts import render_to_response, HttpResponseRedirect
+from django.shortcuts import render_to_response
 from django.template import RequestContext
 import fileinput
 import logging
@@ -34,14 +34,13 @@ LOG_FILENAME = 'error_log.txt'
 
 
 def home(request):
-    print 'This is Home'
     return render_to_response(
         'home.html',
         context_instance=RequestContext(request)
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def upload(request):
     projects = Reference.objects.none()
 
@@ -751,14 +750,19 @@ def uploadFunc(request, stopList):
     )
 
 
-
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def select(request):
     projects = Project.objects.none()
+    if request.user.is_superuser:
+        projects = Project.objects.all()
+    elif request.user.is_authenticated():
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        projects = Project.objects.all().filter( Q(status='public') )
 
-    refs = Reference.objects.none()
-    samples = Sample.objects.none()
-
+    refs = Reference.objects.filter(projectid__in=projects)
+    samples = Sample.objects.filter(projectid__in=projects)
     return render_to_response(
         'select.html',
         {'form9': UploadForm9,
@@ -813,9 +817,9 @@ def kegg_enzyme(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def norm(request):
-    cleanup('media/temp/norm')
+    cleanup('myPhyloDB/media/temp/norm')
 
     return render_to_response(
         'norm.html',
@@ -823,9 +827,9 @@ def norm(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def ANOVA(request):
-    cleanup('media/temp/anova')
+    cleanup('myPhyloDB/media/temp/anova')
 
     return render_to_response(
         'anova.html',
@@ -833,9 +837,9 @@ def ANOVA(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def rich(request):
-    cleanup('media/temp/spac')
+    cleanup('myPhyloDB/media/temp/spac')
 
     return render_to_response(
         'SpAC.html',
@@ -843,9 +847,9 @@ def rich(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def soil_index(request):
-    cleanup('media/temp/soil_index')
+    cleanup('myPhyloDB/media/temp/soil_index')
 
     return render_to_response(
         'soil_index.html',
@@ -853,9 +857,9 @@ def soil_index(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def DiffAbund(request):
-    cleanup('media/temp/diffabund')
+    cleanup('myPhyloDB/media/temp/diffabund')
 
     return render_to_response(
         'diff_abund.html',
@@ -863,9 +867,9 @@ def DiffAbund(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def GAGE(request):
-    cleanup('media/temp/gage')
+    cleanup('myPhyloDB/media/temp/gage')
 
     return render_to_response(
         'gage.html',
@@ -873,9 +877,9 @@ def GAGE(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def PCA(request):
-    cleanup('media/temp/pca')
+    cleanup('myPhyloDB/media/temp/pca')
 
     return render_to_response(
         'pca.html',
@@ -883,9 +887,9 @@ def PCA(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def PCoA(request):
-    cleanup('media/temp/pcoa')
+    cleanup('myPhyloDB/media/temp/pcoa')
 
     return render_to_response(
         'pcoa.html',
@@ -893,9 +897,9 @@ def PCoA(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def SPLS(request):
-    cleanup('media/temp/spls')
+    cleanup('myPhyloDB/media/temp/spls')
 
     return render_to_response(
         'spls.html',
@@ -903,9 +907,9 @@ def SPLS(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def WGCNA(request):
-    cleanup('media/temp/wgcna')
+    cleanup('myPhyloDB/media/temp/wgcna')
 
     return render_to_response(
         'wgcna.html',
@@ -919,7 +923,7 @@ def saveSampleList(request):
         selList = simplejson.loads(allJson)
 
         # save file to users temp/ folder
-        myDir = 'media/usr_temp/' + str(request.user) + '/'
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_sel_samples.pkl'
 
         if not os.path.exists(myDir):
@@ -930,7 +934,7 @@ def saveSampleList(request):
 
         # remove normalized file
         try:
-            os.remove('media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
+            os.remove('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
         except OSError:
             pass
 
@@ -939,7 +943,7 @@ def saveSampleList(request):
         return HttpResponse(res, content_type='application/json')
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def reprocess(request):
     try:
         alignFile = request.FILES['docfile8']
@@ -976,7 +980,7 @@ def reprocess(request):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def update(request):
     state = ''
     return render_to_response(
@@ -1082,7 +1086,7 @@ def updateFunc(request, stopList):
     )
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def pybake(request):
     form6 = UploadForm6(request.POST, request.FILES)
     form7 = UploadForm7(request.POST, request.FILES)
@@ -1117,7 +1121,7 @@ def uploadNorm(request):
     selList = list(set(savedDF['sampleid']))
 
     # save selected samples file to users temp/ folder
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
 
     if not os.path.exists(myDir):
@@ -1127,7 +1131,7 @@ def uploadNorm(request):
         pickle.dump(selList, f)
 
     # save normalized file to users temp/ folder
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_norm_data.csv'
 
     if not os.path.exists(myDir):
@@ -1179,7 +1183,7 @@ def uploadNorm(request):
     biome['columns'] = nameList
     biome['data'] = dataList
 
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_norm_data.biom'
     with open(path, 'w') as outfile:
         simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
@@ -1198,9 +1202,9 @@ def uploadNorm(request):
 # Function to create a user folder at login
 def login_usr_callback(sender, user, request, **kwargs):
     user = request.user
-    if not os.path.exists('media/usr_temp/'+str(user)):
-        os.makedirs('media/usr_temp/'+str(user))
-    cleanup('media/usr_temp/'+str(user))
+    if not os.path.exists('myPhyloDB/media/usr_temp/'+str(user)):
+        os.makedirs('myPhyloDB/media/usr_temp/'+str(user))
+    cleanup('myPhyloDB/media/usr_temp/'+str(user))
 
 user_logged_in.connect(login_usr_callback)
 
@@ -1209,8 +1213,8 @@ user_logged_in.connect(login_usr_callback)
 # Function needs to be added to settings file
 def usrFiles(request):
 
-    selFiles = os.path.exists('media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
-    normFiles = os.path.exists('media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
+    selFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
+    normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
 
     return {
         'selFiles': selFiles,
@@ -1218,26 +1222,3 @@ def usrFiles(request):
     }
 
 
-def refreshData(request):
-    projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all().order_by('project_name')
-    elif request.user.is_authenticated():
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
-
-    refs = Reference.objects.filter(projectid__in=projects)
-    samples = Sample.objects.filter(projectid__in=projects)
-
-    print "Projects: ", projects
-    print "Refs: ", refs
-    print "Samples: ", samples
-
-    return render_to_response(
-        'select.html',
-        {'form9': UploadForm9,
-         'projects': projects,
-         'refs': refs,
-         'samples': samples},
-        context_instance=RequestContext(request)
-    )

@@ -81,7 +81,7 @@ def getPCA(request, stops, RID, PID):
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 4 Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -210,7 +210,7 @@ def getPCA(request, stops, RID, PID):
                     finalDF = getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID)
 
                 # save location info to session
-                myDir = 'media/temp/pca/'
+                myDir = 'myPhyloDB/media/temp/pca/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -270,14 +270,14 @@ def getPCA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                path = "media/temp/pca/Rplots/" + str(RID) + ".pca.pdf"
+                path = "myPhyloDB/media/temp/pca/Rplots/" + str(RID) + ".pca.pdf"
                 if os.path.exists(path):
                     os.remove(path)
 
-                if not os.path.exists('media/temp/pca/Rplots'):
-                    os.makedirs('media/temp/pca/Rplots')
+                if not os.path.exists('myPhyloDB/media/temp/pca/Rplots'):
+                    os.makedirs('myPhyloDB/media/temp/pca/Rplots')
 
-                file = "pdf('media/temp/pca/Rplots/" + str(RID) + ".pca.pdf')"
+                file = "pdf('myPhyloDB/media/temp/pca/Rplots/" + str(RID) + ".pca.pdf')"
                 r.assign("cmd", file)
                 r("eval(parse(text=cmd))")
 
@@ -861,7 +861,7 @@ def getKeggDF(keggAll, savedDF, tempDF, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/pca/' + str(RID)
+        path = 'myPhyloDB/media/temp/pca/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -904,7 +904,7 @@ def getKeggDF(keggAll, savedDF, tempDF, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/pca/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/pca/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -914,7 +914,7 @@ def getKeggDF(keggAll, savedDF, tempDF, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/pca/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/pca/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1195,7 +1195,7 @@ def getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/pca/' + str(RID)
+        path = 'myPhyloDB/media/temp/pca/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1238,7 +1238,7 @@ def getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/pca/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/pca/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1248,7 +1248,7 @@ def getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/pca/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/pca/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1336,7 +1336,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
     global base
     db.close_old_connections()
 
-    f = open('media/temp/pca/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('myPhyloDB/media/temp/pca/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -1373,15 +1373,15 @@ def removePCAFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/pca/Rplots/" + str(RID) + ".pca.pdf"
+        file = "myPhyloDB/media/temp/pca/Rplots/" + str(RID) + ".pca.pdf"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/pca/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/pca/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/pca/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/pca/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 
@@ -1391,11 +1391,11 @@ def removePCAFiles(request):
 def getTabPCA(request):
     if request.is_ajax():
         RID = request.GET["all"]
-        myDir = 'media/temp/pca/'
+        myDir = 'myPhyloDB/media/temp/pca/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/pca/'
+        myDir = 'myPhyloDB/media/temp/pca/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 
@@ -1411,11 +1411,11 @@ def getTabPCA(request):
 def getTabWGCNA(request):
     if request.is_ajax():
         RID = request.GET["all"]
-        myDir = 'media/temp/wgcna/'
+        myDir = 'myPhyloDB/media/temp/wgcna/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/wgcna/'
+        myDir = 'myPhyloDB/media/temp/wgcna/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 

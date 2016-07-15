@@ -13,7 +13,6 @@ from pyper import *
 import simplejson
 import threading
 
-from django.template import RequestContext
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from database.models import Species, Profile
 from database.utils import taxaProfileDF
@@ -89,11 +88,10 @@ def getNorm(request, RID, stopList, PID):
             size_on = int(all["MinSize"])
 
             # Get selected samples from user's folder and query database for sample info
-            myDir = 'media/usr_temp/' + str(request.user) + '/'
+            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_sel_samples.pkl'
             with open(path, 'rb') as f:
                 selected = pickle.load(f)
-
             qs1 = Sample.objects.all().filter(sampleid__in=selected)
 
             # Generate a list of sequence reads per sample and filter samples if minimum samplesize
@@ -269,7 +267,7 @@ def getNorm(request, RID, stopList, PID):
             finalDF = finalDF[metaDFList]
 
             # save location info to session and save in temp/norm
-            myDir = 'media/temp/norm/'
+            myDir = 'myPhyloDB/media/temp/norm/'
             path = str(myDir) + str(RID) + '.pkl'
             request.session['savedDF'] = pickle.dumps(path)
             request.session['NormMeth'] = NormMeth
@@ -279,7 +277,7 @@ def getNorm(request, RID, stopList, PID):
             finalDF.to_pickle(path)
 
             # save file to users temp/ folder
-            myDir = 'media/usr_temp/' + str(request.user) + '/'
+            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.csv'
 
             if not os.path.exists(myDir):
@@ -334,7 +332,7 @@ def getNorm(request, RID, stopList, PID):
                 biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
                 finalDict['biome'] = str(biome_json)
 
-            myDir = 'media/usr_temp/' + str(request.user) + '/'
+            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.biom'
             with open(path, 'w') as outfile:
                 simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)

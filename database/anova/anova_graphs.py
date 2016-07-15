@@ -83,7 +83,7 @@ def getCatUnivData(request, RID, stops, PID):
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -200,7 +200,7 @@ def getCatUnivData(request, RID, stops, PID):
                     finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
-                myDir = 'media/temp/anova/'
+                myDir = 'myPhyloDB/media/temp/anova/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -688,7 +688,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
-                myDir = 'media/temp/anova/'
+                myDir = 'myPhyloDB/media/temp/anova/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -1537,7 +1537,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/anova/' + str(RID)
+        path = 'myPhyloDB/media/temp/anova/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1580,7 +1580,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/anova/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/anova/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1590,7 +1590,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/anova/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/anova/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1923,7 +1923,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/anova/' + str(RID)
+        path = 'myPhyloDB/media/temp/anova/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1960,7 +1960,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/anova/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/anova/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1970,7 +1970,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/anova/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/anova/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -2057,7 +2057,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 def sumStuff(slice, koDict, RID, num, PID, stops):
     db.close_old_connections()
 
-    f = open('media/temp/anova/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('myPhyloDB/media/temp/anova/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -2094,11 +2094,11 @@ def getTabANOVA(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        myDir = 'media/temp/anova/'
+        myDir = 'myPhyloDB/media/temp/anova/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/anova/'
+        myDir = 'myPhyloDB/media/temp/anova/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 
@@ -2115,11 +2115,11 @@ def removeANOVAFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/anova/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/anova/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/anova/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/anova/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 

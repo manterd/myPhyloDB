@@ -87,7 +87,7 @@ def getWGCNA(request, stops, RID, PID):
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 6: Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -281,7 +281,7 @@ def getWGCNA(request, stops, RID, PID):
                     finalDF = getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID)
 
                 # save location info to session
-                myDir = 'media/temp/wgcna/'
+                myDir = 'myPhyloDB/media/temp/wgcna/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -342,7 +342,7 @@ def getWGCNA(request, stops, RID, PID):
                 r("options(stringAsFactors=FALSE)")
                 r("pdf_counter <- 1")
 
-                path = 'media/temp/wgcna/Rplots/%s' % RID
+                path = 'myPhyloDB/media/temp/wgcna/Rplots/%s' % RID
                 if not os.path.exists(path):
                     os.makedirs(path)
 
@@ -1249,7 +1249,7 @@ def getWGCNA(request, stops, RID, PID):
                 base[RID] = 'Step 6 of 6: Pooling pdf files for display...!'
 
                 # Combining Pdf files
-                finalFile = 'media/temp/wgcna/Rplots/' + str(RID) + '/wgcna_final.pdf'
+                finalFile = 'myPhyloDB/media/temp/wgcna/Rplots/' + str(RID) + '/wgcna_final.pdf'
 
                 pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
                 pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
@@ -1403,7 +1403,7 @@ def getKeggDF(keggAll, savedDF, tempDF, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/wgcna/' + str(RID)
+        path = 'myPhyloDB/media/temp/wgcna/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1446,7 +1446,7 @@ def getKeggDF(keggAll, savedDF, tempDF, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/wgcna/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/wgcna/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1456,7 +1456,7 @@ def getKeggDF(keggAll, savedDF, tempDF, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/wgcna/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/wgcna/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1727,7 +1727,7 @@ def getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/wgcna/' + str(RID)
+        path = 'myPhyloDB/media/temp/wgcna/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1770,7 +1770,7 @@ def getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/wgcna/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/wgcna/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1780,7 +1780,7 @@ def getNZDF(nzAll, savedDF, tempDF, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/wgcna/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/wgcna/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1858,7 +1858,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
     global base
     db.close_old_connections()
 
-    f = open('media/temp/wgcna/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('myPhyloDB/media/temp/wgcna/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -1895,14 +1895,14 @@ def removeWGCNAFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        rmPath = 'media/temp/wgcna/Rplots/%s' % RID
+        rmPath = 'myPhyloDB/media/temp/wgcna/Rplots/%s' % RID
         shutil.rmtree(rmPath, ignore_errors=True)
 
-        file = "media/temp/wgcna/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/wgcna/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/wgcna/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/wgcna/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 
@@ -1912,11 +1912,11 @@ def removeWGCNAFiles(request):
 def getTabWGCNA(request):
     if request.is_ajax():
         RID = request.GET["all"]
-        myDir = 'media/temp/wgcna/'
+        myDir = 'myPhyloDB/media/temp/wgcna/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/wgcna/'
+        myDir = 'myPhyloDB/media/temp/wgcna/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 

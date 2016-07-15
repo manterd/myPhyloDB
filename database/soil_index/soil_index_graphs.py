@@ -82,7 +82,7 @@ def getsoil_index(request, stops, RID, PID):
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 3: Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -165,7 +165,7 @@ def getsoil_index(request, stops, RID, PID):
                 count_rDF['total'] = count_rDF.sum(axis=1)
 
                 # save location info to session
-                myDir = 'media/temp/soil_index/'
+                myDir = 'myPhyloDB/media/temp/soil_index/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -740,7 +740,7 @@ def getsoil_index(request, stops, RID, PID):
                 base[RID] = 'Step 3 of 3: Pooling pdf files for display...'
 
                 # Combining Pdf files
-                finalFile = 'media/temp/soil_index/Rplots/' + str(RID) + '/soil_index_final.pdf'
+                finalFile = 'myPhyloDB/media/temp/soil_index/Rplots/' + str(RID) + '/soil_index_final.pdf'
 
                 pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
                 pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
@@ -986,7 +986,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/soil_index/' + str(RID)
+        path = 'myPhyloDB/media/temp/soil_index/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1029,7 +1029,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/soil_index/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/soil_index/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1039,7 +1039,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/soil_index/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/soil_index/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1111,7 +1111,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
     global base
     db.close_old_connections()
 
-    f = open('media/temp/soil_index/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('myPhyloDB/media/temp/soil_index/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -1148,15 +1148,15 @@ def removesoil_indexFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/soil_index/Rplots/" + str(RID) + ".soil_index.pdf"
+        file = "myPhyloDB/media/temp/soil_index/Rplots/" + str(RID) + ".soil_index.pdf"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/soil_index/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/soil_index/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/soil_index/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/soil_index/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 
@@ -1166,11 +1166,11 @@ def removesoil_indexFiles(request):
 def getTabsoil_index(request):
     if request.is_ajax():
         RID = request.GET["all"]
-        myDir = 'media/temp/soil_index/'
+        myDir = 'myPhyloDB/media/temp/soil_index/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/soil_index/'
+        myDir = 'myPhyloDB/media/temp/soil_index/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 

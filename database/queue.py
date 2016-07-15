@@ -119,14 +119,7 @@ def funcCall(request):
             return results
         except KeyError:
             if RID in stopList:
-                try:
-                    pid = stopList.index(RID)
-                    # stopList[pid] = 0
-                    # set stopList back to 0 after it is read in primary methods, here relies on timing to work
-                except:
-                    pass
                 statDict.pop(RID, 0)
-                # print "funcCall returning NF"
                 return HttpResponseNotFound()
         sleep(1)
 

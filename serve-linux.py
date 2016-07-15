@@ -64,9 +64,9 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]
-        staticpath = os.path.join(staticpath, 'media')
+        staticpath = os.path.join(staticpath, 'myPhyloDB/media')
         static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
-        cherrypy.tree.mount(static_handler, '/media')
+        cherrypy.tree.mount(static_handler, '/myPhyloDB/media')
 
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]

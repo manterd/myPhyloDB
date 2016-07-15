@@ -83,7 +83,7 @@ def getSpAC(request, stops, RID, PID):
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -204,7 +204,7 @@ def getSpAC(request, stops, RID, PID):
                     finalDF = getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
-                myDir = 'media/temp/spac/'
+                myDir = 'myPhyloDB/media/temp/spac/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -326,7 +326,7 @@ def getSpAC(request, stops, RID, PID):
                 base[RID] = 'Step 4 of 4: Pooling pdf files for display...'
 
                 # Combining Pdf files
-                finalFile = 'media/temp/spac/Rplots/' + str(RID) + '/SpAC_final.pdf'
+                finalFile = 'myPhyloDB/media/temp/spac/Rplots/' + str(RID) + '/SpAC_final.pdf'
 
                 pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
                 pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
@@ -486,7 +486,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/spac/' + str(RID)
+        path = 'myPhyloDB/media/temp/spac/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -529,7 +529,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/spac/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/spac/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -539,7 +539,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/spac/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/spac/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -820,7 +820,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/spac/' + str(RID)
+        path = 'myPhyloDB/media/temp/spac/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -863,7 +863,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/spac/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/spac/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -873,7 +873,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/spac/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/spac/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -961,7 +961,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
     global base
     db.close_old_connections()
 
-    f = open('media/temp/spac/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('myPhyloDB/media/temp/spac/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -998,15 +998,15 @@ def removeSpACFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/spac/Rplots/" + str(RID) + ".spac.pdf"
+        file = "myPhyloDB/media/temp/spac/Rplots/" + str(RID) + ".spac.pdf"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/spac/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/spac/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/spac/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/spac/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 
@@ -1016,11 +1016,11 @@ def removeSpACFiles(request):
 def getTabSpAC(request):
     if request.is_ajax():
         RID = request.GET["all"]
-        myDir = 'media/temp/spac/'
+        myDir = 'myPhyloDB/media/temp/spac/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/spac/'
+        myDir = 'myPhyloDB/media/temp/spac/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 

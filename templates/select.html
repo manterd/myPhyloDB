@@ -45,7 +45,6 @@
             });
 
             $("#drawtable").click(function () {
-                refreshData();
                 updateProjectTable(selKeys);
                 updateReferenceTable(selKeys);
                 updateSampleTable(selKeys);
@@ -107,13 +106,13 @@
                 checkbox: true,
                 selectMode: 3,
                 initAjax: {
-                    url: "/getProjectTree/",
+                    url: "/myPhyloDB/getProjectTree/",
                     dataType: "jsonp",
                     data: {}
                 },
                 onLazyRead: function (node) {
                     node.appendAjax({
-                        url: '/getProjectTreeChildren/',
+                        url: '/myPhyloDB/getProjectTreeChildren/',
                         data: {id: node.data.id}
                     });
                 },
@@ -136,7 +135,6 @@
                 $("#tree").dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
-                refreshData();
                 updateProjectTable();
                 updateSampleTable();
                 updateReferenceTable();
@@ -157,7 +155,7 @@
                 var jsonDict = JSON.stringify(selKeys);
                 $.ajax({
                     type: 'GET',
-                    url: '/saveSampleList/',
+                    url: '/myPhyloDB/saveSampleList/',
                     dataType: 'json',
                     data: {all: jsonDict},
                     success: function (data) {
@@ -188,18 +186,6 @@
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             })
-        }
-
-        function refreshData() {
-            $.ajax({
-                    type: 'GET',
-                    url: '/refreshData/',
-                    success: function (data) {
-                    },
-                    error: function(XMLHttpRequest, textStatus, errorThrown) {
-                    }
-
-                });
         }
 
         function updateProjectTable(selKeys) {

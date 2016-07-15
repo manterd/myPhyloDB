@@ -38,7 +38,7 @@
 
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/removeDiffAbundFiles/',
+                    url: '/myPhyloDB/removeDiffAbundFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
@@ -53,13 +53,13 @@
                 rootVisible: false,
                 selectMode: 3,
                 initAjax: {
-                    url: '/getSampleCatTree/',
+                    url: '/myPhyloDB/getSampleCatTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function (node) {
                     node.appendAjax({
-                        url: '/getSampleCatTreeChildren/',
+                        url: '/myPhyloDB/getSampleCatTreeChildren/',
                         data: {pType: node.data.pType, field: node.data.title},
                         success: function (node) {
                             if (node.childList == undefined) {
@@ -296,7 +296,7 @@
 
         function getTab(){
             $.ajax({
-                url: '/getTabDiffAbund/',
+                url: '/myPhyloDB/getTabDiffAbund/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -345,7 +345,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stop/',
+                url: '/myPhyloDB/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -363,7 +363,7 @@
 
         function updateStatus(RID) {
             $.ajax({
-                url: '/updateDiffAbund/',
+                url: '/myPhyloDB/updateDiffAbund/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -496,7 +496,7 @@
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
-                    url: '/funcCall/',
+                    url: '/myPhyloDB/funcCall/',
                     type: 'GET',
                     dataType: 'json',
                     data: {

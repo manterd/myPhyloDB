@@ -83,7 +83,7 @@ def getDiffAbund(request, stops, RID, PID):
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -202,7 +202,7 @@ def getDiffAbund(request, stops, RID, PID):
                     finalDF = getNZDF(nzAll, tempDF, catFields_edit, DepVar, RID, stops, PID)
 
                 # save location info to session
-                myDir = 'media/temp/diffabund/'
+                myDir = 'myPhyloDB/media/temp/diffabund/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -753,7 +753,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/diffabund/' + str(RID)
+        path = 'myPhyloDB/media/temp/diffabund/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -796,7 +796,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/diffabund/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/diffabund/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -806,7 +806,7 @@ def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/diffabund/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/diffabund/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1091,7 +1091,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/diffabund/' + str(RID)
+        path = 'myPhyloDB/media/temp/diffabund/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1134,7 +1134,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/diffabund/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/diffabund/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1144,7 +1144,7 @@ def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/diffabund/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/diffabund/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1236,7 +1236,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
     global base
     db.close_old_connections()
 
-    f = open('media/temp/diffabund/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('myPhyloDB/media/temp/diffabund/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -1273,11 +1273,11 @@ def getTabDiffAbund(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        myDir = 'media/temp/diffabund/'
+        myDir = 'myPhyloDB/media/temp/diffabund/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/diffabund/'
+        myDir = 'myPhyloDB/media/temp/diffabund/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 
@@ -1294,11 +1294,11 @@ def removeDiffAbundFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/diffabund/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/diffabund/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/diffabund/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/diffabund/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 

@@ -80,7 +80,7 @@ def getPCoA(request, stops, RID, PID):
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 8: Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -267,7 +267,7 @@ def getPCoA(request, stops, RID, PID):
                     finalDF = getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
-                myDir = 'media/temp/pcoa/'
+                myDir = 'myPhyloDB/media/temp/pcoa/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -390,14 +390,14 @@ def getPCoA(request, stops, RID, PID):
                     r.assign("cmd", pcoa_string)
                     r("eval(parse(text=cmd))")
 
-                    path = "media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf"
+                    path = "myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf"
                     if os.path.exists(path):
                         os.remove(path)
 
-                    if not os.path.exists('media/temp/pcoa/Rplots'):
-                        os.makedirs('media/temp/pcoa/Rplots')
+                    if not os.path.exists('myPhyloDB/media/temp/pcoa/Rplots'):
+                        os.makedirs('myPhyloDB/media/temp/pcoa/Rplots')
 
-                    file = "pdf('media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf', height=4, width=6)"
+                    file = "pdf('myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf', height=4, width=6)"
                     r.assign("cmd", file)
                     r("eval(parse(text=cmd))")
 
@@ -847,7 +847,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/pcoa/' + str(RID)
+        path = 'myPhyloDB/media/temp/pcoa/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -890,7 +890,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/pcoa/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/pcoa/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -900,7 +900,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/pcoa/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/pcoa/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1181,7 +1181,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/pcoa/' + str(RID)
+        path = 'myPhyloDB/media/temp/pcoa/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1224,7 +1224,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/pcoa/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/pcoa/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1234,7 +1234,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/pcoa/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/pcoa/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1322,7 +1322,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
     global base
     db.close_old_connections()
 
-    f = open('media/temp/pcoa/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('myPhyloDB/media/temp/pcoa/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -1359,15 +1359,15 @@ def removePCoAFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf"
+        file = "myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/pcoa/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/pcoa/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/pcoa/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/pcoa/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 
@@ -1377,11 +1377,11 @@ def removePCoAFiles(request):
 def getTabPCoA(request):
     if request.is_ajax():
         RID = request.GET["all"]
-        myDir = 'media/temp/pcoa/'
+        myDir = 'myPhyloDB/media/temp/pcoa/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/pcoa/'
+        myDir = 'myPhyloDB/media/temp/pcoa/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 

@@ -81,7 +81,7 @@ def getSPLS(request, stops, RID, PID):
                 time1[RID] = time.time()
                 base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...'
 
-                myDir = 'media/usr_temp/' + str(request.user) + '/'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
@@ -187,7 +187,7 @@ def getSPLS(request, stops, RID, PID):
                     finalDF = getNZDF(nzAll, savedDF, tempDF, quantFields, DepVar, RID, stops, PID)
 
                 # save location info to session
-                myDir = 'media/temp/spls/'
+                myDir = 'myPhyloDB/media/temp/spls/'
                 path = str(myDir) + str(RID) + '.pkl'
 
                 # now save file to computer
@@ -545,16 +545,16 @@ def getSPLS(request, stops, RID, PID):
                     method = all['methodVal']
                     metric = all['metricVal']
 
-                    path = "media/temp/spls/Rplots/" + str(RID) + ".spls.pdf"
+                    path = "myPhyloDB/media/temp/spls/Rplots/" + str(RID) + ".spls.pdf"
                     if os.path.exists(path):
                         os.remove(path)
 
-                    if not os.path.exists('media/temp/spls/Rplots'):
-                        os.makedirs('media/temp/spls/Rplots')
+                    if not os.path.exists('myPhyloDB/media/temp/spls/Rplots'):
+                        os.makedirs('myPhyloDB/media/temp/spls/Rplots')
 
                     height = 2.5 + 0.2*row
                     width = 3.5 + 0.2*(col-1)
-                    file = "pdf('media/temp/spls/Rplots/" + str(RID) + ".spls.pdf', height=" + str(height) + ", width=" + str(width) + ", onefile=FALSE)"
+                    file = "pdf('myPhyloDB/media/temp/spls/Rplots/" + str(RID) + ".spls.pdf', height=" + str(height) + ", width=" + str(width) + ", onefile=FALSE)"
                     r.assign("cmd", file)
                     r("eval(parse(text=cmd))")
 
@@ -739,7 +739,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/spls/' + str(RID)
+        path = 'myPhyloDB/media/temp/spls/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -782,7 +782,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/spls/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/spls/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -792,7 +792,7 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/spls/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/spls/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1067,7 +1067,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'media/temp/spls/' + str(RID)
+        path = 'myPhyloDB/media/temp/spls/' + str(RID)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -1110,7 +1110,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.DataFrame()
         for i in xrange(numcore):
-            path = 'media/temp/spls/'+str(RID)+'/file%d.temp' % i
+            path = 'myPhyloDB/media/temp/spls/'+str(RID)+'/file%d.temp' % i
             frame = pd.read_csv(path)
             picrustDF = picrustDF.append(frame, ignore_index=True)
 
@@ -1120,7 +1120,7 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        shutil.rmtree('media/temp/spls/'+str(RID))
+        shutil.rmtree('myPhyloDB/media/temp/spls/'+str(RID))
         picrustDF.set_index('speciesid', inplace=True)
         picrustDF[picrustDF > 0] = 1
 
@@ -1202,7 +1202,7 @@ def sumStuff(slice, koDict, RID, num, stops, PID):
     global base
     db.close_old_connections()
 
-    f = open('media/temp/spls/'+str(RID)+'/file'+str(num)+".temp", 'w')
+    f = open('myPhyloDB/media/temp/spls/'+str(RID)+'/file'+str(num)+".temp", 'w')
 
     keyList = []
     for key in koDict:
@@ -1239,15 +1239,15 @@ def removeSPLSFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
 
-        file = "media/temp/spls/Rplots/" + str(RID) + ".spls.pdf"
+        file = "myPhyloDB/media/temp/spls/Rplots/" + str(RID) + ".spls.pdf"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/spls/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/spls/" + str(RID) + ".pkl"
         if os.path.exists(file):
             os.remove(file)
 
-        file = "media/temp/spls/" + str(RID) + ".csv"
+        file = "myPhyloDB/media/temp/spls/" + str(RID) + ".csv"
         if os.path.exists(file):
             os.remove(file)
 
@@ -1257,11 +1257,11 @@ def removeSPLSFiles(request):
 def getTabSPLS(request):
     if request.is_ajax():
         RID = request.GET["all"]
-        myDir = 'media/temp/spls/'
+        myDir = 'myPhyloDB/media/temp/spls/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        myDir = 'media/temp/spls/'
+        myDir = 'myPhyloDB/media/temp/spls/'
         fileName = str(myDir) + str(RID) + '.csv'
         savedDF.to_csv(fileName)
 
