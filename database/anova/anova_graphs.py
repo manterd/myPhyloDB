@@ -2103,7 +2103,7 @@ def getTabANOVA(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/anova/'
+        myDir = '/myPhyloDB/media/temp/anova/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

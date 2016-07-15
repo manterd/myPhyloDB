@@ -1400,7 +1400,7 @@ def getTabPCA(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/pca/'
+        myDir = '/myPhyloDB/media/temp/pca/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)
@@ -1420,7 +1420,7 @@ def getTabWGCNA(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/wgcna/'
+        myDir = '/myPhyloDB/media/temp/wgcna/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

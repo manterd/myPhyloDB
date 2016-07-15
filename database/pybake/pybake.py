@@ -19,6 +19,7 @@ pd.set_option('display.max_colwidth', -1)
 
 
 def statusPyBake(request):
+    # add RID to differentiate between running and queued
     global base, perc
     if request.is_ajax():
         myDict = {'stage': stage}

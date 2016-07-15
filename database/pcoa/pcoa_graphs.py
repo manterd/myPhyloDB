@@ -1386,7 +1386,7 @@ def getTabPCoA(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/pcoa/'
+        myDir = '/myPhyloDB/media/temp/pcoa/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

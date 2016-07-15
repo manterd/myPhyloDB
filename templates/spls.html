@@ -39,7 +39,7 @@
             // remove R plot on close
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/removeSPLSFiles/',
+                    url: '/myPhyloDB/removeSPLSFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
@@ -53,13 +53,13 @@
                 checkbox: true,
                 selectMode: 3,
                 initAjax: {
-                    url: '/getSampleQuantTree/',
+                    url: '/myPhyloDB/getSampleQuantTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function(node) {
                     node.appendAjax({
-                        url: '/getSampleQuantTreeChildren/',
+                        url: '/myPhyloDB/getSampleQuantTreeChildren/',
                         data: {pType: node.data.pType, field: node.data.title},
                         success: function(node) {
                             if (node.childList == undefined) {
@@ -211,7 +211,7 @@
 
         function getTab(){
             $.ajax({
-                url: '/getTabSPLS/',
+                url: '/myPhyloDB/getTabSPLS/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -227,10 +227,8 @@
         }
 
         function getFile(name, final) {
-            {% static "" as baseUrl %}
-            var url = {{ baseUrl }}+'/'+name;
             var anchor = document.createElement('a');
-            anchor.setAttribute('href', url);
+            anchor.setAttribute('href', name);
             anchor.setAttribute('download', final);
 
             var ev = document.createEvent("MouseEvents");
@@ -269,7 +267,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stop/',
+                url: '/myPhyloDB/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -289,7 +287,7 @@
 
         function updateStatus(RID) {
             $.ajax({
-                url: '/statusSPLS/',
+                url: '/myPhyloDB/statusSPLS/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -330,8 +328,7 @@
                     $("#container-2").show();
                     $("#highchartButtons").hide();
 
-                    {% static "" as baseUrl %}
-                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/spls/Rplots/" + RID + ".spls.pdf");
+                    $("#my_image").removeAttr("src").attr("src", "myPhyloDB/media/temp/spls/Rplots/" + RID + ".spls.pdf");
                 }
             } else {
                 $("#container-0").show();
@@ -427,7 +424,7 @@
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/funcCall/',
+                url: '/myPhyloDB/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

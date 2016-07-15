@@ -73,7 +73,7 @@ def getProjectTreeChildren(request):
 
 def getSampleCatTree(request):
 
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
@@ -283,7 +283,7 @@ def getSampleCatTree(request):
 
 
 def getSampleCatTreeChildren(request):
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
@@ -538,7 +538,7 @@ def getSampleCatTreeChildren(request):
 
 
 def getSampleQuantTree(request):
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
@@ -747,7 +747,7 @@ def getSampleQuantTree(request):
 
 
 def getSampleQuantTreeChildren(request):
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
@@ -1009,7 +1009,7 @@ def getSampleQuantTreeChildren(request):
 
 
 def getTaxaTree(request):
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
@@ -1066,7 +1066,7 @@ def getTaxaTree(request):
 
 
 def getTaxaTreeChildren(request):
-    myDir = 'media/usr_temp/' + str(request.user) + '/'
+    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
@@ -1237,7 +1237,7 @@ def getKEGGTree2(request):
     else:
         r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-    r("load('media/kegg/kegg.gs.RData')")
+    r("load('myPhyloDB/media/kegg/kegg.gs.RData')")
     pathArray = r.get("names(kegg.gs)")
 
     pathList = []

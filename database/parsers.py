@@ -28,6 +28,8 @@ import database.dataqueue
 
 
 stage = ''
+last = ''
+mothurStat = ""
 perc = 0
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
@@ -39,7 +41,7 @@ p = None
 def mothur(dest, source):
     global p
     try:
-        global stage, perc
+        global stage, perc, mothurStat
         stage = "Step 3 of 5: Running mothur...please check your host terminal for progress!"
         perc = 0
 
@@ -52,16 +54,6 @@ def mothur(dest, source):
         if not os.path.exists('mothur/reference/template'):
             os.makedirs('mothur/reference/template')
 
-        '''if os.name == 'nt':  # actually startup mothur
-            try:
-                os.system('"mothur\\mothur-win\\mothur.exe mothur\\temp\\mothur.batch"')
-            except Exception as e:
-                print "Mothur failed: " + str(e)
-        else:
-            try:
-                os.system("mothur/mothur-linux/mothur mothur/temp/mothur.batch")
-            except Exception as e:
-                print "Mothur failed: " + str(e)'''
 
         if os.name == 'nt':
             filepath = "mothur\\mothur-win\\mothur.exe mothur\\temp\\mothur.batch"
@@ -71,6 +63,8 @@ def mothur(dest, source):
             p = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             for line in iter(p.stdout.readline, ''):
                 print line
+                mothurStat = line
+            mothurStat = 'Previous mothur output:\n'
         except Exception as e:
             print "Mothur failed: " + str(e)
 
@@ -130,11 +124,20 @@ def termP():
 
 
 def status(request):
+    global last
     if request.is_ajax():
         RID = request.GET['all']
         queuePos = database.dataqueue.datstat(RID)
         dict = {}
         if queuePos == 0:
+
+            # check for duplicate output
+            if last != mothurStat:
+                dict['mothurStat'] = mothurStat
+                last = mothurStat
+            else:
+                dict['mothurStat'] = ''
+
             dict['stage'] = stage
             dict['perc'] = perc
             dict['project'] = rep_project
@@ -145,6 +148,7 @@ def status(request):
                 dict['stage'] = "In queue for processing, "+str(queuePos)+" requests in front of you"
             dict['perc'] = 0
             dict['project'] = rep_project
+            dict['mothurStat'] = ''
         json_data = simplejson.dumps(dict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 

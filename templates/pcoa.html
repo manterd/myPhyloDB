@@ -40,7 +40,7 @@
             // remove R plot on close
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/removePCoAFiles/',
+                    url: '/myPhyloDB/removePCoAFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
@@ -54,13 +54,13 @@
                 checkbox: true,
                 selectMode: 3,
                 initAjax: {
-                    url: '/getSampleCatTree/',
+                    url: '/myPhyloDB/getSampleCatTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function(node) {
                     node.appendAjax({
-                        url: '/getSampleCatTreeChildren/',
+                        url: '/myPhyloDB/getSampleCatTreeChildren/',
                         data: {pType: node.data.pType, field: node.data.title},
                         success: function(node) {
                             if (node.childList == undefined) {
@@ -92,13 +92,13 @@
                 checkbox: true,
                 selectMode: 3,
                 initAjax: {
-                    url: '/getSampleQuantTree/',
+                    url: '/myPhyloDB/getSampleQuantTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function(node) {
                     node.appendAjax({
-                        url: '/getSampleQuantTreeChildren/',
+                        url: '/myPhyloDB/getSampleQuantTreeChildren/',
                         data: {pType: node.data.pType, field: node.data.title},
                         success: function(node) {
                             if (node.childList == undefined) {
@@ -404,7 +404,7 @@
 
         function getTab(){
             $.ajax({
-                url: '/getTabPCoA/',
+                url: '/myPhyloDB/getTabPCoA/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -420,10 +420,8 @@
         }
 
         function getFile(name, final) {
-            {% static "" as baseUrl %}
-            var url = {{ baseUrl }}+'/'+name;
             var anchor = document.createElement('a');
-            anchor.setAttribute('href', url);
+            anchor.setAttribute('href', name);
             anchor.setAttribute('download', final);
 
             var ev = document.createEvent("MouseEvents");
@@ -530,7 +528,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stop/',
+                url: '/myPhyloDB/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -550,7 +548,7 @@
 
         function updateStatus(RID) {
             $.ajax({
-                url: '/statusPCoA/',
+                url: '/myPhyloDB/statusPCoA/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -760,7 +758,7 @@
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/funcCall/',
+                url: '/myPhyloDB/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

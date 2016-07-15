@@ -27,3 +27,12 @@ Step 2: Create new databases
     python manage.py migrate --run-syncdb
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Git large file problem -- files over 100 M will result in the push being rejected
+this is usually due to db.Microbe or db.PICRUSt.  Run the following to remove the
+offending file from the git history (note: the file will also be deleted locally
+but can be recreated using the steps above)
+
+git filter-branch --force --index-filter \
+'git rm --cached --ignore-unmatch db.Microbe' \
+--prune-empty --tag-name-filter cat -- --all
+
