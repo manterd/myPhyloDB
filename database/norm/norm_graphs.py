@@ -710,7 +710,7 @@ def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID, stopLi
 def getTab(request):
     if request.is_ajax():
         myDict = {}
-        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        myDir = '/myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         fileName = str(myDir) + 'usr_norm_data.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)
@@ -720,7 +720,7 @@ def getTab(request):
 def getBiom(request):
     if request.is_ajax():
         myDict = {}
-        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        myDir = '/myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         fileName = str(myDir) + 'usr_norm_data.biom'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

@@ -40,12 +40,17 @@
         var refresh = 0;
         var RID = "";
 
+        window.onload = function() {
+            var mothurStat = localStorage.getItem(name);
+            if (mothurStat !== null) $('#mothurStat').val(mothurStat);
+        };
+
         $(function () {
             $("#tree").dynatree({
                 checkbox: true,
                 selectMode: 3,
                 initAjax: {
-                    url: "/makeReproTree/",
+                    url: "/myPhyloDB/makeReproTree/",
                     dataType: "jsonp",
                     data: {}
                 },
@@ -69,6 +74,7 @@
                 $("#project").show();
                 $("#stage").show();
                 $("#progressBar").show();
+                document.getElementById("mothurStat").value = "";
                 refresh = setInterval(updateStatus, 1000);
 
                 $('<input>').attr({
@@ -120,7 +126,7 @@
 
         function updateStatus(){
             $.ajax({
-                url: '/status/',
+                url: '/myPhyloDB/status/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -134,6 +140,7 @@
                     var project = obj['project'];
                     updateStage(project, stage);
                     progressBar(perc, $("#progressBar"));
+                    document.getElementById("mothurStat").value = obj['mothurStat'] + document.getElementById("mothurStat").value;
                 }
             });
         }
@@ -145,7 +152,7 @@
 
         function stop() {
             $.ajax({
-                url: '/datstop/',
+                url: '/myPhyloDB/datstop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -164,6 +171,11 @@
            var progressBarWidth = percent * $element.width() / 100;
             $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
         }
+
+        window.onbeforeunload = function() {
+            localStorage.setItem(name, $('#mothurStat').val());
+        };
+
     </script>
 {% endblock javascript %}
 
@@ -239,6 +251,7 @@
     <div id="project" style="display: none"></div>
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
+    <textarea id="mothurStat" rows=5 cols=72></textarea>
     <br>
     <form id='form2' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}

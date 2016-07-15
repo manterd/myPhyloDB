@@ -315,7 +315,7 @@ def getGAGE(request, stops, RID, PID):
                         for key in keggDict.iterkeys():
                             r.assign("pathway", key)
                             r("pid <- substr(pathway, start=1, stop=7)")
-                            r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../../myPhyloDB/media/kegg/pathways', kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
+                            r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../kegg/pathways', kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
 
                             # convert to pdf
                             r("pdf(paste('gage_temp', pdf_counter, '.pdf', sep=''))")
@@ -490,7 +490,7 @@ def getTabGAGE(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/gage/'
+        myDir = '/myPhyloDB/media/temp/gage/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

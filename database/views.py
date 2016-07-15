@@ -1088,6 +1088,7 @@ def updateFunc(request, stopList):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def pybake(request):
+    # split up for queue
     form6 = UploadForm6(request.POST, request.FILES)
     form7 = UploadForm7(request.POST, request.FILES)
     form8 = UploadForm8(request.POST, request.FILES)

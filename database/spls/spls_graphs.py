@@ -1266,7 +1266,7 @@ def getTabSPLS(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/spls/'
+        myDir = '/myPhyloDB/media/temp/spls/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

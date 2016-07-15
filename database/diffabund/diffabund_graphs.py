@@ -1282,7 +1282,7 @@ def getTabDiffAbund(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/diffabund/'
+        myDir = '/myPhyloDB/media/temp/diffabund/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

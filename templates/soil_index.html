@@ -298,7 +298,7 @@
             // remove R plot on close
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/removesoil_indexFiles/',
+                    url: '/myPhyloDB/removesoil_indexFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
@@ -312,13 +312,13 @@
                 checkbox: true,
                 selectMode: 3,
                 initAjax: {
-                    url: '/getSampleCatTree/',
+                    url: '/myPhyloDB/getSampleCatTree/',
                     dataType: 'jsonp',
                     data: {}
                 },
                 onLazyRead: function(node) {
                     node.appendAjax({
-                        url: '/getSampleCatTreeChildren/',
+                        url: '/myPhyloDB/getSampleCatTreeChildren/',
                         data: {pType: node.data.pType, field: node.data.title},
                         success: function(node) {
                             if (node.childList == undefined) {
@@ -381,7 +381,7 @@
 
         function getTab(){
             $.ajax({
-                url: '/getTabsoil_index/',
+                url: '/myPhyloDB/getTabsoil_index/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -397,10 +397,8 @@
         }
 
         function getFile(name, final) {
-            {% static "" as baseUrl %}
-            var url = {{ baseUrl }}+'/'+name;
             var anchor = document.createElement('a');
-            anchor.setAttribute('href', url);
+            anchor.setAttribute('href', name);
             anchor.setAttribute('download', final);
 
             var ev = document.createEvent("MouseEvents");
@@ -422,7 +420,7 @@
         function stopThis(RID) {
             clearInterval(refresh);
             $.ajax({
-                url: '/stop/',
+                url: '/myPhyloDB/stop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -441,7 +439,7 @@
 
         function updateStatus(RID) {
             $.ajax({
-                url: '/statussoil_index/',
+                url: '/myPhyloDB/statussoil_index/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -470,8 +468,7 @@
 
         function chooseDisplay() {
             if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
-                {% static "" as baseUrl %}
-                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/soil_index/Rplots/" + RID +"/soil_index_final.pdf");
+                $("#my_image").removeAttr("src").attr("src", "/myPhyloDB/media/temp/soil_index/Rplots/" + RID +"/soil_index_final.pdf");
                 $("#container-2").show();
                 $("#container-0").hide();
             } else {
@@ -667,7 +664,7 @@
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
-                url: '/funcCall/',
+                url: '/myPhyloDB/funcCall/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

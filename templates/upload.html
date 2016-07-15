@@ -33,6 +33,13 @@
         var RID = makeGUID();
         var source = 'mothur';
 
+
+        window.onload = function() {
+            var mothurStat = localStorage.getItem(name);
+            if (mothurStat !== null) $('#mothurStat').val(mothurStat);
+        };
+
+
         $(function () {
             var test = '{{ error }}';
             if (test != "") {
@@ -42,6 +49,7 @@
             $("#Upload").click(function() {
                 $("#stage").show();
                 $("#progressBar").show();
+                document.getElementById("mothurStat").value = "";
                 setInterval(updateStatus, 1000);
             });
 
@@ -100,7 +108,7 @@
 
         function updateStatus() {
             $.ajax({
-                url: '/status/',
+                url: '/myPhyloDB/status/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -113,6 +121,7 @@
                     var perc = obj['perc'];
                     updateStage(stage);
                     progressBar(perc, $("#progressBar"));
+                    document.getElementById("mothurStat").value = obj['mothurStat'] + document.getElementById("mothurStat").value;
                 }
             });
         }
@@ -123,7 +132,7 @@
 
         function stop() {
             $.ajax({
-                url: '/datstop/',
+                url: '/myPhyloDB/datstop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -142,6 +151,11 @@
            var progressBarWidth = percent * $element.width() / 100;
             $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
         }
+
+        window.onbeforeunload = function() {
+            localStorage.setItem(name, $('#mothurStat').val());
+        };
+
     </script>
 {% endblock %}
 {% block my_content %}
@@ -286,6 +300,7 @@
     <br>
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
+    <textarea id="mothurStat" rows=5 cols=72></textarea>
 
     <h2>List of previous uploads:</h2>
     <form id="form2" method="post" action="{% url 'datfuncCall' %}" enctype="multipart/form-data">

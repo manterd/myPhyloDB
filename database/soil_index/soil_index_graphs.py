@@ -407,7 +407,7 @@ def getsoil_index(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                path = os.path.join('media', 'temp', 'soil_index', 'Rplots', RID)
+                path = os.path.join('myPhyloDB', 'media', 'temp', 'soil_index', 'Rplots', RID)
                 if not os.path.exists(path):
                     os.makedirs(path)
 
@@ -1175,7 +1175,7 @@ def getTabsoil_index(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/soil_index/'
+        myDir = '/myPhyloDB/media/temp/soil_index/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

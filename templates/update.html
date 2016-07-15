@@ -15,12 +15,18 @@
         var RID = makeGUID();
         var selNodes = "";
         var selKeys = "";
+
+        window.onload = function() {
+            var mothurStat = localStorage.getItem(name);
+            if (mothurStat !== null) $('#mothurStat').val(mothurStat);
+        };
+
         $(function () {
             $("#tree").dynatree({
                 checkbox: true,
                 selectMode: 1,
                 initAjax: {
-                    url: "/makeUpdateTree/",
+                    url: "/myPhyloDB/makeUpdateTree/",
                     dataType: "jsonp",
                     data: {}
                 },
@@ -35,6 +41,7 @@
 
             $("#submit").click(function() {
                 $("#stage").show();
+                document.getElementById("mothurStat").value = "";
                 setInterval(updateStatus, 1000);
             });
 
@@ -67,7 +74,7 @@
 
         function stop() {
             $.ajax({
-                url: '/datstop/',
+                url: '/myPhyloDB/datstop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -84,7 +91,7 @@
 
         function updateStatus() {
             $.ajax({
-                url: '/status/',
+                url: '/myPhyloDB/status/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -95,6 +102,7 @@
                     var obj = $.parseJSON(result);
                     var stage = obj['stage'];
                     updateStage(stage);
+                    document.getElementById("mothurStat").value = obj['mothurStat'] + document.getElementById("mothurStat").value;
                 }
             });
         }
@@ -102,6 +110,10 @@
         function updateStage(stage) {
             $("#stage").empty().append(stage);
         }
+
+        window.onbeforeunload = function() {
+            localStorage.setItem(name, $('#mothurStat').val());
+        };
 
     </script>
 {% endblock javascript %}
@@ -153,6 +165,7 @@
     <div>{{ state }}</div>
     <br>
     <div id="stage" style="display: none"></div>
+    <textarea id="mothurStat" rows=5 cols=72></textarea>
     <br>
 {% endblock my_content %}
 

@@ -250,7 +250,7 @@ def getSpAC(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                path = os.path.join('media', 'temp', 'spac', 'Rplots', RID)
+                path = os.path.join('myPhyloDB', 'media', 'temp', 'spac', 'Rplots', RID)
                 if not os.path.exists(path):
                     os.makedirs(path)
 
@@ -267,7 +267,7 @@ def getSpAC(request, stops, RID, PID):
                 if allFields:
                     grouped = meta_rDF.groupby(allFields)
                     for name, group in grouped:
-                        print name
+                        # print name
                         if isinstance(name, tuple):
                             name = "; ".join(name)
                         r.assign('name', name)
@@ -1025,7 +1025,7 @@ def getTabSpAC(request):
         savedDF.to_csv(fileName)
 
         myDict = {}
-        myDir = 'temp/spac/'
+        myDir = '/myPhyloDB/media/temp/spac/'
         fileName = str(myDir) + str(RID) + '.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)

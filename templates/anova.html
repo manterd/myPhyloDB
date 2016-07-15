@@ -706,10 +706,9 @@
         }
 
         function getFile(name, final) {
-            {% static "" as baseUrl %}
-            var url = {{ baseUrl }}+'/'+name;
+            alert(name);
             var anchor = document.createElement('a');
-            anchor.setAttribute('href', url);
+            anchor.setAttribute('href', name);
             anchor.setAttribute('download', final);
 
             var ev = document.createEvent("MouseEvents");
