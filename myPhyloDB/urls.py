@@ -123,7 +123,9 @@ urlpatterns = [
     url(r'^myPhyloDB/nzJSON/$', views.nzJSON, name='nzJSON'),
     url(r'^myPhyloDB/pathJSON/$', views.pathJSON, name='pathJSON'),
 
-    url(r'^myPhyloDB/select$', views.uploadNorm, name='uploadNorm'),
+    # For this url, preference would be for /myPhyloDB/select/
+    # However, page names must be unique to render correctly
+    url(r'^myPhyloDB/select_upload/$', views.uploadNorm, name='uploadNorm'),
 
     # queue caller
     url(r'^myPhyloDB/funcCall/$', queue.funcCall, name='funcCall'),
@@ -134,6 +136,10 @@ urlpatterns = [
     url(r'^myPhyloDB/datstop/$', dataqueue.datstop, name='datstop'),
 
     # usrFiles
-    url(r'^myPhyloDB/usrFiles/$', views.usrFiles, name='usrFiles')
+    url(r'^myPhyloDB/usrFiles/$', views.usrFiles, name='usrFiles'),
+
+    # Json data for select page
+    url(r'^myPhyloDB/projectTableJSON/$', views.projectTableJSON, name='projectTableJSON'),
+
 ]
 

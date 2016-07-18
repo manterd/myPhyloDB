@@ -41,7 +41,7 @@ class Server(object):
 
         if hasattr(engine, "signal_handler"):
             engine.signal_handler.subscribe()
-        if hasattr(engine, "console_control_handler"):
+        elif hasattr(engine, "console_control_handler"):
             engine.console_control_handler.subscribe()
 
         cherrypy.engine.subscribe('engine.start', Server.browse(self), priority=90)
@@ -64,15 +64,9 @@ class DjangoAppPlugin(plugins.SimplePlugin):
 
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]
-        staticpath = os.path.join(staticpath, 'templates')
+        staticpath = os.path.join(staticpath, 'myPhyloDB/media')
         static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
-        cherrypy.tree.mount(static_handler, '/templates')
-
-        staticpath = os.path.abspath(self.base_dir)
-        staticpath = os.path.split(staticpath)[0]
-        staticpath = os.path.join(staticpath, 'media')
-        static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
-        cherrypy.tree.mount(static_handler, '/media')
+        cherrypy.tree.mount(static_handler, '/myPhyloDB/media')
 
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]
