@@ -84,7 +84,7 @@ def uploadFunc(request, stopList):
         start = datetime.datetime.now()
         form1 = UploadForm1(request.POST, request.FILES)
         source = str(request.POST['source'])
-        userID = str(request.user.id)
+        userID = str(request.User__id)
         processors = int(request.POST['processors'])
         RID = request.POST['RID']
         PID = 0  # change if adding additional data threads
@@ -777,6 +777,576 @@ def projectTableJSON(request):
         )
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
+        print "projects: ", myJson
+        return HttpResponse(myJson)
+
+# need to finish the rest of the tables for the select page...
+def sampleTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "projectid__project_name",
+            "refid",
+            "sampleid",
+            "sample_name",
+            "organism",
+            "collection_date",
+            "depth",
+            "elev",
+            "seq_platform",
+            "seq_gene",
+            "seq_gene_region",
+            "seq_barcode",
+            "seq_for_primer",
+            "seq_rev_primer",
+            "env_biome",
+            "env_feature",
+            "env_material",
+            "geo_loc_country",
+            "geo_loc_state",
+            "geo_loc_city",
+            "geo_loc_farm",
+            "geo_loc_plot",
+            "latitude",
+            "longitude",
+            "annual_season_precpt",
+            "annual_season_temp"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
+def referenceTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "projectid__project_name",
+            "projectid",
+            "refid",
+            "sample_name",
+            "sampleid",
+            "refid__raw",
+            "refid__path",
+            "refid__source",
+            "refid__alignDB",
+            "refid__templateDB",
+            "refid__taxonomyDB",
+            "refid__author"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
+def airTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "air__projectid__project_name",
+            "air__sampleid__sample_name",
+            "air__barometric_press",
+            "air__carb_dioxide",
+            "air__carb_monoxide",
+            "air__chem_admin_term",
+            "air__chem_admin_time",
+            "air__elev",
+            "air__humidity",
+            "air__methane",
+            "air__organism_type",
+            "air__organism_count",
+            "air__oxy_stat_samp",
+            "air__oxygen",
+            "air__perturbation_type",
+            "air__perturbation_interval",
+            "air__pollutants_type",
+            "air__pollutants_concentration",
+            "air__rel_to_oxygen",
+            "air__resp_part_matter_substance",
+            "air__resp_part_matter_concentration",
+            "air__samp_collect_device",
+            "air__samp_mat_process",
+            "air__samp_salinity",
+            "air__samp_size",
+            "air__samp_store_dur",
+            "air__samp_store_loc",
+            "air__samp_store_temp",
+            "air__solar_irradiance",
+            "air__temp",
+            "air__ventilation_rate",
+            "air__ventilation_type",
+            "air__volatile_org_comp_name",
+            "air__volatile_org_comp_concentration",
+            "air__wind_direction",
+            "air__wind_speed"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        print "air: ", myJson
+        return HttpResponse(myJson)
+
+
+def associatedTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "human_associated__projectid__project_name",
+            "human_associated__sampleid__sample_name",
+            "human_associated__samp_collect_device",
+            "human_associated__samp_mat_process",
+            "human_associated__samp_size",
+            "human_associated__samp_store_temp",
+            "human_associated__samp_store_dur",
+            "human_associated__samp_type",
+            "human_associated__samp_location",
+            "human_associated__samp_temp",
+            "human_associated__samp_ph",
+            "human_associated__samp_oxy_stat",
+            "human_associated__samp_salinity",
+            "human_associated__host_subject_id",
+            "human_associated__host_age",
+            "human_associated__host_pulse",
+            "human_associated__host_gender",
+            "human_associated__host_ethnicity",
+            "human_associated__host_height",
+            "human_associated__host_weight",
+            "human_associated__host_bmi",
+            "human_associated__host_weight_loss_3_month",
+            "human_associated__host_body_temp",
+            "human_associated__host_occupation",
+            "human_associated__pet_farm_animal",
+            "human_associated__smoker",
+            "human_associated__diet_type",
+            "human_associated__diet_duration",
+            "human_associated__diet_frequency",
+            "human_associated__diet_last_six_month",
+            "human_associated__last_meal",
+            "human_associated__medic_hist_perform",
+            "human_associated__disease_type",
+            "human_associated__disease_location",
+            "human_associated__disease_duration",
+            "human_associated__organism_count",
+            "human_associated__tumor_location",
+            "human_associated__tumor_mass",
+            "human_associated__tumor_stage",
+            "human_associated__drug_usage",
+            "human_associated__drug_type",
+            "human_associated__drug_duration",
+            "human_associated__drug_frequency",
+            "human_associated__perturbation",
+            "human_associated__pert_type",
+            "human_associated__pert_duration",
+            "human_associated__pert_frequency",
+            "human_associated__fetal_health_stat",
+            "human_associated__amniotic_fluid_color",
+            "human_associated__gestation_stat",
+            "human_associated__maternal_health_stat"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
+def microbialTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "microbial__projectid__project_name",
+            "microbial__sampleid__sample_name",
+            "microbial__alkalinity",
+            "microbial__alkyl_diethers",
+            "microbial__altitude",
+            "microbial__aminopept_act",
+            "microbial__ammonium",
+            "microbial__bacteria_carb_prod",
+            "microbial__biomass_part_name",
+            "microbial__biomass_amount",
+            "microbial__bishomohopanol",
+            "microbial__bromide",
+            "microbial__calcium",
+            "microbial__carb_nitro_ratio",
+            "microbial__chem_administration_term",
+            "microbial__chem_administration_time",
+            "microbial__chloride",
+            "microbial__chlorophyll",
+            "microbial__diether_lipids_name",
+            "microbial__diether_lipids_concentration",
+            "microbial__diss_carb_dioxide",
+            "microbial__diss_hydrogen",
+            "microbial__diss_inorg_carb",
+            "microbial__diss_org_carb",
+            "microbial__diss_org_nitro",
+            "microbial__diss_oxygen",
+            "microbial__glucosidase_act",
+            "microbial__magnesium",
+            "microbial__mean_frict_vel",
+            "microbial__mean_peak_frict_vel",
+            "microbial__methane",
+            "microbial__n_alkanes_name",
+            "microbial__n_alkanes_concentration",
+            "microbial__nitrate",
+            "microbial__nitrite",
+            "microbial__nitro",
+            "microbial__org_carb",
+            "microbial__org_matter",
+            "microbial__org_nitro",
+            "microbial__organism_name",
+            "microbial__organism_count",
+            "microbial__oxy_stat_samp",
+            "microbial__part_org_carb",
+            "microbial__perturbation_type",
+            "microbial__perturbation_interval",
+            "microbial__petroleum_hydrocarb",
+            "microbial__ph",
+            "microbial__phaeopigments_type",
+            "microbial__phaeopigments_concentration",
+            "microbial__phosphate",
+            "microbial__phosplipid_fatt_acid_name",
+            "microbial__phosplipid_fatt_acid_concentration",
+            "microbial__potassium",
+            "microbial__pressure",
+            "microbial__redox_potential",
+            "microbial__rel_to_oxygen",
+            "microbial__salinity",
+            "microbial__samp_collect_device",
+            "microbial__samp_mat_process",
+            "microbial__samp_size",
+            "microbial__samp_store_dur",
+            "microbial__samp_store_loc",
+            "microbial__samp_store_temp",
+            "microbial__silicate",
+            "microbial__sodium",
+            "microbial__sulfate",
+            "microbial__sulfide",
+            "microbial__temp",
+            "microbial__tot_carb",
+            "microbial__tot_nitro",
+            "microbial__tot_org_carb",
+            "microbial__turbidity",
+            "microbial__water_content"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
+def soilTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "soil__projectid__project_name",
+            "soil__sampleid__sample_name",
+            "soil__samp_collection_device",
+            "soil__samp_size",
+            "soil__samp_depth",
+            "soil__samp_prep",
+            "soil__samp_sieve_size",
+            "soil__samp_store_dur",
+            "soil__samp_store_loc",
+            "soil__samp_store_temp",
+            "soil__samp_weight_dna_ext",
+            "soil__pool_dna_extracts",
+            "soil__fao_class",
+            "soil__local_class",
+            "soil__texture_class",
+            "soil__porosity",
+            "soil__profile_position",
+            "soil__slope_aspect",
+            "soil__slope_gradient",
+            "soil__bulk_density",
+            "soil__drainage_class",
+            "soil__water_content_soil",
+            "soil__cur_land_use",
+            "soil__cur_vegetation",
+            "soil__cur_crop",
+            "soil__cur_cultivar",
+            "soil__crop_rotation",
+            "soil__cover_crop",
+            "soil__fert_amendment_class",
+            "soil__fert_placement",
+            "soil__fert_type",
+            "soil__fert_tot_amount",
+            "soil__fert_N_tot_amount",
+            "soil__fert_P_tot_amount",
+            "soil__fert_K_tot_amount",
+            "soil__irrigation_type",
+            "soil__irrigation_tot_amount",
+            "soil__residue_removal",
+            "soil__residue_growth_stage",
+            "soil__residue_removal_percent",
+            "soil__tillage_event",
+            "soil__tillage_event_depth",
+            "soil__amend1_class",
+            "soil__amend1_active_ingredient",
+            "soil__amend1_tot_amount",
+            "soil__amend2_class",
+            "soil__amend2_active_ingredient",
+            "soil__amend2_tot_amount",
+            "soil__amend3_class",
+            "soil__amend3_active_ingredient",
+            "soil__amend3_tot_amount",
+            "soil__rRNA_copies",
+            "soil__microbial_biomass_C",
+            "soil__microbial_biomass_N",
+            "soil__microbial_respiration",
+            "soil__soil_pH",
+            "soil__soil_EC",
+            "soil__soil_C",
+            "soil__soil_OM",
+            "soil__soil_N",
+            "soil__soil_NO3_N",
+            "soil__soil_NH4_N",
+            "soil__soil_P",
+            "soil__soil_K",
+            "soil__soil_S",
+            "soil__soil_Zn",
+            "soil__soil_Fe",
+            "soil__soil_Cu",
+            "soil__soil_Mn",
+            "soil__soil_Ca",
+            "soil__soil_Mg",
+            "soil__soil_Na",
+            "soil__soil_B",
+            "soil__plant_C",
+            "soil__plant_N",
+            "soil__plant_P",
+            "soil__plant_K",
+            "soil__plant_Ca",
+            "soil__plant_Mg",
+            "soil__plant_S",
+            "soil__plant_Na",
+            "soil__plant_Cl",
+            "soil__plant_Al",
+            "soil__plant_B",
+            "soil__plant_Cu",
+            "soil__plant_Fe",
+            "soil__plant_Mn",
+            "soil__plant_Zn",
+            "soil__crop_tot_biomass_fw",
+            "soil__crop_tot_biomass_dw",
+            "soil__crop_tot_above_biomass_fw",
+            "soil__crop_tot_above_biomass_dw",
+            "soil__crop_tot_below_biomass_fw",
+            "soil__crop_tot_below_biomass_dw",
+            "soil__harv_fraction",
+            "soil__harv_fresh_weight",
+            "soil__harv_dry_weight",
+            "soil__ghg_chamber_placement",
+            "soil__ghg_N2O",
+            "soil__ghg_CO2",
+            "soil__ghg_NH4",
+            "soil__soil_water_cap",
+            "soil__soil_surf_hard",
+            "soil__soil_subsurf_hard",
+            "soil__soil_agg_stability",
+            "soil__soil_ACE_protein",
+            "soil__soil_active_C"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
+def waterTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "water__projectid__project_name",
+            "water__sampleid__sample_name",
+            "water__alkalinity",
+            "water__alkyl_diethers",
+            "water__altitude",
+            "water__aminopept_act",
+            "water__ammonium",
+            "water__atmospheric_data",
+            "water__bac_prod",
+            "water__bac_resp",
+            "water__bacteria_carb_prod",
+            "water__biomass_part_name",
+            "water__biomass_amount",
+            "water__bishomohopanol",
+            "water__bromide",
+            "water__calcium",
+            "water__carb_nitro_ratio",
+            "water__chem_administration_name",
+            "water__chem_administration_time",
+            "water__chloride",
+            "water__chlorophyll",
+            "water__conduc",
+            "water__density",
+            "water__diether_lipids",
+            "water__diss_carb_dioxide",
+            "water__diss_hydrogen",
+            "water__diss_inorg_carb",
+            "water__diss_inorg_nitro",
+            "water__diss_inorg_phosp",
+            "water__diss_org_carb",
+            "water__diss_org_nitro",
+            "water__diss_oxygen",
+            "water__down_par",
+            "water__elev",
+            "water__fluor",
+            "water__glucosidase_act",
+            "water__light_intensity",
+            "water__magnesium",
+            "water__mean_frict_vel",
+            "water__mean_peak_frict_vel",
+            "water__n_alkanes",
+            "water__nitrate",
+            "water__nitrite",
+            "water__nitro",
+            "water__org_carb",
+            "water__org_matter",
+            "water__org_nitro",
+            "water__organism_name",
+            "water__organism_count",
+            "water__oxy_stat_samp",
+            "water__part_org_carb",
+            "water__part_org_nitro",
+            "water__perturbation_type",
+            "water__perturbation_interval",
+            "water__pretroleum_hydrocarb",
+            "water__ph",
+            "water__phaeopigments",
+            "water__phosphate",
+            "water__phosplipid_fatt_acid",
+            "water__photon_flux",
+            "water__potassium",
+            "water__pressure",
+            "water__primary_prod",
+            "water__redox_potential",
+            "water__rel_to_oxygen",
+            "water__samp_mat_process",
+            "water__samp_salinity",
+            "water__samp_size",
+            "water__samp_store_dur",
+            "water__samp_store_loc",
+            "water__samp_store_temp",
+            "water__samp_vol_we_dna_ext",
+            "water__silicate",
+            "water__sodium",
+            "water__soluble_react_phosp",
+            "water__source_material_id",
+            "water__sulfate",
+            "water__sulfide",
+            "water__suspen_part_matter",
+            "water__temp",
+            "water__tidal_stage",
+            "water__tot_depth_water_col",
+            "water__tot_diss_nitro",
+            "water__tot_inorg_nitro",
+            "water__tot_nitro",
+            "water__tot_part_carb",
+            "water__tot_phosp",
+            "water__water_current_direction",
+            "water__water_current_magnitude"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
+def userTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "userdefined__projectid__project_name",
+            "userdefined__sampleid__sample_name",
+            "userdefined__usr_cat1",
+            "userdefined__usr_cat2",
+            "userdefined__usr_cat3",
+            "userdefined__usr_cat4",
+            "userdefined__usr_cat5",
+            "userdefined__usr_cat6",
+            "userdefined__usr_quant1",
+            "userdefined__usr_quant2",
+            "userdefined__usr_quant3",
+            "userdefined__usr_quant4",
+            "userdefined__usr_quant5",
+            "userdefined__usr_quant6"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1067,7 +1637,7 @@ def updateFunc(request, stopList):
             reference = Reference.objects.get(refid=refid)
             raw = reference.raw
             source = reference.source
-            userID = str(request.user.id)
+            userID = str(request.User__id)
 
             # add stops to parse functions?
             if os.path.exists(batPath):

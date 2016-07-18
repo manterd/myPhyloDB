@@ -60,6 +60,138 @@
                 "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
             });
 
+            table2 = $('#sampleTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'sampleTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            table3 = $('#referenceTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'referenceTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            table4 = $('#airTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'airTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            table5 = $('#humassoTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'associatedTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            table6 = $('#microbialTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'microbialTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            table7 = $('#soilTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'soilTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            table8 = $('#waterTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'waterTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            table9 = $('#usrTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'userTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+
+            $("#drawtable").click(function () {
+                updateTables();
+            });
+
             $("div.toolbar").html('<br><br>');
             $("#tabs").tabs({
                 "activate": function(event, ui) {
@@ -67,64 +199,6 @@
                             .columns.adjust()
                             .buttons.resize();
                 }
-            });
-
-            $("#drawtable").click(function () {
-                updateTables();
-                //updateReferenceTable();
-                //updateSampleTable();
-                //updateAirTable();
-                //updateAssociatedTable();
-                //updateMicrobialTable();
-                //updateSoilTable();
-                //updateWaterTable();
-                //updateUsrTable();
-                if (table1.data().length == 0) {
-                    $("#tabs").tabs("disable", 0)
-                } else {
-                    $("#tabs").tabs("enable", 0)
-                }
-                /*
-                if (table2.data().length == 0) {
-                    $("#tabs").tabs("disable", 1)
-                } else {
-                   $("#tabs").tabs("enable", 1)
-                }
-                if (table3.data().length == 0) {
-                    $("#tabs").tabs("disable", 2);
-                } else {
-                    $("#tabs").tabs("enable", 2);
-                }
-                if (table4.data().length == 0) {
-                    $("#tabs").tabs("disable", 3);
-                } else {
-                    $("#tabs").tabs("enable", 3);
-                }
-                if (table5.data().length == 0) {
-                    $("#tabs").tabs("disable", 4);
-                } else {
-                    $("#tabs").tabs("enable", 4);
-                }
-                if (table6.data().length == 0) {
-                    $("#tabs").tabs("disable", 5);
-                } else {
-                    $("#tabs").tabs("enable", 5);
-                }
-                if (table7.data().length == 0) {
-                    $("#tabs").tabs("disable", 6);
-                } else {
-                    $("#tabs").tabs("enable", 6);
-                }
-                if (table8.data().length == 0) {
-                    $("#tabs").tabs("disable", 7);
-                } else {
-                    $("#tabs").tabs("enable", 7);
-                }
-                if (table9.data().length == 0) {
-                    $("#tabs").tabs("disable", 8);
-                } else {
-                    $("#tabs").tabs("enable", 8);
-                }*/
             });
 
             $("#tree").dynatree({
@@ -161,15 +235,6 @@
                     node.select(false);
                 });
                 updateTables();
-                //updateProjectTable();
-                //updateSampleTable();
-                //updateReferenceTable();
-                //updateAirTable();
-                //updateAssociatedTable();
-                //updateMicrobialTable();
-                //updateSoilTable();
-                //updateWaterTable();
-                //updateUsrTable();
             });
 
             $("#submit").click(function () {
@@ -221,553 +286,72 @@
         }
 
         function updateTables() {
-            table1.ajax.reload();
-            //table2.ajax.reload();
-            //table3.ajax.reload();
-            //table4.ajax.reload();
-            //table5.ajax.reload();
-            //table6.ajax.reload();
-            //table7.ajax.reload();
-            //table8.ajax.reload();
-            //table9.ajax.reload();
-        }
-
-        function updateReferenceTable(selKeys) {
-            table2 = $('#referenceTable').DataTable();
-            table2.clear().draw();
-            $.each(selKeys, function (index, value) {
-                {% for project in projects %}
-                    {% for ref in project.reference_set.all %}
-                        {% for sample in ref.sample_set.all %}
-                            var id = "{{ sample.sampleid }}";
-                            if (id == value) {
-                                 table2.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ project.projectid }}",
-                                    "{{ ref.refid }}",
-                                    "{{ sample.sample_name }}",
-                                    "{{ sample.sampleid }}",
-                                    "{{ ref.raw }}",
-                                    "{{ ref.path }}",
-                                    "{{ ref.source }}",
-                                    "{{ ref.alignDB }}",
-                                    "{{ ref.templateDB }}",
-                                    "{{ ref.taxonomyDB }}",
-                                    "{{ ref.author }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
-                {% endfor %}
+            table1.ajax.reload( function(json) {
+                alert("parsing!");
+                var res = json.toString();
+                alert("parsed!");
+                alert(res);
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 0)
+                } else {
+                    $("#tabs").tabs("disable", 0)
+                }
             });
-        }
-
-        function updateSampleTable(selKeys) {
-            table3 = $('#sampleTable').DataTable();
-            table3.clear().draw();
-            $.each(selKeys, function (index, value) {
-                {% for project in projects %}
-                    {% for sample in project.sample_set.all %}
-                        var id = "{{ sample.sampleid }}";
-                        if (id == value) {
-                             table3.row.add([
-                                "{{ project.project_name }}",
-                                "{{ sample.refid.refid }}",
-                                "{{ sample.sampleid }}",
-                                "{{ sample.sample_name }}",
-                                "{{ sample.organism }}",
-                                "{{ sample.collection_date }}",
-                                "{{ sample.depth }}",
-                                "{{ sample.elev }}",
-                                "{{ sample.seq_platform }}",
-                                "{{ sample.seq_gene }}",
-                                "{{ sample.seq_gene_region }}",
-                                "{{ sample.seq_barcode }}",
-                                "{{ sample.seq_for_primer }}",
-                                "{{ sample.seq_rev_primer }}",
-                                "{{ sample.env_biome }}",
-                                "{{ sample.env_feature }}",
-                                "{{ sample.env_material }}",
-                                "{{ sample.geo_loc_country }}",
-                                "{{ sample.geo_loc_state }}",
-                                "{{ sample.geo_loc_city }}",
-                                "{{ sample.geo_loc_farm }}",
-                                "{{ sample.geo_loc_plot }}",
-                                "{{ sample.latitude }}",
-                                "{{ sample.longitude }}",
-                                "{{ sample.annual_season_precpt }}",
-                                "{{ sample.annual_season_temp }}"
-                             ]).draw();
-                        }
-                    {% endfor %}
-                {% endfor %}
+            table2.ajax.reload( function(json) {
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 1)
+                } else {
+                    $("#tabs").tabs("disable", 1)
+                }
             });
-        }
-
-        function updateAirTable(selKeys){
-            table4 = $('#airTable').DataTable();
-            table4.clear().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Air in project.air_set.all %}
-                            var id = "{{ Air.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table4.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Air.sampleid.sample_name }}",
-                                    "{{ Air.barometric_press }}",
-                                    "{{ Air.carb_dioxide }}",
-                                    "{{ Air.carb_monoxide }}",
-                                    "{{ Air.chem_admin_term }}",
-                                    "{{ Air.chem_admin_time }}",
-                                    "{{ Air.elev }}",
-                                    "{{ Air.humidity }}",
-                                    "{{ Air.methane }}",
-                                    "{{ Air.organism_type }}",
-                                    "{{ Air.organism_count }}",
-                                    "{{ Air.oxy_stat_samp }}",
-                                    "{{ Air.oxygen }}",
-                                    "{{ Air.perturbation_type }}",
-                                    "{{ Air.perturbation_interval }}",
-                                    "{{ Air.pollutants_type }}",
-                                    "{{ Air.pollutants_concentration }}",
-                                    "{{ Air.rel_to_oxygen }}",
-                                    "{{ Air.resp_part_matter_substance }}",
-                                    "{{ Air.resp_part_matter_concentration }}",
-                                    "{{ Air.samp_collect_device }}",
-                                    "{{ Air.samp_mat_process }}",
-                                    "{{ Air.samp_salinity }}",
-                                    "{{ Air.samp_size }}",
-                                    "{{ Air.samp_store_dur }}",
-                                    "{{ Air.samp_store_loc }}",
-                                    "{{ Air.samp_store_temp }}",
-                                    "{{ Air.solar_irradiance }}",
-                                    "{{ Air.temp }}",
-                                    "{{ Air.ventilation_rate }}",
-                                    "{{ Air.ventilation_type }}",
-                                    "{{ Air.volatile_org_comp_name }}",
-                                    "{{ Air.volatile_org_comp_concentration }}",
-                                    "{{ Air.wind_direction }}",
-                                    "{{ Air.wind_speed }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
+            table3.ajax.reload( function(json) {
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 2)
+                } else {
+                    $("#tabs").tabs("disable", 2)
+                }
             });
-        }
-
-        function updateAssociatedTable(selKeys) {
-            table5 = $('#humassoTable').DataTable();
-            table5.clear().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Human_Associated in project.human_associated_set.all %}
-                            var id = "{{ Human_Associated.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table5.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Human_Associated.sampleid.sample_name }}",
-                                    "{{ Human_Associated.samp_collect_device }}",
-                                    "{{ Human_Associated.samp_mat_process }}",
-                                    "{{ Human_Associated.samp_size }}",
-                                    "{{ Human_Associated.samp_store_temp }}",
-                                    "{{ Human_Associated.samp_store_dur }}",
-                                    "{{ Human_Associated.samp_type }}",
-                                    "{{ Human_Associated.samp_location }}",
-                                    "{{ Human_Associated.samp_temp }}",
-                                    "{{ Human_Associated.samp_ph }}",
-                                    "{{ Human_Associated.samp_oxy_stat }}",
-                                    "{{ Human_Associated.samp_salinity }}",
-                                    "{{ Human_Associated.host_subject_id }}",
-                                    "{{ Human_Associated.host_age }}",
-                                    "{{ Human_Associated.host_pulse }}",
-                                    "{{ Human_Associated.host_gender }}",
-                                    "{{ Human_Associated.host_ethnicity }}",
-                                    "{{ Human_Associated.host_height }}",
-                                    "{{ Human_Associated.host_weight }}",
-                                    "{{ Human_Associated.host_bmi }}",
-                                    "{{ Human_Associated.host_weight_loss_3_month }}",
-                                    "{{ Human_Associated.host_body_temp }}",
-                                    "{{ Human_Associated.host_occupation }}",
-                                    "{{ Human_Associated.pet_farm_animal }}",
-                                    "{{ Human_Associated.smoker }}",
-                                    "{{ Human_Associated.diet_type }}",
-                                    "{{ Human_Associated.diet_duration }}",
-                                    "{{ Human_Associated.diet_frequency }}",
-                                    "{{ Human_Associated.diet_last_six_month }}",
-                                    "{{ Human_Associated.last_meal }}",
-                                    "{{ Human_Associated.medic_hist_perform }}",
-                                    "{{ Human_Associated.disease_type }}",
-                                    "{{ Human_Associated.disease_location }}",
-                                    "{{ Human_Associated.disease_duration }}",
-                                    "{{ Human_Associated.organism_count }}",
-                                    "{{ Human_Associated.tumor_location }}",
-                                    "{{ Human_Associated.tumor_mass }}",
-                                    "{{ Human_Associated.tumor_stage }}",
-                                    "{{ Human_Associated.drug_usage }}",
-                                    "{{ Human_Associated.drug_type }}",
-                                    "{{ Human_Associated.drug_duration }}",
-                                    "{{ Human_Associated.drug_frequency }}",
-                                    "{{ Human_Associated.perturbation }}",
-                                    "{{ Human_Associated.pert_type }}",
-                                    "{{ Human_Associated.pert_duration }}",
-                                    "{{ Human_Associated.pert_frequency }}",
-                                    "{{ Human_Associated.fetal_health_stat }}",
-                                    "{{ Human_Associated.amniotic_fluid_color }}",
-                                    "{{ Human_Associated.gestation_stat }}",
-                                    "{{ Human_Associated.maternal_health_stat }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
+            table4.ajax.reload( function(json) {
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 3)
+                } else {
+                    $("#tabs").tabs("disable", 3)
+                }
             });
-        }
-
-        function updateMicrobialTable(selKeys){
-            table6 = $('#microbialTable').DataTable();
-            table6.clear().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Microbe in project.microbial_set.all %}
-                            var id = "{{ Microbe.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table6.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Microbe.sampleid.sample_name }}",
-                                    "{{ Microbe.alkalinity }}",
-                                    "{{ Microbe.alkyl_diethers }}",
-                                    "{{ Microbe.altitude }}",
-                                    "{{ Microbe.aminopept_act }}",
-                                    "{{ Microbe.ammonium }}",
-                                    "{{ Microbe.bacteria_carb_prod }}",
-                                    "{{ Microbe.biomass_part_name }}",
-                                    "{{ Microbe.biomass_amount }}",
-                                    "{{ Microbe.bishomohopanol }}",
-                                    "{{ Microbe.bromide }}",
-                                    "{{ Microbe.calcium }}",
-                                    "{{ Microbe.carb_nitro_ratio }}",
-                                    "{{ Microbe.chem_administration_term }}",
-                                    "{{ Microbe.chem_administration_time }}",
-                                    "{{ Microbe.chloride }}",
-                                    "{{ Microbe.chlorophyll }}",
-                                    "{{ Microbe.diether_lipids_name }}",
-                                    "{{ Microbe.diether_lipids_concentration }}",
-                                    "{{ Microbe.diss_carb_dioxide }}",
-                                    "{{ Microbe.diss_hydrogen }}",
-                                    "{{ Microbe.diss_inorg_carb }}",
-                                    "{{ Microbe.diss_org_carb }}",
-                                    "{{ Microbe.diss_org_nitro }}",
-                                    "{{ Microbe.diss_oxygen }}",
-                                    "{{ Microbe.glucosidase_act }}",
-                                    "{{ Microbe.magnesium }}",
-                                    "{{ Microbe.mean_frict_vel }}",
-                                    "{{ Microbe.mean_peak_frict_vel }}",
-                                    "{{ Microbe.methane }}",
-                                    "{{ Microbe.n_alkanes_name }}",
-                                    "{{ Microbe.n_alkanes_concentration }}",
-                                    "{{ Microbe.nitrate }}",
-                                    "{{ Microbe.nitrite }}",
-                                    "{{ Microbe.nitro }}",
-                                    "{{ Microbe.org_carb }}",
-                                    "{{ Microbe.org_matter }}",
-                                    "{{ Microbe.org_nitro }}",
-                                    "{{ Microbe.organism_name }}",
-                                    "{{ Microbe.organism_count }}",
-                                    "{{ Microbe.oxy_stat_samp }}",
-                                    "{{ Microbe.part_org_carb }}",
-                                    "{{ Microbe.perturbation_type }}",
-                                    "{{ Microbe.perturbation_interval }}",
-                                    "{{ Microbe.petroleum_hydrocarb }}",
-                                    "{{ Microbe.ph }}",
-                                    "{{ Microbe.phaeopigments_type }}",
-                                    "{{ Microbe.phaeopigments_concentration }}",
-                                    "{{ Microbe.phosphate }}",
-                                    "{{ Microbe.phosplipid_fatt_acid_name }}",
-                                    "{{ Microbe.phosplipid_fatt_acid_concentration }}",
-                                    "{{ Microbe.potassium }}",
-                                    "{{ Microbe.pressure }}",
-                                    "{{ Microbe.redox_potential }}",
-                                    "{{ Microbe.rel_to_oxygen }}",
-                                    "{{ Microbe.salinity }}",
-                                    "{{ Microbe.samp_collect_device }}",
-                                    "{{ Microbe.samp_mat_process }}",
-                                    "{{ Microbe.samp_size }}",
-                                    "{{ Microbe.samp_store_dur }}",
-                                    "{{ Microbe.samp_store_loc }}",
-                                    "{{ Microbe.samp_store_temp }}",
-                                    "{{ Microbe.silicate }}",
-                                    "{{ Microbe.sodium }}",
-                                    "{{ Microbe.sulfate }}",
-                                    "{{ Microbe.sulfide }}",
-                                    "{{ Microbe.temp }}",
-                                    "{{ Microbe.tot_carb }}",
-                                    "{{ Microbe.tot_nitro }}",
-                                    "{{ Microbe.tot_org_carb }}",
-                                    "{{ Microbe.turbidity }}",
-                                    "{{ Microbe.water_content }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
+            table5.ajax.reload( function(json) {
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 4)
+                } else {
+                    $("#tabs").tabs("disable", 4)
+                }
             });
-        }
-
-        function updateSoilTable(selKeys){
-            table7 = $('#soilTable').DataTable();
-            table7.clear().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Soil in project.soil_set.all %}
-                            var id = "{{ Soil.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table7.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Soil.sampleid.sample_name }}",
-                                    "{{ Soil.samp_collection_device }}",
-                                    "{{ Soil.samp_size }}",
-                                    "{{ Soil.samp_depth }}",
-                                    "{{ Soil.samp_prep }}",
-                                    "{{ Soil.samp_sieve_size }}",
-                                    "{{ Soil.samp_store_dur }}",
-                                    "{{ Soil.samp_store_loc }}",
-                                    "{{ Soil.samp_store_temp }}",
-                                    "{{ Soil.samp_weight_dna_ext }}",
-                                    "{{ Soil.pool_dna_extracts }}",
-                                    "{{ Soil.fao_class }}",
-                                    "{{ Soil.local_class }}",
-                                    "{{ Soil.texture_class }}",
-                                    "{{ Soil.porosity }}",
-                                    "{{ Soil.profile_position }}",
-                                    "{{ Soil.slope_aspect }}",
-                                    "{{ Soil.slope_gradient }}",
-                                    "{{ Soil.bulk_density }}",
-                                    "{{ Soil.drainage_class }}",
-                                    "{{ Soil.water_content_soil }}",
-                                    "{{ Soil.cur_land_use }}",
-                                    "{{ Soil.cur_vegetation }}",
-                                    "{{ Soil.cur_crop }}",
-                                    "{{ Soil.cur_cultivar }}",
-                                    "{{ Soil.crop_rotation }}",
-                                    "{{ Soil.cover_crop }}",
-                                    "{{ Soil.fert_amendment_class }}",
-                                    "{{ Soil.fert_placement }}",
-                                    "{{ Soil.fert_type }}",
-                                    "{{ Soil.fert_tot_amount }}",
-                                    "{{ Soil.fert_N_tot_amount }}",
-                                    "{{ Soil.fert_P_tot_amount }}",
-                                    "{{ Soil.fert_K_tot_amount }}",
-                                    "{{ Soil.irrigation_type }}",
-                                    "{{ Soil.irrigation_tot_amount }}",
-                                    "{{ Soil.residue_removal }}",
-                                    "{{ Soil.residue_growth_stage }}",
-                                    "{{ Soil.residue_removal_percent }}",
-                                    "{{ Soil.tillage_event }}",
-                                    "{{ Soil.tillage_event_depth }}",
-                                    "{{ Soil.amend1_class }}",
-                                    "{{ Soil.amend1_active_ingredient }}",
-                                    "{{ Soil.amend1_tot_amount }}",
-                                    "{{ Soil.amend2_class }}",
-                                    "{{ Soil.amend2_active_ingredient }}",
-                                    "{{ Soil.amend2_tot_amount }}",
-                                    "{{ Soil.amend3_class }}",
-                                    "{{ Soil.amend3_active_ingredient }}",
-                                    "{{ Soil.amend3_tot_amount }}",
-                                    "{{ Soil.rRNA_copies }}",
-                                    "{{ Soil.microbial_biomass_C }}",
-                                    "{{ Soil.microbial_biomass_N }}",
-                                    "{{ Soil.microbial_respiration }}",
-                                    "{{ Soil.soil_pH }}",
-                                    "{{ Soil.soil_EC }}",
-                                    "{{ Soil.soil_C }}",
-                                    "{{ Soil.soil_OM }}",
-                                    "{{ Soil.soil_N }}",
-                                    "{{ Soil.soil_NO3_N }}",
-                                    "{{ Soil.soil_NH4_N }}",
-                                    "{{ Soil.soil_P }}",
-                                    "{{ Soil.soil_K }}",
-                                    "{{ Soil.soil_S }}",
-                                    "{{ Soil.soil_Zn }}",
-                                    "{{ Soil.soil_Fe }}",
-                                    "{{ Soil.soil_Cu }}",
-                                    "{{ Soil.soil_Mn }}",
-                                    "{{ Soil.soil_Ca }}",
-                                    "{{ Soil.soil_Mg }}",
-                                    "{{ Soil.soil_Na }}",
-                                    "{{ Soil.soil_B }}",
-                                    "{{ Soil.plant_C }}",
-                                    "{{ Soil.plant_N }}",
-                                    "{{ Soil.plant_P }}",
-                                    "{{ Soil.plant_K }}",
-                                    "{{ Soil.plant_Ca }}",
-                                    "{{ Soil.plant_Mg }}",
-                                    "{{ Soil.plant_S }}",
-                                    "{{ Soil.plant_Na }}",
-                                    "{{ Soil.plant_Cl }}",
-                                    "{{ Soil.plant_Al }}",
-                                    "{{ Soil.plant_B }}",
-                                    "{{ Soil.plant_Cu }}",
-                                    "{{ Soil.plant_Fe }}",
-                                    "{{ Soil.plant_Mn }}",
-                                    "{{ Soil.plant_Zn }}",
-                                    "{{ Soil.crop_tot_biomass_fw }}",
-                                    "{{ Soil.crop_tot_biomass_dw }}",
-                                    "{{ Soil.crop_tot_above_biomass_fw }}",
-                                    "{{ Soil.crop_tot_above_biomass_dw }}",
-                                    "{{ Soil.crop_tot_below_biomass_fw }}",
-                                    "{{ Soil.crop_tot_below_biomass_dw }}",
-                                    "{{ Soil.harv_fraction }}",
-                                    "{{ Soil.harv_fresh_weight }}",
-                                    "{{ Soil.harv_dry_weight }}",
-                                    "{{ Soil.ghg_chamber_placement }}",
-                                    "{{ Soil.ghg_N2O }}",
-                                    "{{ Soil.ghg_CO2 }}",
-                                    "{{ Soil.ghg_NH4 }}",
-                                     //New
-                                    "{{ Soil.soil_water_cap }}",
-                                    "{{ Soil.soil_surf_hard }}",
-                                    "{{ Soil.soil_subsurf_hard }}",
-                                    "{{ Soil.soil_agg_stability }}",
-                                    "{{ Soil.soil_ACE_protein }}",
-                                    "{{ Soil.soil_active_C }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
+            table6.ajax.reload( function(json) {
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 5)
+                } else {
+                    $("#tabs").tabs("disable", 5)
+                }
             });
-        }
-
-        function updateWaterTable(selKeys){
-            table8 = $('#waterTable').DataTable();
-            table8.clear().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for Water in project.water_set.all %}
-                            var id = "{{ Water.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table8.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ Water.sampleid.sample_name }}",
-                                    "{{ Water.alkalinity }}",
-                                    "{{ Water.alkyl_diethers }}",
-                                    "{{ Water.altitude }}",
-                                    "{{ Water.aminopept_act }}",
-                                    "{{ Water.ammonium }}",
-                                    "{{ Water.atmospheric_data }}",
-                                    "{{ Water.bac_prod }}",
-                                    "{{ Water.bac_resp }}",
-                                    "{{ Water.bacteria_carb_prod }}",
-                                    "{{ Water.biomass_part_name }}",
-                                    "{{ Water.biomass_amount }}",
-                                    "{{ Water.bishomohopanol }}",
-                                    "{{ Water.bromide }}",
-                                    "{{ Water.calcium }}",
-                                    "{{ Water.carb_nitro_ratio }}",
-                                    "{{ Water.chem_administration_name }}",
-                                    "{{ Water.chem_administration_time }}",
-                                    "{{ Water.chloride }}",
-                                    "{{ Water.chlorophyll }}",
-                                    "{{ Water.conduc }}",
-                                    "{{ Water.density }}",
-                                    "{{ Water.diether_lipids }}",
-                                    "{{ Water.diss_carb_dioxide }}",
-                                    "{{ Water.diss_hydrogen }}",
-                                    "{{ Water.diss_inorg_carb }}",
-                                    "{{ Water.diss_inorg_nitro }}",
-                                    "{{ Water.diss_inorg_phosp }}",
-                                    "{{ Water.diss_org_carb }}",
-                                    "{{ Water.diss_org_nitro }}",
-                                    "{{ Water.diss_oxygen }}",
-                                    "{{ Water.down_par }}",
-                                    "{{ Water.elev }}",
-                                    "{{ Water.fluor }}",
-                                    "{{ Water.glucosidase_act }}",
-                                    "{{ Water.light_intensity }}",
-                                    "{{ Water.magnesium }}",
-                                    "{{ Water.mean_frict_vel }}",
-                                    "{{ Water.mean_peak_frict_vel }}",
-                                    "{{ Water.n_alkanes }}",
-                                    "{{ Water.nitrate }}",
-                                    "{{ Water.nitrite }}",
-                                    "{{ Water.nitro }}",
-                                    "{{ Water.org_carb }}",
-                                    "{{ Water.org_matter }}",
-                                    "{{ Water.org_nitro }}",
-                                    "{{ Water.organism_name }}",
-                                    "{{ Water.organism_count }}",
-                                    "{{ Water.oxy_stat_samp }}",
-                                    "{{ Water.part_org_carb }}",
-                                    "{{ Water.part_org_nitro }}",
-                                    "{{ Water.perturbation_type }}",
-                                    "{{ Water.perturbation_interval }}",
-                                    "{{ Water.pretroleum_hydrocarb }}",
-                                    "{{ Water.ph }}",
-                                    "{{ Water.phaeopigments }}",
-                                    "{{ Water.phosphate }}",
-                                    "{{ Water.phosplipid_fatt_acid }}",
-                                    "{{ Water.photon_flux }}",
-                                    "{{ Water.potassium }}",
-                                    "{{ Water.pressure }}",
-                                    "{{ Water.primary_prod }}",
-                                    "{{ Water.redox_potential }}",
-                                    "{{ Water.rel_to_oxygen }}",
-                                    "{{ Water.samp_mat_process }}",
-                                    "{{ Water.samp_salinity }}",
-                                    "{{ Water.samp_size }}",
-                                    "{{ Water.samp_store_dur }}",
-                                    "{{ Water.samp_store_loc }}",
-                                    "{{ Water.samp_store_temp }}",
-                                    "{{ Water.samp_vol_we_dna_ext }}",
-                                    "{{ Water.silicate }}",
-                                    "{{ Water.sodium }}",
-                                    "{{ Water.soluble_react_phosp }}",
-                                    "{{ Water.source_material_id }}",
-                                    "{{ Water.sulfate }}",
-                                    "{{ Water.sulfide }}",
-                                    "{{ Water.suspen_part_matter }}",
-                                    "{{ Water.temp }}",
-                                    "{{ Water.tidal_stage }}",
-                                    "{{ Water.tot_depth_water_col }}",
-                                    "{{ Water.tot_diss_nitro }}",
-                                    "{{ Water.tot_inorg_nitro }}",
-                                    "{{ Water.tot_nitro }}",
-                                    "{{ Water.tot_part_carb }}",
-                                    "{{ Water.tot_phosp }}",
-                                    "{{ Water.water_current_direction }}",
-                                    "{{ Water.water_current_magnitude }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
+            table7.ajax.reload( function(json) {
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 6)
+                } else {
+                    $("#tabs").tabs("disable", 6)
+                }
             });
-        }
-
-        function updateUsrTable(selKeys) {
-            table9 = $('#usrTable').DataTable();
-            table9.clear().draw();
-            $.each(selKeys, function (index, value) {
-                    {% for project in projects %}
-                        {% for User in project.userdefined_set.all %}
-                            var id = "{{ User.sampleid.sampleid }}";
-                            if (id == value) {
-                                 table9.row.add([
-                                    "{{ project.project_name }}",
-                                    "{{ User.sampleid.sample_name }}",
-                                    "{{ User.usr_cat1 }}",
-                                    "{{ User.usr_cat2 }}",
-                                    "{{ User.usr_cat3 }}",
-                                    "{{ User.usr_cat4 }}",
-                                    "{{ User.usr_cat5 }}",
-                                    "{{ User.usr_cat6 }}",
-                                    "{{ User.usr_quant1 }}",
-                                    "{{ User.usr_quant2 }}",
-                                    "{{ User.usr_quant3 }}",
-                                    "{{ User.usr_quant4 }}",
-                                    "{{ User.usr_quant5 }}",
-                                    "{{ User.usr_quant6 }}"
-                                 ]).draw();
-                            }
-                        {% endfor %}
-                    {% endfor %}
+            table8.ajax.reload( function(json) {
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 7)
+                } else {
+                    $("#tabs").tabs("disable", 7)
+                }
+            });
+            table9.ajax.reload( function(json) {
+                if ( Object.keys(json).length > 0 ) {
+                    $("#tabs").tabs("enable", 8)
+                } else {
+                    $("#tabs").tabs("disable", 8)
+                }
             });
         }
 
@@ -813,14 +397,14 @@
     <div id="tabs" style="width: 950px">
         <ul>
             <li><a href="#tabs-1">Project</a></li>
-            <!--<li><a href="#tabs-2">Reference</a></li>
+            <li><a href="#tabs-2">Reference</a></li>
             <li><a href="#tabs-3">MIMARKs</a></li>
             <li><a href="#tabs-4">Air</a></li>
             <li><a href="#tabs-5">Human</a></li>
             <li><a href="#tabs-6">Microbial</a></li>
             <li><a href="#tabs-7">Soil</a></li>
             <li><a href="#tabs-8">Water</a></li>
-            <li><a href="#tabs-9">User</a></li>-->
+            <li><a href="#tabs-9">User</a></li>
         </ul>
 
         <div id="tabs-1">
@@ -844,7 +428,7 @@
             </table>
         </div>
 
-        <!--<div id="tabs-2">
+        <div id="tabs-2">
             <table id="referenceTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
@@ -1322,7 +906,7 @@
                     </tr>
                 </thead>
             </table>
-        </div>-->
+        </div>
     </div>
     <br><br>
 {% endblock my_content %}
