@@ -61,7 +61,7 @@ def getProjectTreeChildren(request):
             reads = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             myNode = {
                 'title': 'Sample: ' + sample.sample_name + '; Reads: ' + str(reads['count__sum']),
-                'tooltip': sample.sample_name,
+                'tooltip': sample.sampleid,
                 'id': sample.sampleid,
                 'isFolder': False
             }
