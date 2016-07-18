@@ -19,23 +19,48 @@
         }
     </style>
     <script type="text/javascript">
+        var selProjects = "";
         var selKeys = "";
         var table1, table2, table3, table4, table5, table6, table7, table8, table9;
         var RID = 0;
+
         $(function () {
+            if ("{{ normpost }}" == "Success") {
+                alert("Uploaded samples were found in your database.");
+                document.getElementById("drawtable").disabled = false;
+                var selKeysStr = "{{ selList | safe }}";
+                selKeysStr = selKeysStr.replace(/'/g, '"');
+                selKeys = JSON.parse(selKeysStr);
+                setNorm(true);
+            } else if ("{{ normpost }}" == 'One or more projects were not found in your database!') {
+                alert("{{ normpost }}");
+                document.getElementById("drawtable").disabled = true;
+                selKeys = "";
+                setNorm(false);
+            } else if ("{{ normpost }}" == 'One or more samples were not found in your database!') {
+                alert("{{ normpost }}");
+                document.getElementById("drawtable").disabled = true;
+                selKeys = "";
+                setNorm(false);
+            }
 
-            if ("{{ normpost }}" == "Success") alert("Uploaded samples were found in your database.\nYou may proceed directly to the Analysis section.");
-            $(".display").dataTable({
-                dom: 'B<"toolbar">lfrtip',
-                deferRender: true,
-                scrollX: true,
-                bSort: true,
-                bPaginate: true,
-                sPaginationType: 'full_numbers',
-                buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+            table1 = $('#projectTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'projectTableJSON' %}",
+                    "data": {
+                        "key": function(){ return JSON.stringify(selKeys);}
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
             });
-            $("div.toolbar").html('<br><br>');
 
+            $("div.toolbar").html('<br><br>');
             $("#tabs").tabs({
                 "activate": function(event, ui) {
                     $( $.fn.dataTable.tables( true ) ).DataTable()
@@ -45,21 +70,21 @@
             });
 
             $("#drawtable").click(function () {
-                updateProjectTable(selKeys);
-                updateReferenceTable(selKeys);
-                updateSampleTable(selKeys);
-                updateAirTable(selKeys);
-                updateAssociatedTable(selKeys);
-                updateMicrobialTable(selKeys);
-                updateSoilTable(selKeys);
-                updateWaterTable(selKeys);
-                updateUsrTable(selKeys);
+                updateTables();
+                //updateReferenceTable();
+                //updateSampleTable();
+                //updateAirTable();
+                //updateAssociatedTable();
+                //updateMicrobialTable();
+                //updateSoilTable();
+                //updateWaterTable();
+                //updateUsrTable();
                 if (table1.data().length == 0) {
                     $("#tabs").tabs("disable", 0)
                 } else {
                     $("#tabs").tabs("enable", 0)
                 }
-
+                /*
                 if (table2.data().length == 0) {
                     $("#tabs").tabs("disable", 1)
                 } else {
@@ -99,7 +124,7 @@
                     $("#tabs").tabs("disable", 8);
                 } else {
                     $("#tabs").tabs("enable", 8);
-                }
+                }*/
             });
 
             $("#tree").dynatree({
@@ -135,23 +160,30 @@
                 $("#tree").dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
-                updateProjectTable();
-                updateSampleTable();
-                updateReferenceTable();
-                updateAirTable();
-                updateAssociatedTable();
-                updateMicrobialTable();
-                updateSoilTable();
-                updateWaterTable();
-                updateUsrTable();
+                updateTables();
+                //updateProjectTable();
+                //updateSampleTable();
+                //updateReferenceTable();
+                //updateAirTable();
+                //updateAssociatedTable();
+                //updateMicrobialTable();
+                //updateSoilTable();
+                //updateWaterTable();
+                //updateUsrTable();
             });
 
             $("#submit").click(function () {
+                selProjects = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                    if (node.getLevel() == 2) {
+                        return node.data.id;
+                    }
+                });
                 selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
                     if (node.getLevel() == 3) {
                         return node.data.id;
                     }
                 });
+
                 var jsonDict = JSON.stringify(selKeys);
                 $.ajax({
                     type: 'GET',
@@ -188,35 +220,16 @@
             })
         }
 
-        function updateProjectTable(selKeys) {
-            table1 = $('#projectTable').DataTable();
-            table1.clear().draw();
-            $.each(selKeys, function (index, value) {
-                //alert("Key!");
-                {% for project in projects %}
-                    //alert("Project!");
-                    {% for sample in project.sample_set.all %}
-                        //alert("Sample!");
-                        var id = "{{ sample.sampleid }}";
-                        if (id == value) {
-                            table1.row.add([
-                                "{{ project.project_name }}",
-                                "{{ project.projectid }}",
-                                "{{ sample.sample_name }}",
-                                "{{ project.project_desc }}",
-                                "{{ project.start_date }}",
-                                "{{ project.end_date }}",
-                                "{{ project.pi_last }}",
-                                "{{ project.pi_first }}",
-                                "{{ project.pi_affiliation }}",
-                                "{{ project.pi_email }}",
-                                "{{ project.pi_phone }}",
-                                "{{ project.status }}"
-                            ]).draw();
-                        }
-                    {% endfor %}
-                {% endfor %}
-            });
+        function updateTables() {
+            table1.ajax.reload();
+            //table2.ajax.reload();
+            //table3.ajax.reload();
+            //table4.ajax.reload();
+            //table5.ajax.reload();
+            //table6.ajax.reload();
+            //table7.ajax.reload();
+            //table8.ajax.reload();
+            //table9.ajax.reload();
         }
 
         function updateReferenceTable(selKeys) {
@@ -800,22 +813,23 @@
     <div id="tabs" style="width: 950px">
         <ul>
             <li><a href="#tabs-1">Project</a></li>
-            <li><a href="#tabs-2">Reference</a></li>
+            <!--<li><a href="#tabs-2">Reference</a></li>
             <li><a href="#tabs-3">MIMARKs</a></li>
             <li><a href="#tabs-4">Air</a></li>
             <li><a href="#tabs-5">Human</a></li>
             <li><a href="#tabs-6">Microbial</a></li>
             <li><a href="#tabs-7">Soil</a></li>
             <li><a href="#tabs-8">Water</a></li>
-            <li><a href="#tabs-9">User</a></li>
+            <li><a href="#tabs-9">User</a></li>-->
         </ul>
 
         <div id="tabs-1">
             <table id="projectTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
-                        <th title="Project name">project_name</th>
                         <th title="myPhyloDB generated project UUID">project_id</th>
+                        <th title="Project status">project_status</th>
+                        <th title="Project name">project_name</th>
                         <th title="Sample name (Mothur group name)">sample_name</th>
                         <th title="Project description">project_desc</th>
                         <th title="Project start date">start_date</th>
@@ -830,7 +844,7 @@
             </table>
         </div>
 
-        <div id="tabs-2">
+        <!--<div id="tabs-2">
             <table id="referenceTable" cellpadding="0" cellspacing="0" border="0" class="display nowrap">
                 <thead>
                     <tr>
@@ -1308,7 +1322,7 @@
                     </tr>
                 </thead>
             </table>
-        </div>
+        </div>-->
     </div>
     <br><br>
 {% endblock my_content %}

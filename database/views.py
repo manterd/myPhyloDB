@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.http import *
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.views.decorators.csrf import csrf_exempt
 import fileinput
 import logging
 import multiprocessing as mp
@@ -14,7 +15,6 @@ import pickle
 import simplejson
 import xlrd
 import time
-from uuid import uuid4
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9
@@ -60,9 +60,7 @@ def upload(request):
 
 
 def upStop(request):
-
     # cleanup mid upload project!
-
     projects = Reference.objects.none()
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -750,25 +748,43 @@ def uploadFunc(request, stopList):
     )
 
 
+def projectTableJSON(request):
+    if request.is_ajax():
+        jsonSamples = request.GET['key']
+        selSamples = simplejson.loads(jsonSamples)
+
+        qs = Sample.objects.none()
+        if request.user.is_superuser:
+            qs = Sample.objects.filter(sampleid__in=selSamples)
+        elif request.user.is_authenticated():
+            path_list = Reference.objects.filter(Q(author=request.user)).values_list('sampleid_id')
+            qs = Sample.objects.all().filter( Q(sampleid__in=path_list) | Q(status='public') ).filter(sampleid__in=selSamples)
+
+        results = {}
+        qs1 = qs.values_list(
+            "projectid",
+            "projectid__status",
+            "projectid__project_name",
+            "sample_name",
+            "projectid__project_desc",
+            "projectid__start_date",
+            "projectid__end_date",
+            "projectid__pi_last",
+            "projectid__pi_first",
+            "projectid__pi_affiliation",
+            "projectid__pi_email",
+            "projectid__pi_phone"
+        )
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def select(request):
-    projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all()
-    elif request.user.is_authenticated():
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') )
-    if not request.user.is_superuser and not request.user.is_authenticated():
-        projects = Project.objects.all().filter( Q(status='public') )
-
-    refs = Reference.objects.filter(projectid__in=projects)
-    samples = Sample.objects.filter(projectid__in=projects)
     return render_to_response(
         'select.html',
-        {'form9': UploadForm9,
-         'projects': projects,
-         'refs': refs,
-         'samples': samples},
+        {'form9': UploadForm9},
         context_instance=RequestContext(request))
 
 
@@ -1139,12 +1155,35 @@ def uploadNorm(request):
         os.makedirs(myDir)
     savedDF.to_csv(path, sep='\t')
 
-    projects = list(set(savedDF['projectid']))
+    projectList = list(set(savedDF['projectid']))
 
-    if Reference.objects.filter(projectid__in=projects).exists():
-        refs = Reference.objects.filter(projectid__in=projects).values_list('refid', flat=True)
+    if Project.objects.filter(projectid__in=projectList).exists():
+        projects = Project.objects.filter(projectid__in=projectList)
+
     else:
-        refs = uuid4().hex
+        return render_to_response(
+            'select.html',
+            {'normpost': 'One or more projects were not found in your database!'},
+            context_instance=RequestContext(request)
+        )
+
+    if Reference.objects.filter(projectid__in=projectList).exists():
+        refs = Reference.objects.filter(projectid__in=projectList)
+    else:
+        return render_to_response(
+            'select.html',
+            {'normpost': 'One or more projects were not found in your database!'},
+            context_instance=RequestContext(request)
+        )
+
+    if Sample.objects.filter(sampleid__in=selList).exists():
+        samples = Sample.objects.filter(sampleid__in=selList)
+    else:
+        return render_to_response(
+            'select.html',
+            {'normpost': 'One or more samples were not found in your database!'},
+            context_instance=RequestContext(request)
+        )
 
     biome = {}
     tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
@@ -1194,7 +1233,8 @@ def uploadNorm(request):
         {'form9': UploadForm9,
          'projects': projects,
          'refs': refs,
-         'samples': selList,
+         'samples': samples,
+         'selList': selList,
          'normpost': 'Success'},
         context_instance=RequestContext(request)
     )
@@ -1210,8 +1250,7 @@ def login_usr_callback(sender, user, request, **kwargs):
 user_logged_in.connect(login_usr_callback)
 
 
-# Add info on user files to base
-# Function needs to be added to settings file
+# Function has been added to context processor in setting file
 def usrFiles(request):
 
     selFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
@@ -1221,5 +1260,3 @@ def usrFiles(request):
         'selFiles': selFiles,
         'normFiles': normFiles
     }
-
-

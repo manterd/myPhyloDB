@@ -1,4 +1,4 @@
-# myPhyloDB       ![myPhyloDB Logo](media/images/myPhyloDB_Logo.png)
+# myPhyloDB       ![myPhyloDB Logo](myPhyloDB/media/images/myPhyloDB_Logo.png)
 <hr>
 * myPhyloDB is a user-friendly web-interface for accessing and analyzing taxonomic data from multiple projects and/or sequencing runs.
 * The goal of myPhyloDB is to allow for easy comparisons and statistical analysis of microbial (i.e., fungi or bacteria) taxonomic abundance across projects, environments, and management scenarios.
