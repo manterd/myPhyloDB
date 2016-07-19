@@ -5,7 +5,6 @@ from django.db.models import Q
 from django.http import *
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.views.decorators.csrf import csrf_exempt
 import fileinput
 import logging
 import multiprocessing as mp
@@ -752,7 +751,6 @@ def projectTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
-
         qs = Sample.objects.none()
         if selSamples:
             qs = Sample.objects.all()
@@ -1395,10 +1393,121 @@ def userTableJSON(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def select(request):
-    return render_to_response(
-        'select.html',
-        {'form9': UploadForm9},
-        context_instance=RequestContext(request))
+    if request.method == 'POST':
+        uploaded = request.FILES["normFile"]
+        savedDF = pd.read_csv(uploaded, index_col=0, sep='\t')
+        selList = list(set(savedDF['sampleid']))
+
+        # save selected samples file to users temp/ folder
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        path = str(myDir) + 'usr_sel_samples.pkl'
+
+        if not os.path.exists(myDir):
+            os.makedirs(myDir)
+
+        with open(path, 'wb') as f:
+            pickle.dump(selList, f)
+
+        # save normalized file to users temp/ folder
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        path = str(myDir) + 'usr_norm_data.csv'
+
+        if not os.path.exists(myDir):
+            os.makedirs(myDir)
+        savedDF.to_csv(path, sep='\t')
+
+        projectList = list(set(savedDF['projectid']))
+
+        if not Project.objects.filter(projectid__in=projectList).exists():
+            return render_to_response(
+                'select.html',
+                {'form9': UploadForm9,
+                 'selList': '',
+                 'normpost': 'error',
+                'method': 'POST'},
+                 context_instance=RequestContext(request)
+            )
+
+        if not Reference.objects.filter(projectid__in=projectList).exists():
+            return render_to_response(
+                'select.html',
+                {'form9': UploadForm9,
+                 'selList': '',
+                 'normpost': 'error',
+                 'method': 'POST'},
+                context_instance=RequestContext(request)
+            )
+
+        if not Sample.objects.filter(sampleid__in=selList).exists():
+            return render_to_response(
+                'select.html',
+                {'form9': UploadForm9,
+                 'selList': '',
+                 'normpost': 'error',
+                 'method': 'POST'},
+                context_instance=RequestContext(request)
+            )
+
+        biome = {}
+        tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+        tempDF.set_index('sampleid', drop=True, inplace=True)
+
+        metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
+        myList = list(tempDF.index.values)
+
+        nameList = []
+        for i in myList:
+            nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
+
+        # get list of lists with abundances
+        taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
+        taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
+        dataList = taxaOnlyDF.values.tolist()
+
+        # get list of taxa
+        namesDF = savedDF.loc[:, ['sampleid', 'speciesid']]
+        namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
+        namesDF = namesDF.pivot(index='speciesid', columns='sampleid', values='taxa')
+
+        taxaList = []
+        for index, row in namesDF.iterrows():
+            metaDict = {}
+            metaDict['taxonomy'] = row[0]
+            taxaList.append({"id": index, "metadata": metaDict})
+
+        biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
+        biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
+        biome['type'] = 'OTU table'
+        biome['generated_by'] = 'myPhyloDB'
+        biome['date'] = str(datetime.datetime.now())
+        biome['matrix_type'] = 'dense'
+        biome['matrix_element_type'] = 'float'
+        biome['rows'] = taxaList
+        biome['columns'] = nameList
+        biome['data'] = dataList
+
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        path = str(myDir) + 'usr_norm_data.biom'
+        with open(path, 'w') as outfile:
+            simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
+
+        return render_to_response(
+            'select.html',
+            {'form9': UploadForm9,
+             'selList': selList,
+             'normpost': 'Success',
+             'method': 'POST'},
+            context_instance=RequestContext(request)
+        )
+
+    else:
+        return render_to_response(
+            'select.html',
+            {'form9': UploadForm9,
+             'selList': '',
+             'normpost': '',
+             'method': 'GET'},
+            context_instance=RequestContext(request))
 
 
 def taxaJSON(request):

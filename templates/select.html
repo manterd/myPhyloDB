@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load my_tags %}
 
 {% block pagetitle %}
     <title xmlns="http://www.w3.org/1999/html">Select</title>
@@ -19,29 +20,33 @@
         }
     </style>
     <script type="text/javascript">
-        var selProjects = "";
         var selKeys = "";
         var table1, table2, table3, table4, table5, table6, table7, table8, table9;
         var RID = 0;
+        var method = "{{ method }}";
 
         $(function () {
-            if ("{{ normpost }}" == "Success") {
-                alert("Uploaded samples were found in your database.");
-                document.getElementById("drawtable").disabled = false;
-                var selKeysStr = "{{ selList | safe }}";
-                selKeysStr = selKeysStr.replace(/'/g, '"');
-                selKeys = JSON.parse(selKeysStr);
-                setNorm(true);
-            } else if ("{{ normpost }}" == 'One or more projects were not found in your database!') {
-                alert("{{ normpost }}");
-                document.getElementById("drawtable").disabled = true;
-                selKeys = "";
-                setNorm(false);
-            } else if ("{{ normpost }}" == 'One or more samples were not found in your database!') {
-                alert("{{ normpost }}");
-                document.getElementById("drawtable").disabled = true;
-                selKeys = "";
-                setNorm(false);
+            if ("{{ method }}" == "POST") {
+                if ("{{ normpost }}" == "Success") {
+                    alert("Uploaded samples were found in the database.\nYou may proceed directly to any analysis using your uploaded data.");
+                    document.getElementById("drawtable").disabled = false;
+                    var selKeysStr = "{{ selList | safe }}";
+                    selKeysStr = selKeysStr.replace(/'/g, '"');
+                    selKeys = JSON.parse(selKeysStr);
+                    setNorm(true);
+                } else if ("{{ normpost }}" == 'error') {
+                    alert("Sample(s) were not found in the database.\nPlease check your file.");
+                    document.getElementById("drawtable").disabled = true;
+                    selKeys = "";
+                    setNorm(false);
+                    $("#link0").hide();
+                    $("#link1").hide();
+                    $("#link2").hide();
+                    $("#link3").hide();
+                    $("#link4").hide();
+                    $("#link5").hide();
+                    $("#link6").hide();
+                }
             }
 
             table1 = $('#projectTable').DataTable({
@@ -51,7 +56,13 @@
                     "processing": false,
                     "url": "{% url 'projectTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -67,7 +78,13 @@
                     "processing": false,
                     "url": "{% url 'sampleTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -83,7 +100,13 @@
                     "processing": false,
                     "url": "{% url 'referenceTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -99,7 +122,13 @@
                     "processing": false,
                     "url": "{% url 'airTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -115,7 +144,13 @@
                     "processing": false,
                     "url": "{% url 'associatedTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -131,7 +166,13 @@
                     "processing": false,
                     "url": "{% url 'microbialTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -147,7 +188,13 @@
                     "processing": false,
                     "url": "{% url 'soilTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -163,7 +210,13 @@
                     "processing": false,
                     "url": "{% url 'waterTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -179,7 +232,13 @@
                     "processing": false,
                     "url": "{% url 'userTableJSON' %}",
                     "data": {
-                        "key": function(){ return JSON.stringify(selKeys);}
+                        "key": function () {
+                            if (method == "GET") {
+                                return JSON.stringify(selKeys);
+                            } else if (method == "POST") {
+                                return JSON.stringify("");
+                            }
+                        }
                     }
                 },
                 "scrollX": true,
@@ -189,6 +248,7 @@
             });
 
             $("#drawtable").click(function () {
+                method = "GET";
                 updateTables();
             });
 
@@ -238,11 +298,6 @@
             });
 
             $("#submit").click(function () {
-                selProjects = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
-                    if (node.getLevel() == 2) {
-                        return node.data.id;
-                    }
-                });
                 selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
                     if (node.getLevel() == 3) {
                         return node.data.id;
@@ -265,9 +320,9 @@
                         $("#link4").hide();
                         $("#link5").show();
                         $("#link6").hide();
+                        document.getElementById("drawtable").disabled = false;
                     }
                 });
-                document.getElementById("drawtable").disabled = false;
             });
 
             $('<input>').attr({
@@ -372,7 +427,7 @@
     <input id="submit" type="button" value="Save Selection(s)!"/>
     <br>
     <br>
-    <form id='form' action="{% url 'uploadNorm' %}" method="post" enctype="multipart/form-data">
+    <form id='form' action="{% url 'select' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <h2>Upload previously normalized sample set</h2>
         <table width="430px" border="2" cellspacing="0" cellpadding="5" class="inlineTable">
