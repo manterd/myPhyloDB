@@ -287,67 +287,63 @@
 
         function updateTables() {
             table1.ajax.reload( function(json) {
-                alert("parsing!");
-                var res = json.toString();
-                alert("parsed!");
-                alert(res);
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 0)
                 } else {
                     $("#tabs").tabs("disable", 0)
                 }
             });
             table2.ajax.reload( function(json) {
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 1)
                 } else {
                     $("#tabs").tabs("disable", 1)
                 }
             });
             table3.ajax.reload( function(json) {
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 2)
                 } else {
                     $("#tabs").tabs("disable", 2)
                 }
             });
             table4.ajax.reload( function(json) {
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 3)
                 } else {
                     $("#tabs").tabs("disable", 3)
                 }
             });
             table5.ajax.reload( function(json) {
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 4)
                 } else {
                     $("#tabs").tabs("disable", 4)
                 }
             });
             table6.ajax.reload( function(json) {
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 5)
                 } else {
                     $("#tabs").tabs("disable", 5)
                 }
             });
             table7.ajax.reload( function(json) {
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 6)
                 } else {
                     $("#tabs").tabs("disable", 6)
                 }
             });
             table8.ajax.reload( function(json) {
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 7)
                 } else {
                     $("#tabs").tabs("disable", 7)
                 }
             });
             table9.ajax.reload( function(json) {
-                if ( Object.keys(json).length > 0 ) {
+                if ( json['data'].length > 0 ) {
                     $("#tabs").tabs("enable", 8)
                 } else {
                     $("#tabs").tabs("disable", 8)
