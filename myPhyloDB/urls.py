@@ -123,10 +123,6 @@ urlpatterns = [
     url(r'^myPhyloDB/nzJSON/$', views.nzJSON, name='nzJSON'),
     url(r'^myPhyloDB/pathJSON/$', views.pathJSON, name='pathJSON'),
 
-    # For this url, preference would be for /myPhyloDB/select/
-    # However, page names must be unique to render correctly
-    url(r'^myPhyloDB/select_upload/$', views.uploadNorm, name='uploadNorm'),
-
     # queue caller
     url(r'^myPhyloDB/funcCall/$', queue.funcCall, name='funcCall'),
     url(r'^myPhyloDB/stop/$', queue.stop, name='stop'),
