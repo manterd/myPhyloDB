@@ -778,6 +778,8 @@ def projectTableJSON(request):
             "projectid__pi_email",
             "projectid__pi_phone"
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -827,6 +829,8 @@ def sampleTableJSON(request):
             "annual_season_precpt",
             "annual_season_temp"
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -862,6 +866,8 @@ def referenceTableJSON(request):
             "refid__taxonomyDB",
             "refid__author"
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -921,6 +927,8 @@ def airTableJSON(request):
             "wind_direction",
             "wind_speed",
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -995,6 +1003,8 @@ def associatedTableJSON(request):
             "gestation_stat",
             "maternal_health_stat"
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -1091,6 +1101,8 @@ def microbialTableJSON(request):
             "turbidity",
             "water_content"
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -1221,6 +1233,8 @@ def soilTableJSON(request):
             "soil_ACE_protein",
             "soil_active_C"
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -1333,6 +1347,8 @@ def waterTableJSON(request):
             "water_current_direction",
             "water_current_magnitude"
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -1370,6 +1386,8 @@ def userTableJSON(request):
             "usr_quant5",
             "usr_quant6"
         )
+
+        qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
