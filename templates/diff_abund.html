@@ -491,15 +491,14 @@
                 myDict['RID'] = RID;
                 myDict['FdrVal'] = document.getElementById("FdrVal").value;
                 myDict['funcName'] = "getDiffAbund";
+                myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
                     url: '/myPhyloDB/funcCall/',
-                    type: 'GET',
-                    dataType: 'json',
-                    data: {
-                        all: jsonDict
-                    },
+                    type: 'POST',
+                    data: jsonDict,
+                    contentType: "application/json; charset=UTF-8",
                     success: function(data) {
                         running = false;
                         stopTimer();

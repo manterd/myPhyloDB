@@ -77,7 +77,7 @@ def getDiffAbund(request, stops, RID, PID):
         while True:
             if request.is_ajax():
                 # Get variables from web page
-                allJson = request.GET["all"]
+                allJson = request.body
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()  # Moved these down here so RID is available

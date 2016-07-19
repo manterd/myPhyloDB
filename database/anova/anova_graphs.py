@@ -79,12 +79,11 @@ def getCatUnivData(request, RID, stops, PID):
         while True:
             if request.is_ajax():
                 # Get variables from web page
-                allJson = request.GET["all"]
+                allJson = request.body
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
-
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -186,7 +185,9 @@ def getCatUnivData(request, RID, stops, PID):
                 if button3 == 1:
                     DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
+                    print 'taxaString:', taxaString
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+                    print 'taxaDict:', taxaDict
                     finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 2:
@@ -577,7 +578,7 @@ def getQuantUnivData(request, RID, stops, PID):
         while True:
             if request.is_ajax():
                 # Get variables from web page
-                allJson = request.GET["all"]
+                allJson = request.body
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()  # Moved these down here so RID is available
@@ -1279,7 +1280,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         if selectAll == 0:
             for key in taxaDict:
                 taxaList = taxaDict[key]
-                if isinstance(taxaList, unicode):
+                if isinstance(taxaList, str):
                     if key == 'Kingdom':
                         tempDF = savedDF.loc[savedDF['kingdomid'] == taxaList]
                         tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
@@ -1441,7 +1442,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
         if keggAll == 0:
             for key in keggDict:
                 keggList = keggDict[key]
-                if isinstance(keggList, unicode):
+                if isinstance(keggList, str):
                     if key == 'Level1':
                         koList = ko_entry.objects.using('picrust').filter(ko_lvl1_id_id=keggList).values_list('ko_orthology', flat=True)
                         if koList:
@@ -1680,7 +1681,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         if nzAll == 0:
             for key in myDict:
                 keggList = myDict[key]
-                if isinstance(keggList, unicode):
+                if isinstance(keggList, str):
                     if key == 'Level1':
                         nzList = nz_entry.objects.using('picrust').filter(nz_lvl1_id_id=keggList).values_list('nz_orthology', flat=True)
                         if nzList:

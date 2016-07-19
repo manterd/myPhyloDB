@@ -1356,7 +1356,6 @@ def userTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
-
         qs = UserDefined.objects.none()
         if selSamples:
             qs = UserDefined.objects.all()

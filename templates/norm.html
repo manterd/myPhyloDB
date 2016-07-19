@@ -328,13 +328,12 @@
             myDict['RID'] = RID;
             myDict['funcName'] = "getNorm";
             var jsonDict = JSON.stringify(myDict);
+
             $.ajax({
+                type: 'POST',
                 url: '/myPhyloDB/funcCall/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: jsonDict
-                },
+                data: jsonDict,
+                contentType: 'application/json;charset=UTF-8',
                 success: function(data) {
                     var error = data['error'];
                     if (error != "none") {

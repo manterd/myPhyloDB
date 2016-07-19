@@ -81,7 +81,7 @@ def getWGCNA(request, stops, RID, PID):
     try:
         while True:
             if request.is_ajax():
-                allJson = request.GET["all"]
+                allJson = request.body
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()

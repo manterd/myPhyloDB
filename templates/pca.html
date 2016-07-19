@@ -503,6 +503,7 @@
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['vecScale'] = vecScale;
             myDict['funcName'] = "getPCA";
+            myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
 
             myDict['contribVal'] = document.getElementById("contribVal").value;
             if ($("#contrib").is(':checked')) {
@@ -522,11 +523,9 @@
 
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: jsonDict
-                },
+                type: 'POST',
+                data: jsonDict,
+                contentType: 'application/json;charset=UTF-8',
                 success: function(data) {
                     running = false;
                     stopTimer(refresh);

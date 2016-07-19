@@ -661,15 +661,14 @@
             myDict['metaIDsCat'] = metaIDsCat;
             myDict['RID'] = RID;
             myDict['funcName'] = "getsoil_index";
+            myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: jsonDict
-                },
+                type: 'POST',
+                data: jsonDict,
+                contentType: 'application/json;charset=UTF-8',
                 success: function(data) {
                     running = false;
                     stopTimer(refresh);

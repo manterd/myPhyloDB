@@ -51,4 +51,4 @@ class UploadForm8(forms.Form):
 
 
 class UploadForm9(forms.Form):
-    normFile = forms.FileField(label='Select file (e.g., norm.csv):')
+    normFile = forms.FileField(label='Select file (e.g., normalized_data.csv):')

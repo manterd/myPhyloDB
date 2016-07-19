@@ -98,9 +98,11 @@ def process(pid):
         sleep(1)
 
 
+from django.views.decorators.csrf import csrf_exempt
+@csrf_exempt
 def funcCall(request):
     global activeList, stopList, stopDict, statDict, qList
-    allJson = request.GET["all"]
+    allJson = request.body
     data = simplejson.loads(allJson)
     RID = data['RID']
     funcName = data['funcName']

@@ -75,7 +75,7 @@ def getSPLS(request, stops, RID, PID):
     global base, stage, time1, TimeDiff
     try:
         while True:
-                allJson = request.GET["all"]
+                allJson = request.body
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()
