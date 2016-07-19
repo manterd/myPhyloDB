@@ -32,6 +32,8 @@ this is usually due to db.Microbe or db.PICRUSt.  Run the following to remove th
 offending file from the git history (note: the file will also be deleted locally
 but can be recreated using the steps above)
 
+git stash
+
 git filter-branch --force --index-filter \
 'git rm --cached --ignore-unmatch db.Microbe' \
 --prune-empty --tag-name-filter cat -- --all
