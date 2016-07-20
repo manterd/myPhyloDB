@@ -332,8 +332,7 @@
             $.ajax({
                 type: 'POST',
                 url: '/myPhyloDB/funcCall/',
-                data: jsonDict,
-                contentType: 'application/json;charset=UTF-8',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function(data) {
                     var error = data['error'];
                     if (error != "none") {

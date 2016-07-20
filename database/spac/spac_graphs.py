@@ -77,7 +77,7 @@ def getSpAC(request, stops, RID, PID):
     try:
         while True:
             if request.is_ajax():
-                allJson = request.body
+                allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()

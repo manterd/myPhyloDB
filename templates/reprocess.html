@@ -140,7 +140,8 @@
                     var project = obj['project'];
                     updateStage(project, stage);
                     progressBar(perc, $("#progressBar"));
-                    document.getElementById("mothurStat").value = obj['mothurStat'] + document.getElementById("mothurStat").value;
+                    document.getElementById("mothurStat").value = document.getElementById("mothurStat").value + obj['mothurStat'];
+                    document.getElementById("mothurStat").scrollTop = document.getElementById("mothurStat").scrollHeight;
                 }
             });
         }
@@ -203,7 +204,7 @@
         <br>
         <input id="submit" type="submit" value="Upload!"/>
     </form>
-    <br><br><br>
+    <br><br>
     <h2>Reprocess Project(s):</h2>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
@@ -251,7 +252,6 @@
     <div id="project" style="display: none"></div>
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
-    <textarea id="mothurStat" rows=5 cols=72></textarea>
     <br>
     <form id='form2' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -282,5 +282,9 @@
             </tr>
         </table>
     </form>
+
+    <br>
+    <h2>Mothur output: </h2>
+    <textarea id="mothurStat" rows=5 cols=72></textarea>
     <br><br><br>
 {% endblock my_content %}

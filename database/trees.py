@@ -30,7 +30,7 @@ def getProjectTree(request):
 
     for project in projects:
         myNode = {
-            'title': project.project_name,
+            'title': project.project_name + " (ID: " + project.projectid + ")",
             'tooltip': project.project_desc,
             'id': project.projectid,
             'isFolder': True,
@@ -60,8 +60,8 @@ def getProjectTreeChildren(request):
         for sample in samples:
             reads = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             myNode = {
-                'title': 'Sample: ' + sample.sample_name + '; Reads: ' + str(reads['count__sum']),
-                'tooltip': sample.sampleid,
+                'title': 'Name: ' + sample.sample_name + '; Reads: ' + str(reads['count__sum']),
+                'tooltip': 'ID:' + sample.sampleid,
                 'id': sample.sampleid,
                 'isFolder': False
             }
@@ -341,12 +341,12 @@ def getSampleCatTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'mimark',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -371,12 +371,12 @@ def getSampleCatTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'air',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -401,12 +401,12 @@ def getSampleCatTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'human_associated',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -431,12 +431,12 @@ def getSampleCatTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'microbial',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -461,12 +461,12 @@ def getSampleCatTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'soil',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -491,12 +491,12 @@ def getSampleCatTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'water',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -521,12 +521,12 @@ def getSampleCatTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'user',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -806,12 +806,12 @@ def getSampleQuantTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'mimark',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -837,12 +837,12 @@ def getSampleQuantTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'air',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -868,12 +868,12 @@ def getSampleQuantTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'human_associated',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -899,12 +899,12 @@ def getSampleQuantTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'microbial',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -930,12 +930,12 @@ def getSampleQuantTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'soil',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -961,12 +961,12 @@ def getSampleQuantTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'water',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }
@@ -992,12 +992,12 @@ def getSampleQuantTreeChildren(request):
                     for item in items:
                         reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': 'Sample: ' + item.sample_name + '; Reads: ' + str(reads['count__sum']),
-                            'id': item.sampleid,
+                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'id': 'ID:' + item.sampleid,
                             'field': field,
                             'value': values[j],
                             'table': 'user',
-                            'tooltip': 'Project: ' + item.projectid.project_name,
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
                             'hideCheckbox': True,
                             'isFolder': False
                         }

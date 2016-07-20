@@ -755,14 +755,12 @@
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
             myDict['surfVal'] = document.getElementById("surfVal").value;
             myDict['funcName'] = "getPCoA";
-            myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
-                data: jsonDict,
-                contentType: 'application/json;charset=UTF-8',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function(data) {
                     running = false;
                     stopTimer(refresh);

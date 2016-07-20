@@ -42,7 +42,7 @@ def mothur(dest, source):
     global p
     try:
         global stage, perc, mothurStat
-        stage = "Step 3 of 5: Running mothur...please check your host terminal for progress!"
+        stage = "Step 3 of 5: Running mothur..."
         perc = 0
 
         if not os.path.exists('mothur/reference/align'):
@@ -63,7 +63,7 @@ def mothur(dest, source):
             p = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             for line in iter(p.stdout.readline, ''):
                 print line
-                mothurStat = line
+                mothurStat += line
             mothurStat = 'Previous mothur output:\n'
         except Exception as e:
             print "Mothur failed: " + str(e)
@@ -124,7 +124,7 @@ def termP():
 
 
 def status(request):
-    global last
+    global last, mothurStat
     if request.is_ajax():
         RID = request.GET['all']
         queuePos = database.dataqueue.datstat(RID)
@@ -149,6 +149,7 @@ def status(request):
             dict['perc'] = 0
             dict['project'] = rep_project
             dict['mothurStat'] = ''
+        mothurStat = ""
         json_data = simplejson.dumps(dict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
@@ -566,14 +567,13 @@ def parse_profile(file3, file4, p_uuid, refDict):
 def repStop(request):
 
     # cleanup in repro project!
-
+    print "Stopping!"
     return "Stopped"
 
 
 def reanalyze(request, stopList):
     # form4
     try:
-
         global rep_project
 
         mothurdest = 'mothur/temp/'
@@ -765,8 +765,10 @@ def reanalyze(request, stopList):
 
 
             try:
+                print "Mothur?"
                 mothur(dest, source)
             except Exception as e:
+                print "Aww"
                 backup.save()
                 print("Error with mothur: " + str(e))
                 return HttpResponse(
@@ -808,7 +810,9 @@ def reanalyze(request, stopList):
 
         return None
 
-    except:
+    except Exception as e:
+        print "It broke!"
+        print " e = ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         try:
@@ -816,9 +820,5 @@ def reanalyze(request, stopList):
         except:
             pass
         logging.exception(myDate)
-        return render_to_response(
-            'reprocess.html',
-            {"error": "yes"},
-            content_type="application/json"
-        )
+        return repStop(request)
 

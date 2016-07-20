@@ -10,13 +10,9 @@ Step 1: Delete the old databases
 Step 2: Create new databases
 
     python manage.py makemigrations database
-
     python manage.py migrate auth
-
     python manage.py migrate database
-
     python manage.py migrate registration
-
     python manage.py migrate --database=picrust
 
     python manage.py createsuperuser

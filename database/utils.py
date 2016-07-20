@@ -45,29 +45,36 @@ def handle_uploaded_file(f, path, name):
 
 def remove_list(request):
     items = request.POST.getlist('chkbx')
+    p_uuid = Reference.objects.filter(path__in=items).values_list('projectid', flat=True)
     for item in items:
-        p_uuid = Reference.objects.get(path=item).projectid.projectid
-        Reference.objects.get(path=item).delete()
-        if os.path.exists(item):
-            shutil.rmtree(item)
+        instance = Reference.objects.filter(path__in=items).all()
+        instance.delete()
 
-        if not Reference.objects.filter(projectid_id=p_uuid).exists():
-            Project.objects.get(projectid=p_uuid).delete()
-            path = "/".join(["uploads", str(p_uuid)])
+        if os.path.exists(item):
+            shutil.rmtree(item, ignore_errors=True)
+
+    pList = list(p_uuid)
+    for pid in pList:
+        if not Reference.objects.filter(projectid=pid).exists():
+            instance = Project.objects.get(projectid=pid)
+            instance.delete()
+            path = os.path.join("uploads", str(pid))
             if os.path.exists(path):
-                shutil.rmtree(path)
+                shutil.rmtree(path, ignore_errors=True)
 
 
 def remove_proj(path):
     p_uuid = Reference.objects.get(path=path).projectid.projectid
-    Reference.objects.get(path=path).delete()
+    instance = Project.objects.filter(projectid=p_uuid).all()
+    instance.delete()
     if os.path.exists(path):
-        shutil.rmtree(path)
-    if not Reference.objects.filter(projectid_id=p_uuid).exists():
-        Project.objects.get(projectid=p_uuid).delete()
-        path = "/".join(["uploads", str(p_uuid)])
+        shutil.rmtree(path, ignore_errors=True)
+    if not Reference.objects.filter(projectid=p_uuid).exists():
+        instance = Project.objects.get(projectid=p_uuid)
+        instance.delete()
+        path = os.path.join("uploads", str(p_uuid))
         if os.path.exists(path):
-            shutil.rmtree(path)
+            shutil.rmtree(path, ignore_errors=True)
 
 
 def multidict(ordered_pairs):

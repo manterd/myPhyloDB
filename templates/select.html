@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load my_tags %}
 
 {% block pagetitle %}
     <title xmlns="http://www.w3.org/1999/html">Select</title>
@@ -26,28 +25,6 @@
         var method = "{{ method }}";
 
         $(function () {
-            if ("{{ method }}" == "POST") {
-                if ("{{ normpost }}" == "Success") {
-                    alert("Uploaded samples were found in the database.\nYou may proceed directly to any analysis using your uploaded data.");
-                    document.getElementById("drawtable").disabled = false;
-                    var selKeysStr = "{{ selList | safe }}";
-                    selKeysStr = selKeysStr.replace(/'/g, '"');
-                    selKeys = JSON.parse(selKeysStr);
-                    setNorm(true);
-                } else if ("{{ normpost }}" == 'error') {
-                    alert("Sample(s) were not found in the database.\nPlease check your file.");
-                    document.getElementById("drawtable").disabled = true;
-                    selKeys = "";
-                    setNorm(false);
-                    $("#link0").hide();
-                    $("#link1").hide();
-                    $("#link2").hide();
-                    $("#link3").hide();
-                    $("#link4").hide();
-                    $("#link5").hide();
-                    $("#link6").hide();
-                }
-            }
 
             table1 = $('#projectTable').DataTable({
                 "dom": 'B<"toolbar">lfrtip',
@@ -247,11 +224,6 @@
                 "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
             });
 
-            $("#drawtable").click(function () {
-                method = "GET";
-                updateTables();
-            });
-
             $("div.toolbar").html('<br><br>');
             $("#tabs").tabs({
                 "activate": function(event, ui) {
@@ -259,6 +231,42 @@
                             .columns.adjust()
                             .buttons.resize();
                 }
+            });
+
+            if ("{{ method }}" == "POST") {
+                if ("{{ normpost }}" == "Success") {
+                    document.getElementById("drawtable").disabled = false;
+                    var selKeysStr = "{{ selList | safe }}";
+                    selKeysStr = selKeysStr.replace(/'/g, '"');
+                    selKeys = JSON.parse(selKeysStr);
+                    setNorm(true);
+                    alert("Uploaded samples were found in the database.\nYou may proceed directly to any analysis using your uploaded data.");
+                    $("#upload").css("background-color", "green").val("Success!");
+                } else if ("{{ normpost }}" == 'error') {
+                    document.getElementById("drawtable").disabled = true;
+                    selKeys = "";
+                    setNorm(false);
+                    $("#link0").hide();
+                    $("#link1").hide();
+                    $("#link2").hide();
+                    $("#link3").hide();
+                    $("#link4").hide();
+                    $("#link5").hide();
+                    $("#link6").hide();
+                    alert("Sample(s) were not found in the database.\nPlease check your file.");
+                    $("#upload").css("background-color", "red").val("Failed!");
+                }
+            }
+
+            $("#drawtable").click(function () {
+                method = "GET";
+                updateTables();
+            });
+
+            $("#file").click(function () {
+                method = "GET";
+                $("#upload").css("background-color", "lightgray").val("Upload!");
+                updateTables();
             });
 
             $("#tree").dynatree({
@@ -287,6 +295,9 @@
                             }
                         });
                     }
+                },
+                onclick: function () {
+                    $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
                 }
             });
 
@@ -297,11 +308,21 @@
                 updateTables();
             });
 
+            $("#upload").click(function () {
+                $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
+                $("#upload").css("background-color", "yellow").val("Uploading!");
+            });
+
             $("#submit").click(function () {
+                $("#upload").css("background-color", "lightgray").val("Upload!");
+
                 selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
                     if (node.getLevel() == 3) {
                         return node.data.id;
                     }
+
+                $("#submit").css("background-color", "yellow").val("Running!");
+
                 });
 
                 var jsonDict = JSON.stringify(selKeys);
@@ -313,6 +334,7 @@
                     success: function (data) {
                         var result = JSON.stringify(data);
                         alert(result);
+                        $("#submit").css("background-color", "green").val("Success!");
                         $("#link0").hide();
                         $("#link1").hide();
                         $("#link2").hide();
@@ -321,7 +343,11 @@
                         $("#link5").show();
                         $("#link6").hide();
                         document.getElementById("drawtable").disabled = false;
+                    },
+                    failure: function () {
+                        $("#submit").css("background-color", "red").val("Failed!");
                     }
+
                 });
             });
 
@@ -433,11 +459,11 @@
         <table width="650px" border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr>
                 <td width="40%">{{ form9.normFile.label_tag }}</td>
-                <td width="60%">{{ form9.normFile }}</td>
+                <td id="file" width="60%">{{ form9.normFile }}</td>
             </tr>
         </table>
         <br>
-        <input id="submit" type="submit" value="Upload!"/>
+        <input id="upload" type="submit" value="Upload!"/>
     </form>
     </div>
     <br><br>

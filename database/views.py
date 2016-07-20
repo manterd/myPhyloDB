@@ -42,7 +42,6 @@ def home(request):
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def upload(request):
     projects = Reference.objects.none()
-
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
     elif request.user.is_authenticated():
@@ -65,7 +64,7 @@ def upStop(request):
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
     elif request.user.is_authenticated():
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-    thing =render_to_response(
+    return render_to_response(
             'upload.html',
             {'projects': projects,
              'form1': UploadForm1,
@@ -73,8 +72,7 @@ def upStop(request):
              'error': "Upload stopped"
              },
             context_instance=RequestContext(request)
-        )
-    return thing
+    )
 
 
 def uploadFunc(request, stopList):
@@ -83,7 +81,7 @@ def uploadFunc(request, stopList):
         start = datetime.datetime.now()
         form1 = UploadForm1(request.POST, request.FILES)
         source = str(request.POST['source'])
-        userID = str(request.User__id)
+        userID = str(request.user.id)
         processors = int(request.POST['processors'])
         RID = request.POST['RID']
         PID = 0  # change if adding additional data threads
@@ -1788,7 +1786,7 @@ def updateFunc(request, stopList):
             reference = Reference.objects.get(refid=refid)
             raw = reference.raw
             source = reference.source
-            userID = str(request.User__id)
+            userID = str(request.user.id)
 
             # add stops to parse functions?
             if os.path.exists(batPath):

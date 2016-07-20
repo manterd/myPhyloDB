@@ -47,12 +47,12 @@ def statussoil_index(request):
             if TimeDiff[RID] == 0:
                 stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.stat(RID))+' others in front of you.'
             else:
-                stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
+                stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         except:
             if TimeDiff[RID] == 0:
                 stage[RID] = 'In queue'
             else:
-                stage[RID] = 'Analysis has been running for %.1f seconds' % TimeDiff[RID]
+                stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         myDict['stage'] = stage[RID]
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
@@ -76,7 +76,7 @@ def getsoil_index(request, stops, RID, PID):
     try:
         while True:
             if request.is_ajax():
-                allJson = request.body
+                allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()

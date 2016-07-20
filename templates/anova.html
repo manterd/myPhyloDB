@@ -1249,14 +1249,12 @@
                 myDict['RID'] = RID;
                 myDict['button3'] = button3;
                 myDict['funcName'] = "getCatUnivData";
-                myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
                     type: 'POST',
                     url: '/myPhyloDB/funcCall/',
-                    data: jsonDict,
-                    contentType: 'application/json;charset=UTF-8',
+                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                     success: function (data) {
                         stopTimer(refresh);
                         running = false;
@@ -1436,14 +1434,12 @@
                 myDict['nzAll'] = nzAll;
                 myDict['button3'] = button3;
                 myDict['funcName'] = "getQuantUnivData";
-                myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
                     url: '/myPhyloDB/funcCall/',
                     type: 'POST',
-                    data: jsonDict,
-                    contentType: 'application/json;charset=UTF-8',
+                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                     success: function (data) {
                         running = false;
                         stopTimer(RID);

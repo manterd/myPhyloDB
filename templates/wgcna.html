@@ -573,14 +573,12 @@
             myDict['graphLayout'] = graphLayout;
             myDict['RID'] = RID;
             myDict['funcName'] = "getWGCNA";
-            myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
-                data: jsonDict,
-                contentType: 'application/json;charset=UTF-8',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function(data) {
                     running = false;
                     stopTimer(refresh);

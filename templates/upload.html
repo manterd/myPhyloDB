@@ -121,7 +121,8 @@
                     var perc = obj['perc'];
                     updateStage(stage);
                     progressBar(perc, $("#progressBar"));
-                    document.getElementById("mothurStat").value = obj['mothurStat'] + document.getElementById("mothurStat").value;
+                    document.getElementById("mothurStat").value = document.getElementById("mothurStat").value + obj['mothurStat'];
+                    document.getElementById("mothurStat").scrollTop = document.getElementById("mothurStat").scrollHeight;
                 }
             });
         }
@@ -288,10 +289,10 @@
         <table>
             <tr>
                 <td>
-                    <input id='Upload' name='Upload' type="submit" value="Upload Files"/>
+                    <input id='Upload' name='Upload' type="submit" value="Upload Files!"/>
                 </td>
                 <td>
-                    <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop"/>
+                    <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop!"/>
                 </td>
             </tr>
         </table>
@@ -300,6 +301,8 @@
     <br>
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
+    <br>
+    <h2>Mothur output: </h2>
     <textarea id="mothurStat" rows=5 cols=72></textarea>
 
     <h2>List of previous uploads:</h2>

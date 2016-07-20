@@ -47,7 +47,7 @@ def updateDiffAbund(request):
             if TimeDiff[RID] == 0:
                 stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.stat(RID))+' others in front of you.'
             else:
-                stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
+                stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
         except:
             if TimeDiff[RID] == 0:
                 stage[RID] = 'In queue'
@@ -77,7 +77,7 @@ def getDiffAbund(request, stops, RID, PID):
         while True:
             if request.is_ajax():
                 # Get variables from web page
-                allJson = request.body
+                allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()  # Moved these down here so RID is available

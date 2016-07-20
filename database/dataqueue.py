@@ -99,24 +99,6 @@ def datfuncCall(request):
         except KeyError:
             if RID in stopList:
                 statDict.pop(RID, 0)
-            try:
-                if stopDict[RID]:
-                    response = HttpResponseNotFound()
-                    if funcName == "uploadFunc":
-                        response = upload(request)
-                        response['error'] = "Upload stopped"
-                    if funcName == "reanalyze":
-                        response = reprocess(request)
-                        response['error'] = "Reprocessing stopped"
-                    if funcName == "updateFunc":
-                        response = update(request)
-                        response['error'] = "Update stopped"
-                    if funcName == "pybake":
-                        response = pybake(request)
-                        response['error'] = "Pybake stopped"
-                    return response
-            except KeyError:
-                pass
         except Exception as e:
             print "Unexpected exception: "+str(e)
         sleep(1)

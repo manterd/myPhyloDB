@@ -8,7 +8,6 @@ import logging
 import math
 import numpy as np
 import pandas as pd
-import pickle
 from pyper import *
 from scipy import stats
 import shutil
@@ -79,7 +78,7 @@ def getCatUnivData(request, RID, stops, PID):
         while True:
             if request.is_ajax():
                 # Get variables from web page
-                allJson = request.body
+                allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()  # Moved these down here so RID is available
@@ -578,14 +577,16 @@ def getQuantUnivData(request, RID, stops, PID):
         while True:
             if request.is_ajax():
                 # Get variables from web page
-                allJson = request.body
+                allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()  # Moved these down here so RID is available
                 base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+                path = str(myDir) + 'usr_norm_data.csv'
 
-                path = pickle.loads(request.session['savedDF'])
-                savedDF = pd.read_pickle(path)
+                with open(path, 'rb') as f:
+                    savedDF = pd.read_csv(f, index_col=0, sep='\t')
 
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
@@ -1553,11 +1554,11 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
         if os.name == 'nt':
             numcore = 1
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, PID)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, PID, stops)) for x in xrange(numcore)]
         else:
             numcore = min(local_cfg.usr_numcore, int(maxCPU))
             listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, PID)) for x in xrange(numcore)]
+            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, PID, stops)) for x in xrange(numcore)]
 
         for p in processes:
             p.start()

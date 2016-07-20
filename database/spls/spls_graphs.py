@@ -75,7 +75,7 @@ def getSPLS(request, stops, RID, PID):
     global base, stage, time1, TimeDiff
     try:
         while True:
-                allJson = request.body
+                allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
 
                 time1[RID] = time.time()
@@ -362,7 +362,7 @@ def getSPLS(request, stops, RID, PID):
                     coeffsDF = coeffsDF.loc[(coeffsDF != 0).any(axis=1)]
                     coeffsDF.sort_index(inplace=True)
                     taxIDList = coeffsDF.index.values.tolist()
-                    print 'button3:', button3
+
                     namesDF = pd.DataFrame()
                     if button3 == 1:
                         if selectAll == 1:
