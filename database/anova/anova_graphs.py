@@ -184,9 +184,7 @@ def getCatUnivData(request, RID, stops, PID):
                 if button3 == 1:
                     DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
-                    print 'taxaString:', taxaString
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    print 'taxaDict:', taxaDict
                     finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 2:
