@@ -12,7 +12,7 @@ import shutil
 import threading
 import time
 
-from models import Project, Reference, Profile
+from models import Project, Sample, Reference, Profile
 from config import local_cfg
 
 

@@ -749,15 +749,17 @@ def projectTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
-        qs = Sample.objects.none()
+
         if selSamples:
-            qs = Sample.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = Sample.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = Sample.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = Sample.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = Sample.objects.none()
+        else:
+            qs = Sample.objects.none()
 
         results = {}
         qs1 = qs.values_list(
@@ -786,15 +788,16 @@ def sampleTableJSON(request):
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
 
-        qs = Sample.objects.none()
         if selSamples:
-            qs = Sample.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = Sample.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = Sample.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = Sample.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = Sample.objects.none()
+        else:
+            qs = Sample.objects.none()
 
         results = {}
         qs1 = qs.values_list(
@@ -837,15 +840,16 @@ def referenceTableJSON(request):
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
 
-        qs = Sample.objects.none()
         if selSamples:
-            qs = Sample.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = Sample.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = Sample.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = Sample.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = Sample.objects.none()
+        else:
+            qs = Sample.objects.none()
 
         results = {}
         qs1 = qs.values_list(
@@ -874,15 +878,16 @@ def airTableJSON(request):
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
 
-        qs = Air.objects.none()
         if selSamples:
-            qs = Air.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = Air.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = Air.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = Air.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = Air.objects.none()
+        else:
+            qs = Air.objects.none()
 
         results = {}
         qs1 = qs.values_list(
@@ -935,15 +940,16 @@ def associatedTableJSON(request):
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
 
-        qs = Human_Associated.objects.none()
         if selSamples:
-            qs = Human_Associated.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = Human_Associated.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = Human_Associated.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = Human_Associated.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = Human_Associated.objects.none()
+        else:
+            qs = Human_Associated.objects.none()
 
         results = {}
         qs1 = qs.values_list(
@@ -1011,15 +1017,16 @@ def microbialTableJSON(request):
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
 
-        qs = Microbial.objects.none()
         if selSamples:
-            qs = Microbial.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = Microbial.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = Microbial.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = Microbial.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = Microbial.objects.none()
+        else:
+            qs = Microbial.objects.none()
 
         results = {}
         qs1 = qs.values_list(
@@ -1109,15 +1116,16 @@ def soilTableJSON(request):
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
 
-        qs = Soil.objects.none()
         if selSamples:
-            qs = Soil.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = Soil.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = Soil.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = Soil.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = Soil.objects.none()
+        else:
+            qs = Soil.objects.none()
 
         results = {}
         qs1 = qs.values_list(
@@ -1241,15 +1249,16 @@ def waterTableJSON(request):
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
 
-        qs = Water.objects.none()
         if selSamples:
-            qs = Water.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = Water.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = Water.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = Water.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = Water.objects.none()
+        else:
+            qs = Water.objects.none()
 
         results = {}
         qs1 = qs.values_list(
@@ -1354,15 +1363,17 @@ def userTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
         selSamples = simplejson.loads(jsonSamples)
-        qs = UserDefined.objects.none()
+
         if selSamples:
-            qs = UserDefined.objects.all()
             if request.user.is_superuser:
-                qs.filter(sampleid__in=selSamples)
+                qs = UserDefined.objects.filter(sampleid__in=selSamples)
             elif request.user.is_authenticated():
-                path_list = qs.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') )
-                qs.filter(sampleid__in=selSamples)
+                path_list = UserDefined.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
+                qs = UserDefined.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+            else:
+                qs = UserDefined.objects.none()
+        else:
+            qs = UserDefined.objects.none()
 
         results = {}
         qs1 = qs.values_list(

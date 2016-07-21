@@ -130,7 +130,6 @@ def status(request):
         queuePos = database.dataqueue.datstat(RID)
         dict = {}
         if queuePos == 0:
-
             # check for duplicate output
             if last != mothurStat:
                 dict['mothurStat'] = mothurStat
