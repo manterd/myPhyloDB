@@ -144,7 +144,5 @@ urlpatterns = [
     url(r'^myPhyloDB/soilTableJSON/$', views.soilTableJSON, name='soilTableJSON'),
     url(r'^myPhyloDB/waterTableJSON/$', views.waterTableJSON, name='waterTableJSON'),
     url(r'^myPhyloDB/userTableJSON/$', views.userTableJSON, name='userTableJSON'),
-
-    url(r'^myPhyloDB/taskNorm/$', norm_graphs.taskNorm, name='taskNorm'),
 ]
 

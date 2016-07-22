@@ -15,7 +15,7 @@ from wgcna import wgcna_graphs
 from spac import spac_graphs
 from soil_index import soil_index_graphs
 from database.utils import threads
-#from database import views
+
 
 q = Queue(maxsize=0)
 activeList = [0] * threads()

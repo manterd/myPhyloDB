@@ -65,26 +65,8 @@ def removeRIDNorm(RID):
     except:
         return False
 
-from django_q.tasks import Async
-def taskNorm(request):
-    allJson = request.body.split('&')[0]
-    all = simplejson.loads(allJson)
-    RID = all['RID']
-    stopList = {'PID': 'kdjfljds'}
-    PID = 'ioewlkdlkj'
-
-    # instantiate an async task
-    a = Async('tgetNorm', request, RID, stopList, PID,group='norm')
-    print 'ok'
-    a.cached = True
-    #a.args = (request, RID, stopList, PID,)
-    a.run()
-    #a.result(wait=-1)
-    return HttpResponse(a.result(wait=-1), content_type='application/json')
-
 
 def getNorm(request, RID, stopList, PID):
-    print 'ok'
     global base, stage, time1, TimeDiff
     try:
         if request.is_ajax():
