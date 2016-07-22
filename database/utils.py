@@ -44,37 +44,46 @@ def handle_uploaded_file(f, path, name):
 
 
 def remove_list(request):
-    items = request.POST.getlist('chkbx')
-    p_uuid = Reference.objects.filter(path__in=items).values_list('projectid', flat=True)
-    for item in items:
-        instance = Reference.objects.filter(path__in=items).all()
-        instance.delete()
+    paths = request.POST.getlist('chkbx')
+    p_uuid = list(Reference.objects.filter(path__in=paths).values_list('projectid', flat=True))
 
-        if os.path.exists(item):
-            shutil.rmtree(item, ignore_errors=True)
+    # Remove record from reference table
+    for path in paths:
+        Reference.objects.filter(path=path).delete()
+        if os.path.exists(path):
+            shutil.rmtree(path, ignore_errors=True)
 
-    pList = list(p_uuid)
-    for pid in pList:
-        if not Reference.objects.filter(projectid=pid).exists():
-            instance = Project.objects.get(projectid=pid)
-            instance.delete()
-            path = os.path.join("uploads", str(pid))
-            if os.path.exists(path):
-                shutil.rmtree(path, ignore_errors=True)
+    # Remove record from project table and path (if necessary)
+    for pid in p_uuid:
+        qs = Project.objects.all().filter(projectid=pid)
+        for item in qs:
+            refLength = len(item.reference_set.values_list('refid', flat=True))
+            if refLength == 0:
+                Project.objects.filter(projectid=pid).delete()
+                path = os.path.join("uploads", str(pid))
+                if os.path.exists(path):
+                    shutil.rmtree(path, ignore_errors=True)
+            else:
+                pass
 
 
 def remove_proj(path):
-    p_uuid = Reference.objects.get(path=path).projectid.projectid
-    instance = Project.objects.filter(projectid=p_uuid).all()
-    instance.delete()
-    if os.path.exists(path):
-        shutil.rmtree(path, ignore_errors=True)
-    if not Reference.objects.filter(projectid=p_uuid).exists():
-        instance = Project.objects.get(projectid=p_uuid)
-        instance.delete()
-        path = os.path.join("uploads", str(p_uuid))
-        if os.path.exists(path):
-            shutil.rmtree(path, ignore_errors=True)
+    pid = Reference.objects.get(path=path).projectid.projectid
+
+    # Remove record from reference table
+    Reference.objects.filter(path=path).delete()
+
+    # Remove record from project table and path (if necessary)
+    qs = Project.objects.all().filter(projectid=pid)
+    for item in qs:
+        refLength = len(item.reference_set.values_list('refid', flat=True))
+        if refLength == 0:
+            Project.objects.filter(projectid=pid).delete()
+            path = os.path.join("uploads", str(pid))
+            if os.path.exists(path):
+                shutil.rmtree(path, ignore_errors=True)
+        else:
+            pass
 
 
 def multidict(ordered_pairs):

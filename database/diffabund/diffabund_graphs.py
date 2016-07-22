@@ -157,7 +157,7 @@ def getDiffAbund(request, stops, RID, PID):
                     myDict = {}
                     myDict['error'] = "Selected meta data only has one level.\nPlease select a different variable(s)."
                     res = simplejson.dumps(myDict)
-                    return None
+                    return HttpResponse(res, content_type='application/json')
 
                 catSampleIDs = []
                 if metaIDsCat:

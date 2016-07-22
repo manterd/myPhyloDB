@@ -313,7 +313,7 @@
                 {% if projects %}
                     {% for project in projects %}
                         <input name="chkbx" type="checkbox" value="{{ project.path }}"/>
-                        Project: {{ project.projectid.project_name }}<br>
+                        Project: {{ project.projectid.project_name }} (ID: {{ project.projectid.projectid }})<br>
                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Path: {{ project.path }})<br>
                         <br>
                     {% endfor %}

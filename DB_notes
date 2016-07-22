@@ -13,13 +13,16 @@ Step 2: Create new databases
     python manage.py migrate auth
     python manage.py migrate database
     python manage.py migrate registration
+    python manage.py migrate django_q
     python manage.py migrate --database=picrust
+    python manage.py migrate --database=tasks
 
     python manage.py createsuperuser
         username: admin
         email: admin@example.com
         password: admin
 
+    #python manage.py createcachetable
     python manage.py migrate --run-syncdb
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

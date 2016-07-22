@@ -65,8 +65,26 @@ def removeRIDNorm(RID):
     except:
         return False
 
+from django_q.tasks import Async
+def taskNorm(request):
+    allJson = request.body.split('&')[0]
+    all = simplejson.loads(allJson)
+    RID = all['RID']
+    stopList = {'PID': 'kdjfljds'}
+    PID = 'ioewlkdlkj'
+
+    # instantiate an async task
+    a = Async('tgetNorm', request, RID, stopList, PID,group='norm')
+    print 'ok'
+    a.cached = True
+    #a.args = (request, RID, stopList, PID,)
+    a.run()
+    #a.result(wait=-1)
+    return HttpResponse(a.result(wait=-1), content_type='application/json')
+
 
 def getNorm(request, RID, stopList, PID):
+    print 'ok'
     global base, stage, time1, TimeDiff
     try:
         if request.is_ajax():
@@ -118,7 +136,7 @@ def getNorm(request, RID, stopList, PID):
                 myDict = {}
                 myDict['error'] = "Error with Normalization!\nYour minimum sample has caused all samples to be removed!"
                 res = simplejson.dumps(myDict)
-                return None
+                return res
 
             tabular_on = int(all['Tabular'])
             biom_on = int(all['Biome'])
@@ -161,7 +179,7 @@ def getNorm(request, RID, stopList, PID):
                 myDict = {}
                 myDict['error'] = "Error with Normalization!\nYour sub-sample size has caused all samples to be removed!"
                 res = simplejson.dumps(myDict)
-                return None
+                return res
 
             metaDF = UnivMetaDF(newList, RID, stopList, PID)
 
@@ -192,7 +210,7 @@ def getNorm(request, RID, stopList, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
                 res = ''
-                return HttpResponse(res, content_type='application/json')
+                return res
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             base[RID] = 'Step 2 of 4: Normalizing data...'
@@ -290,7 +308,7 @@ def getNorm(request, RID, stopList, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
                 res = ''
-                return HttpResponse(res, content_type='application/json')
+                return res
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             base[RID] = 'Step 3 of 4: Formatting biome data...'
@@ -342,7 +360,7 @@ def getNorm(request, RID, stopList, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
                 res = ''
-                return HttpResponse(res, content_type='application/json')
+                return res
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             base[RID] = 'Step 4 of 4: Formatting result table...'
@@ -363,13 +381,13 @@ def getNorm(request, RID, stopList, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
                 res = ''
-                return HttpResponse(res, content_type='application/json')
+                return res
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             finalDict['error'] = 'none'
             res = simplejson.dumps(finalDict)
             removeRIDNorm(RID)
-            return HttpResponse(res, content_type='application/json')
+            return res
 
     except:
         if not stopList[PID] == RID:
@@ -380,7 +398,7 @@ def getNorm(request, RID, stopList, PID):
             myDict['error'] = "Error with Normalization!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
             removeRIDNorm(RID)
-            return HttpResponse(res, content_type='application/json')
+            return res
 
 
 def UnivMetaDF(sampleList, RID, stopList, PID):
@@ -395,7 +413,8 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
     if stopList[PID] == RID:
-        return None
+        res = ''
+        return res
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     your_fields = Air._meta.local_fields
@@ -409,7 +428,8 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
     if stopList[PID] == RID:
-        return None
+        res = ''
+        return res
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     your_fields = Human_Associated._meta.local_fields
@@ -423,7 +443,8 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
     if stopList[PID] == RID:
-        return None
+        res = ''
+        return res
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     your_fields = Microbial._meta.local_fields
@@ -437,7 +458,8 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
     if stopList[PID] == RID:
-        return None
+        res = ''
+        return res
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     your_fields = Soil._meta.local_fields
@@ -451,7 +473,8 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
     if stopList[PID] == RID:
-        return None
+        res = ''
+        return res
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     your_fields = Water._meta.local_fields
@@ -465,7 +488,8 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
     if stopList[PID] == RID:
-        return None
+        res = ''
+        return res
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     your_fields = UserDefined._meta.local_fields
@@ -549,7 +573,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
-                return None
+                res = ''
+                return res
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             for p in processes:
@@ -649,12 +674,14 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stopList[PID] == RID:
-                    return None
+                    res = ''
+                    return res
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stopList[PID] == RID:
-            return None
+            res = ''
+            return res
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'taxa_id', 'rel_abund', 'abund', 'rich', 'diversity'])
@@ -696,12 +723,14 @@ def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID, stopLi
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
-                return None
+                res = ''
+                return res
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stopList[PID] == RID:
-            return None
+            res = ''
+            return res
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         d[i] = temp
@@ -714,7 +743,7 @@ def getTab(request):
         fileName = str(myDir) + 'usr_norm_data.csv'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)
-        return HttpResponse(res, content_type='application/json')
+        return res
 
 
 def getBiom(request):
@@ -724,5 +753,5 @@ def getBiom(request):
         fileName = str(myDir) + 'usr_norm_data.biom'
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)
-        return HttpResponse(res, content_type='application/json')
+        return res
 
