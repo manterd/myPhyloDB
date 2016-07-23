@@ -220,7 +220,6 @@ def getNorm(request, RID, stopList, PID):
             normDF['rich'] = normDF['rich'].round(0).astype(int)
             normDF['diversity'] = normDF['diversity'].astype(float)
 
-
             if remove == 1:
                 grouped = normDF.groupby('speciesid')
                 goodIDs = []
@@ -562,14 +561,12 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
 
             curReads[RID] = 0
             totReads[RID] = reads*iters*len(mySet)
-            print "Totreads: ", totReads
 
             if os.name == 'nt':
                 numcore = 1
                 processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
             else:
                 numcore = min([maxCPU, Proc])
-                print "Running norm with (actually) "+str(numcore)+" threads"
                 processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
 
             for p in processes:

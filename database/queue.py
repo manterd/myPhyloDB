@@ -114,8 +114,8 @@ def funcCall(request):
             recent.pop(RID, 0)
             statDict.pop(RID, 0)
             stopDict.pop(RID, 0)
-            if results is None:  # if stopped as active process
-                return HttpResponseNotFound()  # return rnf (better than None)
+            if results is None:
+                return HttpResponseNotFound()
             return results
         except KeyError:
             if RID in stopList:
