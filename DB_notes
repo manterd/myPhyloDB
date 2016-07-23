@@ -40,3 +40,5 @@ git filter-branch --force --index-filter \
 git filter-branch --force --index-filter \
 'git rm --cached --ignore-unmatch db.PICRUSt' \
 --prune-empty --tag-name-filter cat -- --all
+
+git stash apply
