@@ -328,7 +328,8 @@
                     $("#container-2").show();
                     $("#highchartButtons").hide();
 
-                    $("#my_image").removeAttr("src").attr("src", "myPhyloDB/media/temp/spls/Rplots/" + RID + ".spls.pdf");
+                    {% static "" as baseUrl %}
+                    $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/spls/Rplots/" + RID + ".spls.pdf");
                 }
             } else {
                 $("#container-0").show();
@@ -740,7 +741,7 @@
             <td colspan="20">
                 <div id="container-0" style="height: 425px; width: 950px;">No Data has been selected!</div>
                 <div id="container-1" style="height: 425px; width: 950px; overflow-x: auto; display:none"></div>
-                <div id="container-2" style="height: 425px; width: 950px; display:none"><iframe id="my_image" src="#" height="100%" width="100%"></iframe></div>
+                <div id="container-2" style="height: 425px; width: 935px; display:none"><iframe id="my_image" src="#" height="100%" width="100%"></iframe></div>
             </td>
         </tr>
     </table>

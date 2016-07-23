@@ -33,6 +33,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+done = {}
 
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
@@ -43,41 +44,48 @@ def statusWGCNA(request):
     if request.is_ajax():
         RID = request.GET["all"]
         time2[RID] = time.time()
+
         try:
             TimeDiff[RID] = time2[RID] - time1[RID]
         except:
             TimeDiff[RID] = 0
-        myDict = {}
-        try:
-            if TimeDiff[RID] == 0:
-                stage[RID] = 'Analysis has been placed in queue, there are '+str(database.queue.stat(RID))+' others in front of you.'
-            else:
-                stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-        except:
-            if TimeDiff[RID] == 0:
-                stage[RID] = 'In queue'
-            else:
-                stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-        myDict['stage'] = stage[RID]
+
+        if done[RID]:
+            stage[RID] = 'Analysis is complete, results are loading'
+        else:
+            try:
+                if TimeDiff[RID] == 0:
+                    stage[RID] = 'Analysis has been placed in queue, there are ' + str(database.queue.stat(RID)) + ' others in front of you.'
+                else:
+                    stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            except:
+                if TimeDiff[RID] == 0:
+                    stage[RID] = 'In queue'
+                else:
+                    stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+
+        myDict = {'stage': stage[RID]}
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
 def removeRIDWGCNA(RID):
-    global base, stage, time1, time2, TimeDiff
+    global base, stage, time1, time2, TimeDiff, done
     try:
         base.pop(RID, None)
         stage.pop(RID, None)
         time1.pop(RID, None)
         time2.pop(RID, None)
         TimeDiff.pop(RID, None)
+        done.pop(RID, None)
         return True
     except:
         return False
 
 
 def getWGCNA(request, stops, RID, PID):
-    global base, stage, time1, TimeDiff
+    global base, stage, time1, TimeDiff, done
+    done[RID] = False
     try:
         while True:
             if request.is_ajax():
@@ -1270,6 +1278,7 @@ def getWGCNA(request, stops, RID, PID):
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 removeRIDWGCNA(RID)
+                done[RID] = True
                 return HttpResponse(res, content_type='application/json')
 
     except:

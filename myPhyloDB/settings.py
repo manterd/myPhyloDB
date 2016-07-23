@@ -28,24 +28,17 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 # ORM
-Q_CLUSTER = {
-    'name': 'DjangORM',
-    'workers': 4,   ### defaults to number of CPUs
-    'timeout': 90,  ### number of seconds a worker is allowed to spend on a task before it is terminated.
-    'retry': 120,   ### number of seconds a broker will wait for a cluster to finish a task (must be greater than task timeout)
-    'queue_limit': 500, ### how many tasks are kept in memory by a single cluster
-    'cpu_affinity': 3,  ### number of processors each worker can use (defaults to number of cpus)
-    'bulk': 10,
-    'orm': 'tasks',
-}
-
-
-#CACHES = {
-#    'default': {
-#        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-#        'LOCATION': 'my_cache_table',
-#    }
+#Q_CLUSTER = {
+#    'name': 'DjangORM',
+#    'workers': 4,   ### defaults to number of CPUs
+#    'timeout': 90,  ### number of seconds a worker is allowed to spend on a task before it is terminated.
+#    'retry': 120,   ### number of seconds a broker will wait for a cluster to finish a task (must be greater than task timeout)
+#    'queue_limit': 500, ### how many tasks are kept in memory by a single cluster
+#    'cpu_affinity': 3,  ### number of processors each worker can use (defaults to number of cpus)
+#    'bulk': 10,
+#    'orm': 'tasks',
 #}
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -57,7 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'registration',
-    'django_q',
+    #'django_q',
 ]
 
 MIDDLEWARE_CLASSES = [
