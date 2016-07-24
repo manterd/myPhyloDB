@@ -3,16 +3,13 @@ from django.http import HttpResponse
 from django.db.models import Sum
 from django_pandas.io import read_frame
 import logging
-import multiprocessing as mp
 from numpy import *
 import numpy as np
-#from numpy.random import mtrand
 from numpy.random.mtrand import RandomState
 import pandas as pd
 import pickle
 from pyper import *
 import simplejson
-import threading
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from database.models import Species, Profile
@@ -25,8 +22,8 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
-curReads = {}
-totReads = {}
+curSamples = {}
+totSamples = {}
 done = {}
 
 LOG_FILENAME = 'error_log.txt'
@@ -34,7 +31,7 @@ pd.set_option('display.max_colwidth', -1)
 
 
 def statusNorm(request):
-    global base, stage, time1, time2, TimeDiff
+    global base, stage, time1, time2, TimeDiff, curSamples, totSamples, done
     if request.is_ajax():
         RID = request.GET["all"]
         time2[RID] = time.time()
@@ -51,10 +48,10 @@ def statusNorm(request):
                 if TimeDiff[RID] == 0:
                     stage[RID] = 'Normalization has been placed in queue, there are '+str(database.queue.q.qsize())+' others in front of you.'
                 else:
-                    if curReads == 0:
+                    if curSamples[RID] == 0:
                         stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
                     else:
-                        stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds\nSub-sampling is currently %.1f%% complete' % (TimeDiff[RID], float(curReads[RID])/float(totReads[RID])*100)
+                        stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds\nSub-sampling has processed %d samples out of %d' % (TimeDiff[RID], curSamples[RID], totSamples[RID])
             except:
                 if TimeDiff[RID] == 0:
                     stage[RID] = 'In queue'
@@ -74,8 +71,8 @@ def removeRIDNorm(RID):
         time1.pop(RID, None)
         time2.pop(RID, None)
         TimeDiff.pop(RID, None)
-        curReads.pop(RID, None)
-        totReads.pop(RID, None)
+        curSamples.pop(RID, None)
+        totSamples.pop(RID, None)
         done.pop(RID, None)
         return True
     except:
@@ -83,8 +80,8 @@ def removeRIDNorm(RID):
 
 
 def getNorm(request, RID, stopList, PID):
-    global base, stage, time1, TimeDiff, done
     done[RID] = False
+    global base, stage, time1, TimeDiff, curSamples, totSamples, done
     try:
         if request.is_ajax():
             # Get variables from web page
@@ -95,7 +92,6 @@ def getNorm(request, RID, stopList, PID):
             base[RID] = 'Step 1 of 4: Querying database...'
 
             NormMeth = int(all["NormMeth"])
-            Proc = int(all["Proc"])
 
             remove = int(all["Remove"])
             cutoff = int(all["Cutoff"])
@@ -214,7 +210,7 @@ def getNorm(request, RID, stopList, PID):
 
             base[RID] = 'Step 2 of 4: Normalizing data...'
 
-            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, Proc, RID, stopList, PID)
+            normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
 
             normDF['rel_abund'] = normDF['rel_abund'].astype(float)
             normDF['abund'] = normDF['abund'].round(0).astype(int)
@@ -535,8 +531,8 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
     return metaDF
 
 
-def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc, RID, stopList, PID):
-    global curReads
+def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, stopList, PID):
+    global curSamples
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
@@ -545,43 +541,48 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
     if meth == 1 or meth == 4:
         countDF = df2.reset_index(drop=True)
 
-    elif meth == 2 or meth == 3:
+    elif meth == 2:
         if reads >= 0:
             countDF = df2[taxaID].reset_index(drop=True)
 
-            if Proc < 1:
-                Proc = 1
+            curSamples[RID] = 0
+            totSamples[RID] = len(mySet)
 
-            maxCPU = mp.cpu_count()
-            maxCPU /= 3
-            maxCPU = math.trunc(maxCPU)
-            if maxCPU < 1:
-                maxCPU = 1
-
-            numcore = min([maxCPU, Proc])
-
-            curReads[RID] = 0
-            totReads[RID] = reads*iters*len(mySet)
-
+            totReads = reads*iters
             myArr = df2[mySet].as_matrix()
             probArr = myArr.T
-            test = rarefaction_remove(probArr, depth=reads, seed=0)
-            print "test\n", test
-            print 'sums\n', np.sum(test, axis=1)
+            finalArr = rarefaction_remove(probArr, RID, depth=totReads, seed=0)
+            for i in xrange(len(mySet)):
+                countDF[mySet[i]] = finalArr[i]
 
+            curSamples[RID] = 0
+            totSamples[RID] = 0
 
-            pool = mp.Pool(numcore)
-            pool.map(weightedProb2(reads, iters, Lambda, mySet, df, meth, countDF, RID, stopList, PID), mySet)
-            pool.close()
-            pool.join()
-
-            curReads[RID] = 0
-            totReads[RID] = 0
-
-            #print countDF
             for i in mySet:
                 countDF[i] = countDF[i]/iters
-            #print countDF
+
+        elif reads < 0:
+            countDF = df2.reset_index(drop=True)
+
+    elif meth == 3:
+        if reads >= 0:
+            countDF = df2[taxaID].reset_index(drop=True)
+
+            curSamples[RID] = 0
+            totSamples[RID] = len(mySet)
+
+            totReads = reads*iters
+            myArr = df2[mySet].as_matrix()
+            probArr = myArr.T
+            finalArr = rarefaction_keep(probArr, RID, depth=totReads, myLambda=Lambda, seed=0)
+            for i in xrange(len(mySet)):
+                countDF[mySet[i]] = finalArr[i]
+
+            curSamples[RID] = 0
+            totSamples[RID] = 0
+
+            for i in mySet:
+                countDF[i] = countDF[i]/iters
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
@@ -782,7 +783,8 @@ def weightedProb2(reads, iters, Lambda, mySet, df, meth, countDF, RID, stopList,
         countDF[i] = temp
 
 
-def rarefaction_remove(M, depth=0, seed=0):
+def rarefaction_remove(M, RID, depth=0, seed=0):
+    global curSamples
     prng = RandomState(seed) # reproducible results
     noccur = np.sum(M, axis=1) # number of occurrences for each sample
     nvar = M.shape[1] # number of variables
@@ -793,10 +795,12 @@ def rarefaction_remove(M, depth=0, seed=0):
         p = M[i] / float(noccur[i])
         choice = prng.choice(nvar, size=depth, replace=True, p=p)
         Mrarefied[i] = np.bincount(choice, minlength=nvar)
+        curSamples[RID] += 1
     return Mrarefied
 
 
-def rarefaction_keep(M, depth=0, myLambda=0.5,seed=0):
+def rarefaction_keep(M, RID, depth=0, myLambda=0.5, seed=0):
+    global curSamples
     prng = RandomState(seed) # reproducible results
     noccur = np.sum(M, axis=1) # number of occurrences for each sample
     nvar = M.shape[1] # number of variables
@@ -807,6 +811,7 @@ def rarefaction_keep(M, depth=0, myLambda=0.5,seed=0):
         p = (M[i] + myLambda) / (float(noccur[i]) + nvar * myLambda)
         choice = prng.choice(nvar, size=depth, replace=True, p=p)
         Mrarefied[i] = np.bincount(choice, minlength=nvar)
+        curSamples[RID] += 1
     return Mrarefied
 
 

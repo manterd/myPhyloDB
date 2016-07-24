@@ -48,15 +48,6 @@
 
         $(function () {
 
-            if ( "{{ platform }}" == 'nt') {
-                $("#ProcRow").hide();
-                $("#Procrow-off").show();
-            } else {
-                $("#ProcRow").show();
-                $("#Procrow-off").hide();
-            }
-
-
             $("#run").show().click(function () {
                 if(running == true) {
                     alert("myPhyloDB is currently running your previous analysis request!");
@@ -85,12 +76,6 @@
                 } else {
                     $("#NormVal").val("median");
                 }
-            });
-
-            $("#Proc").change(function () {
-                Proc = $(this).val();
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
             });
 
             $("#NormVal").change(function () {
@@ -324,7 +309,6 @@
             myDict['MinVal'] = document.getElementById("MinVal").value;
             myDict['selectAll'] = selectAll;
             myDict['NormMeth'] = NormMeth;
-            myDict['Proc'] = Proc;
             myDict['RID'] = RID;
             myDict['funcName'] = "getNorm";
             var jsonDict = JSON.stringify(myDict);
@@ -450,15 +434,6 @@
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
                 <th bgcolor="white"></th>
-            </tr>
-            <tr id="ProcRow">
-                <td bgcolor="white">
-                    <input style="background-color: white" type="text" id="Proc" value="2"/>
-                    &nbsp<-- Number of processors to use
-                </td>
-            </tr>
-            <tr id="ProcRow-off" style="display: none">
-                <td bgcolor="white"></td>
             </tr>
             <tr>
                 <td  bgcolor="white">
