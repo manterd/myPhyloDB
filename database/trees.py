@@ -30,7 +30,7 @@ def getProjectTree(request):
 
     for project in projects:
         myNode = {
-            'title': project.project_name + " (ID: " + project.projectid + ")",
+            'title': project.project_name,
             'tooltip': project.project_desc,
             'id': project.projectid,
             'isFolder': True,

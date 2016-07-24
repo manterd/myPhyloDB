@@ -62,7 +62,6 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         from config.local_cfg import update
         update()
 
-        '''
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]
         staticpath = os.path.join(staticpath, 'myPhyloDB/media')
@@ -78,9 +77,9 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]
         staticpath = os.path.join(staticpath, 'instructions')
-        tatic_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
+        static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
         cherrypy.tree.mount(static_handler, '/instructions')
-        '''
+
 
 def signal_handler(signal, frame):
     print 'Exiting...'

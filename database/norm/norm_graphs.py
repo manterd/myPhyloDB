@@ -6,7 +6,8 @@ import logging
 import multiprocessing as mp
 from numpy import *
 import numpy as np
-from numpy.random import mtrand
+#from numpy.random import mtrand
+from numpy.random.mtrand import RandomState
 import pandas as pd
 import pickle
 from pyper import *
@@ -44,7 +45,7 @@ def statusNorm(request):
             TimeDiff[RID] = 0
 
         if done[RID]:
-            stage[RID] = 'Analysis is complete, results are loading'
+            stage[RID] = '\nAnalysis has been running for %.1f seconds\nAnalysis is complete, results are loading' % TimeDiff[RID]
         else:
             try:
                 if TimeDiff[RID] == 0:
@@ -58,7 +59,7 @@ def statusNorm(request):
                 if TimeDiff[RID] == 0:
                     stage[RID] = 'In queue'
                 else:
-                    stage[RID] = '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
+                    stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
 
         myDict = {'stage': stage[RID]}
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
@@ -297,7 +298,7 @@ def getNorm(request, RID, stopList, PID):
 
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
-            finalDF.to_csv(path, sep='\t')
+            finalDF.to_csv(path, sep=',')
 
 
             base[RID] = 'Step 2 of 4: Normalizing data...done!'
@@ -547,8 +548,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
     elif meth == 2 or meth == 3:
         if reads >= 0:
             countDF = df2[taxaID].reset_index(drop=True)
-            manager = mp.Manager()
-            d = manager.dict()
 
             if Proc < 1:
                 Proc = 1
@@ -559,33 +558,30 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, Proc,
             if maxCPU < 1:
                 maxCPU = 1
 
+            numcore = min([maxCPU, Proc])
+
             curReads[RID] = 0
             totReads[RID] = reads*iters*len(mySet)
 
-            if os.name == 'nt':
-                numcore = 1
-                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
-            else:
-                numcore = min([maxCPU, Proc])
-                processes = [threading.Thread(target=weightedProb, args=(x, numcore, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID,)) for x in range(numcore)]
+            myArr = df2[mySet].as_matrix()
+            probArr = myArr.T
+            test = rarefaction_remove(probArr, depth=reads, seed=0)
+            print "test\n", test
+            print 'sums\n', np.sum(test, axis=1)
 
-            for p in processes:
-                p.start()
 
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-            for p in processes:
-                p.join()
+            pool = mp.Pool(numcore)
+            pool.map(weightedProb2(reads, iters, Lambda, mySet, df, meth, countDF, RID, stopList, PID), mySet)
+            pool.close()
+            pool.join()
 
             curReads[RID] = 0
             totReads[RID] = 0
 
-            for key, value in d.items():
-                countDF[key] = value/iters
+            #print countDF
+            for i in mySet:
+                countDF[i] = countDF[i]/iters
+            #print countDF
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
@@ -741,6 +737,77 @@ def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID, stopLi
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         d[i] = temp
+
+
+def weightedProb2(reads, iters, Lambda, mySet, df, meth, countDF, RID, stopList, PID):
+    global curReads
+
+    for i in mySet:
+        arr = asarray(df[i])
+        cols = np.ma.shape(arr)
+        otus = cols[0]
+        sample = arr.astype(dtype=np.float64)
+        if meth == 3:
+            prob = (sample + Lambda) / (sample.sum() + otus * Lambda)
+        else:
+            prob = sample / sample.sum()
+
+        temp = np.zeros((otus,), dtype=np.int)
+        totReads = reads*iters
+        for n in range(totReads):
+            if meth == 3:
+                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
+            else:
+                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
+
+
+        temp2 = np.zeros((otus,), dtype=np.int)
+        for x in sub:
+            np.put(temp2, sub, [1])
+            temp = np.core.umath.add(temp, temp2)
+            curReads[RID] += 1
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stopList[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stopList[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        countDF[i] = temp
+
+
+def rarefaction_remove(M, depth=0, seed=0):
+    prng = RandomState(seed) # reproducible results
+    noccur = np.sum(M, axis=1) # number of occurrences for each sample
+    nvar = M.shape[1] # number of variables
+    nsamp = M.shape[0] # number of samples
+
+    Mrarefied = np.empty_like(M)
+    for i in range(nsamp):
+        p = M[i] / float(noccur[i])
+        choice = prng.choice(nvar, size=depth, replace=True, p=p)
+        Mrarefied[i] = np.bincount(choice, minlength=nvar)
+    return Mrarefied
+
+
+def rarefaction_keep(M, depth=0, myLambda=0.5,seed=0):
+    prng = RandomState(seed) # reproducible results
+    noccur = np.sum(M, axis=1) # number of occurrences for each sample
+    nvar = M.shape[1] # number of variables
+    nsamp = M.shape[0] # number of samples
+
+    Mrarefied = np.empty_like(M)
+    for i in range(nsamp):
+        p = (M[i] + myLambda) / (float(noccur[i]) + nvar * myLambda)
+        choice = prng.choice(nvar, size=depth, replace=True, p=p)
+        Mrarefied[i] = np.bincount(choice, minlength=nvar)
+    return Mrarefied
 
 
 def getTab(request):

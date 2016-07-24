@@ -46,7 +46,7 @@ def updateDiffAbund(request):
             TimeDiff[RID] = 0
 
         if done[RID]:
-            stage[RID] = 'Analysis is complete, results are loading'
+            stage[RID] = '<br>Analysis has been running for %.1f seconds<br>Analysis is complete, results are loading' % TimeDiff[RID]
         else:
             try:
                 if TimeDiff[RID] == 0:
@@ -57,7 +57,7 @@ def updateDiffAbund(request):
                 if TimeDiff[RID] == 0:
                     stage[RID] = 'In queue'
                 else:
-                    stage[RID] = '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+                    stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
 
         myDict = {'stage': stage[RID]}
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
@@ -95,7 +95,7 @@ def getDiffAbund(request, stops, RID, PID):
                 path = str(myDir) + 'usr_norm_data.csv'
 
                 with open(path, 'rb') as f:
-                    savedDF = pd.read_csv(f, index_col=0, sep='\t')
+                    savedDF = pd.read_csv(f, index_col=0, sep=',')
 
                 button3 = int(all['button3'])
                 selectAll = int(all["selectAll"])
