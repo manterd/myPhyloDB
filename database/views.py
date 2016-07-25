@@ -1432,7 +1432,7 @@ def select(request):
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                'method': 'POST'},
+                 'method': 'POST'},
                  context_instance=RequestContext(request)
             )
 

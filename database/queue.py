@@ -1,8 +1,9 @@
 from django.http import HttpResponse, HttpResponseNotFound
 from Queue import Queue
 import simplejson
-from time import sleep
+from time import sleep, time
 import threading
+
 
 from anova import anova_graphs
 from diffabund import diffabund_graphs
@@ -26,6 +27,39 @@ threadDict = {}
 statDict = {}
 stopDict = {}
 stopped = 0
+
+# merged status:
+base = {}
+stage = {}
+time1 = {}
+time2 = {}
+TimeDiff = {}
+
+# setters and getters
+def setBase(RID, val):
+    global base
+    base[RID] = val
+def getBase(RID):
+    return base[RID]
+
+def setStage(RID, val):
+    global stage
+    stage[RID] = val
+def getStage(RID):
+    return stage[RID]
+
+
+def removeRID(RID):
+    global base, stage, time1, time2, TimeDiff
+    try:
+        base.pop(RID, None)
+        stage.pop(RID, None)
+        time1.pop(RID, None)
+        time2.pop(RID, None)
+        TimeDiff.pop(RID, None)
+        return True
+    except:
+        return False
 
 
 def stop(request):
@@ -99,29 +133,59 @@ def process(pid):
 
 
 def funcCall(request):
-    global activeList, stopList, stopDict, statDict, qList
+    # new hybrid call
+    global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff
     allJson = request.body.split('&')[0]
     data = simplejson.loads(allJson)
+    reqType = data['reqType']
     RID = data['RID']
     funcName = data['funcName']
-    qDict = {'RID': RID, 'funcName': funcName, 'request': request}
-    qList.append(qDict)
-    q.put(qDict, True)
-    statDict[RID] = int(q.qsize())
-    while True:
+
+    if reqType == "call":
+        time1[RID] = time()
+        qDict = {'RID': RID, 'funcName': funcName, 'request': request}
+        qList.append(qDict)
+        q.put(qDict, True)
+        statDict[RID] = int(q.qsize())
+
+        myDict = {}
+        myDict['resType'] = "status"
+        json_data = simplejson.dumps(myDict, encoding="Latin-1")
+        return HttpResponse(json_data, content_type='application/json')
+
+    if reqType == "status":
         try:
             results = recent[RID]
             recent.pop(RID, 0)
             statDict.pop(RID, 0)
             stopDict.pop(RID, 0)
-            if results is None:
-                return HttpResponseNotFound()
+            removeRID(RID)
             return results
         except KeyError:
-            if RID in stopList:
-                statDict.pop(RID, 0)
-                return HttpResponseNotFound()
-        sleep(1)
+            time2[RID] = time()
+
+            try:
+                TimeDiff[RID] = time2[RID] - time1[RID]
+            except:
+                TimeDiff[RID] = 0
+
+            try:
+                if TimeDiff[RID] == 0:
+                    stage[RID] = 'Analysis has been placed in queue, there are ' + str(stat(RID)) + ' others in front of you.'
+                else:
+                    stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+            except:
+                if TimeDiff[RID] == 0:
+                    stage[RID] = 'In queue'
+                else:
+                    stage[RID] = 'Analysis starting'
+
+            myDict = {'stage': stage[RID]}
+            myDict['resType'] = "status"
+            json_data = simplejson.dumps(myDict, encoding="Latin-1")
+            return HttpResponse(json_data, content_type='application/json')
+        except Exception as e:
+            print "Error: ", e
 
 
 def stat(RID):

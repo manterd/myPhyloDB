@@ -1143,7 +1143,7 @@ def getTaxaTreeChildren(request):
                     'title': item.speciesName,
                     'id': item.speciesid,
                     'tooltip': "Species",
-                    'isLazy': True
+                    'isLazy': False
                 }
                 nodes.append(myNode)
 

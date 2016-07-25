@@ -706,7 +706,6 @@
         }
 
         function getFile(name, final) {
-            alert(name);
             var anchor = document.createElement('a');
             anchor.setAttribute('href', name);
             anchor.setAttribute('download', final);
@@ -910,24 +909,71 @@
         }
 
         function updateStatus(RID) {
+            var myDict = {};
+            myDict['reqType'] = "status";
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getCatUnivData";
+            var jsonDict = JSON.stringify(myDict);
             $.ajax({
-                url: '/myPhyloDB/statusANOVA/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
+                url: '/myPhyloDB/funcCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var stage = obj['stage'];
-                    if (running) {
-                        if (button1 == 1) {
-                            $('#container-1').empty().append(stage);
-                        } else if (button1 == 2) {
-                            $('#container-2').empty().append(stage);
+                    var resType = obj['resType'];
+
+                    if (resType == "status") {
+                        var stage = obj['stage'];
+                        if (running) {
+                            if (button1 == 1) {
+                                $('#container-1').empty().append(stage);
+                            } else if (button1 == 2) {
+                                $('#container-2').empty().append(stage);
+                            }
                         }
+                    } else {
+                        stopTimer(refresh);
+                        running = false;
+                        var xAxis = data['xAxis'];
+                        var series = data['series'];
+                        var yAxis = data['yAxis'];
+                        var empty = data['empty'];
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                            return
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
+                        var text = data['text'];
+                        if (document.getElementById("button1").value == 1) {
+                            if (empty == 0) {
+                            $("#container-1").empty().append('No significant tests!');
+                            } else {
+                                barchart(xAxis, yAxis, series);
+                                if (button3 == 3) {
+                                    if (nzAll == 5) {
+                                        gibbs();
+                                    }
+                                    if (nzAll == 6) {
+                                        ncycle();
+                                    }
+                                }
+                            }
+                            $('#text-1').val(text);
+                        } else {
+                            if (empty == 0) {
+                            $("#container-2").empty().append('No significant regressions!');
+                            } else {
+                                linechart(xAxis, yAxis, series);
+                            }
+                            $('#text-2').val(text);
+                        }
+                        document.getElementById("TabButton").disabled = false;
                     }
+
                 }
             });
         }
@@ -1249,46 +1295,12 @@
                 myDict['RID'] = RID;
                 myDict['button3'] = button3;
                 myDict['funcName'] = "getCatUnivData";
+                myDict['reqType'] = "call";
                 var jsonDict = JSON.stringify(myDict);
-
                 $.ajax({
                     type: 'POST',
                     url: '/myPhyloDB/funcCall/',
-                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                    success: function (data) {
-                        stopTimer(refresh);
-                        running = false;
-                        var xAxis = data['xAxis'];
-                        var series = data['series'];
-                        var yAxis = data['yAxis'];
-                        var empty = data['empty'];
-                        var error = data['error'];
-                        if (error != "none") {
-                            alert(error);
-                            $("#run").css("background-color", "red");
-                            return
-                        } else {
-                            $("#run").css("background-color", "green");
-                        }
-                        if (empty == 0) {
-                            $("#container-1").empty().append('No significant tests!');
-                        } else {
-                            barchart(xAxis, yAxis, series);
-                            if (button3 == 3) {
-                                if (nzAll == 5) {
-                                    gibbs();
-                                }
-                                if (nzAll == 6) {
-                                    ncycle();
-                                }
-                            }
-                        }
-                        var text = data['text'];
-                        $('#text-1').val(text);
-
-                        document.getElementById("TabButton").disabled = false;
-
-                    }
+                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
                 });
             }
         }
@@ -1434,36 +1446,13 @@
                 myDict['nzAll'] = nzAll;
                 myDict['button3'] = button3;
                 myDict['funcName'] = "getQuantUnivData";
+                myDict['reqType'] = "call";
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
                     url: '/myPhyloDB/funcCall/',
                     type: 'POST',
                     data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                    success: function (data) {
-                        running = false;
-                        stopTimer(RID);
-                        var xAxis = data['xAxis'];
-                        var series = data['series'];
-                        var yAxis = data['yAxis'];
-                        var empty = data['empty'];
-                        var error = data['error'];
-                        if (error != "none") {
-                            alert(error);
-                            $("#run").css("background-color", "red");
-                        } else {
-                            $("#run").css("background-color", "green");
-                        }
-                        if (empty == 0) {
-                            $("#container-2").empty().append('No significant regressions!');
-                        } else {
-                            linechart(xAxis, yAxis, series);
-                        }
-                        var text = data['text'];
-                        $('#text-2').val(text);
-
-                        document.getElementById("TabButton").disabled = false;
-                    }
                 });
             }
         }

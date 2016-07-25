@@ -17,76 +17,18 @@ from database.utils import multidict, sumKEGG
 import database.queue
 
 
-base = {}
-stage = {}
-time1 = {}
-time2 = {}
-TimeDiff = {}
-done = {}
-
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def removeRIDANOVA(RID):
-    global base, stage, time1, time2, TimeDiff, done
-    try:
-        base.pop(RID, None)
-        stage.pop(RID, None)
-        time1.pop(RID, None)
-        time2.pop(RID, None)
-        TimeDiff.pop(RID, None)
-        done.pop(RID, None)
-        return True
-    except:
-        return False
-
-
-def statusANOVA(request):
-    global base, stage, time1, time2, TimeDiff
-    if request.is_ajax():
-        RID = request.GET["all"]
-        time2[RID] = time.time()
-
-        try:
-            TimeDiff[RID] = time2[RID] - time1[RID]
-        except:
-            TimeDiff[RID] = 0
-
-        try:
-            if done[RID]:
-                stage[RID] = '<br>Analysis has been running for %.1f seconds<br>Analysis is complete, results are loading' % TimeDiff[RID]
-            else:
-                try:
-                    if TimeDiff[RID] == 0:
-                        stage[RID] = 'Analysis has been placed in queue, there are ' + str(database.queue.stat(RID)) + ' others in front of you.'
-                    else:
-                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-                except:
-                    if TimeDiff[RID] == 0:
-                        stage[RID] = 'In queue'
-                    else:
-                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-        except:
-            stage[RID] = 'Analysis is initializing...'
-
-        myDict = {'stage': stage[RID]}
-        json_data = simplejson.dumps(myDict, encoding="Latin-1")
-        return HttpResponse(json_data, content_type='application/json')
-
-
 def getCatUnivData(request, RID, stops, PID):
-    global base, stage, time1, TimeDiff, done
-    done[RID] = False
     try:
         while True:
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-
-                time1[RID] = time.time()  # Moved these down here so RID is available
-                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
+                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -172,7 +114,7 @@ def getCatUnivData(request, RID, stops, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
 
-                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
+                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -180,7 +122,7 @@ def getCatUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
+                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
                 button3 = int(all['button3'])
 
                 DepVar = 1
@@ -212,7 +154,7 @@ def getCatUnivData(request, RID, stops, PID):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
 
-                base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done'
+                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -220,7 +162,7 @@ def getCatUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 3 of 4: Performing statistical test...'
+                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
                 finalDict = {}
                 seriesList = []
                 xAxisDict = {}
@@ -386,7 +328,7 @@ def getCatUnivData(request, RID, stops, PID):
                     result += '\n\n\n\n'
 
                     taxa_no = len(grouped1)
-                    base[RID] = 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!'
+                    database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
                     counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -395,8 +337,8 @@ def getCatUnivData(request, RID, stops, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 3 of 4: Performing statistical test...done!'
-                base[RID] = 'Step 4 of 4: Formatting graph data for display...'
+                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
+                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 for name1, group1 in grouped1:
@@ -498,7 +440,7 @@ def getCatUnivData(request, RID, stops, PID):
                 else:
                     finalDict['empty'] = 1
 
-                base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
+                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -507,8 +449,6 @@ def getCatUnivData(request, RID, stops, PID):
 
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                removeRIDANOVA(RID)
-                done[RID] = True
                 return HttpResponse(res, content_type='application/json')
 
     except:
@@ -519,7 +459,6 @@ def getCatUnivData(request, RID, stops, PID):
             myDict = {}
             myDict['error'] = "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            removeRIDANOVA(RID)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -575,7 +514,6 @@ def makeLabels(name, list):
 
 
 def getQuantUnivData(request, RID, stops, PID):
-    global base, stage, time1, TimeDiff
     try:
         while True:
             if request.is_ajax():
@@ -583,8 +521,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
 
-                time1[RID] = time.time()  # Moved these down here so RID is available
-                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
+                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -663,7 +600,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
 
-                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
+                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[PID] == RID:
@@ -671,7 +608,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                base[RID] = 'Step 2 of 4: Selecting your chosen taxa or kegg level...'
+                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or kegg level...')
                 button3 = int(all['button3'])
 
                 finalDF = pd.DataFrame()
@@ -703,7 +640,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
 
-                base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done'
+                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[PID] == RID:
@@ -711,7 +648,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                base[RID] = 'Step 3 of 4: Performing statistical test...!'
+                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...!')
                 finalDict = {}
 
                 colors = [
@@ -829,7 +766,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     result += '\n\n\n\n'
 
                     taxa_no = len(grouped1)
-                    base[RID] = 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!'
+                    database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
                     counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
@@ -838,7 +775,7 @@ def getQuantUnivData(request, RID, stops, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                base[RID] = 'Step 3 of 4: Performing statistical test...done!'
+                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[PID] == RID:
@@ -846,7 +783,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                base[RID] = 'Step 4 of 4: Formatting graph data for display...'
+                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
 
                 finalDF['sample_name'] = ''
@@ -1251,7 +1188,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 else:
                     finalDict['empty'] = 1
 
-                base[RID] = 'Step 4 of 4: Formatting graph data for display...done!'
+                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -1262,7 +1199,6 @@ def getQuantUnivData(request, RID, stops, PID):
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                removeRIDANOVA(RID)
                 return HttpResponse(res, content_type='application/json')
 
     except:
@@ -1272,14 +1208,12 @@ def getQuantUnivData(request, RID, stops, PID):
             logging.exception(myDate)
             myDict = {'error': "Error with ANcOVA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = simplejson.dumps(myDict)
-            removeRIDANOVA(RID)
             return HttpResponse(res, content_type='application/json')
 
 
 def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
-    global base
     try:
-        base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
+        database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
         taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'rel_abund', 'abund_16S', 'rich', 'diversity'])
         if selectAll == 0:
             for key in taxaDict:
@@ -1439,9 +1373,8 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
 
 
 def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
-    global base
     try:
-        base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
+        database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
         koDict = {}
         if keggAll == 0:
             for key in keggDict:
@@ -1632,7 +1565,6 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
 
 
 def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
-    global base
     try:
         nzDict = {}
         if nzAll == 0:

@@ -64,8 +64,8 @@ urlpatterns = [
 
     url(r'^myPhyloDB/getCatUnivData/$', anova_graphs.getCatUnivData, name='getCatUnivData'),
     url(r'^myPhyloDB/getQuantUnivData/$', anova_graphs.getQuantUnivData, name='getQuantUnivData'),
-    url(r'^myPhyloDB/statusANOVA/$', anova_graphs.statusANOVA, name='statusANOVA'),
-    url(r'^myPhyloDB/removeRIDANOVA/$', anova_graphs.removeRIDANOVA, name='removeRIDANOVA'),
+    #url(r'^myPhyloDB/statusANOVA/$', anova_graphs.statusANOVA, name='statusANOVA'),
+    #url(r'^myPhyloDB/removeRIDANOVA/$', anova_graphs.removeRIDANOVA, name='removeRIDANOVA'),
     url(r'^myPhyloDB/getTabANOVA/$', anova_graphs.getTabANOVA, name='getTabANOVA'),
     url(r'^myPhyloDB/removeANOVAFiles/$', anova_graphs.removeANOVAFiles, name='removeANOVAFiles'),
 
@@ -126,6 +126,7 @@ urlpatterns = [
     # queue caller
     url(r'^myPhyloDB/funcCall/$', queue.funcCall, name='funcCall'),
     url(r'^myPhyloDB/stop/$', queue.stop, name='stop'),
+    url(r'^myPhyloDB/removeRID/$', queue.removeRID, name='removeRID'),
 
     # data queue
     url(r'^myPhyloDB/datfuncCall/$', dataqueue.datfuncCall, name='datfuncCall'),
