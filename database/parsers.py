@@ -1,11 +1,9 @@
 import csv
 import datetime
 from django.contrib.auth.models import User
-from django.shortcuts import render_to_response
 from django.http import HttpResponse
 import glob
 import logging
-import numpy as np
 from numpy import *
 import os
 import signal

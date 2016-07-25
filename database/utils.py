@@ -1,7 +1,9 @@
+import ast
 from collections import defaultdict
 import ctypes
-from django import forms
+from django import db, forms
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 import inspect
 import multiprocessing as mp
 import numpy as np
@@ -303,22 +305,34 @@ def threads():
     return int(num_threads)
 
 
-def numcore():
-    """
-    For the hosted version, this should probably
-    be changed to cpu_count / threads.  For a
-    personal version this does not provide maximum
-    control and unnecessarily limits performance.
-    """
-    try:
-        usr_core = int(local_cfg.usr_numcore)
-    except:
-        usr_core = 1
+def sumKEGG(speciesList, picrustDF, keggDict, RID, PID, stops):
+    db.close_old_connections()
+    for species in speciesList:
+        try:
+            cell = picrustDF.at[species, 'geneCount']
+            d = ast.literal_eval(cell)
 
-    if usr_core <= 0:
-        numcore = 1
-    elif usr_core > mp.cpu_count():
-        numcore = int(mp.cpu_count())
-    else:
-        numcore = usr_core
-    return int(numcore)
+            for key in keggDict:
+                sum = 0.0
+                myList = keggDict[key]
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                for k in myList:
+                    if k in d:
+                        sum += d[k]
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[PID] == RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                picrustDF.at[species, key] = sum
+        except:
+            pass
+
+    return picrustDF

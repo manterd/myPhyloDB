@@ -40,19 +40,22 @@ def updateGAGE(request):
         except:
             TimeDiff[RID] = 0
 
-        if done[RID]:
-            stage[RID] = '<br>Analysis has been running for %.1f seconds<br>Analysis is complete, results are loading' % TimeDiff[RID]
-        else:
-            try:
-                if TimeDiff[RID] == 0:
-                    stage[RID] = 'Analysis has been placed in queue, there are ' + str(database.queue.stat(RID)) + ' others in front of you.'
-                else:
-                    stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-            except:
-                if TimeDiff[RID] == 0:
-                    stage[RID] = 'In queue'
-                else:
-                    stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        try:
+            if done[RID]:
+                stage[RID] = '<br>Analysis has been running for %.1f seconds<br>Analysis is complete, results are loading' % TimeDiff[RID]
+            else:
+                try:
+                    if TimeDiff[RID] == 0:
+                        stage[RID] = 'Analysis has been placed in queue, there are ' + str(database.queue.stat(RID)) + ' others in front of you.'
+                    else:
+                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+                except:
+                    if TimeDiff[RID] == 0:
+                        stage[RID] = 'In queue'
+                    else:
+                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        except:
+            stage[RID] = 'Analysis is initializing...'
 
         myDict = {'stage': stage[RID]}
         json_data = simplejson.dumps(myDict, encoding="Latin-1")

@@ -1,24 +1,18 @@
-import ast
 import datetime
-from django import db
 from django.http import HttpResponse
 from django_pandas.io import read_frame
 import logging
 import math
-import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from pyper import *
 import simplejson
-import shutil
-import threading
 
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
-from database.utils import multidict, wOdum
+from database.utils import multidict, sumKEGG, wOdum
 import database.queue
-from config import local_cfg
 
 
 base = {}
@@ -43,19 +37,22 @@ def statusPCoA(request):
         except:
             TimeDiff[RID] = 0
 
-        if done[RID]:
-            stage[RID] = '<br>Analysis has been running for %.1f seconds<br>Analysis is complete, results are loading' % TimeDiff[RID]
-        else:
-            try:
-                if TimeDiff[RID] == 0:
-                    stage[RID] = 'Analysis has been placed in queue, there are ' + str(database.queue.stat(RID)) + ' others in front of you.'
-                else:
-                    stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-            except:
-                if TimeDiff[RID] == 0:
-                    stage[RID] = 'In queue'
-                else:
-                    stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        try:
+            if done[RID]:
+                stage[RID] = '<br>Analysis has been running for %.1f seconds<br>Analysis is complete, results are loading' % TimeDiff[RID]
+            else:
+                try:
+                    if TimeDiff[RID] == 0:
+                        stage[RID] = 'Analysis has been placed in queue, there are ' + str(database.queue.stat(RID)) + ' others in front of you.'
+                    else:
+                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+                except:
+                    if TimeDiff[RID] == 0:
+                        stage[RID] = 'In queue'
+                    else:
+                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+        except:
+            stage[RID] = 'Analysis is initializing...'
 
         myDict = {'stage': stage[RID]}
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
@@ -856,62 +853,15 @@ def getKeggDF(keggAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'myPhyloDB/media/temp/pcoa/' + str(RID)
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        maxCPU = mp.cpu_count()
-        maxCPU /= 3
-        maxCPU = math.trunc(maxCPU)
-        if maxCPU < 1:
-            maxCPU = 1
-
-        if os.name == 'nt':
-            numcore = 1
-            listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
-        else:
-            numcore = min(local_cfg.usr_numcore, maxCPU)
-            listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], koDict, RID, x, stops, PID)) for x in xrange(numcore)]
-
-        for p in processes:
-            p.start()
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        for p in processes:
-            p.join()
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
         levelList = []
         for key in koDict:
-            levelList.append(key)
+            levelList.append(str(key))
 
-        picrustDF = pd.DataFrame()
-        for i in xrange(numcore):
-            path = 'myPhyloDB/media/temp/pcoa/'+str(RID)+'/file%d.temp' % i
-            frame = pd.read_csv(path)
-            picrustDF = picrustDF.append(frame, ignore_index=True)
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        shutil.rmtree('myPhyloDB/media/temp/pcoa/'+str(RID))
-        picrustDF.set_index('speciesid', inplace=True)
-        picrustDF[picrustDF > 0] = 1
+        picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
+        picrustDF.fillna(0.0, inplace=True)
+        picrustDF = sumKEGG(speciesList, picrustDF, koDict, RID, PID, stops)
+        picrustDF.drop('geneCount', axis=1, inplace=True)
+        picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
@@ -1190,62 +1140,15 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
-        path = 'myPhyloDB/media/temp/pcoa/' + str(RID)
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        maxCPU = mp.cpu_count()
-        maxCPU /= 3
-        maxCPU = math.trunc(maxCPU)
-        if maxCPU < 1:
-            maxCPU = 1
-
-        if os.name == 'nt':
-            numcore = 1
-            listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
-        else:
-            numcore = min(local_cfg.usr_numcore, maxCPU)
-            listDF = np.array_split(picrustDF, numcore)
-            processes = [threading.Thread(target=sumStuff, args=(listDF[x], nzDict, RID, x, stops, PID)) for x in xrange(numcore)]
-
-        for p in processes:
-            p.start()
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        for p in processes:
-            p.join()
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
         levelList = []
         for key in nzDict:
-            levelList.append(key)
+            levelList.append(str(key))
 
-        picrustDF = pd.DataFrame()
-        for i in xrange(numcore):
-            path = 'myPhyloDB/media/temp/pcoa/'+str(RID)+'/file%d.temp' % i
-            frame = pd.read_csv(path)
-            picrustDF = picrustDF.append(frame, ignore_index=True)
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        shutil.rmtree('myPhyloDB/media/temp/pcoa/'+str(RID))
-        picrustDF.set_index('speciesid', inplace=True)
-        picrustDF[picrustDF > 0] = 1
+        picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
+        picrustDF.fillna(0.0, inplace=True)
+        picrustDF = sumKEGG(speciesList, picrustDF, nzDict, RID, PID, stops)
+        picrustDF.drop('geneCount', axis=1, inplace=True)
+        picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
@@ -1325,43 +1228,6 @@ def getNZDF(nzAll, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             myDict['error'] = "Error with PCoA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
-
-
-def sumStuff(slice, koDict, RID, num, stops, PID):
-    global base
-    db.close_old_connections()
-
-    f = open('myPhyloDB/media/temp/pcoa/'+str(RID)+'/file'+str(num)+".temp", 'w')
-
-    keyList = []
-    for key in koDict:
-        keyList.append(key)
-
-    f.write('speciesid,'+",".join(keyList)+'\n')
-
-    for index, row in slice.iterrows():
-        d = ast.literal_eval(row['geneCount'])
-
-        f.write(str(index)+',')
-        sumList = []
-        for key in koDict:
-            sum = 0.0
-            myList = koDict[key]
-            for k in myList:
-                if k in d:
-                    sum += d[k]
-            sumList.append(sum)
-
-        f.write(','.join(map(str, sumList)))
-        f.write('\n')
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-    f.close()
 
 
 def removePCoAFiles(request):

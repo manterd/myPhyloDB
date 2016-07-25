@@ -41,22 +41,25 @@ def statusNorm(request):
         except:
             TimeDiff[RID] = 0
 
-        if done[RID]:
-            stage[RID] = '\nAnalysis has been running for %.1f seconds\nAnalysis is complete, results are loading' % TimeDiff[RID]
-        else:
-            try:
-                if TimeDiff[RID] == 0:
-                    stage[RID] = 'Normalization has been placed in queue, there are '+str(database.queue.q.qsize())+' others in front of you.'
-                else:
-                    if curSamples[RID] == 0:
-                        stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
+        try:
+            if done[RID]:
+                stage[RID] = '\nAnalysis has been running for %.1f seconds\nAnalysis is complete, results are loading' % TimeDiff[RID]
+            else:
+                try:
+                    if TimeDiff[RID] == 0:
+                        stage[RID] = 'Normalization has been placed in queue, there are '+str(database.queue.q.qsize())+' others in front of you.'
                     else:
-                        stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds\nSub-sampling has processed %d samples out of %d' % (TimeDiff[RID], curSamples[RID], totSamples[RID])
-            except:
-                if TimeDiff[RID] == 0:
-                    stage[RID] = 'In queue'
-                else:
-                    stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
+                        if curSamples[RID] == 0:
+                            stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
+                        else:
+                            stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds\nSub-sampling has processed %d samples out of %d' % (TimeDiff[RID], curSamples[RID], totSamples[RID])
+                except:
+                    if TimeDiff[RID] == 0:
+                        stage[RID] = 'In queue'
+                    else:
+                        stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
+        except:
+            stage[RID] = 'Analysis is initializing...'
 
         myDict = {'stage': stage[RID]}
         json_data = simplejson.dumps(myDict, encoding="Latin-1")
@@ -696,91 +699,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             normDF = normDF.append(DF1)
 
     return normDF, DESeq_error
-
-
-def weightedProb(x, cores, reads, iters, Lambda, mySet, df, meth, d, RID, stopList, PID):
-    global curReads
-    high = mySet.__len__()
-    set = mySet[x:high:cores]
-
-    for i in set:
-        arr = asarray(df[i])
-        cols = np.ma.shape(arr)
-        otus = cols[0]
-        sample = arr.astype(dtype=np.float64)
-        if meth == 3:
-            prob = (sample + Lambda) / (sample.sum() + otus * Lambda)
-        else:
-            prob = sample / sample.sum()
-
-        temp = np.zeros((otus,), dtype=np.int)
-        totReads = reads*iters
-        for n in range(totReads):
-            if meth == 3:
-                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
-            else:
-                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
-            temp2 = np.zeros((otus,), dtype=np.int)
-            np.put(temp2, sub, [1])
-            temp = np.core.umath.add(temp, temp2)
-            curReads[RID] += 1
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stopList[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        d[i] = temp
-
-
-def weightedProb2(reads, iters, Lambda, mySet, df, meth, countDF, RID, stopList, PID):
-    global curReads
-
-    for i in mySet:
-        arr = asarray(df[i])
-        cols = np.ma.shape(arr)
-        otus = cols[0]
-        sample = arr.astype(dtype=np.float64)
-        if meth == 3:
-            prob = (sample + Lambda) / (sample.sum() + otus * Lambda)
-        else:
-            prob = sample / sample.sum()
-
-        temp = np.zeros((otus,), dtype=np.int)
-        totReads = reads*iters
-        for n in range(totReads):
-            if meth == 3:
-                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=True, p=prob)
-            else:
-                sub = np.random.mtrand.choice(range(sample.size), size=1, replace=False, p=prob)
-
-
-        temp2 = np.zeros((otus,), dtype=np.int)
-        for x in sub:
-            np.put(temp2, sub, [1])
-            temp = np.core.umath.add(temp, temp2)
-            curReads[RID] += 1
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stopList[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        countDF[i] = temp
 
 
 def rarefaction_remove(M, RID, depth=0, seed=0):

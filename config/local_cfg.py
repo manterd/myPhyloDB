@@ -1,9 +1,8 @@
 from django.conf import settings
 
 
-# User-defined settings for multi-threading (integer values only)
-usr_num_threads = 3     # number of analyses that can be run simultaneously
-usr_numcore = 4    # number of processors per analysis
+# number of analyses that can be run simultaneously
+usr_num_threads = 3
 
 
 # Django settings
