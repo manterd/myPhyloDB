@@ -991,12 +991,12 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
         levelList = []
-        for key in koDict:
+        for key in nzDict:
             levelList.append(str(key))
 
         picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
         picrustDF.fillna(0.0, inplace=True)
-        picrustDF = sumKEGG(speciesList, picrustDF, koDict, RID, PID, stops)
+        picrustDF = sumKEGG(speciesList, picrustDF, nzDict, RID, PID, stops)
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
