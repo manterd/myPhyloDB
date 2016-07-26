@@ -119,7 +119,7 @@ def uploadFunc(request, stopList):
             timestamp = ".".join([str(hour), str(minute), str(second)])
             datetimestamp = "_".join([str(date), str(timestamp)])
             dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
-            metaName = 'final_meta.xls'
+            metaName = 'final_meta.xlsx'
             metaFile = '/'.join([dest, metaName])
 
             try:

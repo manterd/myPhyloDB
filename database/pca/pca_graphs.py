@@ -23,7 +23,7 @@ def getPCA(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.base(RID, 'Step 1 of 4 Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 4 Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -122,13 +122,14 @@ def getPCA(request, stops, RID, PID):
                     wantedList = allFields + ['sampleid']
                 else:
                     wantedList = ['sampleid']
-                metaDF = tempDF[wantedList]
+
+                metaDF = tempDF[allFields]
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n\n'
 
-                database.queue.base(RID, 'Step 1 of 8: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 1 of 8: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -136,7 +137,7 @@ def getPCA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
                 DepVar = 1
                 finalDF = pd.DataFrame()
@@ -186,7 +187,7 @@ def getPCA(request, stops, RID, PID):
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
-                database.queue.base(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
+                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -194,7 +195,7 @@ def getPCA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 3 of 4: Performing statistical test...')
+                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -365,7 +366,7 @@ def getPCA(request, stops, RID, PID):
                 r("print(p)")
 
                 r("dev.off()")
-                database.queue.base(RID, 'Step 3 of 4: Performing statistical test...done')
+                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -373,7 +374,7 @@ def getPCA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 4 of 4: Formatting graph data...')
+                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data...')
 
                 finalDict = {}
                 r("options(width=5000)")

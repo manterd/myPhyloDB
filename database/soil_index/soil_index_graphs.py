@@ -26,7 +26,7 @@ def getsoil_index(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.base(RID, 'Step 1 of 3: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 3: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -83,13 +83,14 @@ def getsoil_index(request, stops, RID, PID):
                         tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
 
                 wantedList = allFields + ['sampleid']
+
                 metaDF = tempDF[wantedList]
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n'
 
-                database.queue.base(RID, 'Step 1 of 3: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 1 of 3: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -97,7 +98,7 @@ def getsoil_index(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n')
+                database.queue.setBase(RID, 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n')
 
                 finalDF, keggDF, levelList = getTaxaDF(savedDF, metaDF, RID, stops, PID)
                 finalDF = finalDF[finalDF.rel_abund != 0]
@@ -674,7 +675,7 @@ def getsoil_index(request, stops, RID, PID):
                     r('dev.off()')
                     r("pdf_counter <- pdf_counter + 1")
 
-                database.queue.base(RID, 'Step 2 of 3: Selecting your chosen taxa...done')
+                database.queue.setBase(RID, 'Step 2 of 3: Selecting your chosen taxa...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -682,7 +683,7 @@ def getsoil_index(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 3 of 3: Pooling pdf files for display...')
+                database.queue.setBase(RID, 'Step 3 of 3: Pooling pdf files for display...')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/soil_index/Rplots/' + str(RID) + '/soil_index_final.pdf'
@@ -757,7 +758,7 @@ def getsoil_index(request, stops, RID, PID):
 
 def getTaxaDF(savedDF, metaDF, RID, stops, PID):
     try:
-        database.queue.base(RID, 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n')
+        database.queue.setBase(RID, 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n')
         taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
         taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
 

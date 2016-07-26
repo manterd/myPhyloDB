@@ -21,7 +21,7 @@ def getPCoA(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.base(RID, 'Step 1 of 8: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 8: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -177,14 +177,15 @@ def getPCoA(request, stops, RID, PID):
                         tempDF = tempDF.loc[tempDF[key].isin(valueList)]
 
                 wantedList = allFields + ['sampleid']
-                metaDF = tempDF[wantedList]
+
+                metaDF = tempDF[allFields]
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n'
 
-                database.queue.base(RID, 'Step 1 of 8: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 1 of 8: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -192,7 +193,7 @@ def getPCoA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 2 of 8: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 2 of 8: Selecting your chosen taxa or KEGG level...')
 
                 DepVar = 1
                 finalDF = pd.DataFrame()
@@ -247,7 +248,7 @@ def getPCoA(request, stops, RID, PID):
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
-                database.queue.base(RID, 'Step 2 of 8: Selecting your chosen taxa...done')
+                database.queue.setBase(RID, 'Step 2 of 8: Selecting your chosen taxa...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -255,7 +256,7 @@ def getPCoA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 3 of 8: Calculating distance matrix...')
+                database.queue.setBase(RID, 'Step 3 of 8: Calculating distance matrix...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -305,7 +306,7 @@ def getPCoA(request, stops, RID, PID):
                 rowList = meta_rDF.sample_name.values.tolist()
                 distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
-                database.queue.base(RID, 'Step 3 of 8: Calculating distance matrix...done!')
+                database.queue.setBase(RID, 'Step 3 of 8: Calculating distance matrix...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -313,7 +314,7 @@ def getPCoA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 4 of 8: Principal coordinates analysis...')
+                database.queue.setBase(RID, 'Step 4 of 8: Principal coordinates analysis...')
 
                 anovaFields = []
                 for i in metaDictCat:
@@ -405,7 +406,7 @@ def getPCoA(request, stops, RID, PID):
                     r("eig <- data.frame(Stat, res$cont$importance)")
                     eigDF = r.get("eig")
 
-                    database.queue.base(RID, 'Step 4 of 8: Principal coordinates analysis...done!')
+                    database.queue.setBase(RID, 'Step 4 of 8: Principal coordinates analysis...done!')
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
@@ -413,7 +414,7 @@ def getPCoA(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                    database.queue.base(RID, 'Step 5 of 8: Performing perMANOVA...')
+                    database.queue.setBase(RID, 'Step 5 of 8: Performing perMANOVA...')
 
                     if perms < 10:
                         bigf = 'A minimum of 10 permutations is required...'
@@ -444,11 +445,11 @@ def getPCoA(request, stops, RID, PID):
                             for part in tempStuff:
                                 if part != tempStuff[0]:
                                     bigf += part + '\n'
-                            database.queue.base(RID, 'Step 5 of 8: Performing perMANOVA...done!')
+                            database.queue.setBase(RID, 'Step 5 of 8: Performing perMANOVA...done!')
 
                         elif test == 2:
-                            database.queue.base(RID, 'Step 4 of 8: Principal coordinates analysis...done!')
-                            database.queue.base(RID, 'Step 5 of 8: Performing BetaDisper...')
+                            database.queue.setBase(RID, 'Step 4 of 8: Principal coordinates analysis...done!')
+                            database.queue.setBase(RID, 'Step 5 of 8: Performing BetaDisper...')
 
                             for i in catFields_edit:
                                 factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
@@ -474,7 +475,7 @@ def getPCoA(request, stops, RID, PID):
                                 for part in tempStuff:
                                     if part != tempStuff[0]:
                                         bigf += part + '\n'
-                                database.queue.base(RID, 'Step 5 of 8: Performing BetaDisper...done!')
+                                database.queue.setBase(RID, 'Step 5 of 8: Performing BetaDisper...done!')
 
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                                 if stops[PID] == RID:
@@ -494,7 +495,7 @@ def getPCoA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 6 of 8: Formatting graph data for display...')
+                database.queue.setBase(RID, 'Step 6 of 8: Formatting graph data for display...')
                 finalDict = {}
                 seriesList = []
                 xAxisDict = {}
@@ -613,7 +614,7 @@ def getPCoA(request, stops, RID, PID):
 
                 finalDict['text'] = result
 
-                database.queue.base(RID, 'Step 6 of 8: Formatting graph data for display...done!')
+                database.queue.setBase(RID, 'Step 6 of 8: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -621,13 +622,13 @@ def getPCoA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 7 of 8: Formatting PCoA table...')
+                database.queue.setBase(RID, 'Step 7 of 8: Formatting PCoA table...')
 
                 res_table = pcoaDF.to_html(classes="table display")
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
 
-                database.queue.base(RID, 'Step 7 of 8: Formatting PCoA table...done!')
+                database.queue.setBase(RID, 'Step 7 of 8: Formatting PCoA table...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -635,7 +636,7 @@ def getPCoA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 8 of 8: Formatting distance score table...')
+                database.queue.setBase(RID, 'Step 8 of 8: Formatting distance score table...')
 
                 distDF.sort_index(axis=1, inplace=True)
                 distDF.sort_index(axis=0, inplace=True)
@@ -643,7 +644,7 @@ def getPCoA(request, stops, RID, PID):
                 dist_table = dist_table.replace('border="1"', 'border="0"')
                 finalDict['dist_table'] = str(dist_table)
 
-                database.queue.base(RID, 'Step 8 of 8: Formatting distance score table...done!')
+                database.queue.setBase(RID, 'Step 8 of 8: Formatting distance score table...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

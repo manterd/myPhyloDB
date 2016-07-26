@@ -387,19 +387,87 @@
         }
 
         function updateStatus(RID) {
+            var myDict = {};
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getPCA";
+            myDict['reqType'] = "status";
+            var jsonDict = JSON.stringify(myDict);
             $.ajax({
-                url: '/myPhyloDB/statusPCA/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
+                url: '/myPhyloDB/funcCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var stage = obj['stage'];
-                    if (running) {
-                        $('#container-0').empty().append(stage);
+                    var resType = obj['resType'];
+                    if (resType == "status") {
+                        var stage = obj['stage'];
+                        if (running) {
+                            $('#container-0').empty().append(stage);
+                        }
+                    } else {
+
+                        running = false;
+                        stopTimer(refresh);
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
+
+                        var text = obj['text'];
+                        $('#text-1').val(text);
+
+                        var varCoordDF = obj['varCoordDF'];
+                        $('#varCoordDF').empty().append(varCoordDF).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                        }).draw();
+
+                        var varContribDF = obj['varContribDF'];
+                        $('#varContribDF').empty().append(varContribDF).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                        }).draw();
+
+                        var indCoordDF = obj['indCoordDF'];
+                        $('#indCoordDF').empty().append(indCoordDF).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                        }).draw();
+
+                        var indContribDF = obj['indContribDF'];
+                        $('#indContribDF').empty().append(indContribDF).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                        }).draw();
+                        $("div.toolbar").html('<br><br><br>');
+
+                        document.getElementById("TabButton").disabled = false;
+
+                        chooseDisplay();
                     }
                 }
             });
@@ -499,12 +567,13 @@
             myDict['distance'] = distance;
             myDict['PC1'] = PC1;
             myDict['PC2'] = PC2;
-            myDict['RID'] = RID;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
             myDict['colorVal'] = document.getElementById("colorVal").value;
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['vecScale'] = vecScale;
+            myDict['RID'] = RID;
             myDict['funcName'] = "getPCA";
+            myDict['reqType'] = "call";
             myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
 
             myDict['contribVal'] = document.getElementById("contribVal").value;
@@ -527,71 +596,6 @@
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
                 data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                success: function(data) {
-                    running = false;
-                    stopTimer(refresh);
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var error = data['error'];
-                    if (error != "none") {
-                        alert(error);
-                        $("#run").css("background-color", "red");
-                    } else {
-                        $("#run").css("background-color", "green");
-                    }
-
-                    var text = obj['text'];
-                    $('#text-1').val(text);
-
-                    var varCoordDF = obj['varCoordDF'];
-                    $('#varCoordDF').empty().append(varCoordDF).find('.table').DataTable({
-                        dom: 'B<"toolbar">lfrtip',
-                        deferRender: true,
-                        scrollX: true,
-                        bSort: true,
-                        bPaginate: true,
-                        sPaginationType: 'full_numbers',
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-
-                    var varContribDF = obj['varContribDF'];
-                    $('#varContribDF').empty().append(varContribDF).find('.table').DataTable({
-                        dom: 'B<"toolbar">lfrtip',
-                        deferRender: true,
-                        scrollX: true,
-                        bSort: true,
-                        bPaginate: true,
-                        sPaginationType: 'full_numbers',
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-
-                    var indCoordDF = obj['indCoordDF'];
-                    $('#indCoordDF').empty().append(indCoordDF).find('.table').DataTable({
-                        dom: 'B<"toolbar">lfrtip',
-                        deferRender: true,
-                        scrollX: true,
-                        bSort: true,
-                        bPaginate: true,
-                        sPaginationType: 'full_numbers',
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-
-                    var indContribDF = obj['indContribDF'];
-                    $('#indContribDF').empty().append(indContribDF).find('.table').DataTable({
-                        dom: 'B<"toolbar">lfrtip',
-                        deferRender: true,
-                        scrollX: true,
-                        bSort: true,
-                        bPaginate: true,
-                        sPaginationType: 'full_numbers',
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-                    $("div.toolbar").html('<br><br><br>');
-
-                    document.getElementById("TabButton").disabled = false;
-
-                    chooseDisplay();
-                }
             });
         }
     </script>

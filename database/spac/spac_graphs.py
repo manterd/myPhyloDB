@@ -22,7 +22,7 @@ def getSpAC(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.base(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -113,13 +113,14 @@ def getSpAC(request, stops, RID, PID):
                         tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
 
                 wantedList = allFields + ['sampleid']
-                metaDF = tempDF[wantedList]
+
+                metaDF = tempDF[allFields]
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n'
 
-                database.queue.base(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -127,21 +128,21 @@ def getSpAC(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
                 DepVar = 1
                 finalDF = pd.DataFrame()
                 if button3 == 1:
                     DepVar = int(all["DepVar_taxa"])
-                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF('abund', selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('abund', keggAll, '', savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('abund', nzAll, '', savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/spac/'
@@ -175,7 +176,7 @@ def getSpAC(request, stops, RID, PID):
                 meta_rDF = meta_rDF[wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
-                database.queue.base(RID, 'Step 2 of 4: Selecting your chosen taxa...done')
+                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -183,7 +184,7 @@ def getSpAC(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 3 of 4: Calculating Species Accumulation Curves...')
+                database.queue.setBase(RID, 'Step 3 of 4: Calculating Species Accumulation Curves...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -261,9 +262,9 @@ def getSpAC(request, stops, RID, PID):
                     r("dev.off()")
                     r("pdf_counter <- pdf_counter + 1")
 
-                database.queue.base(RID, 'Step 3 of 4: Calculating Species Accumulation Curves...done!')
+                database.queue.setBase(RID, 'Step 3 of 4: Calculating Species Accumulation Curves...done!')
 
-                database.queue.base(RID, 'Step 4 of 4: Pooling pdf files for display...')
+                database.queue.setBase(RID, 'Step 4 of 4: Pooling pdf files for display...')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/spac/Rplots/' + str(RID) + '/SpAC_final.pdf'

@@ -386,20 +386,91 @@
         }
 
         function updateStatus(RID) {
+            var myDict = {};
+            myDict['reqType'] = "status";
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getWGCNA";
+            var jsonDict = JSON.stringify(myDict);
             $.ajax({
-                url: '/myPhyloDB/statusWGCNA/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
+                url: '/myPhyloDB/funcCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var stage = obj['stage'];
-                    if (running) {
-                        $('#container-0').empty().append(stage);
+                    var resType = obj['resType'];
+                    if (resType == "status") {
+                        var stage = obj['stage'];
+                        if (running) {
+                            $('#container-0').empty().append(stage);
+                        }
+                    } else {
+                        running = false;
+                        stopTimer(refresh);
+                        var xAxis = obj['xAxis'];
+                        var series = obj['series'];
+                        var yAxis = obj['yAxis'];
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
+
+                        var text = obj['text'];
+                        $('#text-1').val(text);
+
+                        var legend = obj['legend'];
+                        $('#legend').empty().append(legend).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var res_table = obj['res_table'];
+                        $('#res_table').empty().append(res_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var dist_table = obj['dist_table'];
+                        $('#dist_table').empty().append(dist_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var kme_table = obj['kme_table'];
+                        $('#kme_table').empty().append(kme_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        $("div.toolbar").html('<br><br><br>');
+                        document.getElementById("TabButton").disabled = false;
+
+                        chooseDisplay();
                     }
+
                 }
             });
         }
@@ -574,6 +645,7 @@
             myDict['maxNGenes'] = maxNGenes;
             myDict['graphLayout'] = graphLayout;
             myDict['RID'] = RID;
+            myDict['reqType'] = "call";
             myDict['funcName'] = "getWGCNA";
             var jsonDict = JSON.stringify(myDict);
 
@@ -581,74 +653,6 @@
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
                 data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                success: function(data) {
-                    running = false;
-                    stopTimer(refresh);
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var xAxis = obj['xAxis'];
-                    var series = obj['series'];
-                    var yAxis = obj['yAxis'];
-                    var error = data['error'];
-                    if (error != "none") {
-                        alert(error);
-                        $("#run").css("background-color", "red");
-                    } else {
-                        $("#run").css("background-color", "green");
-                    }
-
-                    var text = obj['text'];
-                    $('#text-1').val(text);
-
-                    var legend = obj['legend'];
-                    $('#legend').empty().append(legend).find('.table').DataTable({
-                        dom: 'B<"toolbar">lfrtip',
-                        deferRender: true,
-                        scrollX: true,
-                        bSort: true,
-                        bPaginate: true,
-                        sPaginationType: 'full_numbers',
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-
-                    var res_table = obj['res_table'];
-                    $('#res_table').empty().append(res_table).find('.table').DataTable({
-                        dom: 'B<"toolbar">lfrtip',
-                        deferRender: true,
-                        scrollX: true,
-                        bSort: true,
-                        bPaginate: true,
-                        sPaginationType: 'full_numbers',
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-
-                    var dist_table = obj['dist_table'];
-                    $('#dist_table').empty().append(dist_table).find('.table').DataTable({
-                        dom: 'B<"toolbar">lfrtip',
-                        deferRender: true,
-                        scrollX: true,
-                        bSort: true,
-                        bPaginate: true,
-                        sPaginationType: 'full_numbers',
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-
-                    var kme_table = obj['kme_table'];
-                    $('#kme_table').empty().append(kme_table).find('.table').DataTable({
-                        dom: 'B<"toolbar">lfrtip',
-                        deferRender: true,
-                        scrollX: true,
-                        bSort: true,
-                        bPaginate: true,
-                        sPaginationType: 'full_numbers',
-                        buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                    }).draw();
-
-                    $("div.toolbar").html('<br><br><br>');
-                    document.getElementById("TabButton").disabled = false;
-
-                    chooseDisplay();
-                }
             });
         }
 

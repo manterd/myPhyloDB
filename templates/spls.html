@@ -288,19 +288,75 @@
         }
 
         function updateStatus(RID) {
+            var myDict = {};
+            myDict['funcName'] = "getSPLS";
+            myDict['reqType'] = "status";
+            myDict['RID'] = RID;
+            var jsonDict = JSON.stringify(myDict);
             $.ajax({
-                url: '/myPhyloDB/statusSPLS/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
+                url: '/myPhyloDB/funcCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var stage = obj['stage'];
-                    if (running) {
-                        $('#container-0').empty().append(stage);
+                    var resType = obj['resType'];
+                    if (resType == "status") {
+                        var stage = obj['stage'];
+                        if (running) {
+                            $('#container-0').empty().append(stage);
+                        }
+                    } else {
+                        running = false;
+                        stopTimer(refresh);
+                        var series = obj['series'];
+
+                        var error = data['error'];
+                        if (error != "none") {
+                            $("#run").css("background-color", "red");
+                            $("#container-0").empty().append('Analysis was aborted!');
+                            alert(error);
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
+
+                        var text = obj['text'];
+                        $('#text-1').val(text);
+
+                        if (series == undefined) {
+                            $("#container-0").empty().append('No significant regressions!');
+                        } else {
+                            var xAxis = obj['xAxis'];
+                            var yAxis = obj['yAxis'];
+                            heatmap(xAxis, yAxis, series);
+                            chooseDisplay();
+
+                            var res_table = obj['res_table'];
+                            $('#res_table').empty().append(res_table).find('.table').DataTable({
+                                dom: 'B<"toolbar">lfrtip',
+                                deferRender: true,
+                                scrollX: true,
+                                bSort: true,
+                                bPaginate: true,
+                                sPaginationType: 'full_numbers',
+                                buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                            }).draw();
+
+                            var pred_table = obj['pred_table'];
+                            $('#pred_table').empty().append(pred_table).find('.table').DataTable({
+                                dom: 'B<"toolbar">lfrtip',
+                                deferRender: true,
+                                scrollX: true,
+                                bSort: true,
+                                bPaginate: true,
+                                sPaginationType: 'full_numbers',
+                                buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                            }).draw();
+
+                            $("div.toolbar").html('<br><br><br>');
+                            document.getElementById("TabButton").disabled = false;
+
+                        }
                     }
                 }
             });
@@ -423,66 +479,13 @@
             myDict['metricVal'] = document.getElementById("metricVal").value;
             myDict['RID'] = RID;
             myDict['funcName'] = "getSPLS";
+            myDict['reqType'] = "call";
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
                 data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                success: function(data) {
-                    running = false;
-                    stopTimer(refresh);
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var series = obj['series'];
-
-                    var error = data['error'];
-                    if (error != "none") {
-                        $("#run").css("background-color", "red");
-                        $("#container-0").empty().append('Analysis was aborted!');
-                        alert(error);
-                    } else {
-                        $("#run").css("background-color", "green");
-                    }
-
-                    var text = obj['text'];
-                    $('#text-1').val(text);
-
-                    if (series == undefined) {
-                        $("#container-0").empty().append('No significant regressions!');
-                    } else {
-                        var xAxis = obj['xAxis'];
-                        var yAxis = obj['yAxis'];
-                        heatmap(xAxis, yAxis, series);
-                        chooseDisplay();
-
-                        var res_table = obj['res_table'];
-                        $('#res_table').empty().append(res_table).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-
-                        var pred_table = obj['pred_table'];
-                        $('#pred_table').empty().append(pred_table).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-
-                        $("div.toolbar").html('<br><br><br>');
-                        document.getElementById("TabButton").disabled = false;
-
-                    }
-                }
             });
         }
 

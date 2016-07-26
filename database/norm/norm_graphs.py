@@ -29,7 +29,7 @@ def getNorm(request, RID, stopList, PID):
             # Get variables from web page
             allJson = request.body.split('&')[0]
             all = simplejson.loads(allJson)
-            database.queue.base(RID, 'Step 1 of 4: Querying database...')
+            database.queue.setBase(RID, 'Step 1 of 4: Querying database...')
 
             NormMeth = int(all["NormMeth"])
 
@@ -140,7 +140,7 @@ def getNorm(request, RID, stopList, PID):
             qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-            database.queue.base(RID, 'Step 1 of 4: Querying database...done!')
+            database.queue.setBase(RID, 'Step 1 of 4: Querying database...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -148,7 +148,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.base(RID, 'Step 2 of 4: Normalizing data...')
+            database.queue.setBase(RID, 'Step 2 of 4: Normalizing data...')
 
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
 
@@ -237,14 +237,14 @@ def getNorm(request, RID, stopList, PID):
             finalDF.to_csv(path, sep=',')
 
 
-            database.queue.base(RID, 'Step 2 of 4: Normalizing data...done!')
+            database.queue.setBase(RID, 'Step 2 of 4: Normalizing data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            database.queue.base(RID, 'Step 3 of 4: Formatting biome data...')
+            database.queue.setBase(RID, 'Step 3 of 4: Formatting biome data...')
 
             biome = {}
 
@@ -288,7 +288,7 @@ def getNorm(request, RID, stopList, PID):
             with open(path, 'w') as outfile:
                 simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
-            database.queue.base(RID, 'Step 3 of 4: Formatting biome data...done!')
+            database.queue.setBase(RID, 'Step 3 of 4: Formatting biome data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -296,7 +296,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.base(RID, 'Step 4 of 4: Formatting result table...')
+            database.queue.setBase(RID, 'Step 4 of 4: Formatting result table...')
 
             if tabular_on == 1:
                 data = finalDF.values.tolist()
@@ -309,7 +309,7 @@ def getNorm(request, RID, stopList, PID):
                 finalDict['data'] = data
                 finalDict['columns'] = colList
 
-            database.queue.base(RID, 'Step 4 of 4: Formatting result table...done!')
+            database.queue.setBase(RID, 'Step 4 of 4: Formatting result table...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:

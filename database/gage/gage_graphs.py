@@ -28,7 +28,7 @@ def getGAGE(request, stops, RID, PID):
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.base(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -82,7 +82,7 @@ def getGAGE(request, stops, RID, PID):
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '\n===============================================\n'
 
-                database.queue.base(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -90,7 +90,7 @@ def getGAGE(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 2 of 4: Mapping phylotypes to KEGG pathways...')
+                database.queue.setBase(RID, 'Step 2 of 4: Mapping phylotypes to KEGG pathways...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -129,7 +129,7 @@ def getGAGE(request, stops, RID, PID):
 
                 finalDF = getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID)
 
-                database.queue.base(RID, 'Step 3 of 4: Performing GAGE analysis...')
+                database.queue.setBase(RID, 'Step 3 of 4: Performing GAGE analysis...')
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/gage/'
@@ -277,7 +277,7 @@ def getGAGE(request, stops, RID, PID):
                             r("dev.off()")
                             r("pdf_counter <- pdf_counter + 1")
 
-                        database.queue.base(RID, 'Step 3 of 4: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(trt2) + ' is done!')
+                        database.queue.setBase(RID, 'Step 3 of 4: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(trt2) + ' is done!')
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                         if stops[PID] == RID:
@@ -291,7 +291,7 @@ def getGAGE(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 4 of 4: Pooling pdf files for display...')
+                database.queue.setBase(RID, 'Step 4 of 4: Pooling pdf files for display...')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/gage/Rplots/' + str(RID) + '/gage_final.pdf'
@@ -366,7 +366,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             counter += 1
-            database.queue.base(RID, 'Step 2 of 4: Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is done!')
+            database.queue.setBase(RID, 'Step 2 of 4: Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:

@@ -264,19 +264,45 @@
         }
 
         function updateStatus(RID) {
+            var myDict = {};
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getSpAC";
+            myDict['reqType'] = "status";
+            var jsonDict = JSON.stringify(myDict);
             $.ajax({
-                url: '/myPhyloDB/statusSpAC/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
+                url: '/myPhyloDB/funcCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    var stage = obj['stage'];
-                    if (running) {
-                        $('#container-0').empty().append(stage);
+                    var resType = obj['resType'];
+                    if (resType == "status") {
+                        var stage = obj['stage'];
+                        if (running) {
+                            $('#container-0').empty().append(stage);
+                        }
+                    } else {
+                        running = false;
+                        stopTimer(refresh);
+                        var xAxis = obj['xAxis'];
+                        var series = obj['series'];
+                        var yAxis = obj['yAxis'];
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
+
+                        var text = obj['text'];
+                        $('#text-1').val(text);
+
+                        $("div.toolbar").html('<br><br>');
+                        document.getElementById("TabButton").disabled = false;
+
+                        chooseDisplay();
                     }
                 }
             });
@@ -374,36 +400,13 @@
             myDict['RID'] = RID;
             myDict['funcName'] = "getSpAC";
             myDict['method'] = document.getElementById("method").value;
+            myDict['reqType'] = "call";
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
                 data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                success: function(data) {
-                    running = false;
-                    stopTimer(refresh);
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var xAxis = obj['xAxis'];
-                    var series = obj['series'];
-                    var yAxis = obj['yAxis'];
-                    var error = data['error'];
-                    if (error != "none") {
-                        alert(error);
-                        $("#run").css("background-color", "red");
-                    } else {
-                        $("#run").css("background-color", "green");
-                    }
-
-                    var text = obj['text'];
-                    $('#text-1').val(text);
-
-                    $("div.toolbar").html('<br><br>');
-                    document.getElementById("TabButton").disabled = false;
-
-                    chooseDisplay();
-                }
             });
         }
     </script>

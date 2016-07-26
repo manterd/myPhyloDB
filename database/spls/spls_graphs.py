@@ -23,7 +23,7 @@ def getSPLS(request, stops, RID, PID):
         while True:
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.base(RID, 'Step 1 of 5: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -62,7 +62,8 @@ def getSPLS(request, stops, RID, PID):
                         tempDF = tempDF.loc[tempDF[key].isin(valueList)]
 
                 wantedList = quantFields + ['sampleid']
-                metaDF = tempDF[wantedList]
+
+                metaDF = tempDF[quantFields]
 
                 result = ''
                 button3 = int(all['button3'])
@@ -105,7 +106,7 @@ def getSPLS(request, stops, RID, PID):
                 result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n'
                 result += '\n===============================================\n'
 
-                database.queue.base(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -113,7 +114,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
 
                 DepVar = 1
                 finalDF = pd.DataFrame()
@@ -140,7 +141,7 @@ def getSPLS(request, stops, RID, PID):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
 
-                database.queue.base(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done')
+                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -148,7 +149,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 3 of 5: Calculating sPLS...')
+                database.queue.setBase(RID, 'Step 3 of 5: Calculating sPLS...')
 
                 if DepVar == 1:
                     result += 'Dependent Variable: Relative Abundance' + '\n'
@@ -254,7 +255,7 @@ def getSPLS(request, stops, RID, PID):
                 r("sum <- sum(coef.f != 0)")
                 total = r.get("sum")
 
-                database.queue.base(RID, 'Step 3 of 5: Calculating sPLS...done!')
+                database.queue.setBase(RID, 'Step 3 of 5: Calculating sPLS...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -262,7 +263,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.base(RID, 'Step 4 of 5: Formatting graph data for display...')
+                database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...')
 
                 finalDict = {}
                 if total is not None:
@@ -536,8 +537,8 @@ def getSPLS(request, stops, RID, PID):
 
                 finalDict['text'] = result
 
-                database.queue.base(RID, 'Step 4 of 5: Formatting graph data for display...done!')
-                database.queue.base(RID, 'Step 5 of 5: Formatting sPLS coefficient table...')
+                database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...done!')
+                database.queue.setBase(RID, 'Step 5 of 5: Formatting sPLS coefficient table...')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

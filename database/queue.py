@@ -136,7 +136,6 @@ def funcCall(request):
     reqType = data['reqType']
     RID = data['RID']
     funcName = data['funcName']
-
     if reqType == "call":
         time1[RID] = time()
         qDict = {'RID': RID, 'funcName': funcName, 'request': request}
