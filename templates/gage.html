@@ -38,11 +38,12 @@
 
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/myPhyloDB/removeGAGEFiles/',
+                    url: '/myPhyloDB/removeFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
-                        all: RID
+                        all: RID,
+                        func: 'gage'
                     }
                 });
             });
@@ -184,11 +185,12 @@
 
         function getTab(){
             $.ajax({
-                url: '/myPhyloDB/getTabGAGE/',
+                url: '/myPhyloDB/getRawData/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
-                    all: RID
+                    all: RID,
+                    func: 'gage'
                 },
                 success: function(data) {
                     var result = JSON.stringify(data);

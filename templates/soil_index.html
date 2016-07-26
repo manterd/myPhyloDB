@@ -266,12 +266,6 @@
             ["46", "N cycle", "", "1.7.2.4", "nitrous-oxide reductase", "1.0e08"]
         ];
 
-        //alert("About to break");
-        //var num = document.getElementById("theme");
-        //alert(num);
-        //presetFunc();
-        //alert("Nevermind?");
-
         $(function () {
             table = $('#example').DataTable( {
                 data: dataSet,
@@ -286,7 +280,6 @@
             } );
 
             table.MakeCellsEditable({
-                //"onUpdate": myCallbackFunction,
                 "inputCss": 'my-input-class',
                 "columns": [5],
                 "confirmationButton": {
@@ -298,11 +291,12 @@
             // remove R plot on close
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/myPhyloDB/removesoil_indexFiles/',
+                    url: '/myPhyloDB/removeFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
-                        all: RID
+                        all: RID,
+                        func: 'soil_index'
                     }
                 });
             });
@@ -381,11 +375,12 @@
 
         function getTab(){
             $.ajax({
-                url: '/myPhyloDB/getTabsoil_index/',
+                url: '/myPhyloDB/getRawData/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
-                    all: RID
+                    all: RID,
+                    func: 'soil_index'
                 },
                 success: function(data) {
                     var result = JSON.stringify(data);

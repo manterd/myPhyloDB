@@ -35,18 +35,14 @@ time1 = {}
 time2 = {}
 TimeDiff = {}
 
-# setters and getters
+
 def setBase(RID, val):
     global base
     base[RID] = val
+
+
 def getBase(RID):
     return base[RID]
-
-def setStage(RID, val):
-    global stage
-    stage[RID] = val
-def getStage(RID):
-    return stage[RID]
 
 
 def removeRID(RID):
@@ -180,8 +176,7 @@ def funcCall(request):
                 else:
                     stage[RID] = 'Analysis starting'
 
-            myDict = {'stage': stage[RID]}
-            myDict['resType'] = "status"
+            myDict = {'stage': stage[RID], 'resType': 'status'}
             json_data = simplejson.dumps(myDict, encoding="Latin-1")
             return HttpResponse(json_data, content_type='application/json')
         except Exception as e:

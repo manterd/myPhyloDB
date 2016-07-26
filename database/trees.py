@@ -1220,7 +1220,7 @@ def getKEGGTreeChildren(request):
                     'tooltip': item.ko_desc,
                     'kegg': 'Level4',
                     'isFolder': False,
-                    'isLazy': True
+                    'isLazy': False
                 }
                 nodes.append(myNode)
 
@@ -1381,7 +1381,7 @@ def getNZTreeChildren(request):
                     'tooltip': item.nz_desc,
                     'kegg': 'Level5',
                     'isFolder': False,
-                    'isLazy': True
+                    'isLazy': False
                 }
                 nodes.append(myNode)
 

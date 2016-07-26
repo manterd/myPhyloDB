@@ -1,7 +1,6 @@
-import ast
 from collections import defaultdict
 import ctypes
-from django import db, forms
+from django import forms
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 import inspect
@@ -11,10 +10,11 @@ import os
 import pandas as pd
 import re
 import shutil
+import simplejson
 import threading
 import time
 
-from models import Project, Sample, Reference, Profile
+from models import Project, Reference, Profile
 from config import local_cfg
 
 
@@ -305,34 +305,43 @@ def threads():
     return int(num_threads)
 
 
-def sumKEGG(speciesList, picrustDF, keggDict, RID, PID, stops):
-    db.close_old_connections()
-    for species in speciesList:
-        try:
-            cell = picrustDF.at[species, 'geneCount']
-            d = ast.literal_eval(cell)
+def getRawData(request):
+    if request.is_ajax():
+        RID = request.GET["all"]
+        func = request.GET["func"]
 
-            for key in keggDict:
-                sum = 0.0
-                myList = keggDict[key]
+        myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
+        fileName = str(myDir) + str(RID) + '.pkl'
+        savedDF = pd.read_pickle(fileName)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
+        fileName = str(myDir) + str(RID) + '.csv'
+        savedDF.to_csv(fileName)
 
-                for k in myList:
-                    if k in d:
-                        sum += d[k]
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID] == RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        myDict = {}
+        myDir = '/myPhyloDB/media/temp/' + str(func) + '/'
+        fileName = str(myDir) + str(RID) + '.csv'
+        myDict['name'] = str(fileName)
+        res = simplejson.dumps(myDict)
 
-                picrustDF.at[species, key] = sum
-        except:
-            pass
+        return HttpResponse(res, content_type='application/json')
 
-    return picrustDF
+
+def removeFiles(request):
+    if request.is_ajax():
+        RID = request.GET["all"]
+        func = request.GET["func"]
+
+        file = "myPhyloDB/media/temp/" + str(func) + "/Rplots/" + str(RID) + "." + str(func) + ".pdf"
+        if os.path.exists(file):
+            os.remove(file)
+
+        file = "myPhyloDB/media/temp/" + str(func) + "/" + str(RID) + ".pkl"
+        if os.path.exists(file):
+            os.remove(file)
+
+        file = "myPhyloDB/media/temp/" + str(func) + "/" + str(RID) + ".csv"
+        if os.path.exists(file):
+            os.remove(file)
+
+        return HttpResponse()

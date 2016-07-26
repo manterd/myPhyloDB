@@ -17,82 +17,19 @@ from database.utils import taxaProfileDF
 import database.queue
 
 
-base = {}
-stage = {}
-time1 = {}
-time2 = {}
-TimeDiff = {}
 curSamples = {}
 totSamples = {}
-done = {}
-
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def statusNorm(request):
-    global base, stage, time1, time2, TimeDiff, curSamples, totSamples, done
-    if request.is_ajax():
-        RID = request.GET["all"]
-        time2[RID] = time.time()
-
-        try:
-            TimeDiff[RID] = time2[RID] - time1[RID]
-        except:
-            TimeDiff[RID] = 0
-
-        try:
-            if done[RID]:
-                stage[RID] = '\nAnalysis has been running for %.1f seconds\nAnalysis is complete, results are loading' % TimeDiff[RID]
-            else:
-                try:
-                    if TimeDiff[RID] == 0:
-                        stage[RID] = 'Normalization has been placed in queue, there are '+str(database.queue.q.qsize())+' others in front of you.'
-                    else:
-                        if curSamples[RID] == 0:
-                            stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
-                        else:
-                            stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds\nSub-sampling has processed %d samples out of %d' % (TimeDiff[RID], curSamples[RID], totSamples[RID])
-                except:
-                    if TimeDiff[RID] == 0:
-                        stage[RID] = 'In queue'
-                    else:
-                        stage[RID] = str(base[RID]) + '\nAnalysis has been running for %.1f seconds' % TimeDiff[RID]
-        except:
-            stage[RID] = 'Analysis is initializing...'
-
-        myDict = {'stage': stage[RID]}
-        json_data = simplejson.dumps(myDict, encoding="Latin-1")
-        return HttpResponse(json_data, content_type='application/json')
-
-
-def removeRIDNorm(RID):
-    global base, stage, time1, time2, TimeDiff, done
-    try:
-        base.pop(RID, None)
-        stage.pop(RID, None)
-        time1.pop(RID, None)
-        time2.pop(RID, None)
-        TimeDiff.pop(RID, None)
-        curSamples.pop(RID, None)
-        totSamples.pop(RID, None)
-        done.pop(RID, None)
-        return True
-    except:
-        return False
-
-
 def getNorm(request, RID, stopList, PID):
-    done[RID] = False
-    global base, stage, time1, TimeDiff, curSamples, totSamples, done
     try:
         if request.is_ajax():
             # Get variables from web page
             allJson = request.body.split('&')[0]
             all = simplejson.loads(allJson)
-
-            time1[RID] = time.time()  # Moved these down here so RID is available
-            base[RID] = 'Step 1 of 4: Querying database...'
+            database.queue.base(RID, 'Step 1 of 4: Querying database...')
 
             NormMeth = int(all["NormMeth"])
 
@@ -203,7 +140,7 @@ def getNorm(request, RID, stopList, PID):
             qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-            base[RID] = 'Step 1 of 4: Querying database...done!'
+            database.queue.base(RID, 'Step 1 of 4: Querying database...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -211,7 +148,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            base[RID] = 'Step 2 of 4: Normalizing data...'
+            database.queue.base(RID, 'Step 2 of 4: Normalizing data...')
 
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
 
@@ -300,14 +237,14 @@ def getNorm(request, RID, stopList, PID):
             finalDF.to_csv(path, sep=',')
 
 
-            base[RID] = 'Step 2 of 4: Normalizing data...done!'
+            database.queue.base(RID, 'Step 2 of 4: Normalizing data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            base[RID] = 'Step 3 of 4: Formatting biome data...'
+            database.queue.base(RID, 'Step 3 of 4: Formatting biome data...')
 
             biome = {}
 
@@ -351,7 +288,7 @@ def getNorm(request, RID, stopList, PID):
             with open(path, 'w') as outfile:
                 simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
-            base[RID] = 'Step 3 of 4: Formatting biome data...done!'
+            database.queue.base(RID, 'Step 3 of 4: Formatting biome data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -359,7 +296,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            base[RID] = 'Step 4 of 4: Formatting result table...'
+            database.queue.base(RID, 'Step 4 of 4: Formatting result table...')
 
             if tabular_on == 1:
                 data = finalDF.values.tolist()
@@ -372,7 +309,7 @@ def getNorm(request, RID, stopList, PID):
                 finalDict['data'] = data
                 finalDict['columns'] = colList
 
-            base[RID] = 'Step 4 of 4: Formatting result table...done!'
+            database.queue.base(RID, 'Step 4 of 4: Formatting result table...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -382,8 +319,6 @@ def getNorm(request, RID, stopList, PID):
 
             finalDict['error'] = 'none'
             res = simplejson.dumps(finalDict)
-            removeRIDNorm(RID)
-            done[RID] = True
             return HttpResponse(res, content_type='application/json')
 
     except:
@@ -394,7 +329,6 @@ def getNorm(request, RID, stopList, PID):
             myDict = {}
             myDict['error'] = "Error with Normalization!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            removeRIDNorm(RID)
             return HttpResponse(res, content_type='application/json')
 
 

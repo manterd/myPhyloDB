@@ -8,7 +8,6 @@ import pandas as pd
 from PyPDF2 import PdfFileReader, PdfFileMerger
 from pyper import *
 import simplejson
-import time
 
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
@@ -18,77 +17,18 @@ from database.models import Phyla, Class, Order, Family, Genus, Species
 import database.queue
 
 
-base = {}
-stage = {}
-time1 = {}
-time2 = {}
-TimeDiff = {}
-done = {}
-
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def updateGAGE(request):
-    global base, stage, time1, time2, TimeDiff
-    if request.is_ajax():
-        RID = request.GET["all"]
-        time2[RID] = time.time()
-
-        try:
-            TimeDiff[RID] = time2[RID] - time1[RID]
-        except:
-            TimeDiff[RID] = 0
-
-        try:
-            if done[RID]:
-                stage[RID] = '<br>Analysis has been running for %.1f seconds<br>Analysis is complete, results are loading' % TimeDiff[RID]
-            else:
-                try:
-                    if TimeDiff[RID] == 0:
-                        stage[RID] = 'Analysis has been placed in queue, there are ' + str(database.queue.stat(RID)) + ' others in front of you.'
-                    else:
-                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-                except:
-                    if TimeDiff[RID] == 0:
-                        stage[RID] = 'In queue'
-                    else:
-                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-        except:
-            stage[RID] = 'Analysis is initializing...'
-
-        myDict = {'stage': stage[RID]}
-        json_data = simplejson.dumps(myDict, encoding="Latin-1")
-        return HttpResponse(json_data, content_type='application/json')
-
-
-def removeRIDGAGE(RID):
-    global base, stage, time1, time2, TimeDiff, done
-    try:
-        base.pop(RID, None)
-        stage.pop(RID, None)
-        time1.pop(RID, None)
-        time2.pop(RID, None)
-        TimeDiff.pop(RID, None)
-        done.pop(RID, None)
-        return True
-    except:
-        return False
-
-
 def getGAGE(request, stops, RID, PID):
-    global base, stage, time1, TimeDiff, done
-    done[RID] = False
     try:
         while True:
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-
-                time1[RID] = time.time()  # Moved these down here so RID is available
-                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...'
-
+                database.queue.base(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -142,7 +82,7 @@ def getGAGE(request, stops, RID, PID):
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '\n===============================================\n'
 
-                base[RID] = 'Step 1 of 4: Selecting your chosen meta-variables...done'
+                database.queue.base(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -150,7 +90,7 @@ def getGAGE(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of 4: Mapping phylotypes to KEGG pathways...'
+                database.queue.base(RID, 'Step 2 of 4: Mapping phylotypes to KEGG pathways...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -189,7 +129,7 @@ def getGAGE(request, stops, RID, PID):
 
                 finalDF = getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID)
 
-                base[RID] = 'Step 3 of 4: Performing GAGE analysis...'
+                database.queue.base(RID, 'Step 3 of 4: Performing GAGE analysis...')
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/gage/'
@@ -337,7 +277,7 @@ def getGAGE(request, stops, RID, PID):
                             r("dev.off()")
                             r("pdf_counter <- pdf_counter + 1")
 
-                        base[RID] = 'Step 3 of 4: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(trt2) + ' is done!'
+                        database.queue.base(RID, 'Step 3 of 4: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(trt2) + ' is done!')
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                         if stops[PID] == RID:
@@ -351,7 +291,7 @@ def getGAGE(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 4 of 4: Pooling pdf files for display...'
+                database.queue.base(RID, 'Step 4 of 4: Pooling pdf files for display...')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/gage/Rplots/' + str(RID) + '/gage_final.pdf'
@@ -383,8 +323,6 @@ def getGAGE(request, stops, RID, PID):
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                removeRIDGAGE(RID)
-                done[RID] = True
                 return HttpResponse(res, content_type='application/json')
 
     except:
@@ -395,12 +333,10 @@ def getGAGE(request, stops, RID, PID):
             myDict = {}
             myDict['error'] = "Error with GAGE Analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            removeRIDGAGE(RID)
             return HttpResponse(res, content_type='application/json')
 
 
 def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
-    global base
     try:
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
@@ -430,7 +366,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             counter += 1
-            base[RID] = 'Step 2 of 4: Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is done!'
+            database.queue.base(RID, 'Step 2 of 4: Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
@@ -487,42 +423,6 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
             myDict['error'] = "Error with GAGE Analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
-
-
-def getTabGAGE(request):
-    if request.is_ajax():
-        RID = request.GET["all"]
-
-        myDir = 'myPhyloDB/media/temp/gage/'
-        fileName = str(myDir) + str(RID) + '.pkl'
-        savedDF = pd.read_pickle(fileName)
-
-        myDir = 'myPhyloDB/media/temp/gage/'
-        fileName = str(myDir) + str(RID) + '.csv'
-        savedDF.to_csv(fileName)
-
-        myDict = {}
-        myDir = '/myPhyloDB/media/temp/gage/'
-        fileName = str(myDir) + str(RID) + '.csv'
-        myDict['name'] = str(fileName)
-        res = simplejson.dumps(myDict)
-
-        return HttpResponse(res, content_type='application/json')
-
-
-def removeGAGEFiles(request):
-    if request.is_ajax():
-        RID = request.GET["all"]
-
-        file = "myPhyloDB/media/temp/gage/" + str(RID) + ".pkl"
-        if os.path.exists(file):
-            os.remove(file)
-
-        file = "myPhyloDB/media/temp/gage/" + str(RID) + ".csv"
-        if os.path.exists(file):
-            os.remove(file)
-
-        return HttpResponse()
 
 
 def getFullTaxonomy(level, id):

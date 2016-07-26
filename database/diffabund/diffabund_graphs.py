@@ -1,91 +1,30 @@
 import datetime
 from django.http import HttpResponse
-from django_pandas.io import read_frame
 import logging
 import pandas as pd
 from pyper import *
 import simplejson
-import time
 
-from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
-from database.utils import multidict, sumKEGG
+from database.utils import multidict
+from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 import database.queue
 
-
-base = {}
-stage = {}
-time1 = {}
-time2 = {}
-TimeDiff = {}
-done = {}
 
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def updateDiffAbund(request):
-    global base, stage, time1, time2, TimeDiff
-    if request.is_ajax():
-        RID = request.GET["all"]
-        time2[RID] = time.time()
-
-        try:
-            TimeDiff[RID] = time2[RID] - time1[RID]
-        except:
-            TimeDiff[RID] = 0
-
-        try:
-            if done[RID]:
-                stage[RID] = '<br>Analysis has been running for %.1f seconds<br>Analysis is complete, results are loading' % TimeDiff[RID]
-            else:
-                try:
-                    if TimeDiff[RID] == 0:
-                        stage[RID] = 'Analysis has been placed in queue, there are ' + str(database.queue.stat(RID)) + ' others in front of you.'
-                    else:
-                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-                except:
-                    if TimeDiff[RID] == 0:
-                        stage[RID] = 'In queue'
-                    else:
-                        stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-        except:
-            stage[RID] = 'Analysis is initializing...'
-
-        myDict = {'stage': stage[RID]}
-        json_data = simplejson.dumps(myDict, encoding="Latin-1")
-        return HttpResponse(json_data, content_type='application/json')
-
-
-def removeRIDDIFF(RID):
-    global base, stage, time1, time2, TimeDiff, done
-    try:
-        base.pop(RID, None)
-        stage.pop(RID, None)
-        time1.pop(RID, None)
-        time2.pop(RID, None)
-        TimeDiff.pop(RID, None)
-        done.pop(RID, None)
-        return True
-    except:
-        return False
-
-
 def getDiffAbund(request, stops, RID, PID):
-    global base, stage, time1, TimeDiff, done
-    done[RID] = False
     try:
         while True:
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-
-                time1[RID] = time.time()  # Moved these down here so RID is available
-                base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...'
-
+                database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
                 path = str(myDir) + 'usr_norm_data.csv'
 
@@ -175,11 +114,13 @@ def getDiffAbund(request, stops, RID, PID):
                     for key in metaDictCat:
                         tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
 
+                metaDF = tempDF[catFields_edit]
+
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '\n===============================================\n'
 
-                base[RID] = 'Step 1 of 5: Selecting your chosen meta-variables...done'
+                database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -187,22 +128,24 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...'
+                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
 
                 # get selected taxa fro each rank selected in the tree
                 DepVar = 1
                 finalDF = pd.DataFrame()
                 if button3 == 1:
                     DepVar = int(all["DepVar_taxa"])
-                    finalDF = getTaxaDF(selectAll, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF('abund', selectAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    result += 'The following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
+                    result += '===============================================\n'
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
-                    finalDF = getKeggDF(keggAll, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('abund', keggAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
-                    finalDF = getNZDF(nzAll, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('abund', nzAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/diffabund/'
@@ -240,7 +183,7 @@ def getDiffAbund(request, stops, RID, PID):
                 wantedList = ['sampleid', 'merge', 'sample_name']
                 meta_rDF = meta_rDF.loc[:, wantedList]
                 meta_rDF.set_index('sampleid', drop=True, inplace=True)
-                base[RID] = 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done'
+                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -248,7 +191,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 3 of 5: Performing statistical test...'
+                database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...')
 
                 finalDict = {}
                 if os.name == 'nt':
@@ -415,7 +358,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                             finalDF = pd.concat([finalDF, nbinom_res])
 
-                            base[RID] = 'Step 3 of 5: Performing statistical test...' + str(iterationName) + ' is done!'
+                            database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...' + str(iterationName) + ' is done!')
 
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                             if stops[PID] == RID:
@@ -429,8 +372,8 @@ def getDiffAbund(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 3 of 5: Performing statistical test...done!'
-                base[RID] = 'Step 4 of 5: Formatting graph data for display...'
+                database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...done!')
+                database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...')
 
                 seriesList = []
                 xAxisDict = {}
@@ -507,7 +450,7 @@ def getDiffAbund(request, stops, RID, PID):
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
 
-                base[RID] = 'Step 4 of 5: Formatting graph data for display...done!'
+                database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -515,14 +458,14 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                base[RID] = 'Step 5 of 5:  Formatting nbinomTest results for display...'
+                database.queue.setBase(RID, 'Step 5 of 5:  Formatting nbinomTest results for display...')
 
                 res_table = finalDF.to_html(classes="table display")
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
                 finalDict['text'] = result
 
-                base[RID] = 'Step 5 of 5: Formatting nbinomTest results for display...done!'
+                database.queue.setBase(RID, 'Step 5 of 5: Formatting nbinomTest results for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -532,8 +475,6 @@ def getDiffAbund(request, stops, RID, PID):
 
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
-                removeRIDDIFF(RID)
-                done[RID] = True
                 return HttpResponse(res, content_type='application/json')
 
     except:
@@ -544,7 +485,6 @@ def getDiffAbund(request, stops, RID, PID):
             myDict = {}
             myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
             res = simplejson.dumps(myDict)
-            removeRIDDIFF(RID)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -628,555 +568,6 @@ def findNZ(id):
                     except:
                         return 'Not found'
     return taxa
-
-
-def getTaxaDF(selectAll, tempDF, allFields, DepVar, RID, stops, PID):
-    global base
-    try:
-        base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
-        taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'abund', 'abund_16S'])
-
-        if selectAll == 2:
-            taxaDF = tempDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'abund_16S']]
-            taxaDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
-            taxaDF.loc[:, 'rank'] = 'Phyla'
-        elif selectAll == 3:
-            taxaDF = tempDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'abund_16S']]
-            taxaDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
-            taxaDF.loc[:, 'rank'] = 'Class'
-        elif selectAll == 4:
-            taxaDF = tempDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'abund_16S']]
-            taxaDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
-            taxaDF.loc[:, 'rank'] = 'Order'
-        elif selectAll == 5:
-            taxaDF = tempDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'abund_16S']]
-            taxaDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
-            taxaDF.loc[:, 'rank'] = 'Family'
-        elif selectAll == 6:
-            taxaDF = tempDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'abund_16S']]
-            taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
-            taxaDF.loc[:, 'rank'] = 'Genus'
-        elif selectAll == 7:
-            taxaDF = tempDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'abund_16S']]
-            taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
-            taxaDF.loc[:, 'rank'] = 'Species'
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        # Create combined metadata column - DiffAbund only
-        if len(allFields) > 1:
-            for index, row in tempDF.iterrows():
-                tempDF.loc[index, 'merge'] = "; ".join(row[allFields])
-        else:
-            tempDF.loc[:, 'merge'] = tempDF.loc[:, allFields[0]]
-
-        metaDF = tempDF.loc[:, ['merge']]
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
-
-        wantedList = ['sampleid', 'merge', 'rank', 'rank_name', 'rank_id']
-        if DepVar == 1:
-            finalDF = finalDF.groupby(wantedList)[['abund']].sum()
-        elif DepVar == 4:
-            finalDF = finalDF.groupby(wantedList)[['abund_16S']].sum()
-
-        finalDF.reset_index(drop=False, inplace=True)
-        return finalDF
-
-    except:
-        if not stops[PID] == RID:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-
-
-def getKeggDF(keggAll, tempDF, allFields, DepVar, RID, stops, PID):
-    global base
-    try:
-        base[RID] = 'Step 2 of 4: Selecting your chosen taxa or KEGG level...'
-        koDict = {}
-        if keggAll == 1:
-            keys = ko_lvl1.objects.using('picrust').values_list('ko_lvl1_id', flat=True)
-            for key in keys:
-                koList = ko_entry.objects.using('picrust').filter(ko_lvl1_id_id=key).values_list('ko_orthology', flat=True)
-                if koList:
-                    koDict[key] = koList
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        elif keggAll == 2:
-            keys = ko_lvl2.objects.using('picrust').values_list('ko_lvl2_id', flat=True)
-            for key in keys:
-                koList = ko_entry.objects.using('picrust').filter(ko_lvl2_id_id=key).values_list('ko_orthology', flat=True)
-                if koList:
-                    koDict[key] = koList
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        elif keggAll == 3:
-            keys = ko_lvl3.objects.using('picrust').values_list('ko_lvl3_id', flat=True)
-            for key in keys:
-                koList = ko_entry.objects.using('picrust').filter(ko_lvl3_id_id=key).values_list('ko_orthology', flat=True)
-                if koList:
-                    koDict[key] = koList
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
-        profileDF = tempDF.loc[:, wanted]
-        profileDF.set_index('speciesid', inplace=True)
-
-        # get PICRUSt data for species
-        speciesList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
-        picrustDF.set_index('speciesid__speciesid', inplace=True)
-
-        levelList = []
-        for key in koDict:
-            levelList.append(str(key))
-
-        picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
-        picrustDF.fillna(0.0, inplace=True)
-        picrustDF = sumKEGG(speciesList, picrustDF, koDict, RID, PID, stops)
-        picrustDF.drop('geneCount', axis=1, inplace=True)
-        picrustDF[picrustDF > 0.0] = 1.0
-
-        # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
-
-        for level in levelList:
-            if DepVar == 1:
-                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
-            elif DepVar == 4:
-                taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
-        taxaDF.reset_index(drop=False, inplace=True)
-
-        if DepVar == 1:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
-        elif DepVar == 4:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
-
-        # Create combined metadata column - DiffAbund only
-        if len(allFields) > 1:
-            for index, row in tempDF.iterrows():
-                tempDF.loc[index, 'merge'] = "; ".join(row[allFields])
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        else:
-            tempDF.loc[:, 'merge'] = tempDF.loc[:, allFields[0]]
-
-        metaDF = tempDF.loc[:, ['sampleid', 'merge']]
-        metaDF.set_index('sampleid', drop=True, inplace=True)
-        grouped = metaDF.groupby(level=0)
-        metaDF = grouped.last()
-
-        taxaDF.set_index('sampleid', drop=True, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
-
-        finalDF.reset_index(drop=False, inplace=True)
-
-        finalDF['rank'] = ''
-        finalDF['rank_name'] = ''
-        for index, row in finalDF.iterrows():
-            if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl1'
-                finalDF.loc[index, 'rank_name'] = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=row['rank_id']).ko_lvl1_name
-            elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl2'
-                finalDF.loc[index, 'rank_name'] = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=row['rank_id']).ko_lvl2_name
-            elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl3'
-                finalDF.loc[index, 'rank_name'] = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=row['rank_id']).ko_lvl3_name
-            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl4'
-                finalDF.loc[index, 'rank_name'] = ko_entry.objects.using('picrust').get(ko_lvl4_id=row['rank_id']).ko_name
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        return finalDF
-
-    except:
-        if not stops[PID] == RID:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-
-
-def getNZDF(nzAll, tempDF, allFields, DepVar, RID, stops, PID):
-    global base
-    try:
-        nzDict = {}
-        if nzAll == 1:
-            keys = nz_lvl1.objects.using('picrust').values_list('nz_lvl1_id', flat=True)
-            for key in keys:
-                nzList = nz_entry.objects.using('picrust').filter(nz_lvl1_id_id=key).values_list('nz_orthology', flat=True)
-                if nzList:
-                    nzDict[key] = nzList
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        elif nzAll == 2:
-            keys = nz_lvl2.objects.using('picrust').values_list('nz_lvl2_id', flat=True)
-            for key in keys:
-                nzList = nz_entry.objects.using('picrust').filter(nz_lvl2_id_id=key).values_list('nz_orthology', flat=True)
-                if nzList:
-                    nzDict[key] = nzList
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        elif nzAll == 3:
-            keys = nz_lvl3.objects.using('picrust').values_list('nz_lvl3_id', flat=True)
-            for key in keys:
-                nzList = nz_entry.objects.using('picrust').filter(nz_lvl3_id_id=key).values_list('nz_orthology', flat=True)
-                if nzList:
-                    nzDict[key] = nzList
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        elif nzAll == 4:
-            keys = nz_lvl4.objects.using('picrust').values_list('nz_lvl4_id', flat=True)
-            for key in keys:
-                nzList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=key).values_list('nz_orthology', flat=True)
-                if nzList:
-                    nzDict[key] = nzList
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        elif nzAll == 5:
-            # 1.18.6.1  nitrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.3.3.11  pyrroloquinoline-quinone synthase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.3.3.11  pyrroloquinoline-quinone synthase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.4.99.5  glycine dehydrogenase (cyanide-forming)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.99.5  glycine dehydrogenase (cyanide-forming)').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.1.1.76  (S,S)-butanediol dehydrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.1.1.76  (S,S)-butanediol dehydrogenase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.2.1.14  chitinase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.14  chitinase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 4.1.1.74  indolepyruvate decarboxylase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.74  indolepyruvate decarboxylase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 6.3.2.39  aerobactin synthase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.39  aerobactin synthase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.2.1.4  cellulase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.4  cellulase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.2.1.21  beta-glucosidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.21  beta-glucosidase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.2.1.8  endo-1,4-beta-xylanase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.8  endo-1,4-beta-xylanase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.2.1.37  xylan 1,4-beta-xylosidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.37  xylan 1,4-beta-xylosidase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.5.1.4  amidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.5.1.5  urease
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.5  urease').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.1.3.1  alkaline phosphatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.1  alkaline phosphatase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.1.3.2  acid phosphatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.2  acid phosphatase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.1.6.1  arylsulfatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-        elif nzAll == 6:
-            # 1.18.6.1  nitrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 3.5.1.5  urease
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.1.5  urease').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.14.99.39  ammonia monooxygenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.7.2.6  hydroxylamine dehydrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.7.99.4  nitrate reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.7.2.1  nitrite reductase (NO-forming)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.7.2.5  nitric oxide reductase (cytochrome c)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-            # 1.7.2.4  nitrous-oxide reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = idList
-
-        # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
-        profileDF = tempDF.loc[:, wanted]
-        profileDF.set_index('speciesid', inplace=True)
-
-        # get PICRUSt data for species
-        speciesList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
-        picrustDF.set_index('speciesid__speciesid', inplace=True)
-
-        levelList = []
-        for key in nzDict:
-            levelList.append(str(key))
-
-        picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
-        picrustDF.fillna(0.0, inplace=True)
-        picrustDF = sumKEGG(speciesList, picrustDF, nzDict, RID, PID, stops)
-        picrustDF.drop('geneCount', axis=1, inplace=True)
-        print picrustDF
-        picrustDF[picrustDF > 0.0] = 1.0
-
-        # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
-
-        for level in levelList:
-            if DepVar == 1:
-                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
-            elif DepVar == 4:
-                taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
-        taxaDF.reset_index(drop=False, inplace=True)
-
-        if DepVar == 1:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
-        elif DepVar == 4:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
-
-        # Create combined metadata column - DiffAbund only
-        if len(allFields) > 1:
-            for index, row in tempDF.iterrows():
-                tempDF.loc[index, 'merge'] = "; ".join(row[allFields])
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        else:
-            tempDF.loc[:, 'merge'] = tempDF.loc[:, allFields[0]]
-
-        metaDF = tempDF.loc[:, ['sampleid', 'merge']]
-        metaDF.set_index('sampleid', drop=True, inplace=True)
-        grouped = metaDF.groupby(level=0)
-        metaDF = grouped.last()
-
-        taxaDF.set_index('sampleid', drop=True, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
-
-        finalDF.reset_index(drop=False, inplace=True)
-        finalDF['rank'] = ''
-        finalDF['rank_name'] = ''
-        for index, row in finalDF.iterrows():
-            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl1'
-                finalDF.loc[index, 'rank_name'] = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=row['rank_id']).nz_lvl1_name
-            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl2'
-                finalDF.loc[index, 'rank_name'] = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=row['rank_id']).nz_lvl2_name
-            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl3'
-                finalDF.loc[index, 'rank_name'] = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=row['rank_id']).nz_lvl3_name
-            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl4'
-                finalDF.loc[index, 'rank_name'] = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=row['rank_id']).nz_lvl4_name
-            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl5'
-                finalDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_name
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        return finalDF
-
-    except:
-        if not stops[PID] == RID:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "Error with Differential Abundance!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-
-
-def getTabDiffAbund(request):
-    if request.is_ajax():
-        RID = request.GET["all"]
-
-        myDir = 'myPhyloDB/media/temp/diffabund/'
-        fileName = str(myDir) + str(RID) + '.pkl'
-        savedDF = pd.read_pickle(fileName)
-
-        myDir = 'myPhyloDB/media/temp/diffabund/'
-        fileName = str(myDir) + str(RID) + '.csv'
-        savedDF.to_csv(fileName)
-
-        myDict = {}
-        myDir = '/myPhyloDB/media/temp/diffabund/'
-        fileName = str(myDir) + str(RID) + '.csv'
-        myDict['name'] = str(fileName)
-        res = simplejson.dumps(myDict)
-
-        return HttpResponse(res, content_type='application/json')
-
-
-def removeDiffAbundFiles(request):
-    if request.is_ajax():
-        RID = request.GET["all"]
-
-        file = "myPhyloDB/media/temp/diffabund/" + str(RID) + ".pkl"
-        if os.path.exists(file):
-            os.remove(file)
-
-        file = "myPhyloDB/media/temp/diffabund/" + str(RID) + ".csv"
-        if os.path.exists(file):
-            os.remove(file)
-
-        return HttpResponse()
 
 
 def getFullTaxonomy(level, id):

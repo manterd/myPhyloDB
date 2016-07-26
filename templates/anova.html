@@ -41,11 +41,12 @@
 
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/myPhyloDB/removeANOVAFiles/',
+                    url: '/myPhyloDB/removeFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
-                        all: RID
+                        all: RID,
+                        func: 'anova'
                     }
                 });
             });
@@ -690,11 +691,12 @@
 
         function getTab(){
             $.ajax({
-                url: '/myPhyloDB/getTabANOVA/',
+                url: '/myPhyloDB/getRawData/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
-                    all: RID
+                    all: RID,
+                    func: 'anova'
                 },
                 success: function(data) {
                     var result = JSON.stringify(data);
@@ -1670,6 +1672,7 @@
                         <option value="5">Families</option>
                         <option value="6">Genera</option>
                         <option value="7">Species</option>
+                        <option value="8">PGPRs</option>
                     </select>
                     &nbsp<-- Selected taxa level
                 </td>

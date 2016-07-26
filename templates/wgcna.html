@@ -44,11 +44,12 @@
             // remove R plot on close
             $(window).bind('beforeunload', function(){
                 $.ajax({
-                    url: '/myPhyloDB/removeWGCNAFiles/',
+                    url: '/myPhyloDB/removeFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
-                        all: RID
+                        all: RID,
+                        func: 'wgcna'
                     }
                 });
             });
@@ -312,11 +313,12 @@
 
         function getTab(){
             $.ajax({
-                url: '/myPhyloDB/getTabWGCNA/',
+                url: '/myPhyloDB/getRawData/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
-                    all: RID
+                    all: RID,
+                    func: 'wgcna'
                 },
                 success: function(data) {
                     var result = JSON.stringify(data);
@@ -687,6 +689,7 @@
                     <option value="5">Families</option>
                     <option value="6">Genera</option>
                     <option value="7" selected="selected">Species</option>
+                    <option value="8">PGPRs</option>
                 </select>
                 &nbsp<-- Selected taxa level
             </td>
