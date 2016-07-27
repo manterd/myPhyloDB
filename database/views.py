@@ -124,7 +124,7 @@ def uploadFunc(request, stopList):
 
             try:
                 handle_uploaded_file(file1, dest, metaName)
-                parse_project(metaFile, p_uuid)
+                parse_project(metaFile, num_samp, p_uuid)
             except:
                 logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                 myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -1774,7 +1774,7 @@ def updateFunc(request, stopList):
         try:
             metaFile = '/'.join([dest, file1.name])
             handle_uploaded_file(file1, dest, file1.name)
-            parse_project(metaFile, p_uuid)
+            parse_project(metaFile, num_samp, p_uuid)
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
             return render_to_response(

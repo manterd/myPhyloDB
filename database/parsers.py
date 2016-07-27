@@ -5,6 +5,7 @@ from django.http import HttpResponse
 import glob
 import logging
 from numpy import *
+import numpy as np
 import os
 import signal
 import psutil
@@ -18,10 +19,12 @@ import xlrd
 from xlutils.copy import copy
 import xlwt
 from xlwt import Style
+import openpyxl
+from io import BytesIO
 
-from models import Project, Reference, Sample, Soil, Human_Associated, UserDefined
+from models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
-from utils import purge, handle_uploaded_file
+from utils import purge, handle_uploaded_file, excel_to_dict
 import database.dataqueue
 
 
@@ -153,11 +156,11 @@ def status(request):
 
 def projectid(Document):
     try:
-        f = xlrd.open_workbook(file_contents=Document.read())
-        sheet = f.sheet_by_name('Project')
-        pType = sheet.cell_value(rowx=5, colx=2)
-        projectid = sheet.cell_value(rowx=5, colx=3)
-        num_samp = int(sheet.cell_value(rowx=5, colx=0))
+        wb = openpyxl.load_workbook(BytesIO(Document.read()), data_only=True)
+        ws = wb.get_sheet_by_name('Project')
+        pType = ws.cell(row=6, column=3).value
+        projectid = ws.cell(row=6, column=4).value
+        num_samp = ws.cell(row=6, column=1).value
 
         if projectid:
             p_uuid = projectid
@@ -173,14 +176,18 @@ def projectid(Document):
         return None
 
 
-def parse_project(Document, p_uuid):
+def parse_project(Document, num_samp, p_uuid):
     try:
         global stage, perc
         stage = "Step 1 of 5: Parsing project file..."
         perc = 0
 
-        df = pd.read_excel(Document, skiprows=4, sheetname='Project')
-        rowDict = df.to_dict(orient='records')[0]
+        headerRow = [
+            'num_samp', 'status', 'projectType', 'projectid', 'project_name', 'project_desc', 'start_date',
+            'end_date', 'pi_last', 'pi_first', 'pi_affiliation', 'pi_email', 'pi_phone'
+        ]
+        myDict = excel_to_dict(Document, headers=headerRow, headerRow=5, nRows=num_samp, sheet='Project', data_only=True)
+        rowDict = myDict[0]
         rowDict.pop('num_samp')
 
         if not Project.objects.filter(projectid=p_uuid).exists():
@@ -191,7 +198,6 @@ def parse_project(Document, p_uuid):
         else:
             rowDict.pop('projectid')
             Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, **rowDict)
-
     except:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -240,7 +246,7 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
         logging.exception(myDate)
 
 
-def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userID):
+def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, userID):
     try:
         global stage, perc
         stage = "Step 2 of 5: Parsing sample file..."
@@ -249,30 +255,77 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
 
         project = Project.objects.get(projectid=p_uuid)
 
-        df1 = pd.read_excel(Document, skiprows=5, sheetname='MIMARKs')
-        if pType == 'human associated':
-            df2 = pd.read_excel(Document, skiprows=5, sheetname='Human Associated')
-        elif pType == 'soil':
-            df2 = pd.read_excel(Document, skiprows=5, sheetname='Soil')
-        else:
-            df2 = pd.DataFrame()
+        headerRow = [
+            'refid', 'sampleid', 'sample_name', 'organism', 'collection_date', 'depth', 'elev', 'seq_method', 'seq_platform',
+            'seq_gene', 'seq_gene_region', 'seq_barcode', 'seq_for_primer', 'seq_rev_primer', 'env_biome', 'env_feature',
+            'env_material', 'geo_loc_name', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot',
+            'lat_lon', 'latitude', 'longitude', 'annual_season_precpt', 'annual_season_temp'
+        ]
+        dict1 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='MIMARKs', data_only=True)
 
-        df3 = pd.read_excel(Document, skiprows=5, sheetname='User')
+        if pType == 'air':
+            headerRow = [
+                #TODO: add columns
+            ]
+            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Air', data_only=True)
+
+        elif pType == 'human associated' or pType == 'human gut':
+            headerRow = [
+                #TODO: add columns
+            ]
+            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Human Associated', data_only=True)
+
+        elif pType == 'microbial':
+            headerRow = [
+                #TODO: add columns
+            ]
+            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Microbial', data_only=True)
+
+        elif pType == 'soil':
+            #TODO: update Excel template and headerRow for soil health variables
+            headerRow = [
+                'sampleid', 'sample_name', 'samp_collection_device', 'samp_size', 'samp_depth', 'samp_prep', 'samp_sieve_size',
+                'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'samp_weight_dna_ext', 'pool_dna_extracts', 'fao_class',
+                'local_class', 'texture_class', 'porosity', 'profile_position', 'slope_aspect', 'slope_gradient', 'bulk_density',
+                'drainage_class', 'water_content_soil', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'crop_rotation',
+                'cover_crop', 'fert_amendment_class', 'fert_placement', 'fert_type', 'fert_tot_amount', 'fert_N_tot_amount',
+                'fert_P_tot_amount', 'fert_K_tot_amount', 'irrigation_type', 'irrigation_tot_amount', 'residue_removal',
+                'residue_growth_stage', 'residue_removal_percent', 'tillage_event', 'tillage_event_depth', 'amend1_class',
+                'amend1_active_ingredient', 'amend1_tot_amount', 'amend2_class', 'amend2_active_ingredient', 'amend2_tot_amount',
+                'amend3_class', 'amend3_active_ingredient', 'amend3_tot_amount', 'rRNA_copies', 'microbial_biomass_C',
+                'microbial_biomass_N', 'microbial_respiration', 'soil_pH', 'soil_EC', 'soil_C', 'soil_OM', 'soil_N', 'soil_NO3_N',
+                'soil_NH4_N', 'soil_P', 'soil_K', 'soil_S', 'soil_Zn', 'soil_Fe', 'soil_Cu', 'soil_Mn', 'soil_Ca', 'soil_Mg',
+                'soil_Na', 'soil_B', 'plant_C', 'plant_N', 'plant_P', 'plant_K', 'plant_Ca', 'plant_Mg', 'plant_S', 'plant_Na',
+                'plant_Cl', 'plant_Al', 'plant_B', 'plant_Cu', 'plant_Fe', 'plant_Mn', 'plant_Zn', 'crop_tot_biomass_fw',
+                'crop_tot_biomass_dw', 'crop_tot_above_biomass_fw', 'crop_tot_above_biomass_dw', 'crop_tot_below_biomass_fw',
+                'crop_tot_below_biomass_dw', 'harv_fraction', 'harv_fresh_weight', 'harv_dry_weight', 'ghg_chamber_placement',
+                'ghg_N2O', 'ghg_CO2', 'ghg_NH4'
+            ]
+            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Soil', data_only=True)
+
+        elif pType == 'water':
+            headerRow = [
+                #TODO: add columns
+            ]
+            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Water', data_only=True)
+
+        else:
+            dict2 = list()
+
+        headerRow = [
+            'sampleid', 'sample_name', 'usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6',
+            'usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6'
+        ]
+        dict3 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='User', data_only=True)
 
         idList = []
-        refid = ''
-        refDict = {}
-        newRefID = uuid4().hex
-        for i in xrange(total):
+        for i in xrange(num_samp):
             step += 1.0
-            perc = int((step / total/2) * 100)
-
-            row = df1.iloc[[i]].to_dict(orient='records')[0]
-
+            perc = int((step / num_samp/2) * 100)
+            row = dict1[i]
             pathid = row['refid']
-
             if not isinstance(pathid, unicode):
-                refid = newRefID
+                refid = uuid4().hex
             else:
                 refid = pathid
 
@@ -294,12 +347,21 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
                 idList.append(s_uuid)
                 Sample.objects.create(projectid=project, refid=reference, **row)
 
-            refDict[s_uuid] = refid
-
+            refDict = {s_uuid: refid}
             sample = Sample.objects.get(sampleid=s_uuid)
 
-            if pType == "human associated":
-                row = df2.iloc[[i]].to_dict(orient='records')[0]
+            row = dict2[i]
+            if pType == "air":
+                if not Air.objects.filter(sampleid=s_uuid).exists():
+                    row.pop('sampleid')
+                    row.pop('sample_name')
+                    Air.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+                else:
+                    row.pop('sampleid')
+                    row.pop('sample_name')
+                    Air.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+
+            elif pType == "human associated":
                 if not Human_Associated.objects.filter(sampleid=s_uuid).exists():
                     row.pop('sampleid')
                     row.pop('sample_name')
@@ -309,8 +371,17 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
                     row.pop('sample_name')
                     Human_Associated.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
+            elif pType == "microbial":
+                if not Microbial.objects.filter(sampleid=s_uuid).exists():
+                    row.pop('sampleid')
+                    row.pop('sample_name')
+                    Microbial.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+                else:
+                    row.pop('sampleid')
+                    row.pop('sample_name')
+                    Microbial.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+
             elif pType == "soil":
-                row = df2.iloc[[i]].to_dict(orient='records')[0]
                 if not Soil.objects.filter(sampleid=s_uuid).exists():
                     row.pop('sampleid')
                     row.pop('sample_name')
@@ -319,10 +390,20 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
                     row.pop('sampleid')
                     row.pop('sample_name')
                     Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
-            else:
-                placeholder = ''
 
-            row = df3.iloc[[i]].to_dict(orient='records')[0]
+            elif pType == "water":
+                if not Water.objects.filter(sampleid=s_uuid).exists():
+                    row.pop('sampleid')
+                    row.pop('sample_name')
+                    Water.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+                else:
+                    row.pop('sampleid')
+                    row.pop('sample_name')
+                    Water.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+            else:
+                pass
+
+            row = dict3[i]
             if not UserDefined.objects.filter(sampleid=s_uuid).exists():
                 row.pop('sampleid')
                 row.pop('sample_name')
@@ -332,6 +413,7 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
                 row.pop('sample_name')
                 UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
+        #TODO: change this re-formatting to work with openpyxl
         rb = xlrd.open_workbook(Document, formatting_info=True)
         nSheets = rb.nsheets
         wb = copy(rb)
@@ -364,26 +446,26 @@ def parse_sample(Document, p_uuid, pType, total, dest, batch, raw, source, userI
                 ws.write(5, 3, p_uuid, style)
 
             if ws.name == 'MIMARKs':
-                for i in xrange(total):
+                for i in xrange(num_samp):
                     j = i + 6
                     ws.write(j, 0, refid, style)
                     ws.write(j, 1, idList[i], style)
 
             if pType == 'human associated':
                 if ws.name == 'Human Associated':
-                    for i in xrange(total):
+                    for i in xrange(num_samp):
                         j = i + 6
                         ws.write(j, 0, idList[i], style)
             elif pType == 'soil':
                 if ws.name == 'Soil':
-                    for i in xrange(total):
+                    for i in xrange(num_samp):
                         j = i + 6
                         ws.write(j, 0, idList[i], style)
             else:
-                placeholder = ''
+                pass
 
             if ws.name == 'User':
-                for i in xrange(total):
+                for i in xrange(num_samp):
                     j = i + 6
                     ws.write(j, 0, idList[i], style)
 

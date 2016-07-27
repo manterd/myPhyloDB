@@ -3,7 +3,7 @@ from utils import MultiFileField
 
 
 class UploadForm1(forms.Form):
-    docfile1 = forms.FileField(label='Select meta.xls file:')
+    docfile1 = forms.FileField(label='Select meta.xlsx file:')
 
 
 class UploadForm2(forms.Form):
@@ -33,7 +33,7 @@ class UploadForm4(forms.Form):
     processors = forms.IntegerField(initial=2, min_value=1, max_value=100)
 
 class UploadForm5(forms.Form):
-    docfile11 = forms.FileField(label='Select meta.xls file:')
+    docfile11 = forms.FileField(label='Select meta.xlsx file:')
 
 
 class UploadForm6(forms.Form):
