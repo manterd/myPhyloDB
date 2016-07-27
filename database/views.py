@@ -12,7 +12,6 @@ import os
 import pandas as pd
 import pickle
 import simplejson
-import xlrd
 import time
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
@@ -1788,10 +1787,6 @@ def updateFunc(request, stopList):
             return updaStop(request)
 
         try:
-            f = xlrd.open_workbook(metaFile)
-            sheet = f.sheet_by_name('Project')
-            num_samp = int(sheet.cell_value(rowx=5, colx=0))
-
             bat = 'mothur.batch'
             batPath = '/'.join([dest, bat])
             reference = Reference.objects.get(refid=refid)
@@ -1799,7 +1794,6 @@ def updateFunc(request, stopList):
             source = reference.source
             userID = str(request.user.id)
 
-            # add stops to parse functions?
             if os.path.exists(batPath):
                 with open(batPath, 'rb') as batFile:
                     parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
