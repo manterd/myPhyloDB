@@ -3,9 +3,11 @@ import datetime
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 import glob
+from io import BytesIO
 import logging
 from numpy import *
 import numpy as np
+import openpyxl
 import os
 import signal
 import psutil
@@ -15,8 +17,6 @@ import shutil
 import simplejson
 import subprocess
 from uuid import uuid4
-import openpyxl
-from io import BytesIO
 
 from models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
@@ -246,7 +246,6 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
         logging.exception(myDate)
 
 
-#TODO: need to fix how the import deals with empty cells since some are float others string
 def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, userID):
     try:
         global stage, perc
@@ -254,7 +253,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         perc = 0
 
         project = Project.objects.get(projectid=p_uuid)
-        wb = openpyxl.load_workbook(Document, data_only=False, read_only=False)
+        wb = openpyxl.load_workbook(Document, data_only=True, read_only=True)
         perc = 25
 
         headerRow = [
@@ -330,10 +329,10 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         for i in xrange(num_samp):
             row = dict1[i]
             pathid = row['refid']
-            if not isinstance(pathid, unicode):
-                refid = newRefID
-            else:
+            if pathid:
                 refid = pathid
+            else:
+                refid = newRefID
 
             s_uuid = row['sampleid']
             row.pop('refid')
@@ -427,6 +426,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
             perc += 25/num_samp
 
         ### add myPhyloDB generated IDs to excel metafile
+        wb = openpyxl.load_workbook(Document, data_only=False, read_only=False)
         ws = wb.get_sheet_by_name('Project')
         ws.cell(row=6, column=4).value = p_uuid
 
@@ -584,14 +584,11 @@ def parse_profile(file3, file4, p_uuid, refDict):
             t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesName=s)
 
             for name in sampleList:
-                count = int(row[str(name)])
+                count = int(row[name])
                 if count > 0:
                     project = Project.objects.get(projectid=p_uuid)
                     sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
                     sampid = sample.sampleid
-
-                    print 'refDict:', refDict
-                    print 'sampid:', sampid
                     refid = refDict[sampid]
                     reference = Reference.objects.get(refid=refid)
 

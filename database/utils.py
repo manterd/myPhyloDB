@@ -354,13 +354,8 @@ def excel_to_dict(wb, headers=[], headerRow=1, nRows=1, sheet='Sheet1'):
         line = dict()
         for header in headers:
             cell_value = ws.cell(row=row, column=headers.index(header)+1).value
-            '''
-            if type(cell_value) is unicode:
-                cell_value = cell_value.encode('utf-8').decode('ascii', 'ignore')
-                cell_value = cell_value.strip()
-            '''
             if cell_value is None:
-                cell_value = ''
+                cell_value = np.nan
             line[header] = cell_value
         result_dict.append(line)
     return result_dict
