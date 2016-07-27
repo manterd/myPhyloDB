@@ -15,10 +15,6 @@ import shutil
 import simplejson
 import subprocess
 from uuid import uuid4
-import xlrd
-from xlutils.copy import copy
-import xlwt
-from xlwt import Style
 import openpyxl
 from io import BytesIO
 
@@ -156,7 +152,10 @@ def status(request):
 
 def projectid(Document):
     try:
-        wb = openpyxl.load_workbook(BytesIO(Document.read()), data_only=True)
+        global stage, perc
+        perc = 0
+        stage = "Step 1 of 5: Parsing project file..."
+        wb = openpyxl.load_workbook(BytesIO(Document.read()), data_only=True, read_only=True)
         ws = wb.get_sheet_by_name('Project')
         pType = ws.cell(row=6, column=3).value
         projectid = ws.cell(row=6, column=4).value
@@ -176,17 +175,17 @@ def projectid(Document):
         return None
 
 
-def parse_project(Document, num_samp, p_uuid):
+def parse_project(Document, p_uuid):
     try:
         global stage, perc
-        stage = "Step 1 of 5: Parsing project file..."
-        perc = 0
-
+        perc = 50
         headerRow = [
             'num_samp', 'status', 'projectType', 'projectid', 'project_name', 'project_desc', 'start_date',
             'end_date', 'pi_last', 'pi_first', 'pi_affiliation', 'pi_email', 'pi_phone'
         ]
-        myDict = excel_to_dict(Document, headers=headerRow, headerRow=5, nRows=num_samp, sheet='Project', data_only=True)
+
+        wb = openpyxl.load_workbook(Document, data_only=True, read_only=True)
+        myDict = excel_to_dict(wb, headers=headerRow, headerRow=5, nRows=1, sheet='Project')
         rowDict = myDict[0]
         rowDict.pop('num_samp')
 
@@ -198,6 +197,7 @@ def parse_project(Document, num_samp, p_uuid):
         else:
             rowDict.pop('projectid')
             Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, **rowDict)
+        stage = "Step 1 of 5: Parsing project file...done"
     except:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -246,14 +246,16 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
         logging.exception(myDate)
 
 
+#TODO: need to fix how the import deals with empty cells since some are float others string
 def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, userID):
     try:
         global stage, perc
         stage = "Step 2 of 5: Parsing sample file..."
         perc = 0
-        step = 0
 
         project = Project.objects.get(projectid=p_uuid)
+        wb = openpyxl.load_workbook(Document, data_only=False, read_only=False)
+        perc = 25
 
         headerRow = [
             'refid', 'sampleid', 'sample_name', 'organism', 'collection_date', 'depth', 'elev', 'seq_method', 'seq_platform',
@@ -261,25 +263,26 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
             'env_material', 'geo_loc_name', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot',
             'lat_lon', 'latitude', 'longitude', 'annual_season_precpt', 'annual_season_temp'
         ]
-        dict1 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='MIMARKs', data_only=True)
+        dict1 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='MIMARKs')
+        perc = 50
 
         if pType == 'air':
             headerRow = [
                 #TODO: add columns
             ]
-            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Air', data_only=True)
+            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Air')
 
         elif pType == 'human associated' or pType == 'human gut':
             headerRow = [
                 #TODO: add columns
             ]
-            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Human Associated', data_only=True)
+            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Human Associated')
 
         elif pType == 'microbial':
             headerRow = [
                 #TODO: add columns
             ]
-            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Microbial', data_only=True)
+            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Microbial')
 
         elif pType == 'soil':
             #TODO: update Excel template and headerRow for soil health variables
@@ -301,31 +304,34 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                 'crop_tot_below_biomass_dw', 'harv_fraction', 'harv_fresh_weight', 'harv_dry_weight', 'ghg_chamber_placement',
                 'ghg_N2O', 'ghg_CO2', 'ghg_NH4'
             ]
-            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Soil', data_only=True)
+            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Soil')
 
         elif pType == 'water':
             headerRow = [
                 #TODO: add columns
             ]
-            dict2 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Water', data_only=True)
+            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Water')
 
         else:
             dict2 = list()
+        perc = 75
 
         headerRow = [
             'sampleid', 'sample_name', 'usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6',
             'usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6'
         ]
-        dict3 = excel_to_dict(Document, headers=headerRow, headerRow=6, nRows=num_samp, sheet='User', data_only=True)
+        dict3 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='User')
+        perc = 100
 
         idList = []
+        refid = ''
+        refDict = {}
+        newRefID = uuid4().hex
         for i in xrange(num_samp):
-            step += 1.0
-            perc = int((step / num_samp/2) * 100)
             row = dict1[i]
             pathid = row['refid']
             if not isinstance(pathid, unicode):
-                refid = uuid4().hex
+                refid = newRefID
             else:
                 refid = pathid
 
@@ -347,7 +353,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                 idList.append(s_uuid)
                 Sample.objects.create(projectid=project, refid=reference, **row)
 
-            refDict = {s_uuid: refid}
+            refDict[s_uuid] = refid
             sample = Sample.objects.get(sampleid=s_uuid)
 
             row = dict2[i]
@@ -381,15 +387,20 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                     row.pop('sample_name')
                     Microbial.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
+            #TODO: remove extras once they are added to the excel metafile
             elif pType == "soil":
                 if not Soil.objects.filter(sampleid=s_uuid).exists():
                     row.pop('sampleid')
                     row.pop('sample_name')
-                    Soil.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+                    Soil.objects.create(projectid=project, refid=reference, sampleid=sample, soil_water_cap=None,
+                        soil_surf_hard=None, soil_subsurf_hard=None, soil_agg_stability=None, soil_ACE_protein=None,
+                        soil_active_C=None, **row)
                 else:
                     row.pop('sampleid')
                     row.pop('sample_name')
-                    Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+                    Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample,
+                        soil_water_cap=None, soil_surf_hard=None, soil_subsurf_hard=None, soil_agg_stability=None,
+                        soil_ACE_protein=None, soil_active_C=None, **row)
 
             elif pType == "water":
                 if not Water.objects.filter(sampleid=s_uuid).exists():
@@ -413,68 +424,24 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                 row.pop('sample_name')
                 UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-        #TODO: change this re-formatting to work with openpyxl
-        rb = xlrd.open_workbook(Document, formatting_info=True)
-        nSheets = rb.nsheets
-        wb = copy(rb)
+            perc += 25/num_samp
 
-        style = xlwt.XFStyle()
+        ### add myPhyloDB generated IDs to excel metafile
+        ws = wb.get_sheet_by_name('Project')
+        ws.cell(row=6, column=4).value = p_uuid
 
-        # border
-        borders = xlwt.Borders()
-        borders.bottom = xlwt.Borders.THIN
-        borders.top = xlwt.Borders.THIN
-        borders.left = xlwt.Borders.THIN
-        borders.right = xlwt.Borders.THIN
-        style.borders = borders
+        ws = wb.get_sheet_by_name('MIMARKs')
+        for i in xrange(len(idList)):
+            j = i + 7
+            ws.cell(row=j, column=1).value = refid
+            ws.cell(row=j, column=2).value = idList[i]
+            perc += 25/num_samp
 
-        # font
-        font = xlwt.Font()
-        font.name = 'Calibri'
-        font.height = 11 * 20
-        style.font = font
-
-        # background color
-        pattern = xlwt.Pattern()
-        pattern.pattern = xlwt.Pattern.SOLID_PATTERN
-        pattern.pattern_fore_colour = xlwt.Style.colour_map['gray25']
-        style.pattern = pattern
-
-        for each in xrange(nSheets):
-            ws = wb.get_sheet(each)
-            if ws.name == 'Project':
-                ws.write(5, 3, p_uuid, style)
-
-            if ws.name == 'MIMARKs':
-                for i in xrange(num_samp):
-                    j = i + 6
-                    ws.write(j, 0, refid, style)
-                    ws.write(j, 1, idList[i], style)
-
-            if pType == 'human associated':
-                if ws.name == 'Human Associated':
-                    for i in xrange(num_samp):
-                        j = i + 6
-                        ws.write(j, 0, idList[i], style)
-            elif pType == 'soil':
-                if ws.name == 'Soil':
-                    for i in xrange(num_samp):
-                        j = i + 6
-                        ws.write(j, 0, idList[i], style)
-            else:
-                pass
-
-            if ws.name == 'User':
-                for i in xrange(num_samp):
-                    j = i + 6
-                    ws.write(j, 0, idList[i], style)
-
-            wb.save(Document)
-            perc += 50/nSheets
-
+        wb.save(Document)
         return refDict
 
-    except:
+    except Exception as e:
+        print e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -586,7 +553,6 @@ def parse_profile(file3, file4, p_uuid, refDict):
         del df1, df2
 
         total, columns = df3.shape
-
         sampleList = df3.columns.values.tolist()
         sampleList.remove('Taxonomy')
 
@@ -619,12 +585,13 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
             for name in sampleList:
                 count = int(row[str(name)])
-
                 if count > 0:
                     project = Project.objects.get(projectid=p_uuid)
                     sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
                     sampid = sample.sampleid
 
+                    print 'refDict:', refDict
+                    print 'sampid:', sampid
                     refid = refDict[sampid]
                     reference = Reference.objects.get(refid=refid)
 
@@ -644,14 +611,12 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
 
 def repStop(request):
-
     # cleanup in repro project!
     print "Stopping!"
     return "Stopped"
 
 
 def reanalyze(request, stopList):
-    # form4
     try:
         global rep_project
 
@@ -817,19 +782,13 @@ def reanalyze(request, stopList):
             except Exception as e:
                 print("Error with batch file: ", e)
 
-            p_uuid = project.projectid.projectid
+            shutil.copy('% s/final_meta.xlsx' % dest, '% s/final_meta.xlsx' % mothurdest)
 
             if stopList[PID] == RID:
                 return repStop(request)
 
-
-            dest = project.path
-            pType = project.projectid.projectType
-
-            shutil.copy('% s/final_meta.xls' % dest, '% s/final_meta.xls' % mothurdest)
-
-            backup = Reference.objects.get(path=dest)  # save before deleting in case of error? how to reinsert...
-            Reference.objects.get(path=dest).delete()  # removes project from database
+            backup = Reference.objects.get(path=dest)
+            Reference.objects.get(path=dest).delete()
 
             # alternatively, edit existing project data rather than removing and replacing, save edits for end of
             # reprocess, such that data is in the same state as before reprocess if it fails
@@ -837,17 +796,14 @@ def reanalyze(request, stopList):
             if not os.path.exists(dest):
                 os.makedirs(dest)
 
-            shutil.copy('% s/final_meta.xls' % mothurdest, '% s/final_meta.xls' % dest)
+            shutil.copy('% s/final_meta.xlsx' % mothurdest, '% s/final_meta.xlsx' % dest)
             if stopList[PID] == RID:
-                backup.save()  # works! sometimes
+                backup.save()
                 return repStop(request)
 
-
             try:
-                print "Mothur?"
                 mothur(dest, source)
             except Exception as e:
-                print "Aww"
                 backup.save()
                 print("Error with mothur: " + str(e))
                 return HttpResponse(
@@ -860,10 +816,10 @@ def reanalyze(request, stopList):
                 return repStop(request)
 
             # subQueue()
-
-            metaName = 'final_meta.xls'
+            metaName = 'final_meta.xlsx'
             metaFile = '/'.join([dest, metaName])
 
+            p_uuid, pType, num_samp = projectid(metaFile)
             parse_project(metaFile, p_uuid)
 
             if stopList[PID] == RID:
@@ -873,10 +829,6 @@ def reanalyze(request, stopList):
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
                 userID = str(request.user.id)
-
-                f = xlrd.open_workbook(metaFile)
-                sheet = f.sheet_by_name('Project')
-                num_samp = int(sheet.cell_value(rowx=5, colx=0))
 
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
 
@@ -890,12 +842,11 @@ def reanalyze(request, stopList):
         return None
 
     except Exception as e:
-        print "It broke!"
         print " e = ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         try:
-            backup.save()
+            backup.save()   #TODO: This probably isn't working, need to reference before try?
         except:
             pass
         logging.exception(myDate)

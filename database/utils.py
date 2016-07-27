@@ -6,13 +6,11 @@ from django.http import HttpResponse
 import inspect
 import multiprocessing as mp
 import numpy as np
-import openpyxl
 import os
 import pandas as pd
 import re
 import shutil
 import simplejson
-import string
 import threading
 import time
 
@@ -349,19 +347,20 @@ def removeFiles(request):
         return HttpResponse()
 
 
-def excel_to_dict(excel_path, headers=[], headerRow=1, nRows=1, sheet='Sheet1', data_only=False):
-    wb = openpyxl.load_workbook(excel_path, data_only=data_only)
+def excel_to_dict(wb, headers=[], headerRow=1, nRows=1, sheet='Sheet1'):
     ws = wb.get_sheet_by_name(sheet)
     result_dict = []
     for row in range(headerRow+1, headerRow+1+nRows):
         line = dict()
         for header in headers:
             cell_value = ws.cell(row=row, column=headers.index(header)+1).value
+            '''
             if type(cell_value) is unicode:
                 cell_value = cell_value.encode('utf-8').decode('ascii', 'ignore')
                 cell_value = cell_value.strip()
+            '''
             if cell_value is None:
-                cell_value = np.nan
+                cell_value = ''
             line[header] = cell_value
         result_dict.append(line)
     return result_dict
