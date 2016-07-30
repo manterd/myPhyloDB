@@ -13,6 +13,7 @@ import pandas as pd
 import pickle
 import simplejson
 import time
+import zipfile
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9
@@ -54,6 +55,46 @@ def upload(request):
          'error': ""},
         context_instance=RequestContext(request)
     )
+
+
+@login_required(login_url='/myPhyloDB/accounts/login/')
+def download(request):
+
+    projects = Reference.objects.none()
+    if request.user.is_superuser:
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+    elif request.user.is_authenticated():
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+
+    if request.method == "POST":
+        paths = request.POST.getlist('chkbx')
+
+        zip_file = os.path.join(os.getcwd(), 'myPhyloDB', 'media', 'usr_temp', request.user.username, 'final_data.zip')
+        zf = zipfile.ZipFile(zip_file, "w")
+        for path in paths:
+            if os.path.exists(path):
+                for root, dirs, files in os.walk(path):
+                    for file in files:
+                        if file.endswith('.shared') or file.endswith('.taxonomy') or file.endswith('.fasta') or file.endswith('.names') or file.endswith('.groups') or file.endswith('.log') or file.endswith('.xlsx') or file.endswith('.xls'):
+                            zf.write(os.path.join(root, file))
+        zf.close()
+
+        return render_to_response(
+            'download.html',
+            {'projects': projects,
+             'type': "POST",
+             'paths': paths},
+            context_instance=RequestContext(request)
+        )
+
+    else:
+        return render_to_response(
+            'download.html',
+            {'projects': projects,
+             'type': "GET",
+             'paths': ''},
+            context_instance=RequestContext(request)
+        )
 
 
 def upStop(request):
@@ -863,7 +904,7 @@ def referenceTableJSON(request):
             "refid__alignDB",
             "refid__templateDB",
             "refid__taxonomyDB",
-            "refid__author"
+            "refid__author_id__username"
         )
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]

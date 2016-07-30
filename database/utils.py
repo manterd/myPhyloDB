@@ -347,15 +347,21 @@ def removeFiles(request):
         return HttpResponse()
 
 
-def excel_to_dict(wb, headers=[], headerRow=1, nRows=1, sheet='Sheet1'):
+def excel_to_dict(wb, headerRow=1, nRows=1, sheet='Sheet1'):
     ws = wb.get_sheet_by_name(sheet)
+
+    headerDict = dict()
+    for col in xrange(1, ws.max_column):
+        if ws.cell(row=headerRow, column=col).value:
+            headerDict[col] = ws.cell(row=headerRow, column=col).value
+
     result_dict = []
     for row in range(headerRow+1, headerRow+1+nRows):
         line = dict()
-        for header in headers:
-            cell_value = ws.cell(row=row, column=headers.index(header)+1).value
+        for key, value in headerDict.iteritems():
+            cell_value = ws.cell(row=row, column=key).value
             if cell_value is None:
                 cell_value = np.nan
-            line[header] = cell_value
+            line[headerDict[key]] = cell_value
         result_dict.append(line)
     return result_dict

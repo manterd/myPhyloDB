@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>Download</title>
+{% endblock %}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
+{% block javascript %}
+    <style>
+        #progressBar {
+                width: 200px;
+                height: 22px;
+                border: 1px solid #111;
+                background-color: #292929;
+        }
+
+        #progressBar div {
+                height: 100%;
+                color: #fff;
+                text-align: right;
+                line-height: 22px;
+                width: 0;
+                background-color: #0099ff;
+        }
+    </style>
+    <script type="text/javascript">
+        $(function () {
+
+            var type = "{{ type }}";
+            if (type == "POST") {
+                {% static "" as baseUrl %}
+                getFile('/myPhyloDB/media/usr_temp/{{ user.username }}/final_data.zip', 'final_data.zip');
+            }
+        });
+
+        function getFile(name, final) {
+            var anchor = document.createElement('a');
+            anchor.setAttribute('href', name);
+            anchor.setAttribute('download', final);
+
+            var ev = document.createEvent("MouseEvents");
+                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            anchor.dispatchEvent(ev);
+        }
+
+    </script>
+{% endblock %}
+{% block my_content %}
+
+    <h2>List of previous uploads:</h2>
+    <form id="form" method="post" action="{% url 'download' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <table>
+            <td>
+                {% if projects %}
+                    {% for project in projects %}
+                        Project: {{ project.projectid.project_name }}<br>
+                        <input name="chkbx" type="checkbox" value="{{ project.path }}"/>
+                        Path: {{ project.path }}<br>
+                        <br>
+                    {% endfor %}
+                {% else %}
+                    <p>No projects uploaded.</p>
+                {% endif %}
+            </td>
+        </table>
+        <p><input name="clickMe" type="submit" value="Get selected!"/></p>
+    </form>
+{% endblock my_content %}

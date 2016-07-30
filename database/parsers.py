@@ -179,13 +179,9 @@ def parse_project(Document, p_uuid):
     try:
         global stage, perc
         perc = 50
-        headerRow = [
-            'num_samp', 'status', 'projectType', 'projectid', 'project_name', 'project_desc', 'start_date',
-            'end_date', 'pi_last', 'pi_first', 'pi_affiliation', 'pi_email', 'pi_phone'
-        ]
 
         wb = openpyxl.load_workbook(Document, data_only=True, read_only=True)
-        myDict = excel_to_dict(wb, headers=headerRow, headerRow=5, nRows=1, sheet='Project')
+        myDict = excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
         rowDict = myDict[0]
         rowDict.pop('num_samp')
 
@@ -234,9 +230,11 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
             taxonomy_ref = 'null'
 
         if not Reference.objects.filter(refid=refid).exists():
+            print 'does not exist'
             project = Project.objects.get(projectid=p_uuid)
             Reference.objects.create(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
         else:
+            print 'exists'
             project = Project.objects.get(projectid=p_uuid)
             Reference.objects.filter(refid=refid).update(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
 
@@ -256,71 +254,29 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         wb = openpyxl.load_workbook(Document, data_only=True, read_only=True)
         perc = 25
 
-        headerRow = [
-            'refid', 'sampleid', 'sample_name', 'organism', 'collection_date', 'depth', 'elev', 'seq_method', 'seq_platform',
-            'seq_gene', 'seq_gene_region', 'seq_barcode', 'seq_for_primer', 'seq_rev_primer', 'env_biome', 'env_feature',
-            'env_material', 'geo_loc_name', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot',
-            'lat_lon', 'latitude', 'longitude', 'annual_season_precpt', 'annual_season_temp'
-        ]
-        dict1 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='MIMARKs')
+        dict1 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='MIMARKs')
         perc = 50
 
         if pType == 'air':
-            headerRow = [
-                #TODO: add columns
-            ]
-            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Air')
+            dict2 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Air')
 
         elif pType == 'human associated' or pType == 'human gut':
-            headerRow = [
-                #TODO: add columns
-            ]
-            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Human Associated')
+            dict2 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Human Associated')
 
         elif pType == 'microbial':
-            headerRow = [
-                #TODO: add columns
-            ]
-            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Microbial')
+            dict2 = excel_to_dict(wb,headerRow=6, nRows=num_samp, sheet='Microbial')
 
         elif pType == 'soil':
-            #TODO: update Excel template and headerRow for soil health variables
-            headerRow = [
-                'sampleid', 'sample_name', 'samp_collection_device', 'samp_size', 'samp_depth', 'samp_prep', 'samp_sieve_size',
-                'samp_store_dur', 'samp_store_loc', 'samp_store_temp', 'samp_weight_dna_ext', 'pool_dna_extracts', 'fao_class',
-                'local_class', 'texture_class', 'porosity', 'profile_position', 'slope_aspect', 'slope_gradient', 'bulk_density',
-                'drainage_class', 'water_content_soil', 'cur_land_use', 'cur_vegetation', 'cur_crop', 'cur_cultivar', 'crop_rotation',
-                'cover_crop', 'fert_amendment_class', 'fert_placement', 'fert_type', 'fert_tot_amount', 'fert_N_tot_amount',
-                'fert_P_tot_amount', 'fert_K_tot_amount', 'irrigation_type', 'irrigation_tot_amount', 'residue_removal',
-                'residue_growth_stage', 'residue_removal_percent', 'tillage_event', 'tillage_event_depth', 'amend1_class',
-                'amend1_active_ingredient', 'amend1_tot_amount', 'amend2_class', 'amend2_active_ingredient', 'amend2_tot_amount',
-                'amend3_class', 'amend3_active_ingredient', 'amend3_tot_amount', 'rRNA_copies', 'microbial_biomass_C',
-                'microbial_biomass_N', 'microbial_respiration', 'soil_pH', 'soil_EC', 'soil_C', 'soil_OM', 'soil_N', 'soil_NO3_N',
-                'soil_NH4_N', 'soil_P', 'soil_K', 'soil_S', 'soil_Zn', 'soil_Fe', 'soil_Cu', 'soil_Mn', 'soil_Ca', 'soil_Mg',
-                'soil_Na', 'soil_B', 'plant_C', 'plant_N', 'plant_P', 'plant_K', 'plant_Ca', 'plant_Mg', 'plant_S', 'plant_Na',
-                'plant_Cl', 'plant_Al', 'plant_B', 'plant_Cu', 'plant_Fe', 'plant_Mn', 'plant_Zn', 'crop_tot_biomass_fw',
-                'crop_tot_biomass_dw', 'crop_tot_above_biomass_fw', 'crop_tot_above_biomass_dw', 'crop_tot_below_biomass_fw',
-                'crop_tot_below_biomass_dw', 'harv_fraction', 'harv_fresh_weight', 'harv_dry_weight', 'ghg_chamber_placement',
-                'ghg_N2O', 'ghg_CO2', 'ghg_NH4'
-            ]
-            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Soil')
+            dict2 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Soil')
 
         elif pType == 'water':
-            headerRow = [
-                #TODO: add columns
-            ]
-            dict2 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='Water')
+            dict2 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Water')
 
         else:
             dict2 = list()
-        perc = 75
 
-        headerRow = [
-            'sampleid', 'sample_name', 'usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6',
-            'usr_quant1', 'usr_quant2', 'usr_quant3', 'usr_quant4', 'usr_quant5', 'usr_quant6'
-        ]
-        dict3 = excel_to_dict(wb, headers=headerRow, headerRow=6, nRows=num_samp, sheet='User')
-        perc = 100
+        dict3 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='User')
+        perc = 75
 
         idList = []
         refid = ''
@@ -329,7 +285,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         for i in xrange(num_samp):
             row = dict1[i]
             pathid = row['refid']
-            if pathid:
+            if not np.isnan(pathid):
                 refid = pathid
             else:
                 refid = newRefID
