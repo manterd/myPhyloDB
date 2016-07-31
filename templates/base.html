@@ -178,9 +178,11 @@
                 <a class="Offmouse" href="{% url "download" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Download a zip file containing your final Mothur files (i.e., processed data).">[Download]</li></a>
                 <a class="Offmouse" href="{% url "reprocess" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Reprocess uploaded projects with new reference files.">[Reprocess]</li></a>
                 <a class="Offmouse" href="{% url "update" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update/edit metadata for uploaded projects.">[Update]</li></a>
-                <a class="Offmouse" href="{% url "pybake" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update PICRUSt reference files.">[PyBake]</li></a>
-                <br>
             {% endif %}
+            {% if user.is_superuser %}
+                <a class="Offmouse" href="{% url "pybake" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update PICRUSt reference files.">[PyBake]</li></a>
+            {% endif %}
+            <br>
             <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Select projects/samples for analysis.">Select Data</li></a>
             <div id="link5" style="display: none;" >
                 <a class="Offmouse" href="{% url "norm" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Normalize Data</li></a>

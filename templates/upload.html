@@ -36,7 +36,7 @@
 
         window.onload = function() {
             var mothurStat = localStorage.getItem(name);
-            if (mothurStat !== null) $('#mothurStat').val(mothurStat);
+            if (mothurStat != null) $('#mothurStat').val(mothurStat);
         };
 
 
@@ -122,7 +122,7 @@
                     updateStage(stage);
                     progressBar(perc, $("#progressBar"));
                     document.getElementById("mothurStat").value = document.getElementById("mothurStat").value + obj['mothurStat'];
-                    document.getElementById("mothurStat").scrollTop = document.getElementById("mothurStat").scrollHeight;
+                    //document.getElementById("mothurStat").scrollTop = document.getElementById("mothurStat").scrollHeight;
                 }
             });
         }
@@ -166,7 +166,7 @@
     <form id="form" action="{% url 'datfuncCall' %}" method="post" onclick="RID = makeGUID();" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+        <table width="650px" border="0" cellspacing="0" cellpadding="5">
             <tr>
                 <td colspan="2">1.) Select metadata file:</td>
             </tr>
@@ -183,7 +183,7 @@
         </table>
         <br>
 
-        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+        <table width="650px" border="0" cellspacing="0" cellpadding="5">
             <tr>
                 <td colspan="2">2.) Select sequence data format:</td>
             </tr>
@@ -200,7 +200,7 @@
         </table>
         <br>
 
-        <table width="100%" border="0" cellspacing="0" cellpadding="5">
+        <table width="650px" border="0" cellspacing="0" cellpadding="5">
             <tr>
                 <td>3.) Select sequencing files:</td>
             </tr>
@@ -270,7 +270,7 @@
             </tr>
         </table>
         <br>
-        <table id="proc_table" style="display: none" width="100%" border="0" cellspacing="0" cellpadding="5">
+        <table id="proc_table" style="display: none" width="650px" border="0" cellspacing="0" cellpadding="5">
             <tr>
                 <td width="100">4.) How many processors would you like to use?</td>
             </tr>
@@ -302,8 +302,9 @@
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
     <br>
-    <h2>Mothur output: </h2>
-    <textarea id="mothurStat" rows=5 cols=72></textarea>
+
+    <h2>Mothur status and output: </h2>
+    <textarea id="mothurStat" rows=25 cols=72 style="width: 925px"></textarea>
 
     <h2>List of previous uploads:</h2>
     <form id="form2" method="post" action="{% url 'datfuncCall' %}" enctype="multipart/form-data">

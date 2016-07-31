@@ -29,14 +29,15 @@ def getProjectTree(request):
         projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
 
     for project in projects:
-        myNode = {
-            'title': project.project_name,
-            'tooltip': project.project_desc,
-            'id': project.projectid,
-            'isFolder': True,
-            'isLazy': True
-        }
-        myTree['children'].append(myNode)
+        if Sample.objects.filter(projectid=project.projectid).exists():
+            myNode = {
+                'title': project.project_name,
+                'tooltip': project.project_desc,
+                'id': project.projectid,
+                'isFolder': True,
+                'isLazy': True
+            }
+            myTree['children'].append(myNode)
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
@@ -79,7 +80,7 @@ def getSampleCatTree(request):
         samples = pickle.load(f)
 
     # convert samples list into django queryset based on id's in current list
-    samples = Sample.objects.all().filter(sampleid__in=samples)  # this seems to work
+    samples = Sample.objects.all().filter(sampleid__in=samples)
 
     projectList = samples.values_list('projectid').distinct()
     projectType = Project.objects.all().filter(projectid__in=projectList)

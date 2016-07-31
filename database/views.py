@@ -1,6 +1,7 @@
 import datetime
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.signals import user_logged_in
+from django.db import transaction
 from django.db.models import Q
 from django.http import *
 from django.shortcuts import render_to_response
@@ -115,7 +116,13 @@ def upStop(request):
     )
 
 
+@transaction.atomic
 def uploadFunc(request, stopList):
+
+    ### create a savepoint
+    sid = transaction.savepoint()
+
+    ### start of main upload function
     projects = Reference.objects.none()
     if request.method == 'POST' and 'Upload' in request.POST:
         start = datetime.datetime.now()
@@ -169,8 +176,8 @@ def uploadFunc(request, stopList):
                 logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                 myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                 logging.exception(myDate)
-
                 remove_proj(dest)
+                transaction.savepoint_rollback(sid)
 
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -204,6 +211,7 @@ def uploadFunc(request, stopList):
 
             if stopList[PID] == RID:
                 remove_proj(dest)
+                transaction.savepoint_rollback(sid)
                 return upStop(request)
 
             try:
@@ -212,8 +220,8 @@ def uploadFunc(request, stopList):
                 logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                 myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                 logging.exception(myDate)
-
                 remove_proj(dest)
+                transaction.savepoint_rollback(sid)
 
                 if request.user.is_superuser:
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -231,6 +239,7 @@ def uploadFunc(request, stopList):
 
             if stopList[PID] == RID:
                 remove_proj(dest)
+                transaction.savepoint_rollback(sid)
                 return upStop(request)
 
             if source == 'mothur':
@@ -243,8 +252,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -262,6 +271,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file4 = request.FILES['docfile4']
@@ -275,8 +285,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -294,6 +304,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
             elif source == '454_sff':
@@ -303,6 +314,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file_list = request.FILES.getlist('sff_files')
@@ -313,6 +325,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file_list = request.FILES.getlist('oligo_files')
@@ -323,6 +336,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file5 = request.FILES['docfile5']
@@ -345,6 +359,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 # check queue for mothur availability, then run or wait
@@ -359,8 +374,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -378,6 +393,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 subQueue()
@@ -389,8 +405,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -408,6 +424,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
@@ -421,8 +438,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -440,6 +457,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
             elif source == '454_fastq':
@@ -474,6 +492,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file_list = request.FILES.getlist('qual_files')
@@ -502,6 +521,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 oligo = 'temp.oligos'
@@ -510,12 +530,14 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 handle_uploaded_file(file6, dest, file6.name)
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 batch = 'mothur.batch'
@@ -529,6 +551,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
@@ -538,6 +561,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
@@ -547,8 +571,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -566,6 +590,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
@@ -575,8 +600,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -594,6 +619,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
@@ -606,8 +632,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -625,6 +651,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
             elif source == 'miseq':
@@ -638,24 +665,24 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 handle_uploaded_file(file13, dest, fastq)
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file_list = request.FILES.getlist('fastq_files')
                 for each in file_list:
                     file = each
                     handle_uploaded_file(file, mothurdest, each)
-                    if stopList[PID] == RID:
-                        remove_proj(dest)
-                        return upStop(request)
                     handle_uploaded_file(file, dest, each)
                     if stopList[PID] == RID:
                         remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
                         return upStop(request)
 
                 batch = 'mothur.batch'
@@ -669,6 +696,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
@@ -678,6 +706,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
@@ -686,8 +715,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -705,6 +734,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
@@ -714,8 +744,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -732,6 +762,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
@@ -744,8 +775,8 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -762,6 +793,7 @@ def uploadFunc(request, stopList):
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
                     return upStop(request)
 
             else:
@@ -1736,21 +1768,21 @@ def reprocess(request):
         alignDB = request.FILES['docfile8'].name
         handle_uploaded_file(alignFile, 'mothur/reference/align', alignDB)
     except:
-        placeholder = ''
+        pass
 
     try:
         templateFile = request.FILES['docfile9']
         templateDB = request.FILES['docfile9'].name
         handle_uploaded_file(templateFile, 'mothur/reference/template', templateDB)
     except:
-        placeholder = ''
+        pass
 
     try:
         taxonomyFile = request.FILES['docfile10']
         taxonomyDB = request.FILES['docfile10'].name
         handle_uploaded_file(taxonomyFile, 'mothur/reference/taxonomy', taxonomyDB)
     except:
-        placeholder = ''
+        pass
 
     alignDB = sorted(os.listdir('mothur/reference/align/'))
     templateDB = sorted(os.listdir('mothur/reference/template/'))
@@ -1868,6 +1900,7 @@ def updateFunc(request, stopList):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
+@user_passes_test(lambda u: u.is_superuser)
 def pybake(request):
     # split up for queue
     form6 = UploadForm6(request.POST, request.FILES)

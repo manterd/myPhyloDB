@@ -168,7 +168,7 @@ def funcCall(request):
                 if TimeDiff[RID] == 0:
                     stage[RID] = 'Analysis has been placed in queue, there are ' + str(stat(RID)) + ' others in front of you.'
                 else:
-                    stage[RID] = str(base[RID]) + '<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
+                    stage[RID] = str(base[RID]) + '\n<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
             except:
                 if TimeDiff[RID] == 0:
                     stage[RID] = 'In queue'

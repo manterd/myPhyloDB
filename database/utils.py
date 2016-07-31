@@ -2,6 +2,7 @@ from collections import defaultdict
 import ctypes
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.http import HttpResponse
 import inspect
 import multiprocessing as mp
@@ -72,15 +73,11 @@ def remove_list(request):
 def remove_proj(path):
     pid = Reference.objects.get(path=path).projectid.projectid
 
-    # Remove record from reference table
-    Reference.objects.filter(path=path).delete()
-
-    # Remove record from project table and path (if necessary)
+    # Remove paths (if necessary)
     qs = Project.objects.all().filter(projectid=pid)
     for item in qs:
         refLength = len(item.reference_set.values_list('refid', flat=True))
         if refLength == 0:
-            Project.objects.filter(projectid=pid).delete()
             path = os.path.join("uploads", str(pid))
             if os.path.exists(path):
                 shutil.rmtree(path, ignore_errors=True)

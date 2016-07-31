@@ -1,6 +1,7 @@
 import csv
 import datetime
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import HttpResponse
 import glob
 from io import BytesIO
@@ -51,7 +52,6 @@ def mothur(dest, source):
         if not os.path.exists('mothur/reference/template'):
             os.makedirs('mothur/reference/template')
 
-
         if os.name == 'nt':
             filepath = "mothur\\mothur-win\\mothur.exe mothur\\temp\\mothur.batch"
         else:
@@ -64,7 +64,6 @@ def mothur(dest, source):
             mothurStat = 'Previous mothur output:\n'
         except Exception as e:
             print "Mothur failed: " + str(e)
-
 
         if source == '454_sff':
             shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
@@ -139,7 +138,7 @@ def status(request):
             dict['project'] = rep_project
         else:
             if (queuePos == -1024):
-                dict['stage'] = "Stopping..."
+                dict['stage'] = "Stopping...please be patient while we restore the database!"
             else:
                 dict['stage'] = "In queue for processing, "+str(queuePos)+" requests in front of you"
             dict['perc'] = 0
@@ -230,11 +229,9 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
             taxonomy_ref = 'null'
 
         if not Reference.objects.filter(refid=refid).exists():
-            print 'does not exist'
             project = Project.objects.get(projectid=p_uuid)
             Reference.objects.create(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
         else:
-            print 'exists'
             project = Project.objects.get(projectid=p_uuid)
             Reference.objects.filter(refid=refid).update(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
 
@@ -568,8 +565,12 @@ def repStop(request):
     print "Stopping!"
     return "Stopped"
 
-
+@transaction.atomic
 def reanalyze(request, stopList):
+
+    ### create savepoint
+    sid = transaction.savepoint()
+
     try:
         global rep_project
 
@@ -636,16 +637,20 @@ def reanalyze(request, stopList):
                             myStr = "mothur/temp/" + str(file.name)
                         tempList.append(myStr)
                     inputList = "-".join(tempList)
+
                     if stopList[PID] == RID:
                         return repStop(request)
+
                     if os.name == 'nt':
                         os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
                     else:
                         os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
+
                 else:
                     for each in file_list:
                         if stopList[PID] == RID:
                             return repStop(request)
+
                         file = each
                         fasta = 'temp.fasta'
                         handle_uploaded_file(file, mothurdest, fasta)
@@ -740,24 +745,18 @@ def reanalyze(request, stopList):
             if stopList[PID] == RID:
                 return repStop(request)
 
-            backup = Reference.objects.get(path=dest)
-            Reference.objects.get(path=dest).delete()
-
-            # alternatively, edit existing project data rather than removing and replacing, save edits for end of
-            # reprocess, such that data is in the same state as before reprocess if it fails
-
             if not os.path.exists(dest):
                 os.makedirs(dest)
 
             shutil.copy('% s/final_meta.xlsx' % mothurdest, '% s/final_meta.xlsx' % dest)
             if stopList[PID] == RID:
-                backup.save()
+                transaction.savepoint_rollback(sid)
                 return repStop(request)
 
             try:
                 mothur(dest, source)
             except Exception as e:
-                backup.save()
+                transaction.savepoint_rollback(sid)
                 print("Error with mothur: " + str(e))
                 return HttpResponse(
                     simplejson.dumps({"error": "yes"}),
@@ -765,7 +764,7 @@ def reanalyze(request, stopList):
                 )
 
             if stopList[PID] == RID:
-                backup.save()
+                transaction.savepoint_rollback(sid)
                 return repStop(request)
 
             # subQueue()
@@ -776,7 +775,7 @@ def reanalyze(request, stopList):
             parse_project(metaFile, p_uuid)
 
             if stopList[PID] == RID:
-                backup.save()
+                transaction.savepoint_rollback(sid)
                 return repStop(request)
 
             with open('% s/mothur.batch' % dest, 'rb') as file7:
@@ -798,10 +797,7 @@ def reanalyze(request, stopList):
         print " e = ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-        try:
-            backup.save()   #TODO: This probably isn't working, need to reference before try?
-        except:
-            pass
+        transaction.savepoint_rollback(sid)
         logging.exception(myDate)
         return repStop(request)
 
