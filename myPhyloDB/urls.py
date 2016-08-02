@@ -16,19 +16,27 @@ from database.wgcna import wgcna_graphs
 from database.pybake import pybake
 from database import utils
 from database import dataqueue
+from database.models import user_profile
+from database.forms import UserRegForm
+
 
 admin.autodiscover()
 
 
-class MyRegistrationView(RegistrationView):
-    def get_success_url(self, request=None, user=None):
-        return '/myPhyloDB/select/'
+def user_created(sender, user, request, **kwargs):
+    form = UserRegForm(request.POST)
+    data = user_profile(user=user)
+    data.affiliation = form.data["affiliation"]
+    data.save()
+
+from registration.signals import user_registered
+user_registered.connect(user_created)
 
 
 urlpatterns = [
     ### administration, registration, and main myPhyloDB pages
     url(r'^myPhyloDB/admin/', admin.site.urls),
-    url(r'^myPhyloDB/accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
+    url(r'^myPhyloDB/accounts/register/$', RegistrationView.as_view(form_class=UserRegForm, success_url='/myPhyloDB/select/'), name='registration_register'),
     url(r'^myPhyloDB/accounts/', include('registration.backends.simple.urls')),
     url(r'^myPhyloDB/', include('database.urls')),
 
@@ -47,6 +55,7 @@ urlpatterns = [
     url(r'^myPhyloDB/waterTableJSON/$', views.waterTableJSON, name='waterTableJSON'),
     url(r'^myPhyloDB/userTableJSON/$', views.userTableJSON, name='userTableJSON'),
     url(r'^myPhyloDB/usrFiles/$', views.usrFiles, name='usrFiles'),
+    url(r'^myPhyloDB/getProjectFiles/$', views.getProjectFiles, name='getProjectFiles'),
 
     ### urls from parser page
     url(r'^myPhyloDB/status/$', parsers.status, name='status'),
@@ -68,6 +77,8 @@ urlpatterns = [
     url(r'^myPhyloDB/getNZTreeChildren/$', trees.getNZTreeChildren, name='getNZTreeChildren'),
     url(r'^myPhyloDB/makeUpdateTree/$', trees.makeUpdateTree, name='makeUpdateTree'),
     url(r'^myPhyloDB/makeReproTree/$', trees.makeReproTree, name='makeReproTree'),
+    url(r'^myPhyloDB/getDownloadTree/$', trees.getDownloadTree, name='getDownloadTree'),
+    url(r'^myPhyloDB/getDownloadTreeChildren/$', trees.getDownloadTreeChildren, name='getDownloadTreeChildren'),
 
     ### urls from normalization page
     url(r'^myPhyloDB/getNorm/$', norm_graphs.getNorm, name='getNorm'),
@@ -101,5 +112,8 @@ urlpatterns = [
     ### urls from utils file
     url(r'^myPhyloDB/getRawData/$', utils.getRawData, name='getRawData'),
     url(r'^myPhyloDB/removeFiles/$', utils.removeFiles, name='removeFiles'),
-]
 
+    # django upload form progress bar thing
+    # url(r'^progressbarupload/', include('progressbarupload.urls')),
+
+]

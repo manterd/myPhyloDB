@@ -32,7 +32,7 @@ def getProjectTree(request):
         if Sample.objects.filter(projectid=project.projectid).exists():
             myNode = {
                 'title': project.project_name,
-                'tooltip': project.project_desc,
+                'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
                 'id': project.projectid,
                 'isFolder': True,
                 'isLazy': True
@@ -62,7 +62,7 @@ def getProjectTreeChildren(request):
             reads = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
             myNode = {
                 'title': 'Name: ' + sample.sample_name + '; Reads: ' + str(reads['count__sum']),
-                'tooltip': 'ID:' + sample.sampleid,
+                'tooltip': 'ID: ' + sample.sampleid,
                 'id': sample.sampleid,
                 'isFolder': False
             }
@@ -1507,3 +1507,56 @@ def makeReproTree(request):
     return HttpResponse(response_dict, content_type='application/javascript')
 
 
+def getDownloadTree(request):
+    myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+
+    projects = Project.objects.none()
+    if request.user.is_superuser:
+        projects = Project.objects.all().order_by('project_name')
+    elif request.user.is_authenticated():
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
+
+    for project in projects:
+        if Sample.objects.filter(projectid=project.projectid).exists():
+            myNode = {
+                'title': project.project_name,
+                'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
+                'id': project.projectid,
+                'isFolder': True,
+                'hideCheckbox': False,
+                'isLazy': True
+            }
+            myTree['children'].append(myNode)
+    # Convert result list to a JSON string
+    res = simplejson.dumps(myTree, encoding="Latin-1")
+
+    # Support for the JSONP protocol.
+    response_dict = {}
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+    response_dict.update({'children': myTree})
+    return HttpResponse(response_dict, content_type='application/javascript')
+
+
+def getDownloadTreeChildren(request):
+    # get project children which are visible to current user (check
+    if request.is_ajax():
+        projectid = request.GET["id"]
+        samples = Reference.objects.filter(projectid=projectid)
+
+        nodes = []
+        for sample in samples:
+            myNode = {
+                'title': sample.path,
+                'id': sample.refid,
+                'isFolder': False
+            }
+            nodes.append(myNode)
+
+        res = simplejson.dumps(nodes, encoding="Latin-1")
+        return HttpResponse(res, content_type='application/json')

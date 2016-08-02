@@ -6,8 +6,47 @@
 {% block my_content %}
 <form method="post" action="">
     {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="{% trans 'Submit' %}" />
+    <br><br>
+    <table style="background-color: white">
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.username.label }}:&nbsp;</td>
+            <td>{{ form.username }}</td>
+            <td>Required. 30 characters or fewer. Letters, digits and @/./+/-/_ only.</td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.email.label }}:&nbsp;</td>
+            <td>{{ form.email }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.password1.label }}:&nbsp;</td>
+            <td>{{ form.password1 }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">Password (again):&nbsp;</td>
+            <td>{{ form.password2 }}</td>
+            <td>Enter the same password as before, for verification.</td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">Affiliation:&nbsp;</td>
+            <td>{{ form.affiliation }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td>
+                <input type="submit" value="{% trans 'Submit' %}" />
+            </td>
+            <td></td>
+        </tr>
+    </table>
 </form>
 {% endblock %}
 

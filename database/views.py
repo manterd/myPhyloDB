@@ -67,35 +67,42 @@ def download(request):
     elif request.user.is_authenticated():
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
 
-    if request.method == "POST":
-        paths = request.POST.getlist('chkbx')
+    return render_to_response(
+        'download.html',
+        {'projects': projects,
+         'type': "GET",
+         'paths': ''},
+        context_instance=RequestContext(request)
+    )
 
-        zip_file = os.path.join(os.getcwd(), 'myPhyloDB', 'media', 'usr_temp', request.user.username, 'final_data.zip')
-        zf = zipfile.ZipFile(zip_file, "w")
-        for path in paths:
-            if os.path.exists(path):
-                for root, dirs, files in os.walk(path):
-                    for file in files:
-                        if file.endswith('.shared') or file.endswith('.taxonomy') or file.endswith('.fasta') or file.endswith('.names') or file.endswith('.groups') or file.endswith('.log') or file.endswith('.xlsx') or file.endswith('.xls'):
-                            zf.write(os.path.join(root, file))
-        zf.close()
 
-        return render_to_response(
-            'download.html',
-            {'projects': projects,
-             'type': "POST",
-             'paths': paths},
-            context_instance=RequestContext(request)
-        )
+def getProjectFiles(request):
+    all = request.GET['all']
+    selKeys = simplejson.loads(all)
 
-    else:
-        return render_to_response(
-            'download.html',
-            {'projects': projects,
-             'type': "GET",
-             'paths': ''},
-            context_instance=RequestContext(request)
-        )
+    paths = Reference.objects.filter(refid__in=selKeys).values_list('path', flat=True)
+    zip_file = os.path.join(os.getcwd(), 'myPhyloDB', 'media', 'usr_temp', request.user.username, 'final_data.zip')
+    zf = zipfile.ZipFile(zip_file, "w")
+    foundCount = 0
+    errorMsg = "none"
+    for path in paths:
+        if os.path.exists(path):
+            foundCount += 1
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    if file.endswith('.shared') or file.endswith('.taxonomy') or file.endswith('.fasta') or file.endswith('.names') or file.endswith('.groups') or file.endswith('.log') or file.endswith('.xlsx') or file.endswith('.xls'):
+                        zf.write(os.path.join(root, file))
+
+    # rename/replace PID dirs with project names
+    # move project name dirs up one level
+    # delete empty 'uploads' dir
+
+    if foundCount != len(paths):
+        errorMsg = "Failed to locate project files"
+    zf.close()
+    results = {'files': zip_file, 'error': errorMsg}
+    myJson = simplejson.dumps(results, ensure_ascii=False)
+    return HttpResponse(myJson)
 
 
 def upStop(request):

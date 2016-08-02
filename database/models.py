@@ -653,6 +653,11 @@ class PICRUSt(models.Model):
     geneCount = JSONField(default={})
 
 
+class user_profile(models.Model):
+     user = models.OneToOneField(Users)
+     affiliation = models.CharField(max_length=200)
+
+
 '''
 class PLFA(models.Model):
     content_type = models.ForeignKey(ContentType)

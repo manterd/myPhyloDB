@@ -30,13 +30,84 @@
         }
     </style>
     <script type="text/javascript">
+
+
         $(function () {
 
-            var type = "{{ type }}";
-            if (type == "POST") {
-                {% static "" as baseUrl %}
-                getFile('/myPhyloDB/media/usr_temp/{{ user.username }}/final_data.zip', 'final_data.zip');
-            }
+            $("#tree").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/myPhyloDB/getDownloadTree/",
+                    dataType: "jsonp",
+                    data: {}
+                },
+                onLazyRead: function (node) {
+                    node.appendAjax({
+                        url: '/myPhyloDB/getDownloadTreeChildren/',
+                        data: {id: node.data.id}
+                    });
+                },
+                onSelect: function (flag, node) {
+                    if (flag && node.childList == undefined) {
+                        node.reloadChildren(function () {
+                            if (node.childList == undefined) {
+                                node.select(false);
+                                node.remove(true);
+                            } else {
+                                node.select(false);
+                                node.select(true);
+                            }
+                        });
+                    }
+                },
+                onclick: function () {
+                    $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
+                }
+            });
+
+            $("#clearMeta").click(function () {
+                $("#tree").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+
+            $("#submit").click(function () {
+                $("#upload").css("background-color", "lightgray").val("Upload!");
+
+                var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                    if (node.getLevel() == 3) {
+                        return node.data.id;
+                }
+
+                $("#submit").css("background-color", "yellow").val("Running!");
+
+                });
+
+                var jsonDict = JSON.stringify(selKeys);
+                $.ajax({
+                    type: 'GET',
+                    url: '/myPhyloDB/getProjectFiles/',
+                    dataType: 'json',
+                    data: {all: jsonDict},
+                    success: function (data) {
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert("Error: "+error);
+                            $("#submit").css("background-color", "red").val("Failed!");
+                        } else {
+                            {% static "" as baseUrl %}
+                            getFile('/myPhyloDB/media/usr_temp/{{ user.username }}/final_data.zip', 'final_data.zip');
+                            $("#submit").css("background-color", "green").val("Success!");
+                        }
+
+                    },
+                    failure: function () {
+                        $("#submit").css("background-color", "red").val("Failed!");
+                    }
+
+                });
+            });
         });
 
         function getFile(name, final) {
@@ -54,6 +125,24 @@
 {% block my_content %}
 
     <h2>List of previous uploads:</h2>
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <th>Select project(s) to download:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree"></div>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <input id="submit" type="button" value="Download Selection(s)!"/>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    {% comment %}
     <form id="form" method="post" action="{% url 'download' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <table>
@@ -72,4 +161,5 @@
         </table>
         <p><input name="clickMe" type="submit" value="Get selected!"/></p>
     </form>
+    {% endcomment %}
 {% endblock my_content %}

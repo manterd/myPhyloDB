@@ -6,13 +6,50 @@
 {% block my_content %}
 <form method="post" action="">
     {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="{% trans 'Log in' %}" />
+    <br><br>
+    <table style="background-color: white">
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.username.label }}:&nbsp;</td>
+            <td>{{ form.username }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.password.label }}:&nbsp;</td>
+            <td>{{ form.password }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td>
+                <input type="submit" value="{% trans 'Log in' %}" />
+            </td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td>
+        <p>{% trans "Not a member?" %} <a href="{% url 'registration_register' %}">{% trans "Register" %}</a>.</p>
+            </td>
+            <td></td>
+        </tr>
+    </table>
     <input type="hidden" name="next" value="{% url "select" %}" />
+
 </form>
 
-<!--<p>{% trans "Forgot your password?" %} <a href="{% url 'auth_password_reset' %}">{% trans "Reset it" %}</a>.</p>-->
-<p>{% trans "Not a member?" %} <a href="{% url 'registration_register' %}">{% trans "Register" %}</a>.</p>
+{% comment %}
+<p>{% trans "Forgot your password?" %} <a href="{% url 'auth_password_reset' %}">{% trans "Reset it" %}</a>.</p>
+{% endcomment %}
 {% endblock %}
 
 
