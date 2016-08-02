@@ -29,7 +29,7 @@ def getNorm(request, RID, stopList, PID):
             # Get variables from web page
             allJson = request.body.split('&')[0]
             all = simplejson.loads(allJson)
-            database.queue.setBase(RID, 'Step 1 of 4: Querying database...')
+            database.queue.setBase(RID, 'Step 1 of 6: Querying database...')
 
             NormMeth = int(all["NormMeth"])
 
@@ -140,7 +140,7 @@ def getNorm(request, RID, stopList, PID):
             qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
             taxaDict['Species'] = qs3
 
-            database.queue.setBase(RID, 'Step 1 of 4: Querying database...done!')
+            database.queue.setBase(RID, 'Step 1 of 6: Querying database...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -148,9 +148,11 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 2 of 4: Normalizing data...')
+            database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
 
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
+
+            database.queue.setBase(RID, 'Step 4 of 6: Calculating indices...')
 
             normDF['rel_abund'] = normDF['rel_abund'].astype(float)
             normDF['abund'] = normDF['abund'].round(0).astype(int)
@@ -204,7 +206,6 @@ def getNorm(request, RID, stopList, PID):
             finalDF[['rel_abund', 'rich', 'diversity']] = finalDF[['rel_abund', 'rich', 'diversity']].astype(float)
             finalDF[['abund', 'abund_16S']] = finalDF[['abund', 'abund_16S']].astype(int)
 
-
             finalDF.reset_index(drop=False, inplace=True)
             finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
@@ -236,15 +237,15 @@ def getNorm(request, RID, stopList, PID):
                 os.makedirs(myDir)
             finalDF.to_csv(path, sep=',')
 
-
-            database.queue.setBase(RID, 'Step 2 of 4: Normalizing data...done!')
+            database.queue.setBase(RID, 'Step 4 of 6: Calculating indices...done')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            database.queue.setBase(RID, 'Step 3 of 4: Formatting biome data...')
+
+            database.queue.setBase(RID, 'Step 5 of 6: Formatting biome data...')
 
             biome = {}
 
@@ -288,7 +289,7 @@ def getNorm(request, RID, stopList, PID):
             with open(path, 'w') as outfile:
                 simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
-            database.queue.setBase(RID, 'Step 3 of 4: Formatting biome data...done!')
+            database.queue.setBase(RID, 'Step 5 of 6: Formatting biome data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -296,7 +297,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 4 of 4: Formatting result table...')
+            database.queue.setBase(RID, 'Step 6 of 6: Formatting result table...')
 
             if tabular_on == 1:
                 data = finalDF.values.tolist()
@@ -309,7 +310,7 @@ def getNorm(request, RID, stopList, PID):
                 finalDict['data'] = data
                 finalDict['columns'] = colList
 
-            database.queue.setBase(RID, 'Step 4 of 4: Formatting result table...done!')
+            database.queue.setBase(RID, 'Step 6 of 6: Formatting result table...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -469,7 +470,7 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
 
 
 def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, stopList, PID):
-    global curSamples
+    global curSamples, totSamples
     df2 = df.reset_index()
     taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
 
@@ -493,7 +494,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
                 countDF[mySet[i]] = finalArr[i]
 
             curSamples[RID] = 0
-            totSamples[RID] = 0
 
             for i in mySet:
                 countDF[i] = countDF[i]/iters
@@ -516,7 +516,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
                 countDF[mySet[i]] = finalArr[i]
 
             curSamples[RID] = 0
-            totSamples[RID] = 0
 
             for i in mySet:
                 countDF[i] = countDF[i]/iters
@@ -565,6 +564,9 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             DESeq_error = 'yes'
             countDF = df2.reset_index(drop=True)
 
+    database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...done!')
+    database.queue.setBase(RID, 'Step 3 of 6: Tabulating data...')
+
     relabundDF = pd.DataFrame(countDF[taxaID])
     binaryDF = pd.DataFrame(countDF[taxaID])
     diversityDF = pd.DataFrame(countDF[taxaID])
@@ -576,11 +578,13 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     field = 'speciesid'
     taxaList = taxaDict['Species']
 
-
     qs = Species.objects.filter(speciesid__in=taxaList)
     namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid'])
     namesDF.rename(columns={'kingdomid__kingdomid': 'kingdomid', 'phylaid__phylaid': 'phylaid', 'classid__classid' : 'classid', 'orderid__orderid' : 'orderid', 'familyid__familyid' : 'familyid', 'genusid__genusid' : 'genusid'}, inplace=True)
     namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName'}, inplace=True)
+
+    curSamples[RID] = 0
+    totSamples[RID] = len(mySet)
 
     normDF = pd.DataFrame()
     for item in mySet:
@@ -632,11 +636,16 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         else:
             normDF = normDF.append(DF1)
 
+        curSamples[RID] += 1
+        database.queue.setBase(RID, 'Step 3 of 6: Tabulating data...\nTabulating is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
+
+    curSamples[RID] = 0
+
     return normDF, DESeq_error
 
 
 def rarefaction_remove(M, RID, depth=0, seed=0):
-    global curSamples
+    global curSamples, totSamples
     prng = RandomState(seed) # reproducible results
     noccur = np.sum(M, axis=1) # number of occurrences for each sample
     nvar = M.shape[1] # number of variables
@@ -648,11 +657,12 @@ def rarefaction_remove(M, RID, depth=0, seed=0):
         choice = prng.choice(nvar, size=depth, replace=True, p=p)
         Mrarefied[i] = np.bincount(choice, minlength=nvar)
         curSamples[RID] += 1
+        database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
 
 
 def rarefaction_keep(M, RID, depth=0, myLambda=0.5, seed=0):
-    global curSamples
+    global curSamples, totSamples
     prng = RandomState(seed) # reproducible results
     noccur = np.sum(M, axis=1) # number of occurrences for each sample
     nvar = M.shape[1] # number of variables
@@ -664,6 +674,7 @@ def rarefaction_keep(M, RID, depth=0, myLambda=0.5, seed=0):
         choice = prng.choice(nvar, size=depth, replace=True, p=p)
         Mrarefied[i] = np.bincount(choice, minlength=nvar)
         curSamples[RID] += 1
+        database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
 
 

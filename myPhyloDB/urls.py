@@ -28,8 +28,8 @@ class MyRegistrationView(RegistrationView):
 urlpatterns = [
     ### administration, registration, and main myPhyloDB pages
     url(r'^myPhyloDB/admin/', admin.site.urls),
-    url(r'^myPhyloDB/accounts/', include('registration.urls')),
-    url(r'^myPhyloDB/register/$', MyRegistrationView.as_view(), name='registration_register'),
+    url(r'^myPhyloDB/accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
+    url(r'^myPhyloDB/accounts/', include('registration.backends.simple.urls')),
     url(r'^myPhyloDB/', include('database.urls')),
 
     ### urls from views page
