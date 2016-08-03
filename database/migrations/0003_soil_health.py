@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('database', '0002_picrust_rrnacount'),
+        ('database', '0002_rrnacount'),
     ]
 
     operations = [

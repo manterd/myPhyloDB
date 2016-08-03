@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User as Users
+from django.contrib.auth.models import User
 from jsonfield import JSONField
 
 
@@ -44,7 +44,7 @@ class Reference(models.Model):
     alignDB = models.CharField(max_length=90, blank=True)
     templateDB = models.CharField(max_length=90, blank=True)
     taxonomyDB = models.CharField(max_length=90, blank=True)
-    author = models.ForeignKey(Users, related_name='entries')
+    author = models.ForeignKey(User, related_name='entries')
 
     class Meta:
         verbose_name_plural = 'entries'
@@ -653,9 +653,25 @@ class PICRUSt(models.Model):
     geneCount = JSONField(default={})
 
 
-class user_profile(models.Model):
-     user = models.OneToOneField(Users)
-     affiliation = models.CharField(max_length=200)
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE,)
+    affiliation = models.CharField(blank=True, max_length=200)
+    city = models.CharField(blank=True, max_length=200)
+    state = models.CharField(blank=True, max_length=100)
+    country = models.CharField(blank=True, max_length=100)
+    zip = models.CharField(blank=True, max_length=50)
+    phone = models.CharField(blank=True, max_length=100)
+    reference = models.CharField(blank=True, max_length=100)
+    purpose = models.CharField(blank=True, max_length=100)
+
+
+def create_user_profile(sender, instance, created, **kwargs):
+    profile, created = UserProfile.objects.get_or_create(user=instance)
+
+
+#from django.db.models.signals import post_save
+from registration.signals import user_registered
+user_registered.connect(create_user_profile, sender=User)
 
 
 '''

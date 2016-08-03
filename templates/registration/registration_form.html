@@ -4,21 +4,21 @@
 {% block title %}{% trans "Register for an account" %}{% endblock %}
 
 {% block my_content %}
+<br><br>
 <form method="post" action="">
     {% csrf_token %}
-    <br><br>
     <table style="background-color: white">
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right"></td>
+            <td>Required Fields:</td>
+            <td></td>
+        </tr>
         <tr>
             <td style="width: 10px"></td>
             <td style="text-align: right">{{ form.username.label }}:&nbsp;</td>
             <td>{{ form.username }}</td>
-            <td>Required. 30 characters or fewer. Letters, digits and @/./+/-/_ only.</td>
-        </tr>
-        <tr>
-            <td style="width: 10px"></td>
-            <td style="text-align: right">{{ form.email.label }}:&nbsp;</td>
-            <td>{{ form.email }}</td>
-            <td></td>
+            <td>Must be 30 characters or fewer. Letters, digits and @/./+/-/_ only.</td>
         </tr>
         <tr>
             <td style="width: 10px"></td>
@@ -34,8 +34,65 @@
         </tr>
         <tr>
             <td style="width: 10px"></td>
-            <td style="text-align: right">Affiliation:&nbsp;</td>
+            <td style="text-align: right">{{ form.email.label }}:&nbsp;</td>
+            <td>{{ form.email }}</td>
+            <td></td>
+        </tr>
+        <tr class="blank_row">
+            <td colspan="4"></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right"></td>
+            <td>Optional Fields:</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.affiliation.label }}:&nbsp;</td>
             <td>{{ form.affiliation }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.city.label }}:&nbsp;</td>
+            <td>{{ form.city }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.state.label }}:&nbsp;</td>
+            <td>{{ form.state }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.country.label }}:&nbsp;</td>
+            <td>{{ form.country }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.zip.label }}:&nbsp;</td>
+            <td>{{ form.zip }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.phone.label }}:&nbsp;</td>
+            <td>{{ form.phone }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.reference.label }}:&nbsp;</td>
+            <td>{{ form.reference }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.purpose.label }}:&nbsp;</td>
+            <td>{{ form.purpose }}</td>
             <td></td>
         </tr>
         <tr>

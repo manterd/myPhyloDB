@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-from registration.backends.simple.views import RegistrationView
+from registration.backends.default.views import RegistrationView
 
 from database import views, parsers, trees, queue
 from database.anova import anova_graphs
@@ -16,28 +16,23 @@ from database.wgcna import wgcna_graphs
 from database.pybake import pybake
 from database import utils
 from database import dataqueue
-from database.models import user_profile
 from database.forms import UserRegForm
+import database.regbackend
 
 
 admin.autodiscover()
 
 
-def user_created(sender, user, request, **kwargs):
-    form = UserRegForm(request.POST)
-    data = user_profile(user=user)
-    data.affiliation = form.data["affiliation"]
-    data.save()
-
-from registration.signals import user_registered
-user_registered.connect(user_created)
+class MyRegistrationView(RegistrationView):
+    def get_success_url(self, request=None, user=None):
+        return '/myPhyloDB/select/'
 
 
 urlpatterns = [
     ### administration, registration, and main myPhyloDB pages
     url(r'^myPhyloDB/admin/', admin.site.urls),
-    url(r'^myPhyloDB/accounts/register/$', RegistrationView.as_view(form_class=UserRegForm, success_url='/myPhyloDB/select/'), name='registration_register'),
-    url(r'^myPhyloDB/accounts/', include('registration.backends.simple.urls')),
+    url(r'^myPhyloDB/accounts/register/$', RegistrationView.as_view(form_class=UserRegForm), name='registration_register'),
+    url(r'^myPhyloDB/accounts/', include('registration.backends.default.urls')),
     url(r'^myPhyloDB/', include('database.urls')),
 
     ### urls from views page

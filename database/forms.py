@@ -1,8 +1,9 @@
 from django import forms
 from utils import MultiFileField
 from registration.forms import RegistrationForm
+from database.models import UserProfile
 from django.contrib.auth.models import User
-from database.models import user_profile
+
 
 class UploadForm1(forms.Form):
     docfile1 = forms.FileField(label='Select meta.xlsx file:')
@@ -58,8 +59,14 @@ class UploadForm9(forms.Form):
 
 class UserRegForm(RegistrationForm):
     affiliation = forms.CharField(label='Affiliation', max_length=200)
+    city = forms.CharField(label='City', max_length=200)
+    state = forms.CharField(label='State', max_length=100)
+    country = forms.CharField(label='Country', max_length=100)
+    zip = forms.CharField(label='Zip', max_length=50)
+    phone = forms.CharField(label='Phone', max_length=100)
+    reference = forms.CharField(label='Reference', max_length=100)
+    purpose = forms.CharField(label='Purpose', max_length=100)
 
     class Meta:
         model = User
         fields = '__all__'
-
