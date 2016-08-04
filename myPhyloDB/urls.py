@@ -17,21 +17,20 @@ from database.pybake import pybake
 from database import utils
 from database import dataqueue
 from database.forms import UserRegForm
-import database.regbackend
 
 
 admin.autodiscover()
 
-
+'''
 class MyRegistrationView(RegistrationView):
     def get_success_url(self, request=None, user=None):
         return '/myPhyloDB/select/'
-
+'''
 
 urlpatterns = [
     ### administration, registration, and main myPhyloDB pages
     url(r'^myPhyloDB/admin/', admin.site.urls),
-    url(r'^myPhyloDB/accounts/register/$', RegistrationView.as_view(form_class=UserRegForm), name='registration_register'),
+    url(r'^myPhyloDB/accounts/register/$', RegistrationView.as_view(form_class=UserRegForm, success_url='/myPhyloDB/select/'), name='registration_register'),
     url(r'^myPhyloDB/accounts/', include('registration.backends.default.urls')),
     url(r'^myPhyloDB/', include('database.urls')),
 

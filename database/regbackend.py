@@ -1,9 +1,10 @@
+'''
 from forms import UserRegForm
 from models import UserProfile
 
 
 def user_created(sender, user, request, **kwargs):
-    print "user_created:", request.POST
+    print 'User is being created...'
     form = UserRegForm(request.POST)
     data = UserProfile(user=user)
     data.affiliation = form.data['affiliation']
@@ -19,3 +20,4 @@ def user_created(sender, user, request, **kwargs):
 
 from registration.signals import user_registered
 user_registered.connect(user_created)
+'''

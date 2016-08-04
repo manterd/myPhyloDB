@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User as Users
 from jsonfield import JSONField
 
 
@@ -44,7 +44,7 @@ class Reference(models.Model):
     alignDB = models.CharField(max_length=90, blank=True)
     templateDB = models.CharField(max_length=90, blank=True)
     taxonomyDB = models.CharField(max_length=90, blank=True)
-    author = models.ForeignKey(User, related_name='entries')
+    author = models.ForeignKey(Users, related_name='entries')
 
     class Meta:
         verbose_name_plural = 'entries'
@@ -654,7 +654,7 @@ class PICRUSt(models.Model):
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE,)
+    user = models.OneToOneField(Users, on_delete=models.CASCADE)
     affiliation = models.CharField(blank=True, max_length=200)
     city = models.CharField(blank=True, max_length=200)
     state = models.CharField(blank=True, max_length=100)
@@ -664,7 +664,33 @@ class UserProfile(models.Model):
     reference = models.CharField(blank=True, max_length=100)
     purpose = models.CharField(blank=True, max_length=100)
 
+    def __unicode__(self):
+        return self.user
 
+
+from registration.signals import user_registered
+def user_registered_callback(sender, user, request, **kwargs):
+        print 'Hello'
+        print 'sender:', sender
+        print 'user:', user
+        print 'request:', request
+        profile = UserProfile(user=user)
+        form = request.POST
+        print 'form:', form
+        profile.affiliation = form['affiliation']
+        profile.city = form['city']
+        profile.state = form['state']
+        profile.country = form['country']
+        profile.zip = form['zip']
+        profile.phone = form['phone']
+        profile.reference = form['reference']
+        profile.purpose = form['purpose']
+        profile.save()
+
+user_registered.connect(user_registered_callback)
+
+
+'''
 def create_user_profile(sender, instance, created, **kwargs):
     profile, created = UserProfile.objects.get_or_create(user=instance)
 
@@ -672,7 +698,7 @@ def create_user_profile(sender, instance, created, **kwargs):
 #from django.db.models.signals import post_save
 from registration.signals import user_registered
 user_registered.connect(create_user_profile, sender=User)
-
+'''
 
 '''
 class PLFA(models.Model):

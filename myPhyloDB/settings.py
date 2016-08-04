@@ -50,6 +50,8 @@ MIDDLEWARE_CLASSES = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTH_PROFILE_MODULE = "database.UserProfile"
+
 ROOT_URLCONF = 'myPhyloDB.urls'
 
 TEMPLATES = [
@@ -121,9 +123,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-
-PROGRESSBARUPLOAD_INCLUDE_JQUERY = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/

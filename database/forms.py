@@ -1,8 +1,9 @@
 from django import forms
-from utils import MultiFileField
+from django.contrib.auth.models import User, UserManager
 from registration.forms import RegistrationForm
+from registration.models import RegistrationProfile
+from utils import MultiFileField
 from database.models import UserProfile
-from django.contrib.auth.models import User
 
 
 class UploadForm1(forms.Form):
@@ -66,7 +67,3 @@ class UserRegForm(RegistrationForm):
     phone = forms.CharField(label='Phone', max_length=100)
     reference = forms.CharField(label='Reference', max_length=100)
     purpose = forms.CharField(label='Purpose', max_length=100)
-
-    class Meta:
-        model = User
-        fields = '__all__'
