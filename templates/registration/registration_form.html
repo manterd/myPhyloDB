@@ -17,8 +17,8 @@
         <tr>
             <td style="width: 10px"></td>
             <td style="text-align: right">{{ form.username.label }}:&nbsp;</td>
-            <td>{{ form.username }}</td>
-            <td>Must be 30 characters or fewer. Letters, digits and @/./+/-/_ only.</td>
+            <td>{{ form.username }}&nbsp;Must be 30 characters or fewer. Letters, digits and @/./+/-/_ only.</td>
+            <td></td>
         </tr>
         <tr>
             <td style="width: 10px"></td>
@@ -29,8 +29,8 @@
         <tr>
             <td style="width: 10px"></td>
             <td style="text-align: right">Password (again):&nbsp;</td>
-            <td>{{ form.password2 }}</td>
-            <td>Enter the same password as before, for verification.</td>
+            <td>{{ form.password2 }}&nbsp;Enter the same password as before, for verification.</td>
+            <td></td>
         </tr>
         <tr>
             <td style="width: 10px"></td>
@@ -45,6 +45,18 @@
             <td style="width: 10px"></td>
             <td style="text-align: right"></td>
             <td>Optional Fields:</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.firstName.label }}:&nbsp;</td>
+            <td>{{ form.firstName }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.lastName.label }}:&nbsp;</td>
+            <td>{{ form.lastName }}</td>
             <td></td>
         </tr>
         <tr>

@@ -1,9 +1,10 @@
 from django import forms
-from django.contrib.auth.models import User, UserManager
-from registration.forms import RegistrationForm
-from registration.models import RegistrationProfile
 from utils import MultiFileField
-from database.models import UserProfile
+from registration.forms import RegistrationForm
+from localflavor.us.us_states import STATE_CHOICES
+from django_countries import countries
+from django.contrib.auth.models import User
+import re
 
 
 class UploadForm1(forms.Form):
@@ -57,13 +58,38 @@ class UploadForm8(forms.Form):
 class UploadForm9(forms.Form):
     normFile = forms.FileField(label='Select file (e.g., normalized_data.csv):')
 
+reference_choices = (
+    ('No data', '(not selected)'),
+    ('Publication', 'Publication'),
+    ('Web Search', 'Web Search'),
+    ('Colleague or Friend', 'Colleague or Friend'),
+    ('Other', 'Other')
+)
+
+purpose_choices = (
+    ('No data', '(not selected)'),
+    ('Research', 'Research'),
+    ('Teaching', 'Teaching'),
+    ('Consulting', 'Consulting'),
+    ('Software Development', 'Software Development'),
+    ('Other', 'Other')
+)
+
+myStates = list(STATE_CHOICES)
+myStates.insert(0, ('No data', '(not selected)'))
+
+myCountries = list(countries)
+myCountries.insert(0, ('No data', '(not selected)'))
+
 
 class UserRegForm(RegistrationForm):
-    affiliation = forms.CharField(label='Affiliation', max_length=200)
-    city = forms.CharField(label='City', max_length=200)
-    state = forms.CharField(label='State', max_length=100)
-    country = forms.CharField(label='Country', max_length=100)
-    zip = forms.CharField(label='Zip', max_length=50)
-    phone = forms.CharField(label='Phone', max_length=100)
-    reference = forms.CharField(label='Reference', max_length=100)
-    purpose = forms.CharField(label='Purpose', max_length=100)
+    firstName = forms.CharField(label='First Name', required=False)
+    lastName = forms.CharField(label='Last Name', required=False)
+    affiliation = forms.CharField(label='Affiliation', required=False)
+    city = forms.CharField(label='City', required=False)
+    state = forms.ChoiceField(widget=forms.Select, choices=myStates)
+    country = forms.ChoiceField(widget=forms.Select, choices=myCountries)
+    zip = forms.CharField(label='Zip', required=False)
+    phone = forms.CharField(label='Phone', required=False)
+    reference = forms.ChoiceField(widget=forms.Select, choices=reference_choices)
+    purpose = forms.ChoiceField(widget=forms.Select, choices=purpose_choices)

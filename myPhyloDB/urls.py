@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-from registration.backends.default.views import RegistrationView
+from registration.backends.simple.views import RegistrationView
 
 from database import views, parsers, trees, queue
 from database.anova import anova_graphs
@@ -17,15 +17,11 @@ from database.pybake import pybake
 from database import utils
 from database import dataqueue
 from database.forms import UserRegForm
+import database.regbackend
 
 
 admin.autodiscover()
 
-'''
-class MyRegistrationView(RegistrationView):
-    def get_success_url(self, request=None, user=None):
-        return '/myPhyloDB/select/'
-'''
 
 urlpatterns = [
     ### administration, registration, and main myPhyloDB pages
@@ -106,8 +102,5 @@ urlpatterns = [
     ### urls from utils file
     url(r'^myPhyloDB/getRawData/$', utils.getRawData, name='getRawData'),
     url(r'^myPhyloDB/removeFiles/$', utils.removeFiles, name='removeFiles'),
-
-    # django upload form progress bar thing
-    # url(r'^progressbarupload/', include('progressbarupload.urls')),
 
 ]
