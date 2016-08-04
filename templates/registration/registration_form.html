@@ -5,8 +5,32 @@
 
 {% block my_content %}
 <br><br>
+
 <form method="post" action="">
     {% csrf_token %}
+
+    <table style="background-color: white">
+        <tr>
+            <td style="width: 40px"></td>
+            <td class="error_message">
+                {% for field in form.visible_fields %}
+                    {% if field.errors %}
+                        {% for err in field.errors %}
+                                    <ul>
+                                        <li><span style="color: red">{{ field.label }} error: </span>{{ err }}</li>
+                                    </ul>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td></td>
+        </tr>
+        <tr class="blank_row">
+            <td colspan="4"></td>
+        </tr>
+    </table>
+
+
     <table style="background-color: white">
         <tr>
             <td style="width: 10px"></td>
