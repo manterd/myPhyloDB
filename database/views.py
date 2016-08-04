@@ -1,4 +1,6 @@
 import datetime
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.signals import user_logged_in
 from django.db import transaction
@@ -17,9 +19,9 @@ import time
 import zipfile
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
-    UploadForm6, UploadForm7, UploadForm8, UploadForm9
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm
 from models import Project, Reference, Sample, Air, Microbial, Human_Associated, Soil, Water, UserDefined, Species
-from models import ko_entry, nz_entry
+from models import ko_entry, nz_entry, UserProfile
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 from models import addQueue, getQueue, subQueue
@@ -59,19 +61,20 @@ def upload(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def download(request):
+def profile(request):
 
-    projects = Reference.objects.none()
+    projects = Project.objects.none()
     if request.user.is_superuser:
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+        projects = Project.objects.all().order_by('project_name')
     elif request.user.is_authenticated():
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
 
     return render_to_response(
-        'download.html',
-        {'projects': projects,
-         'type': "GET",
-         'paths': ''},
+        'profile.html',
+        {'projects': projects},
         context_instance=RequestContext(request)
     )
 
@@ -2065,3 +2068,37 @@ def usrFiles(request):
         'selFiles': selFiles,
         'normFiles': normFiles
     }
+
+
+def changeuser(request):
+    return render_to_response(
+        'changeuser.html',
+        {"form": UserRegForm,
+            "error": "none"},
+        context_instance=RequestContext(request)
+    )
+
+
+def updateInfo(request):
+    stuff = request.POST
+    pword = stuff['password1']
+    error = "none"
+    verified = check_password(pword, request.user.password)
+    if verified:
+        thisUser = User.objects.get(username=request.user.username)
+        myData = UserProfile.objects.get(user=thisUser)
+        for key in stuff:
+            thisUser.__setattr__(key, stuff[key])
+            myData.__setattr__(key, stuff[key])
+        thisUser.save()
+        myData.save()
+    else:
+        error = "Incorrect password"
+
+
+    return render_to_response(
+        'changeuser.html',
+        {"form": UserRegForm,
+            "error": error},
+        context_instance=RequestContext(request)
+    )

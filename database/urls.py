@@ -5,7 +5,6 @@ from . import views
 urlpatterns = [
     url(r'^home/$', views.home, name='home'),
     url(r'^upload/$', views.upload, name='upload'),
-    url(r'^download/$', views.download, name='download'),
     url(r'^select/$', views.select, name='select'),
     url(r'^taxa/$', views.taxa, name='taxa'),
     url(r'^kegg_path/$', views.kegg_path, name='kegg_path'),
@@ -23,4 +22,6 @@ urlpatterns = [
     url(r'^reprocess/$', views.reprocess, name='reprocess'),
     url(r'^update/$', views.update, name='update'),
     url(r'^pybake/$', views.pybake, name='pybake'),
+    url(r'^accounts/profile/$', views.profile, name='profile'),
+    url(r'^accounts/changeuser/$', views.changeuser, name='changeuser'),
 ]

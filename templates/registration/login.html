@@ -7,6 +7,7 @@
 <form method="post" action="">
     {% csrf_token %}
     <br><br>
+    <h2>User login:</h2>
     <table style="background-color: white">
         <tr>
             <td style="width: 10px"></td>
@@ -38,18 +39,26 @@
             <td></td>
             <td></td>
             <td>
-        <p>{% trans "Not a member?" %} <a href="{% url 'registration_register' %}">{% trans "Register" %}</a>.</p>
+                <p>{% trans "Not a member?" %} <a href="{% url 'registration_register' %}">{% trans "Register" %}</a>.</p>
             </td>
             <td></td>
         </tr>
+        {% comment %}
+        If email functionality is added, we can add this step.
+        <tr>
+            <td></td>
+            <td></td>
+            <td>
+                <p>{% trans "Forgot your password?" %} <a href="{% url 'auth_password_reset' %}">{% trans "Reset it" %}</a>.</p>
+            </td>
+            <td></td>
+        </tr>
+        {% endcomment %}
     </table>
     <input type="hidden" name="next" value="{% url "select" %}" />
 
 </form>
 
-{% comment %}
-<p>{% trans "Forgot your password?" %} <a href="{% url 'auth_password_reset' %}">{% trans "Reset it" %}</a>.</p>
-{% endcomment %}
 {% endblock %}
 
 

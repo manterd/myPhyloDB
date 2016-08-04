@@ -151,6 +151,7 @@
 
             {% if user.is_active %}
                 <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
+                <a class="Offmouse" href="/myPhyloDB/accounts/profile/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Manage your account">my Account</li></a>
                 <a class="Offmouse" href="/myPhyloDB/accounts/logout/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Logout current user">Logout</li></a>
             {% else %}
                 <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
@@ -175,7 +176,6 @@
             </div>
             {% if user.is_authenticated %}
                 <a class="Offmouse" href="{% url "upload" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add new projects/samples here.">[Upload]</li></a>
-                <a class="Offmouse" href="{% url "download" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Download a zip file containing your final Mothur files (i.e., processed data).">[Download]</li></a>
                 <a class="Offmouse" href="{% url "reprocess" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Reprocess uploaded projects with new reference files.">[Reprocess]</li></a>
                 <a class="Offmouse" href="{% url "update" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update/edit metadata for uploaded projects.">[Update]</li></a>
             {% endif %}
@@ -218,7 +218,7 @@
         </div>
     </div>
 
-    <div id="Content">
+    <div id="Content" style="margin-left: 10px;">
         {% block my_content %}{% endblock my_content%}
     </div>
 </body>
