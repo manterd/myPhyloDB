@@ -20,6 +20,7 @@ from database.forms import UserRegForm
 import database.regbackend
 
 
+admin.site.site_url = '/myPhyloDB/home/'
 admin.autodiscover()
 
 

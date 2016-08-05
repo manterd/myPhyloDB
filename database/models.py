@@ -21,22 +21,25 @@ def subQueue():
 
 
 class Project(models.Model):
-    projectid = models.TextField(primary_key=True)
+    projectid = models.CharField(max_length=50, primary_key=True)
     status = models.CharField(max_length=15, blank=False)
     projectType = models.CharField(max_length=90, blank=False)
-    project_name = models.TextField(blank=True)
+    project_name = models.CharField(max_length=100, blank=True)
     project_desc = models.TextField(blank=True)
-    start_date = models.CharField(max_length=15, blank=True)
-    end_date = models.CharField(max_length=15, blank=True)
-    pi_last = models.TextField(blank=True)
-    pi_first = models.TextField(blank=True)
-    pi_affiliation = models.CharField(max_length=90, blank=True)
+    start_date = models.CharField(max_length=25, blank=True)
+    end_date = models.CharField(max_length=25, blank=True)
+    pi_last = models.CharField(max_length=75, blank=True)
+    pi_first = models.CharField(max_length=50, blank=True)
+    pi_affiliation = models.CharField(max_length=100, blank=True)
     pi_email = models.EmailField(blank=True)
     pi_phone = models.CharField(max_length=15, blank=True)
 
+    def __unicode__(self):
+        return self.project_name
+
 
 class Reference(models.Model):
-    refid = models.TextField(primary_key=True)
+    refid = models.CharField(max_length=50, primary_key=True)
     raw = models.BooleanField()
     projectid = models.ForeignKey(Project)
     path = models.CharField(max_length=90)
@@ -46,8 +49,8 @@ class Reference(models.Model):
     taxonomyDB = models.CharField(max_length=90, blank=True)
     author = models.ForeignKey(Users, related_name='entries')
 
-    class Meta:
-        verbose_name_plural = 'entries'
+    def __unicode__(self):
+        return self.path
 
 
 class Sample(models.Model):
