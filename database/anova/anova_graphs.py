@@ -344,7 +344,6 @@ def getCatUnivData(request, RID, stops, PID):
                 database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
-                seriesDict = {}
                 for name1, group1 in grouped1:
                     dataList = []
                     pValue = pValDict[name1]
@@ -363,11 +362,6 @@ def getCatUnivData(request, RID, stops, PID):
                             grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
                             dataList = list(grouped2)
 
-                        seriesDict['name'] = name1
-                        seriesDict['color'] = colors[colors_idx]
-                        seriesDict['data'] = dataList
-                        seriesList.append(seriesDict)
-
                     elif sig_only == 1:
                         if pValue < 0.05:
                             if DepVar == 1:
@@ -383,10 +377,11 @@ def getCatUnivData(request, RID, stops, PID):
                                 grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
                                 dataList = list(grouped2)
 
-                            seriesDict['name'] = name1
-                            seriesDict['color'] = colors[colors_idx]
-                            seriesDict['data'] = dataList
-                            seriesList.append(seriesDict)
+                    seriesDict = {}
+                    seriesDict['name'] = name1
+                    seriesDict['color'] = colors[colors_idx]
+                    seriesDict['data'] = dataList
+                    seriesList.append(seriesDict)
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:

@@ -75,6 +75,15 @@ def getsoil_index(request, stops, RID, PID):
                 allSampleIDs = catSampleIDs
                 allFields = catFields_edit
 
+                savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                rows, cols = savedDF.shape
+                if rows < 1:
+                    myDict = {'error': "Error with selected dataset: no abund_16S rows found"}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+                finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
+                remSampleList = list(set(allSampleIDs) - set(finalSampleList))
+
                 # Removes samples (rows) that are not in our samplelist
                 tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
 
@@ -92,6 +101,7 @@ def getsoil_index(request, stops, RID, PID):
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n'
+                result += str(len(remSampleList)) + ' samples were removed from analysis (missing abund_16S data)\n'
 
                 database.queue.setBase(RID, 'Step 1 of 3: Selecting your chosen meta-variables...done')
 
@@ -126,6 +136,9 @@ def getsoil_index(request, stops, RID, PID):
 
                 # Removes samples (rows) that are not in our sample_rlist
                 meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]
+
+                # make sure column types are correct
+                meta_rDF[catFields_edit] = meta_rDF[catFields_edit].astype(str)
 
                 want = catFields_edit + ['sampleid']
                 bioDF = meta_rDF[want].copy()

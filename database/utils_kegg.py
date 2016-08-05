@@ -626,7 +626,7 @@ def getNZDF(abund, nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops
         # get PICRUSt data for species
         speciesList = pd.unique(profileDF.index.ravel().tolist())
         qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
+        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'], verbose=False)
         picrustDF.set_index('speciesid__speciesid', inplace=True)
 
         levelList = []

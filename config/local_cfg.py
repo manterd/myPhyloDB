@@ -7,9 +7,9 @@ usr_num_threads = 3
 
 # Django settings
 def update():
-    settings.DEBUG = True
+    settings.DEBUG = False
     settings.ALLOWED_HOSTS = ['*']
-    settings.TEMPLATE_DEBUG = True
+    settings.TEMPLATE_DEBUG = False
     settings.SESSION_EXPIRE_AT_BROWSER_CLOSE = True
     settings.USE_L10N = True
     settings.USE_I18N = True

@@ -235,7 +235,7 @@ def getSpAC(request, stops, RID, PID):
                             r("plot(x, main=paste(name))")
                         else:
                             r("plot(0:10, type='n', axes=FALSE, bty='n', xlab='', ylab='', \
-                                main=paste(name, '\nInsufficient data to generate plot (n < 3)!', sep='')) \
+                                main=paste(name, '\nInsufficient data to generate plot (n <= 3)!', sep='')) \
                             ")
                         r("dev.off()")
                         r("pdf_counter <- pdf_counter + 1")

@@ -145,7 +145,7 @@ def geneParse(file1, file2, file3):
             PICRUSt.objects.using('picrust').create(speciesid_id=s, rRNACount=rRNACount, geneCount=geneCount)
 
         counter += 1
-        stage = 'Step 4 of 4: Adding PICRUSt data to your database...OTU ' + str(counter) + ' out of ' + str(total) + ' is complete!'
+        stage = 'Step 4 of 4: Adding PICRUSt data to your database... ' + str(counter) + ' OTUs out of ' + str(total) + ' are complete!'
 
     time2 = datetime.now()
     delta = time2 - time1

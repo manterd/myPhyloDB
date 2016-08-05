@@ -169,8 +169,12 @@ def getDiffAbund(request, stops, RID, PID):
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
                 temp_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+
                 # Removes samples (rows) that are not in our samplelist
                 temp_rDF = temp_rDF.loc[temp_rDF['sampleid'].isin(catSampleIDs)]
+
+                # make sure column types are correct
+                temp_rDF[catFields_edit] = temp_rDF[catFields_edit].astype(str)
 
                 if metaDictCat:
                     for key in metaDictCat:

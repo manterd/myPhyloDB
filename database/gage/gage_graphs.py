@@ -131,6 +131,7 @@ def getGAGE(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDF = getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID)
+                finalSampleList = pd.unique(finalDF.sampleid.tolist())
 
                 database.queue.setBase(RID, 'Step 3 of 4: Performing GAGE analysis...')
 
@@ -152,9 +153,10 @@ def getGAGE(request, stops, RID, PID):
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
                 temp_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                temp_rDF[catFields_edit] = temp_rDF[catFields_edit].astype(str)
 
-                # Removes samples (rows) that are not in our samplelist
-                temp_rDF = temp_rDF.loc[temp_rDF['sampleid'].isin(catSampleIDs)]
+                # Removes samples (rows) that are not in our final samplelist
+                temp_rDF = temp_rDF.loc[temp_rDF['sampleid'].isin(finalSampleList)]
 
                 if metaDictCat:
                     for key in metaDictCat:
@@ -351,22 +353,28 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
         qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
         picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
         picrustDF.set_index('speciesid__speciesid', inplace=True)
+        picrustSpeciesList = pd.unique(picrustDF.index.ravel().tolist())
 
         finalKeys = []
         total, col = picrustDF.shape
         counter = 0
-        for index, row in picrustDF.iterrows():
-            d = ast.literal_eval(row['geneCount'])
-            for x in d.iterkeys():
-                picrustDF.loc[index, x] = d[x]
-                if x not in finalKeys:
-                    finalKeys.append(x)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        for species in speciesList:
+            if species in picrustSpeciesList:
+                cell = picrustDF.at[species, 'geneCount']  # JUMP
+                d = ast.literal_eval(cell)
+                for key in d:
+                    picrustDF.at[species, key] = d[key]
+                    if counter == 0:
+                        finalKeys.append(key)
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[PID] == RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            else:
+                pass
 
             counter += 1
             database.queue.setBase(RID, 'Step 2 of 4: Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is done!')
@@ -414,7 +422,6 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
 
         finalDF.reset_index(drop=False, inplace=True)
-
         return finalDF
 
     except:

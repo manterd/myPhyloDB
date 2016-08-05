@@ -234,6 +234,7 @@ def getPCoA(request, stops, RID, PID):
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
 
                 meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                meta_rDF[catFields_edit] = meta_rDF[catFields_edit].astype(str)
 
                 # Removes samples (rows) that are not in our samplelist
                 meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]

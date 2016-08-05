@@ -716,7 +716,7 @@ def getWGCNA(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 # plot dendrogram
-                r("pdf(paste(path, '/wgcna_temp', pdf_counter, '.pdf', sep=''), height=6, width=5+0.025*nGenes)")
+                r("pdf(paste(path, '/wgcna_temp', pdf_counter, '.pdf', sep=''), height=6, width=5+0.01*nGenes)")
                 r("pdf_counter <- pdf_counter + 1")
                 r("plotDendroAndColors(net$dendrograms[[1]], \
                     cbind(mergedColors[net$blockGenes[[1]]], unmergedColors[net$blockGenes[[1]]]), \
@@ -725,7 +725,7 @@ def getWGCNA(request, stops, RID, PID):
                 r("dev.off()")
 
                 #relating the modules
-                r("pdf(paste(path, '/wgcna_temp', pdf_counter, '.pdf', sep=''), height=6, width=5+0.025*nGenes)")
+                r("pdf(paste(path, '/wgcna_temp', pdf_counter, '.pdf', sep=''), height=6, width=5+0.01*nGenes)")
                 r("pdf_counter <- pdf_counter + 1")
                 nModules = r.get("colorlevels")
                 if len(nModules) > 2:
@@ -743,7 +743,7 @@ def getWGCNA(request, stops, RID, PID):
                 r("TOM.mat <- as.matrix(TOM)")
                 r("diss = (1-TOM.mat)^6")
                 r("diag(diss)=NA")
-                r("pdf(paste(path, '/wgcna_temp', pdf_counter, '.pdf', sep=''), height=3+0.025*nGenes, width=5+0.025*nGenes)")
+                r("pdf(paste(path, '/wgcna_temp', pdf_counter, '.pdf', sep=''), height=3+0.01*nGenes, width=5+0.01*nGenes)")
                 r("pdf_counter <- pdf_counter + 1")
                 r("TOMplot(diss, net$dendrograms[[1]], mergedColors[net$blockGenes[[1]]], main='TOM Dissimilarity Matrix')")
                 r("dev.off()")
