@@ -93,6 +93,10 @@ def getCatUnivData(request, RID, stops, PID):
                 # Removes samples (rows) that are not in our samplelist
                 tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
 
+                # make sure column types are correct
+                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
+                tempDF[quantFields] = tempDF[quantFields].astype(float)
+
                 if metaDictCat:
                     for key in metaDictCat:
                         tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
@@ -128,8 +132,9 @@ def getCatUnivData(request, RID, stops, PID):
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
                     finalDF, missingList = getTaxaDF('rel_abund', selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-                    result += 'The following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
-                    result += '===============================================\n'
+                    if selectAll == 8:
+                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
+                        result += '===============================================\n'
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
@@ -243,7 +248,7 @@ def getCatUnivData(request, RID, stops, PID):
                         try:
                             pList.append(float(part))
                         except:
-                            placeholder = ''
+                            pass
 
                     if pList:
                         p_val = min(pList)
@@ -339,6 +344,7 @@ def getCatUnivData(request, RID, stops, PID):
                 database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
+                seriesDict = {}
                 for name1, group1 in grouped1:
                     dataList = []
                     pValue = pValDict[name1]
@@ -357,6 +363,11 @@ def getCatUnivData(request, RID, stops, PID):
                             grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
                             dataList = list(grouped2)
 
+                        seriesDict['name'] = name1
+                        seriesDict['color'] = colors[colors_idx]
+                        seriesDict['data'] = dataList
+                        seriesList.append(seriesDict)
+
                     elif sig_only == 1:
                         if pValue < 0.05:
                             if DepVar == 1:
@@ -372,17 +383,16 @@ def getCatUnivData(request, RID, stops, PID):
                                 grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
                                 dataList = list(grouped2)
 
+                            seriesDict['name'] = name1
+                            seriesDict['color'] = colors[colors_idx]
+                            seriesDict['data'] = dataList
+                            seriesList.append(seriesDict)
+
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                    seriesDict = {}
-                    seriesDict['name'] = name1
-                    seriesDict['color'] = colors[colors_idx]
-                    seriesDict['data'] = dataList
-                    seriesList.append(seriesDict)
 
                     colors_idx += 1
                     if colors_idx >= len(colors):
@@ -563,12 +573,10 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 metaDictQuant = {}
                 quantFields = []
-                quantValues = []
                 if metaValsQuant:
                     metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
                     for key in sorted(metaDictQuant):
                         quantFields.append(key)
-                        quantValues.extend(metaDictQuant[key])
 
                 quantSampleIDs = []
                 if metaIDsQuant:
@@ -581,6 +589,10 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 # Removes samples (rows) that are not in our samplelist
                 tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+
+                # make sure column types are correct
+                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
+                tempDF[quantFields] = tempDF[quantFields].astype(float)
 
                 if metaDictCat:
                     for key in metaDictCat:
@@ -615,19 +627,22 @@ def getQuantUnivData(request, RID, stops, PID):
                     DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    if selectAll == 8:
+                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
+                        result += '===============================================\n'
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getKeggDF('rel_abund', keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF = getNZDF(nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getNZDF('rel_abund', nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'

@@ -56,12 +56,13 @@ def getSPLS(request, stops, RID, PID):
                 # Removes samples (rows) that are not in our samplelist
                 tempDF = savedDF.loc[savedDF['sampleid'].isin(quantSampleIDs)]
 
+                # make sure column types are correct
+                tempDF[quantFields] = tempDF[quantFields].astype(float)
+
                 if metaDictQuant:
                     for key in metaDictQuant:
                         valueList = [float(x) for x in metaDictQuant[key]]
                         tempDF = tempDF.loc[tempDF[key].isin(valueList)]
-
-                wantedList = quantFields + ['sampleid']
 
                 metaDF = tempDF[quantFields]
 
@@ -121,8 +122,9 @@ def getSPLS(request, stops, RID, PID):
                 if button3 == 1:
                     DepVar = int(all["DepVar_taxa"])
                     finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
-                    result += 'The following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
-                    result += '===============================================\n'
+                    if selectAll == 8:
+                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
+                        result += '===============================================\n'
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])

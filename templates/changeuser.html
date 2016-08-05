@@ -9,10 +9,17 @@
     {% endif %}
 {% endblock user %}
 
+{% block javascript %}
+    <script type="text/javascript">
+        function myFunction() {
+            $("#submit").css("background-color", "yellow").attr("value", "updating...");
+
+        }
+    </script>
+{% endblock javascript %}
 
 {% block my_content %}
 <br><br>
-
 <form method="post" action="{% url 'updateInfo' %}">
     {% csrf_token %}
 
@@ -120,7 +127,7 @@
             <td></td>
             <td></td>
             <td>
-                <input type="submit" value="Update Info" />
+                <input type="submit" id="submit" onclick="myFunction()" value="Update changes" />
             </td>
             <td></td>
         </tr>

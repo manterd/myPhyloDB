@@ -2,10 +2,16 @@
 {% load i18n %}
 
 {% block title %}{% trans "Register for an account" %}{% endblock %}
+{% block javascript %}
+    <script type="text/javascript">
+        function myFunction() {
+            alert("The form was submitted");
+        }
+    </script>
+{% endblock javascript %}
 
 {% block my_content %}
 <br><br>
-
 <form method="post" action="">
     {% csrf_token %}
 
@@ -135,7 +141,7 @@
             <td></td>
             <td></td>
             <td>
-                <input type="submit" value="{% trans 'Submit' %}" />
+                <input type="submit" onsubmit="myFunction()" value="{% trans 'Submit' %}" />
             </td>
             <td></td>
         </tr>

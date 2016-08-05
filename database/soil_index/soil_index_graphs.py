@@ -78,6 +78,9 @@ def getsoil_index(request, stops, RID, PID):
                 # Removes samples (rows) that are not in our samplelist
                 tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
 
+                # make sure column types are correct
+                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
+
                 if metaDictCat:
                     for key in metaDictCat:
                         tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]

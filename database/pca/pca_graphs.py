@@ -114,14 +114,12 @@ def getPCA(request, stops, RID, PID):
                 else:
                     tempDF = savedDF
 
+                # make sure column types are correct
+                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
+
                 if metaDictCat:
                     for key in metaDictCat:
                         tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
-
-                if allFields:
-                    wantedList = allFields + ['sampleid']
-                else:
-                    wantedList = ['sampleid']
 
                 metaDF = tempDF[allFields]
 
@@ -144,8 +142,9 @@ def getPCA(request, stops, RID, PID):
                 if button3 == 1:
                     DepVar = int(all["DepVar_taxa"])
                     finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
-                    result += 'The following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
-                    result += '===============================================\n'
+                    if selectAll == 8:
+                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
+                        result += '===============================================\n'
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
