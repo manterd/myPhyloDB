@@ -220,7 +220,7 @@ def getSpAC(request, stops, RID, PID):
                         r("pdf(paste('SpAC_temp', pdf_counter, '.pdf', sep=''))")
                         if method == 'estaccumR':
                             r("x <- estaccumR(data)")
-                        if method == 'poolaccum':
+                        elif method == 'poolaccum':
                             r("x <- poolaccum(data)")
 
                         values = r("summary(x)")

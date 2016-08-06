@@ -5,11 +5,9 @@ import pandas as pd
 from pyper import *
 import simplejson
 
-from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
-from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 import database.queue
 
 
@@ -273,106 +271,21 @@ def getDiffAbund(request, stops, RID, PID):
                             r("df <- data.frame(rank_id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
                             nbinom_res = r.get("df")
 
-                            zipped = []
                             if button3 == 1:
-                                zipped = getFullTaxonomy(selectAll, nbinom_res['rank_id'])
+                                zipped = getFullTaxonomy(nbinom_res['rank_id'])
+                                insertTaxaInfo(button3, zipped, nbinom_res, pos=1)
                             elif button3 == 2:
-                                zipped = getFullKO(keggAll, nbinom_res['rank_id'])
+                                zipped = getFullKO(nbinom_res['rank_id'])
+                                insertTaxaInfo(button3, zipped, nbinom_res, pos=1)
                             elif button3 == 3:
-                                zipped = getFullNZ(nzAll, nbinom_res['rank_id'])
-
-                            if button3 == 1:
-                                if selectAll == 2:
-                                    k, p = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Kingdom', k)
-                                    nbinom_res.insert(2, 'Phyla', p)
-                                elif selectAll == 3:
-                                    k, p, c = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Kingdom', k)
-                                    nbinom_res.insert(2, 'Phyla', p)
-                                    nbinom_res.insert(3, 'Class', c)
-                                elif selectAll == 4:
-                                    k, p, c, o = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Kingdom', k)
-                                    nbinom_res.insert(2, 'Phyla', p)
-                                    nbinom_res.insert(3, 'Class', c)
-                                    nbinom_res.insert(4, 'Order', o)
-                                elif selectAll == 5:
-                                    k, p, c, o, f = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Kingdom', k)
-                                    nbinom_res.insert(2, 'Phyla', p)
-                                    nbinom_res.insert(3, 'Class', c)
-                                    nbinom_res.insert(4, 'Order', o)
-                                    nbinom_res.insert(5, 'Family', f)
-                                elif selectAll == 6 or selectAll == 8:
-                                    k, p, c, o, f, g = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Kingdom', k)
-                                    nbinom_res.insert(2, 'Phyla', p)
-                                    nbinom_res.insert(3, 'Class', c)
-                                    nbinom_res.insert(4, 'Order', o)
-                                    nbinom_res.insert(5, 'Family', f)
-                                    nbinom_res.insert(6, 'Genus', g)
-                                elif selectAll == 7:
-                                    k, p, c, o, f, g, s = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Kingdom', k)
-                                    nbinom_res.insert(2, 'Phyla', p)
-                                    nbinom_res.insert(3, 'Class', c)
-                                    nbinom_res.insert(4, 'Order', o)
-                                    nbinom_res.insert(5, 'Family', f)
-                                    nbinom_res.insert(6, 'Genus', g)
-                                    nbinom_res.insert(7, 'Species', s)
-                            if button3 == 2:
-                                if keggAll == 1:
-                                    L1 = [x[0] for x in zipped]
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                if keggAll == 2:
-                                    L1, L2 = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                    nbinom_res.insert(2, 'Level_2', L2)
-                                if keggAll == 3:
-                                    L1, L2, L3 = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                    nbinom_res.insert(2, 'Level_2', L2)
-                                    nbinom_res.insert(3, 'Level_3', L3)
-                            if button3 == 3:
-                                if nzAll == 1:
-                                    L1 = [x[0] for x in zipped]
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                if nzAll == 2:
-                                    L1, L2 = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                    nbinom_res.insert(2, 'Level_2', L2)
-                                if nzAll == 3:
-                                    L1, L2, L3 = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                    nbinom_res.insert(2, 'Level_2', L2)
-                                    nbinom_res.insert(3, 'Level_3', L3)
-                                if nzAll == 4:
-                                    L1, L2, L3, L4 = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                    nbinom_res.insert(2, 'Level_2', L2)
-                                    nbinom_res.insert(3, 'Level_3', L3)
-                                    nbinom_res.insert(4, 'Level_4', L4)
-                                if nzAll == 5:
-                                    L1, L2, L3, L4 = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                    nbinom_res.insert(2, 'Level_2', L2)
-                                    nbinom_res.insert(3, 'Level_3', L3)
-                                    nbinom_res.insert(4, 'Level_4', L4)
-                                if nzAll == 6:
-                                    L1, L2, L3, L4 = map(None, *zipped)
-                                    nbinom_res.insert(1, 'Level_1', L1)
-                                    nbinom_res.insert(2, 'Level_2', L2)
-                                    nbinom_res.insert(3, 'Level_3', L3)
-                                    nbinom_res.insert(4, 'Level_4', L4)
-
-                                nbinom_res.fillna(value=1, inplace=True)
+                                zipped = getFullNZ(nbinom_res['rank_id'])
+                                insertTaxaInfo(button3, zipped, nbinom_res, pos=1)
 
                             nbinom_res.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
 
                             iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
                             nbinom_res.insert(1, 'Comparison', iterationName)
-
+                            print nbinom_res
                             nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
                             nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
                             nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
@@ -381,8 +294,6 @@ def getDiffAbund(request, stops, RID, PID):
                             nbinom_res.rename(columns={' stat ': 'Stat'}, inplace=True)
                             nbinom_res.rename(columns={' pval ': 'p-value'}, inplace=True)
                             nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
-                            nbinom_res[['p-value', 'p-adjusted']].astype(float)
-
                             finalDF = pd.concat([finalDF, nbinom_res])
 
                             database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...' + str(iterationName) + ' is done!')
@@ -515,142 +426,4 @@ def getDiffAbund(request, stops, RID, PID):
             return HttpResponse(res, content_type='application/json')
 
 
-def findTaxa(id):
-    taxa = ""
-    try:
-        temp = Kingdom.objects.filter(kingdomid=id)
-        taxa += temp[0].kingdomName
-    except:
-        try:
-            temp = Phyla.objects.filter(phylaid=id)
-            taxa += temp[0].phylaName
-        except:
-            try:
-                temp = Class.objects.filter(classid=id)
-                taxa += temp[0].className
-            except:
-                try:
-                    temp = Order.objects.filter(orderid=id)
-                    taxa += temp[0].orderName
-                except:
-                    try:
-                        temp = Family.objects.filter(familyid=id)
-                        taxa += temp[0].familyName
-                    except:
-                        try:
-                            temp = Genus.objects.filter(genusid=id)
-                            taxa += temp[0].genusName
-                        except:
-                            try:
-                                temp = Species.objects.filter(speciesid=id)
-                                taxa += temp[0].speciesName
-                            except:
-                                return 'Not found'
-    return taxa
 
-
-def findKEGG(id):
-    taxa = ""
-    try:
-        temp = ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=id)
-        taxa += temp[0].ko_lvl1_name
-    except:
-        try:
-            temp = ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=id)
-            taxa += temp[0].ko_lvl2_name
-        except:
-            try:
-                temp = ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=id)
-                taxa += temp[0].ko_lvl3_name
-            except:
-                try:
-                    temp = ko_entry.objects.using('picrust').filter(ko_lvl4_id=id)
-                    taxa += temp[0].ko_name
-                except:
-                    return 'Not found'
-    return taxa
-
-
-def findNZ(id):
-    taxa = ""
-    try:
-        temp = nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=id)
-        taxa += temp[0].nz_lvl1_name
-    except:
-        try:
-            temp = nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=id)
-            taxa += temp[0].nz_lvl2_name
-        except:
-            try:
-                temp = nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=id)
-                taxa += temp[0].nz_lvl3_name
-            except:
-                try:
-                    temp = nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=id)
-                    taxa += temp[0].nz_lvl4_name
-                except:
-                    try:
-                        temp = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id)
-                        taxa += temp[0].nz_name
-                    except:
-                        return 'Not found'
-    return taxa
-
-
-def getFullTaxonomy(level, id):
-    record = []
-    if level == 2:
-        record = Phyla.objects.all().filter(phylaid__in=id).values_list('kingdomid_id__kingdomName', 'phylaName')
-    elif level == 3:
-        record = Class.objects.all().filter(classid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
-    elif level == 4:
-        record = Order.objects.all().filter(orderid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
-    elif level == 5:
-        record = Family.objects.all().filter(familyid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
-    elif level == 6 or level == 8:
-        record = Genus.objects.all().filter(genusid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
-    elif level == 7:
-        record = Species.objects.all().filter(speciesid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
-
-    return record
-
-
-def getFullKO(level, id):
-    record = []
-
-    if level == 1:
-        record = ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id__in=id).values_list('ko_lvl1_name')
-    elif level == 2:
-        record = ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id__in=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_name')
-    elif level == 3:
-        record = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id__in=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
-
-    return record
-
-
-def getFullNZ(level, id):
-    record = []
-
-    if level == 1:
-        record = nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id__in=id).values_list('nz_lvl1_name')
-    elif level == 2:
-        record = nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_name')
-    elif level == 3:
-        record = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
-    elif level == 4:
-        record = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-    elif level == 5:
-        for item in id:
-            if nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=item).exists():
-                qs = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
-                record.extend(qs)
-            elif nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=item).exists():
-                qs = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-                record.extend(qs)
-            elif nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=item).exists():
-                qs = nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_id_id__nz_lvl4_name')
-                record.extend(qs)
-    elif level == 6:
-        record = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-
-    return record

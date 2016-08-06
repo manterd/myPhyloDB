@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import simplejson
 
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
@@ -750,3 +751,122 @@ def sumKEGG(speciesList, picrustDF, keggDict, RID, PID, stops):
             pass
 
     return picrustDF
+
+
+def getFullTaxonomy(idList):
+    recordList = []
+    for id in idList:
+        if Phyla.objects.all().filter(phylaid=id).exists():
+            qs = Phyla.objects.all().filter(phylaid=id).values_list('kingdomid_id__kingdomName', 'phylaName')
+            record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
+            recordList.append(record)
+        else:
+            if Class.objects.all().filter(classid=id).exists():
+                qs = Class.objects.all().filter(classid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
+                record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A',)
+                recordList.append(record)
+            else:
+                if Order.objects.all().filter(orderid=id).exists():
+                    qs = Order.objects.all().filter(orderid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
+                    record = qs[0] + ('N/A', 'N/A', 'N/A',)
+                    recordList.append(record)
+                else:
+                    if Family.objects.all().filter(familyid=id).exists():
+                        qs = Family.objects.all().filter(familyid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
+                        record = qs[0] + ('N/A', 'N/A',)
+                        recordList.append(record)
+                    else:
+                        if Genus.objects.all().filter(genusid=id).exists():
+                            qs = Genus.objects.all().filter(genusid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
+                            record = qs[0] + ('N/A',)
+                            recordList.append(record)
+                        else:
+                            if Species.objects.all().filter(speciesid=id).exists():
+                                qs = Species.objects.all().filter(speciesid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
+                                record = qs[0]
+                                recordList.append(record)
+                            else:
+                                record = ('Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found',)
+                                recordList.append(record)
+
+    return recordList
+
+
+def getFullKO(idList):
+    recordList = []
+
+    for id in idList:
+            if ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id=id).exists():
+                qs = ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id=id).values_list('ko_lvl1_name')
+                record = qs[0] + ('N/A', 'N/A')
+                recordList.append(record)
+            else:
+                if ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id=id).exists():
+                    qs = ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_name')
+                    record = qs[0] + ('N/A',)
+                    recordList.append(record)
+                else:
+                    if ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).exists():
+                        qs = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
+                        record = qs[0]
+                        recordList.append(record)
+                    else:
+                        record = ('Not found', 'Not found', 'Not found',)
+                        recordList.append(record)
+
+    return recordList
+
+
+def getFullNZ(idList):
+    recordList = []
+
+    for id in idList:
+            if nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id=id).exists():
+                qs = nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id=id).values_list('nz_lvl1_name')
+                record = qs[0] + ('N/A', 'N/A', 'N/A',)
+                recordList.append(record)
+            else:
+                if nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id=id).exists():
+                    qs = nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_name')
+                    record = qs[0] + ('N/A', 'N/A',)
+                    recordList.append(record)
+                else:
+                    if nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=id).exists():
+                        qs = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
+                        record = qs[0] + ('N/A',)
+                        recordList.append(record)
+                    else:
+                        if nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=id).exists():
+                            qs = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
+                            record = qs[0]
+                            recordList.append(record)
+                        else:
+                            record = ('Not found', 'Not found', 'Not found', 'Not found',)
+                            recordList.append(record)
+
+    return recordList
+
+
+def insertTaxaInfo(button3, zipped, DF, pos=1):
+    if button3 == 1:
+        k, p, c, o, f, g, s = map(None, *zipped)
+        DF.insert(pos, 'Kingdom', k)
+        DF.insert(pos+1, 'Phyla', p)
+        DF.insert(pos+2, 'Class', c)
+        DF.insert(pos+3, 'Order', o)
+        DF.insert(pos+4, 'Family', f)
+        DF.insert(pos+5, 'Genus', g)
+        DF.insert(pos+6, 'Species', s)
+    elif button3 == 2:
+        L1, L2, L3 = map(None, *zipped)
+        DF.insert(pos, 'Level_1', L1)
+        DF.insert(pos+1, 'Level_2', L2)
+        DF.insert(pos+2, 'Level_3', L3)
+    elif button3 == 3:
+        L1, L2, L3, L4 = map(None, *zipped)
+        DF.insert(pos, 'Level_1', L1)
+        DF.insert(pos+1, 'Level_2', L2)
+        DF.insert(pos+2, 'Level_3', L3)
+        DF.insert(pos+3, 'Level_4', L4)
+
+    DF.fillna(value='N/A', inplace=True)

@@ -8,11 +8,9 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import simplejson
 import sys
 
-from database.models import Phyla, Class, Order, Family, Genus, Species
-from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
-from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
+from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 import database.queue
 
 
@@ -607,98 +605,14 @@ def getWGCNA(request, stops, RID, PID):
 
                 zipped = []
                 if button3 == 1:
-                    zipped = getFullTaxonomy(selectAll, kmeDF['rank_id'])
+                    zipped = getFullTaxonomy(list(kmeDF['rank_id']))
+                    insertTaxaInfo(button3, zipped, kmeDF, pos=1)
                 elif button3 == 2:
-                    zipped = getFullKO(keggAll, kmeDF['rank_id'])
+                    zipped = getFullKO(list(kmeDF['rank_id']))
+                    insertTaxaInfo(button3, zipped, kmeDF, pos=1)
                 elif button3 == 3:
-                    zipped = getFullNZ(nzAll, kmeDF['rank_id'])
-
-                if button3 == 1:
-                    if selectAll == 2:
-                        k, p = map(None, *zipped)
-                        kmeDF.insert(1, 'Kingdom', k)
-                        kmeDF.insert(2, 'Phyla', p)
-                    elif selectAll == 3:
-                        k, p, c = map(None, *zipped)
-                        kmeDF.insert(1, 'Kingdom', k)
-                        kmeDF.insert(2, 'Phyla', p)
-                        kmeDF.insert(3, 'Class', c)
-                    elif selectAll == 4:
-                        k, p, c, o = map(None, *zipped)
-                        kmeDF.insert(1, 'Kingdom', k)
-                        kmeDF.insert(2, 'Phyla', p)
-                        kmeDF.insert(3, 'Class', c)
-                        kmeDF.insert(4, 'Order', o)
-                    elif selectAll == 5:
-                        k, p, c, o, f = map(None, *zipped)
-                        kmeDF.insert(1, 'Kingdom', k)
-                        kmeDF.insert(2, 'Phyla', p)
-                        kmeDF.insert(3, 'Class', c)
-                        kmeDF.insert(4, 'Order', o)
-                        kmeDF.insert(5, 'Family', f)
-                    elif selectAll == 6:
-                        k, p, c, o, f, g = map(None, *zipped)
-                        kmeDF.insert(1, 'Kingdom', k)
-                        kmeDF.insert(2, 'Phyla', p)
-                        kmeDF.insert(3, 'Class', c)
-                        kmeDF.insert(4, 'Order', o)
-                        kmeDF.insert(5, 'Family', f)
-                        kmeDF.insert(6, 'Genus', g)
-                    elif selectAll == 7:
-                        k, p, c, o, f, g, s = map(None, *zipped)
-                        kmeDF.insert(1, 'Kingdom', k)
-                        kmeDF.insert(2, 'Phyla', p)
-                        kmeDF.insert(3, 'Class', c)
-                        kmeDF.insert(4, 'Order', o)
-                        kmeDF.insert(5, 'Family', f)
-                        kmeDF.insert(6, 'Genus', g)
-                        kmeDF.insert(7, 'Species', s)
-                if button3 == 2:
-                    if keggAll == 1:
-                        L1 = [i[0] for i in zipped]
-                        kmeDF.insert(1, 'Level_1', L1)
-                    if keggAll == 2:
-                        L1, L2 = map(None, *zipped)
-                        kmeDF.insert(1, 'Level_1', L1)
-                        kmeDF.insert(2, 'Level_2', L2)
-                    if keggAll == 3:
-                        L1, L2, L3 = map(None, *zipped)
-                        kmeDF.insert(1, 'Level_1', L1)
-                        kmeDF.insert(2, 'Level_2', L2)
-                        kmeDF.insert(3, 'Level_3', L3)
-                if button3 == 3:
-                    if nzAll == 1:
-                        L1 = [i[0] for i in zipped]
-                        kmeDF.insert(1, 'Level_1', L1)
-                    if nzAll == 2:
-                        L1, L2 = map(None, *zipped)
-                        kmeDF.insert(1, 'Level_1', L1)
-                        kmeDF.insert(2, 'Level_2', L2)
-                    if nzAll == 3:
-                        L1, L2, L3 = map(None, *zipped)
-                        kmeDF.insert(1, 'Level_1', L1)
-                        kmeDF.insert(2, 'Level_2', L2)
-                        kmeDF.insert(3, 'Level_3', L3)
-                    if nzAll == 4:
-                        L1, L2, L3, L4 = map(None, *zipped)
-                        kmeDF.insert(1, 'Level_1', L1)
-                        kmeDF.insert(2, 'Level_2', L2)
-                        kmeDF.insert(3, 'Level_3', L3)
-                        kmeDF.insert(4, 'Level_4', L4)
-                    if nzAll == 5:
-                        L1, L2, L3, L4 = map(None, *zipped)
-                        kmeDF.insert(1, 'Level_1', L1)
-                        kmeDF.insert(2, 'Level_2', L2)
-                        kmeDF.insert(3, 'Level_3', L3)
-                        kmeDF.insert(4, 'Level_4', L4)
-                    if nzAll == 6:
-                        L1, L2, L3, L4 = map(None, *zipped)
-                        kmeDF.insert(1, 'Level_1', L1)
-                        kmeDF.insert(2, 'Level_2', L2)
-                        kmeDF.insert(3, 'Level_3', L3)
-                        kmeDF.insert(4, 'Level_4', L4)
-
-                    kmeDF.fillna(value='N/A', inplace=True)
+                    zipped = getFullNZ(list(kmeDF['rank_id']))
+                    insertTaxaInfo(button3, zipped, kmeDF, pos=1)
 
                 kme_table = kmeDF.to_html(classes="table display")
                 kme_table = kme_table.replace('border="1"', 'border="0"')
@@ -1244,63 +1158,3 @@ def getWGCNA(request, stops, RID, PID):
             myDict = {'error': "Error with WGCNA!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
-
-
-def getFullTaxonomy(level, id):
-    record = []
-
-    if level == 2:
-        record = Phyla.objects.all().filter(phylaid__in=id).values_list('kingdomid_id__kingdomName', 'phylaName')
-    elif level == 3:
-        record = Class.objects.all().filter(classid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
-    elif level == 4:
-        record = Order.objects.all().filter(orderid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
-    elif level == 5:
-        record = Family.objects.all().filter(familyid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
-    elif level == 6:
-        record = Genus.objects.all().filter(genusid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
-    elif level == 7:
-        record = Species.objects.all().filter(speciesid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
-
-    return record
-
-
-def getFullKO(level, id):
-    record = []
-
-    if level == 1:
-        record = ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id__in=id).values_list('ko_lvl1_name')
-    elif level == 2:
-        record = ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id__in=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_name')
-    elif level == 3:
-        record = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id__in=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
-
-    return record
-
-
-def getFullNZ(level, id):
-    record = []
-
-    if level == 1:
-        record = nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id__in=id).values_list('nz_lvl1_name')
-    elif level == 2:
-        record = nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_name')
-    elif level == 3:
-        record = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
-    elif level == 4:
-        record = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-    elif level == 5:
-        for item in id:
-            if nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=item).exists():
-                qs = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
-                record.extend(qs)
-            elif nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=item).exists():
-                qs = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-                record.extend(qs)
-            elif nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=item).exists():
-                qs = nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_id_id__nz_lvl4_name')
-                record.extend(qs)
-    elif level == 6:
-        record = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-
-    return record

@@ -150,6 +150,7 @@ def getGAGE(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 3 of 4: Performing GAGE analysis...')
 
+                '''
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/gage/'
                 path = str(myDir) + str(RID) + '.pkl'
@@ -158,6 +159,7 @@ def getGAGE(request, stops, RID, PID):
                 if not os.path.exists(myDir):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
+                '''
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 1:

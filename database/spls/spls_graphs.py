@@ -125,7 +125,7 @@ def getSPLS(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
 
                     finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
-                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
+                    remSampleList = list(set(quantSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
                     result += '===============================================\n\n'

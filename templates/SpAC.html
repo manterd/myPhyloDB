@@ -88,6 +88,7 @@
 
             // Start stop and other 'click' functions
             $("#run").click(function () {
+                checkButtons();
                 if(running == true) {
                     alert("myPhyloDB is currently running your previous analysis request!");
                     return false;
@@ -190,19 +191,22 @@
         });
 
         function getTab(){
+            $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
             $.ajax({
                 url: '/myPhyloDB/getRawData/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
                     all: RID,
-                    func: 'spac'
+                    func: 'spac',
+                    button3: button3
                 },
                 success: function(data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var name = obj['name'];
                     getFile(name, 'final_data.csv');
+                    $("#TabButton").css("background-color", "green").val("Done!");
                 }
             });
         }
@@ -221,6 +225,7 @@
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
+            $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
 
             if (button3 == 1) {
@@ -330,6 +335,7 @@
         }
 
         function chooseData() {
+            $("#TabButton")
             $("#run").css("background-color", "yellow");
             $("#container-0").empty().append('Analysis is running...please be patient');
             getGraphData();

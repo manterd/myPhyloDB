@@ -2,7 +2,6 @@ from collections import defaultdict
 import ctypes
 from django import forms
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.http import HttpResponse
 import inspect
 import multiprocessing as mp
@@ -17,6 +16,7 @@ import time
 
 from models import Project, Reference, Profile
 from config import local_cfg
+from utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 
 
 pd.set_option('display.max_colwidth', -1)
@@ -306,10 +306,24 @@ def getRawData(request):
     if request.is_ajax():
         RID = request.GET["all"]
         func = request.GET["func"]
+        button3 = int(request.GET["button3"])
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
+
+        fRow, fCol = savedDF.shape
+        if button3 == 1:
+            zipped = getFullTaxonomy(list(savedDF['rank_id']))
+            insertTaxaInfo(button3, zipped, savedDF, pos=fCol)
+        elif button3 == 2:
+            zipped = getFullKO(list(savedDF['rank_id']))
+            insertTaxaInfo(button3, zipped, savedDF, pos=fCol)
+        elif button3 == 3:
+            zipped = getFullNZ(list(savedDF['rank_id']))
+            insertTaxaInfo(button3, zipped, savedDF, pos=fCol)
+
+        savedDF.drop('rank_name', axis=1, inplace=True)
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         fileName = str(myDir) + str(RID) + '.csv'

@@ -232,6 +232,7 @@ def nzParse(file):
     nz_lvl1.objects.using('picrust').all().delete()
     nz_lvl2.objects.using('picrust').all().delete()
     nz_lvl3.objects.using('picrust').all().delete()
+    nz_lvl4.objects.using('picrust').all().delete()
     nz_entry.objects.using('picrust').all().delete()
 
     text = file.read().splitlines()

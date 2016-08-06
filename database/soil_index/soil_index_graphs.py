@@ -125,6 +125,7 @@ def getsoil_index(request, stops, RID, PID):
                 count_rDF['coverage'] = 1 - count_rDF['singletons'] / count_rDF['sum']
                 count_rDF['total'] = count_rDF.sum(axis=1)
 
+                '''
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/soil_index/'
                 path = str(myDir) + str(RID) + '.pkl'
@@ -133,6 +134,7 @@ def getsoil_index(request, stops, RID, PID):
                 if not os.path.exists(myDir):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
+                '''
 
                 meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
 
