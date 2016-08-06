@@ -105,7 +105,30 @@ def getSPLS(request, stops, RID, PID):
                         result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
                 result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n'
-                result += '\n===============================================\n'
+                result += '===============================================\n\n'
+
+                button3 = int(all['button3'])
+                DepVar = 1
+                if button3 == 1:
+                    DepVar = int(all["DepVar_taxa"])
+                elif button3 == 2:
+                    DepVar = int(all["DepVar_kegg"])
+                elif button3 == 3:
+                    DepVar = int(all["DepVar_nz"])
+
+                if DepVar == 4:
+                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = savedDF.shape
+                    if rows < 1:
+                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
+                        res = simplejson.dumps(myDict)
+                        return HttpResponse(res, content_type='application/json')
+
+                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
+                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
+
+                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
+                    result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
 
@@ -117,21 +140,17 @@ def getSPLS(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
 
-                DepVar = 1
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
                     finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
                     finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, tempDF, quantFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
                     finalDF = getNZDF('rel_abund', nzAll, '', savedDF, tempDF, quantFields, DepVar, RID, stops, PID)
 
                 # save location info to session

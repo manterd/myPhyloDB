@@ -945,6 +945,7 @@
                         if (error != "none") {
                             alert(error);
                             $("#run").css("background-color", "red");
+                            $("#container-1").empty();
                             return
                         } else {
                             $("#run").css("background-color", "green");
@@ -1454,7 +1455,7 @@
                 $.ajax({
                     url: '/myPhyloDB/funcCall/',
                     type: 'POST',
-                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
                 });
             }
         }

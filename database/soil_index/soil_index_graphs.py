@@ -78,9 +78,10 @@ def getsoil_index(request, stops, RID, PID):
                 savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
                 rows, cols = savedDF.shape
                 if rows < 1:
-                    myDict = {'error': "Error with selected dataset: no abund_16S rows found"}
+                    myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
+
                 finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                 remSampleList = list(set(allSampleIDs) - set(finalSampleList))
 
@@ -100,8 +101,9 @@ def getsoil_index(request, stops, RID, PID):
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += '===============================================\n'
-                result += str(len(remSampleList)) + ' samples were removed from analysis (missing abund_16S data)\n'
+                result += '===============================================\n\n'
+                result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
+                result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 3: Selecting your chosen meta-variables...done')
 

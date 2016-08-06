@@ -83,7 +83,23 @@ def getGAGE(request, stops, RID, PID):
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += '\n===============================================\n'
+                result += '===============================================\n\n'
+
+
+                DepVar = int(all["DepVar"])
+                if DepVar == 4:
+                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = savedDF.shape
+                    if rows < 1:
+                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
+                        res = simplejson.dumps(myDict)
+                        return HttpResponse(res, content_type='application/json')
+
+                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
+                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
+
+                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
+                    result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
@@ -100,7 +116,6 @@ def getGAGE(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                DepVar = int(all["DepVar"])
                 keggString = all["kegg"]
                 keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                 nameList = []

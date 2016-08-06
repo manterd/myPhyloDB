@@ -112,7 +112,30 @@ def getCatUnivData(request, RID, stops, PID):
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
-                result += '===============================================\n'
+                result += '===============================================\n\n'
+
+                button3 = int(all['button3'])
+                DepVar = 1
+                if button3 == 1:
+                    DepVar = int(all["DepVar_taxa"])
+                elif button3 == 2:
+                    DepVar = int(all["DepVar_kegg"])
+                elif button3 == 3:
+                    DepVar = int(all["DepVar_nz"])
+
+                if DepVar == 4:
+                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = savedDF.shape
+                    if rows < 1:
+                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
+                        res = simplejson.dumps(myDict)
+                        return HttpResponse(res, content_type='application/json')
+
+                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
+                    remSampleList = list(set(allSampleIDs) - set(finalSampleList))
+
+                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
+                    result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
@@ -123,12 +146,9 @@ def getCatUnivData(request, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
-                button3 = int(all['button3'])
 
-                DepVar = 1
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
                     finalDF, missingList = getTaxaDF('rel_abund', selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
@@ -136,14 +156,12 @@ def getCatUnivData(request, RID, stops, PID):
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
-                if button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
+                elif button3 == 2:
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                     finalDF = getKeggDF('rel_abund', keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
-                if button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
+                elif button3 == 3:
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
                     finalDF = getNZDF('rel_abund', nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
@@ -603,7 +621,31 @@ def getQuantUnivData(request, RID, stops, PID):
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
-                result += '===============================================\n'
+                result += '===============================================\n\n'
+
+                button3 = int(all['button3'])
+                DepVar = 1
+                if button3 == 1:
+                    DepVar = int(all["DepVar_taxa"])
+                elif button3 == 2:
+                    DepVar = int(all["DepVar_kegg"])
+                elif button3 == 3:
+                    DepVar = int(all["DepVar_nz"])
+
+                if DepVar == 4:
+                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = savedDF.shape
+                    if rows < 1:
+                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
+                        res = simplejson.dumps(myDict)
+                        return HttpResponse(res, content_type='application/json')
+
+                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
+                    remSampleList = list(set(allSampleIDs) - set(finalSampleList))
+
+                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
+                    result += '===============================================\n\n'
+
 
                 database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
@@ -614,12 +656,9 @@ def getQuantUnivData(request, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or kegg level...')
-                button3 = int(all['button3'])
 
                 finalDF = pd.DataFrame()
-                DepVar = 1
                 if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
                     finalDF, missingList = getTaxaDF('rel_abund', selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
@@ -628,13 +667,11 @@ def getQuantUnivData(request, RID, stops, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                     finalDF, missingList = getKeggDF('rel_abund', keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
                     finalDF, missingList = getNZDF('rel_abund', nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)

@@ -121,7 +121,30 @@ def getDiffAbund(request, stops, RID, PID):
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += '\n===============================================\n'
+                result += '===============================================\n\n'
+
+                button3 = int(all['button3'])
+                DepVar = 1
+                if button3 == 1:
+                    DepVar = int(all["DepVar_taxa"])
+                elif button3 == 2:
+                    DepVar = int(all["DepVar_kegg"])
+                elif button3 == 3:
+                    DepVar = int(all["DepVar_nz"])
+
+                if DepVar == 4:
+                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = savedDF.shape
+                    if rows < 1:
+                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
+                        res = simplejson.dumps(myDict)
+                        return HttpResponse(res, content_type='application/json')
+
+                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
+                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
+
+                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
+                    result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
 
@@ -134,21 +157,17 @@ def getDiffAbund(request, stops, RID, PID):
                 database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
 
                 # get selected taxa fro each rank selected in the tree
-                DepVar = 1
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
                     finalDF, missingList = getTaxaDF('abund', selectAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
                     finalDF = getKeggDF('abund', keggAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
                     finalDF = getNZDF('abund', nzAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
 
                 # save location info to session
@@ -285,7 +304,7 @@ def getDiffAbund(request, stops, RID, PID):
                                     nbinom_res.insert(3, 'Class', c)
                                     nbinom_res.insert(4, 'Order', o)
                                     nbinom_res.insert(5, 'Family', f)
-                                elif selectAll == 6:
+                                elif selectAll == 6 or selectAll == 8:
                                     k, p, c, o, f, g = map(None, *zipped)
                                     nbinom_res.insert(1, 'Kingdom', k)
                                     nbinom_res.insert(2, 'Phyla', p)
@@ -580,7 +599,6 @@ def findNZ(id):
 
 def getFullTaxonomy(level, id):
     record = []
-
     if level == 2:
         record = Phyla.objects.all().filter(phylaid__in=id).values_list('kingdomid_id__kingdomName', 'phylaName')
     elif level == 3:
@@ -589,7 +607,7 @@ def getFullTaxonomy(level, id):
         record = Order.objects.all().filter(orderid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
     elif level == 5:
         record = Family.objects.all().filter(familyid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
-    elif level == 6:
+    elif level == 6 or level == 8:
         record = Genus.objects.all().filter(genusid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
     elif level == 7:
         record = Species.objects.all().filter(speciesid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
