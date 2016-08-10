@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     url(r'^home/$', views.home, name='home'),
     url(r'^upload/$', views.upload, name='upload'),
+    url(r'^download/$', views.download, name='download'),
     url(r'^select/$', views.select, name='select'),
     url(r'^taxa/$', views.taxa, name='taxa'),
     url(r'^kegg_path/$', views.kegg_path, name='kegg_path'),

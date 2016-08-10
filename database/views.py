@@ -59,6 +59,23 @@ def upload(request):
         context_instance=RequestContext(request)
     )
 
+@login_required(login_url='/myPhyloDB/accounts/login/')
+def download(request):
+
+    projects = Reference.objects.none()
+    if request.user.is_superuser:
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+    elif request.user.is_authenticated():
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+
+    return render_to_response(
+        'download.html',
+        {'projects': projects,
+         'type': "GET",
+         'paths': ''},
+        context_instance=RequestContext(request)
+    )
+
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def profile(request):
