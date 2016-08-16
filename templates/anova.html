@@ -918,7 +918,7 @@
             var myDict = {};
             myDict['reqType'] = "status";
             myDict['RID'] = RID;
-            myDict['funcName'] = "getCatUnivData";
+            myDict['funcName'] = "anovaStatus";
             var jsonDict = JSON.stringify(myDict);
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
@@ -928,7 +928,6 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var resType = obj['resType'];
-
                     if (resType == "status") {
                         var stage = obj['stage'];
                         if (running) {

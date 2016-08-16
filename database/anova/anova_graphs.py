@@ -468,6 +468,8 @@ def getCatUnivData(request, RID, stops, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
 
+
+                finalDict['resType'] = 'res'
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
@@ -695,7 +697,6 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...!')
                 finalDict = {}
-
                 colors = [
                     "#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",
                     "#7A4900", "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87",
@@ -827,7 +828,6 @@ def getQuantUnivData(request, RID, stops, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-
                 database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
 
@@ -835,13 +835,19 @@ def getQuantUnivData(request, RID, stops, PID):
                 for index, row in finalDF.iterrows():
                     val = Sample.objects.get(sampleid=row['sampleid']).sample_name
                     finalDF.loc[index, 'sample_name'] = val
-
                 colors_idx = 0
                 shapes_idx = 0
                 seriesList = []
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 for name1, group1 in grouped1:
-                    pValue = pValDict[name1]
+                    try:
+                        pValue = pValDict[name1]  # JUMP error line, KeyError Phyla, AD3
+                    except Exception as e:
+                        pass
+                        # print e  # try catch prevents full crash from key error
+                        # results look appropriate but do not mention sample based key errors
+                        # potentially add name1 to a list to spit out in results, which signifies samples(?) which
+                        # did not necessarily represent the full selection
                     if sig_only == 0:
                         if catLevels > 1:
                             grouped2 = group1.groupby(catFields_edit)
@@ -1241,6 +1247,8 @@ def getQuantUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+
+                finalDict['resType'] = 'res'
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)

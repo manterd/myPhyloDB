@@ -285,7 +285,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                             iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
                             nbinom_res.insert(1, 'Comparison', iterationName)
-                            print nbinom_res
+                            # print nbinom_res
                             nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
                             nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
                             nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
@@ -329,8 +329,17 @@ def getDiffAbund(request, stops, RID, PID):
                     for index, row in nosigDF.iterrows():
                         dataDict = {}
                         dataDict['name'] = row['Rank ID']
+
+                        # remove N/A strings from rows (replace with None ?)
+
                         dataDict['x'] = float(row['baseMean'])
-                        dataDict['y'] = float(row['log2FoldChange'])
+
+                        try:
+                            dataDict['y'] = float(row['log2FoldChange'])  # error: could not convert string to float
+                        except Exception as e:  # strings /\ "N/A" where float expected
+                            # print e
+                            dataDict['y'] = 0.0
+
                         nosigData.append(dataDict)
 
                     seriesDict = {}

@@ -490,13 +490,13 @@ def getWGCNA(request, stops, RID, PID):
                 moduleDF.rename(columns={' Whole Network Connectivity ': 'Whole Network Connectivity'}, inplace=True)
                 moduleDF.insert(0, 'rank_id', index)
 
-                zipped = []
+                zipped = []  # JUMP  Potentially run an if to check for all select level
                 if button3 == 1:
-                    zipped = getFullTaxonomy(selectAll, moduleDF['rank_id'])
+                    zipped = getFullTaxonomy(moduleDF['rank_id'])  # error, getFullTaxonomy only takes one argument
                 elif button3 == 2:
-                    zipped = getFullKO(keggAll, moduleDF['rank_id'])
+                    zipped = getFullKO(moduleDF['rank_id'])
                 elif button3 == 3:
-                    zipped = getFullNZ(nzAll, moduleDF['rank_id'])
+                    zipped = getFullNZ(moduleDF['rank_id'])
 
                 if button3 == 1:
                     if selectAll == 2:

@@ -155,6 +155,7 @@ def funcCall(request):
             statDict.pop(RID, 0)
             stopDict.pop(RID, 0)
             removeRID(RID)
+            # results on anova quant not working occasionally, depends on categorical selection
             return results
         except KeyError:
             time2[RID] = time()
