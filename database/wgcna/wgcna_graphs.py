@@ -232,6 +232,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
+                    # JUMP PGPRs
                     finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, catFields_edit,DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
@@ -492,96 +493,36 @@ def getWGCNA(request, stops, RID, PID):
 
                 zipped = []  # JUMP  Potentially run an if to check for all select level
                 if button3 == 1:
-                    zipped = getFullTaxonomy(moduleDF['rank_id'])  # error, getFullTaxonomy only takes one argument
+                    zipped = getFullTaxonomy(moduleDF['rank_id'])  # had selectAll AND moduleDF
                 elif button3 == 2:
                     zipped = getFullKO(moduleDF['rank_id'])
                 elif button3 == 3:
                     zipped = getFullNZ(moduleDF['rank_id'])
 
+
                 if button3 == 1:
-                    if selectAll == 2:
-                        k, p = map(None, *zipped)
-                        moduleDF.insert(1, 'Kingdom', k)
-                        moduleDF.insert(2, 'Phyla', p)
-                    elif selectAll == 3:
-                        k, p, c = map(None, *zipped)
-                        moduleDF.insert(1, 'Kingdom', k)
-                        moduleDF.insert(2, 'Phyla', p)
-                        moduleDF.insert(3, 'Class', c)
-                    elif selectAll == 4:
-                        k, p, c, o = map(None, *zipped)
-                        moduleDF.insert(1, 'Kingdom', k)
-                        moduleDF.insert(2, 'Phyla', p)
-                        moduleDF.insert(3, 'Class', c)
-                        moduleDF.insert(4, 'Order', o)
-                    elif selectAll == 5:
-                        k, p, c, o, f = map(None, *zipped)
-                        moduleDF.insert(1, 'Kingdom', k)
-                        moduleDF.insert(2, 'Phyla', p)
-                        moduleDF.insert(3, 'Class', c)
-                        moduleDF.insert(4, 'Order', o)
-                        moduleDF.insert(5, 'Family', f)
-                    elif selectAll == 6:
-                        k, p, c, o, f, g = map(None, *zipped)
-                        moduleDF.insert(1, 'Kingdom', k)
-                        moduleDF.insert(2, 'Phyla', p)
-                        moduleDF.insert(3, 'Class', c)
-                        moduleDF.insert(4, 'Order', o)
-                        moduleDF.insert(5, 'Family', f)
-                        moduleDF.insert(6, 'Genus', g)
-                    elif selectAll == 7:
-                        k, p, c, o, f, g, s = map(None, *zipped)
-                        moduleDF.insert(1, 'Kingdom', k)
-                        moduleDF.insert(2, 'Phyla', p)
-                        moduleDF.insert(3, 'Class', c)
-                        moduleDF.insert(4, 'Order', o)
-                        moduleDF.insert(5, 'Family', f)
-                        moduleDF.insert(6, 'Genus', g)
-                        moduleDF.insert(7, 'Species', s)
+                    # removed split based on select level as getFullTaxonomy returns a full set
+                    k, p, c, o, f, g, s = map(None, *zipped)
+                    moduleDF.insert(1, 'Kingdom', k)
+                    moduleDF.insert(2, 'Phyla', p)
+                    moduleDF.insert(3, 'Class', c)
+                    moduleDF.insert(4, 'Order', o)
+                    moduleDF.insert(5, 'Family', f)
+                    moduleDF.insert(6, 'Genus', g)
+                    moduleDF.insert(7, 'Species', s)
                 if button3 == 2:
-                    if keggAll == 1:
-                        L1 = [x[0] for x in zipped]
-                        moduleDF.insert(1, 'Level_1', L1)
-                    if keggAll == 2:
-                        L1, L2 = map(None, *zipped)
-                        moduleDF.insert(1, 'Level_1', L1)
-                        moduleDF.insert(2, 'Level_2', L2)
-                    if keggAll == 3:
-                        L1, L2, L3 = map(None, *zipped)
-                        moduleDF.insert(1, 'Level_1', L1)
-                        moduleDF.insert(2, 'Level_2', L2)
-                        moduleDF.insert(3, 'Level_3', L3)
+                    # same as taxa
+                    L1, L2, L3 = map(None, *zipped)
+                    moduleDF.insert(1, 'Level_1', L1)
+                    moduleDF.insert(2, 'Level_2', L2)
+                    moduleDF.insert(3, 'Level_3', L3)
                 if button3 == 3:
-                    if nzAll == 1:
-                        L1 = [x[0] for x in zipped]
-                        moduleDF.insert(1, 'Level_1', L1)
-                    if nzAll == 2:
-                        L1, L2 = map(None, *zipped)
-                        moduleDF.insert(1, 'Level_1', L1)
-                        moduleDF.insert(2, 'Level_2', L2)
-                    if nzAll == 3:
-                        L1, L2, L3 = map(None, *zipped)
-                        moduleDF.insert(1, 'Level_1', L1)
-                        moduleDF.insert(2, 'Level_2', L2)
-                        moduleDF.insert(3, 'Level_3', L3)
-                    if nzAll == 4:
-                        L1, L2, L3, L4 = map(None, *zipped)
-                        moduleDF.insert(1, 'Level_1', L1)
-                        moduleDF.insert(2, 'Level_2', L2)
-                        moduleDF.insert(3, 'Level_3', L3)
-                        moduleDF.insert(4, 'Level_4', L4)
-                    if nzAll == 5:
-                        L1, L2, L3, L4 = map(None, *zipped)
-                        moduleDF.insert(1, 'Level_1', L1)
-                        moduleDF.insert(2, 'Level_2', L2)
-                        moduleDF.insert(3, 'Level_3', L3)
-                        moduleDF.insert(4, 'Level_4', L4)
-                    if nzAll == 6:
-                        L1, L2, L3, L4 = map(None, *zipped)
-                        moduleDF.insert(1, 'Level_1', L1)
-                        moduleDF.insert(2, 'Level_2', L2)
-                        moduleDF.insert(3, 'Level_3', L3)
-                        moduleDF.insert(4, 'Level_4', L4)
+                    # same as taxa
+                    L1, L2, L3, L4 = map(None, *zipped)
+                    moduleDF.insert(1, 'Level_1', L1)
+                    moduleDF.insert(2, 'Level_2', L2)
+                    moduleDF.insert(3, 'Level_3', L3)
+                    moduleDF.insert(4, 'Level_4', L4)
 
                     moduleDF.fillna(value='N/A', inplace=True)
 
