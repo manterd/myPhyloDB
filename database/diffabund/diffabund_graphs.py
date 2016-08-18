@@ -285,7 +285,6 @@ def getDiffAbund(request, stops, RID, PID):
 
                             iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
                             nbinom_res.insert(1, 'Comparison', iterationName)
-                            # print nbinom_res
                             nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
                             nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
                             nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
@@ -397,6 +396,8 @@ def getDiffAbund(request, stops, RID, PID):
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
 
+                print "series: ", finalDict['series']
+
                 database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -422,6 +423,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
+
                 return HttpResponse(res, content_type='application/json')
 
     except:
