@@ -792,6 +792,8 @@ def getQuantUnivData(request, RID, stops, PID):
                     if not np.isnan(p_vals).any():
                         p_value = min(p_vals)
                         pValDict[name1] = p_value
+                    else:
+                        pValDict[name1] = np.nan
 
                     result += 'Level: ' + str(name1[0]) + '\n'
                     result += 'Name: ' + str(name1[1]) + '\n'
@@ -830,24 +832,18 @@ def getQuantUnivData(request, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
-
                 finalDF['sample_name'] = ''
                 for index, row in finalDF.iterrows():
                     val = Sample.objects.get(sampleid=row['sampleid']).sample_name
                     finalDF.loc[index, 'sample_name'] = val
+
                 colors_idx = 0
                 shapes_idx = 0
                 seriesList = []
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 for name1, group1 in grouped1:
-                    try:
-                        pValue = pValDict[name1]  # JUMP error line, KeyError Phyla, AD3
-                    except Exception as e:
-                        pass
-                        # print e  # try catch prevents full crash from key error
-                        # results look appropriate but do not mention sample based key errors
-                        # potentially add name1 to a list to spit out in results, which signifies samples(?) which
-                        # did not necessarily represent the full selection
+                    pValue = pValDict[name1]
+
                     if sig_only == 0:
                         if catLevels > 1:
                             grouped2 = group1.groupby(catFields_edit)
@@ -1246,7 +1242,6 @@ def getQuantUnivData(request, RID, stops, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
 
                 finalDict['resType'] = 'res'
                 finalDict['text'] = result

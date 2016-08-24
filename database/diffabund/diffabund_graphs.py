@@ -271,6 +271,9 @@ def getDiffAbund(request, stops, RID, PID):
                             r("df <- data.frame(rank_id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
                             nbinom_res = r.get("df")
 
+                            # remove taxa that failed (i.e., both trts are zero or log2FoldChange is NaN)
+                            nbinom_res = nbinom_res.loc[pd.notnull(nbinom_res[' log2FoldChange '])]
+
                             if button3 == 1:
                                 zipped = getFullTaxonomy(nbinom_res['rank_id'])
                                 insertTaxaInfo(button3, zipped, nbinom_res, pos=1)
@@ -329,15 +332,8 @@ def getDiffAbund(request, stops, RID, PID):
                         dataDict = {}
                         dataDict['name'] = row['Rank ID']
 
-                        # remove N/A strings from rows (replace with None ?)
-
                         dataDict['x'] = float(row['baseMean'])
-
-                        try:
-                            dataDict['y'] = float(row['log2FoldChange'])  # error: could not convert string to float
-                        except Exception as e:  # strings /\ "N/A" where float expected
-                            # print e
-                            dataDict['y'] = 0.0
+                        dataDict['y'] = float(row['log2FoldChange'])
 
                         nosigData.append(dataDict)
 
@@ -395,8 +391,6 @@ def getDiffAbund(request, stops, RID, PID):
                 finalDict['series'] = seriesList
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
-
-                print "series: ", finalDict['series']
 
                 database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...done!')
 

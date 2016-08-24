@@ -282,7 +282,8 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         for i in xrange(num_samp):
             row = dict1[i]
             pathid = row['refid']
-            if not np.isnan(pathid):
+
+            if isinstance(pathid, unicode):
                 refid = pathid
             else:
                 refid = newRefID

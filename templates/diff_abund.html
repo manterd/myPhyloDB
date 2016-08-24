@@ -402,7 +402,6 @@
                         if (empty == 0) {
                             alert('No significant tests!');
                         }
-                        alert("Drawing!");
                         var text = data['text'];
                         $('#text-1').val(text);
 
@@ -417,9 +416,7 @@
                             buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                         }).draw();
                         $("div.toolbar").html('<br><br><br>');
-                        alert("For real now");
-                        scatter(xAxis, yAxis, series);  // crashing in here
-                        alert("Drawn!");
+                        scatter(xAxis, yAxis, series);
                         document.getElementById("TabButton").disabled = false;
                     }
                 }
@@ -556,7 +553,6 @@
         }
 
         function scatter(xAxis, yAxis, series) {
-            alert("scatter!");
            catOptions = {
                 chart: {
                     renderTo: 'container-1',
@@ -627,9 +623,7 @@
                 },
                 credits: { enabled: false }
             };
-            alert("cats? "+catOptions);  // catOptions might not be valid with certain data (check for nulls)
-            chart1 = new Highcharts.Chart(catOptions);  // crashing here
-            alert("Added!");
+            chart1 = new Highcharts.Chart(catOptions);
         }
     </script>
 {% endblock javascript %}

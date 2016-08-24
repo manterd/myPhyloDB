@@ -259,7 +259,7 @@ def getGAGE(request, stops, RID, PID):
 
                         compDF = r.get("df")
                         comparison = str(trt1) + ' vs. ' + str(trt2)
-                        compDF.insert(0, 'comparison', comparison)  # nonetype! compDF can be null?
+                        compDF.insert(0, 'comparison', comparison)
                         diffDF = diffDF.append(compDF, ignore_index=True)
                         all_columns = compDF.columns
                         diffDF = diffDF.ix[:, all_columns]
