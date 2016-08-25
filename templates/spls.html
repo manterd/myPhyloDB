@@ -121,6 +121,14 @@
                  checkButtons();
             });
 
+            $("#x_scale").click(function () {
+                checkButtons();
+            });
+
+            $("#y_scale").click(function () {
+                checkButtons();
+            });
+
             $("#TabButton").click(function () {
                 getTab();
             });
@@ -484,6 +492,19 @@
             myDict['RID'] = RID;
             myDict['funcName'] = "getSPLS";
             myDict['reqType'] = "call";
+
+            if ($("#x_scale").is(':checked')) {
+                myDict['x_scale'] = 'yes'
+            } else {
+                myDict['x_scale'] = 'no'
+            }
+
+            if ($("#y_scale").is(':checked')) {
+                myDict['y_scale'] = 'yes'
+            } else {
+                myDict['y_scale'] = 'no'
+            }
+
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -616,6 +637,10 @@
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>sPLS Settings:</em></strong></td>
         </tr>
         <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white" colspan="2"><em>Removal of variables with zero variance:</em></td>
+        </tr>
+        <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <span title="cutoff for the ratio of the most common value to the second most common value">
@@ -635,7 +660,32 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
-        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white" colspan="2"><em>Variable scaling:</em></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <span title="check to scale predictor (X) variables by dividing by the standard deviation" >
+                    <input type="checkbox" checked id="x_scale"/>
+                    &nbsp<-- scale predictor (X) variables
+                </span>
+
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <span title="check to scale response (Y) variables by dividing by the standard deviation" >
+                    <input type="checkbox" id="y_scale"/>
+                    &nbsp<-- scale response (Y) variables
+                </span>
+
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
         <tr>
             <td bgcolor="white"></td>
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plot:</em></strong></td>
@@ -765,6 +815,7 @@
     <br>
     <br>
     <h2>Observed & Predicted Data:</h2>
+    <h3 id="data"></h3>
     <div id="pred_table" style="width: 950px; overflow-x: auto;"></div>
     <br>
     <br>

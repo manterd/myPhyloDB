@@ -104,7 +104,20 @@ def getSPLS(request, stops, RID, PID):
                     elif keggAll == 6:
                         result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
-                result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n'
+                result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n\n'
+
+                x_scale = all['x_scale']
+                if x_scale == 'yes':
+                    result += 'Predictor (X) variables have been scaled by dividing by their standard deviation.\n'
+                else:
+                    result += 'Predictor (X) variables have not been scaled.\n'
+
+                y_scale = all['y_scale']
+                if y_scale == 'yes':
+                    result += 'All response (Y) variables (i.e., observed & predicted) have been scaled by dividing by their standard deviation.\n'
+                else:
+                    result += 'All response (Y) variables (i.e., observed & predicted) have not been scaled.\n'
+
                 result += '===============================================\n\n'
 
                 button3 = int(all['button3'])
@@ -234,12 +247,20 @@ def getSPLS(request, stops, RID, PID):
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
-                r("maxK <- length(Y)")
-                r("X_scaled <- scale(X_new, center=TRUE, scale=TRUE)")
-                r("Y_scaled <- scale(Y, center=TRUE, scale=TRUE)")
+                if x_scale == 'yes':
+                    r("X_scaled <- scale(X_new, center=FALSE, scale=TRUE)")
+                else:
+                    r("X_scaled <- scale(X_new, center=FALSE, scale=FALSE)")
+
+                if y_scale == 'yes':
+                    r("Y_scaled <- scale(Y, center=FALSE, scale=TRUE)")
+                else:
+                    r("Y_scaled <- scale(Y, center=FALSE, scale=FALSE)")
+
                 r("detach('package:mixOmics', unload=TRUE)")
                 r("library(spls)")
                 r("set.seed(1)")
+                r("maxK <- length(Y)")
 
                 spls_string = "cv <- cv.spls(X_scaled, Y_scaled, scale.x=FALSE, scale.y=FALSE, eta=seq(0.1, 0.9, 0.1), K=c(1:maxK), plot.it=FALSE)"
                 r.assign("cmd", spls_string)
@@ -289,23 +310,24 @@ def getSPLS(request, stops, RID, PID):
                 finalDict = {}
                 if total is not None:
                     r("pred.f <- predict(f, type='fit')")
-                    r("library(DMwR)")
-                    r("pred.ns <- unscale(pred.f, Y_scaled)")
-                    r("pred.ns.rows <- row.names(pred.ns)")
-                    pred = r.get("pred.ns")
-                    rows = r.get("pred.ns.rows")
+                    r("pred.f.rows <- row.names(pred.f)")
+                    pred = r.get("pred.f")
+                    rows = r.get("pred.f.rows")
                     predList = ['pred_' + s for s in quantFields]
                     predDF = pd.DataFrame(pred,  columns=[predList], index=rows)
 
-                    resultDF = pd.merge(meta_rDF, predDF, left_index=True, right_index=True)
+                    meta_scaled = r.get("Y_scaled")
+                    metaDF_scaled = pd.DataFrame(data=meta_scaled, columns=quantFields, index=rows)
+                    resultDF = pd.merge(metaDF_scaled, predDF, left_index=True, right_index=True)
                     result += 'sPLS Model Fit (y = mx + b):\n'
                     result += 'y = predicted\n'
                     result += 'x = observed\n\n'
 
                     for i in xrange(len(quantFields)):
-                        x = resultDF[quantFields[i]].astype(float).values.tolist()
+                        r.assign("myCol", quantFields[i])
+                        x = r.get("Y_scaled[,myCol]")
+                        x = x.tolist()
                         y = resultDF[predList[i]].astype(float).values.tolist()
-
                         slp, inter, r_value, p, se = stats.linregress(x, y)
                         r_sq = r_value * r_value
 
