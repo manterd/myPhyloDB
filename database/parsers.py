@@ -500,7 +500,6 @@ def parse_profile(file3, file4, p_uuid, refDict):
         df2 = df2[b]
         file4.close()
 
-        #df3 = df1.join(df2, how='outer')
         df3 = pd.merge(df1, df2, left_index=True, right_index=True, how='inner')
         df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', value='', regex=True, inplace=True)
         df3.reset_index(drop=True, inplace=True)

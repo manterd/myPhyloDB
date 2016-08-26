@@ -167,6 +167,17 @@ def uploadFunc(request, stopList):
             file1 = request.FILES['docfile1']
             try:
                 p_uuid, pType, num_samp = projectid(file1)
+                if not num_samp:
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "Error: Please open and save your meta file in Excel/OpenOffice in order to perform the necessary calculations..."
+                         },
+                        context_instance=RequestContext(request)
+                    )
+
             except:
                 logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                 myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -1866,6 +1877,14 @@ def updateFunc(request, stopList):
         ref = Reference.objects.get(refid=refid)
         dest = ref.path
         p_uuid, pType, num_samp = projectid(file1)
+        if not num_samp:
+            return render_to_response(
+                'update.html',
+                {'form5': UploadForm5,
+                 'state': "Error: Please open and save your meta file in Excel/OpenOffice in order to perform the necessary calculations..."
+                 },
+                context_instance=RequestContext(request)
+            )
 
         if stopList[PID] == RID:
             return updaStop(request)

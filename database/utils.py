@@ -360,20 +360,8 @@ def removeFiles(request):
 
 def excel_to_dict(wb, headerRow=1, nRows=1, sheet='Sheet1'):
     ws = wb.get_sheet_by_name(sheet)
-
     headerDict = dict()
-    if sheet == 'Project':
-        max_col = 12
-    elif sheet == 'MIMARKs':
-        max_col = 28
-    elif sheet == 'Soil':
-        max_col = 101
-    elif sheet == 'User':
-        max_col = 14
-    else:
-        max_col = ws.max_column
-
-    for col in xrange(1, max_col):
+    for col in xrange(1, ws.max_column+1):
         if ws.cell(row=headerRow, column=col).value:
             headerDict[col] = ws.cell(row=headerRow, column=col).value
 
