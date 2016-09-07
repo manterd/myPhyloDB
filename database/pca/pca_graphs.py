@@ -521,12 +521,13 @@ def getPCA(request, stops, RID, PID):
                 res = simplejson.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
-    except:
+    except Exception as e:
         if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
-            myDict = {'error': "Error with pca!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
+            myDict = {}
+            myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 

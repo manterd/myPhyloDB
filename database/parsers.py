@@ -154,7 +154,7 @@ def projectid(Document):
         global stage, perc
         perc = 0
         stage = "Step 1 of 5: Parsing project file..."
-        wb = openpyxl.load_workbook(BytesIO(Document.read()), data_only=True, read_only=True)
+        wb = openpyxl.load_workbook(BytesIO(Document.read()), data_only=True, read_only=False)
         ws = wb.get_sheet_by_name('Project')
         pType = ws.cell(row=6, column=3).value
         projectid = ws.cell(row=6, column=4).value
@@ -179,7 +179,7 @@ def parse_project(Document, p_uuid):
         global stage, perc
         perc = 50
 
-        wb = openpyxl.load_workbook(Document, data_only=True, read_only=True)
+        wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
         myDict = excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
         rowDict = myDict[0]
         rowDict.pop('num_samp')
@@ -248,7 +248,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         perc = 0
 
         project = Project.objects.get(projectid=p_uuid)
-        wb = openpyxl.load_workbook(Document, data_only=True, read_only=True)
+        wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
         perc = 25
 
         dict1 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='MIMARKs')

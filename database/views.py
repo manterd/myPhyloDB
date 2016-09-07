@@ -2099,6 +2099,7 @@ def usrFiles(request):
 
     selFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
     normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
+    # curNorm = last used normalization method, to be used for analysis compatibility checks (diffabund + deseq types)
 
     return {
         'selFiles': selFiles,
