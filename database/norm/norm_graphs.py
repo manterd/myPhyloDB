@@ -661,7 +661,7 @@ def rarefaction_remove(M, RID, depth=0, seed=0):
     return Mrarefied
 
 
-def rarefaction_keep(M, RID, depth=0, myLambda=0.5, seed=0):
+def rarefaction_keep(M, RID, depth=0, myLambda=0.1, seed=0):
     global curSamples, totSamples
     prng = RandomState(seed) # reproducible results
     noccur = np.sum(M, axis=1) # number of occurrences for each sample
