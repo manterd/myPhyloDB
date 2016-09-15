@@ -29,6 +29,13 @@ def getDiffAbund(request, stops, RID, PID):
                 with open(path, 'rb') as f:
                     savedDF = pd.read_csv(f, index_col=0, sep=',')
 
+                # round data to fix normalization type issues
+                savedDF['abund'] = savedDF['abund'].round(0).astype(int)
+                savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
+                savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)
+                savedDF['rich'] = savedDF['rich'].round(0).astype(int)
+                savedDF['diversity'] = savedDF['diversity'].round(0).astype(int)
+
                 button3 = int(all['button3'])
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
@@ -235,6 +242,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+
                 r("library(DESeq2)")
                 r("colData <- data.frame(row.names=colnames(count), trt=trt)")
                 r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design = ~ trt)")
@@ -265,7 +273,7 @@ def getDiffAbund(request, stops, RID, PID):
                         if i != j:
                             r.assign("trt1", mergeSet[i])
                             r.assign("trt2", mergeSet[j])
-                            # run DESeq here?
+                            # round values, convert to int
                             r("res <- results(dds, contrast=c('trt', trt1, trt2))")
                             r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
                             r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")

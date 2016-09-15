@@ -669,6 +669,8 @@ class UserProfile(models.Model):
     reference = models.CharField(blank=True, max_length=100)
     purpose = models.CharField(blank=True, max_length=100)
 
+    # current select token (create new token upon selecting new data, invalidates current analysis and norm pages
+
 
 '''
 class PLFA(models.Model):

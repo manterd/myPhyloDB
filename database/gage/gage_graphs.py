@@ -35,6 +35,13 @@ def getGAGE(request, stops, RID, PID):
                 with open(path, 'rb') as f:
                     savedDF = pd.read_csv(f, index_col=0, sep=',')
 
+                # round data to fix normalization type issues
+                savedDF['abund'] = savedDF['abund'].round(0).astype(int)
+                savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
+                savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)
+                savedDF['rich'] = savedDF['rich'].round(0).astype(int)
+                savedDF['diversity'] = savedDF['diversity'].round(0).astype(int)
+
                 result = ''
 
                 # Select samples and meta-variables from savedDF
@@ -246,6 +253,8 @@ def getGAGE(request, stops, RID, PID):
                         trt2 = levels[j]
                         r.assign("trt1", trt1)
                         r.assign("trt2", trt2)
+
+                        # round values to integers?
 
                         # get sign based on log2FoldChange
                         r("res <- results(dds, contrast=c('trt', trt1, trt2))")

@@ -320,6 +320,7 @@ def getNorm(request, RID, stopList, PID):
 
             finalDict['error'] = 'none'
             res = simplejson.dumps(finalDict)
+            # store curNorm! same place as normfiles / as part of normfiles
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -682,7 +683,7 @@ def getTab(request):
     if request.is_ajax():
         myDict = {}
         myDir = '/myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        fileName = str(myDir) + 'usr_norm_data.csv'
+        fileName = str(myDir) + 'usr_norm_data.csv'  # this file for curNorm
         myDict['name'] = str(fileName)
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
