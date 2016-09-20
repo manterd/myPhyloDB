@@ -407,6 +407,7 @@
             myDict['funcName'] = "getSpAC";
             myDict['method'] = document.getElementById("method").value;
             myDict['reqType'] = "call";
+            myDict['dataID'] = dataID;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({

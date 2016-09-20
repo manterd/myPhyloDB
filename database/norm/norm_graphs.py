@@ -320,7 +320,6 @@ def getNorm(request, RID, stopList, PID):
 
             finalDict['error'] = 'none'
             res = simplejson.dumps(finalDict)
-            # store curNorm! same place as normfiles / as part of normfiles
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:

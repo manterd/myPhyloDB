@@ -1,0 +1,3 @@
+Redirect proxy port to CherryPy port
+
+sudo iptables -A PREROUTING -t nat -p tcp --dport 80 -j REDIRECT --to-port 8000

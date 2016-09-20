@@ -812,6 +812,7 @@
             myDict['surfVal'] = document.getElementById("surfVal").value;
             myDict['funcName'] = "getPCoA";
             myDict['reqType'] = "call";
+            myDict['dataID'] = dataID;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({

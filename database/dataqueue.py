@@ -18,7 +18,7 @@ stopped = 0
 
 
 def datstop(request):
-    global activeList, stopList, threadDict, stopDict
+    global activeList, stopList, threadDict, stopDict, stopped
     RID = str(request.GET['all'])
     stopDict[RID] = True
     try:
@@ -34,6 +34,7 @@ def datstop(request):
                 stopList[pid] = RID
                 myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
                 stop = simplejson.dumps(myDict)
+                stopped += 1
                 return HttpResponse(stop, content_type='application/json')
     except:
         myDict = {'error': 'Analysis not running'}

@@ -1302,6 +1302,7 @@
                 myDict['button3'] = button3;
                 myDict['funcName'] = "getCatUnivData";
                 myDict['reqType'] = "call";
+                myDict['dataID'] = dataID;
                 var jsonDict = JSON.stringify(myDict);
                 $.ajax({
                     type: 'POST',
@@ -1453,6 +1454,7 @@
                 myDict['button3'] = button3;
                 myDict['funcName'] = "getQuantUnivData";
                 myDict['reqType'] = "call";
+                myDict['dataID'] = dataID;
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({

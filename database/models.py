@@ -670,7 +670,7 @@ class UserProfile(models.Model):
     purpose = models.CharField(blank=True, max_length=100)
 
     # current select token (create new token upon selecting new data, invalidates current analysis and norm pages
-
+    dataID = models.CharField(blank=True, max_length=200)
 
 '''
 class PLFA(models.Model):

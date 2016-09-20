@@ -17,6 +17,7 @@ import pickle
 import simplejson
 import time
 import zipfile
+from uuid import uuid4
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm
@@ -1794,6 +1795,16 @@ def saveSampleList(request):
         except OSError:
             pass
 
+        try:
+            # store dataID! userProfile attribute, generate UUID at end of selection # JUMP
+            thisUser = User.objects.get(username=request.user.username)
+            userProfiles = UserProfile.objects.all()
+            myData = UserProfile.objects.get(user=thisUser)
+            myData.dataID = uuid4().hex
+            myData.save()
+        except Exception as e:
+            print e
+
         text = 'Selected sample(s) have been recorded!'
         res = simplejson.dumps(text, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
@@ -2099,11 +2110,16 @@ def usrFiles(request):
 
     selFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
     normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
-    # curNorm = last used normalization method, to be used for analysis compatibility checks (diffabund + deseq types)
+
+    try:
+        dataID = UserProfile.objects.get(user=request.user).dataID  # UUID from last selection
+    except:
+        dataID = "nodataidfound"
 
     return {
         'selFiles': selFiles,
-        'normFiles': normFiles
+        'normFiles': normFiles,
+        'dataID': dataID
     }
 
 
@@ -2124,7 +2140,7 @@ def updateInfo(request):
     if verified:
         thisUser = User.objects.get(username=request.user.username)
         myData = UserProfile.objects.get(user=thisUser)
-        for key in stuff:
+        for key in stuff:  # JUMP
             thisUser.__setattr__(key, stuff[key])
             myData.__setattr__(key, stuff[key])
         thisUser.save()

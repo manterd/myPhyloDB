@@ -539,6 +539,7 @@
                 myDict['FdrVal'] = document.getElementById("FdrVal").value;
                 myDict['funcName'] = "getDiffAbund";
                 myDict['reqType'] = "call";
+                myDict['dataID'] = dataID;
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({

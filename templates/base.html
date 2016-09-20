@@ -54,6 +54,7 @@
         var selFiles = false;
         var normFiles = false;
         var normNorm = false;
+        var dataID = "dataIDnotfound";
         //var normMethod = "None";  // save with normFiles and such, to be loaded without cookie dependency
         $(function () {
             $('[title]').qtip({
@@ -79,8 +80,9 @@
         }
 
         function menu () {
-            var selFiles = "{{ selFiles }}";
-            var normFiles = "{{ normFiles }}";
+            selFiles = "{{ selFiles }}";
+            normFiles = "{{ normFiles }}";
+            dataID = "{{ dataID }}";
             if (normNorm == true) normFiles = "True";
             normNorm = false;
 

@@ -176,6 +176,8 @@ def getGAGE(request, stops, RID, PID):
                     finalDF['abund_16S'] = finalDF['abund_16S'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
+                count_rDF.fillna(0, inplace=True)
+
                 temp_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
                 temp_rDF[catFields_edit] = temp_rDF[catFields_edit].astype(str)
 

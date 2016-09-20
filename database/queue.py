@@ -16,6 +16,7 @@ from wgcna import wgcna_graphs
 from spac import spac_graphs
 from soil_index import soil_index_graphs
 from database.utils import threads
+from models import UserProfile
 
 
 q = Queue(maxsize=0)
@@ -34,6 +35,7 @@ stage = {}
 time1 = {}
 time2 = {}
 TimeDiff = {}
+complete = {}
 
 
 def setBase(RID, val):
@@ -53,6 +55,7 @@ def removeRID(RID):
         time1.pop(RID, None)
         time2.pop(RID, None)
         TimeDiff.pop(RID, None)
+        complete.pop(RID, None)
         return True
     except:
         return False
@@ -137,16 +140,33 @@ def funcCall(request):
     RID = data['RID']
     funcName = data['funcName']
     if reqType == "call":
-        time1[RID] = time()
-        qDict = {'RID': RID, 'funcName': funcName, 'request': request}
-        qList.append(qDict)
-        q.put(qDict, True)
-        statDict[RID] = int(q.qsize())
+        try:
+            dataID = data['dataID']
+        except:
+            print "Missing dataID"
+            myDict = {}
+            myDict['error'] = "Error: Dev done goofed!"
+            json_data = simplejson.dumps(myDict, encoding="Latin-1")
+            return HttpResponse(json_data,  content_type='application/json')
 
-        myDict = {}
-        myDict['resType'] = "status"
-        json_data = simplejson.dumps(myDict, encoding="Latin-1")
-        return HttpResponse(json_data, content_type='application/json')
+        if dataID == UserProfile.objects.get(user=request.user).dataID:
+            time1[RID] = time()
+            qDict = {'RID': RID, 'funcName': funcName, 'request': request}
+            qList.append(qDict)
+            q.put(qDict, True)
+            statDict[RID] = int(q.qsize())
+            complete[RID] = False
+
+            myDict = {}
+            myDict['resType'] = "status"
+            json_data = simplejson.dumps(myDict, encoding="Latin-1")
+            return HttpResponse(json_data, content_type='application/json')
+        else:
+            print "THIS SHOULD BE AN ERROR!!!"
+            myDict = {}
+            myDict['error'] = "Error: Selected data has changed, please refresh the page"
+            json_data = simplejson.dumps(myDict)
+            return HttpResponse(json_data, content_type='application/json')
 
     if reqType == "status":
         try:
@@ -159,7 +179,6 @@ def funcCall(request):
             return results
         except KeyError:
             time2[RID] = time()
-
             try:
                 TimeDiff[RID] = time2[RID] - time1[RID]
             except:
@@ -172,7 +191,13 @@ def funcCall(request):
                     stage[RID] = str(base[RID]) + '\n<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
             except:
                 if TimeDiff[RID] == 0:
-                    stage[RID] = 'In queue'
+                    try:
+                        if not complete[RID]:
+                            stage[RID] = 'In queue'
+                        else:
+                            stage[RID] = 'Analysis complete, preparing results'
+                    except:
+                        stage[RID] = 'Analysis complete, preparing results'
                 else:
                     stage[RID] = 'Analysis starting'
 
