@@ -91,7 +91,8 @@ def getCatUnivData(request, RID, stops, PID):
                 allFields = catFields_edit + quantFields
 
                 # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+                tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                tempDF = tempDF.loc[tempDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
                 tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
@@ -106,7 +107,9 @@ def getCatUnivData(request, RID, stops, PID):
                         valueList = [float(x) for x in metaDictQuant[key]]
                         tempDF = tempDF.loc[tempDF[key].isin(valueList)]
 
-                metaDF = tempDF[allFields]
+                wantedList = allFields + ['sampleid']
+                tempDF = tempDF[wantedList]
+                tempDF.set_index('sampleid', drop=True, inplace=True)
 
                 result = ''
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
@@ -115,14 +118,9 @@ def getCatUnivData(request, RID, stops, PID):
                 result += '===============================================\n\n'
 
                 button3 = int(all['button3'])
-                DepVar = 1
-                if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
-                elif button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
-                elif button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
+                DepVar = int(all["DepVar"])
 
+                finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                 if DepVar == 4:
                     savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
                     rows, cols = savedDF.shape
@@ -131,7 +129,6 @@ def getCatUnivData(request, RID, stops, PID):
                         res = simplejson.dumps(myDict)
                         return HttpResponse(res, content_type='application/json')
 
-                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                     remSampleList = list(set(allSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
@@ -151,7 +148,7 @@ def getCatUnivData(request, RID, stops, PID):
                 if button3 == 1:
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF(finalSampleList, 'rel_abund', selectAll, taxaDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
@@ -165,6 +162,54 @@ def getCatUnivData(request, RID, stops, PID):
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
                     finalDF = getNZDF('rel_abund', nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+
+                # transform Y, if requested
+                transform = int(all["transform"])
+                if transform == 1:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.log(finalDF.rel_abund)
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.log(finalDF.rich)
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.log(finalDF.diversity)
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.log(finalDF.abund_16S)
+                elif transform == 2:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.log10(finalDF.rel_abund)
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.log10(finalDF.rich)
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.log10(finalDF.diversity)
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.log10(finalDF.abund_16S)
+                elif transform == 3:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.sqrt(finalDF.rel_abund)
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.sqrt(finalDF.rich)
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.sqrt(finalDF.diversity)
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.sqrt(finalDF.abund_16S)
+                elif transform == 4:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.log10(finalDF.rel_abund/(1-finalDF.rel_abund))
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.log10(finalDF.rich/(1-finalDF.rich))
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.log10(finalDF.diversity/(1-finalDF.diversity))
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.log10(finalDF.abund_16S/(1-finalDF.abund_16S))
+                elif transform == 5:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.arcsin(finalDF.rel_abund)
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.arcsin(finalDF.rich)
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.arcsin(finalDF.diversity)
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.arcsin(finalDF.abund_16S)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'
@@ -226,34 +271,38 @@ def getCatUnivData(request, RID, stops, PID):
                     "#252F99", "#00CCFF", "#674E60", "#FC009C", "#92896B"
                 ]
 
+                if os.name == 'nt':
+                    r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                else:
+                    r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
                 # group DataFrame by each taxa level selected
+
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 pValDict = {}
                 counter = 1
                 for name1, group1 in grouped1:
                     D = ''
-
-                    if os.name == 'nt':
-                        r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
-                    else:
-                        r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
-
                     r.assign("df", group1)
                     trtString = " * ".join(allFields)
+
                     if DepVar == 1:
-                        anova_string = "fit <- aov(rel_abund ~ " + str(trtString) + ", data=df)"
+                        anova_string = "fit <- aov(df$rel_abund ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
+
                     elif DepVar == 2:
-                        anova_string = "fit <- aov(rich ~ " + str(trtString) + ", data=df)"
+                        anova_string = "fit <- aov(df$rich ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
+
                     elif DepVar == 3:
-                        anova_string = "fit <- aov(diversity ~ " + str(trtString) + ", data=df)"
+                        anova_string = "fit <- aov(df$diversity ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
+
                     elif DepVar == 4:
-                        anova_string = "fit <- aov(abund_16S ~ " + str(trtString) + ", data=df)"
+                        anova_string = "fit <- aov(df$abund_16S ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
 
@@ -293,6 +342,7 @@ def getCatUnivData(request, RID, stops, PID):
 
                         D += "\nLSmeans & Tukey's HSD post-hoc test:\n\n"
                         r("library(lsmeans)")
+                        # r('TukeyHSD(fit)')
 
                         if len(quantFields) == 0:
                             for i in fList:
@@ -444,6 +494,13 @@ def getCatUnivData(request, RID, stops, PID):
                 elif DepVar == 4:
                     yTitle['text'] = 'Total Abundance (rRNA gene copies)'
                 yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
+
+                if transform != 0:
+                    tname = {
+                        '1': "Ln", '2': "Log10", '3': "Sqrt", '4': "Logit", '5': "Arcsin"
+                    }
+                    yTitle['text'] = tname[str(transform)] + "(" + yTitle['text'] + ")"
+
                 yAxisDict['title'] = yTitle
 
                 xStyleDict = {'style': {'color': 'black', 'fontSize': '14px'}, 'rotation': 0}
@@ -626,13 +683,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 result += '===============================================\n\n'
 
                 button3 = int(all['button3'])
-                DepVar = 1
-                if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
-                elif button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
-                elif button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
+                DepVar = int(all["DepVar"])
 
                 if DepVar == 4:
                     savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
@@ -677,6 +728,54 @@ def getQuantUnivData(request, RID, stops, PID):
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
                     finalDF, missingList = getNZDF('rel_abund', nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+
+                # transform Y, if requested
+                transform = int(all["transform"])
+                if transform == 1:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.log(finalDF.rel_abund)
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.log(finalDF.rich)
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.log(finalDF.diversity)
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.log(finalDF.abund_16S)
+                elif transform == 2:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.log10(finalDF.rel_abund)
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.log10(finalDF.rich)
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.log10(finalDF.diversity)
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.log10(finalDF.abund_16S)
+                elif transform == 3:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.sqrt(finalDF.rel_abund)
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.sqrt(finalDF.rich)
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.sqrt(finalDF.diversity)
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.sqrt(finalDF.abund_16S)
+                elif transform == 4:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.log10(finalDF.rel_abund/(1-finalDF.rel_abund))
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.log10(finalDF.rich/(1-finalDF.rich))
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.log10(finalDF.diversity/(1-finalDF.diversity))
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.log10(finalDF.abund_16S/(1-finalDF.abund_16S))
+                elif transform == 5:
+                    if DepVar == 1:
+                        finalDF['rel_abund'] = np.arcsin(finalDF.rel_abund)
+                    elif DepVar == 2:
+                        finalDF['rich'] = np.arcsin(finalDF.rich)
+                    elif DepVar == 3:
+                        finalDF['diversity'] = np.arcsin(finalDF.diversity)
+                    elif DepVar == 4:
+                        finalDF['abund_16S'] = np.arcsin(finalDF.abund_16S)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'
@@ -1218,6 +1317,12 @@ def getQuantUnivData(request, RID, stops, PID):
                 elif DepVar == 4:
                     yTitle['text'] = 'Total Abundance (rRNA gene copies)'
                 yAxisDict['title'] = yTitle
+
+                if transform != 0:
+                    tname = {
+                        '1': "Ln", '2': "Log10", '3': "Sqrt", '4': "Logit", '5': "Arcsin"
+                    }
+                    yTitle['text'] = tname[str(transform)] + "(" + yTitle['text'] + ")"
 
                 yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
                 yAxisDict['title'] = yTitle

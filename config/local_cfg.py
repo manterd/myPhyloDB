@@ -19,19 +19,3 @@ def update():
 
     ### Settings for django-registration-redux
     settings.REGISTRATION_OPEN = True
-
-    '''
-    ### Do not change this code (it is currently disabled)
-    ### Settings for two-step authentification
-    settings.ACCOUNT_ACTIVATION_DAYS = 7
-    settings.REGISTRATION_EMAIL_SUBJECT_PREFIX = 'myPhyloDB Registration: '
-    settings.SEND_ACTIVATION_EMAIL = True
-    settings.REGISTRATION_AUTO_LOGIN = False
-
-    ### Settings for email server
-    settings.EMAIL_USE_TLS = True
-    settings.EMAIL_HOST = 'smtp.gmail.com'
-    settings.EMAIL_PORT = 587
-    settings.EMAIL_HOST_USER = ''
-    settings.EMAIL_HOST_PASSWORD = ''
-    '''

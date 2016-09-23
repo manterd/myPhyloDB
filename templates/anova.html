@@ -26,7 +26,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, DepVar_taxa = 1, DepVar_kegg = 1, DepVar_nz = 1, selTheme = 0, i = 0;
+        var button1 = 1, DepVar = 1, selTheme = 0, i = 0;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", nodesKEGG = "", nodesNZ = "", taxaAll = 0, keggAll = 0, nzAll = 0;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
@@ -36,6 +36,7 @@
         var RID = 0;
         var button3 = 1;
         var cat_gibbs = 0, cat_n = 0;
+        var transform = 0;
 
         $(function () {
 
@@ -434,6 +435,12 @@
                 checkButtons();
             });
 
+            $("#transform").change(function () {
+                transform = $(this).val();
+                chooseDisplay();
+                checkButtons();
+            });
+
             $("#selectTree").change(function () {
                 button3 = $(this).val();
                 checkButtons();
@@ -505,20 +512,21 @@
                 ncycle();
             });
 
-            $("#DepVar_taxa").change(function () {
-                DepVar_taxa = $(this).val();
-                chooseDisplay();
-                checkButtons();
-            });
-
-            $("#DepVar_kegg").change(function () {
-                DepVar_kegg = $(this).val();
-                chooseDisplay();
-                checkButtons();
-            });
-
-            $("#DepVar_nz").change(function () {
-                DepVar_nz = $(this).val();
+            $("#DepVar").change(function () {
+                DepVar = $(this).val();
+                if (DepVar == 1) {
+                    $('#transform').empty()
+                        .append('<option value="0">None</option>')
+                        .append('<option value="4">Logit</option>')
+                        .append('<option value="5">Arcsin</option>');
+                }
+                else {
+                    $('#transform').empty()
+                        .append('<option value="0">None</option>')
+                        .append('<option value="1">Ln</option>')
+                        .append('<option value="2">Log10</option>')
+                        .append('<option value="3">Sqrt</option>');
+                }
                 chooseDisplay();
                 checkButtons();
             });
@@ -887,9 +895,7 @@
                     $("#cat_nitrogen").hide();
                 }
             }
-
         }
-
 
         function stopThis(RID) {
             clearInterval(refresh);
@@ -1291,9 +1297,7 @@
                 myDict['taxa'] = taxa;
                 myDict['kegg'] = kegg;
                 myDict['nz'] = nz;
-                myDict['DepVar_taxa'] = DepVar_taxa;
-                myDict['DepVar_kegg'] = DepVar_kegg;
-                myDict['DepVar_nz'] = DepVar_nz;
+                myDict['DepVar'] = DepVar;
                 myDict['sig_only'] = sig_only;
                 myDict['selectAll'] = taxaAll;
                 myDict['keggAll'] = keggAll;
@@ -1303,6 +1307,7 @@
                 myDict['funcName'] = "getCatUnivData";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
+                myDict['transform'] = transform;
                 var jsonDict = JSON.stringify(myDict);
                 $.ajax({
                     type: 'POST',
@@ -1441,9 +1446,7 @@
                 myDict['metaValsQuant'] = metaValsQuant;
                 myDict['metaIDsQuant'] = metaIDsQuant;
                 myDict['taxa'] = taxa;
-                myDict['DepVar_taxa'] = DepVar_taxa;
-                myDict['DepVar_kegg'] = DepVar_kegg;
-                myDict['DepVar_nz'] = DepVar_nz;
+                myDict['DepVar'] = DepVar;
                 myDict['sig_only'] = sig_only;
                 myDict['selectAll'] = taxaAll;
                 myDict['RID'] = RID;
@@ -1710,6 +1713,23 @@
             </tr>
             <tr><td bgcolor="white"></td></tr>
             <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>ANcOVA options:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <select id="transform">
+                        <option value="0" selected="selected">None</option>
+                        <!--<option value="1">Ln</option>
+                        <option value="2">Log10</option>
+                        <option value="3">Sqrt</option>-->
+                        <option value="4">Logit</option>
+                        <option value="5">Arcsin</option>
+                    </select>
+                    &nbsp<-- Data transformation
+                </td>
+            </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
                 <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
             </tr>
             <tr>
@@ -1743,27 +1763,9 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td id="cell_taxa" colspan="8" style="text-align: center">
+            <td id="cell" colspan="8" style="text-align: center">
                 Dependent variable:
-                <select id="DepVar_taxa">
-                    <option value="1">Relative Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                    <option value="2">Species Richness</option>
-                    <option value="3">Species Diversity</option>
-                </select>
-            </td>
-            <td id="cell_kegg" colspan="8" style="text-align: center; display: none">
-                Dependent variable:
-                <select id="DepVar_kegg">
-                    <option value="1">Relative Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                    <option value="2">Species Richness</option>
-                    <option value="3">Species Diversity</option>
-                </select>
-            </td>
-            <td id="cell_nz" colspan="8" style="text-align: center; display: none">
-                Dependent variable:
-                <select id="DepVar_nz">
+                <select id="DepVar">
                     <option value="1">Relative Abundance</option>
                     <option value="4">Abundance (rRNA gene copies)</option>
                     <option value="2">Species Richness</option>
