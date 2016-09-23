@@ -178,7 +178,6 @@ def parse_project(Document, p_uuid):
     try:
         global stage, perc
         perc = 50
-
         wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
         myDict = excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
         rowDict = myDict[0]
@@ -193,10 +192,12 @@ def parse_project(Document, p_uuid):
             rowDict.pop('projectid')
             Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, **rowDict)
         stage = "Step 1 of 5: Parsing project file...done"
-    except:
+        return "none"
+    except Exception as ex:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
+        return str(ex)
 
 
 def parse_reference(p_uuid, refid, path, batch, raw, source, userid):

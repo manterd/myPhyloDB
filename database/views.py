@@ -143,6 +143,29 @@ def upStop(request):
             context_instance=RequestContext(request)
     )
 
+def upErr(msg, request, dest, sid):
+    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+    logging.exception(myDate)
+    remove_proj(dest)
+    transaction.savepoint_rollback(sid)
+
+    if request.user.is_superuser:
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+    elif request.user.is_authenticated():
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+    else:
+        projects = None
+    return render_to_response(
+        'upload.html',
+        {'projects': projects,
+         'form1': UploadForm1,
+         'form2': UploadForm2,
+         'error': msg
+         },
+        context_instance=RequestContext(request)
+    )
+
 
 @transaction.atomic
 def uploadFunc(request, stopList):
@@ -210,27 +233,13 @@ def uploadFunc(request, stopList):
 
             try:
                 handle_uploaded_file(file1, dest, metaName)
-                parse_project(metaFile, p_uuid)
+                res = parse_project(metaFile, p_uuid)
+                if res == "none":
+                    print "Parsed project with no errors"
+                else:
+                    print "Encountered error while parsing meta file: "+res
             except:
-                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                logging.exception(myDate)
-                remove_proj(dest)
-                transaction.savepoint_rollback(sid)
-
-                if request.user.is_superuser:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                elif request.user.is_authenticated():
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                return render_to_response(
-                    'upload.html',
-                    {'projects': projects,
-                     'form1': UploadForm1,
-                     'form2': UploadForm2,
-                     'error': "There was an error parsing your meta file:" + str(file1.name)
-                     },
-                    context_instance=RequestContext(request)
-                )
+                return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
 
             if source == 'mothur':
                 raw = False
@@ -256,25 +265,7 @@ def uploadFunc(request, stopList):
             try:
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
             except:
-                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                logging.exception(myDate)
-                remove_proj(dest)
-                transaction.savepoint_rollback(sid)
-
-                if request.user.is_superuser:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                elif request.user.is_authenticated():
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                return render_to_response(
-                    'upload.html',
-                    {'projects': projects,
-                     'form1': UploadForm1,
-                     'form2': UploadForm2,
-                     'error': "There was an error parsing your meta file:" + str(file1.name)
-                     },
-                    context_instance=RequestContext(request)
-                )
+                return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
 
             if stopList[PID] == RID:
                 remove_proj(dest)
@@ -282,7 +273,28 @@ def uploadFunc(request, stopList):
                 return upStop(request)
 
             if source == 'mothur':
-                file3 = request.FILES['docfile3']
+                try:
+                    file3 = request.FILES['docfile3']
+                except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+                    remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
+
+                    if request.user.is_superuser:
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "Cannot open taxonomy file"
+                         },
+                        context_instance=RequestContext(request)
+                    )
                 handle_uploaded_file(file3, dest, file3.name)
 
                 try:
@@ -313,7 +325,28 @@ def uploadFunc(request, stopList):
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file4 = request.FILES['docfile4']
+                try:
+                    file4 = request.FILES['docfile4']
+                except:
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+                    remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
+
+                    if request.user.is_superuser:
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+                    return render_to_response(
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "Cannot open shared file"
+                         },
+                        context_instance=RequestContext(request)
+                    )
                 handle_uploaded_file(file4, dest, file4.name)
 
                 try:
