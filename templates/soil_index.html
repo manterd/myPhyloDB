@@ -324,13 +324,8 @@
                 onSelect: function(flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            if (node.childList == undefined) {
-                                node.select(false);
-                                node.remove(true);
-                            } else {
-                                node.select(false);
-                                node.select(true);
-                            }
+                            node.select(false);
+                            node.select(true);
                         });
                     }
                     nodesCat = node.tree.getSelectedNodes();
@@ -722,7 +717,8 @@
     <div>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
-            <th>Select Meta Data:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            <th>Select Meta Data:
+                <br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
         </tr>
         <tr>
             <td style="padding-right: 10px; vertical-align: top">

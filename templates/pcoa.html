@@ -73,13 +73,8 @@
                 onSelect: function(flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            if (node.childList == undefined) {
-                                node.select(false);
-                                node.remove(true);
-                            } else {
-                                node.select(false);
-                                node.select(true);
-                            }
+                            node.select(false);
+                            node.select(true);
                         });
                     }
                     nodesCat = node.tree.getSelectedNodes();
@@ -111,13 +106,8 @@
                 onSelect: function(flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            if (node.childList == undefined) {
-                                node.select(false);
-                                node.remove(true);
-                            } else {
-                                node.select(false);
-                                node.select(true);
-                            }
+                            node.select(false);
+                            node.select(true);
                         });
                     }
                     nodesQuant = node.tree.getSelectedNodes();
@@ -895,18 +885,12 @@
 
 {% block my_content %}
     <br>
-    <th>Select Type:
-        <select id="selectTree">
-            <option value="1" selected="selected">Taxa</option>
-            <option value="2" >KEGG orthology</option>
-            <option value="3" >KEGG enzyme</option>
-        </select>
-    </th>
     <!-- tree tables -->
     <div>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
-            <th>Select Meta Data:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            <th>Select Meta Data:<br>
+                <a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
         </tr>
         <tr>
             <td style="padding-right: 10px; vertical-align: top">
@@ -917,6 +901,18 @@
     </table>
 
     <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="selectTree">
+                    <option value="1" selected="selected">Taxonomy</option>
+                    <option value="2" >KEGG orthology</option>
+                    <option value="3" >KEGG enzyme</option>
+                </select>
+                &nbsp<-- Selected sequence mapping
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
         <tr id="row_taxa">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">

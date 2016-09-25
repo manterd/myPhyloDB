@@ -41,9 +41,7 @@ def getsoil_index(request, stops, RID, PID):
 
                 # Get maxvals for plotting
                 maxVals = all['maxVals']
-
                 locMax = all['locMax']
-
 
                 metaDictCat = {}
                 catFields = []
@@ -67,7 +65,8 @@ def getsoil_index(request, stops, RID, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
+                        if idDictCat[key] not in idDictCat:
+                            catSampleIDs.extend(idDictCat[key])
 
                 if not catFields_edit:
                     catSampleIDs = savedDF['sampleid'].tolist()

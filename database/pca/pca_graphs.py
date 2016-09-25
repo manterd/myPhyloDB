@@ -74,7 +74,6 @@ def getPCA(request, stops, RID, PID):
                     elif keggAll == 6:
                         result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
-
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
@@ -101,25 +100,28 @@ def getPCA(request, stops, RID, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
+                        if idDictCat[key] not in catSampleIDs:
+                            catSampleIDs.extend(idDictCat[key])
 
                 allSampleIDs = catSampleIDs
                 allFields = catFields_edit
 
                 # Removes samples (rows) that are not in our samplelist
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
                 if allSampleIDs:
-                    tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
-                else:
-                    tempDF = savedDF
+                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
+                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
-                metaDF = tempDF[allFields]
+                finalSampleList = metaDF.sampleid.tolist()
+                wantedList = allFields + ['sampleid']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
@@ -135,19 +137,17 @@ def getPCA(request, stops, RID, PID):
                     DepVar = int(all["DepVar_nz"])
 
                 if DepVar == 4:
-                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = savedDF.shape
+                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = rnaDF.shape
                     if rows < 1:
                         myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
                         res = simplejson.dumps(myDict)
                         return HttpResponse(res, content_type='application/json')
 
-                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                     remSampleList = list(set(catSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
                     result += '===============================================\n\n'
-
 
                 database.queue.setBase(RID, 'Step 1 of 8: Selecting your chosen meta-variables...done')
 
@@ -167,10 +167,10 @@ def getPCA(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/pca/'
@@ -191,20 +191,6 @@ def getPCA(request, stops, RID, PID):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
 
-                meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                meta_rDF[catFields_edit] = meta_rDF[catFields_edit].astype(str)
-
-                # Removes samples (rows) that are not in our samplelist
-                meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        meta_rDF = meta_rDF.loc[meta_rDF[key].isin(metaDictCat[key])]
-
-                wantedList = allFields + ['sampleid', 'sample_name']
-                meta_rDF = meta_rDF[wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
-
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -224,8 +210,8 @@ def getPCA(request, stops, RID, PID):
                 r.assign("cols", count_rDF.columns.values.tolist())
                 r("colnames(data) <- cols")
 
-                r.assign("meta", meta_rDF)
-                r.assign("rows", meta_rDF.index.values.tolist())
+                r.assign("meta", metaDF)
+                r.assign("rows", metaDF.index.values.tolist())
                 r("rownames(meta) <- rows")
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -249,7 +235,12 @@ def getPCA(request, stops, RID, PID):
                 r("library(factoextra)")
                 r("library(fpc)")
 
-                r("res.pca <- PCA(data, ncp=(nrow(data)-1), graph=FALSE)")
+                scale = all['scaled']
+                if scale == 'yes':
+                    r("res.pca <- PCA(data, ncp=(nrow(data)-1), scale.unit=TRUE, graph=FALSE)")
+                else:
+                    r("res.pca <- PCA(data, ncp=(nrow(data)-1), scale.unit=FALSE, graph=FALSE)")
+
                 r("fviz_screeplot(res.pca)")
 
                 r.assign("PC1", PC1)
@@ -259,12 +250,12 @@ def getPCA(request, stops, RID, PID):
                 if addContrib == 'yes':
                     contrib = int(all["contribVal"])
                     row, taxa = count_rDF.shape
-                    samples, col = meta_rDF.shape
+                    samples, col = metaDF.shape
                     contrib = min(contrib, taxa, samples)
                     r.assign("contrib", contrib)
                 if addContrib == 'no':
                     row, taxa = count_rDF.shape
-                    samples, col = meta_rDF.shape
+                    samples, col = metaDF.shape
                     contrib = max(taxa, samples)
                     r.assign("contrib", contrib)
 
@@ -276,7 +267,6 @@ def getPCA(request, stops, RID, PID):
                     theme(axis.text.x=element_text(angle=90, hjust=1))")
                 r("fviz_contrib(res.pca, choice='ind', axes=PC2, top=contrib) + \
                     theme(axis.text.x=element_text(angle=90, hjust=1))")
-
 
                 ellipseVal = all['ellipseVal']
                 if ellipseVal == 'None':
@@ -328,10 +318,16 @@ def getPCA(request, stops, RID, PID):
                 if addContrib2 == 'no':
                     r("contrib2 <- length(res.pca$var$cos2)")
 
+                rankDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
+                rankDF.set_index('rank_id', inplace=True)
+                r.assign('rankDF', rankDF['rank_name'])
+
                 r("varDF <- data.frame(varnames=rownames(res.pca$var$coord), \
                     x=res.pca$var$coord[,PC1], \
                     y=res.pca$var$coord[,PC2]) \
                 ")
+
+                r('varDF <- merge(varDF, rankDF, by="row.names", all.x=FALSE)')
 
                 # rescale variable coordinates (from factoextra)
                 r("mult <- min(max(indDF$x)-min(indDF$x)/(max(varDF$x)-min(varDF$x)), max(indDF$y)-min(indDF$y)/(max(varDF$y)-min(varDF$y)))")
@@ -354,7 +350,7 @@ def getPCA(request, stops, RID, PID):
                     if not shapeVal == 'None':
                         r("p <- p + geom_point(aes(x=x, y=y, color=as.factor(Color), shape=as.factor(Shape)), size=4)")
                         r("p <- p + scale_color_brewer(palette='Set1')")
-                        r("p <- p + guides(color=guide_legend('Symbols'), shape=guide_legend('Symbols'))")
+                        r("p <- p + guides(color=guide_legend('Colors'), shape=guide_legend('Symbols'))")
                     else:
                         r("p <- p + geom_point(aes(x=x, y=y, color=factor(Color)), size=4)")
                         r("p <- p + scale_color_brewer(palette='Set1')")
@@ -367,16 +363,14 @@ def getPCA(request, stops, RID, PID):
                         r("p <- p + geom_point(aes(x=x, y=y), size=4)")
 
                 if not ellipseVal == 'None':
-                    r("p <- p + stat_ellipse(aes(x=x, y=y, fill=factor(Fill)), geom='polygon', level=0.95, alpha=0.2)")
-                    r("p <- p + scale_fill_brewer(palette='Set1')")
-                    r("p <- p + guides(fill=guide_legend('Ellipses'))")
+                    r("p <- p + stat_ellipse(aes(x=x, y=y, color=factor(Fill)), geom='polygon', level=0.95, alpha=0)")
 
                 r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
                 r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
 
                 if addContrib2 == 'yes':
                     r("p <- p + geom_segment(data=varDF, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='blue')")
-                    r("p <- p + geom_text(data=varDF, aes(x=v1, y=v2, label=varnames, vjust=ifelse(v2 >= 0, -1, 2)), size=2, position=position_jitter(width=0, height=0), color='blue')")
+                    r("p <- p + geom_text(data=varDF, aes(x=v1, y=v2, label=rank_name, vjust=ifelse(v2 >= 0, -1, 2)), size=2, position=position_jitter(width=0, height=0), color='blue')")
 
                 r("p <- p + ggtitle('Biplot of variables and individuals')")
                 r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$eig[PC1,2], 1), '%)', sep=''))")
@@ -478,10 +472,10 @@ def getPCA(request, stops, RID, PID):
                     r("df <- data.frame(ind$coord)")
 
                 tempDF = r.get("df")
-                if not meta_rDF.empty:
-                    tempDF['id'] = meta_rDF.index.values.tolist()
+                if not metaDF.empty:
+                    tempDF['id'] = metaDF.index.values.tolist()
                     tempDF.set_index('id', inplace=True)
-                    indCoordDF = pd.merge(meta_rDF, tempDF, left_index=True, right_index=True, how='inner')
+                    indCoordDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
                     indCoordDF.reset_index(drop=False, inplace=True)
                     indCoordDF.rename(columns={'index': 'rank_id', ' km.cluster ': 'k-means cluster'}, inplace=True)
                 else:
@@ -499,10 +493,10 @@ def getPCA(request, stops, RID, PID):
 
                 r("df <- data.frame(ind$contrib)")
                 tempDF = r.get("df")
-                if not meta_rDF.empty:
-                    tempDF['id'] = meta_rDF.index.values
+                if not metaDF.empty:
+                    tempDF['id'] = metaDF.index.values
                     tempDF.set_index('id', inplace=True)
-                    indContribDF = pd.merge(meta_rDF, tempDF, left_index=True, right_index=True, how='inner')
+                    indContribDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
                     indContribDF.reset_index(drop=False, inplace=True)
                     indContribDF.rename(columns={'index': 'rank_id'}, inplace=True)
                 else:

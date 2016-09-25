@@ -19,7 +19,7 @@ LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def getTaxaDF(abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
+def getTaxaDF(finalSampleList, abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     try:
         missingList = []
         taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', abund, 'abund_16S', 'rich', 'diversity'])
@@ -28,90 +28,195 @@ def getTaxaDF(abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RI
                 taxaList = taxaDict[key]
                 if isinstance(taxaList, str):
                     if key == 'Kingdom':
+                        blankDF = pd.DataFrame(index=finalSampleList)
+                        blankDF.loc[:, 'rank'] = 'kingdom'
+                        blankDF.loc[:, 'rank_id'] = taxaList
+                        blankDF.loc[:, 'rank_name'] = Kingdom.objects.get(kingdomid=taxaList).kingdomName
                         tempDF = savedDF.loc[savedDF['kingdomid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'kingdomid': 'rank_id', 'kingdomName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Kingdom'
+                        tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF.set_index('sampleid', inplace=True)
+                        tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                        tempDF.fillna(0, inplace=True)
+                        tempDF.reset_index(inplace=True)
+                        tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Phyla':
+                        blankDF = pd.DataFrame(index=finalSampleList)
+                        blankDF.loc[:, 'rank'] = 'phyla'
+                        blankDF.loc[:, 'rank_id'] = taxaList
+                        blankDF.loc[:, 'rank_name'] = Phyla.objects.get(phylaid=taxaList).phylaName
                         tempDF = savedDF.loc[savedDF['phylaid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Phyla'
+                        tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF.set_index('sampleid', inplace=True)
+                        tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                        tempDF.fillna(0, inplace=True)
+                        tempDF.reset_index(inplace=True)
+                        tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Class':
+                        blankDF = pd.DataFrame(index=finalSampleList)
+                        blankDF.loc[:, 'rank'] = 'class'
+                        blankDF.loc[:, 'rank_id'] = taxaList
+                        blankDF.loc[:, 'rank_name'] = Class.objects.get(classid=taxaList).className
                         tempDF = savedDF.loc[savedDF['classid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'classid', 'className', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Class'
+                        tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF.set_index('sampleid', inplace=True)
+                        tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                        tempDF.fillna(0, inplace=True)
+                        tempDF.reset_index(inplace=True)
+                        tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Order':
+                        blankDF = pd.DataFrame(index=finalSampleList)
+                        blankDF.loc[:, 'rank'] = 'order'
+                        blankDF.loc[:, 'rank_id'] = taxaList
+                        blankDF.loc[:, 'rank_name'] = Order.objects.get(orderid=taxaList).orderName
                         tempDF = savedDF.loc[savedDF['orderid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'orderid', 'orderName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Order'
+                        tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF.set_index('sampleid', inplace=True)
+                        tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                        tempDF.fillna(0, inplace=True)
+                        tempDF.reset_index(inplace=True)
+                        tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Family':
+                        blankDF = pd.DataFrame(index=finalSampleList)
+                        blankDF.loc[:, 'rank'] = 'family'
+                        blankDF.loc[:, 'rank_id'] = taxaList
+                        blankDF.loc[:, 'rank_name'] = Family.objects.get(familyid=taxaList).familyName
                         tempDF = savedDF.loc[savedDF['familyid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'familyid', 'familyName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Family'
+                        tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF.set_index('sampleid', inplace=True)
+                        tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                        tempDF.fillna(0, inplace=True)
+                        tempDF.reset_index(inplace=True)
+                        tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Genus':
+                        blankDF = pd.DataFrame(index=finalSampleList)
+                        blankDF.loc[:, 'rank'] = 'genus'
+                        blankDF.loc[:, 'rank_id'] = taxaList
+                        blankDF.loc[:, 'rank_name'] = Genus.objects.get(genusid=taxaList).genusName
                         tempDF = savedDF.loc[savedDF['genusid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'genusid', 'genusName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Genus'
+                        tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF.set_index('sampleid', inplace=True)
+                        tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                        tempDF.fillna(0, inplace=True)
+                        tempDF.reset_index(inplace=True)
+                        tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Species':
+                        blankDF = pd.DataFrame(index=finalSampleList)
+                        blankDF.loc[:, 'rank'] = 'species'
+                        blankDF.loc[:, 'rank_id'] = taxaList
+                        blankDF.loc[:, 'rank_name'] = Species.objects.get(speciesid=taxaList).speciesName
                         tempDF = savedDF.loc[savedDF['speciesid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Species'
+                        tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF.set_index('sampleid', inplace=True)
+                        tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                        tempDF.fillna(0, inplace=True)
+                        tempDF.reset_index(inplace=True)
+                        tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
                         taxaDF = taxaDF.append(tempDF)
                 else:
                     if key == 'Kingdom':
-                        tempDF = savedDF.loc[savedDF['kingdomid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'kingdomid': 'rank_id', 'kingdomName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Kingdom'
-                        taxaDF = taxaDF.append(tempDF)
+                        for item in taxaList:
+                            blankDF = pd.DataFrame(index=finalSampleList)
+                            blankDF.loc[:, 'rank'] = 'kingdom'
+                            blankDF.loc[:, 'rank_id'] = item
+                            blankDF.loc[:, 'rank_name'] = Kingdom.objects.get(kingdomid=item).kingdomName
+                            tempDF = savedDF.loc[savedDF['kingdomid'] == item]
+                            tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                            tempDF.set_index('sampleid', inplace=True)
+                            tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                            tempDF.fillna(0, inplace=True)
+                            tempDF.reset_index(inplace=True)
+                            tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
+                            taxaDF = taxaDF.append(tempDF)
                     elif key == 'Phyla':
-                        tempDF = savedDF.loc[savedDF['phylaid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Phyla'
-                        taxaDF = taxaDF.append(tempDF)
+                        for item in taxaList:
+                            blankDF = pd.DataFrame(index=finalSampleList)
+                            blankDF.loc[:, 'rank'] = 'phyla'
+                            blankDF.loc[:, 'rank_id'] = item
+                            blankDF.loc[:, 'rank_name'] = Phyla.objects.get(phylaid=item).phylaName
+                            tempDF = savedDF.loc[savedDF['phylaid'] == item]
+                            tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                            tempDF.set_index('sampleid', inplace=True)
+                            tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                            tempDF.fillna(0, inplace=True)
+                            tempDF.reset_index(inplace=True)
+                            tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
+                            taxaDF = taxaDF.append(tempDF)
                     elif key == 'Class':
-                        tempDF = savedDF.loc[savedDF['classid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'classid', 'className', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Class'
-                        taxaDF = taxaDF.append(tempDF)
+                        for item in taxaList:
+                            blankDF = pd.DataFrame(index=finalSampleList)
+                            blankDF.loc[:, 'rank'] = 'class'
+                            blankDF.loc[:, 'rank_id'] = item
+                            blankDF.loc[:, 'rank_name'] = Class.objects.get(classid=item).className
+                            tempDF = savedDF.loc[savedDF['classid'] == item]
+                            tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                            tempDF.set_index('sampleid', inplace=True)
+                            tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                            tempDF.fillna(0, inplace=True)
+                            tempDF.reset_index(inplace=True)
+                            tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
+                            taxaDF = taxaDF.append(tempDF)
                     elif key == 'Order':
-                        tempDF = savedDF.loc[savedDF['orderid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'orderid', 'orderName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Order'
-                        taxaDF = taxaDF.append(tempDF)
+                        for item in taxaList:
+                            blankDF = pd.DataFrame(index=finalSampleList)
+                            blankDF.loc[:, 'rank'] = 'order'
+                            blankDF.loc[:, 'rank_id'] = item
+                            blankDF.loc[:, 'rank_name'] = Order.objects.get(orderid=item).orderName
+                            tempDF = savedDF.loc[savedDF['orderid'] == item]
+                            tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                            tempDF.set_index('sampleid', inplace=True)
+                            tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                            tempDF.fillna(0, inplace=True)
+                            tempDF.reset_index(inplace=True)
+                            tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
+                            taxaDF = taxaDF.append(tempDF)
                     elif key == 'Family':
-                        tempDF = savedDF.loc[savedDF['familyid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'familyid', 'familyName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Family'
-                        taxaDF = taxaDF.append(tempDF)
+                        for item in taxaList:
+                            blankDF = pd.DataFrame(index=finalSampleList)
+                            blankDF.loc[:, 'rank'] = 'family'
+                            blankDF.loc[:, 'rank_id'] = item
+                            blankDF.loc[:, 'rank_name'] = Family.objects.get(familyid=item).familyName
+                            tempDF = savedDF.loc[savedDF['familyid'] == item]
+                            tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                            tempDF.set_index('sampleid', inplace=True)
+                            tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                            tempDF.fillna(0, inplace=True)
+                            tempDF.reset_index(inplace=True)
+                            tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
+                            taxaDF = taxaDF.append(tempDF)
                     elif key == 'Genus':
-                        tempDF = savedDF.loc[savedDF['genusid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'genusid', 'genusName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Genus'
-                        taxaDF = taxaDF.append(tempDF)
+                        for item in taxaList:
+                            blankDF = pd.DataFrame(index=finalSampleList)
+                            blankDF.loc[:, 'rank'] = 'genus'
+                            blankDF.loc[:, 'rank_id'] = item
+                            blankDF.loc[:, 'rank_name'] = Genus.objects.get(genusid=item).genusName
+                            tempDF = savedDF.loc[savedDF['genusid'] == item]
+                            tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                            tempDF.set_index('sampleid', inplace=True)
+                            tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                            tempDF.fillna(0, inplace=True)
+                            tempDF.reset_index(inplace=True)
+                            tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
+                            taxaDF = taxaDF.append(tempDF)
                     elif key == 'Species':
-                        tempDF = savedDF.loc[savedDF['speciesid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', abund, 'abund_16S', 'rich', 'diversity']]
-                        tempDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'Species'
-                        taxaDF = taxaDF.append(tempDF)
+                        for item in taxaList:
+                            blankDF = pd.DataFrame(index=finalSampleList)
+                            blankDF.loc[:, 'rank'] = 'species'
+                            blankDF.loc[:, 'rank_id'] = item
+                            blankDF.loc[:, 'rank_name'] = Species.objects.get(speciesid=item).speciesName
+                            tempDF = savedDF.loc[savedDF['speciesid'] == item]
+                            tempDF = tempDF[['sampleid', abund, 'abund_16S', 'rich', 'diversity']]
+                            tempDF.set_index('sampleid', inplace=True)
+                            tempDF = pd.merge(blankDF, tempDF, left_index=True, right_index=True, how='outer')
+                            tempDF.fillna(0, inplace=True)
+                            tempDF.reset_index(inplace=True)
+                            tempDF.rename(columns={'index': 'sampleid'}, inplace=True)
+                            taxaDF = taxaDF.append(tempDF)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -119,6 +224,7 @@ def getTaxaDF(abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RI
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+        #TODO get a list of taxa and then fix like above
         elif selectAll == 1:
             taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', abund, 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'kingdomid': 'rank_id', 'kingdomName': 'rank_name'}, inplace=True)
@@ -162,9 +268,8 @@ def getTaxaDF(abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RI
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        taxaDF.set_index('sampleid', inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
-        finalDF.reset_index(drop=False, inplace=True)
+        metaDF.reset_index(inplace=True, drop=False)
+        finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='outer')
 
         wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
         if DepVar == 1:
@@ -285,7 +390,7 @@ def getKeggDF(abund, keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID,
 
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', abund, 'abund_16S']
-        profileDF = savedDF.loc[:, wanted]
+        profileDF = tempDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
         # get PICRUSt data for species
@@ -623,7 +728,7 @@ def getNZDF(abund, nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops
 
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', abund, 'abund_16S']
-        profileDF = savedDF.loc[:, wanted]
+        profileDF = tempDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
         # get PICRUSt data for species

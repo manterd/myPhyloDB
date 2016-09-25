@@ -76,33 +76,42 @@ def getGAGE(request, stops, RID, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
+                        if idDictCat[key] not in catSampleIDs:
+                            catSampleIDs.extend(idDictCat[key])
+
+                allSampleIDs = catSampleIDs
+                allFields = catFields_edit
 
                 # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.loc[savedDF['sampleid'].isin(catSampleIDs)]
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                if allSampleIDs:
+                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
+                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
+
+                finalSampleList = metaDF.sampleid.tolist()
+                wantedList = catFields_edit + ['sampleid', 'sample_name']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n\n'
 
-
                 DepVar = int(all["DepVar"])
                 if DepVar == 4:
-                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = savedDF.shape
+                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = rnaDF.shape
                     if rows < 1:
                         myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
                         res = simplejson.dumps(myDict)
                         return HttpResponse(res, content_type='application/json')
 
-                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                     remSampleList = list(set(catSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
@@ -152,8 +161,7 @@ def getGAGE(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                finalDF = getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID)
-                finalSampleList = pd.unique(finalDF.sampleid.tolist())
+                finalDF = getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID)
 
                 database.queue.setBase(RID, 'Step 3 of 5: Performing GAGE analysis...')
 
@@ -176,27 +184,15 @@ def getGAGE(request, stops, RID, PID):
 
                 count_rDF.fillna(0, inplace=True)
 
-                temp_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                temp_rDF[catFields_edit] = temp_rDF[catFields_edit].astype(str)
-
-                # Removes samples (rows) that are not in our final samplelist
-                temp_rDF = temp_rDF.loc[temp_rDF['sampleid'].isin(finalSampleList)]
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        temp_rDF = temp_rDF.loc[temp_rDF[key].isin(metaDictCat[key])]
-
                 # Create combined metadata column - GAGE only
-                meta_rDF = temp_rDF.copy()
                 if len(catFields_edit) > 1:
-                    for index, row in temp_rDF.iterrows():
-                        meta_rDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                    for index, row in metaDF.iterrows():
+                        metaDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
                 else:
-                    meta_rDF.loc[:, 'merge'] = temp_rDF.loc[:, catFields_edit[0]]
+                    metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields_edit[0]]
 
-                wantedList = ['sampleid', 'merge', 'sample_name']
-                meta_rDF = meta_rDF.loc[:, wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
+                wantedList = ['merge', 'sample_name']
+                metaDF = metaDF.loc[:, wantedList]
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -205,7 +201,7 @@ def getGAGE(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict = {}
-                r.assign("metaDF", meta_rDF)
+                r.assign("metaDF", metaDF)
                 r("trt <- factor(metaDF$merge)")
 
                 r.assign("count", count_rDF)
@@ -227,7 +223,7 @@ def getGAGE(request, stops, RID, PID):
                     result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
                 result += '\n===============================================\n\n\n'
 
-                levels = list(set(meta_rDF['merge'].tolist()))
+                levels = list(set(metaDF['merge'].tolist()))
                 levels = natsorted(levels, key=lambda y: y.lower())
 
                 r("library(pathview)")
@@ -266,12 +262,17 @@ def getGAGE(request, stops, RID, PID):
                         r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
                         r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
                         r("df <- data.frame(kegg=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                        nbinom_res = r.get("df")
 
-                        compDF = r.get("df")
+                        if nbinom_res is None:
+                            myDict = {'error': "DESeq failed!\nPlease try a different data combination."}
+                            res = simplejson.dumps(myDict)
+                            return HttpResponse(res, content_type='application/json')
+
                         comparison = str(trt1) + ' vs. ' + str(trt2)
-                        compDF.insert(0, 'comparison', comparison)
-                        diffDF = diffDF.append(compDF, ignore_index=True)
-                        all_columns = compDF.columns
+                        nbinom_res.insert(0, 'comparison', comparison)
+                        diffDF = diffDF.append(nbinom_res, ignore_index=True)
+                        all_columns = nbinom_res.columns
                         diffDF = diffDF.ix[:, all_columns]
 
                         ### GAGE analysis on all pathways...
@@ -373,7 +374,7 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
     try:
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
-        profileDF = tempDF.loc[:, wanted]
+        profileDF = savedDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
         # get PICRUSt data for species

@@ -51,20 +51,30 @@ def getSPLS(request, stops, RID, PID):
                 if metaIDsQuant:
                     idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
                     for key in sorted(idDictQuant):
-                        quantSampleIDs.extend(idDictQuant[key])
+                        if idDictQuant[key] not in quantSampleIDs:
+                            quantSampleIDs.extend(idDictQuant[key])
+
+                allSampleIDs = quantSampleIDs
+                allFields = quantFields
 
                 # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.loc[savedDF['sampleid'].isin(quantSampleIDs)]
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                if allSampleIDs:
+                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[quantFields] = tempDF[quantFields].astype(float)
+                metaDF[allFields] = metaDF[allFields].astype(str)
+                metaDF[quantFields] = metaDF[quantFields].astype(float)
 
                 if metaDictQuant:
                     for key in metaDictQuant:
                         valueList = [float(x) for x in metaDictQuant[key]]
-                        tempDF = tempDF.loc[tempDF[key].isin(valueList)]
+                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
 
-                metaDF = tempDF[quantFields]
+                finalSampleList = metaDF.sampleid.tolist()
+                wantedList = allFields + ['sampleid', 'sample_name']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 result = ''
                 button3 = int(all['button3'])
@@ -137,7 +147,6 @@ def getSPLS(request, stops, RID, PID):
                         res = simplejson.dumps(myDict)
                         return HttpResponse(res, content_type='application/json')
 
-                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                     remSampleList = list(set(quantSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
@@ -161,10 +170,10 @@ def getSPLS(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, tempDF, quantFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, tempDF, quantFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/spls/'
@@ -205,24 +214,13 @@ def getSPLS(request, stops, RID, PID):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
 
-                meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-
-                if metaDictQuant:
-                    for key in metaDictQuant:
-                        valueList = [float(x) for x in metaDictQuant[key]]
-                        meta_rDF = meta_rDF.loc[meta_rDF[key].isin(valueList)]
-
-                wantedList = quantFields + ['sampleid']
-                meta_rDF = meta_rDF[wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
-
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
                 r.assign("X", count_rDF)
-                r.assign("Y", meta_rDF)
+                r.assign("Y", metaDF)
                 r.assign("names", count_rDF.columns.values)
                 r("colnames(X) <- names")
 

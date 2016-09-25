@@ -1144,9 +1144,12 @@ def getTaxaTreeChildren(request):
                     'title': item.speciesName,
                     'id': item.speciesid,
                     'tooltip': "Species",
-                    'isLazy': False
+                    'isLazy': True
                 }
                 nodes.append(myNode)
+
+        elif taxa == 'Species':
+            pass
 
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
@@ -1221,10 +1224,12 @@ def getKEGGTreeChildren(request):
                     'tooltip': item.ko_desc,
                     'kegg': 'Level4',
                     'isFolder': False,
-                    'isLazy': False
+                    'isLazy': True
                 }
                 nodes.append(myNode)
 
+        elif level == 'Level4':
+            pass
 
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
@@ -1382,9 +1387,12 @@ def getNZTreeChildren(request):
                     'tooltip': item.nz_desc,
                     'kegg': 'Level5',
                     'isFolder': False,
-                    'isLazy': False
+                    'isLazy': True
                 }
                 nodes.append(myNode)
+
+        elif level == 'Level5':
+            pass
 
 
         res = simplejson.dumps(nodes, encoding="Latin-1")

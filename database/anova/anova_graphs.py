@@ -70,7 +70,8 @@ def getCatUnivData(request, RID, stops, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
+                        if idDictCat[key] not in catSampleIDs:
+                            catSampleIDs.extend(idDictCat[key])
 
                 metaDictQuant = {}
                 quantFields = []
@@ -85,31 +86,34 @@ def getCatUnivData(request, RID, stops, PID):
                 if metaIDsQuant:
                     idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
                     for key in sorted(idDictQuant):
-                        quantSampleIDs.extend(idDictQuant[key])
+                        if idDictQuant[key] not in quantSampleIDs:
+                            quantSampleIDs.extend(idDictQuant[key])
 
-                allSampleIDs = catSampleIDs + quantSampleIDs
+                allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
                 allFields = catFields_edit + quantFields
 
                 # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                tempDF = tempDF.loc[tempDF['sampleid'].isin(allSampleIDs)]
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                if allSampleIDs:
+                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
-                tempDF[quantFields] = tempDF[quantFields].astype(float)
+                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
+                metaDF[quantFields] = metaDF[quantFields].astype(float)
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
                 if metaDictQuant:
                     for key in metaDictQuant:
                         valueList = [float(x) for x in metaDictQuant[key]]
-                        tempDF = tempDF.loc[tempDF[key].isin(valueList)]
+                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
 
-                wantedList = allFields + ['sampleid']
-                tempDF = tempDF[wantedList]
-                tempDF.set_index('sampleid', drop=True, inplace=True)
+                finalSampleList = metaDF.sampleid.tolist()
+                wantedList = allFields + ['sampleid', 'sample_name']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 result = ''
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
@@ -120,10 +124,9 @@ def getCatUnivData(request, RID, stops, PID):
                 button3 = int(all['button3'])
                 DepVar = int(all["DepVar"])
 
-                finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                 if DepVar == 4:
-                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = savedDF.shape
+                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = rnaDF.shape
                     if rows < 1:
                         myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
                         res = simplejson.dumps(myDict)
@@ -148,7 +151,7 @@ def getCatUnivData(request, RID, stops, PID):
                 if button3 == 1:
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF, missingList = getTaxaDF(finalSampleList, 'rel_abund', selectAll, taxaDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
@@ -156,15 +159,42 @@ def getCatUnivData(request, RID, stops, PID):
                 elif button3 == 2:
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF('rel_abund', keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('rel_abund', keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 elif button3 == 3:
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF = getNZDF('rel_abund', nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('rel_abund', nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # transform Y, if requested
                 transform = int(all["transform"])
+
+                # replace zeros before transformation
+                if transform != 0:
+                    if DepVar == 1:
+                        myList = finalDF.rel_abund.tolist()
+                        nonZero = filter(lambda a: a != 0, myList)
+                        value = min(nonZero) / 2.0
+                        finalDF.rel_abund.replace(to_replace=0, value=value, inplace=True)
+
+                    elif DepVar == 2:
+                        myList = finalDF.rich.tolist()
+                        nonZero = filter(lambda a: a != 0, myList)
+                        value = min(nonZero) / 2.0
+                        finalDF.rich.replace(to_replace=0, value=value, inplace=True)
+
+                    elif DepVar == 3:
+                        myList = finalDF.diversity.tolist()
+                        nonZero = filter(lambda a: a != 0, myList)
+                        value = min(nonZero) / 2.0
+                        finalDF.diversity.replace(to_replace=0, value=value, inplace=True)
+
+                    elif DepVar == 4:
+                        myList = finalDF.abund_16S.tolist()
+                        nonZero = filter(lambda a: a != 0, myList)
+                        value = min(nonZero) / 2
+                        finalDF.abund_16S.replace(to_replace=0, value=value, inplace=True)
+
                 if transform == 1:
                     if DepVar == 1:
                         finalDF['rel_abund'] = np.log(finalDF.rel_abund)
@@ -430,6 +460,12 @@ def getCatUnivData(request, RID, stops, PID):
                             grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
                             dataList = list(grouped2)
 
+                        seriesDict = {}
+                        seriesDict['name'] = name1
+                        seriesDict['color'] = colors[colors_idx]
+                        seriesDict['data'] = dataList
+                        seriesList.append(seriesDict)
+
                     elif sig_only == 1:
                         if pValue < 0.05:
                             if DepVar == 1:
@@ -445,11 +481,11 @@ def getCatUnivData(request, RID, stops, PID):
                                 grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
                                 dataList = list(grouped2)
 
-                    seriesDict = {}
-                    seriesDict['name'] = name1
-                    seriesDict['color'] = colors[colors_idx]
-                    seriesDict['data'] = dataList
-                    seriesList.append(seriesDict)
+                            seriesDict = {}
+                            seriesDict['name'] = name1
+                            seriesDict['color'] = colors[colors_idx]
+                            seriesDict['data'] = dataList
+                            seriesList.append(seriesDict)
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
@@ -641,7 +677,8 @@ def getQuantUnivData(request, RID, stops, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
+                        if idDictCat[key] not in catSampleIDs:
+                            catSampleIDs.extend(idDictCat[key])
 
                 metaDictQuant = {}
                 quantFields = []
@@ -654,27 +691,32 @@ def getQuantUnivData(request, RID, stops, PID):
                 if metaIDsQuant:
                     idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
                     for key in sorted(idDictQuant):
-                        quantSampleIDs.extend(idDictQuant[key])
+                        if idDictQuant[key] not in quantSampleIDs:
+                            quantSampleIDs.extend(idDictQuant[key])
 
-                allSampleIDs = catSampleIDs + quantSampleIDs
+                allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
                 allFields = catFields_edit + quantFields
 
                 # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
-                tempDF[quantFields] = tempDF[quantFields].astype(float)
+                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
+                metaDF[quantFields] = metaDF[quantFields].astype(float)
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
                 if metaDictQuant:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
-                metaDF = tempDF[allFields]
+                finalSampleList = metaDF.sampleid.tolist()
+                wantedList = allFields + ['sampleid', 'sample_name']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 result = ''
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
@@ -686,14 +728,13 @@ def getQuantUnivData(request, RID, stops, PID):
                 DepVar = int(all["DepVar"])
 
                 if DepVar == 4:
-                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = savedDF.shape
+                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = rnaDF.shape
                     if rows < 1:
                         myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
                         res = simplejson.dumps(myDict)
                         return HttpResponse(res, content_type='application/json')
 
-                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                     remSampleList = list(set(allSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
@@ -722,15 +763,42 @@ def getQuantUnivData(request, RID, stops, PID):
                 if button3 == 2:
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF, missingList = getKeggDF('rel_abund', keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getKeggDF('rel_abund', keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF, missingList = getNZDF('rel_abund', nzAll, nzDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getNZDF('rel_abund', nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # transform Y, if requested
                 transform = int(all["transform"])
+
+                # replace zeros before transformation
+                if transform != 0:
+                    if DepVar == 1:
+                        myList = finalDF.rel_abund.tolist()
+                        nonZero = filter(lambda a: a != 0, myList)
+                        value = min(nonZero) / 2.0
+                        finalDF.rel_abund.replace(to_replace=0, value=value, inplace=True)
+
+                    elif DepVar == 2:
+                        myList = finalDF.rich.tolist()
+                        nonZero = filter(lambda a: a != 0, myList)
+                        value = min(nonZero) / 2.0
+                        finalDF.rich.replace(to_replace=0, value=value, inplace=True)
+
+                    elif DepVar == 3:
+                        myList = finalDF.diversity.tolist()
+                        nonZero = filter(lambda a: a != 0, myList)
+                        value = min(nonZero) / 2.0
+                        finalDF.diversity.replace(to_replace=0, value=value, inplace=True)
+
+                    elif DepVar == 4:
+                        myList = finalDF.abund_16S.tolist()
+                        nonZero = filter(lambda a: a != 0, myList)
+                        value = min(nonZero) / 2
+                        finalDF.abund_16S.replace(to_replace=0, value=value, inplace=True)
+
                 if transform == 1:
                     if DepVar == 1:
                         finalDF['rel_abund'] = np.log(finalDF.rel_abund)

@@ -97,25 +97,30 @@ def getSpAC(request, stops, RID, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
+                        if idDictCat[key] not in catSampleIDs:
+                            catSampleIDs.extend(idDictCat[key])
 
                 if not catFields_edit:
-                    catSampleIDs = savedDF['sampleid'].tolist()
+                    catSampleIDs = savedDF.sampleid.unique().tolist()
 
                 allSampleIDs = catSampleIDs
                 allFields = catFields_edit
 
                 # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                if allSampleIDs:
+                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
+                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
-                metaDF = tempDF[allFields]
+                wantedList = allFields + ['sampleid', 'sample_name']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
@@ -139,11 +144,11 @@ def getSpAC(request, stops, RID, PID):
 
                 if button3 == 2:
                     DepVar = int(all["DepVar_kegg"])
-                    finalDF = getKeggDF('abund', keggAll, '', savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('abund', keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     DepVar = int(all["DepVar_nz"])
-                    finalDF = getNZDF('abund', nzAll, '', savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('abund', nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/spac/'
@@ -163,19 +168,6 @@ def getSpAC(request, stops, RID, PID):
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
-
-                meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-
-                # Removes samples (rows) that are not in our samplelist
-                meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        meta_rDF = meta_rDF.loc[meta_rDF[key].isin(metaDictCat[key])]
-
-                wantedList = allFields + ['sampleid', 'sample_name']
-                meta_rDF = meta_rDF[wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa...done')
 
@@ -207,7 +199,7 @@ def getSpAC(request, stops, RID, PID):
 
                 r("pdf_counter <- 1")
                 if allFields:
-                    grouped = meta_rDF.groupby(allFields)
+                    grouped = metaDF.groupby(allFields)
                     for name, group in grouped:
                         # print name
                         if isinstance(name, tuple):

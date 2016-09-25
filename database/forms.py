@@ -3,8 +3,6 @@ from utils import MultiFileField
 from registration.forms import RegistrationForm
 from localflavor.us.us_states import STATE_CHOICES
 from django_countries import countries
-from django.contrib.auth.models import User
-import re
 
 
 class UploadForm1(forms.Form):

@@ -141,7 +141,8 @@ def getPCoA(request, stops, RID, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
+                        if idDictCat[key] not in catSampleIDs:
+                            catSampleIDs.extend(idDictCat[key])
 
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
@@ -159,28 +160,34 @@ def getPCoA(request, stops, RID, PID):
                 if metaIDsQuant:
                     idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
                     for key in sorted(idDictQuant):
-                        quantSampleIDs.extend(idDictQuant[key])
+                        if idDictQuant[key] not in quantSampleIDs:
+                            quantSampleIDs.extend(idDictQuant[key])
 
-                allSampleIDs = catSampleIDs + quantSampleIDs
+                allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
                 allFields = catFields_edit + quantFields
 
                 # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                if allSampleIDs:
+                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
-                tempDF[quantFields] = tempDF[quantFields].astype(float)
+                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
+                metaDF[quantFields] = metaDF[quantFields].astype(float)
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
                 if metaDictQuant:
                     for key in metaDictQuant:
                         valueList = [float(x) for x in metaDictQuant[key]]
-                        tempDF = tempDF.loc[tempDF[key].isin(valueList)]
+                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
 
-                metaDF = tempDF[allFields]
+                finalSampleList = metaDF.sampleid.tolist()
+                wantedList = allFields + ['sampleid', 'sample_name']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
@@ -204,7 +211,6 @@ def getPCoA(request, stops, RID, PID):
                         res = simplejson.dumps(myDict)
                         return HttpResponse(res, content_type='application/json')
 
-                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                     remSampleList = list(set(catSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
@@ -229,10 +235,10 @@ def getPCoA(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, tempDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/pcoa/'
@@ -252,25 +258,6 @@ def getPCoA(request, stops, RID, PID):
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
-
-                meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                meta_rDF[catFields_edit] = meta_rDF[catFields_edit].astype(str)
-
-                # Removes samples (rows) that are not in our samplelist
-                meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        meta_rDF = meta_rDF.loc[meta_rDF[key].isin(metaDictCat[key])]
-
-                if metaDictQuant:
-                    for key in metaDictQuant:
-                        valueList = [float(x) for x in metaDictQuant[key]]
-                        meta_rDF = meta_rDF.loc[meta_rDF[key].isin(valueList)]
-
-                wantedList = allFields + ['sampleid', 'sample_name']
-                meta_rDF = meta_rDF[wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
                 database.queue.setBase(RID, 'Step 2 of 8: Selecting your chosen taxa...done')
 
@@ -327,7 +314,7 @@ def getPCoA(request, stops, RID, PID):
                 r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
                 mat = r.get("mat")
 
-                rowList = meta_rDF.sample_name.values.tolist()
+                rowList = metaDF.sample_name.values.tolist()
                 distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
                 database.queue.setBase(RID, 'Step 3 of 8: Calculating distance matrix...done!')
@@ -354,7 +341,7 @@ def getPCoA(request, stops, RID, PID):
                 bigf = ''
                 envFit = ''
                 if trtLength > 0:
-                    r.assign("meta", meta_rDF)
+                    r.assign("meta", metaDF)
                     pcoa_string = "ord <- capscale(dist ~ " + str(trtString) + ", meta)"
                     r.assign("cmd", pcoa_string)
                     r("eval(parse(text=cmd))")
@@ -380,7 +367,6 @@ def getPCoA(request, stops, RID, PID):
                         r.assign("cmd", myStr)
                         r("eval(parse(text=cmd))")
                         r("pl <- ordiellipse(ord, cat, kind='sd', conf=0.95, draw='polygon', border='black')")
-
 
                     surfVal = all['surfVal']
                     if surfVal != 'None':

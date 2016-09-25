@@ -51,13 +51,8 @@
                 onSelect: function (flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            if (node.childList == undefined) {
-                                node.select(false);
-                                node.remove(true);
-                            } else {
-                                node.select(false);
-                                node.select(true);
-                            }
+                            node.select(false);
+                            node.select(true);
                         });
                     }
                 },

@@ -77,13 +77,8 @@
                 onSelect: function (flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            if (node.childList == undefined) {
-                                node.select(false);
-                                node.remove(true);
-                            } else {
-                                node.select(false);
-                                node.select(true);
-                            }
+                            node.select(false);
+                            node.select(true);
                         });
                     }
                     nodesCat = node.tree.getSelectedNodes();
@@ -113,13 +108,8 @@
                 onSelect: function (flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            if (node.childList == undefined) {
-                                node.select(false);
-                                node.remove(true);
-                            } else {
-                                node.select(false);
-                                node.select(true);
-                            }
+                            node.select(false);
+                            node.select(true);
                         });
                     }
                     nodesQuant = node.tree.getSelectedNodes();
@@ -159,13 +149,8 @@
                 onSelect: function (flag, node) {
                     if (flag && node.childList == undefined) {
                         node.reloadChildren(function () {
-                            if (node.childList == undefined) {
-                                node.select(false);
-                                node.remove(true);
-                            } else {
-                                node.select(false);
-                                node.select(true);
-                            }
+                            node.select(false);
+                            node.select(true);
                         });
                     }
                     nodesTaxa = node.tree.getSelectedNodes();
@@ -1415,7 +1400,6 @@
                 }
 
                 var taxa = "{" + array2.join(",") + "}";
-
                 var array3 = [];
                 for (i = 0; i < nodesKEGG.length; i++) {
                     key = nodesKEGG[i].data.kegg;
@@ -1458,6 +1442,7 @@
                 myDict['funcName'] = "getQuantUnivData";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
+                myDict['transform'] = transform;
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
@@ -1470,7 +1455,7 @@
 
         function barchart(xAxis, yAxis, series) {
             var categories = series[0].data.length;
-            var width = categories*75+600;
+            var width = categories*100+600;
 
             catOptions = {
                 chart: {
@@ -1510,7 +1495,7 @@
                     itemStyle: {
                         fontSize: '10px',
                         font: '10pt Trebuchet MS, Verdana, sans-serif',
-                        width: 250
+                        width: 300
                     },
                     align: 'right',
                     verticalAlign: 'top',
@@ -1631,7 +1616,7 @@
     <div>
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr style="height: 40px;">
-                <th>Select Meta Data:
+                <th>Select Meta Data:<br>
                     <a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a>
                 </th>
             </tr>
@@ -1644,12 +1629,7 @@
         </table>
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable" style="margin-left:10px;">
             <tr style="height: 40px;">
-                <th>Select Tree:
-                    <select id="selectTree">
-                        <option value="1" selected="selected">Taxa</option>
-                        <option value="2" >KEGG orthology</option>
-                        <option value="3" >KEGG enzyme</option>
-                    </select>
+                <th>Select Response Variable:<br>
                     <a href="#" id="clearTaxa" style="font-size: 12px;">-Deselect all-</a>
                 </th>
             </tr>
@@ -1662,6 +1642,16 @@
             </tr>
         </table>
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+            <tr>
+                <td bgcolor="white" width="350px">
+                    <select id="selectTree">
+                        <option value="1" selected="selected">Taxonomy</option>
+                        <option value="2" >KEGG orthology</option>
+                        <option value="3" >KEGG enzyme</option>
+                    </select>
+                    &nbsp<-- Selected sequence mapping
+                </td>
+            </tr>
             <tr>
                 <td bgcolor="white" width="350px">
                     <select id="button1">
@@ -1725,7 +1715,7 @@
                         <option value="4">Logit</option>
                         <option value="5">Arcsin</option>
                     </select>
-                    &nbsp<-- Data transformation
+                    &nbsp<-- Selected data transformation
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>

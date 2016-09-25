@@ -110,19 +110,27 @@ def getDiffAbund(request, stops, RID, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
+                        if idDictCat[key] not in catSampleIDs:
+                            catSampleIDs.extend(idDictCat[key])
+
+                allSampleIDs = catSampleIDs
+                allFields = catFields
 
                 # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.loc[savedDF['sampleid'].isin(catSampleIDs)]
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+                metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
+                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
-                metaDF = tempDF[catFields_edit]
+                finalSampleList = metaDF.sampleid.tolist()
+                wantedList = allFields + ['sampleid', 'sample_name']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
@@ -138,14 +146,13 @@ def getDiffAbund(request, stops, RID, PID):
                     DepVar = int(all["DepVar_nz"])
 
                 if DepVar == 4:
-                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = savedDF.shape
+                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
+                    rows, cols = rnaDF.shape
                     if rows < 1:
                         myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
                         res = simplejson.dumps(myDict)
                         return HttpResponse(res, content_type='application/json')
 
-                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                     remSampleList = list(set(catSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
@@ -170,10 +177,10 @@ def getDiffAbund(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('abund', keggAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('abund', keggAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('abund', nzAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('abund', nzAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/diffabund/'
@@ -194,30 +201,13 @@ def getDiffAbund(request, stops, RID, PID):
 
                 count_rDF.fillna(0, inplace=True)
 
-
-                temp_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-
-                # Removes samples (rows) that are not in our samplelist
-                temp_rDF = temp_rDF.loc[temp_rDF['sampleid'].isin(catSampleIDs)]
-
-                # make sure column types are correct
-                temp_rDF[catFields_edit] = temp_rDF[catFields_edit].astype(str)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        temp_rDF = temp_rDF.loc[temp_rDF[key].isin(metaDictCat[key])]
-
                 # Create combined metadata column - DiffAbund only
-                meta_rDF = temp_rDF.copy()
                 if len(catFields) > 1:
-                    for index, row in temp_rDF.iterrows():
-                       meta_rDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                    for index, row in metaDF.iterrows():
+                       metaDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
                 else:
-                    meta_rDF.loc[:, 'merge'] = temp_rDF.loc[:, catFields_edit[0]]
+                    metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields_edit[0]]
 
-                wantedList = ['sampleid', 'merge', 'sample_name']
-                meta_rDF = meta_rDF.loc[:, wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
                 database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -234,7 +224,7 @@ def getDiffAbund(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                r.assign("metaDF", meta_rDF)
+                r.assign("metaDF", metaDF)
                 r("trt <- factor(metaDF$merge)")
 
                 r.assign("count", count_rDF)
@@ -244,7 +234,6 @@ def getDiffAbund(request, stops, RID, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
 
                 r("library(DESeq2)")
                 r("colData <- data.frame(row.names=colnames(count), trt=trt)")
@@ -265,9 +254,8 @@ def getDiffAbund(request, stops, RID, PID):
                     result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
                 result += '\n===============================================\n\n\n'
 
-                mergeList = meta_rDF['merge'].tolist()
+                mergeList = metaDF['merge'].tolist()
                 mergeSet = list(set(mergeList))
-
                 finalDF = pd.DataFrame()
                 for i, val in enumerate(mergeSet):
                     start = i + 1
@@ -276,6 +264,7 @@ def getDiffAbund(request, stops, RID, PID):
                         if i != j:
                             r.assign("trt1", mergeSet[i])
                             r.assign("trt2", mergeSet[j])
+
                             # round values, convert to int
                             r("res <- results(dds, contrast=c('trt', trt1, trt2))")
                             r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
@@ -283,9 +272,13 @@ def getDiffAbund(request, stops, RID, PID):
                             r("df <- data.frame(rank_id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
                             nbinom_res = r.get("df")
 
+                            if nbinom_res is None:
+                                myDict = {'error': "DESeq failed!\nPlease try a different data combination."}
+                                res = simplejson.dumps(myDict)
+                                return HttpResponse(res, content_type='application/json')
+
                             # remove taxa that failed (i.e., both trts are zero or log2FoldChange is NaN)
                             nbinom_res = nbinom_res.loc[pd.notnull(nbinom_res[' log2FoldChange '])]
-                            # /\ AttributeError: 'NoneType' object has no attribute 'loc' /\
 
                             if button3 == 1:
                                 zipped = getFullTaxonomy(nbinom_res['rank_id'])

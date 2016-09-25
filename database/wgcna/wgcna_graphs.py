@@ -79,6 +79,8 @@ def getWGCNA(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
 
                 metaDictCat = {}
                 catFields = []
@@ -102,10 +104,8 @@ def getWGCNA(request, stops, RID, PID):
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        catSampleIDs.extend(idDictCat[key])
-
-                metaValsQuant = all['metaValsQuant']
-                metaIDsQuant = all['metaIDsQuant']
+                        if idDictCat[key] not in catSampleIDs:
+                            catSampleIDs.extend(idDictCat[key])
 
                 metaDictQuant = {}
                 quantFields = []
@@ -120,31 +120,34 @@ def getWGCNA(request, stops, RID, PID):
                 if metaIDsQuant:
                     idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
                     for key in sorted(idDictQuant):
-                        quantSampleIDs.extend(idDictQuant[key])
+                        if idDictQuant[key] not in quantSampleIDs:
+                            quantSampleIDs.extend(idDictQuant[key])
 
-                allSampleIDs = catSampleIDs + quantSampleIDs
+                allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
                 allFields = catFields_edit + quantFields
 
                 # Removes samples (rows) that are not in our samplelist
+                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
                 if allSampleIDs:
-                    tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
-                else:
-                    tempDF = savedDF
+                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
-                tempDF[quantFields] = tempDF[quantFields].astype(float)
+                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
+                metaDF[quantFields] = metaDF[quantFields].astype(float)
 
                 if metaDictCat:
                     for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
+                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
                 if metaDictQuant:
                     for key in metaDictQuant:
                         valueList = [float(x) for x in metaDictQuant[key]]
-                        tempDF = tempDF.loc[tempDF[key].isin(valueList)]
+                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
 
-                metaDF = tempDF[allFields]
+                finalSampleList = metaDF.sampleid.tolist()
+                wantedList = allFields + ['sampleid', 'sample_name']
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
 
                 if allFields:
                     result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
@@ -171,7 +174,6 @@ def getWGCNA(request, stops, RID, PID):
                         res = simplejson.dumps(myDict)
                         return HttpResponse(res, content_type='application/json')
 
-                    finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
                     remSampleList = list(set(catSampleIDs) - set(finalSampleList))
 
                     result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
@@ -232,17 +234,16 @@ def getWGCNA(request, stops, RID, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    # JUMP PGPRs
                     finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, catFields_edit,DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, tempDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/wgcna/'
@@ -262,24 +263,6 @@ def getWGCNA(request, stops, RID, PID):
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
-
-                meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-
-                # Removes samples (rows) that are not in our samplelist
-                meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(allSampleIDs)]
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        meta_rDF = meta_rDF.loc[meta_rDF[key].isin(metaDictCat[key])]
-
-                if metaDictQuant:
-                    for key in metaDictQuant:
-                        valueList = [float(x) for x in metaDictQuant[key]]
-                        meta_rDF = meta_rDF.loc[meta_rDF[key].isin(valueList)]
-
-                wantedList = ['sampleid', 'sample_name'] + allFields
-                meta_rDF = meta_rDF[wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
 
                 database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen taxa...done!')
 
@@ -315,7 +298,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 r.assign("datExpr", count_rDF)
                 r.assign("geneID", count_rDF.columns.values.tolist())
-                r.assign("sampleID", meta_rDF.index.values.tolist())
+                r.assign("sampleID", metaDF.index.values.tolist())
                 r("datExpr[] <- lapply(datExpr, as.numeric)")
                 r("names(datExpr) <- geneID")
 
@@ -373,7 +356,7 @@ def getWGCNA(request, stops, RID, PID):
 
 
                 # Set soft-thresholding power based on number of samples
-                nSamples, col = meta_rDF.shape
+                nSamples, col = metaDF.shape
                 if networkType == 'unsigned':
                     if nSamples < 20:
                         myPower = 10
@@ -566,7 +549,7 @@ def getWGCNA(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 # Create Eigengene Table
-                r.assign("meta", meta_rDF)
+                r.assign("meta", metaDF)
                 r("aovDF <- data.frame(datME)")
                 r("names(aovDF) <- names(datME)")
                 r("rownames(aovDF) <- rownames(datME)")
@@ -788,7 +771,7 @@ def getWGCNA(request, stops, RID, PID):
                 #Finding modules that relate to a trait (quantitative variable)
                 if quantFields:
                     if len(catFields_edit) == 1:
-                        r.assign("meta", meta_rDF)
+                        r.assign("meta", metaDF)
                         r.assign("quantFields", quantFields)
                         r.assign("catFields_edit", catFields_edit[0])
                         r("levels = levels(meta[,paste(catFields_edit)])")
@@ -855,9 +838,9 @@ def getWGCNA(request, stops, RID, PID):
                         r("dev.off()")
 
                     elif len(catFields_edit) > 1:
-                        for index, row in meta_rDF.iterrows():
-                           meta_rDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
-                        r.assign("meta", meta_rDF)
+                        for index, row in metaDF.iterrows():
+                           metaDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                        r.assign("meta", metaDF)
                         r.assign("quantFields", quantFields)
                         r("levels = levels(meta$merge)")
                         levels = r.get("levels")
@@ -931,7 +914,7 @@ def getWGCNA(request, stops, RID, PID):
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     else:
-                        r.assign("meta", meta_rDF)
+                        r.assign("meta", metaDF)
                         r.assign("quantFields", quantFields)
                         r("moduleTraitCor <- cor(datME, meta[,paste(quantFields)], use='p')")
                         r("moduleTraitPvalue <- corPvalueFisher(moduleTraitCor, nSamples)")
@@ -965,7 +948,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 else:
                     if len(catFields_edit) == 1:
-                        r.assign("meta", meta_rDF)
+                        r.assign("meta", metaDF)
                         trtStr = ' * '.join(catFields_edit)
                         r.assign("trtStr", trtStr)
 
@@ -1015,7 +998,7 @@ def getWGCNA(request, stops, RID, PID):
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     elif len(catFields_edit) > 1:
-                        r.assign("meta", meta_rDF)
+                        r.assign("meta", metaDF)
                         trtStr = ' * '.join(catFields_edit)
                         r.assign("trtStr", trtStr)
 
