@@ -259,6 +259,8 @@ def getPCoA(request, stops, RID, PID):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
 
+                count_rDF.fillna(0, inplace=True)
+
                 database.queue.setBase(RID, 'Step 2 of 8: Selecting your chosen taxa...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

@@ -63,7 +63,6 @@ def getSPLS(request, stops, RID, PID):
                     metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
-                metaDF[allFields] = metaDF[allFields].astype(str)
                 metaDF[quantFields] = metaDF[quantFields].astype(float)
 
                 if metaDictQuant:
@@ -214,18 +213,19 @@ def getSPLS(request, stops, RID, PID):
                 elif DepVar == 4:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
 
+                count_rDF.fillna(0, inplace=True)
+
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
                 r.assign("X", count_rDF)
-                r.assign("Y", metaDF)
+                r.assign("Y", metaDF[quantFields])
                 r.assign("names", count_rDF.columns.values)
                 r("colnames(X) <- names")
 
                 r("library(mixOmics)")
-
                 freqCut = all["freqCut"]
                 num = int(freqCut.split('/')[0])
                 den = int(freqCut.split('/')[1])
@@ -276,7 +276,6 @@ def getSPLS(request, stops, RID, PID):
                     myDict = {'error': "Analysis did not converge.\nsPLS-Regr was aborted!"}
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
-
 
                 r("set.seed(1)")
                 r("ci.f <- ci.spls(f, plot.it=FALSE, plot.fix='y')")
@@ -540,7 +539,7 @@ def getSPLS(request, stops, RID, PID):
                         os.makedirs('myPhyloDB/media/temp/spls/Rplots')
 
                     height = 2.5 + 0.2*row
-                    width = 3.5 + 0.2*(col-1)
+                    width = 4 + 0.2*(col-1)
                     file = "pdf('myPhyloDB/media/temp/spls/Rplots/" + str(RID) + ".spls.pdf', height=" + str(height) + ", width=" + str(width) + ", onefile=FALSE)"
                     r.assign("cmd", file)
                     r("eval(parse(text=cmd))")
