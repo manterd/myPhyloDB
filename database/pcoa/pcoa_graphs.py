@@ -240,6 +240,10 @@ def getPCoA(request, stops, RID, PID):
                 if button3 == 3:
                     finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
+                # make sure column types are correct
+                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[quantFields] = finalDF[quantFields].astype(float)
+
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/pcoa/'
                 path = str(myDir) + str(RID) + '.pkl'

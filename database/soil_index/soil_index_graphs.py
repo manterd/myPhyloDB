@@ -117,6 +117,9 @@ def getsoil_index(request, stops, RID, PID):
                 finalDF, keggDF, levelList = getTaxaDF(savedDF, metaDF, RID, stops, PID)
                 finalDF = finalDF[finalDF.rel_abund != 0]
 
+                # make sure column types are correct
+                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+
                 count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
                 count_rDF.fillna(0, inplace=True)
                 count_rDF['sum'] = count_rDF[count_rDF.gt(0)].count(axis=1)

@@ -143,6 +143,7 @@ def upStop(request):
             context_instance=RequestContext(request)
     )
 
+
 def upErr(msg, request, dest, sid):
     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -169,7 +170,7 @@ def upErr(msg, request, dest, sid):
 
 @transaction.atomic
 def uploadFunc(request, stopList):
-
+    print "Starting uploadFunc!"
     ### create a savepoint
     sid = transaction.savepoint()
 

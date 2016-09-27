@@ -150,6 +150,9 @@ def getSpAC(request, stops, RID, PID):
                     DepVar = int(all["DepVar_nz"])
                     finalDF = getNZDF('abund', nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
+                # make sure column types are correct
+                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/spac/'
                 path = str(myDir) + str(RID) + '.pkl'

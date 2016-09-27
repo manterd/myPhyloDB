@@ -166,6 +166,10 @@ def getCatUnivData(request, RID, stops, PID):
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
                     finalDF = getNZDF('rel_abund', nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
+                # make sure column types are correct
+                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[quantFields] = finalDF[quantFields].astype(float)
+
                 # transform Y, if requested
                 transform = int(all["transform"])
 
@@ -311,6 +315,7 @@ def getCatUnivData(request, RID, stops, PID):
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 pValDict = {}
                 counter = 1
+                print finalDF.dtypes
                 for name1, group1 in grouped1:
                     D = ''
                     r.assign("df", group1)
@@ -769,6 +774,10 @@ def getQuantUnivData(request, RID, stops, PID):
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
                     finalDF, missingList = getNZDF('rel_abund', nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                # make sure column types are correct
+                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[quantFields] = finalDF[quantFields].astype(float)
 
                 # transform Y, if requested
                 transform = int(all["transform"])

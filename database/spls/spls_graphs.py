@@ -174,6 +174,9 @@ def getSPLS(request, stops, RID, PID):
                 if button3 == 3:
                     finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
 
+                # make sure column types are correct
+                finalDF[quantFields] = finalDF[quantFields].astype(float)
+
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/spls/'
                 path = str(myDir) + str(RID) + '.pkl'

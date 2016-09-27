@@ -163,6 +163,9 @@ def getGAGE(request, stops, RID, PID):
 
                 finalDF = getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID)
 
+                # make sure column types are correct
+                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)  # JUMP
+                'finalDF\n', finalDF
                 database.queue.setBase(RID, 'Step 3 of 5: Performing GAGE analysis...')
 
                 # save location info to session
@@ -250,8 +253,6 @@ def getGAGE(request, stops, RID, PID):
                         trt2 = levels[j]
                         r.assign("trt1", trt1)
                         r.assign("trt2", trt2)
-
-                        # round values to integers?
 
                         # get sign based on log2FoldChange
                         r("res <- results(dds, contrast=c('trt', trt1, trt2))")
@@ -370,7 +371,7 @@ def getGAGE(request, stops, RID, PID):
             return HttpResponse(res, content_type='application/json')
 
 
-def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
+def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
     try:
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
@@ -440,15 +441,8 @@ def getKeggDF(savedDF, tempDF, DepVar, RID, stops, PID):
         elif DepVar == 4:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
 
-        wanted = ['sampleid']
-        metaDF = savedDF.loc[:, wanted]
-        metaDF.set_index('sampleid', drop=True, inplace=True)
-        grouped = metaDF.groupby(level=0)
-        metaDF = grouped.last()
-
         taxaDF.set_index('sampleid', drop=True, inplace=True)
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
-
         finalDF.reset_index(drop=False, inplace=True)
         return finalDF
 

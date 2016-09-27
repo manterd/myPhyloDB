@@ -182,6 +182,10 @@ def getDiffAbund(request, stops, RID, PID):
                 if button3 == 3:
                     finalDF = getNZDF('abund', nzAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
 
+
+                # make sure column types are correct
+                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/diffabund/'
                 path = str(myDir) + str(RID) + '.pkl'

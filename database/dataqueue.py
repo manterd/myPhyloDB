@@ -83,6 +83,7 @@ def dataprocess(pid):
 
 def datfuncCall(request):
     global activeList, stopList, stopDict, statDict, qList
+    print "datfuncCall!"
     RID = request.POST['RID']
     request.POST['stopList'] = stopList
     funcName = request.POST['funcName']
