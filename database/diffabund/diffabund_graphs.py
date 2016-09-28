@@ -5,7 +5,7 @@ import pandas as pd
 from pyper import *
 import simplejson
 
-from database.utils import multidict
+from database.utils import getMetaDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 import database.queue
@@ -81,57 +81,8 @@ def getDiffAbund(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
-
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
-
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
-
-                if not catFields_edit:
-                    error = "Selected meta data only has one level.\nPlease select a different variable(s)."
-                    myDict = {'error': error}
-                    res = simplejson.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
-
-                catSampleLists = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        catSampleLists.append(idDictCat[key])
-                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
-
-                allSampleIDs = catSampleIDs
-                allFields = catFields
-
-                # Removes samples (rows) that are not in our samplelist
-                savedDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-
-                finalSampleList = metaDF.sampleid.tolist()
-                wantedList = allFields + ['sampleid', 'sample_name']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
-
-                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += '===============================================\n\n'
+                metaValsQuant = []
+                metaIDsQuant = []
 
                 button3 = int(all['button3'])
                 DepVar = 1
@@ -142,18 +93,27 @@ def getDiffAbund(request, stops, RID, PID):
                 elif button3 == 3:
                     DepVar = int(all["DepVar_nz"])
 
-                if DepVar == 4:
-                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = rnaDF.shape
-                    if rows < 1:
-                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                        res = simplejson.dumps(myDict)
-                        return HttpResponse(res, content_type='application/json')
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
 
-                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
+                if not catFields:
+                    error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
-                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
-                    result += '===============================================\n\n'
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
+                result = ''
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
+                result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
 
@@ -168,20 +128,20 @@ def getDiffAbund(request, stops, RID, PID):
                 # get selected taxa fro each rank selected in the tree
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    finalDF, missingList = getTaxaDF('abund', selectAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF('abund', selectAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('abund', keggAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('abund', keggAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('abund', nzAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('abund', nzAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
 
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/diffabund/'
@@ -205,9 +165,9 @@ def getDiffAbund(request, stops, RID, PID):
                 # Create combined metadata column - DiffAbund only
                 if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
-                       metaDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                       metaDF.loc[index, 'merge'] = "; ".join(row[catFields])
                 else:
-                    metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields_edit[0]]
+                    metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
                 database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done')
 

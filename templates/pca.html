@@ -300,12 +300,17 @@
         }
 
         function colorBox() {
-            $("#colorVal").empty().prepend('<option selected="selected" value="None">None</option>').append('<option value="k-means">k-means</option>');
+            $("#colorVal").empty()
+                    .prepend('<option selected="selected" value="None">None</option>')
+                    .append('<option value="k-means">k-means</option>');
+
+            var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
                     if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
+                            titleArray.push(title);
                             $("#colorVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
@@ -314,20 +319,29 @@
                     if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
-                            $("#colorVal").append('<option value='+title+'>'+title+'</option>').append('<option value="k-means">k-means</option>');
+                            titleArray.push(title);
+                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
             });
+            if (titleArray.length > 1) {
+                $("#colorVal").append('<option value=interaction>interaction</option>');
+            }
         }
 
         function shapeBox() {
-            $("#shapeVal").empty().prepend('<option selected="selected" value="None">None</option>').append('<option value="k-means">k-means</option>');
+            $("#shapeVal").empty()
+                    .prepend('<option selected="selected" value="None">None</option>')
+                    .append('<option value="k-means">k-means</option>');
+
+            var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
                     if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
+                            titleArray.push(title);
                             $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
@@ -336,20 +350,29 @@
                     if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
-                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>').append('<option value="k-means">k-means</option>');
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
             });
+            if (titleArray.length > 1) {
+                $("#shapeVal").append('<option value=interaction>interaction</option>');
+            }
         }
 
         function ellipseBox() {
-            $("#ellipseVal").empty().prepend('<option selected="selected" value="None">None</option>').append('<option value="k-means">k-means</option>');
+            $("#ellipseVal").empty()
+                    .prepend('<option selected="selected" value="None">None</option>')
+                    .append('<option value="k-means">k-means</option>');
+
+            var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
                     if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
+                            titleArray.push(title);
                             $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
@@ -358,11 +381,15 @@
                     if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
-                            $("#ellipseVal").append('<option value='+title+'>'+title+'</option>').append('<option value="k-means">k-means</option>');
+                            titleArray.push(title);
+                            $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
             });
+            if (titleArray.length > 1) {
+                $("#ellipseVal").append('<option value=interaction>interaction</option>');
+            }
         }
 
         function stopThis(RID) {
@@ -792,7 +819,7 @@
                         <option value="None">None</option>
                         <option value="k-means">k-means</option>
                     </select>
-                    &nbsp<-- Select variable for ordiellipse
+                    &nbsp<-- Select grouping variable for ordiellipse
                 </div>
             </td>
             <td bgcolor="white"></td>

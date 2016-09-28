@@ -79,6 +79,7 @@
                     }
                     nodesCat = node.tree.getSelectedNodes();
                     colorBox();
+                    shapeBox();
                     ellipseBox();
                     $("#run").css("background-color", "lightgray");
                 }
@@ -456,11 +457,14 @@
 
         function colorBox() {
             $("#colorVal").empty().prepend('<option selected="selected" value="None">None</option>');
+
+            var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
                     if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
+                            titleArray.push(title);
                             $("#colorVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
@@ -469,21 +473,58 @@
                     if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
+                            titleArray.push(title);
                             $("#colorVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
             });
+            if (titleArray.length > 1) {
+                $("#colorVal").append('<option value=interaction>interaction</option>');
+            }
         }
 
+        function shapeBox() {
+            $("#shapeVal").empty()
+                    .prepend('<option selected="selected" value="None">None</option>')
+                    .append('<option value="k-means">k-means</option>');
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
+            if (titleArray.length > 1) {
+                $("#shapeVal").append('<option value=interaction>interaction</option>');
+            }
+        }
 
         function ellipseBox() {
             $("#ellipseVal").empty().prepend('<option selected="selected" value="None">None</option>');
+
+            var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
                     if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
+                            titleArray.push(title);
                             $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
@@ -492,15 +533,20 @@
                     if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
+                            titleArray.push(title);
                             $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
             });
+            if (titleArray.length > 1) {
+                $("#ellipseVal").append('<option value=interaction>interaction</option>');
+            }
         }
 
         function surfBox() {
             $("#surfVal").empty().prepend('<option selected="selected" value="None">None</option>');
+
             $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
                     if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
@@ -798,6 +844,7 @@
             myDict['perms'] = document.getElementById("perms").value;
             myDict['RID'] = RID;
             myDict['colorVal'] = document.getElementById("colorVal").value;
+            myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
             myDict['surfVal'] = document.getElementById("surfVal").value;
             myDict['funcName'] = "getPCoA";
@@ -1042,7 +1089,19 @@
                     <select id="colorVal">
                         <option value="None">None</option>
                     </select>
-                    &nbsp<-- Select variable for symbol colors
+                    &nbsp<-- Select grouping variable for symbol colors
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="shapeVal">
+                        <option value="None">None</option>
+                    </select>
+                    &nbsp<-- Select grouping variable for symbol shapes
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -1054,7 +1113,7 @@
                     <select id="ellipseVal">
                         <option value="None">None</option>
                     </select>
-                    &nbsp<-- Select variable for ordiellipse
+                    &nbsp<-- Select grouping variable for ordiellipse
                 </div>
             </td>
             <td bgcolor="white"></td>

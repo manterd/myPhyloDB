@@ -418,22 +418,24 @@ def getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, Dep
     finalSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
 
     # remove samples not selected
-    savedDF = savedDF.loc[savedDF['sampleid'].isin(finalSampleIDs)]
+    if finalSampleIDs:
+        savedDF = savedDF.loc[savedDF['sampleid'].isin(finalSampleIDs)]
     metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
 
     # Check if there is at least one categorical variable with multiple levels
     # Remove fields with only 1 level
     remCatFields = []
-    for i in catFields:
-        noLevels = len(list(pd.unique(metaDF[i])))
-        if noLevels < 2:
-            catFields.remove(i)
-            remCatFields.append(i)
+    if catFields:
+        for i in catFields:
+            noLevels = len(list(pd.unique(metaDF[i])))
+            if noLevels < 2:
+                catFields.remove(i)
+                remCatFields.append(i)
 
-    if remCatFields:
-        allFields = catFields + quantFields
-        wantedList = allFields + ['sampleid', 'sample_name']
-        metaDF = metaDF[wantedList]
+        if remCatFields:
+            allFields = catFields + quantFields
+            wantedList = allFields + ['sampleid', 'sample_name']
+            metaDF = metaDF[wantedList]
 
     # remove samples that do not have rRNA copy number data available
     if DepVar == 4:

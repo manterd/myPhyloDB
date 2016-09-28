@@ -5,7 +5,7 @@ import pandas as pd
 from pyper import *
 import simplejson
 
-from database.utils import multidict
+from database.utils import multidict, getMetaDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 import database.queue
@@ -77,55 +77,8 @@ def getPCA(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
-
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
-
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
-
-                catSampleLists = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        catSampleLists.append(idDictCat[key])
-                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
-
-                if not catFields_edit:
-                    catSampleIDs = savedDF['sampleid'].tolist()
-
-                allSampleIDs = catSampleIDs
-                allFields = catFields_edit
-
-                # Removes samples (rows) that are not in our samplelist
-                savedDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                if allSampleIDs:
-                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-
-                finalSampleList = metaDF.sampleid.tolist()
-                wantedList = allFields + ['sampleid']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
-
-                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += '===============================================\n\n'
+                metaValsQuant = []
+                metaIDsQuant = []
 
                 button3 = int(all['button3'])
                 DepVar = 1
@@ -136,18 +89,15 @@ def getPCA(request, stops, RID, PID):
                 elif button3 == 3:
                     DepVar = int(all["DepVar_nz"])
 
-                if DepVar == 4:
-                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = rnaDF.shape
-                    if rows < 1:
-                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                        res = simplejson.dumps(myDict)
-                        return HttpResponse(res, content_type='application/json')
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
 
-                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
-
-                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
-                    result += '===============================================\n\n'
+                result = ''
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
+                result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 8: Selecting your chosen meta-variables...done')
 
@@ -161,19 +111,19 @@ def getPCA(request, stops, RID, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/pca/'
@@ -276,7 +226,10 @@ def getPCA(request, stops, RID, PID):
                 ellipseVal = all['ellipseVal']
                 if ellipseVal == 'None':
                     r("ellipseTrt <- c('All')")
-                if ellipseVal != 'None' and ellipseVal != 'k-means':
+                if ellipseVal == 'interaction':
+                    r.assign("catFields", catFields)
+                    r("ellipseTrt <- interaction(meta[,paste(catFields)])")
+                if ellipseVal != 'None' and ellipseVal != 'k-means' and ellipseVal != 'interaction':
                     r.assign("ellipseVal", ellipseVal)
                     r("ellipseTrt <- as.factor(meta[,paste(ellipseVal)])")
                 if ellipseVal != 'None' and ellipseVal == 'k-means':
@@ -288,7 +241,10 @@ def getPCA(request, stops, RID, PID):
                 colorVal = all['colorVal']
                 if colorVal == 'None':
                     r("colorTrt <- c('All')")
-                if colorVal != 'None' and colorVal != 'k-means':
+                if colorVal == 'interaction':
+                    r.assign("catFields", catFields)
+                    r("colorTrt <- interaction(meta[,paste(catFields)])")
+                if colorVal != 'None' and colorVal != 'k-means' and colorVal != 'interaction':
                     r.assign("colorVal", colorVal)
                     r("colorTrt <- as.factor(meta[,paste(colorVal)])")
                 if colorVal != 'None' and colorVal == 'k-means':
@@ -300,7 +256,10 @@ def getPCA(request, stops, RID, PID):
                 shapeVal = all['shapeVal']
                 if shapeVal == 'None':
                     r("shapeTrt <- 'All'")
-                if shapeVal != 'None' and shapeVal != 'k-means':
+                if shapeVal == 'interaction':
+                    r.assign("catFields", catFields)
+                    r("shapeTrt <- interaction(meta[,paste(catFields)])")
+                if shapeVal != 'None' and shapeVal != 'k-means' and shapeVal != 'interaction':
                     r.assign("shapeVal", shapeVal)
                     r("shapeTrt <- as.factor(meta[,paste(shapeVal)])")
                 if shapeVal != 'None' and shapeVal == 'k-means':

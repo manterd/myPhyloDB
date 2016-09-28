@@ -12,7 +12,7 @@ import simplejson
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
-from database.utils import multidict
+from database.utils import multidict, getMetaDF
 from database.models import Phyla, Class, Order, Family, Genus, Species
 import database.queue
 
@@ -35,84 +35,35 @@ def getGAGE(request, stops, RID, PID):
                 with open(path, 'rb') as f:
                     savedDF = pd.read_csv(f, index_col=0, sep=',')
 
-                # round data to fix normalization type issues
-                savedDF['abund'] = savedDF['abund'].round(0).astype(int)
-                savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
-                savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)
-                savedDF['rich'] = savedDF['rich'].round(0).astype(int)
-                savedDF['diversity'] = savedDF['diversity'].round(0).astype(int)
-
-                result = ''
-
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
+                metaValsQuant = []
+                metaIDsQuant = []
+                
+                DepVar = int(all["DepVar"])
 
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
 
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
-
-                if not catFields_edit:
-                    error = "Selected meta data only has one level.\nPlease select a different variable(s)."
+                if not catFields:
+                    error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
-                catSampleLists = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        catSampleLists.append(idDictCat[key])
-                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
-                allSampleIDs = catSampleIDs
-
-                # Removes samples (rows) that are not in our samplelist
-                savedDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                if allSampleIDs:
-                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-
-                finalSampleList = metaDF.sampleid.tolist()
-                wantedList = catFields_edit + ['sampleid', 'sample_name']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
-
-                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
+                result = ''
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
-
-                DepVar = int(all["DepVar"])
-                if DepVar == 4:
-                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = rnaDF.shape
-                    if rows < 1:
-                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                        res = simplejson.dumps(myDict)
-                        return HttpResponse(res, content_type='application/json')
-
-                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
-
-                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
-                    result += '===============================================\n\n'
-
+                
                 database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -160,7 +111,7 @@ def getGAGE(request, stops, RID, PID):
                 finalDF = getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
                 database.queue.setBase(RID, 'Step 3 of 5: Performing GAGE analysis...')
 
                 # save location info to session
@@ -183,11 +134,11 @@ def getGAGE(request, stops, RID, PID):
                 count_rDF.fillna(0, inplace=True)
 
                 # Create combined metadata column - GAGE only
-                if len(catFields_edit) > 1:
+                if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
-                        metaDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                        metaDF.loc[index, 'merge'] = "; ".join(row[catFields])
                 else:
-                    metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields_edit[0]]
+                    metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
                 wantedList = ['merge', 'sample_name']
                 metaDF = metaDF.loc[:, wantedList]

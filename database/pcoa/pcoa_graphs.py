@@ -6,7 +6,7 @@ import pandas as pd
 from pyper import *
 import simplejson
 
-from database.utils import multidict, wOdum
+from database.utils import multidict, getMetaDF, wOdum
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 import database.queue
 
@@ -112,79 +112,8 @@ def getPCoA(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
-
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
-
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
-
-                if not catFields_edit:
-                    myDict = {}
-                    myDict['error'] = "Selected meta data only has one level.\nPlease select a different variable."
-                    res = simplejson.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
-
-                catSampleLists = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        catSampleLists.append(idDictCat[key])
-                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
-
-                metaValsQuant = all['metaValsQuant']
-                metaIDsQuant = all['metaIDsQuant']
-
-                metaDictQuant = {}
-                quantFields = []
-                quantValues = []
-                if metaValsQuant:
-                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
-                    for key in sorted(metaDictQuant):
-                        quantFields.append(key)
-                        quantValues.extend(metaDictQuant[key])
-
-                quantSampleLists = []
-                if metaIDsQuant:
-                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
-                    for key in sorted(idDictQuant):
-                        quantSampleLists.extend(idDictQuant[key])
-                quantSampleIDs = list(set.intersection(*map(set, quantSampleLists)))
-
-                allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
-                allFields = catFields_edit + quantFields
-
-                # Removes samples (rows) that are not in our samplelist
-                savedDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                if allSampleIDs:
-                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-                metaDF[quantFields] = metaDF[quantFields].astype(float)
-
-                finalSampleList = metaDF.sampleid.tolist()
-                wantedList = allFields + ['sampleid', 'sample_name']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
-
-                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
-                result += '===============================================\n\n'
+                metaValsQuant = []
+                metaIDsQuant = []
 
                 button3 = int(all['button3'])
                 DepVar = 1
@@ -195,19 +124,27 @@ def getPCoA(request, stops, RID, PID):
                 elif button3 == 3:
                     DepVar = int(all["DepVar_nz"])
 
-                if DepVar == 4:
-                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = savedDF.shape
-                    if rows < 1:
-                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                        res = simplejson.dumps(myDict)
-                        return HttpResponse(res, content_type='application/json')
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
 
-                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
+                if not catFields:
+                    error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
-                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
-                    result += '===============================================\n\n'
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
+                result = ''
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
+                result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 8: Selecting your chosen meta-variables...done')
 
@@ -233,7 +170,7 @@ def getPCoA(request, stops, RID, PID):
                     finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
 
                 # save location info to session
@@ -325,14 +262,8 @@ def getPCoA(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 4 of 8: Principal coordinates analysis...')
 
-                anovaFields = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        anovaFields.append(i)
-
                 trtLength = len(set(catValues))
-                trtString = " + ".join(anovaFields)
+                trtString = " + ".join(catFields)
 
                 pcoaDF = pd.DataFrame()
                 eigDF = pd.DataFrame()
@@ -359,32 +290,47 @@ def getPCoA(request, stops, RID, PID):
                     r("layout(matrix(c(1,2), 1), widths=c(4,2), heights=c(4,4))")
                     r("ordiplot(ord, type='n')")
 
+                    colorVal = all['colorVal']
+                    if colorVal == 'None':
+                        r("myCol <- c('All')")
+                    if colorVal == 'interaction':
+                        r.assign("catFields", catFields)
+                        r("myCol <- interaction(meta[,paste(catFields)])")
+                    if colorVal != 'None' and colorVal != 'interaction':
+                        r.assign("colorVal", colorVal)
+                        r("myCol <- as.factor(meta[,paste(colorVal)])")
+
+                    shapeVal = all['shapeVal']
+                    if shapeVal == 'None':
+                        r("myPCH <- c('All')")
+                    if shapeVal == 'interaction':
+                        r.assign("catFields", catFields)
+                        r("myPCH <- interaction(meta[,paste(catFields)])")
+                    if shapeVal != 'None' and shapeVal != 'interaction':
+                        r.assign("shapeVal", shapeVal)
+                        r("myPCH <- as.factor(meta[,paste(shapeVal)])")
+
+                    ### create data frame
+                    r("points(ord, display='sites', pch=15, col=myCol)")
+                    r("par(mar=c(0,0,4,0))")
+                    r("plot(0, type='n', xlab='', ylab='', axes=FALSE)")
+                    r("legend('topleft', legend=levels(myCol), bty='n', pch=15, col=1:length(myCol))")
+
                     ellipseVal = all['ellipseVal']
-                    if ellipseVal != 'None':
-                        myStr = "cat <- factor(meta$" + str(ellipseVal) + ")"
-                        r.assign("cmd", myStr)
-                        r("eval(parse(text=cmd))")
+                    if ellipseVal != 'None' and ellipseVal != 'interaction':
+                        r.assign("ellipseVal", ellipseVal)
+                        r("cat <- as.factor(meta[,paste(ellipseVal)])")
+                        r("pl <- ordiellipse(ord, cat, kind='sd', conf=0.95, draw='polygon', border='black')")
+                    if ellipseVal == 'interaction':
+                        r.assign("catFields", catFields)
+                        r("cat <- interaction(meta[,paste(catFields)])")
                         r("pl <- ordiellipse(ord, cat, kind='sd', conf=0.95, draw='polygon', border='black')")
 
                     surfVal = all['surfVal']
                     if surfVal != 'None':
-                        myStr = "quant <- meta$" + str(surfVal)
-                        r.assign("cmd", myStr)
-                        r("eval(parse(text=cmd))")
+                        r.assign("surfVal", surfVal)
+                        r("quant <- meta[,paste(surfVal)]")
                         r("ordisurf(ord, quant, cex=1, labcex=0.6, add=TRUE)")
-
-                    colorVal = all['colorVal']
-                    if colorVal != 'None':
-                        myStr = "cat <- factor(meta$" + str(colorVal) + ")"
-                        r.assign("cmd", myStr)
-                        r("eval(parse(text=cmd))")
-                        r("points(ord, display='sites', pch=15, col=cat)")
-                        r("par(mar=c(0,0,4,0))")
-                        r("plot(0, type='n', xlab='', ylab='', axes=FALSE)")
-                        r("legend('topleft', legend=levels(cat), bty='n', pch=15, col=1:length(cat))")
-                    else:
-                        r("points(ord, display='sites', pch=15)")
-                        r("plot(0, type='n', xlab='', ylab='', axes=FALSE)")
 
                     r("dev.off()")
 
@@ -426,11 +372,11 @@ def getPCoA(request, stops, RID, PID):
 
                     if perms < 10:
                         bigf = 'A minimum of 10 permutations is required...'
-                    elif len(catFields_edit) == 0:
+                    elif len(catFields) == 0:
                         bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
-                    elif perms >= 10 and len(catFields_edit) > 0:
+                    elif perms >= 10 and len(catFields) > 0:
                         if test == 1:
-                            for i in catFields_edit:
+                            for i in catFields:
                                 factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
                                 r.assign("cmd", factor_string)
                                 r("eval(parse(text=cmd))")
@@ -442,7 +388,7 @@ def getPCoA(request, stops, RID, PID):
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                             r.assign("perms", perms)
-                            trtString = " * ".join(catFields_edit)
+                            trtString = " * ".join(catFields)
                             amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
                             r.assign("cmd", amova_string)
                             r("eval(parse(text=cmd))")
@@ -459,7 +405,7 @@ def getPCoA(request, stops, RID, PID):
                             database.queue.setBase(RID, 'Step 4 of 8: Principal coordinates analysis...done!')
                             database.queue.setBase(RID, 'Step 5 of 8: Performing BetaDisper...')
 
-                            for i in catFields_edit:
+                            for i in catFields:
                                 factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
                                 r.assign("cmd", factor_string)
                                 r("eval(parse(text=cmd))")
@@ -471,7 +417,7 @@ def getPCoA(request, stops, RID, PID):
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                             r.assign("perms", perms)
-                            for i in catFields_edit:
+                            for i in catFields:
                                 beta_string = "res <- betadisper(dist, " + str(i) + ")"
                                 r.assign("cmd", beta_string)
                                 r("eval(parse(text=cmd))")
@@ -509,8 +455,8 @@ def getPCoA(request, stops, RID, PID):
                 xAxisDict = {}
                 yAxisDict = {}
 
-                CAP1 = PC1 + len(catFields_edit) + len(quantFields) + 1
-                CAP2 = PC2 + len(catFields_edit) + len(quantFields) + 1
+                CAP1 = PC1 + len(catFields) + len(quantFields) + 1
+                CAP2 = PC2 + len(catFields) + len(quantFields) + 1
 
                 colors = [
                     "#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",
@@ -550,10 +496,10 @@ def getPCoA(request, stops, RID, PID):
                 ]
 
                 colors_idx = 0
-                if catFields_edit:
-                    grouped = pcoaDF.groupby(catFields_edit)
+                if catFields:
+                    grouped = pcoaDF.groupby(catFields)
                     for name, group in grouped:
-                        if len(catFields_edit) > 1:
+                        if len(catFields) > 1:
                             trt = "; ".join(name)
                         else:
                             trt = name
@@ -602,14 +548,14 @@ def getPCoA(request, stops, RID, PID):
                 if test == 2:
                     result += 'betaDisper results:' + '\n'
 
-                if len(catFields_edit) == 0:
+                if len(catFields) == 0:
                     result += 'test cannot be run...' + '\n'
                 else:
                     bigf = bigf.decode('utf-8')
                     result += bigf + '\n'
                 result += '===============================================\n'
 
-                if len(catFields_edit) > 0:
+                if len(catFields) > 0:
                     result += '\nenvfit results:\n'
                     envFit = envFit.decode('utf-8')
                     result += envFit
