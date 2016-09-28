@@ -351,31 +351,27 @@ def getPCoA(request, stops, RID, PID):
                     r("eval(parse(text=cmd))")
 
                     r("library(ggplot2)")
-                    r("p <- ggplot(indDF)")
+                    r("p <- ggplot()")
 
                     if not colorVal == 'None':
                         if not shapeVal == 'None':
-                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, color=factor(Color), shape=factor(Shape)), size=4)")
-                            r("p <- p + scale_color_brewer(palette='Set1')")
-                            r("p <- p + guides(color=guide_legend('Colors'), shape=guide_legend('Symbols'))")
+                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, fill=factor(Color), shape=factor(Shape)), size=4)")
+                            r("p <- p + scale_fill_brewer(name='Symbol-colors', palette='Set1', guide=guide_legend(override.aes=list(shape=21)))")
+                            r("p <- p + scale_shape_manual(name='Symbol-shapes', values=c(21, 22, 23, 24, 25))")
                         else:
-                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, color=factor(Color)), size=4)")
-                            r("p <- p + scale_color_brewer(palette='Set1')")
-                            r("p <- p + guides(color=guide_legend('Colors'))")
+                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, fill=factor(Color)), shape=21, size=4)")
+                            r("p <- p + scale_fill_brewer(name='Symbol-colors', palette='Set1', guide=guide_legend(override.aes=list(shape=21)))")
                     else:
                         if not shapeVal == 'None':
                             r("p <- p + geom_point(data=indDF, aes(x=x, y=y, shape=factor(Shape)), size=4)")
-                            r("p <- p + guides(shape=guide_legend('Symbols'))")
+                            r("p <- p + scale_shape_manual(name='Symbol-shapes', values=c(21, 22, 23, 24, 25))")
                         else:
                             r("p <- p + geom_point(data=indDF, aes(x=x, y=y), size=4)")
 
                     if not ellipseVal == 'None':
                         r("p <- p + stat_ellipse(data=indDF, aes(x=x, y=y, color=factor(Fill)), geom='polygon', level=0.95, alpha=0)")
-
-                    ### Based on the following ref...
-                    # https://oliviarata.wordpress.com/2014/07/17/ordinations-in-ggplot2-v2-ordisurf/
-                    if not surfVal == 'None':
-                        r("p <- p + stat_contour(data=ordi.mat, aes(x=x, y=y, z=z), color='black', binwidth=2)")
+                        r("p <- p + scale_color_brewer(palette='Set1')")
+                        r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
 
                     r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
                     r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
@@ -386,7 +382,12 @@ def getPCoA(request, stops, RID, PID):
                     r("p <- p + xlab(paste('Dim.', PC1, ' (', round(PerExp1, 1), '%)', sep=''))")
                     r("p <- p + ylab(paste('Dim.', PC2, ' (', round(PerExp2, 1), '%)', sep=''))")
 
-                    print r("print(p)")
+                    if not surfVal == 'None':
+                        r("p <- p + stat_contour(data=ordi.mat, aes(x=x, y=y, z=z), color='black')")
+                        #print r("p <- p + scale_color_gradient(high='darkgreen', low='darkolivegreen1')")
+
+                    r("print(p)")
+
                     r("dev.off()")
 
                     if len(quantFields) > 0:

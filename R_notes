@@ -32,6 +32,8 @@ Step 2: Make sure the following R dependencies are installed
 
     sudo apt-get install libxml2-dev
 
+    sudo apt-get install libtcl8.5 libtk8.5 tcl8.5 tk8.5
+
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 3: Build new R installation
 
@@ -46,7 +48,7 @@ Step 4: Install required packages
 
     type "./R"
 
-    install.packages(c("lsmeans", "vegan", "spls", "mixOmics", "DMwR", "pheatmap", "RColorBrewer", "lme4", "FactoMineR", "ggplot2", "stringi", "devtools", "fpc", "png", "pbkrtest"))
+    install.packages(c("lsmeans", "vegan", "spls", "mixOmics", "DMwR", "pheatmap", "RColorBrewer", "lme4", "FactoMineR", "ggplot2", "stringi", "devtools", "fpc", "png", "pbkrtest", "quadprog", "directlabels"))
 
     library("devtools")
     install_github("kassambara/factoextra")
