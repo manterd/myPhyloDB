@@ -437,7 +437,7 @@ def getKeggDF(savedDF, metaDF, allSampleIDs, DepVar, RID, stops, PID):
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
         finalDF.reset_index(drop=False, inplace=True)
         return finalDF
 
