@@ -503,15 +503,18 @@
                     $('#transform').empty()
                         .append('<option value="0">None</option>')
                         .append('<option value="4">Logit</option>')
-                        .append('<option value="5">Arcsin</option>');
+                        .append('<option value="5">Arcsin</option>')
+                        .val(0);
                 }
                 else {
                     $('#transform').empty()
-                        .append('<option value="0">None</option>')
+                        .append('<option value="0" selected>None</option>')
                         .append('<option value="1">Ln</option>')
                         .append('<option value="2">Log10</option>')
-                        .append('<option value="3">Sqrt</option>');
+                        .append('<option value="3">Sqrt</option>')
+                        .val(0);
                 }
+                transform = 0;
                 chooseDisplay();
                 checkButtons();
             });

@@ -61,12 +61,12 @@ def getsoil_index(request, stops, RID, PID):
                     else:
                         removed.append(i)
 
-                catSampleIDs = []
+                catSampleLists = []
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        if idDictCat[key] not in idDictCat:
-                            catSampleIDs.extend(idDictCat[key])
+                        catSampleLists.append(idDictCat[key])
+                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
 
                 if not catFields_edit:
                     catSampleIDs = savedDF['sampleid'].tolist()

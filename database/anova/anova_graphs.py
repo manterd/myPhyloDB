@@ -8,7 +8,7 @@ from scipy import stats
 import simplejson
 
 from database.models import Sample
-from database.utils import multidict
+from database.utils import multidict, getMetaDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 import database.queue
 
@@ -36,106 +36,35 @@ def getCatUnivData(request, RID, stops, PID):
                 nzAll = int(all["nzAll"])
                 sig_only = int(all["sig_only"])
 
-                # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
 
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
-
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
-
-                if not catFields_edit:
-                    myDict = {}
-                    myDict['error'] = "Selected meta data only has one level.\nPlease select different variable(s)."
-                    res = simplejson.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
-
-                catSampleIDs = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        if idDictCat[key] not in catSampleIDs:
-                            catSampleIDs.extend(idDictCat[key])
-
-                metaDictQuant = {}
-                quantFields = []
-                quantValues = []
-                if metaValsQuant:
-                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
-                    for key in sorted(metaDictQuant):
-                        quantFields.append(key)
-                        quantValues.extend(metaDictQuant[key])
-
-                quantSampleIDs = []
-                if metaIDsQuant:
-                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
-                    for key in sorted(idDictQuant):
-                        if idDictQuant[key] not in quantSampleIDs:
-                            quantSampleIDs.extend(idDictQuant[key])
-
-                allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
-                allFields = catFields_edit + quantFields
-
-                # Removes samples (rows) that are not in our samplelist
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                if allSampleIDs:
-                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-                metaDF[quantFields] = metaDF[quantFields].astype(float)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
-
-                if metaDictQuant:
-                    for key in metaDictQuant:
-                        valueList = [float(x) for x in metaDictQuant[key]]
-                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
-
-                finalSampleList = metaDF.sampleid.tolist()
-                wantedList = allFields + ['sampleid', 'sample_name']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
-
-                result = ''
-                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
-                result += '===============================================\n\n'
-
                 button3 = int(all['button3'])
                 DepVar = int(all["DepVar"])
 
-                if DepVar == 4:
-                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = rnaDF.shape
-                    if rows < 1:
-                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                        res = simplejson.dumps(myDict)
-                        return HttpResponse(res, content_type='application/json')
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
 
-                    remSampleList = list(set(allSampleIDs) - set(finalSampleList))
+                if not catFields:
+                    error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
-                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
-                    result += '===============================================\n\n'
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
+                result = ''
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
+                result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
@@ -167,7 +96,7 @@ def getCatUnivData(request, RID, stops, PID):
                     finalDF = getNZDF('rel_abund', nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
 
                 # transform Y, if requested
@@ -315,7 +244,6 @@ def getCatUnivData(request, RID, stops, PID):
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 pValDict = {}
                 counter = 1
-                print finalDF.dtypes
                 for name1, group1 in grouped1:
                     D = ''
                     r.assign("df", group1)
@@ -453,16 +381,16 @@ def getCatUnivData(request, RID, stops, PID):
 
                     if sig_only == 0:
                         if DepVar == 1:
-                            grouped2 = group1.groupby(catFields_edit)['rel_abund'].mean()
+                            grouped2 = group1.groupby(catFields)['rel_abund'].mean()
                             dataList = list(grouped2)
                         elif DepVar == 2:
-                            grouped2 = group1.groupby(catFields_edit)['rich'].mean()
+                            grouped2 = group1.groupby(catFields)['rich'].mean()
                             dataList = list(grouped2)
                         elif DepVar == 3:
-                            grouped2 = group1.groupby(catFields_edit)['diversity'].mean()
+                            grouped2 = group1.groupby(catFields)['diversity'].mean()
                             dataList = list(grouped2)
                         elif DepVar == 4:
-                            grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
+                            grouped2 = group1.groupby(catFields)['abund_16S'].mean()
                             dataList = list(grouped2)
 
                         seriesDict = {}
@@ -474,16 +402,16 @@ def getCatUnivData(request, RID, stops, PID):
                     elif sig_only == 1:
                         if pValue < 0.05:
                             if DepVar == 1:
-                                grouped2 = group1.groupby(catFields_edit)['rel_abund'].mean()
+                                grouped2 = group1.groupby(catFields)['rel_abund'].mean()
                                 dataList = list(grouped2)
                             elif DepVar == 2:
-                                grouped2 = group1.groupby(catFields_edit)['rich'].mean()
+                                grouped2 = group1.groupby(catFields)['rich'].mean()
                                 dataList = list(grouped2)
                             elif DepVar == 3:
-                                grouped2 = group1.groupby(catFields_edit)['diversity'].mean()
+                                grouped2 = group1.groupby(catFields)['diversity'].mean()
                                 dataList = list(grouped2)
                             elif DepVar == 4:
-                                grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
+                                grouped2 = group1.groupby(catFields)['abund_16S'].mean()
                                 dataList = list(grouped2)
 
                             seriesDict = {}
@@ -503,15 +431,15 @@ def getCatUnivData(request, RID, stops, PID):
                         colors_idx = 0
 
                     if DepVar == 1:
-                        grouped2 = group1.groupby(catFields_edit)['rel_abund'].mean()
+                        grouped2 = group1.groupby(catFields)['rel_abund'].mean()
                     elif DepVar == 4:
-                        grouped2 = group1.groupby(catFields_edit)['abund_16S'].mean()
+                        grouped2 = group1.groupby(catFields)['abund_16S'].mean()
                     elif DepVar == 2:
-                        grouped2 = group1.groupby(catFields_edit)['rich'].mean()
+                        grouped2 = group1.groupby(catFields)['rich'].mean()
                     elif DepVar == 3:
-                        grouped2 = group1.groupby(catFields_edit)['diversity'].mean()
+                        grouped2 = group1.groupby(catFields)['diversity'].mean()
 
-                    if catFields_edit.__len__() == 1:
+                    if catFields.__len__() == 1:
                         xAxisDict['categories'] = grouped2.index.values.tolist()
                     else:
                         g2indexvals = grouped2.index.values
@@ -660,91 +588,24 @@ def getQuantUnivData(request, RID, stops, PID):
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
 
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
-
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
-
-                catSampleIDs = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        if idDictCat[key] not in catSampleIDs:
-                            catSampleIDs.extend(idDictCat[key])
-
-                metaDictQuant = {}
-                quantFields = []
-                if metaValsQuant:
-                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
-                    for key in sorted(metaDictQuant):
-                        quantFields.append(key)
-
-                quantSampleIDs = []
-                if metaIDsQuant:
-                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
-                    for key in sorted(idDictQuant):
-                        if idDictQuant[key] not in quantSampleIDs:
-                            quantSampleIDs.extend(idDictQuant[key])
-
-                allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
-                allFields = catFields_edit + quantFields
-
-                # Removes samples (rows) that are not in our samplelist
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-                metaDF[quantFields] = metaDF[quantFields].astype(float)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
-
-                if metaDictQuant:
-                    for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
-
-                finalSampleList = metaDF.sampleid.tolist()
-                wantedList = allFields + ['sampleid', 'sample_name']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
-
-                result = ''
-                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
-                result += '===============================================\n\n'
-
                 button3 = int(all['button3'])
                 DepVar = int(all["DepVar"])
 
-                if DepVar == 4:
-                    rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = rnaDF.shape
-                    if rows < 1:
-                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                        res = simplejson.dumps(myDict)
-                        return HttpResponse(res, content_type='application/json')
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
 
-                    remSampleList = list(set(allSampleIDs) - set(finalSampleList))
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
-                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
-                    result += '===============================================\n\n'
-
+                result = ''
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
+                result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
@@ -776,7 +637,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     finalDF, missingList = getNZDF('rel_abund', nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
 
                 # transform Y, if requested
@@ -1022,7 +883,7 @@ def getQuantUnivData(request, RID, stops, PID):
 
                     if sig_only == 0:
                         if catLevels > 1:
-                            grouped2 = group1.groupby(catFields_edit)
+                            grouped2 = group1.groupby(catFields)
                             for name2, group2 in grouped2:
                                 dataList = []
                                 x = []
@@ -1196,7 +1057,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     elif sig_only == 1:
                         if pValue < 0.05:
                             if catLevels > 1:
-                                grouped2 = group1.groupby(catFields_edit)
+                                grouped2 = group1.groupby(catFields)
                                 for name2, group2 in grouped2:
                                     dataList = []
                                     x = []

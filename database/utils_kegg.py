@@ -758,38 +758,43 @@ def sumKEGG(speciesList, picrustDF, keggDict, RID, PID, stops):
 def getFullTaxonomy(idList):
     recordList = []
     for id in idList:
-        if Phyla.objects.all().filter(phylaid=id).exists():
-            qs = Phyla.objects.all().filter(phylaid=id).values_list('kingdomid_id__kingdomName', 'phylaName')
-            record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
+        if Kingdom.objects.all().filter(kingdomid=id).exists():
+            qs = Kingdom.objects.all().filter(kingdomid=id).values_list('kingdomName')
+            record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
             recordList.append(record)
         else:
-            if Class.objects.all().filter(classid=id).exists():
-                qs = Class.objects.all().filter(classid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
-                record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A',)
+            if Phyla.objects.all().filter(phylaid=id).exists():
+                qs = Phyla.objects.all().filter(phylaid=id).values_list('kingdomid_id__kingdomName', 'phylaName')
+                record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
                 recordList.append(record)
             else:
-                if Order.objects.all().filter(orderid=id).exists():
-                    qs = Order.objects.all().filter(orderid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
-                    record = qs[0] + ('N/A', 'N/A', 'N/A',)
+                if Class.objects.all().filter(classid=id).exists():
+                    qs = Class.objects.all().filter(classid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
+                    record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A',)
                     recordList.append(record)
                 else:
-                    if Family.objects.all().filter(familyid=id).exists():
-                        qs = Family.objects.all().filter(familyid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
-                        record = qs[0] + ('N/A', 'N/A',)
+                    if Order.objects.all().filter(orderid=id).exists():
+                        qs = Order.objects.all().filter(orderid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
+                        record = qs[0] + ('N/A', 'N/A', 'N/A',)
                         recordList.append(record)
                     else:
-                        if Genus.objects.all().filter(genusid=id).exists():
-                            qs = Genus.objects.all().filter(genusid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
-                            record = qs[0] + ('N/A',)
+                        if Family.objects.all().filter(familyid=id).exists():
+                            qs = Family.objects.all().filter(familyid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
+                            record = qs[0] + ('N/A', 'N/A',)
                             recordList.append(record)
                         else:
-                            if Species.objects.all().filter(speciesid=id).exists():
-                                qs = Species.objects.all().filter(speciesid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
-                                record = qs[0]
+                            if Genus.objects.all().filter(genusid=id).exists():
+                                qs = Genus.objects.all().filter(genusid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
+                                record = qs[0] + ('N/A',)
                                 recordList.append(record)
                             else:
-                                record = ('Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found',)
-                                recordList.append(record)
+                                if Species.objects.all().filter(speciesid=id).exists():
+                                    qs = Species.objects.all().filter(speciesid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
+                                    record = qs[0]
+                                    recordList.append(record)
+                                else:
+                                    record = ('Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found',)
+                                    recordList.append(record)
 
     return recordList
 

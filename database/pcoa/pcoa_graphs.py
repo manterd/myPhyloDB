@@ -137,12 +137,12 @@ def getPCoA(request, stops, RID, PID):
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
-                catSampleIDs = []
+                catSampleLists = []
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        if idDictCat[key] not in catSampleIDs:
-                            catSampleIDs.extend(idDictCat[key])
+                        catSampleLists.append(idDictCat[key])
+                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
 
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
@@ -156,17 +156,18 @@ def getPCoA(request, stops, RID, PID):
                         quantFields.append(key)
                         quantValues.extend(metaDictQuant[key])
 
-                quantSampleIDs = []
+                quantSampleLists = []
                 if metaIDsQuant:
                     idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
                     for key in sorted(idDictQuant):
-                        if idDictQuant[key] not in quantSampleIDs:
-                            quantSampleIDs.extend(idDictQuant[key])
+                        quantSampleLists.extend(idDictQuant[key])
+                quantSampleIDs = list(set.intersection(*map(set, quantSampleLists)))
 
                 allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
                 allFields = catFields_edit + quantFields
 
                 # Removes samples (rows) that are not in our samplelist
+                savedDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
                 metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
                 if allSampleIDs:
                     metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
@@ -174,15 +175,6 @@ def getPCoA(request, stops, RID, PID):
                 # make sure column types are correct
                 metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
                 metaDF[quantFields] = metaDF[quantFields].astype(float)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
-
-                if metaDictQuant:
-                    for key in metaDictQuant:
-                        valueList = [float(x) for x in metaDictQuant[key]]
-                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
 
                 finalSampleList = metaDF.sampleid.tolist()
                 wantedList = allFields + ['sampleid', 'sample_name']

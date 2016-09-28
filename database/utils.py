@@ -375,3 +375,84 @@ def excel_to_dict(wb, headerRow=1, nRows=1, sheet='Sheet1'):
             line[headerDict[key]] = cell_value
         result_dict.append(line)
     return result_dict
+
+
+def getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar):
+
+    catFields = []
+    catValues = []
+    if metaValsCat:
+        metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
+        for key in sorted(metaDictCat):
+            catFields.append(key)
+            catValues.extend(metaDictCat[key])
+
+    catSampleLists = []
+    if metaIDsCat:
+        idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
+        for key in sorted(idDictCat):
+            catSampleLists.append(idDictCat[key])
+
+    catSampleIDs = []
+    if catSampleLists:
+        catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
+
+    quantFields = []
+    quantValues = []
+    if metaValsQuant:
+        metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
+        for key in sorted(metaDictQuant):
+            quantFields.append(key)
+            quantValues.extend(metaDictQuant[key])
+
+    quantSampleLists = []
+    if metaIDsQuant:
+        idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
+        for key in sorted(idDictQuant):
+            quantSampleLists.extend(idDictQuant[key])
+
+    quantSampleIDs = []
+    if quantSampleLists:
+        quantSampleIDs = list(set.intersection(*map(set, quantSampleLists)))
+
+    finalSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
+
+    # remove samples not selected
+    savedDF = savedDF.loc[savedDF['sampleid'].isin(finalSampleIDs)]
+    metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+
+    # Check if there is at least one categorical variable with multiple levels
+    # Remove fields with only 1 level
+    remCatFields = []
+    for i in catFields:
+        noLevels = len(list(pd.unique(metaDF[i])))
+        if noLevels < 2:
+            catFields.remove(i)
+            remCatFields.append(i)
+
+    if remCatFields:
+        allFields = catFields + quantFields
+        wantedList = allFields + ['sampleid', 'sample_name']
+        metaDF = metaDF[wantedList]
+
+    # remove samples that do not have rRNA copy number data available
+    if DepVar == 4:
+        rnaDF = savedDF.loc[savedDF['abund_16S'] != 0]
+        finalSampleIDs = list(pd.unique(rnaDF['sampleid']))
+        savedDF = savedDF.loc[savedDF['sampleid'].isin(finalSampleIDs)]
+        metaDF = metaDF.loc[metaDF['sampleid'].isin(finalSampleIDs)]
+
+    # remove unnecessary fields
+    wantedList = catFields + quantFields + ['sampleid', 'kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+    savedDF = savedDF[wantedList]
+
+    wantedList = catFields + quantFields + ['sampleid', 'sample_name']
+    wantedList = list(set(wantedList))
+    metaDF = metaDF[wantedList]
+    metaDF.set_index('sampleid', drop=True, inplace=True)
+
+    # make sure column types are correct
+    metaDF[catFields] = metaDF[catFields].astype(str)
+    metaDF[quantFields] = metaDF[quantFields].astype(float)
+
+    return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues

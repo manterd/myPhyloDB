@@ -67,8 +67,8 @@ def getGAGE(request, stops, RID, PID):
                         removed.append(i)
 
                 if not catFields_edit:
-                    myDict = {}
-                    myDict['error'] = "Selected meta data only has one level.\nPlease select a different variable(s)."
+                    error = "Selected meta data only has one level.\nPlease select a different variable(s)."
+                    myDict = {'error': error}
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 

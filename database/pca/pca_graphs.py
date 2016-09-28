@@ -96,27 +96,27 @@ def getPCA(request, stops, RID, PID):
                     else:
                         removed.append(i)
 
-                catSampleIDs = []
+                catSampleLists = []
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        if idDictCat[key] not in catSampleIDs:
-                            catSampleIDs.extend(idDictCat[key])
+                        catSampleLists.append(idDictCat[key])
+                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
+
+                if not catFields_edit:
+                    catSampleIDs = savedDF['sampleid'].tolist()
 
                 allSampleIDs = catSampleIDs
                 allFields = catFields_edit
 
                 # Removes samples (rows) that are not in our samplelist
+                savedDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
                 metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
                 if allSampleIDs:
                     metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
 
                 # make sure column types are correct
                 metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
                 finalSampleList = metaDF.sampleid.tolist()
                 wantedList = allFields + ['sampleid']
