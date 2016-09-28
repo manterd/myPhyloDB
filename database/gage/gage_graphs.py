@@ -82,6 +82,7 @@ def getGAGE(request, stops, RID, PID):
                 allSampleIDs = catSampleIDs
 
                 # Removes samples (rows) that are not in our samplelist
+                savedDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
                 metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
                 if allSampleIDs:
                     metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
@@ -156,7 +157,7 @@ def getGAGE(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                finalDF = getKeggDF(savedDF, metaDF, allSampleIDs, DepVar, RID, stops, PID)
+                finalDF = getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
@@ -365,12 +366,11 @@ def getGAGE(request, stops, RID, PID):
             return HttpResponse(res, content_type='application/json')
 
 
-def getKeggDF(savedDF, metaDF, allSampleIDs, DepVar, RID, stops, PID):
+def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
     try:
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
         profileDF = savedDF.loc[:, wanted]
-        profileDF = profileDF.loc[profileDF['sampleid'].isin(allSampleIDs)]
         profileDF.set_index('speciesid', inplace=True)
 
         # get PICRUSt data for species
@@ -446,8 +446,8 @@ def getKeggDF(savedDF, metaDF, allSampleIDs, DepVar, RID, stops, PID):
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
+            error = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
+            myDict = {"error": error}
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
