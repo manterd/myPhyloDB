@@ -112,8 +112,8 @@ def getPCoA(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
-                metaValsQuant = []
-                metaIDsQuant = []
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
 
                 button3 = int(all['button3'])
                 DepVar = 1
@@ -275,6 +275,18 @@ def getPCoA(request, stops, RID, PID):
                     r.assign("cmd", pcoa_string)
                     r("eval(parse(text=cmd))")
 
+                    r("res <- summary(ord)")
+                    r("id <- rownames(meta)")
+                    r("pcoa <- data.frame(id, meta, res$sites)")
+                    pcoaDF = r.get("pcoa")
+
+                    pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
+                    pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
+
+                    r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
+                    r("eig <- data.frame(Stat, res$cont$importance)")
+                    eigDF = r.get("eig")
+
                     path = "myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf"
                     if os.path.exists(path):
                         os.remove(path)
@@ -282,56 +294,99 @@ def getPCoA(request, stops, RID, PID):
                     if not os.path.exists('myPhyloDB/media/temp/pcoa/Rplots'):
                         os.makedirs('myPhyloDB/media/temp/pcoa/Rplots')
 
-                    file = "pdf('myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf', height=4, width=6)"
-                    r.assign("cmd", file)
-                    r("eval(parse(text=cmd))")
-
-                    r("par(mfrow=c(1,2))")
-                    r("layout(matrix(c(1,2), 1), widths=c(4,2), heights=c(4,4))")
-                    r("ordiplot(ord, type='n')")
-
                     colorVal = all['colorVal']
                     if colorVal == 'None':
-                        r("myCol <- c('All')")
+                        r("colorTrt <- c('All')")
                     if colorVal == 'interaction':
                         r.assign("catFields", catFields)
-                        r("myCol <- interaction(meta[,paste(catFields)])")
+                        r("colorTrt <- interaction(meta[,paste(catFields)])")
                     if colorVal != 'None' and colorVal != 'interaction':
                         r.assign("colorVal", colorVal)
-                        r("myCol <- as.factor(meta[,paste(colorVal)])")
+                        r("colorTrt <- as.factor(meta[,paste(colorVal)])")
 
                     shapeVal = all['shapeVal']
                     if shapeVal == 'None':
-                        r("myPCH <- c('All')")
+                        r("shapeTrt <- c('All')")
                     if shapeVal == 'interaction':
                         r.assign("catFields", catFields)
-                        r("myPCH <- interaction(meta[,paste(catFields)])")
+                        r("shapeTrt <- interaction(meta[,paste(catFields)])")
                     if shapeVal != 'None' and shapeVal != 'interaction':
                         r.assign("shapeVal", shapeVal)
-                        r("myPCH <- as.factor(meta[,paste(shapeVal)])")
-
-                    ### create data frame
-                    r("points(ord, display='sites', pch=15, col=myCol)")
-                    r("par(mar=c(0,0,4,0))")
-                    r("plot(0, type='n', xlab='', ylab='', axes=FALSE)")
-                    r("legend('topleft', legend=levels(myCol), bty='n', pch=15, col=1:length(myCol))")
+                        r("shapeTrt <- as.factor(meta[,paste(shapeVal)])")
 
                     ellipseVal = all['ellipseVal']
+                    if ellipseVal == 'None':
+                        r("ellipseTrt <- c('All')")
                     if ellipseVal != 'None' and ellipseVal != 'interaction':
                         r.assign("ellipseVal", ellipseVal)
-                        r("cat <- as.factor(meta[,paste(ellipseVal)])")
-                        r("pl <- ordiellipse(ord, cat, kind='sd', conf=0.95, draw='polygon', border='black')")
+                        r("ellipseTrt <- as.factor(meta[,paste(ellipseVal)])")
                     if ellipseVal == 'interaction':
                         r.assign("catFields", catFields)
-                        r("cat <- interaction(meta[,paste(catFields)])")
-                        r("pl <- ordiellipse(ord, cat, kind='sd', conf=0.95, draw='polygon', border='black')")
+                        r("ellipseTrt <- interaction(meta[,paste(catFields)])")
 
                     surfVal = all['surfVal']
                     if surfVal != 'None':
                         r.assign("surfVal", surfVal)
                         r("quant <- meta[,paste(surfVal)]")
-                        r("ordisurf(ord, quant, cex=1, labcex=0.6, add=TRUE)")
+                        r("ordi <- ordisurf(ord ~ quant)")
+                        r("ordi.grid <- ordi$grid")
+                        r("ordi.mat <- expand.grid(x=ordi.grid$x, y=ordi.grid$y)")
+                        r("ordi.mat$z <- as.vector(ordi.grid$z)")
+                        r("ordi.mat <- data.frame(na.omit(ordi.mat))")
 
+                    # extract data and create dataframe for plotting
+                    r.assign("PC1", PC1)
+                    r.assign("PC2", PC2)
+                    r("indDF <- data.frame( \
+                        x=as.vector(scores(ord, choices=c(PC1), display=c('sites'))), \
+                        y=as.vector(scores(ord, choices=c(PC2), display=c('sites'))), \
+                        Color=colorTrt, \
+                        Shape=shapeTrt, \
+                        Fill=ellipseTrt) \
+                    ")
+
+                    # set up plot
+                    file = "pdf('myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf')"
+                    r.assign("cmd", file)
+                    r("eval(parse(text=cmd))")
+
+                    r("library(ggplot2)")
+                    r("p <- ggplot(indDF)")
+
+                    if not colorVal == 'None':
+                        if not shapeVal == 'None':
+                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, color=factor(Color), shape=factor(Shape)), size=4)")
+                            r("p <- p + scale_color_brewer(palette='Set1')")
+                            r("p <- p + guides(color=guide_legend('Colors'), shape=guide_legend('Symbols'))")
+                        else:
+                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, color=factor(Color)), size=4)")
+                            r("p <- p + scale_color_brewer(palette='Set1')")
+                            r("p <- p + guides(color=guide_legend('Colors'))")
+                    else:
+                        if not shapeVal == 'None':
+                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, shape=factor(Shape)), size=4)")
+                            r("p <- p + guides(shape=guide_legend('Symbols'))")
+                        else:
+                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y), size=4)")
+
+                    if not ellipseVal == 'None':
+                        r("p <- p + stat_ellipse(data=indDF, aes(x=x, y=y, color=factor(Fill)), geom='polygon', level=0.95, alpha=0)")
+
+                    ### Based on the following ref...
+                    # https://oliviarata.wordpress.com/2014/07/17/ordinations-in-ggplot2-v2-ordisurf/
+                    if not surfVal == 'None':
+                        r("p <- p + stat_contour(data=ordi.mat, aes(x=x, y=y, z=z), color='black', binwidth=2)")
+
+                    r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
+                    r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
+
+                    r("p <- p + ggtitle('Principal Coordinates Analysis')")
+                    r.assign("PerExp1", eigDF.iloc[1, PC1] * 100.0)
+                    r.assign("PerExp2", eigDF.iloc[1, PC2] * 100.0)
+                    r("p <- p + xlab(paste('Dim.', PC1, ' (', round(PerExp1, 1), '%)', sep=''))")
+                    r("p <- p + ylab(paste('Dim.', PC2, ' (', round(PerExp2, 1), '%)', sep=''))")
+
+                    print r("print(p)")
                     r("dev.off()")
 
                     if len(quantFields) > 0:
@@ -347,18 +402,6 @@ def getPCoA(request, stops, RID, PID):
                         for part in tempStuff:
                             if part > tempStuff[1]:
                                 envFit += part + '\n'
-
-                    r("res <- summary(ord)")
-                    r("id <- rownames(meta)")
-                    r("pcoa <- data.frame(id, meta, res$sites)")
-                    pcoaDF = r.get("pcoa")
-
-                    pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
-                    pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
-
-                    r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
-                    r("eig <- data.frame(Stat, res$cont$importance)")
-                    eigDF = r.get("eig")
 
                     database.queue.setBase(RID, 'Step 4 of 8: Principal coordinates analysis...done!')
 
