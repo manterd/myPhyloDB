@@ -72,15 +72,14 @@ def getGAGE(request, stops, RID, PID):
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
-                catSampleIDs = []
+                catSampleLists = []
                 if metaIDsCat:
                     idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
                     for key in sorted(idDictCat):
-                        if idDictCat[key] not in catSampleIDs:
-                            catSampleIDs.extend(idDictCat[key])
+                        catSampleLists.append(idDictCat[key])
+                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
 
                 allSampleIDs = catSampleIDs
-                allFields = catFields_edit
 
                 # Removes samples (rows) that are not in our samplelist
                 metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
@@ -89,10 +88,6 @@ def getGAGE(request, stops, RID, PID):
 
                 # make sure column types are correct
                 metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
 
                 finalSampleList = metaDF.sampleid.tolist()
                 wantedList = catFields_edit + ['sampleid', 'sample_name']
@@ -161,11 +156,10 @@ def getGAGE(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                finalDF = getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID)
+                finalDF = getKeggDF(savedDF, metaDF, allSampleIDs, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)  # JUMP
-                'finalDF\n', finalDF
+                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
                 database.queue.setBase(RID, 'Step 3 of 5: Performing GAGE analysis...')
 
                 # save location info to session
@@ -371,11 +365,12 @@ def getGAGE(request, stops, RID, PID):
             return HttpResponse(res, content_type='application/json')
 
 
-def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
+def getKeggDF(savedDF, metaDF, allSampleIDs, DepVar, RID, stops, PID):
     try:
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
         profileDF = savedDF.loc[:, wanted]
+        profileDF = profileDF.loc[profileDF['sampleid'].isin(allSampleIDs)]
         profileDF.set_index('speciesid', inplace=True)
 
         # get PICRUSt data for species
