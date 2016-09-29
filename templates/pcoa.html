@@ -307,8 +307,11 @@
                 checkButtons();
             });
 
-
             $("#colorVal").change(function () {
+                checkButtons();
+            });
+
+            $("#palette").change(function () {
                 checkButtons();
             });
 
@@ -844,6 +847,7 @@
             myDict['perms'] = document.getElementById("perms").value;
             myDict['RID'] = RID;
             myDict['colorVal'] = document.getElementById("colorVal").value;
+            myDict['palette'] = document.getElementById("palette").value;
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
             myDict['surfVal'] = document.getElementById("surfVal").value;
@@ -1090,6 +1094,23 @@
                         <option value="None">None</option>
                     </select>
                     &nbsp<-- Select grouping variable for symbol colors
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="palette">
+                        <option value="Set1">Set1</option>
+                        <option value="Set2">Set2</option>
+                        <option value="Set3">Set3</option>
+                        <option value="Paired">Paired</option>
+                        <option value="Dark2">Dark2</option>
+                        <option value="Accent">Accent</option>
+                    </select>
+                    &nbsp<-- Select color palette for symbol colors
                 </div>
             </td>
             <td bgcolor="white"></td>

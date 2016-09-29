@@ -351,26 +351,29 @@ def getPCoA(request, stops, RID, PID):
                     r("eval(parse(text=cmd))")
 
                     r("library(ggplot2)")
-                    r("p <- ggplot()")
+                    r("p <- ggplot(indDF, aes(x, y))")
+
+                    myPalette = all['palette']
+                    r.assign("myPalette", myPalette)
 
                     if not colorVal == 'None':
                         if not shapeVal == 'None':
-                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, fill=factor(Color), shape=factor(Shape)), size=4)")
-                            r("p <- p + scale_fill_brewer(name='Symbol-colors', palette='Set1', guide=guide_legend(override.aes=list(shape=21)))")
+                            r("p <- p + geom_point(aes(fill=factor(Color), shape=factor(Shape)), size=4)")
+                            r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
                             r("p <- p + scale_shape_manual(name='Symbol-shapes', values=c(21, 22, 23, 24, 25))")
                         else:
-                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, fill=factor(Color)), shape=21, size=4)")
-                            r("p <- p + scale_fill_brewer(name='Symbol-colors', palette='Set1', guide=guide_legend(override.aes=list(shape=21)))")
+                            r("p <- p + geom_point(aes(fill=factor(Color)), shape=21, size=4)")
+                            r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
                     else:
                         if not shapeVal == 'None':
-                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y, shape=factor(Shape)), size=4)")
+                            r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
                             r("p <- p + scale_shape_manual(name='Symbol-shapes', values=c(21, 22, 23, 24, 25))")
                         else:
-                            r("p <- p + geom_point(data=indDF, aes(x=x, y=y), size=4)")
+                            r("p <- p + geom_point(size=4)")
 
                     if not ellipseVal == 'None':
-                        r("p <- p + stat_ellipse(data=indDF, aes(x=x, y=y, color=factor(Fill)), geom='polygon', level=0.95, alpha=0)")
-                        r("p <- p + scale_color_brewer(palette='Set1')")
+                        r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=0.95, alpha=0)")
+                        r("p <- p + scale_color_brewer(palette=myPalette)")
                         r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
 
                     r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
@@ -383,8 +386,13 @@ def getPCoA(request, stops, RID, PID):
                     r("p <- p + ylab(paste('Dim.', PC2, ' (', round(PerExp2, 1), '%)', sep=''))")
 
                     if not surfVal == 'None':
-                        r("p <- p + stat_contour(data=ordi.mat, aes(x=x, y=y, z=z), color='black')")
-                        #print r("p <- p + scale_color_gradient(high='darkgreen', low='darkolivegreen1')")
+                        r('library(data.table)')
+                        r("p <- p + stat_contour(data=ordi.mat, aes(x, y, z=z, label=..level..), color='red')")
+                        # get the last element in p (i.e., the one with the contour lines)
+                        r("p.data <- tail(ggplot_build(p)$data, n=1)")
+                        r("DT <- as.data.table(p.data[[1]], n=1)")
+                        r("tmp <- unique(DT, by='level', fromLast=TRUE)")
+                        r("p <- p + geom_text(aes(label=level, z=NULL), data=tmp)")
 
                     r("print(p)")
 
