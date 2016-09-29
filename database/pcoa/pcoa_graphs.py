@@ -39,8 +39,32 @@ def getPCoA(request, stops, RID, PID):
                 alpha = float(all["alpha"])
                 perms = int(all["perms"])
 
-                result = ''
+                # Select samples and meta-variables from savedDF
+                metaValsCat = all['metaValsCat']
+                metaIDsCat = all['metaIDsCat']
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
+
                 button3 = int(all['button3'])
+                DepVar = int(all["DepVar"])
+
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
+
+                if not catFields:
+                    error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
+                result = ''
                 if button3 == 1:
                     if selectAll == 1:
                         result += 'Taxa level: Kingdom' + '\n'
@@ -109,38 +133,6 @@ def getPCoA(request, stops, RID, PID):
                     result += 'Distance score: wOdum' + '\n'
                     result += 'alpha: ' + str(alpha) + '\n'
 
-                # Select samples and meta-variables from savedDF
-                metaValsCat = all['metaValsCat']
-                metaIDsCat = all['metaIDsCat']
-                metaValsQuant = all['metaValsQuant']
-                metaIDsQuant = all['metaIDsQuant']
-
-                button3 = int(all['button3'])
-                DepVar = 1
-                if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
-                elif button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
-                elif button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
-
-                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
-                allFields = catFields + quantFields
-
-                if not catFields:
-                    error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
-                    myDict = {'error': error}
-                    res = simplejson.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
-
-                if not finalSampleIDs:
-                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
-                    myDict = {'error': error}
-                    res = simplejson.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
-
-                result = ''
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
                 result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'

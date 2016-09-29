@@ -5,7 +5,7 @@ import pandas as pd
 from pyper import *
 import simplejson
 
-from database.utils import multidict, getMetaDF
+from database.utils import multidict, getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 import database.queue
@@ -81,13 +81,7 @@ def getPCA(request, stops, RID, PID):
                 metaIDsQuant = []
 
                 button3 = int(all['button3'])
-                DepVar = 1
-                if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
-                elif button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
-                elif button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
+                DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
@@ -124,6 +118,10 @@ def getPCA(request, stops, RID, PID):
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
+
+                # transform Y, if requested
+                transform = int(all["transform"])
+                finalDF = transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/pca/'

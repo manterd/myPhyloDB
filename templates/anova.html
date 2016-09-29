@@ -1646,14 +1646,7 @@
         </table>
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
-                <td bgcolor="white" width="350px">
-                    <select id="selectTree">
-                        <option value="1" selected="selected">Taxonomy</option>
-                        <option value="2" >KEGG orthology</option>
-                        <option value="3" >KEGG enzyme</option>
-                    </select>
-                    &nbsp<-- Selected sequence mapping
-                </td>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Analysis Type:</em></strong></td>
             </tr>
             <tr>
                 <td bgcolor="white" width="350px">
@@ -1661,7 +1654,21 @@
                         <option value="1" selected="selected">Bar plot (factors)</option>
                         <option value="2" >Scatter plot (regression)</option>
                     </select>
-                    &nbsp<-- Selected analysis
+                    &nbsp<-- Displayed graph
+                </td>
+            </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data Selection:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white" width="350px">
+                    <select id="selectTree">
+                        <option value="1" selected="selected">Taxonomy</option>
+                        <option value="2" >KEGG orthology</option>
+                        <option value="3" >KEGG enzyme</option>
+                    </select>
+                    &nbsp<-- Sequence mapping
                 </td>
             </tr>
             <tr id="row_taxa">
@@ -1676,7 +1683,7 @@
                         <option value="7">Species</option>
                         <option value="8">PGPRs</option>
                     </select>
-                    &nbsp<-- Selected taxa level
+                    &nbsp<-- Taxa level
                 </td>
             </tr>
             <tr id="row_kegg" style="display:none">
@@ -1687,7 +1694,7 @@
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
                     </select>
-                    &nbsp<-- Selected KEGG level
+                    &nbsp<-- KEGG orthology level
                 </td>
             </tr>
             <tr id="row_nz" style="display:none">
@@ -1701,12 +1708,8 @@
                         <option value="5">GIBBs</option>
                         <option value="6">N cycle</option>
                     </select>
-                    &nbsp<-- Selected KEGG level
+                    &nbsp<-- KEGG enzyme level
                 </td>
-            </tr>
-            <tr><td bgcolor="white"></td></tr>
-            <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>ANcOVA options:</em></strong></td>
             </tr>
             <tr>
                 <td bgcolor="white">
@@ -1718,7 +1721,7 @@
                         <option value="4">Logit</option>
                         <option value="5">Arcsin</option>
                     </select>
-                    &nbsp<-- Selected data transformation
+                    &nbsp<-- Raw data transformation
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>

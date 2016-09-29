@@ -409,7 +409,7 @@ def getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, Dep
     if metaIDsQuant:
         idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
         for key in sorted(idDictQuant):
-            quantSampleLists.extend(idDictQuant[key])
+            quantSampleLists.append(idDictQuant[key])
 
     quantSampleIDs = []
     if quantSampleLists:
@@ -458,3 +458,79 @@ def getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, Dep
     metaDF[quantFields] = metaDF[quantFields].astype(float)
 
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
+
+
+def transformDF(transform, DepVar, finalDF):
+    # replace zeros before transformation
+    if transform != 0:
+        if DepVar == 1:
+            myList = finalDF.rel_abund.tolist()
+            nonZero = filter(lambda a: a != 0, myList)
+            value = min(nonZero) / 2.0
+            finalDF.rel_abund.replace(to_replace=0, value=value, inplace=True)
+
+        elif DepVar == 2:
+            myList = finalDF.rich.tolist()
+            nonZero = filter(lambda a: a != 0, myList)
+            value = min(nonZero) / 2.0
+            finalDF.rich.replace(to_replace=0, value=value, inplace=True)
+
+        elif DepVar == 3:
+            myList = finalDF.diversity.tolist()
+            nonZero = filter(lambda a: a != 0, myList)
+            value = min(nonZero) / 2.0
+            finalDF.diversity.replace(to_replace=0, value=value, inplace=True)
+
+        elif DepVar == 4:
+            myList = finalDF.abund_16S.tolist()
+            nonZero = filter(lambda a: a != 0, myList)
+            value = min(nonZero) / 2
+            finalDF.abund_16S.replace(to_replace=0, value=value, inplace=True)
+
+    if transform == 1:
+        if DepVar == 1:
+            finalDF['rel_abund'] = np.log(finalDF.rel_abund)
+        elif DepVar == 2:
+            finalDF['rich'] = np.log(finalDF.rich)
+        elif DepVar == 3:
+            finalDF['diversity'] = np.log(finalDF.diversity)
+        elif DepVar == 4:
+            finalDF['abund_16S'] = np.log(finalDF.abund_16S)
+    elif transform == 2:
+        if DepVar == 1:
+            finalDF['rel_abund'] = np.log10(finalDF.rel_abund)
+        elif DepVar == 2:
+            finalDF['rich'] = np.log10(finalDF.rich)
+        elif DepVar == 3:
+            finalDF['diversity'] = np.log10(finalDF.diversity)
+        elif DepVar == 4:
+            finalDF['abund_16S'] = np.log10(finalDF.abund_16S)
+    elif transform == 3:
+        if DepVar == 1:
+            finalDF['rel_abund'] = np.sqrt(finalDF.rel_abund)
+        elif DepVar == 2:
+            finalDF['rich'] = np.sqrt(finalDF.rich)
+        elif DepVar == 3:
+            finalDF['diversity'] = np.sqrt(finalDF.diversity)
+        elif DepVar == 4:
+            finalDF['abund_16S'] = np.sqrt(finalDF.abund_16S)
+    elif transform == 4:
+        if DepVar == 1:
+            finalDF['rel_abund'] = np.log10(finalDF.rel_abund/(1-finalDF.rel_abund))
+        elif DepVar == 2:
+            finalDF['rich'] = np.log10(finalDF.rich/(1-finalDF.rich))
+        elif DepVar == 3:
+            finalDF['diversity'] = np.log10(finalDF.diversity/(1-finalDF.diversity))
+        elif DepVar == 4:
+            finalDF['abund_16S'] = np.log10(finalDF.abund_16S/(1-finalDF.abund_16S))
+    elif transform == 5:
+        if DepVar == 1:
+            finalDF['rel_abund'] = np.arcsin(finalDF.rel_abund)
+        elif DepVar == 2:
+            finalDF['rich'] = np.arcsin(finalDF.rich)
+        elif DepVar == 3:
+            finalDF['diversity'] = np.arcsin(finalDF.diversity)
+        elif DepVar == 4:
+            finalDF['abund_16S'] = np.arcsin(finalDF.abund_16S)
+
+    return finalDF

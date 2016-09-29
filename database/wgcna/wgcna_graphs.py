@@ -8,7 +8,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import simplejson
 import sys
 
-from database.utils import multidict
+from database.utils import multidict, getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 import database.queue
@@ -38,8 +38,26 @@ def getWGCNA(request, stops, RID, PID):
                 keggAll = int(all["keggAll"])
                 nzAll = int(all["nzAll"])
 
-                result = ''
+                # Select samples and meta-variables from savedDF
+                metaValsCat = all['metaValsCat']
+                metaIDsCat = all['metaIDsCat']
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
+
                 button3 = int(all['button3'])
+                DepVar = int(all["DepVar"])
+
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
+
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
+                result = ''
                 if button3 == 1:
                     if selectAll == 1:
                         result += 'Taxa level: Kingdom' + '\n'
@@ -76,108 +94,10 @@ def getWGCNA(request, stops, RID, PID):
                     elif keggAll == 6:
                         result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
-                # Select samples and meta-variables from savedDF
-                metaValsCat = all['metaValsCat']
-                metaIDsCat = all['metaIDsCat']
-                metaValsQuant = all['metaValsQuant']
-                metaIDsQuant = all['metaIDsQuant']
-
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
-
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
-
-                catSampleIDs = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        if idDictCat[key] not in catSampleIDs:
-                            catSampleIDs.extend(idDictCat[key])
-
-                metaDictQuant = {}
-                quantFields = []
-                quantValues = []
-                if metaValsQuant:
-                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
-                    for key in sorted(metaDictQuant):
-                        quantFields.append(key)
-                        quantValues.extend(metaDictQuant[key])
-
-                quantSampleIDs = []
-                if metaIDsQuant:
-                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
-                    for key in sorted(idDictQuant):
-                        if idDictQuant[key] not in quantSampleIDs:
-                            quantSampleIDs.extend(idDictQuant[key])
-
-                allSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
-                allFields = catFields_edit + quantFields
-
-                # Removes samples (rows) that are not in our samplelist
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                if allSampleIDs:
-                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-                metaDF[quantFields] = metaDF[quantFields].astype(float)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
-
-                if metaDictQuant:
-                    for key in metaDictQuant:
-                        valueList = [float(x) for x in metaDictQuant[key]]
-                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
-
-                finalSampleList = metaDF.sampleid.tolist()
-                wantedList = allFields + ['sampleid', 'sample_name']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
-
-                if allFields:
-                    result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                    result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                    result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
-                else:
-                    result += 'No meta variables were selected\n'
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
-
-                button3 = int(all['button3'])
-                DepVar = 1
-                if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
-                elif button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
-                elif button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
-
-                if DepVar == 4:
-                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = savedDF.shape
-                    if rows < 1:
-                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                        res = simplejson.dumps(myDict)
-                        return HttpResponse(res, content_type='application/json')
-
-                    remSampleList = list(set(catSampleIDs) - set(finalSampleList))
-
-                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
-                    result += '===============================================\n\n'
 
                 # settings block
                 networkType = all['networkType']
@@ -234,20 +154,24 @@ def getWGCNA(request, stops, RID, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, catFields_edit,DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, catFields,DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, catFields_edit, DepVar, RID, stops, PID)
+                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
+
+                # transform Y, if requested
+                transform = int(all["transform"])
+                finalDF = transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/wgcna/'
@@ -776,15 +700,15 @@ def getWGCNA(request, stops, RID, PID):
 
                 #Finding modules that relate to a trait (quantitative variable)
                 if quantFields:
-                    if len(catFields_edit) == 1:
+                    if len(catFields) == 1:
                         r.assign("meta", metaDF)
                         r.assign("quantFields", quantFields)
-                        r.assign("catFields_edit", catFields_edit[0])
-                        r("levels = levels(meta[,paste(catFields_edit)])")
+                        r.assign("catFields", catFields[0])
+                        r("levels = levels(meta[,paste(catFields)])")
                         levels = r.get("levels")
                         for level in levels:
                             r.assign("level", level)
-                            r("filter <- meta[,paste(catFields_edit)]==level")
+                            r("filter <- meta[,paste(catFields)]==level")
                             r("datME.mod <- as.matrix(datME)[filter,]")
                             r("meta.mod <- as.matrix(meta[,paste(quantFields)])[filter,]")
                             r("nSamples.mod <- nrow(meta.mod)")
@@ -843,9 +767,9 @@ def getWGCNA(request, stops, RID, PID):
                         )")
                         r("dev.off()")
 
-                    elif len(catFields_edit) > 1:
+                    elif len(catFields) > 1:
                         for index, row in metaDF.iterrows():
-                           metaDF.loc[index, 'merge'] = "; ".join(row[catFields_edit])
+                           metaDF.loc[index, 'merge'] = "; ".join(row[catFields])
                         r.assign("meta", metaDF)
                         r.assign("quantFields", quantFields)
                         r("levels = levels(meta$merge)")
@@ -953,14 +877,14 @@ def getWGCNA(request, stops, RID, PID):
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 else:
-                    if len(catFields_edit) == 1:
+                    if len(catFields) == 1:
                         r.assign("meta", metaDF)
-                        trtStr = ' * '.join(catFields_edit)
+                        trtStr = ' * '.join(catFields)
                         r.assign("trtStr", trtStr)
 
                         r("modules <- unique(mergedColors)")
                         r("modules <- paste('ME', modules, sep='.')")
-                        r.assign("cols", catFields_edit)
+                        r.assign("cols", catFields)
                         r("aovDF$x <- aovDF[,paste(cols)]")
                         r("dat.m <- melt(aovDF, id.vars='x', measure.vars=modules)")
 
@@ -1003,14 +927,14 @@ def getWGCNA(request, stops, RID, PID):
                             return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                    elif len(catFields_edit) > 1:
+                    elif len(catFields) > 1:
                         r.assign("meta", metaDF)
-                        trtStr = ' * '.join(catFields_edit)
+                        trtStr = ' * '.join(catFields)
                         r.assign("trtStr", trtStr)
 
                         r("modules <- unique(mergedColors)")
                         r("modules <- paste('ME', modules, sep='.')")
-                        r.assign("cols", catFields_edit)
+                        r.assign("cols", catFields)
                         r("aovDF$x <- apply(aovDF[,paste(cols)], 1, paste, collapse='; ')")
                         r("dat.m <- melt(aovDF, id.vars='x', measure.vars=modules)")
 

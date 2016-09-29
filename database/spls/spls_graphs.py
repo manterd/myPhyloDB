@@ -9,7 +9,7 @@ import simplejson
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4
-from database.utils import multidict
+from database.utils import multidict, getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 import database.queue
 
@@ -35,48 +35,25 @@ def getSPLS(request, stops, RID, PID):
                 nzAll = int(all["nzAll"])
 
                 # Select samples and meta-variables from savedDF
+                metaValsCat = []
+                metaIDsCat = []
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
 
-                metaDictQuant = {}
-                quantFields = []
-                quantValues = []
-                if metaValsQuant:
-                    metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
-                    for key in sorted(metaDictQuant):
-                        quantFields.append(key)
-                        quantValues.extend(metaDictQuant[key])
+                button3 = int(all['button3'])
+                DepVar = int(all["DepVar"])
 
-                quantSampleIDs = []
-                if metaIDsQuant:
-                    idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
-                    for key in sorted(idDictQuant):
-                        if idDictQuant[key] not in quantSampleIDs:
-                            quantSampleIDs.extend(idDictQuant[key])
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
 
-                allSampleIDs = quantSampleIDs
-                allFields = quantFields
-
-                # Removes samples (rows) that are not in our samplelist
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                if allSampleIDs:
-                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[quantFields] = metaDF[quantFields].astype(float)
-
-                if metaDictQuant:
-                    for key in metaDictQuant:
-                        valueList = [float(x) for x in metaDictQuant[key]]
-                        metaDF = metaDF.loc[metaDF[key].isin(valueList)]
-
-                finalSampleList = metaDF.sampleid.tolist()
-                wantedList = allFields + ['sampleid', 'sample_name']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
                 result = ''
-                button3 = int(all['button3'])
                 if button3 == 1:
                     if selectAll == 1:
                         result += 'Taxa level: Kingdom' + '\n'
@@ -113,7 +90,10 @@ def getSPLS(request, stops, RID, PID):
                     elif keggAll == 6:
                         result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
-                result += 'Quantitative variables selected: ' + ", ".join(quantFields) + '\n\n'
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
+                result += '===============================================\n\n'
 
                 x_scale = all['x_scale']
                 if x_scale == 'yes':
@@ -128,28 +108,6 @@ def getSPLS(request, stops, RID, PID):
                     result += 'All response (Y) variables (i.e., observed & predicted) have not been scaled.\n'
 
                 result += '===============================================\n\n'
-
-                button3 = int(all['button3'])
-                DepVar = 1
-                if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
-                elif button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
-                elif button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
-
-                if DepVar == 4:
-                    savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                    rows, cols = savedDF.shape
-                    if rows < 1:
-                        myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                        res = simplejson.dumps(myDict)
-                        return HttpResponse(res, content_type='application/json')
-
-                    remSampleList = list(set(quantSampleIDs) - set(finalSampleList))
-
-                    result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
-                    result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
 
@@ -176,6 +134,10 @@ def getSPLS(request, stops, RID, PID):
 
                 # make sure column types are correct
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
+
+                # transform Y, if requested
+                transform = int(all["transform"])
+                finalDF = transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/spls/'
