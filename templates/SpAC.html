@@ -11,11 +11,7 @@
     {% endif %}
 {% endblock user %}
 
-{% block menu_item %}
-    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
-    <br>
-    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
-{% endblock menu_item %}
+{% block menu_item %}{% endblock menu_item %}
 
 {% block javascript %}
     <style>
@@ -504,6 +500,21 @@
                     </select>
                     &nbsp<-- Method
                 </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
+        </tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
+                &nbsp;
+                <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
+                &nbsp<-- Start/stop analysis
             </td>
             <td bgcolor="white"></td>
         </tr>

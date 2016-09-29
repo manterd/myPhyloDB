@@ -11,11 +11,7 @@
     {% endif %}
 {% endblock user %}
 
-{% block menu_item %}
-    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
-    <br>
-    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
-{% endblock menu_item %}
+{% block menu_item %}{% endblock menu_item %}
 
 {% block javascript %}
     <style>
@@ -26,7 +22,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, DepVar = 1, selTheme = 0, i = 0;
+        var button1 = 1, DepVar = 0, selTheme = 0, i = 0;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", nodesKEGG = "", nodesNZ = "", taxaAll = 0, keggAll = 0, nzAll = 0;
         var chart1 = {}, chart2 = {};
         var catOptions = {}, quantOptions = {};
@@ -499,7 +495,15 @@
 
             $("#DepVar").change(function () {
                 DepVar = $(this).val();
-                if (DepVar == 1) {
+                if (DepVar == 0) {
+                    $('#transform').empty()
+                        .append('<option value="0" selected>None</option>')
+                        .append('<option value="1">Ln</option>')
+                        .append('<option value="2">Log10</option>')
+                        .append('<option value="3">Sqrt</option>')
+                        .val(0);
+                }
+                else if (DepVar == 1) {
                     $('#transform').empty()
                         .append('<option value="0">None</option>')
                         .append('<option value="4">Logit</option>')
@@ -1713,15 +1717,45 @@
             </tr>
             <tr>
                 <td bgcolor="white">
+                    <select id="DepVar">
+                        <option value="0" selected="selected">Abundance</option>
+                        <option value="1">Relative Abundance</option>
+                        <option value="4">Total Abundance</option>
+                        <option value="2">Species Richness</option>
+                        <option value="3">Species Diversity</option>
+                    </select>
+                    &nbsp<-- Dependent variable:
+                </td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
                     <select id="transform">
                         <option value="0" selected="selected">None</option>
-                        <!--<option value="1">Ln</option>
+                        <option value="1">Ln</option>
                         <option value="2">Log10</option>
-                        <option value="3">Sqrt</option>-->
-                        <option value="4">Logit</option>
-                        <option value="5">Arcsin</option>
+                        <option value="3">Sqrt</option>
+                        <!--<option value="4">Logit</option>
+                        <option value="5">Arcsin</option>-->
                     </select>
                     &nbsp<-- Raw data transformation
+                </td>
+            </tr>
+            <tr>
+                <td id="sig_text" bgcolor="white">
+                    <input type="checkbox" id="sig_box">
+                    &nbsp<-- Display only significant tests (p <= 0.05):
+                </td>
+            </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
+                    &nbsp;
+                    <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
+                    &nbsp<-- Start/stop analysis
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>
@@ -1736,11 +1770,6 @@
         </table>
     </div>
     <br><br>
-
-    <div style="float: left; padding-left: 10px;" id="sig_text">
-        Display only significant tests (p <= 0.05):
-        <input type="checkbox" id="sig_box">
-    </div>
 
     <table width="950px" border="2" style="table-layout: fixed">
         <colgroup>
@@ -1759,21 +1788,13 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td id="cell" colspan="8" style="text-align: center">
-                Dependent variable:
-                <select id="DepVar">
-                    <option value="1">Relative Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                    <option value="2">Species Richness</option>
-                    <option value="3">Species Diversity</option>
-                </select>
-            </td>
+            <td colspan="8"></td>
             <td colspan="4" style="text-align: center"></td>
             <td id="cat_off" colspan="8" style="text-align: center"></td>
             <td id="cat_gibbs" colspan="8" style="text-align: center; display: none">
                 Category:
                 <select id="GIBBs">
-                    <option value="0">All</option>
+                    <option value="0" selected="selected">All</option>
                     <option value="1">C decomposition</option>
                     <option value="2">N decomposition</option>
                     <option value="3">P decomposition</option>
@@ -1789,7 +1810,7 @@
             <td id="cat_nitrogen" colspan="8" style="text-align: center; display: none">
                 Category:
                 <select id="N_cycle">
-                    <option value="0">All</option>
+                    <option value="0" selected="selected">All</option>
                     <option value="1">Nitrogen fixation</option>
                     <option value="2">Urease</option>
                     <option value="3">Nitrification</option>

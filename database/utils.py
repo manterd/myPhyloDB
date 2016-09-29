@@ -463,7 +463,13 @@ def getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, Dep
 def transformDF(transform, DepVar, finalDF):
     # replace zeros before transformation
     if transform != 0:
-        if DepVar == 1:
+        if DepVar == 0:
+            myList = finalDF.abund.tolist()
+            nonZero = filter(lambda a: a != 0, myList)
+            value = min(nonZero) / 2.0
+            finalDF.abund.replace(to_replace=0, value=value, inplace=True)
+
+        elif DepVar == 1:
             myList = finalDF.rel_abund.tolist()
             nonZero = filter(lambda a: a != 0, myList)
             value = min(nonZero) / 2.0
@@ -488,7 +494,9 @@ def transformDF(transform, DepVar, finalDF):
             finalDF.abund_16S.replace(to_replace=0, value=value, inplace=True)
 
     if transform == 1:
-        if DepVar == 1:
+        if DepVar == 0:
+            finalDF['abund'] = np.log(finalDF.abund)
+        elif DepVar == 1:
             finalDF['rel_abund'] = np.log(finalDF.rel_abund)
         elif DepVar == 2:
             finalDF['rich'] = np.log(finalDF.rich)
@@ -497,7 +505,9 @@ def transformDF(transform, DepVar, finalDF):
         elif DepVar == 4:
             finalDF['abund_16S'] = np.log(finalDF.abund_16S)
     elif transform == 2:
-        if DepVar == 1:
+        if DepVar == 0:
+            finalDF['abund'] = np.log10(finalDF.abund)
+        elif DepVar == 1:
             finalDF['rel_abund'] = np.log10(finalDF.rel_abund)
         elif DepVar == 2:
             finalDF['rich'] = np.log10(finalDF.rich)
@@ -506,7 +516,9 @@ def transformDF(transform, DepVar, finalDF):
         elif DepVar == 4:
             finalDF['abund_16S'] = np.log10(finalDF.abund_16S)
     elif transform == 3:
-        if DepVar == 1:
+        if DepVar == 0:
+            finalDF['abund'] = np.sqrt(finalDF.abund)
+        elif DepVar == 1:
             finalDF['rel_abund'] = np.sqrt(finalDF.rel_abund)
         elif DepVar == 2:
             finalDF['rich'] = np.sqrt(finalDF.rich)
@@ -515,7 +527,9 @@ def transformDF(transform, DepVar, finalDF):
         elif DepVar == 4:
             finalDF['abund_16S'] = np.sqrt(finalDF.abund_16S)
     elif transform == 4:
-        if DepVar == 1:
+        if DepVar == 0:
+            finalDF['abund'] = np.log10(finalDF.abund/(1-finalDF.abund))
+        elif DepVar == 1:
             finalDF['rel_abund'] = np.log10(finalDF.rel_abund/(1-finalDF.rel_abund))
         elif DepVar == 2:
             finalDF['rich'] = np.log10(finalDF.rich/(1-finalDF.rich))
@@ -524,7 +538,9 @@ def transformDF(transform, DepVar, finalDF):
         elif DepVar == 4:
             finalDF['abund_16S'] = np.log10(finalDF.abund_16S/(1-finalDF.abund_16S))
     elif transform == 5:
-        if DepVar == 1:
+        if DepVar == 0:
+            finalDF['abund'] = np.arcsin(finalDF.abund)
+        elif DepVar == 1:
             finalDF['rel_abund'] = np.arcsin(finalDF.rel_abund)
         elif DepVar == 2:
             finalDF['rich'] = np.arcsin(finalDF.rich)

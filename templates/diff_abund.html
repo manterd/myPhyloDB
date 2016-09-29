@@ -11,11 +11,7 @@
     {% endif %}
 {% endblock user %}
 
-{% block menu_item %}
-    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
-    <br>
-    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
-{% endblock menu_item %}
+{% block menu_item %}{% endblock menu_item %}
 
 {% block javascript %}
     <style>
@@ -26,7 +22,7 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar_taxa = 1, DepVar_kegg = 1, DepVar_nz = 1, selTheme = 0, i = 0;
+        var DepVar = 0, selTheme = 0, i = 0;
         var nodesCat = "", nodesTaxa = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
         var chart1 = {};
         var catOptions = {};
@@ -188,16 +184,8 @@
                 }
             });
 
-            $("#DepVar_taxa").change(function () {
-                DepVar_taxa = $(this).val();
-                checkButtons();
-            });
-            $("#DepVar_kegg").change(function () {
-                DepVar_kegg = $(this).val();
-                checkButtons();
-            });
-            $("#DepVar_nz").change(function () {
-                DepVar_nz = $(this).val();
+            $("#DepVar").change(function () {
+                DepVar = $(this).val();
                 checkButtons();
             });
 
@@ -523,9 +511,7 @@
                 var myDict = {};
                 myDict['metaValsCat'] = metaValsCat;
                 myDict['metaIDsCat'] = metaIDsCat;
-                myDict['DepVar_taxa'] = DepVar_taxa;
-                myDict['DepVar_kegg'] = DepVar_kegg;
-                myDict['DepVar_nz'] = DepVar_nz;
+                myDict['DepVar'] = DepVar;
                 myDict['selectAll'] = taxaAll;
                 myDict['keggAll'] = keggAll;
                 myDict['nzAll'] = nzAll;
@@ -652,7 +638,7 @@
                         <option value="2" >KEGG orthology</option>
                         <option value="3" >KEGG enzyme</option>
                     </select>
-                    &nbsp<-- Sequence mapping
+                    &nbsp;<-- Sequence mapping
                 </td>
             </tr>
             <tr id="row_taxa">
@@ -666,7 +652,7 @@
                         <option value="7" selected="selected">Species</option>
                         <option value="8">PGPRs</option>
                     </select>
-                    &nbsp<-- Taxa level
+                    &nbsp;<-- Taxa level
                 </td>
             </tr>
             <tr id="row_kegg" style="display:none">
@@ -676,7 +662,7 @@
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
                     </select>
-                    &nbsp<-- KEGG pathway level
+                    &nbsp;<-- KEGG pathway level
                 </td>
             </tr>
             <tr id="row_nz" style="display:none">
@@ -689,7 +675,28 @@
                         <option value="5">GIBBs</option>
                         <option value="6">N cycle</option>
                     </select>
-                    &nbsp<-- KEGG enzyme level
+                    &nbsp;<-- KEGG enzyme level
+                </td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <select id="DepVar">
+                        <option value="0">Abundance</option>
+                        <option value="4">Total Abundance</option>
+                    </select>
+                    &nbsp;<-- Dependent variable
+                </td>
+            </tr>
+            <tr><td colspan="3" bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
+                    &nbsp;
+                    <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
+                    &nbsp;<-- Start/stop analysis
                 </td>
             </tr>
             <tr><td colspan="3" bgcolor="white"></td></tr>
@@ -721,27 +728,7 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td id="cell_taxa" colspan="8" style="text-align: center">
-                Dependent variable:
-                <select id="DepVar_taxa">
-                    <option value="1">Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                </select>
-            </td>
-            <td id="cell_kegg" colspan="8" style="text-align: center; display: none">
-                Dependent variable:
-                <select id="DepVar_kegg">
-                    <option value="1">Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                </select>
-            </td>
-            <td id="cell_nz" colspan="8" style="text-align: center; display: none">
-                Dependent variable:
-                <select id="DepVar_nz">
-                    <option value="1">Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                </select>
-            </td>
+            <td colspan="8" style="text-align: center">
             <td colspan="4" style="text-align: center">
             <td id="FdrRow" colspan="8" style="text-align: center;">
                 False Discovery Rate:

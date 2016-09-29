@@ -792,7 +792,7 @@ def getTaxaDF(savedDF, metaDF, RID, stops, PID):
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         taxaDF.drop('sampleid', axis=1, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
 
         speciesList = taxaDF['rank_id'].tolist()
         speciesList = list(set(speciesList))
@@ -961,7 +961,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
         picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
 
         for level in levelList:
             taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
@@ -982,7 +982,7 @@ def getNZDF(metaDF, finalDF, RID, stops, PID):
         metaDF = grouped.last()
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
-        keggDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+        keggDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
         keggDF.reset_index(drop=False, inplace=True)
 
         keggDF['rank'] = ''

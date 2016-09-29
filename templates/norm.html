@@ -11,11 +11,7 @@
     {% endif %}
 {% endblock user %}
 
-{% block menu_item %}
-    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
-    <br>
-    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
-{% endblock menu_item %}
+{% block menu_item %}{% endblock menu_item %}
 
 {% block javascript %}
     <style>
@@ -445,11 +441,11 @@
 {% endblock javascript %}
 
 {% block my_content %}
+    <br>
     <div>
-        <h2>Select your normalization method:</h2>
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
-                <th bgcolor="white"></th>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Select normalization method:</em></strong></td>
             </tr>
             <tr>
                 <td  bgcolor="white">
@@ -460,7 +456,7 @@
                         <option value="4">Proportion</option>
                         <option value="5">DESeq2</option>
                     </select>
-                    &nbsp<-- Selected normalization method
+                    &nbsp<-- Normalization method
                 </td>
             </tr>
             <tr id="NormRow" style="display: none;" bgcolor="white">
@@ -482,12 +478,9 @@
                     &nbsp<-- Lambda
                 </td>
             </tr>
-        </table>
-        <br><br>
-        <h2>Select sample/species cutoffs (optional):</h2>
-        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+            <tr><td bgcolor="white"></td></tr>
             <tr>
-                <th bgcolor="white"></th>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Select sample/species cutoffs:</em></strong></td>
             </tr>
             <tr id="MinRow" bgcolor="white">
                 <td>
@@ -503,22 +496,46 @@
                     &nbsp<-- Minimum species size
                 </td>
             </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Display your output formats (optional):</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input type="checkbox" title="Click to turn on/off" id="Tabular"/>
+                    &nbsp<-- Output tabular results to DataTable
+                </td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input type="checkbox" title="Click to turn on/off" id="Biom"/>
+                    &nbsp<-- Output biom results to text area
+                </td>
+            </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run normalization:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
+                    &nbsp
+                    <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
+                    &nbsp<-- Start/stop normalization
+                </td>
+            </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Direct download of your data (optional):</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input id="TabButton" type="button" disabled value="Tabular"/>
+                    &nbsp
+                    <input id="BiomButton" type="button" disabled value="BIOM"/>
+                </td>
+            </tr>
         </table>
-        <br><br>
-
-        <h2>Display your output formats (optional):</h2>
-        <input type="checkbox" title="Click to turn on/off" id="Tabular"/>
-        &nbsp<-- Output tabular results to DataTable
-        <br>
-        <input type="checkbox" title="Click to turn on/off" id="Biom"/>
-        &nbsp<-- Output biom results to text area
-        <br><br>
-
-        <h2>Direct download of your data (optional):</h2>
-        <input id="TabButton" type="button" disabled value="Tabular"/>
-        &nbsp&nbsp&nbsp
-        <input id="BiomButton" type="button" disabled value="BIOM"/>
-        <br>
     </div>
     <br><br>
 

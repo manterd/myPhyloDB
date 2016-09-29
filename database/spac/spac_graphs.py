@@ -136,19 +136,16 @@ def getSpAC(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
-                DepVar = 1
+                DepVar = 0
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
-                    finalDF, missingList = getTaxaDF('abund', selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
-                    finalDF = getKeggDF('abund', keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
-                    finalDF = getNZDF('abund', nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
@@ -163,8 +160,10 @@ def getSpAC(request, stops, RID, PID):
                 finalDF.to_pickle(path)
 
                 count_rDF = pd.DataFrame()
-                if DepVar == 1:
+                if DepVar == 0:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+                elif DepVar == 1:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
                 elif DepVar == 2:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
                 elif DepVar == 3:

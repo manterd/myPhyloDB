@@ -80,7 +80,7 @@ def getCatUnivData(request, RID, stops, PID):
                 if button3 == 1:
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
@@ -88,12 +88,12 @@ def getCatUnivData(request, RID, stops, PID):
                 elif button3 == 2:
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF('rel_abund', keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 elif button3 == 3:
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF = getNZDF('rel_abund', nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF(nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -178,7 +178,12 @@ def getCatUnivData(request, RID, stops, PID):
                     r.assign("df", group1)
                     trtString = " * ".join(allFields)
 
-                    if DepVar == 1:
+                    if DepVar == 0:
+                        anova_string = "fit <- aov(df$abund ~ " + str(trtString) + ", data=df)"
+                        r.assign("cmd", anova_string)
+                        r("eval(parse(text=cmd))")
+
+                    elif DepVar == 1:
                         anova_string = "fit <- aov(df$rel_abund ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
@@ -275,14 +280,16 @@ def getCatUnivData(request, RID, stops, PID):
                     result += 'Level: ' + str(name1[0]) + '\n'
                     result += 'Name: ' + str(name1[1]) + '\n'
                     result += 'ID: ' + str(name1[2]) + '\n'
-                    if DepVar == 1:
+                    if DepVar == 0:
+                        result += 'Dependent Variable: Abundance' + '\n'
+                    elif DepVar == 1:
                         result += 'Dependent Variable: Relative Abundance' + '\n'
                     elif DepVar == 2:
                         result += 'Dependent Variable: Species Richness' + '\n'
                     elif DepVar == 3:
                         result += 'Dependent Variable: Species Diversity' + '\n'
                     elif DepVar == 4:
-                        result += 'Dependent Variable: Total Abundance (rRNA gene copies)' + '\n'
+                        result += 'Dependent Variable: Total Abundance' + '\n'
 
                     result += '\nANCOVA table:\n'
                     D = D.decode('utf-8')
@@ -309,7 +316,10 @@ def getCatUnivData(request, RID, stops, PID):
                     pValue = pValDict[name1]
 
                     if sig_only == 0:
-                        if DepVar == 1:
+                        if DepVar == 0:
+                            grouped2 = group1.groupby(catFields)['abund'].mean()
+                            dataList = list(grouped2)
+                        elif DepVar == 1:
                             grouped2 = group1.groupby(catFields)['rel_abund'].mean()
                             dataList = list(grouped2)
                         elif DepVar == 2:
@@ -330,7 +340,10 @@ def getCatUnivData(request, RID, stops, PID):
 
                     elif sig_only == 1:
                         if pValue < 0.05:
-                            if DepVar == 1:
+                            if DepVar == 0:
+                                grouped2 = group1.groupby(catFields)['abund'].mean()
+                                dataList = list(grouped2)
+                            elif DepVar == 1:
                                 grouped2 = group1.groupby(catFields)['rel_abund'].mean()
                                 dataList = list(grouped2)
                             elif DepVar == 2:
@@ -359,7 +372,9 @@ def getCatUnivData(request, RID, stops, PID):
                     if colors_idx >= len(colors):
                         colors_idx = 0
 
-                    if DepVar == 1:
+                    if DepVar == 0:
+                        grouped2 = group1.groupby(catFields)['abund'].mean()
+                    elif DepVar == 1:
                         grouped2 = group1.groupby(catFields)['rel_abund'].mean()
                     elif DepVar == 4:
                         grouped2 = group1.groupby(catFields)['abund_16S'].mean()
@@ -383,14 +398,16 @@ def getCatUnivData(request, RID, stops, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 yTitle = {}
-                if DepVar == 1:
+                if DepVar == 0:
+                    yTitle['text'] = 'Abundance'
+                elif DepVar == 1:
                     yTitle['text'] = 'Relative Abundance'
                 elif DepVar == 2:
                     yTitle['text'] = 'Species Richness'
                 elif DepVar == 3:
                     yTitle['text'] = 'Species Diversity'
                 elif DepVar == 4:
-                    yTitle['text'] = 'Total Abundance (rRNA gene copies)'
+                    yTitle['text'] = 'Total Abundance'
                 yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
 
                 if transform != 0:
@@ -550,7 +567,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 if button3 == 1:
                     taxaString = all["taxa"]
                     taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
@@ -558,12 +575,12 @@ def getQuantUnivData(request, RID, stops, PID):
                 if button3 == 2:
                     keggString = all["kegg"]
                     keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF, missingList = getKeggDF('rel_abund', keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF, missingList = getNZDF('rel_abund', nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getNZDF(nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -645,7 +662,11 @@ def getQuantUnivData(request, RID, stops, PID):
                     r.assign("df", group1)
 
                     trtString = " * ".join(allFields)
-                    if DepVar == 1:
+                    if DepVar == 0:
+                        anova_string = "fit <- lm(abund ~ " + str(trtString) + ", data=df)"
+                        r.assign("cmd", anova_string)
+                        r("eval(parse(text=cmd))")
+                    elif DepVar == 1:
                         anova_string = "fit <- lm(rel_abund ~ " + str(trtString) + ", data=df)"
                         r.assign("cmd", anova_string)
                         r("eval(parse(text=cmd))")
@@ -693,14 +714,16 @@ def getQuantUnivData(request, RID, stops, PID):
                     result += 'Level: ' + str(name1[0]) + '\n'
                     result += 'Name: ' + str(name1[1]) + '\n'
                     result += 'ID: ' + str(name1[2]) + '\n'
-                    if DepVar == 1:
+                    if DepVar == 0:
+                        result += 'Dependent Variable: Abundance' + '\n'
+                    elif DepVar == 1:
                         result += 'Dependent Variable: Relative Abundance' + '\n'
                     elif DepVar == 2:
                         result += 'Dependent Variable: Species Richness' + '\n'
                     elif DepVar == 3:
                         result += 'Dependent Variable: Species Diversity' + '\n'
                     elif DepVar == 4:
-                        result += 'Dependent Variable: Total Abundance (rRNA gene copies)' + '\n'
+                        result += 'Dependent Variable: Total Abundance' + '\n'
 
                     result += '\nANCOVA table:\n'
                     D = D.decode('utf-8')
@@ -746,7 +769,10 @@ def getQuantUnivData(request, RID, stops, PID):
                                 dataList = []
                                 x = []
                                 y = []
-                                if DepVar == 1:
+                                if DepVar == 0:
+                                    x = group2[quantFields[0]].values.astype(float).tolist()
+                                    y = group2['abund'].values.astype(float).tolist()
+                                elif DepVar == 1:
                                     x = group2[quantFields[0]].values.astype(float).tolist()
                                     y = group2['rel_abund'].values.astype(float).tolist()
                                 elif DepVar == 2:
@@ -759,7 +785,14 @@ def getQuantUnivData(request, RID, stops, PID):
                                     x = group2[quantFields[0]].values.astype(float).tolist()
                                     y = group2['abund_16S'].values.astype(float).tolist()
 
-                                if DepVar == 1:
+                                if DepVar == 0:
+                                    for index, row in group2.iterrows():
+                                        dataDict = {}
+                                        dataDict['name'] = row['sample_name']
+                                        dataDict['x'] = float(row[quantFields[0]])
+                                        dataDict['y'] = float(row['abund'])
+                                        dataList.append(dataDict)
+                                elif DepVar == 1:
                                     for index, row in group2.iterrows():
                                         dataDict = {}
                                         dataDict['name'] = row['sample_name']
@@ -833,7 +866,10 @@ def getQuantUnivData(request, RID, stops, PID):
                             dataList = []
                             x = []
                             y = []
-                            if DepVar == 1:
+                            if DepVar == 0:
+                                x = group1[quantFields[0]].values.astype(float).tolist()
+                                y = group1['abund'].values.astype(float).tolist()
+                            elif DepVar == 1:
                                 x = group1[quantFields[0]].values.astype(float).tolist()
                                 y = group1['rel_abund'].values.astype(float).tolist()
                             elif DepVar == 2:
@@ -846,7 +882,14 @@ def getQuantUnivData(request, RID, stops, PID):
                                 x = group1[quantFields[0]].values.astype(float).tolist()
                                 y = group1['abund_16S'].values.astype(float).tolist()
 
-                            if DepVar == 1:
+                            if DepVar == 0:
+                                for index, row in group1.iterrows():
+                                    dataDict = {}
+                                    dataDict['name'] = row['sample_name']
+                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['y'] = float(row['abund'])
+                                    dataList.append(dataDict)
+                            elif DepVar == 1:
                                 for index, row in group1.iterrows():
                                     dataDict = {}
                                     dataDict['name'] = row['sample_name']
@@ -920,7 +963,10 @@ def getQuantUnivData(request, RID, stops, PID):
                                     dataList = []
                                     x = []
                                     y = []
-                                    if DepVar == 1:
+                                    if DepVar == 0:
+                                        x = group2[quantFields[0]].values.astype(float).tolist()
+                                        y = group2['abund'].values.astype(float).tolist()
+                                    elif DepVar == 1:
                                         x = group2[quantFields[0]].values.astype(float).tolist()
                                         y = group2['rel_abund'].values.astype(float).tolist()
                                     elif DepVar == 2:
@@ -933,7 +979,14 @@ def getQuantUnivData(request, RID, stops, PID):
                                         x = group2[quantFields[0]].values.astype(float).tolist()
                                         y = group2['abund_16S'].values.astype(float).tolist()
 
-                                    if DepVar == 1:
+                                    if DepVar == 0:
+                                        for index, row in group2.iterrows():
+                                            dataDict = {}
+                                            dataDict['name'] = row['sample_name']
+                                            dataDict['x'] = float(row[quantFields[0]])
+                                            dataDict['y'] = float(row['abund'])
+                                            dataList.append(dataDict)
+                                    elif DepVar == 1:
                                         for index, row in group2.iterrows():
                                             dataDict = {}
                                             dataDict['name'] = row['sample_name']
@@ -1007,7 +1060,10 @@ def getQuantUnivData(request, RID, stops, PID):
                                 dataList = []
                                 x = []
                                 y = []
-                                if DepVar == 1:
+                                if DepVar == 0:
+                                    x = group1[quantFields[0]].values.astype(float).tolist()
+                                    y = group1['rel_abund'].values.astype(float).tolist()
+                                elif DepVar == 1:
                                     x = group1[quantFields[0]].values.astype(float).tolist()
                                     y = group1['rel_abund'].values.astype(float).tolist()
                                 elif DepVar == 2:
@@ -1020,7 +1076,14 @@ def getQuantUnivData(request, RID, stops, PID):
                                     x = group1[quantFields[0]].values.astype(float).tolist()
                                     y = group1['abund_16S'].values.astype(float).tolist()
 
-                                if DepVar == 1:
+                                if DepVar == 0:
+                                    for index, row in group1.iterrows():
+                                        dataDict = {}
+                                        dataDict['name'] = row['sample_name']
+                                        dataDict['x'] = float(row[quantFields[0]])
+                                        dataDict['y'] = float(row['rel_abund'])
+                                        dataList.append(dataDict)
+                                elif DepVar == 1:
                                     for index, row in group1.iterrows():
                                         dataDict = {}
                                         dataDict['name'] = row['sample_name']
@@ -1104,14 +1167,16 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 yAxisDict = {}
                 yTitle = {}
-                if DepVar == 1:
+                if DepVar == 0:
+                    yTitle['text'] = 'Abundance'
+                elif DepVar == 1:
                     yTitle['text'] = 'Relative Abundance'
                 elif DepVar == 2:
                     yTitle['text'] = 'Species Richness'
                 elif DepVar == 3:
                     yTitle['text'] = 'Shannon Diversity'
                 elif DepVar == 4:
-                    yTitle['text'] = 'Total Abundance (rRNA gene copies)'
+                    yTitle['text'] = 'Total Abundance'
                 yAxisDict['title'] = yTitle
 
                 if transform != 0:

@@ -121,16 +121,16 @@ def getSPLS(request, stops, RID, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, quantFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
@@ -158,18 +158,22 @@ def getSPLS(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 3 of 5: Calculating sPLS...')
 
-                if DepVar == 1:
+                if DepVar == 0:
+                    result += 'Dependent Variable: Abundance' + '\n'
+                elif DepVar == 1:
                     result += 'Dependent Variable: Relative Abundance' + '\n'
                 elif DepVar == 2:
                     result += 'Dependent Variable: Species Richness' + '\n'
                 elif DepVar == 3:
                     result += 'Dependent Variable: Species Diversity' + '\n'
                 elif DepVar == 4:
-                    result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
+                    result += 'Dependent Variable: Total Abundance' + '\n'
                 result += '\n===============================================\n'
 
                 count_rDF = pd.DataFrame()
-                if DepVar == 1:
+                if DepVar == 0:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+                elif DepVar == 1:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
                 elif DepVar == 2:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
@@ -504,7 +508,7 @@ def getSPLS(request, stops, RID, PID):
                         os.makedirs('myPhyloDB/media/temp/spls/Rplots')
 
                     height = 2.5 + 0.2*row
-                    width = 4 + 0.2*(col-1)
+                    width = 5 + 0.2*(col-1)
                     file = "pdf('myPhyloDB/media/temp/spls/Rplots/" + str(RID) + ".spls.pdf', height=" + str(height) + ", width=" + str(width) + ", onefile=FALSE)"
                     r.assign("cmd", file)
                     r("eval(parse(text=cmd))")

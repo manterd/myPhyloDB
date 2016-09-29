@@ -19,96 +19,96 @@ LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def getTaxaDF(abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
+def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     try:
         missingList = []
-        taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', abund, 'abund_16S', 'rich', 'diversity'])
+        taxaDF = pd.DataFrame(columns=['sampleid', 'rank', 'rank_id', 'rank_name', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'])
         if selectAll == 0:
             for key in taxaDict:
                 taxaList = taxaDict[key]
                 if isinstance(taxaList, str):
                     if key == 'Kingdom':
                         tempDF = savedDF.loc[savedDF['kingdomid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'kingdomid': 'rank_id', 'kingdomName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Kingdom'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Phyla':
                         tempDF = savedDF.loc[savedDF['phylaid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Phyla'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Class':
                         tempDF = savedDF.loc[savedDF['classid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'classid', 'className', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'classid', 'className', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Class'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Order':
                         tempDF = savedDF.loc[savedDF['orderid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'orderid', 'orderName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'orderid', 'orderName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Order'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Family':
                         tempDF = savedDF.loc[savedDF['familyid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'familyid', 'familyName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'familyid', 'familyName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Family'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Genus':
                         tempDF = savedDF.loc[savedDF['genusid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'genusid', 'genusName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'genusid', 'genusName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Genus'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Species':
                         tempDF = savedDF.loc[savedDF['speciesid'] == taxaList]
-                        tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Species'
                         taxaDF = taxaDF.append(tempDF)
                 else:
                     if key == 'Kingdom':
                         tempDF = savedDF.loc[savedDF['kingdomid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'kingdomid': 'rank_id', 'kingdomName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Kingdom'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Phyla':
                         tempDF = savedDF.loc[savedDF['phylaid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'phylaid', 'phylaName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Phyla'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Class':
                         tempDF = savedDF.loc[savedDF['classid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'classid', 'className', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'classid', 'className', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Class'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Order':
                         tempDF = savedDF.loc[savedDF['orderid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'orderid', 'orderName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'orderid', 'orderName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Order'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Family':
                         tempDF = savedDF.loc[savedDF['familyid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'familyid', 'familyName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'familyid', 'familyName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Family'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Genus':
                         tempDF = savedDF.loc[savedDF['genusid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'genusid', 'genusName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'genusid', 'genusName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Genus'
                         taxaDF = taxaDF.append(tempDF)
                     elif key == 'Species':
                         tempDF = savedDF.loc[savedDF['speciesid'].isin(taxaList)]
-                        tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', abund, 'abund_16S', 'rich', 'diversity']]
+                        tempDF = tempDF[['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Species'
                         taxaDF = taxaDF.append(tempDF)
@@ -120,35 +120,35 @@ def getTaxaDF(abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RI
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif selectAll == 1:
-            taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', abund, 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'kingdomid', 'kingdomName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'kingdomid': 'rank_id', 'kingdomName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Kingdom'
         elif selectAll == 2:
-            taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', abund, 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'phylaid', 'phylaName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'phylaid': 'rank_id', 'phylaName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Phyla'
         elif selectAll == 3:
-            taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', abund, 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'classid', 'className', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'classid': 'rank_id', 'className': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Class'
         elif selectAll == 4:
-            taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', abund, 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'orderid', 'orderName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'orderid': 'rank_id', 'orderName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Order'
         elif selectAll == 5:
-            taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', abund, 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'familyid', 'familyName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'familyid': 'rank_id', 'familyName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Family'
         elif selectAll == 6:
-            taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', abund, 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Genus'
         elif selectAll == 7:
-            taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', abund, 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Species'
         elif selectAll == 8:
-            taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', abund, 'abund_16S', 'rich', 'diversity']]
+            taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
             pgprList = ['Actinomyces', 'Arthrobacter', 'Azospirillum', 'Bacillus', 'Burkholderia', 'Enterobacter', 'Mitsuaria', 'Pasteuria', 'Pseudomonas', 'Rhizobium']
             taxaDF = taxaDF.loc[taxaDF['rank_name'].isin(pgprList)]
@@ -167,8 +167,10 @@ def getTaxaDF(abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RI
         finalDF.reset_index(drop=False, inplace=True)
 
         wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
-        if DepVar == 1:
-            finalDF = finalDF.groupby(wantedList)[[abund]].sum()
+        if DepVar == 0:
+            finalDF = finalDF.groupby(wantedList)[['abund']].sum()
+        elif DepVar == 1:
+            finalDF = finalDF.groupby(wantedList)[['rel_abund']].sum()
         elif DepVar == 4:
             finalDF = finalDF.groupby(wantedList)[['abund_16S']].sum()
             finalDF['abund_16S'] = finalDF['abund_16S'].astype(int)
@@ -190,7 +192,7 @@ def getTaxaDF(abund, selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RI
             return HttpResponse(res, content_type='application/json')
 
 
-def getKeggDF(abund, keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
+def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
     try:
         koDict = {}
         if keggAll == 0:
@@ -284,7 +286,7 @@ def getKeggDF(abund, keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID,
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', abund, 'abund_16S']
+        wanted = ['sampleid', 'speciesid', 'rel_abund', 'abund_16S']
         profileDF = savedDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -305,15 +307,17 @@ def getKeggDF(abund, keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID,
         picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
 
         for level in levelList:
-            if DepVar == 1:
-                taxaDF[level] = taxaDF[abund] * taxaDF[level]
+            if DepVar == 0:
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
+            elif DepVar == 1:
+                taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
             elif DepVar == 2:
-                taxaDF[level] = np.where(taxaDF[abund] * taxaDF[level] > 0, 1, 0)
+                taxaDF[level] = np.where(taxaDF['abund'] * taxaDF[level] > 0, 1, 0)
             elif DepVar == 3:
-                taxaDF[level] = taxaDF[abund] * taxaDF[level]
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
                 taxaDF[level] = taxaDF[level].div(taxaDF[level].sum(), axis=0)
                 taxaDF[level] = taxaDF[level].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
             elif DepVar == 4:
@@ -328,8 +332,10 @@ def getKeggDF(abund, keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID,
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
 
-        if DepVar == 1:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name=abund)
+        if DepVar == 0:
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
+        elif DepVar == 1:
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='rel_abund')
         elif DepVar == 2:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='rich')
         elif DepVar == 3:
@@ -344,7 +350,7 @@ def getKeggDF(abund, keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID,
         metaDF = grouped.last()
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
         finalDF.reset_index(drop=False, inplace=True)
 
         finalDF['rank'] = ''
@@ -381,7 +387,7 @@ def getKeggDF(abund, keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID,
             return HttpResponse(res, content_type='application/json')
 
 
-def getNZDF(abund, nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
+def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
     try:
         nzDict = {}
         if nzAll == 0:
@@ -622,7 +628,7 @@ def getNZDF(abund, nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops
             nzDict[id] = idList
 
         # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', abund, 'abund_16S']
+        wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S']
         profileDF = savedDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -643,14 +649,17 @@ def getNZDF(abund, nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops
         picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
+
         for level in levelList:
-            if DepVar == 1:
-                taxaDF[level] = taxaDF[abund] * taxaDF[level]
+            if DepVar == 0:
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
+            elif DepVar == 1:
+                taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
             elif DepVar == 2:
-                taxaDF[level] = np.where(taxaDF[abund] * taxaDF[level] > 0, 1, 0)
+                taxaDF[level] = np.where(taxaDF['abund'] * taxaDF[level] > 0, 1, 0)
             elif DepVar == 3:
-                taxaDF[level] = taxaDF[abund] * taxaDF[level]
+                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
                 taxaDF[level] = taxaDF[level].div(taxaDF[level].sum(), axis=0)
                 taxaDF[level] = taxaDF[level].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
             elif DepVar == 4:
@@ -665,8 +674,10 @@ def getNZDF(abund, nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
 
-        if DepVar == 1:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name=abund)
+        if DepVar == 0:
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
+        elif DepVar == 1:
+            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='rel_abund')
         elif DepVar == 2:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='rich')
         elif DepVar == 3:
@@ -681,7 +692,7 @@ def getNZDF(abund, nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops
         metaDF = grouped.last()
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
         finalDF.reset_index(drop=False, inplace=True)
 
         finalDF['rank'] = ''

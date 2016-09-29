@@ -112,6 +112,7 @@ def getGAGE(request, stops, RID, PID):
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
+
                 database.queue.setBase(RID, 'Step 3 of 5: Performing GAGE analysis...')
 
                 # save location info to session
@@ -124,7 +125,7 @@ def getGAGE(request, stops, RID, PID):
                 finalDF.to_pickle(path)
 
                 count_rDF = pd.DataFrame()
-                if DepVar == 1:
+                if DepVar == 0:
                     finalDF['abund'] = finalDF['abund'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
                 elif DepVar == 4:
@@ -166,10 +167,10 @@ def getGAGE(request, stops, RID, PID):
                 r("dds <- estimateDispersions(dds)")
                 r("dds <- nbinomWaldTest(dds)")
 
-                if DepVar == 1:
-                    result += 'Dependent Variable: Relative Abundance' + '\n'
+                if DepVar == 0:
+                    result += 'Dependent Variable: Abundance' + '\n'
                 elif DepVar == 4:
-                    result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
+                    result += 'Dependent Variable: Total Abundance' + '\n'
                 result += '\n===============================================\n\n\n'
 
                 levels = list(set(metaDF['merge'].tolist()))
@@ -320,7 +321,7 @@ def getGAGE(request, stops, RID, PID):
 def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
     try:
         # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'abund', 'abund_16S']
+        wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S']
         profileDF = savedDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -365,10 +366,10 @@ def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
         picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
 
         for key in finalKeys:
-            if DepVar == 1:
+            if DepVar == 0:
                 taxaDF[key] = taxaDF['abund'] * taxaDF[key]
             elif DepVar == 4:
                 taxaDF[key] = taxaDF['abund_16S'] * taxaDF[key]
@@ -382,7 +383,7 @@ def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
         taxaDF = taxaDF.groupby('sampleid')[finalKeys].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
 
-        if DepVar == 1:
+        if DepVar == 0:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 4:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')

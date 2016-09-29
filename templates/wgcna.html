@@ -11,11 +11,7 @@
     {% endif %}
 {% endblock user %}
 
-{% block menu_item %}
-    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
-    <br>
-    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
-{% endblock menu_item %}
+{% block menu_item %}{% endblock menu_item %}
 
 {% block javascript %}
     <style>
@@ -26,7 +22,7 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar = 1, selTheme = 0;
+        var DepVar = 0, selTheme = 0;
         var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
         var display = 1;
         var catOptions = {};
@@ -744,13 +740,26 @@
         </tr>
         <tr>
             <td bgcolor="white">
+                <select id="DepVar">
+                    <option value="0" selected="selected">Abundance</option>
+                    <option value="1">Relative Abundance</option>
+                    <option value="4">Total Abundance</option>
+                    <option value="2">Species Richness</option>
+                    <option value="3">Species Diversity</option>
+                </select>
+                &nbsp<-- Dependent variable
+            </td>
+            <td bgcolor="white" width="50px"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white">
                 <select id="transform">
                     <option value="0" selected="selected">None</option>
-                    <!--<option value="1">Ln</option>
+                    <option value="1">Ln</option>
                     <option value="2">Log10</option>
-                    <option value="3">Sqrt</option>-->
-                    <option value="4">Logit</option>
-                    <option value="5">Arcsin</option>
+                    <option value="3">Sqrt</option>
+                    <!--<option value="4">Logit</option>
+                    <option value="5">Arcsin</option>-->
                 </select>
                 &nbsp<-- Raw data transformation
             </td>
@@ -882,6 +891,18 @@
                 </tr>
                 <tr><td colspan="2" bgcolor="white"></td></tr>
                 <tr>
+                    <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
+                </tr>
+                <tr>
+                    <td bgcolor="white" colspan="2">
+                        <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
+                        &nbsp;
+                        <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
+                        &nbsp<-- Start/stop analysis
+                    </td>
+                </tr>
+                <tr><td colspan="2" bgcolor="white"></td></tr>
+                <tr>
                     <td bgcolor="lightgray" colspan="2" style="outline: thin solid">
                         <strong><em>Export Raw Data:</em></strong>
                     </td>
@@ -918,13 +939,7 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td id="cell_taxa" colspan="8" style="text-align: center">
-                Dependent variable:
-                <select id="DepVar">
-                    <option value="1">Relative Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                </select>
-            </td>
+            <td id="cell_taxa" colspan="8" style="text-align: center"></td>
             <td colspan="4" style="text-align: center"></td>
             <td colspan="8" style="text-align: center"></td>
         </tr>

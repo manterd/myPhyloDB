@@ -85,13 +85,7 @@ def getDiffAbund(request, stops, RID, PID):
                 metaIDsQuant = []
 
                 button3 = int(all['button3'])
-                DepVar = 1
-                if button3 == 1:
-                    DepVar = int(all["DepVar_taxa"])
-                elif button3 == 2:
-                    DepVar = int(all["DepVar_kegg"])
-                elif button3 == 3:
-                    DepVar = int(all["DepVar_nz"])
+                DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
@@ -128,17 +122,16 @@ def getDiffAbund(request, stops, RID, PID):
                 # get selected taxa fro each rank selected in the tree
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    finalDF, missingList = getTaxaDF('abund', selectAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('abund', keggAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('abund', nzAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
-
+                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -153,7 +146,7 @@ def getDiffAbund(request, stops, RID, PID):
                 finalDF.to_pickle(path)
 
                 count_rDF = pd.DataFrame()
-                if DepVar == 1:
+                if DepVar == 0:
                     finalDF['abund'] = finalDF['abund'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
                 elif DepVar == 4:
@@ -196,6 +189,12 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                if DepVar == 0:
+                    result += 'Dependent Variable: Abundance' + '\n'
+                elif DepVar == 4:
+                    result += 'Dependent Variable: Total Abundance' + '\n'
+                result += '\n===============================================\n\n\n'
+
                 r("library(DESeq2)")
                 r("colData <- data.frame(row.names=colnames(count), trt=trt)")
                 r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design = ~ trt)")
@@ -204,16 +203,6 @@ def getDiffAbund(request, stops, RID, PID):
                 r("dds$sizeFactor <- sizeFactor")
                 r("dds <- estimateDispersions(dds)")
                 r("dds <- nbinomWaldTest(dds)")
-
-                if DepVar == 1:
-                    result += 'Dependent Variable: Abundance' + '\n'
-                elif DepVar == 2:
-                    result += 'Dependent Variable: Species Richness' + '\n'
-                elif DepVar == 3:
-                    result += 'Dependent Variable: Species Diversity' + '\n'
-                elif DepVar == 4:
-                    result += 'Dependent Variable: Abundance (rRNA gene copies)' + '\n'
-                result += '\n===============================================\n\n\n'
 
                 mergeList = metaDF['merge'].tolist()
                 mergeSet = list(set(mergeList))

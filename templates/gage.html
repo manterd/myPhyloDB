@@ -11,11 +11,7 @@
     {% endif %}
 {% endblock user %}
 
-{% block menu_item %}
-    <p><input id="run" type="submit" value="Run Analysis!" style="background-color: lightgray"/></p>
-    <br>
-    <p><input id="stop" type="submit" value="Stop Analysis!" style="background-color: lightgray"/></p>
-{% endblock menu_item %}
+{% block menu_item %}{% endblock menu_item %}
 
 {% block javascript %}
     <style>
@@ -26,7 +22,7 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar = 1, i = 0;
+        var DepVar = 0, i = 0;
         var nodesCat = "", nodesKEGG = "";
         var chart1 = {};
         var catOptions = {};
@@ -136,6 +132,10 @@
                     series.update(series.options);
                     chart1.redraw();
                 }
+            });
+
+            $("#TabButton").click(function () {
+                getTab();
             });
 
             // Start stop and other 'click' functions
@@ -557,6 +557,41 @@
                 </td>
             </tr>
         </table>
+        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data selection:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <select id="DepVar">
+                        <option value="0" selected="selected">Abundance</option>
+                        <option value="4">Total Abundance</option>
+                    </select>
+                    &nbsp<-- Dependent variable
+                </td>
+            </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
+                    &nbsp;
+                    <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
+                    &nbsp<-- Start/stop analysis
+                </td>
+            </tr>
+            <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input id="TabButton" type="button" disabled value="Export Data"/>
+                </td>
+            </tr>
+        </table>
     </div>
     <br><br>
     <table width="950px" border="2" style="table-layout: fixed">
@@ -576,13 +611,7 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td id="cell" colspan="8" style="text-align: center">
-                Dependent variable:
-                <select id="DepVar">
-                    <option value="1">Abundance</option>
-                    <option value="4">Abundance (rRNA gene copies)</option>
-                </select>
-            </td>
+            <td colspan="8" style="text-align: center"></td>
             <td colspan="4" style="text-align: center">
             <td colspan="8" style="text-align: center;"></td>
         </tr>

@@ -154,16 +154,16 @@ def getWGCNA(request, stops, RID, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    finalDF, missingList = getTaxaDF('rel_abund', selectAll, '', savedDF, metaDF, catFields,DepVar, RID, stops, PID)
+                    finalDF, missingList = getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF('rel_abund', keggAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF('rel_abund', nzAll, '', savedDF, metaDF, catFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -183,7 +183,9 @@ def getWGCNA(request, stops, RID, PID):
                 finalDF.to_pickle(path)
 
                 count_rDF = pd.DataFrame()
-                if DepVar == 1:
+                if DepVar == 0:
+                    count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+                elif DepVar == 1:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
                 elif DepVar == 2:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
@@ -660,14 +662,13 @@ def getWGCNA(request, stops, RID, PID):
 
                 r("layout <- paste('layout', graphLayout, sep='.')")
                 r("l <- do.call(layout, list(nnet))")
-                r('path')
                 r("pdf(paste(path, '/wgcna_temp', pdf_counter, '.pdf', sep=''), height=8, width=8)")
                 r("pdf_counter <- pdf_counter + 1")
                 r("p <- plot(nnet, \
                     main='Eigengene Network', \
                     edge.color='gray', \
                     edge.arrow.size=0, \
-                    edge.width=edgeDF$weight / max(edgeDF$weight) * 5, \
+                    edge.width=edgeDF$weight / max(edgeDF$weight) * 10, \
                     edge.label=NA, \
                     edge.label.cex=0.7, \
                     edge.label.color='blue', \
@@ -675,8 +676,8 @@ def getWGCNA(request, stops, RID, PID):
                     vertex.label=paste(nodeDF$altName), \
                     vertex.label.cex=0.7, \
                     vertex.label.color='black', \
-                    vertex.frame.color=adjustcolor('black', alpha=0.75), \
-                    vertex.color=adjustcolor(nodeDF$nodeAttr, alpha=0.75), \
+                    vertex.frame.color=adjustcolor('gray', alpha=0.95), \
+                    vertex.color=adjustcolor(nodeDF$nodeAttr, alpha=0.95), \
                     layout=l, \
                 )")
                 r("dev.off()")
