@@ -262,12 +262,20 @@ def getPCoA(request, stops, RID, PID):
                 pcoaDF = pd.DataFrame()
                 eigDF = pd.DataFrame()
                 bigf = ''
-                envFit = ''
+                r.assign("PC1", PC1)
+                r.assign("PC2", PC2)
+
                 if trtLength > 0:
                     r.assign("meta", metaDF)
                     pcoa_string = "ord <- capscale(dist ~ " + str(trtString) + ", meta)"
                     r.assign("cmd", pcoa_string)
                     r("eval(parse(text=cmd))")
+
+                    if quantFields:
+                        trtString = " + ".join(quantFields)
+                        envfit_str = "ef <- envfit(ord ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
+                        r.assign("cmd", envfit_str)
+                        r("eval(parse(text=cmd))")
 
                     r("res <- summary(ord)")
                     r("id <- rownames(meta)")
@@ -329,8 +337,6 @@ def getPCoA(request, stops, RID, PID):
                         r("ordi.mat <- data.frame(na.omit(ordi.mat))")
 
                     # extract data and create dataframe for plotting
-                    r.assign("PC1", PC1)
-                    r.assign("PC2", PC2)
                     r("indDF <- data.frame( \
                         x=as.vector(scores(ord, choices=c(PC1), display=c('sites'))), \
                         y=as.vector(scores(ord, choices=c(PC2), display=c('sites'))), \
@@ -370,15 +376,6 @@ def getPCoA(request, stops, RID, PID):
                         r("p <- p + scale_color_brewer(palette=myPalette)")
                         r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
 
-                    r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
-                    r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
-
-                    r("p <- p + ggtitle('Principal Coordinates Analysis')")
-                    r.assign("PerExp1", eigDF.iloc[1, PC1] * 100.0)
-                    r.assign("PerExp2", eigDF.iloc[1, PC2] * 100.0)
-                    r("p <- p + xlab(paste('Dim.', PC1, ' (', round(PerExp1, 1), '%)', sep=''))")
-                    r("p <- p + ylab(paste('Dim.', PC2, ' (', round(PerExp2, 1), '%)', sep=''))")
-
                     if not surfVal == 'None':
                         r('library(data.table)')
                         r("p <- p + stat_contour(data=ordi.mat, aes(x, y, z=z, label=..level..), color='red')")
@@ -388,23 +385,41 @@ def getPCoA(request, stops, RID, PID):
                         r("tmp <- unique(DT, by='level', fromLast=TRUE)")
                         r("p <- p + geom_text(aes(label=level, z=NULL), data=tmp)")
 
+                    if quantFields:
+                        # create dataframe from envfit for export and adding to biplot
+                        r('efDF <- as.data.frame(ef$vectors$arrows)')
+                        r('efDF$p <- ef$vectors$pvals')
+                        r('efDF$label <- row.names(efDF)')
+                        r('names(efDF) <- c("PC1", "PC2", "p", "label")')
+
+                        # scale and remove non-significant objects
+                        r('efDF.adj <- efDF[efDF$p < 0.05,]')
+                        r('xrange <- layer_scales(p)$x$range$range')
+                        r('yrange <-layer_scales(p)$y$range$range')
+                        r('efDF.adj[PC1] <- efDF.adj[PC1] * min(abs(xrange))')
+                        r('efDF.adj[PC2] <- efDF.adj[PC2] * min(abs(yrange))')
+
+                        r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=PC1, yend=PC2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
+                        r("p <- p + geom_text(data=efDF.adj, aes(x=PC1, y=PC2, label=label, vjust=ifelse(PC2 >= 0, -1, 2)), size=3, color='red')")
+
+                        # send data to result string
+                        envfit = r("ef$vectors")
+                        result += 'Regression of quantitative variables with ordination axes (e.g., envfit)\n'
+                        result += str(envfit) + '\n'
+                        result += '===============================================\n'
+
+                    r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
+                    r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
+
+                    r("p <- p + ggtitle('Principal Coordinates Analysis')")
+                    r.assign("PerExp1", eigDF.iloc[1, PC1] * 100.0)
+                    r.assign("PerExp2", eigDF.iloc[1, PC2] * 100.0)
+                    r("p <- p + xlab(paste('Dim.', PC1, ' (', round(PerExp1, 1), '%)', sep=''))")
+                    r("p <- p + ylab(paste('Dim.', PC2, ' (', round(PerExp2, 1), '%)', sep=''))")
+
                     r("print(p)")
 
                     r("dev.off()")
-
-                    if len(quantFields) > 0:
-                        trtString = " + ".join(quantFields)
-                        envfit_str = "fit <- envfit(ord ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
-                        r.assign("cmd", envfit_str)
-                        r("eval(parse(text=cmd))")
-
-                        fit_out = r("fit")
-                        fit_out = fit_out.replace('try({fit})', '')
-                        fit_out = fit_out.replace('***VECTORS', '')
-                        tempStuff = fit_out.split('\n')
-                        for part in tempStuff:
-                            if part > tempStuff[1]:
-                                envFit += part + '\n'
 
                     database.queue.setBase(RID, 'Step 4 of 8: Principal coordinates analysis...done!')
 
@@ -599,12 +614,6 @@ def getPCoA(request, stops, RID, PID):
                 else:
                     bigf = bigf.decode('utf-8')
                     result += bigf + '\n'
-                result += '===============================================\n'
-
-                if len(catFields) > 0:
-                    result += '\nenvfit results:\n'
-                    envFit = envFit.decode('utf-8')
-                    result += envFit
                 result += '===============================================\n'
 
                 result += '\nEigenvalues\n'

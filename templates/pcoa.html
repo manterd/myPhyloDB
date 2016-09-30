@@ -183,7 +183,7 @@
                 chooseData();
             });
 
-           $("#stop").show().click(function () {
+            $("#stop").show().click(function () {
                 running = false;
                 stopThis(RID);
             });
@@ -281,7 +281,6 @@
                 checkButtons();
             });
 
-
             $("#perms").change(function () {
                 checkButtons();
             });
@@ -304,7 +303,6 @@
 
             $("#graphDisplay").change(function () {
                 display = $(this).val();
-                //checkButtons();
                 chooseDisplay();
             });
 
@@ -406,7 +404,6 @@
                 ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
             anchor.dispatchEvent(ev);
         }
-
 
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
@@ -713,6 +710,7 @@
             var vals = '';
             var id = '';
             var ids = '';
+
             for (var i = 0; i < nodesQuant.length; i++) {
                 if (nodesQuant[i].getLevel() == 5) {
                     if ((nodesQuant[i].data.table == 'mimark') || (nodesQuant[i].data.table == 'user')) {
@@ -737,6 +735,7 @@
                     }
                 }
             }
+
             for (var i = 0; i < nodesCat.length; i++) {
                 if (nodesCat[i].getLevel() == 5) {
                     if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
@@ -785,22 +784,18 @@
             var metaVals = '';
             if ((nodesCat.length > 0) && (nodesQuant.length > 0)) {
                 metaVals = "{" + arrayValsCat.join(",") + "," + arrayValsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
+            } else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
                 metaVals = "{" + arrayValsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
+            } else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
                 metaVals = "{" + arrayValsCat.join(",") + "}";
             }
 
             var metaIDs = '';
             if ((nodesCat.length > 0) && (nodesQuant.length > 0)) {
                 metaIDs = "{" + arrayIDsCat.join(",") + "," + arrayIDsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
+            } else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
                 metaIDs = "{" + arrayIDsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
+            }  else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
                 metaIDs = "{" + arrayIDsCat.join(",") + "}";
             }
 

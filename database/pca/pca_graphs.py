@@ -77,8 +77,8 @@ def getPCA(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
-                metaValsQuant = []
-                metaIDsQuant = []
+                metaValsQuant = all['metaValsQuant']
+                metaIDsQuant = all['metaIDsQuant']
 
                 button3 = int(all['button3'])
                 DepVar = int(all["DepVar"])
@@ -189,17 +189,27 @@ def getPCA(request, stops, RID, PID):
                 r("library(FactoMineR)")
                 r("library(factoextra)")
                 r("library(fpc)")
+                r('library(vegan)')
+
+                r.assign("PC1", PC1)
+                r.assign("PC2", PC2)
 
                 scale = all['scaled']
                 if scale == 'yes':
                     r("res.pca <- PCA(data, ncp=(nrow(data)-1), scale.unit=TRUE, graph=FALSE)")
+                    r("PCA <- rda(data, scale=TRUE)")
                 else:
                     r("res.pca <- PCA(data, ncp=(nrow(data)-1), scale.unit=FALSE, graph=FALSE)")
+                    r("PCA <- rda(data, scale=FALSE)")
+
+                # Use vegan to calculate regression between ord axes and quantFields
+                if quantFields:
+                    trtString = " + ".join(allFields)
+                    envfit_str = "ef <- envfit(PCA ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
+                    r.assign("cmd", envfit_str)
+                    r("eval(parse(text=cmd))")
 
                 r("fviz_screeplot(res.pca)")
-
-                r.assign("PC1", PC1)
-                r.assign("PC2", PC2)
 
                 addContrib = all['addContrib']
                 if addContrib == 'yes':
@@ -340,6 +350,30 @@ def getPCA(request, stops, RID, PID):
                     r("p <- p + geom_segment(data=varDF, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='blue')")
                     r("p <- p + geom_text(data=varDF, aes(x=v1, y=v2, label=rank_name, vjust=ifelse(v2 >= 0, -1, 2)), size=2, position=position_jitter(width=0, height=0), color='blue')")
 
+                if quantFields:
+                    # create dataframe from envfit for export and adding to biplot
+                    r('efDF <- as.data.frame(ef$vectors$arrows)')
+                    r('efDF$p <- ef$vectors$pvals')
+                    r('efDF$label <- row.names(efDF)')
+                    r('names(efDF) <- c("PC1", "PC2", "p", "label")')
+
+                    # scale and remove non-significant objects
+                    r('efDF.adj <- efDF[efDF$p < 0.05,]')
+                    r('xrange <- layer_scales(p)$x$range$range')
+                    r('yrange <-layer_scales(p)$y$range$range')
+                    r('efDF.adj[PC1] <- efDF.adj[PC1] * min(abs(xrange))')
+                    r('efDF.adj[PC2] <- efDF.adj[PC2] * min(abs(yrange))')
+
+                    r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=PC1, yend=PC2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
+                    r("p <- p + geom_text(data=efDF.adj, aes(x=PC1, y=PC2, label=label, vjust=ifelse(PC2 >= 0, -1, 2)), size=3, color='red')")
+
+                    # send data to result string
+                    envfit = r("ef$vectors")
+                    result += 'Regression of quantitative variables with ordination axes (e.g., envfit)\n'
+                    result += str(envfit) + '\n'
+                    result += '===============================================\n'
+
+                # add labels to plot
                 r("p <- p + ggtitle('Biplot of variables and individuals')")
                 r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$eig[PC1,2], 1), '%)', sep=''))")
                 r("p <- p + ylab(paste('Dim.', PC2, ' (', round(res.pca$eig[PC2,2], 1), '%)', sep=''))")

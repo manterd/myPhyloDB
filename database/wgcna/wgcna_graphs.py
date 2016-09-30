@@ -254,7 +254,6 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-
                 gsg = r.get("gsg")
                 if not gsg:
                     finalDict['text'] = error
@@ -413,7 +412,6 @@ def getWGCNA(request, stops, RID, PID):
                     zipped = getFullKO(moduleDF['rank_id'])
                 elif button3 == 3:
                     zipped = getFullNZ(moduleDF['rank_id'])
-
 
                 if button3 == 1:
                     # removed split based on select level as getFullTaxonomy returns a full set
