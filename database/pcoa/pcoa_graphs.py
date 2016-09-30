@@ -204,8 +204,10 @@ def getPCoA(request, stops, RID, PID):
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
                 r.assign("data", count_rDF)
-                r("library(vegan)")
+                r.assign("cols", count_rDF.columns.values.tolist())
+                r("colnames(data) <- cols")
 
+                r("library(vegan)")
                 if distance == 1:
                     r("dist <- vegdist(data, method='manhattan')")
                 elif distance == 2:
@@ -271,12 +273,6 @@ def getPCoA(request, stops, RID, PID):
                     r.assign("cmd", pcoa_string)
                     r("eval(parse(text=cmd))")
 
-                    if quantFields:
-                        trtString = " + ".join(quantFields)
-                        envfit_str = "ef <- envfit(ord ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
-                        r.assign("cmd", envfit_str)
-                        r("eval(parse(text=cmd))")
-
                     r("res <- summary(ord)")
                     r("id <- rownames(meta)")
                     r("pcoa <- data.frame(id, meta, res$sites)")
@@ -288,6 +284,41 @@ def getPCoA(request, stops, RID, PID):
                     r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
                     r("eig <- data.frame(Stat, res$cont$importance)")
                     eigDF = r.get("eig")
+
+                    if quantFields:
+                        # correlation between quantFields and ordination axes
+                        trtString = " + ".join(quantFields)
+                        envfit_str = "ef <- envfit(ord ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
+                        r.assign("cmd", envfit_str)
+                        r("eval(parse(text=cmd))")
+
+                        # create dataframe from envfit for export and adding to biplot
+                        r('efDF <- as.data.frame(ef$vectors$arrows)')
+                        r('efDF$r2 <- ef$vectors$r')
+                        r('efDF$p <- ef$vectors$pvals')
+                        r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
+                        r('efDF$p.adj <- pvals.adj')
+
+                        # send data to result string
+                        envfit = r("efDF")
+                        result += 'Regression of quantitative variables with ordination axes (e.g., envfit)\n'
+                        result += str(envfit) + '\n'
+                        result += '===============================================\n'
+
+                    # correlation between taxa and ordination axes
+                    r('taxfit <- envfit(ord, data)')
+                    # create dataframe from envfit for export and adding to biplot
+                    r('taxfitDF <- as.data.frame(taxfit$vectors$arrows)')
+                    r('taxfitDF$r2 <- taxfit$vectors$r')
+                    r('taxfitDF$p <- taxfit$vectors$pvals')
+                    r('p.adj <- round(p.adjust(taxfit$vectors$pvals, method="BH"),3)')
+                    r('taxfitDF$p.adj <- p.adj')
+
+                    # send data to result string
+                    taxfitDF = r("taxfitDF")
+                    result += 'Regression of taxa with ordination axes (e.g., envfit)\n'
+                    result += str(taxfitDF) + '\n'
+                    result += '===============================================\n'
 
                     path = "myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf"
                     if os.path.exists(path):
@@ -386,25 +417,33 @@ def getPCoA(request, stops, RID, PID):
                         r("p <- p + geom_text(aes(label=level, z=NULL), data=tmp)")
 
                     if quantFields:
-                        # create dataframe from envfit for export and adding to biplot
-                        r('efDF <- as.data.frame(ef$vectors$arrows)')
-                        r('efDF$p <- ef$vectors$pvals')
+                        # scale and remove non-significant objects from efDF
+                        r('names(efDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
                         r('efDF$label <- row.names(efDF)')
-                        r('names(efDF) <- c("PC1", "PC2", "p", "label")')
-
-                        # scale and remove non-significant objects
-                        r('efDF.adj <- efDF[efDF$p < 0.05,]')
+                        r('efDF.adj <- efDF[efDF$p.adj < 0.05,]')
                         r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
                         r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                         r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
                         r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
                         r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
 
-                        # send data to result string
-                        envfit = r("ef$vectors")
-                        result += 'Regression of quantitative variables with ordination axes (e.g., envfit)\n'
-                        result += str(envfit) + '\n'
-                        result += '===============================================\n'
+                    # scale and remove non-significant objects from taxDF
+                    # filter data to top contributors (max correlation with selected axes)
+                    r("x <- as.vector(abs(taxfitDF[,PC1] * taxfitDF[,PC2]))")
+                    print r('x')
+                    r("rank <- rank(-x, ties.method='random')")
+                    contrib = 10
+                    r.assign("contrib", contrib)
+                    r("rank <- (rank <= contrib)")
+                    r("taxfitDF <- taxfitDF[rank,]")
+                    r('names(taxfitDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
+                    r('taxfitDF$label <- row.names(taxfitDF)')
+                    r('taxfitDF.adj <- taxfitDF[taxfitDF$p.adj < 0.05,]')
+                    r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
+                    r('taxfitDF.adj$v1 <- taxfitDF.adj[,PC1] * mult * 0.7')
+                    r('taxfitDF.adj$v2 <- taxfitDF.adj[,PC2] * mult * 0.7')
+                    r("p <- p + geom_segment(data=taxfitDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='blue')")
+                    r("p <- p + geom_text(data=taxfitDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='blue')")
 
                     r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
                     r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
