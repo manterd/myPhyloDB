@@ -330,7 +330,7 @@ def getPCoA(request, stops, RID, PID):
                     if surfVal != 'None':
                         r.assign("surfVal", surfVal)
                         r("quant <- meta[,paste(surfVal)]")
-                        r("ordi <- ordisurf(ord ~ quant)")
+                        r("ordi <- ordisurf(ord ~ quant, add=FALSE)")
                         r("ordi.grid <- ordi$grid")
                         r("ordi.mat <- expand.grid(x=ordi.grid$x, y=ordi.grid$y)")
                         r("ordi.mat$z <- as.vector(ordi.grid$z)")
