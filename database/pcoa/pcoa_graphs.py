@@ -394,13 +394,11 @@ def getPCoA(request, stops, RID, PID):
 
                         # scale and remove non-significant objects
                         r('efDF.adj <- efDF[efDF$p < 0.05,]')
-                        r('xrange <- layer_scales(p)$x$range$range')
-                        r('yrange <-layer_scales(p)$y$range$range')
-                        r('efDF.adj[PC1] <- efDF.adj[PC1] * min(abs(xrange))')
-                        r('efDF.adj[PC2] <- efDF.adj[PC2] * min(abs(yrange))')
+                        r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
+                        r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
 
-                        r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=PC1, yend=PC2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
-                        r("p <- p + geom_text(data=efDF.adj, aes(x=PC1, y=PC2, label=label, vjust=ifelse(PC2 >= 0, -1, 2)), size=3, color='red')")
+                        r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
+                        r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
 
                         # send data to result string
                         envfit = r("ef$vectors")

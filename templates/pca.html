@@ -23,7 +23,7 @@
 
     <script type="text/javascript">
         var DepVar = 0, selTheme = 0;
-        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1, vecScale = 1.0;
+        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
         var chart1 = {}, display = 1;
         var catOptions = {};
         var distance = 15, PC1 = 1, PC2 = 2;
@@ -259,29 +259,6 @@
             });
 
             $("#ellipseVal").change(function () {
-                checkButtons();
-            });
-            $("#vecScale").change(function () {
-                vecScale = $(this).val();
-                vecScale = parseFloat(vecScale, 10);
-                if (vecScale<0)
-                {
-                    vecScale = 0.7;
-                    document.getElementById("vecScale").value = "0.7";
-                    alert("Entered value is too small. Bounds for vector scale are from 0.0 to 1.0");
-                }
-                if (vecScale>1.0)
-                {
-                    vecScale = 0.7;
-                    document.getElementById("vecScale").value = "0.7";
-                    alert("Entered value is too large. Bounds for vector scale are from 0.0 to 1.0");
-                }
-                if (isNaN(vecScale))
-                {
-                    vecScale = 0.7;
-                    document.getElementById("vecScale").value = "0.7";
-                    alert("Entered value is not a number. Bounds for vector scale are from 0.0 to 1.0");
-                }
                 checkButtons();
             });
 
@@ -699,7 +676,6 @@
             myDict['colorVal'] = document.getElementById("colorVal").value;
             myDict['palette'] = document.getElementById("palette").value;
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
-            myDict['vecScale'] = vecScale;
             myDict['RID'] = RID;
             myDict['funcName'] = "getPCA";
             myDict['reqType'] = "call";
@@ -909,16 +885,6 @@
                     <input type="checkbox" checked title="Click to turn contributors on/off" id="contrib2"/>
                     <input type="text" title="Enter the number of variables (vectors) to include in the biplot.  Variables will be selected based on their Pearson correlation with either axis." id="contribVal2" value="10" style="background-color: white"/>
                     &nbsp<-- Number of contributors to show in biplot
-                </div>
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td bgcolor="white">
-                <div style="background-color: white">
-                    <input type="text" title="Enter scaling value for vectors (0.0-1.0)" id="vecScale" value="1.0" style="background-color: white"/>
-                    &nbsp<-- Biplot vector scaling
                 </div>
             </td>
             <td bgcolor="white"></td>

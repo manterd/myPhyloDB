@@ -34,7 +34,6 @@ def getPCA(request, stops, RID, PID):
 
                 PC1 = int(all["PC1"])
                 PC2 = int(all["PC2"])
-                vecScale = float(all["vecScale"])
 
                 result = ''
                 button3 = int(all['button3'])
@@ -197,18 +196,13 @@ def getPCA(request, stops, RID, PID):
                 scale = all['scaled']
                 if scale == 'yes':
                     r("res.pca <- PCA(data, ncp=(nrow(data)-1), scale.unit=TRUE, graph=FALSE)")
-                    r("PCA <- rda(data, scale=TRUE)")
                 else:
                     r("res.pca <- PCA(data, ncp=(nrow(data)-1), scale.unit=FALSE, graph=FALSE)")
-                    r("PCA <- rda(data, scale=FALSE)")
 
                 # Use vegan to calculate regression between ord axes and quantFields
                 if quantFields:
-                    trtString = " + ".join(allFields)
-                    envfit_str = "ef <- envfit(PCA ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
-                    r.assign("cmd", envfit_str)
-                    r("eval(parse(text=cmd))")
-
+                    r.assign('quantFields', quantFields)
+                    r('ef <- envfit(res.pca$ind$coord, meta[,paste(quantFields)], choices=c(PC1,PC2))')
                 r("fviz_screeplot(res.pca)")
 
                 addContrib = all['addContrib']
@@ -224,7 +218,7 @@ def getPCA(request, stops, RID, PID):
                     contrib = max(taxa, samples)
                     r.assign("contrib", contrib)
 
-                r("fviz_contrib(res.pca, choice='var', axes=PC1, top=contrib) + \
+                r("fviz_coord(res.pca, choice='var', axes=PC1, top=contrib) + \
                     theme(axis.text.x=element_text(angle=90, hjust=1))")
                 r("fviz_contrib(res.pca, choice='var', axes=PC2, top=contrib) + \
                     theme(axis.text.x=element_text(angle=90, hjust=1))")
@@ -305,11 +299,8 @@ def getPCA(request, stops, RID, PID):
 
                 # rescale variable coordinates (from factoextra)
                 r("mult <- min(max(indDF$x)-min(indDF$x)/(max(varDF$x)-min(varDF$x)), max(indDF$y)-min(indDF$y)/(max(varDF$y)-min(varDF$y)))")
-
-                r.assign("vecScale", vecScale)
-
-                r("varDF$v1 <- varDF$x * mult * vecScale")
-                r("varDF$v2 <- varDF$y * mult * vecScale")
+                r("varDF$v1 <- varDF$x * mult * 0.7")
+                r("varDF$v2 <- varDF$y * mult * 0.7")
 
                 # filter data to top contributors (max correlation with selected axes)
                 r("x <- as.vector(apply(abs(res.pca$var$cor[,c(PC1, PC2)]), 1, max))")
@@ -355,17 +346,16 @@ def getPCA(request, stops, RID, PID):
                     r('efDF <- as.data.frame(ef$vectors$arrows)')
                     r('efDF$p <- ef$vectors$pvals')
                     r('efDF$label <- row.names(efDF)')
-                    r('names(efDF) <- c("PC1", "PC2", "p", "label")')
 
                     # scale and remove non-significant objects
                     r('efDF.adj <- efDF[efDF$p < 0.05,]')
-                    r('xrange <- layer_scales(p)$x$range$range')
-                    r('yrange <-layer_scales(p)$y$range$range')
-                    r('efDF.adj[PC1] <- efDF.adj[PC1] * min(abs(xrange))')
-                    r('efDF.adj[PC2] <- efDF.adj[PC2] * min(abs(yrange))')
+                    r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
+                    r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
+                    efDF_adj = r.get("efDF.adj")
 
-                    r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=PC1, yend=PC2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
-                    r("p <- p + geom_text(data=efDF.adj, aes(x=PC1, y=PC2, label=label, vjust=ifelse(PC2 >= 0, -1, 2)), size=3, color='red')")
+                    if not efDF_adj.empty:
+                        r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
+                        r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
 
                     # send data to result string
                     envfit = r("ef$vectors")
