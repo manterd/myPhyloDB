@@ -394,9 +394,9 @@ def getPCoA(request, stops, RID, PID):
 
                         # scale and remove non-significant objects
                         r('efDF.adj <- efDF[efDF$p < 0.05,]')
+                        r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
                         r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                         r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
-
                         r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
                         r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
 
