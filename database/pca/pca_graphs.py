@@ -203,29 +203,20 @@ def getPCA(request, stops, RID, PID):
                 if quantFields:
                     r.assign('quantFields', quantFields)
                     r('ef <- envfit(res.pca$ind$coord, meta[,paste(quantFields)], choices=c(PC1,PC2))')
-                r("fviz_screeplot(res.pca)")
 
-                addContrib = all['addContrib']
-                if addContrib == 'yes':
-                    contrib = int(all["contribVal"])
-                    row, taxa = count_rDF.shape
-                    samples, col = metaDF.shape
-                    contrib = min(contrib, taxa, samples)
-                    r.assign("contrib", contrib)
-                if addContrib == 'no':
-                    row, taxa = count_rDF.shape
-                    samples, col = metaDF.shape
-                    contrib = max(taxa, samples)
-                    r.assign("contrib", contrib)
+                addContrib1 = all['addContrib1']
+                if addContrib1 == 'yes':
+                    contrib1 = int(all["contribVal1"])
+                else:
+                    contrib1 = 0
+                r.assign("contrib1", contrib1)
 
-                r("fviz_coord(res.pca, choice='var', axes=PC1, top=contrib) + \
-                    theme(axis.text.x=element_text(angle=90, hjust=1))")
-                r("fviz_contrib(res.pca, choice='var', axes=PC2, top=contrib) + \
-                    theme(axis.text.x=element_text(angle=90, hjust=1))")
-                r("fviz_contrib(res.pca, choice='ind', axes=PC1, top=contrib) + \
-                    theme(axis.text.x=element_text(angle=90, hjust=1))")
-                r("fviz_contrib(res.pca, choice='ind', axes=PC2, top=contrib) + \
-                    theme(axis.text.x=element_text(angle=90, hjust=1))")
+                addContrib2 = all['addContrib2']
+                if addContrib2 == 'yes':
+                    contrib2 = int(all["contribVal2"])
+                else:
+                    contrib2 = 0
+                r.assign("contrib2", contrib2)
 
                 ellipseVal = all['ellipseVal']
                 if ellipseVal == 'None':
@@ -272,30 +263,26 @@ def getPCA(request, stops, RID, PID):
                     r("km <- kmeans(scores, centers=pamk.best$nc)")
                     r("shapeTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
 
-                r("indDF <- data.frame(x=res.pca$ind$coord[,PC1], \
+                r("indDF <- data.frame( \
+                    x=res.pca$ind$coord[,PC1], \
                     y=res.pca$ind$coord[,PC2], \
                     Color=colorTrt, \
                     Shape=shapeTrt, \
                     Fill=ellipseTrt) \
                 ")
 
-                addContrib2 = all['addContrib2']
-                if addContrib2 == 'yes':
-                    contrib2 = int(all["contribVal2"])
-                    r.assign("contrib2", contrib2)
-                if addContrib2 == 'no':
-                    r("contrib2 <- length(res.pca$var$cos2)")
-
-                rankDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
-                rankDF.set_index('rank_id', inplace=True)
-                r.assign('rankDF', rankDF['rank_name'])
-
-                r("varDF <- data.frame(varnames=rownames(res.pca$var$coord), \
+                r("varDF <- data.frame( \
                     x=res.pca$var$coord[,PC1], \
-                    y=res.pca$var$coord[,PC2]) \
+                    y=res.pca$var$coord[,PC2], \
+                    contr1 = res.pca$var$contrib[,PC1], \
+                    contr2 = res.pca$var$contrib[,PC2]) \
                 ")
 
-                r('varDF <- merge(varDF, rankDF, by="row.names", all.x=FALSE)')
+                # get taxa rank names
+                rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
+                rankNameDF.set_index('rank_id', inplace=True)
+                r.assign('rankNameDF', rankNameDF['rank_name'])
+                r('varDF <- cbind(varDF, rankNameDF)')
 
                 # rescale variable coordinates (from factoextra)
                 r("mult <- min(max(indDF$x)-min(indDF$x)/(max(varDF$x)-min(varDF$x)), max(indDF$y)-min(indDF$y)/(max(varDF$y)-min(varDF$y)))")
@@ -303,10 +290,9 @@ def getPCA(request, stops, RID, PID):
                 r("varDF$v2 <- varDF$y * mult * 0.7")
 
                 # filter data to top contributors (max correlation with selected axes)
-                r("x <- as.vector(apply(abs(res.pca$var$cor[,c(PC1, PC2)]), 1, max))")
-                r("rank <- rank(-x, ties.method='random')")
-                r("rank <- (rank <= contrib2)")
-                r("varDF <- varDF[rank,]")
+                r('varDF$PC1.rank = rank(-varDF$contr1, ties.method="min")')
+                r('varDF$PC2.rank = rank(-varDF$contr2, ties.method="min")')
+                r('varDF <- varDF[varDF$PC1.rank <= contrib1 | varDF$PC2.rank <= contrib2,]')
 
                 # Create biplot using ggplot
                 r("p <- ggplot(indDF, aes(x,y))")
@@ -337,7 +323,7 @@ def getPCA(request, stops, RID, PID):
                 r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
                 r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
 
-                if addContrib2 == 'yes':
+                if addContrib1 == 'yes' or addContrib2 == 'yes':
                     r("p <- p + geom_segment(data=varDF, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='blue')")
                     r("p <- p + geom_text(data=varDF, aes(x=v1, y=v2, label=rank_name, vjust=ifelse(v2 >= 0, -1, 2)), size=2, position=position_jitter(width=0, height=0), color='blue')")
 

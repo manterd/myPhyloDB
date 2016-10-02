@@ -51,12 +51,6 @@ def getWGCNA(request, stops, RID, PID):
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
-                if not finalSampleIDs:
-                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
-                    myDict = {'error': error}
-                    res = simplejson.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
-
                 result = ''
                 if button3 == 1:
                     if selectAll == 1:
@@ -713,7 +707,7 @@ def getWGCNA(request, stops, RID, PID):
                             r("nSamples.mod <- nrow(meta.mod)")
                             r("moduleTraitCor <- cor(datME.mod, meta.mod, use='p')")
                             r("moduleTraitPvalue <- corPvalueFisher(moduleTraitCor, nSamples.mod)")
-                            r("textMatrix <- paste(signif(moduleTraitCor, 2), '\n(', signif(moduleTraitPvalue, 1), ')', sep='')")
+                            r("textMatrix <- paste(signif(moduleTraitCor, 3), '\n(', signif(moduleTraitPvalue, 3), ')', sep='')")
                             r("dim(textMatrix) <- dim(moduleTraitCor)")
                             r("nrow <- as.integer(dim(textMatrix)[1])")
                             r("ncol <- as.integer(dim(textMatrix)[2])")
@@ -744,7 +738,7 @@ def getWGCNA(request, stops, RID, PID):
                         # Now All data
                         r("moduleTraitCor <- cor(datME, meta[,paste(quantFields)], use='p')")
                         r("moduleTraitPvalue <- corPvalueFisher(moduleTraitCor, nSamples)")
-                        r("textMatrix <- paste(signif(moduleTraitCor, 2), '\n(', signif(moduleTraitPvalue, 1), ')', sep='')")
+                        r("textMatrix <- paste(signif(moduleTraitCor, 3), '\n(', signif(moduleTraitPvalue, 3), ')', sep='')")
                         r("dim(textMatrix) <- dim(moduleTraitCor)")
                         r("nrow <- as.integer(dim(textMatrix)[1])")
                         r("ncol <- as.integer(dim(textMatrix)[2])")
@@ -781,7 +775,7 @@ def getWGCNA(request, stops, RID, PID):
                             r("nSamples.mod <- nrow(meta.mod)")
                             r("moduleTraitCor <- cor(datME.mod, meta.mod, use='p')")
                             r("moduleTraitPvalue <- corPvalueFisher(moduleTraitCor, nSamples.mod)")
-                            r("textMatrix <- paste(signif(moduleTraitCor, 2), '\n(', signif(moduleTraitPvalue, 1), ')', sep='')")
+                            r("textMatrix <- paste(signif(moduleTraitCor, 3), '\n(', signif(moduleTraitPvalue, 3), ')', sep='')")
                             r("dim(textMatrix) <- dim(moduleTraitCor)")
                             r("nrow <- as.integer(dim(textMatrix)[1])")
                             r("ncol <- as.integer(dim(textMatrix)[2])")
@@ -814,7 +808,7 @@ def getWGCNA(request, stops, RID, PID):
                         r("moduleTraitPvalue <- corPvalueFisher(moduleTraitCor, nSamples)")
                         r("moduleTraitCor")
                         r("moduleTraitPvalue")
-                        r("textMatrix <- paste(signif(moduleTraitCor, 2), '\n(', signif(moduleTraitPvalue, 1), ')', sep='')")
+                        r("textMatrix <- paste(signif(moduleTraitCor, 3), '\n(', signif(moduleTraitPvalue, 3), ')', sep='')")
                         r("dim(textMatrix) <- dim(moduleTraitCor)")
                         r("nrow <- as.integer(dim(textMatrix)[1])")
                         r("ncol <- as.integer(dim(textMatrix)[2])")
@@ -847,7 +841,7 @@ def getWGCNA(request, stops, RID, PID):
                         r.assign("quantFields", quantFields)
                         r("moduleTraitCor <- cor(datME, meta[,paste(quantFields)], use='p')")
                         r("moduleTraitPvalue <- corPvalueFisher(moduleTraitCor, nSamples)")
-                        r("textMatrix <- paste(signif(moduleTraitCor, 2), '\n(', signif(moduleTraitPvalue, 1), ')', sep='')")
+                        r("textMatrix <- paste(signif(moduleTraitCor, 3), '\n(', signif(moduleTraitPvalue, 3), ')', sep='')")
                         r("dim(textMatrix) <- dim(moduleTraitCor)")
                         r("nrow <- as.integer(dim(textMatrix)[1])")
                         r("ncol <- as.integer(dim(textMatrix)[2])")

@@ -305,21 +305,6 @@ def getPCoA(request, stops, RID, PID):
                         result += str(envfit) + '\n'
                         result += '===============================================\n'
 
-                    # correlation between taxa and ordination axes
-                    r('taxfit <- envfit(ord, data)')
-                    # create dataframe from envfit for export and adding to biplot
-                    r('taxfitDF <- as.data.frame(taxfit$vectors$arrows)')
-                    r('taxfitDF$r2 <- taxfit$vectors$r')
-                    r('taxfitDF$p <- taxfit$vectors$pvals')
-                    r('p.adj <- round(p.adjust(taxfit$vectors$pvals, method="BH"),3)')
-                    r('taxfitDF$p.adj <- p.adj')
-
-                    # send data to result string
-                    taxfitDF = r("taxfitDF")
-                    result += 'Regression of taxa with ordination axes (e.g., envfit)\n'
-                    result += str(taxfitDF) + '\n'
-                    result += '===============================================\n'
-
                     path = "myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf"
                     if os.path.exists(path):
                         os.remove(path)
@@ -426,24 +411,6 @@ def getPCoA(request, stops, RID, PID):
                         r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
                         r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
                         r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
-
-                    # scale and remove non-significant objects from taxDF
-                    # filter data to top contributors (max correlation with selected axes)
-                    r("x <- as.vector(abs(taxfitDF[,PC1] * taxfitDF[,PC2]))")
-                    print r('x')
-                    r("rank <- rank(-x, ties.method='random')")
-                    contrib = 10
-                    r.assign("contrib", contrib)
-                    r("rank <- (rank <= contrib)")
-                    r("taxfitDF <- taxfitDF[rank,]")
-                    r('names(taxfitDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
-                    r('taxfitDF$label <- row.names(taxfitDF)')
-                    r('taxfitDF.adj <- taxfitDF[taxfitDF$p.adj < 0.05,]')
-                    r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
-                    r('taxfitDF.adj$v1 <- taxfitDF.adj[,PC1] * mult * 0.7')
-                    r('taxfitDF.adj$v2 <- taxfitDF.adj[,PC2] * mult * 0.7')
-                    r("p <- p + geom_segment(data=taxfitDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='blue')")
-                    r("p <- p + geom_text(data=taxfitDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='blue')")
 
                     r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
                     r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")

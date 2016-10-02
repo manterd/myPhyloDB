@@ -145,7 +145,7 @@
                 checkButtons();
             });
 
-            $("#contrib").click(function () {
+            $("#contrib1").click(function () {
                 checkButtons();
             });
 
@@ -196,14 +196,21 @@
 
             $("#DepVar").change(function () {
                 DepVar = $(this).val();
-                if (DepVar == 1) {
+                if (DepVar == 0) {
+                    $('#transform').empty()
+                        .append('<option value="0" selected>None</option>')
+                        .append('<option value="1">Ln</option>')
+                        .append('<option value="2">Log10</option>')
+                        .append('<option value="3">Sqrt</option>')
+                        .val(0);
+                } else if (DepVar == 1) {
                     $('#transform').empty()
                         .append('<option value="0">None</option>')
+                        .append('<option value="3">Sqrt</option>')
                         .append('<option value="4">Logit</option>')
                         .append('<option value="5">Arcsin</option>')
                         .val(0);
-                }
-                else {
+                } else {
                     $('#transform').empty()
                         .append('<option value="0" selected>None</option>')
                         .append('<option value="1">Ln</option>')
@@ -683,11 +690,11 @@
             myDict['transform'] = transform;
             myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
 
-            myDict['contribVal'] = document.getElementById("contribVal").value;
-            if ($("#contrib").is(':checked')) {
-                myDict['addContrib'] = 'yes'
+            myDict['contribVal1'] = document.getElementById("contribVal1").value;
+            if ($("#contrib1").is(':checked')) {
+                myDict['addContrib1'] = 'yes'
             } else {
-                myDict['addContrib'] = 'no'
+                myDict['addContrib1'] = 'no'
             }
 
             myDict['contribVal2'] = document.getElementById("contribVal2").value;
@@ -871,9 +878,9 @@
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <input type="checkbox" checked title="Click to turn contributors on/off" id="contrib"/>
-                    <input type="text" title="Enter the number of samples/variables to include in the bar plots.  Variables will be selected based on their contribution to each axis independently." id="contribVal" value="10" style="background-color: white"/>
-                    &nbsp<-- Number of contributors to show in bar plots
+                    <input type="checkbox" checked title="Click to turn on/off" id="contrib1"/>
+                    <input type="text" title="Enter the number of samples/variables to include in the plots.  Variables will be selected based on their contribution to axis 1." id="contribVal1" value="5" style="background-color: white; width: 50px"/>
+                    &nbsp<-- Number of contributors to the 1st PCA Axis to display in plot
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -882,9 +889,9 @@
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <input type="checkbox" checked title="Click to turn contributors on/off" id="contrib2"/>
-                    <input type="text" title="Enter the number of variables (vectors) to include in the biplot.  Variables will be selected based on their Pearson correlation with either axis." id="contribVal2" value="10" style="background-color: white"/>
-                    &nbsp<-- Number of contributors to show in biplot
+                    <input type="checkbox" checked title="Click to turn on/off" id="contrib2"/>
+                    <input type="text" title="Enter the number of sample/variables to include in the plots.  Variables will be selected based on their contribution to axis 2." id="contribVal2" value="5" style="background-color: white; width: 50px"/>
+                    &nbsp<-- Number of contributors to the 2nd PCA Axis to display in plot
                 </div>
             </td>
             <td bgcolor="white"></td>

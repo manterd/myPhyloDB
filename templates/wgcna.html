@@ -190,14 +190,21 @@
 
             $("#DepVar").change(function () {
                 DepVar = $(this).val();
-                if (DepVar == 1) {
+                if (DepVar == 0) {
+                    $('#transform').empty()
+                        .append('<option value="0" selected>None</option>')
+                        .append('<option value="1">Ln</option>')
+                        .append('<option value="2">Log10</option>')
+                        .append('<option value="3">Sqrt</option>')
+                        .val(0);
+                } else if (DepVar == 1) {
                     $('#transform').empty()
                         .append('<option value="0">None</option>')
+                        .append('<option value="3">Sqrt</option>')
                         .append('<option value="4">Logit</option>')
                         .append('<option value="5">Arcsin</option>')
                         .val(0);
-                }
-                else {
+                } else {
                     $('#transform').empty()
                         .append('<option value="0" selected>None</option>')
                         .append('<option value="1">Ln</option>')
@@ -786,7 +793,7 @@
                        &nbsp<-- networkType<br>
                    </td>
                    <td bgcolor="white" width="375" title="p-value ratio threshold for reassigning genes between modules">
-                        <input id="reassignThreshold" type="text" value="0.000001"/>
+                        <input id="reassignThreshold" type="text" value="1e-6" style="width: 50px;"/>
                         &nbsp<-- reassignThreshold
                     </td>
                 </tr>
@@ -799,48 +806,48 @@
                         &nbsp<-- corType
                     </td>
                     <td bgcolor="white" width="375" title="Modules without kME values above this threshold will be disbanded">
-                        <input id="minCoreKME" type="text" value="0.5"/>
+                        <input id="minCoreKME" type="text" value="0.5" style="width: 50px;"/>
                         &nbsp<-- minCoreKME
                     </td>
                 </tr>
                 <tr>
                     <td id="maxPOutliers-on" style="display:none" bgcolor="white" width="325" title="Maximum percentile of data that can be considered outliers on either side of the median (used when corType=bicor only)">
-                        <input id="maxPOutliers" type="text" value="1"/>
+                        <input id="maxPOutliers" type="text" value="1" style="width: 50px;"/>
                         &nbsp<-- maxPOutliers
                     </td>
                     <td id="maxPOutliers-off" bgcolor="white" width="325"></td>
                     <td bgcolor="white" width="375" title="Modules with fewer genes than this threshold will be disbanded. Recommended value is minModuleSize/3">
-                        <input id="minCoreKMESize" type="text" value="2">
+                        <input id="minCoreKMESize" type="text" value="2" style="width: 50px;">
                         &nbsp<-- minCoreKMESize
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325"><em>Basic tree cut</em></td>
                     <td bgcolor="white" width="375" title="Genes whose eigengene connectivity is below this threshold will be removed from the module">
-                        <input id="minKMEtoStay" type="text" value="0.3"/>
+                        <input id="minKMEtoStay" type="text" value="0.3" style="width: 50px;"/>
                         &nbsp<-- minKMEtoStay
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="Simplified control over module detection [0-4]">
-                        <input id="deepSplit" type="text" value="2"/>
+                        <input id="deepSplit" type="text" value="2" style="width: 50px;"/>
                         &nbsp<-- deepSplit
                     </td>
                     <td bgcolor="white" width="375"><em>Module merging</em></td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="Dendrogram cut height for module detection">
-                        <input id="detectCutHeight" type="text" value="0.995"/>
+                        <input id="detectCutHeight" type="text" value="0.995" style="width: 50px;"/>
                         &nbsp<-- detectCutHeight
                     </td>
                     <td bgcolor="white" width="375" title="Dendrogram cut height for module merging">
-                        <input id="mergeCutHeight" type="text" value="0.15"/>
+                        <input id="mergeCutHeight" type="text" value="0.15" style="width: 50px;"/>
                         &nbsp<-- mergeCutHeight
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="Minimum module size">
-                        <input id="minModuleSize" type="text" value="6"/>
+                        <input id="minModuleSize" type="text" value="6" style="width: 50px;"/>
                         &nbsp<-- minModuleSize
                     </td>
                     <td bgcolor="white" width="375"></td>
@@ -853,17 +860,17 @@
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="Adjacency threshold for including edges in network graph.">
-                        <input id="minEdge" type="text" value="0.05"/>
+                        <input id="minEdge" type="text" value="0.05" style="width: 50px;"/>
                         &nbsp<-- minEdge
                     </td>
                     <td bgcolor="white" width="375" title="Maximum number of genes per module (ranked by KME) to include to network graph">
-                        <input id="maxNGenes" type="text" value="6"/>
+                        <input id="maxNGenes" type="text" value="6" style="width: 50px;"/>
                         &nbsp<-- maxNGenes
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="kME threshold for including nodes in network graph">
-                        <input id="minKME" type="text" value="0.80"/>
+                        <input id="minKME" type="text" value="0.80" style="width: 50px;"/>
                         &nbsp<-- minKME
                     </td>
                     <td bgcolor="white" width="375" title="Network graph layout">
