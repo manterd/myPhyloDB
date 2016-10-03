@@ -282,7 +282,7 @@ def getPCA(request, stops, RID, PID):
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
                 rankNameDF.set_index('rank_id', inplace=True)
                 r.assign('rankNameDF', rankNameDF['rank_name'])
-                r('varDF <- cbind(varDF, rankNameDF)')
+                r('varDF <- merge(varDF, rankNameDF, by="row.names", all.x=TRUE)')
 
                 # rescale variable coordinates (from factoextra)
                 r("mult <- min(max(indDF$x)-min(indDF$x)/(max(varDF$x)-min(varDF$x)), max(indDF$y)-min(indDF$y)/(max(varDF$y)-min(varDF$y)))")
