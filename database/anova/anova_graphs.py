@@ -9,7 +9,7 @@ import simplejson
 
 from database.models import Sample
 from database.utils import multidict, getMetaDF, transformDF
-from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
+from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
 import database.queue
 
 
@@ -94,6 +94,15 @@ def getCatUnivData(request, RID, stops, PID):
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
                     finalDF = getNZDF(nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                # filter phylotypes based on user settings
+                remUnclass = all['remUnclass']
+                remZeroes = all['remZeroes']
+                perZeroes = int(all['perZeroes'])
+                filterData = all['filterData']
+                filterPer = int(all['filterPer'])
+                filterMeth = int(all['filterMeth'])
+                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -581,6 +590,15 @@ def getQuantUnivData(request, RID, stops, PID):
                     nzString = all["nz"]
                     nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
                     finalDF, missingList = getNZDF(nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                # filter phylotypes based on user settings
+                remUnclass = all['remUnclass']
+                remZeroes = all['remZeroes']
+                perZeroes = int(all['perZeroes'])
+                filterData = all['filterData']
+                filterPer = int(all['filterPer'])
+                filterMeth = int(all['filterMeth'])
+                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

@@ -7,7 +7,7 @@ from pyper import *
 import simplejson
 
 from database.utils import multidict, getMetaDF, wOdum
-from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
+from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
 import database.queue
 
 
@@ -160,6 +160,15 @@ def getPCoA(request, stops, RID, PID):
 
                 if button3 == 3:
                     finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                # filter phylotypes based on user settings
+                remUnclass = all['remUnclass']
+                remZeroes = all['remZeroes']
+                perZeroes = int(all['perZeroes'])
+                filterData = all['filterData']
+                filterPer = int(all['filterPer'])
+                filterMeth = int(all['filterMeth'])
+                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

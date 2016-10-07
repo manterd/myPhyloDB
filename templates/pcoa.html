@@ -203,6 +203,22 @@
                 checkButtons();
             });
 
+            $("#remUnclass").click(function () {
+                checkButtons();
+            });
+
+            $("#remZeroes").click(function () {
+                checkButtons();
+            });
+
+            $("#filterData").click(function () {
+                checkButtons();
+            });
+
+            $("#filterMeth").click(function () {
+                checkButtons();
+            });
+
             $("#TabButton").click(function () {
                 getTab();
             });
@@ -826,6 +842,29 @@
             myDict['funcName'] = "getPCoA";
             myDict['reqType'] = "call";
             myDict['dataID'] = dataID;
+
+            if ($("#remUnclass").is(':checked')) {
+                myDict['remUnclass'] = 'yes'
+            } else {
+                myDict['remUnclass'] = 'no'
+            }
+
+            if ($("#remZeroes").is(':checked')) {
+                myDict['remZeroes'] = 'yes'
+            } else {
+                myDict['remZeroes'] = 'no'
+            }
+
+            if ($("#filterData").is(':checked')) {
+                myDict['filterData'] = 'yes'
+            } else {
+                myDict['filterData'] = 'no'
+            }
+
+            myDict['perZeroes'] = document.getElementById("perZeroes").value;
+            myDict['filterPer'] = document.getElementById("filterPer").value;
+            myDict['filterMeth'] = document.getElementById("filterMeth").value;
+
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -1000,6 +1039,41 @@
         <tr><td colspan="3" bgcolor="white"></td></tr>
         <tr>
             <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Filtering:</strong></em></td>
+        </tr>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="checkbox" id="remUnclass" checked>&nbsp<-- Remove unassigned/unmapped reads
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="checkbox" id="remZeroes" checked/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="checkbox" id="filterData" checked/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on
+                <select id="filterMeth">
+                    <!--<option value="1">None</option>-->
+                    <option value="2" selected="selected">Interquantile range (IQR)</option>
+                    <option value="3">Variance (V)</option>
+                    <option value="4">Standard deviation (SD)</option>
+                    <option value="5">Mean abundance value</option>
+                    <option value="6">Median abundance value</option>
+                </select>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>PCoA Settings:</strong></em></td>
         </tr>
         <tr>
@@ -1022,11 +1096,9 @@
                     <option value="14">Cao</option>
                     <option value="15" selected="selected">wOdum</option>
                 </select>
-                &nbsp<-- Distance score
+                &nbsp<-- Distance score<span id="alphaLevel">; use alpha (&#945) level <input type="text" id="alphaVal" value="1" style="width:40px; background-color: white"/></span>
             </td>
-            <td bgcolor="white">
-                <div id="alphaLevel">&#945 parameter: <input type="text" id="alphaVal" value="1" style="width:40px; background-color: white"/></div>
-            </td>
+            <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
@@ -1065,11 +1137,9 @@
                     <option value=1 selected="selected">perMANOVA</option>
                     <option value=2>betaDisper</option>
                 </select>
-                &nbsp<-- Test
+                &nbsp<-- Run test with <input type="text" id="perms" value="1000" style="width:40px; background-color: white"/> permutations
             </td>
-            <td bgcolor="white">
-                <div style="background-color: white" id="permutations">permutations: <input type="text" id="perms" value="1000" style="width:40px; background-color: white"/></div>
-            </td>
+            <td bgcolor="white"></td>
         </tr>
         <tr><td colspan="3" bgcolor="white"></td></tr>
         <tr>

@@ -890,32 +890,60 @@ def insertTaxaInfo(button3, zipped, DF, pos=1):
     DF.fillna(value='N/A', inplace=True)
 
 
-def filterDF(finalDF, selectAll, remUnclass, remZeroes, perZeroes, filterMeth):
-
-    countDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
-    idList = countDF.index.tolist()
-    taxonomyList = getFullTaxonomy(idList)
-    # truncate list of tuples to correct taxa level...
-    print taxonomyList
+def filterDF(finalDF, DepVar, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth):
+    numSamples = len(finalDF['sampleid'].unique())
+    myVar = ''
+    if DepVar == 0:
+        myVar = 'abund'
+    elif DepVar == 1:
+        myVar = 'rel_abund'
+    elif DepVar == 2:
+        myVar = 'rich'
+    elif DepVar == 3:
+        myVar = 'diversity'
+    elif DepVar == 4:
+        myVar = 'abund_16S'
 
     if remUnclass == 'yes':
-        pass    # remove unclassified at selected taxa level or above
+        finalDF = finalDF[~finalDF['rank_name'].str.contains('unclassified')]
 
-    if remZeroes == 'yes':
-        pass    # remove phylotypes with greater percentage of zeroes than 'perZeroes'
+    if remZeroes == 'yes' and perZeroes > 0:
+        threshold = int(perZeroes / 100.0 * numSamples)
+        bytag = finalDF.groupby('rank_id').aggregate(np.count_nonzero)
+        tags = bytag[bytag[myVar] >= threshold].index.tolist()
+        finalDF = finalDF[finalDF['rank_id'].isin(tags)]
 
-    if filterMeth == 1:
-        pass
-    elif filterMeth == 2:
-        pass    # filter based on IQR
-    elif filterMeth == 3:
-        pass    # filter based on CV
-    elif filterMeth == 4:
-        pass    # filter based on SD
-    elif filterMeth == 5:
-        pass    # filter based on mean abundance
-    elif filterMeth == 6:
-        pass    # filter based on median abundance
+    if filterData == 'yes' and filterPer < 100:
+        threshold = int(filterPer / 100.0 * numSamples)
+        if filterMeth == 1:
+            pass
+        elif filterMeth == 2:
+            bytag_q3 = finalDF.groupby('rank_id')[myVar].quantile(0.75)
+            bytag_q1 = finalDF.groupby('rank_id')[myVar].quantile(0.25)
+            bytag = bytag_q3 - bytag_q1
+            bytag.sort(axis=0, ascending=False, inplace=True)
+            tags = bytag[:threshold].index.tolist()
+            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+        elif filterMeth == 3:
+            bytag = finalDF.groupby('rank_id')[myVar].var()
+            bytag.sort(axis=0, ascending=False, inplace=True)
+            tags = bytag[:threshold].index.tolist()
+            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+        elif filterMeth == 4:
+            bytag = finalDF.groupby('rank_id')[myVar].std()
+            bytag.sort(axis=0, ascending=False, inplace=True)
+            tags = bytag[:threshold].index.tolist()
+            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+        elif filterMeth == 5:
+            bytag = finalDF.groupby('rank_id')[myVar].mean()
+            bytag.sort(axis=0, ascending=False, inplace=True)
+            tags = bytag[:threshold].index.tolist()
+            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+        elif filterMeth == 6:
+            bytag = finalDF.groupby('rank_id')[myVar].median()
+            bytag.sort(axis=0, ascending=False, inplace=True)
+            tags = bytag[:threshold].index.tolist()
+            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
 
     return finalDF
 

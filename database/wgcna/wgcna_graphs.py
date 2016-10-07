@@ -9,7 +9,7 @@ import simplejson
 import sys
 
 from database.utils import multidict, getMetaDF, transformDF
-from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
+from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
 from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 import database.queue
 
@@ -158,6 +158,15 @@ def getWGCNA(request, stops, RID, PID):
 
                 if button3 == 3:
                     finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                # filter phylotypes based on user settings
+                remUnclass = all['remUnclass']
+                remZeroes = all['remZeroes']
+                perZeroes = int(all['perZeroes'])
+                filterData = all['filterData']
+                filterPer = int(all['filterPer'])
+                filterMeth = int(all['filterMeth'])
+                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

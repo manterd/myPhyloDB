@@ -119,8 +119,10 @@ def getPCA(request, stops, RID, PID):
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
                 perZeroes = int(all['perZeroes'])
+                filterData = all['filterData']
+                filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
-                finalDF = filterDF(finalDF, selectAll, remUnclass, remZeroes, perZeroes, filterMeth)
+                finalDF = filterDF(finalDF, DepVar, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

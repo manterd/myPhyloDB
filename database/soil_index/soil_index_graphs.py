@@ -12,7 +12,7 @@ import simplejson
 from database.models import PICRUSt
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict
-from database.utils_kegg import sumKEGG
+from database.utils_kegg import sumKEGG, filterDF
 import database.queue
 
 
@@ -116,6 +116,15 @@ def getsoil_index(request, stops, RID, PID):
 
                 finalDF, keggDF, levelList = getTaxaDF(savedDF, metaDF, RID, stops, PID)
                 finalDF = finalDF[finalDF.rel_abund != 0]
+
+                # filter phylotypes based on user settings
+                remUnclass = all['remUnclass']
+                remZeroes = all['remZeroes']
+                perZeroes = int(all['perZeroes'])
+                filterData = all['filterData']
+                filterPer = int(all['filterPer'])
+                filterMeth = int(all['filterMeth'])
+                finalDF = filterDF(finalDF, 'abund_16S', remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
                 # make sure column types are correct
                 finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)

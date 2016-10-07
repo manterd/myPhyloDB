@@ -10,7 +10,7 @@ from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4
 from database.utils import multidict, getMetaDF, transformDF
-from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
+from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
 import database.queue
 
 
@@ -131,6 +131,15 @@ def getSPLS(request, stops, RID, PID):
 
                 if button3 == 3:
                     finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                # filter phylotypes based on user settings
+                remUnclass = all['remUnclass']
+                remZeroes = all['remZeroes']
+                perZeroes = int(all['perZeroes'])
+                filterData = all['filterData']
+                filterPer = int(all['filterPer'])
+                filterMeth = int(all['filterMeth'])
+                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
                 # make sure column types are correct
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
