@@ -153,6 +153,18 @@
                 checkButtons();
             });
 
+            $("#remUnclass").click(function () {
+                checkButtons();
+            });
+
+            $("#remZeroes").click(function () {
+                checkButtons();
+            });
+
+            $("#filterMeth").click(function () {
+                checkButtons();
+            });
+
             $("#TabButton").click(function () {
                 getTab();
             });
@@ -710,6 +722,21 @@
                 myDict['scaled'] = 'no'
             }
 
+            if ($("#remUnclass").is(':checked')) {
+                myDict['remUnclass'] = 'yes'
+            } else {
+                myDict['remUnclass'] = 'no'
+            }
+
+            if ($("#remZeroes").is(':checked')) {
+                myDict['remZeroes'] = 'yes'
+            } else {
+                myDict['remZeroes'] = 'no'
+            }
+
+            myDict['perZeroes'] = document.getElementById("perZeroes").value;
+            myDict['filterMeth'] = document.getElementById("filterMeth").value;
+
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -824,6 +851,41 @@
                     <option value="5">Arcsin</option>-->
                 </select>
                 &nbsp<-- Raw data transformation
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Filtering:</strong></em></td>
+        </tr>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="checkbox" id="remUnclass">&nbsp<-- Remove unassigned/unmapped reads
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="checkbox" id="remZeroes"/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="filterMeth">
+                    <option value="1" selected="selected">None</option>
+                    <option value="2">Interquantile range (IQR)</option>
+                    <option value="3">Coefficient of variation (CV)</option>
+                    <option value="4">Standard deviation (SD)</option>
+                    <option value="5">Mean abundance value</option>
+                    <option value="6">Median abundance value</option>
+                </select>
+                &nbsp<-- Data filtering
             </td>
             <td bgcolor="white"></td>
         </tr>
