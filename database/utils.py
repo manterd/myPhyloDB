@@ -550,28 +550,3 @@ def transformDF(transform, DepVar, finalDF):
             finalDF['abund_16S'] = np.arcsin(finalDF.abund_16S)
 
     return finalDF
-
-
-def filterDF(finalDF, selectAll, remUnclass, remZeroes, perZeroes, filterMeth):
-    if remUnclass == 'yes':
-        pass    # remove unclassified at selected taxa level or above
-
-    if remZeroes == 'yes':
-        pass    # remove phylotypes with greater percentage of zeroes than 'perZeroes'
-
-    if filterMeth == 1:
-        pass
-    elif filterMeth == 2:
-        pass    # filter based on IQR
-    elif filterMeth == 3:
-        pass    # filter based on CV
-    elif filterMeth == 4:
-        pass    # filter based on SD
-    elif filterMeth == 5:
-        pass    # filter based on mean abundance
-    elif filterMeth == 6:
-        pass    # filter based on median abundance
-
-    return finalDF
-
-

@@ -5,9 +5,9 @@ import pandas as pd
 from pyper import *
 import simplejson
 
-from database.utils import multidict, getMetaDF, transformDF, filterDF
+from database.utils import multidict, getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
-from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
+from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo, filterDF
 import database.queue
 
 
@@ -360,11 +360,11 @@ def getPCA(request, stops, RID, PID):
                     result += '===============================================\n'
 
                 # add labels to plot
-                print r("p <- p + ggtitle('Biplot of variables and individuals')")
-                print r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$eig[PC1,2], 1), '%)', sep=''))")
-                print r("p <- p + ylab(paste('Dim.', PC2, ' (', round(res.pca$eig[PC2,2], 1), '%)', sep=''))")
+                r("p <- p + ggtitle('Biplot of variables and individuals')")
+                r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$eig[PC1,2], 1), '%)', sep=''))")
+                r("p <- p + ylab(paste('Dim.', PC2, ' (', round(res.pca$eig[PC2,2], 1), '%)', sep=''))")
 
-                print r("print(p)")
+                r("print(p)")
 
                 r("dev.off()")
                 database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...done')

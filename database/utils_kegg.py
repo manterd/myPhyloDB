@@ -888,3 +888,35 @@ def insertTaxaInfo(button3, zipped, DF, pos=1):
         DF.insert(pos+3, 'Level_4', L4)
 
     DF.fillna(value='N/A', inplace=True)
+
+
+def filterDF(finalDF, selectAll, remUnclass, remZeroes, perZeroes, filterMeth):
+
+    countDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
+    idList = countDF.index.tolist()
+    taxonomyList = getFullTaxonomy(idList)
+    # truncate list of tuples to correct taxa level...
+    print taxonomyList
+
+    if remUnclass == 'yes':
+        pass    # remove unclassified at selected taxa level or above
+
+    if remZeroes == 'yes':
+        pass    # remove phylotypes with greater percentage of zeroes than 'perZeroes'
+
+    if filterMeth == 1:
+        pass
+    elif filterMeth == 2:
+        pass    # filter based on IQR
+    elif filterMeth == 3:
+        pass    # filter based on CV
+    elif filterMeth == 4:
+        pass    # filter based on SD
+    elif filterMeth == 5:
+        pass    # filter based on mean abundance
+    elif filterMeth == 6:
+        pass    # filter based on median abundance
+
+    return finalDF
+
+
