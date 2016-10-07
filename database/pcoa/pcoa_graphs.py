@@ -372,18 +372,21 @@ def getPCoA(request, stops, RID, PID):
                     myPalette = all['palette']
                     r.assign("myPalette", myPalette)
 
+                    r('number <- nlevels(indDF$Shape)')
+                    r('shapes <- rep(c(21, 22, 23, 24, 25), length.out = number) ')
+
                     if not colorVal == 'None':
                         if not shapeVal == 'None':
                             r("p <- p + geom_point(aes(fill=factor(Color), shape=factor(Shape)), size=4)")
                             r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
-                            r("p <- p + scale_shape_manual(name='Symbol-shapes', values=c(21, 22, 23, 24, 25))")
+                            r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
                         else:
                             r("p <- p + geom_point(aes(fill=factor(Color)), shape=21, size=4)")
                             r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
                     else:
                         if not shapeVal == 'None':
                             r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
-                            r("p <- p + scale_shape_manual(name='Symbol-shapes', values=c(21, 22, 23, 24, 25))")
+                            r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
                         else:
                             r("p <- p + geom_point(size=4)")
 

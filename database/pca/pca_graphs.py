@@ -307,18 +307,21 @@ def getPCA(request, stops, RID, PID):
                 myPalette = all['palette']
                 r.assign("myPalette", myPalette)
 
+                r('number <- nlevels(indDF$Shape)')
+                r('shapes <- rep(c(21, 22, 23, 24, 25), length.out = number) ')
+
                 if not colorVal == 'None':
                     if not shapeVal == 'None':
                         r("p <- p + geom_point(aes(fill=factor(Color), shape=factor(Shape)), size=4)")
                         r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
-                        r("p <- p + scale_shape_manual(name='Symbol-shapes', values=c(21, 22, 23, 24, 25))")
+                        r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
                     else:
                         r("p <- p + geom_point(aes(fill=factor(Color)), shape=21, size=4)")
                         r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
                 else:
                     if not shapeVal == 'None':
                         r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
-                        r("p <- p + scale_shape_manual(name='Symbol-shapes', values=c(21, 22, 23, 24, 25))")
+                        r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
                     else:
                         r("p <- p + geom_point(size=4)")
 
@@ -357,11 +360,11 @@ def getPCA(request, stops, RID, PID):
                     result += '===============================================\n'
 
                 # add labels to plot
-                r("p <- p + ggtitle('Biplot of variables and individuals')")
-                r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$eig[PC1,2], 1), '%)', sep=''))")
-                r("p <- p + ylab(paste('Dim.', PC2, ' (', round(res.pca$eig[PC2,2], 1), '%)', sep=''))")
+                print r("p <- p + ggtitle('Biplot of variables and individuals')")
+                print r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$eig[PC1,2], 1), '%)', sep=''))")
+                print r("p <- p + ylab(paste('Dim.', PC2, ' (', round(res.pca$eig[PC2,2], 1), '%)', sep=''))")
 
-                r("print(p)")
+                print r("print(p)")
 
                 r("dev.off()")
                 database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...done')
