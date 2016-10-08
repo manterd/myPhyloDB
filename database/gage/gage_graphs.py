@@ -109,8 +109,6 @@ def getGAGE(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                finalDF = getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID)
-
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
@@ -118,7 +116,10 @@ def getGAGE(request, stops, RID, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
-                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+
+                nzAll = 4
+                filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                finalDF = getKeggDF(filteredDF, metaDF, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

@@ -136,17 +136,6 @@ def getSpAC(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
-                DepVar = 0
-                finalDF = pd.DataFrame()
-                if button3 == 1:
-                    finalDF, missingList = getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-
-                if button3 == 2:
-                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-
-                if button3 == 3:
-                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
@@ -154,7 +143,23 @@ def getSpAC(request, stops, RID, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
-                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                DepVar = 0
+
+                finalDF = pd.DataFrame()
+                if button3 == 1:
+                    filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF, missingList = getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    if selectAll == 8:
+                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
+                        result += '===============================================\n'
+
+                if button3 == 2:
+                    filteredDF = filterDF(savedDF, DepVar, keggAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF = getKeggDF(keggAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                if button3 == 3:
+                    filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF = getNZDF(nzAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)

@@ -10,9 +10,9 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import simplejson
 
 from database.models import PICRUSt
-from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
-from database.utils import multidict
+from database.utils import multidict, getMetaDF
 from database.utils_kegg import sumKEGG, filterDF
+from database.utils_kegg import getTaxaDF, getNZDF
 import database.queue
 
 
@@ -38,70 +38,23 @@ def getsoil_index(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
+                metaValsQuant = []
+                metaIDsQuant = []
 
                 # Get maxvals for plotting
                 maxVals = all['maxVals']
                 locMax = all['locMax']
 
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
+                button3 = 1
+                DepVar = 4
 
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
 
-                catSampleLists = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        catSampleLists.append(idDictCat[key])
-                catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
-
-                if not catFields_edit:
-                    catSampleIDs = savedDF['sampleid'].tolist()
-
-                allSampleIDs = catSampleIDs
-                allFields = catFields_edit
-
-                savedDF = savedDF.loc[savedDF['abund_16S'] != 0]
-                rows, cols = savedDF.shape
-                if rows < 1:
-                    myDict = {'error': "Error: no qPCR or 'rRNA gene copies' data were found for this dataset"}
-                    res = simplejson.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
-
-                finalSampleList = pd.unique(savedDF.sampleid.ravel().tolist())
-                remSampleList = list(set(allSampleIDs) - set(finalSampleList))
-
-                # Removes samples (rows) that are not in our samplelist
-                tempDF = savedDF.loc[savedDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                tempDF[catFields_edit] = tempDF[catFields_edit].astype(str)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        tempDF = tempDF.loc[tempDF[key].isin(metaDictCat[key])]
-
-                wantedList = allFields + ['sampleid']
-
-                metaDF = tempDF[wantedList]
-
-                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += '===============================================\n\n'
-                result += str(len(remSampleList)) + " samples were removed from analysis (missing 'rRNA gene copies' data)\n"
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 1 of 3: Selecting your chosen meta-variables...done')
@@ -114,9 +67,6 @@ def getsoil_index(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n')
 
-                finalDF, keggDF, levelList = getTaxaDF(savedDF, metaDF, RID, stops, PID)
-                finalDF = finalDF[finalDF.rel_abund != 0]
-
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
@@ -124,19 +74,21 @@ def getsoil_index(request, stops, RID, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
-                finalDF = filterDF(finalDF, 'abund_16S', remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+
+                filteredDF = filterDF(savedDF, 4, 7, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                finalDF, missingList = getTaxaDF(7, '', filteredDF, metaDF, allFields, 10, RID, stops, PID)
+                keggDF = getNZDF(7, '', filteredDF, metaDF, allFields, 4, RID, stops, PID)
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
 
-                count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+                count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
                 count_rDF.fillna(0, inplace=True)
                 count_rDF['sum'] = count_rDF[count_rDF.gt(0)].count(axis=1)
                 count_rDF['singletons'] = count_rDF[count_rDF.lt(2)].sum(axis=1)
                 count_rDF['coverage'] = 1 - count_rDF['singletons'] / count_rDF['sum']
                 count_rDF['total'] = count_rDF.sum(axis=1)
 
-                '''
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/soil_index/'
                 path = str(myDir) + str(RID) + '.pkl'
@@ -145,106 +97,98 @@ def getsoil_index(request, stops, RID, PID):
                 if not os.path.exists(myDir):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
-                '''
 
-                meta_rDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-
-                # Removes samples (rows) that are not in our sample_rlist
-                meta_rDF = meta_rDF.loc[meta_rDF['sampleid'].isin(catSampleIDs)]
-
-                # make sure column types are correct
-                meta_rDF[catFields_edit] = meta_rDF[catFields_edit].astype(str)
-
-                want = catFields_edit + ['sampleid']
-                bioDF = meta_rDF[want].copy()
-                chemDF = meta_rDF[want].copy()
-                physDF = meta_rDF[want].copy()
+                want = catFields + ['sampleid']
+                metaDF.reset_index(drop=False, inplace=True)
+                bioDF = metaDF[want].copy()
+                chemDF = metaDF[want].copy()
+                physDF = metaDF[want].copy()
 
                 # check for null columns, fill with blanks if found (0's, not nulls)
                 # Biological
 
-                if 'microbial_respiration' in meta_rDF.columns:
-                    bioDF['microbial_respiration'] = meta_rDF['microbial_respiration']
+                if 'microbial_respiration' in metaDF.columns:
+                    bioDF['microbial_respiration'] = metaDF['microbial_respiration']
                 else:
                     bioDF['microbial_respiration'] = 0.0
 
-                if 'soil_active_c' in meta_rDF.columns:
-                    bioDF['soil_active_c'] = meta_rDF['soil_active_c']
+                if 'soil_active_c' in metaDF.columns:
+                    bioDF['soil_active_c'] = metaDF['soil_active_c']
                 else:
                     bioDF['soil_active_c'] = 0.0
 
-                if 'soil_ACE_protein' in meta_rDF.columns:
-                    bioDF['soil_ACE_protein'] = meta_rDF['soil_ACE_protein']
+                if 'soil_ACE_protein' in metaDF.columns:
+                    bioDF['soil_ACE_protein'] = metaDF['soil_ACE_protein']
                 else:
                     bioDF['soil_ACE_protein'] = 0.0
 
                 # Chemical
-                if 'soil_pH' in meta_rDF.columns:
-                    chemDF['soil_pH'] = meta_rDF['soil_pH']
+                if 'soil_pH' in metaDF.columns:
+                    chemDF['soil_pH'] = metaDF['soil_pH']
                 else:
                     chemDF['soil_pH'] = 0.0
-                if 'soil_C' in meta_rDF.columns:
-                    chemDF['soil_C'] = meta_rDF['soil_C']
+                if 'soil_C' in metaDF.columns:
+                    chemDF['soil_C'] = metaDF['soil_C']
                 else:
                     chemDF['soil_C'] = 0.0
-                if 'soil_OM' in meta_rDF.columns:
-                    chemDF['soil_OM'] = meta_rDF['soil_OM']
+                if 'soil_OM' in metaDF.columns:
+                    chemDF['soil_OM'] = metaDF['soil_OM']
                 else:
                     chemDF['soil_OM'] = 0.0
-                if 'soil_N' in meta_rDF.columns:
-                    chemDF['soil_N'] = meta_rDF['soil_N']
+                if 'soil_N' in metaDF.columns:
+                    chemDF['soil_N'] = metaDF['soil_N']
                 else:
                     chemDF['soil_N'] = 0.0
-                if 'soil_P' in meta_rDF.columns:
-                    chemDF['soil_P'] = meta_rDF['soil_P']
+                if 'soil_P' in metaDF.columns:
+                    chemDF['soil_P'] = metaDF['soil_P']
                 else:
                     chemDF['soil_P'] = 0.0
-                if 'soil_K' in meta_rDF.columns:
-                    chemDF['soil_K'] = meta_rDF['soil_K']
+                if 'soil_K' in metaDF.columns:
+                    chemDF['soil_K'] = metaDF['soil_K']
                 else:
                     chemDF['soil_K'] = 0.0
 
                 # Physical
-                if 'water_content_soil' in meta_rDF.columns:
-                    physDF['water_content_soil'] = meta_rDF['water_content_soil']
+                if 'water_content_soil' in metaDF.columns:
+                    physDF['water_content_soil'] = metaDF['water_content_soil']
                 else:
                     physDF['water_content_soil'] = 0.0
-                if 'bulk_density' in meta_rDF.columns:
-                    physDF['bulk_density'] = meta_rDF['bulk_density']
+                if 'bulk_density' in metaDF.columns:
+                    physDF['bulk_density'] = metaDF['bulk_density']
                 else:
                     physDF['bulk_density'] = 0.0
-                if 'porosity' in meta_rDF.columns:
-                    physDF['porosity'] = meta_rDF['porosity']
+                if 'porosity' in metaDF.columns:
+                    physDF['porosity'] = metaDF['porosity']
                 else:
                     physDF['porosity'] = 0.0
-                if 'soil_EC' in meta_rDF.columns:
-                    physDF['soil_EC'] = meta_rDF['soil_EC']
+                if 'soil_EC' in metaDF.columns:
+                    physDF['soil_EC'] = metaDF['soil_EC']
                 else:
                     physDF['soil_EC'] = 0.0
-                if 'soil_surf_hard' in meta_rDF.columns:
-                    physDF['soil_surf_hard'] = meta_rDF['soil_surf_hard']
+                if 'soil_surf_hard' in metaDF.columns:
+                    physDF['soil_surf_hard'] = metaDF['soil_surf_hard']
                 else:
                     physDF['soil_surf_hard'] = 0.0
-                if 'soil_subsurf_hard' in meta_rDF.columns:
-                    physDF['soil_subsurf_hard'] = meta_rDF['soil_subsurf_hard']
+                if 'soil_subsurf_hard' in metaDF.columns:
+                    physDF['soil_subsurf_hard'] = metaDF['soil_subsurf_hard']
                 else:
                     physDF['soil_subsurf_hard'] = 0.0
-                if 'microbial_biomass_C' in meta_rDF.columns:
-                    physDF['microbial_biomass_C'] = meta_rDF['microbial_biomass_C']
+                if 'microbial_biomass_C' in metaDF.columns:
+                    physDF['microbial_biomass_C'] = metaDF['microbial_biomass_C']
                 else:
                     physDF['microbial_biomass_C'] = 0.0
-                if 'microbial_biomass_N' in meta_rDF.columns:
-                    physDF['microbial_biomass_N'] = meta_rDF['microbial_biomass_N']
+                if 'microbial_biomass_N' in metaDF.columns:
+                    physDF['microbial_biomass_N'] = metaDF['microbial_biomass_N']
                 else:
                     physDF['microbial_biomass_N'] = 0.0
 
-                if 'soil_agg_stability' in meta_rDF.columns:
-                    physDF['soil_agg_stability'] = meta_rDF['soil_agg_stability']
+                if 'soil_agg_stability' in metaDF.columns:
+                    physDF['soil_agg_stability'] = metaDF['soil_agg_stability']
                 else:
                     physDF['soil_agg_stability'] = 0.0
 
-                if 'soil_water_cap' in meta_rDF.columns:
-                    physDF['soil_water_cap'] = meta_rDF['soil_water_cap']
+                if 'soil_water_cap' in metaDF.columns:
+                    physDF['soil_water_cap'] = metaDF['soil_water_cap']
                 else:
                     physDF['soil_water_cap'] = 0.0
 
@@ -258,21 +202,24 @@ def getsoil_index(request, stops, RID, PID):
                 dataDF.set_index('sampleid', drop=True, inplace=True)
 
                 # get means
-                bioDF = bioDF.groupby(catFields_edit)
-                chemDF = chemDF.groupby(catFields_edit)
-                physDF = physDF.groupby(catFields_edit)
+                bioDF = bioDF.groupby(catFields)
+                chemDF = chemDF.groupby(catFields)
+                physDF = physDF.groupby(catFields)
 
                 bioDF = bioDF.mean()
                 chemDF = chemDF.mean()
                 physDF = physDF.mean()
 
-                if metaDictCat:
-                    for key in metaDictCat:
-                        meta_rDF = meta_rDF.loc[meta_rDF[key].isin(metaDictCat[key])]
-
                 wantedList = allFields + ['sampleid', 'sample_name']
-                meta_rDF = meta_rDF[wantedList]
-                meta_rDF.set_index('sampleid', drop=True, inplace=True)
+                metaDF = metaDF[wantedList]
+                metaDF.set_index('sampleid', drop=True, inplace=True)
+
+                speciesList = finalDF['rank_id'].tolist()
+                speciesList = list(set(speciesList))
+                qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
+                df = read_frame(qs, fieldnames=['speciesid__speciesid', 'rRNACount'])
+                df.rename(columns={'speciesid__speciesid': 'rank_id'}, inplace=True)
+                finalDF = pd.merge(finalDF, df, left_on='rank_id', right_on='rank_id', how='outer')
 
                 rnaDF = finalDF.replace(r'\s+', np.nan, regex=True)
                 rnaDF.fillna(0.0, axis=1, inplace=True)
@@ -291,12 +238,12 @@ def getsoil_index(request, stops, RID, PID):
                 sumDF2 = finalDF.groupby('sampleid')['abund_16S', 'rich', 'diversity'].sum()
                 allDF = pd.merge(sumDF2, sumDF1, left_index=True, right_index=True, how='outer')
 
-                allDF = pd.merge(allDF, meta_rDF, left_index=True, right_index=True, how='outer')
+                allDF = pd.merge(allDF, metaDF, left_index=True, right_index=True, how='outer')
                 allDF = pd.merge(allDF, count_rDF, left_index=True, right_index=True, how='inner')
 
                 wantList = ['abund_16S', 'rich', 'diversity', 'coverage'] + myBins
 
-                bytrt1 = allDF.groupby(catFields_edit)[wantList]
+                bytrt1 = allDF.groupby(catFields)[wantList]
                 df1 = bytrt1.mean()
 
                 # merge with other df's before sending to R
@@ -305,18 +252,18 @@ def getsoil_index(request, stops, RID, PID):
                 df1 = pd.merge(df1, physDF, left_index=True, right_index=True, how='outer')
 
                 df1.reset_index(drop=False, inplace=True)
-                if len(catFields_edit) > 1:
+                if len(catFields) > 1:
                     for index, row in df1.iterrows():
-                        df1.loc[index, 'Treatment'] = " & ".join(row[catFields_edit])
+                        df1.loc[index, 'Treatment'] = " & ".join(row[catFields])
                 else:
-                    df1.loc[:, 'Treatment'] = df1.loc[:, catFields_edit[0]]
+                    df1.loc[:, 'Treatment'] = df1.loc[:, catFields[0]]
 
                 df1.set_index('Treatment', inplace=True)
 
-                nzDF = keggDF.groupby(['sampleid', 'rank_name'])['abund'].sum()
+                nzDF = keggDF.groupby(['sampleid', 'rank_name'])['abund_16S'].sum()
                 nzDF = nzDF.unstack(level=-1)
-                starDF = pd.merge(meta_rDF, nzDF, left_index=True, right_index=True, how='outer')
-                bytrt2 = starDF.groupby(catFields_edit)
+                starDF = pd.merge(metaDF, nzDF, left_index=True, right_index=True, how='outer')
+                bytrt2 = starDF.groupby(catFields)
 
                 dataDF = pd.merge(dataDF, sumDF1, left_index=True, right_index=True, how='outer')
                 dataDF = pd.merge(dataDF, sumDF2, left_index=True, right_index=True, how='outer')
@@ -350,7 +297,7 @@ def getsoil_index(request, stops, RID, PID):
 
                 dataDF = pd.merge(dataDF, starDF[myList], left_index=True, right_index=True, how='outer')
                 want = ['sample_name']
-                dataDF = pd.merge(meta_rDF[want], dataDF, left_index=True, right_index=True, how='outer')
+                dataDF = pd.merge(metaDF[want], dataDF, left_index=True, right_index=True, how='outer')
                 dataDF.reset_index(drop=False, inplace=True)
 
                 df2 = bytrt2[myList].mean()
@@ -394,11 +341,11 @@ def getsoil_index(request, stops, RID, PID):
                 r.assign("RID", RID)
 
                 df2.reset_index(drop=False, inplace=True)
-                if len(catFields_edit) > 1:
+                if len(catFields) > 1:
                     for index, row in df2.iterrows():
-                        df2.loc[index, 'Treatment'] = " & ".join(row[catFields_edit])
+                        df2.loc[index, 'Treatment'] = " & ".join(row[catFields])
                 else:
-                    df2.loc[:, 'Treatment'] = df2.loc[:, catFields_edit[0]]
+                    df2.loc[:, 'Treatment'] = df2.loc[:, catFields[0]]
 
                 df2.set_index('Treatment', inplace=True)
                 df2 = df2[newList]
@@ -776,251 +723,6 @@ def getsoil_index(request, stops, RID, PID):
                 finalDict['error'] = 'none'
                 res = simplejson.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
-
-    except Exception as e:
-        if not stops[PID] == RID:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-
-
-def getTaxaDF(savedDF, metaDF, RID, stops, PID):
-    try:
-        database.queue.setBase(RID, 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n')
-        taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
-        taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        taxaDF.drop('sampleid', axis=1, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
-
-        speciesList = taxaDF['rank_id'].tolist()
-        speciesList = list(set(speciesList))
-        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-        df = read_frame(qs, fieldnames=['speciesid__speciesid', 'rRNACount'])
-        df.rename(columns={'speciesid__speciesid': 'rank_id'}, inplace=True)
-        finalDF = pd.merge(finalDF, df, left_on='rank_id', right_on='rank_id', how='outer')
-
-        keggDF, levelList = getNZDF(metaDF, finalDF, RID, stops, PID)
-
-        return finalDF, keggDF, levelList
-
-    except Exception as e:
-        if not stops[PID] == RID:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-            myDict = {}
-            myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = simplejson.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-
-
-def getNZDF(metaDF, finalDF, RID, stops, PID):
-    try:
-        nzDict = {}
-        # 1.18.6.1  nitrogenase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.3.3.11  pyrroloquinoline-quinone synthase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.3.3.11  pyrroloquinoline-quinone synthase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.4.99.5  glycine dehydrogenase (cyanide-forming)
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.99.5  glycine dehydrogenase (cyanide-forming)').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.1.1.76  (S,S)-butanediol dehydrogenase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.1.1.76  (S,S)-butanediol dehydrogenase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.2.1.14  chitinase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.14  chitinase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 4.1.1.74  indolepyruvate decarboxylase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.74  indolepyruvate decarboxylase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 6.3.2.39  aerobactin synthase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.39  aerobactin synthase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.2.1.4  cellulase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.4  cellulase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.2.1.21  beta-glucosidase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.21  beta-glucosidase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.2.1.8  endo-1,4-beta-xylanase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.8  endo-1,4-beta-xylanase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.2.1.37  xylan 1,4-beta-xylosidase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.37  xylan 1,4-beta-xylosidase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.5.1.4  amidase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.5.1.5  urease
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.5  urease').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.1.3.1  alkaline phosphatase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.1  alkaline phosphatase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.1.3.2  acid phosphatase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.2  acid phosphatase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 3.1.6.1  arylsulfatase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.14.99.39  ammonia monooxygenase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.7.2.6  hydroxylamine dehydrogenase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.7.99.4  nitrate reductase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.7.2.1  nitrite reductase (NO-forming)
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.7.2.5  nitric oxide reductase (cytochrome c)
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # 1.7.2.4  nitrous-oxide reductase
-        id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
-        idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-        nzDict[id] = idList
-
-        # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'rank_id', 'rel_abund', 'abund_16S']
-        profileDF = finalDF.loc[:, wanted]
-        profileDF.set_index('rank_id', inplace=True)
-
-        # get PICRUSt data for species
-        speciesList = pd.unique(finalDF['rank_id'].tolist())
-        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
-        picrustDF.set_index('speciesid__speciesid', inplace=True)
-
-        levelList = []
-        for key in nzDict:
-            levelList.append(str(key))
-
-        picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
-        picrustDF.fillna(0.0, inplace=True)
-        picrustDF = sumKEGG(speciesList, picrustDF, nzDict, RID, PID, stops)
-        picrustDF.drop('geneCount', axis=1, inplace=True)
-        picrustDF[picrustDF > 0.0] = 1.0
-
-        # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
-
-        for level in levelList:
-            taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
-        taxaDF.reset_index(drop=False, inplace=True)
-
-        taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
-
-        metaDF.set_index('sampleid', drop=True, inplace=True)
-        grouped = metaDF.groupby(level=0)
-        metaDF = grouped.last()
-
-        taxaDF.set_index('sampleid', drop=True, inplace=True)
-        keggDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
-        keggDF.reset_index(drop=False, inplace=True)
-
-        keggDF['rank'] = ''
-        keggDF['rank_name'] = ''
-
-        for index, row in keggDF.iterrows():
-            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=row['rank_id']).exists():
-                keggDF.loc[index, 'rank'] = 'Lvl1'
-                keggDF.loc[index, 'rank_name'] = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=row['rank_id']).nz_lvl1_name
-            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=row['rank_id']).exists():
-                keggDF.loc[index, 'rank'] = 'Lvl2'
-                keggDF.loc[index, 'rank_name'] = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=row['rank_id']).nz_lvl2_name
-            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=row['rank_id']).exists():
-                keggDF.loc[index, 'rank'] = 'Lvl3'
-                keggDF.loc[index, 'rank_name'] = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=row['rank_id']).nz_lvl3_name
-            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=row['rank_id']).exists():
-                keggDF.loc[index, 'rank'] = 'Lvl4'
-                keggDF.loc[index, 'rank_name'] = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=row['rank_id']).nz_lvl4_name
-            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=row['rank_id']).exists():
-                keggDF.loc[index, 'rank'] = 'Lvl5'
-                keggDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_name
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        return keggDF, levelList
 
     except Exception as e:
         if not stops[PID] == RID:

@@ -810,18 +810,18 @@
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="remZeroes" checked/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+                <input type="checkbox" id="remZeroes"/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
             </td>
             <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="filterData" checked/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
+                <input type="checkbox" id="filterData"/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
                 <select id="filterMeth">
                     <!--<option value="1">None</option>-->
                     <option value="2" selected="selected">Interquantile range (IQR)</option>
-                    <option value="3">Variance (V)</option>
+                    <option value="3">Coefficient of variation (CV)</option>
                     <option value="4">Standard deviation (SD)</option>
                     <option value="5">Mean abundance value</option>
                     <option value="6">Median abundance value</option>
@@ -868,7 +868,7 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td id="cell_taxa" colspan="8" style="text-align: center"></td>
+            <td colspan="8" style="text-align: center"></td>
             <td colspan="4" style="text-align: center"></td>
             <td colspan="8" style="text-align: center"></td>
         </tr>

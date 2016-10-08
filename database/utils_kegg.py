@@ -178,7 +178,8 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             finalDF = finalDF.groupby(wantedList)[['rich']].sum()
         elif DepVar == 3:
             finalDF = finalDF.groupby(wantedList)[['diversity']].sum()
-
+        elif DepVar == 10:
+            finalDF = finalDF.groupby(wantedList)[['abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']].sum()
         finalDF.reset_index(drop=False, inplace=True)
         return finalDF, missingList
 
@@ -270,6 +271,19 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
             keys = ko_lvl3.objects.using('picrust').values_list('ko_lvl3_id', flat=True)
             for key in keys:
                 koList = ko_entry.objects.using('picrust').filter(ko_lvl3_id_id=key).values_list('ko_orthology', flat=True)
+                if koList:
+                    koDict[key] = koList
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        elif keggAll == 4:
+            keys = ko_entry.objects.using('picrust').values_list('ko_lvl4_id', flat=True)
+            for key in keys:
+                koList = ko_entry.objects.using('picrust').filter(ko_lvl4_id=key).values_list('ko_orthology', flat=True)
                 if koList:
                     koDict[key] = koList
 
@@ -627,8 +641,130 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 
+        elif nzAll == 7:
+            # 1.18.6.1  nitrogenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.3.3.11  pyrroloquinoline-quinone synthase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.3.3.11  pyrroloquinoline-quinone synthase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.4.99.5  glycine dehydrogenase (cyanide-forming)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.99.5  glycine dehydrogenase (cyanide-forming)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.1.1.76  (S,S)-butanediol dehydrogenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.1.1.76  (S,S)-butanediol dehydrogenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.14  chitinase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.14  chitinase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 4.1.1.74  indolepyruvate decarboxylase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.74  indolepyruvate decarboxylase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 6.3.2.39  aerobactin synthase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.39  aerobactin synthase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.4  cellulase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.4  cellulase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.21  beta-glucosidase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.21  beta-glucosidase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.8  endo-1,4-beta-xylanase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.8  endo-1,4-beta-xylanase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.2.1.37  xylan 1,4-beta-xylosidase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.37  xylan 1,4-beta-xylosidase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.5.1.4  amidase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.5.1.5  urease
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.5  urease').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.1.3.1  alkaline phosphatase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.1  alkaline phosphatase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.1.3.2  acid phosphatase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.2  acid phosphatase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 3.1.6.1  arylsulfatase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.14.99.39  ammonia monooxygenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.6  hydroxylamine dehydrogenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.99.4  nitrate reductase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.1  nitrite reductase (NO-forming)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.5  nitric oxide reductase (cytochrome c)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.4  nitrous-oxide reductase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S']
+        print savedDF
         profileDF = savedDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -890,8 +1026,9 @@ def insertTaxaInfo(button3, zipped, DF, pos=1):
     DF.fillna(value='N/A', inplace=True)
 
 
-def filterDF(finalDF, DepVar, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth):
-    numSamples = len(finalDF['sampleid'].unique())
+def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth):
+
+    numSamples = len(savedDF['sampleid'].unique())
     myVar = ''
     if DepVar == 0:
         myVar = 'abund'
@@ -904,47 +1041,73 @@ def filterDF(finalDF, DepVar, remUnclass, remZeroes, perZeroes, filterData, filt
     elif DepVar == 4:
         myVar = 'abund_16S'
 
+    myLevel = 0
+    myID = ''
+    if level == 1:
+        myLevel = 'kingdomName'
+        myID = 'kingdomid'
+    elif level == 2:
+        myLevel = 'phylaName'
+        myID = 'phylaid'
+    elif level == 3:
+        myLevel = 'className'
+        myID = 'classid'
+    elif level == 4:
+        myLevel = 'orderName'
+        myID = 'orderid'
+    elif level == 5:
+        myLevel = 'familyName'
+        myID = 'familyid'
+    elif level == 6:
+        myLevel = 'genusName'
+        myID = 'genusid'
+    elif level == 7:
+        myLevel = 'speciesName'
+        myID = 'speciesid'
+
     if remUnclass == 'yes':
-        finalDF = finalDF[~finalDF['rank_name'].str.contains('unclassified')]
+        savedDF = savedDF[~savedDF[myLevel].str.contains('unclassified')]
 
     if remZeroes == 'yes' and perZeroes > 0:
         threshold = int(perZeroes / 100.0 * numSamples)
-        bytag = finalDF.groupby('rank_id').aggregate(np.count_nonzero)
+        bytag = savedDF.groupby(myID).aggregate(np.count_nonzero)
         tags = bytag[bytag[myVar] >= threshold].index.tolist()
-        finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+        savedDF = savedDF[savedDF[myID].isin(tags)]
 
     if filterData == 'yes' and filterPer < 100:
         threshold = int(filterPer / 100.0 * numSamples)
         if filterMeth == 1:
             pass
         elif filterMeth == 2:
-            bytag_q3 = finalDF.groupby('rank_id')[myVar].quantile(0.75)
-            bytag_q1 = finalDF.groupby('rank_id')[myVar].quantile(0.25)
+            bytag_q3 = savedDF.groupby(myID)[myVar].quantile(0.75)
+            bytag_q1 = savedDF.groupby(myID)[myVar].quantile(0.25)
             bytag = bytag_q3 - bytag_q1
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
-            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+            savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 3:
-            bytag = finalDF.groupby('rank_id')[myVar].var()
+            bytag_sd = savedDF.groupby(myID)[myVar].std()
+            bytag_mean = savedDF.groupby(myID)[myVar].mean()
+            bytag = bytag_sd / bytag_mean
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
-            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+            savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 4:
-            bytag = finalDF.groupby('rank_id')[myVar].std()
+            bytag = savedDF.groupby(myID)[myVar].std()
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
-            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+            savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 5:
-            bytag = finalDF.groupby('rank_id')[myVar].mean()
+            bytag = savedDF.groupby(myID)[myVar].mean()
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
-            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+            savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 6:
-            bytag = finalDF.groupby('rank_id')[myVar].median()
+            bytag = savedDF.groupby(myID)[myVar].median()
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
-            finalDF = finalDF[finalDF['rank_id'].isin(tags)]
+            savedDF = savedDF[savedDF[myID].isin(tags)]
 
-    return finalDF
+    return savedDF
 
 

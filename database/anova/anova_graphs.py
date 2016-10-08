@@ -76,25 +76,6 @@ def getCatUnivData(request, RID, stops, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
-                finalDF = pd.DataFrame()
-                if button3 == 1:
-                    taxaString = all["taxa"]
-                    taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF, missingList = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-                    if selectAll == 8:
-                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
-                        result += '===============================================\n'
-
-                elif button3 == 2:
-                    keggString = all["kegg"]
-                    keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-
-                elif button3 == 3:
-                    nzString = all["nz"]
-                    nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF = getNZDF(nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
@@ -102,7 +83,22 @@ def getCatUnivData(request, RID, stops, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
-                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+
+                finalDF = pd.DataFrame()
+                if button3 == 1:
+                    filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF, missingList = getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    if selectAll == 8:
+                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
+                        result += '===============================================\n'
+
+                if button3 == 2:
+                    filteredDF = filterDF(savedDF, DepVar, keggAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF = getKeggDF(keggAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                if button3 == 3:
+                    filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF = getNZDF(nzAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -572,25 +568,6 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or kegg level...')
 
-                finalDF = pd.DataFrame()
-                if button3 == 1:
-                    taxaString = all["taxa"]
-                    taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
-                    finalDF, missingList = getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-                    if selectAll == 8:
-                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
-                        result += '===============================================\n'
-
-                if button3 == 2:
-                    keggString = all["kegg"]
-                    keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF, missingList = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-
-                if button3 == 3:
-                    nzString = all["nz"]
-                    nzDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(nzString)
-                    finalDF, missingList = getNZDF(nzAll, nzDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
@@ -598,7 +575,22 @@ def getQuantUnivData(request, RID, stops, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
-                finalDF = filterDF(finalDF, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+
+                finalDF = pd.DataFrame()
+                if button3 == 1:
+                    filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF, missingList = getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    if selectAll == 8:
+                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
+                        result += '===============================================\n'
+
+                if button3 == 2:
+                    filteredDF = filterDF(savedDF, DepVar, keggAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF = getKeggDF(keggAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+
+                if button3 == 3:
+                    filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF = getNZDF(nzAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

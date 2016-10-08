@@ -166,6 +166,22 @@
                 checkButtons();
             });
 
+            $("#remUnclass").click(function () {
+                checkButtons();
+            });
+
+            $("#remZeroes").click(function () {
+                checkButtons();
+            });
+
+            $("#filterData").click(function () {
+                checkButtons();
+            });
+
+            $("#filterMeth").click(function () {
+                checkButtons();
+            });
+
             $("#TabButton").click(function () {
                 getTab();
             });
@@ -440,6 +456,29 @@
                 myDict['funcName'] = "getGAGE";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
+
+                if ($("#remUnclass").is(':checked')) {
+                    myDict['remUnclass'] = 'yes'
+                } else {
+                    myDict['remUnclass'] = 'no'
+                }
+
+                if ($("#remZeroes").is(':checked')) {
+                    myDict['remZeroes'] = 'yes'
+                } else {
+                    myDict['remZeroes'] = 'no'
+                }
+
+                if ($("#filterData").is(':checked')) {
+                    myDict['filterData'] = 'yes'
+                } else {
+                    myDict['filterData'] = 'no'
+                }
+
+                myDict['perZeroes'] = document.getElementById("perZeroes").value;
+                myDict['filterPer'] = document.getElementById("filterPer").value;
+                myDict['filterMeth'] = document.getElementById("filterMeth").value;
+
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
@@ -582,16 +621,16 @@
             </tr>
             <tr>
                 <td bgcolor="white">
-                    <input type="checkbox" id="remZeroes" checked/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+                    <input type="checkbox" id="remZeroes"/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
                 </td>
             </tr>
             <tr>
                 <td bgcolor="white">
-                    <input type="checkbox" id="filterData" checked/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on
+                    <input type="checkbox" id="filterData"/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on
                     <select id="filterMeth">
                         <!--<option value="1">None</option>-->
                         <option value="2" selected="selected">Interquantile range (IQR)</option>
-                        <option value="3">Variance (V)</option>
+                        <option value="3">Coefficient of variation (CV)</option>
                         <option value="4">Standard deviation (SD)</option>
                         <option value="5">Mean abundance value</option>
                         <option value="6">Median abundance value</option>
