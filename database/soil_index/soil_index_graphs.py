@@ -224,9 +224,13 @@ def getsoil_index(request, stops, RID, PID):
                 rnaDF = finalDF.replace(r'\s+', np.nan, regex=True)
                 rnaDF.fillna(0.0, axis=1, inplace=True)
                 rnaDF['bins'] = 'bin1'
-                rnaDF.ix[(rnaDF.rRNACount > 0) & (rnaDF.rRNACount <= 2), 'bins'] = 'bin1'
-                rnaDF.ix[(rnaDF.rRNACount > 2) & (rnaDF.rRNACount < 4), 'bins'] = 'bin2'
-                rnaDF.ix[rnaDF.rRNACount >= 4, 'bins'] = 'bin3'
+                rnaDF.ix[(rnaDF.rRNACount == 1), 'bins'] = 'bin1'
+                rnaDF.ix[(rnaDF.rRNACount == 2), 'bins'] = 'bin2'
+                rnaDF.ix[(rnaDF.rRNACount == 3), 'bins'] = 'bin3'
+                rnaDF.ix[(rnaDF.rRNACount == 4), 'bins'] = 'bin4'
+                rnaDF.ix[(rnaDF.rRNACount == 5), 'bins'] = 'bin5'
+                rnaDF.ix[(rnaDF.rRNACount == 6), 'bins'] = 'bin6'
+                rnaDF.ix[rnaDF.rRNACount > 6, 'bins'] = 'bin7'
                 myBins = list(set(rnaDF['bins'].tolist()))
 
                 binDF = rnaDF.groupby(['sampleid', 'bins'])['rel_abund'].sum()
@@ -234,17 +238,19 @@ def getsoil_index(request, stops, RID, PID):
                 binDF.fillna(0.0, axis=1, inplace=True)
                 binDF.reset_index(drop=False, inplace=True)
                 sumDF1 = binDF.groupby('sampleid')[myBins].sum()
-
+                sumDF1['stability'] = (sumDF1['bin1'] * 1) + (sumDF1['bin2'] * 2) + (sumDF1['bin3'] * 3) + \
+                    (sumDF1['bin4'] * 4) + (sumDF1['bin5'] * 5) + (sumDF1['bin6'] * 6) + (sumDF1['bin7'] * 7)
                 sumDF2 = finalDF.groupby('sampleid')['abund_16S', 'rich', 'diversity'].sum()
                 allDF = pd.merge(sumDF2, sumDF1, left_index=True, right_index=True, how='outer')
 
                 allDF = pd.merge(allDF, metaDF, left_index=True, right_index=True, how='outer')
                 allDF = pd.merge(allDF, count_rDF, left_index=True, right_index=True, how='inner')
 
-                wantList = ['abund_16S', 'rich', 'diversity', 'coverage'] + myBins
+                wantList = ['abund_16S', 'rich', 'diversity', 'coverage'] + myBins + ['stability']
 
                 bytrt1 = allDF.groupby(catFields)[wantList]
                 df1 = bytrt1.mean()
+                print df1
 
                 # merge with other df's before sending to R
                 df1 = pd.merge(df1, bioDF, left_index=True, right_index=True, how='outer')
@@ -638,16 +644,16 @@ def getsoil_index(request, stops, RID, PID):
 
                     # RNA bins
 
-                    r('vals <- as.matrix(t(odat[off, myBins]))')
+                    r('vals <- as.matrix(t(odat[off, rev(myBins)]))')
                     r('par(mai=c(0.5,3,0,3))')
                     r('bar <- barplot(vals, xlim=c(0,1), ylim=c(0,1), \
                         width=0.2, horiz=T, space=0, xpd=T, \
-                        cex.names=0.8, las=2, axes=F, col=c("red", "darkgray", "green"), \
-                         beside=F, yaxs="i", xaxs="i")')
+                        cex.names=0.8, las=2, axes=F, col=rainbow(10), \
+                        beside=F, yaxs="i", xaxs="i")')
                     r('axis(1, at=c(0, 0.25, 0.5, 0.75, 1), lwd.ticks=0.2, cex.axis=0.8)')
-                    r('text(x=c(0.2, 0.5, 0.8), y=bar+0.3, labels=round(vals, 3), cex=0.8, xpd=T)')
+                    #r('text(x=c(0.2, 0.5, 0.8), y=bar+0.3, labels=round(vals, 3), cex=0.8, xpd=T)')
                     r('title("rRNA Copy Number", line=-0.8, xpd=T)')
-                    r('legend(1.1, 0.5, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"), xpd=T)')
+                    #r('legend(1.1, 0.5, c("x <= 2", "2 < x < 4", "x >= 4"), cex=0.8, bty="n", fill=c("red", "darkgray", "green"), xpd=T)')
 
 
                     r('dev.off()')

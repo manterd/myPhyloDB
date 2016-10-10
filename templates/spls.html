@@ -635,7 +635,7 @@
                     <option value="2" >KEGG orthology</option>
                     <option value="3" >KEGG enzyme</option>
                 </select>
-                &nbsp<-- Sequence mapping
+                &nbsp; <-- Sequence mapping
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -651,7 +651,7 @@
                     <option value="7" selected="selected">Species</option>
                     <option value="8">PGPRs</option>
                 </select>
-                &nbsp<-- Taxa level
+                &nbsp; <-- Taxa level
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -663,7 +663,7 @@
                     <option value="2">Level 2</option>
                     <option value="3">Level 3</option>
                 </select>
-                &nbsp<-- KEGG Pathway level
+                &nbsp; <-- KEGG Pathway level
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -678,7 +678,7 @@
                     <option value="5">GIBBs</option>
                     <option value="6">N cycle</option>
                 </select>
-                &nbsp<-- KEGG Enzyme level
+                &nbsp; <-- KEGG Enzyme level
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -692,7 +692,7 @@
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
                 </select>
-                &nbsp<-- Dependent variable
+                &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Relative Abundance = proportion<br>Total Abundance = 16S rRNA copies per g soil<br>Species Richness = Number of species<br>Species Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -707,7 +707,7 @@
                     <!--<option value="4">Logit</option>
                     <option value="5">Arcsin</option>-->
                 </select>
-                &nbsp<-- Raw data transformation
+                &nbsp; <-- Raw data transformation
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -720,21 +720,21 @@
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="remUnclass" checked>&nbsp<-- Remove unassigned/unmapped reads
+                <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
             </td>
             <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="remZeroes"/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+                <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
             </td>
             <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="filterData"/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
+                <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
                 <select id="filterMeth">
                     <!--<option value="1">None</option>-->
                     <option value="2" selected="selected">Interquantile range (IQR)</option>
@@ -760,7 +760,7 @@
             <td bgcolor="white">
                 <span title="cutoff for the ratio of the most common value to the second most common value">
                     <input type="text" id="freqCut" value="95/5" style="width:40px; background-color: white"/>
-                    &nbsp<-- freqCut for nearZeroVar
+                    &nbsp; <-- freqCut for nearZeroVar
                 </span>
             </td>
             <td bgcolor="white"></td>
@@ -770,7 +770,7 @@
             <td bgcolor="white">
                 <span title="cutoff for the percentage of distinct values out of the number of total samples" >
                     <input type="text" id="uniqueCut" value="10" style="width:40px; background-color: white"/>
-                    &nbsp<-- uniqueCut for nearZeroVar
+                    &nbsp; <-- uniqueCut for nearZeroVar
                 </span>
             </td>
             <td bgcolor="white"></td>
@@ -784,7 +784,7 @@
             <td bgcolor="white">
                 <span title="check to scale predictor (X) variables by dividing by the standard deviation" >
                     <input type="checkbox" checked id="x_scale"/>
-                    &nbsp<-- scale predictor (X) variables
+                    &nbsp; <-- scale predictor (X) variables
                 </span>
 
             </td>
@@ -795,7 +795,7 @@
             <td bgcolor="white">
                 <span title="check to scale response (Y) variables by dividing by the standard deviation" >
                     <input type="checkbox" id="y_scale"/>
-                    &nbsp<-- scale response (Y) variables
+                    &nbsp; <-- scale response (Y) variables
                 </span>
 
             </td>
@@ -817,7 +817,7 @@
                         <option value="median">Median (WPGMC)</option>
                         <option value="centroid">Centroid (UPGMC)</option>
                     </select>
-                &nbsp<-- Linkage method
+                &nbsp; <-- Linkage method
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -832,7 +832,7 @@
                         <option value="manhattan">Manhattan</option>
                         <option value="maximum">Maximum</option>
                     </select>
-                &nbsp<-- Distance metric
+                &nbsp; <-- Distance metric
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -848,7 +848,7 @@
                 <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
                 &nbsp;
                 <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
-                &nbsp<-- Start/stop analysis
+                &nbsp; <-- Start/stop analysis
             </td>
             <td bgcolor="white"></td>
         </tr>

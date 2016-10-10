@@ -975,7 +975,7 @@
                     <option value="2" >KEGG orthology</option>
                     <option value="3" >KEGG enzyme</option>
                 </select>
-                &nbsp<-- Sequence mapping
+                &nbsp; <-- Sequence mapping
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -991,7 +991,7 @@
                     <option value="7" selected="selected">Species</option>
                     <option value="8">PGPRs</option>
                 </select>
-                &nbsp<-- Taxa level
+                &nbsp; <-- Taxa level
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1003,7 +1003,7 @@
                     <option value="2">Level 2</option>
                     <option value="3">Level 3</option>
                 </select>
-                &nbsp<-- KEGG pathway level
+                &nbsp; <-- KEGG pathway level
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1018,7 +1018,7 @@
                     <option value="5">GIBBs</option>
                     <option value="6">N cycle</option>
                 </select>
-                &nbsp<-- KEGG enzyme level
+                &nbsp; <-- KEGG enzyme level
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1032,7 +1032,7 @@
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
                 </select>
-                &nbsp<-- Dependent variable
+                &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Relative Abundance = proportion<br>Total Abundance = 16S rRNA copies per g soil<br>Species Richness = Number of species<br>Species Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1045,21 +1045,21 @@
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="remUnclass" checked>&nbsp<-- Remove unassigned/unmapped reads
+                <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
             </td>
             <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="remZeroes"/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+                <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
             </td>
             <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="filterData"/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on
+                <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on
                 <select id="filterMeth">
                     <!--<option value="1">None</option>-->
                     <option value="2" selected="selected">Interquantile range (IQR)</option>
@@ -1096,7 +1096,7 @@
                     <option value="14">Cao</option>
                     <option value="15" selected="selected">wOdum</option>
                 </select>
-                &nbsp<-- Distance score<span id="alphaLevel">; use alpha (&#945) level <input type="text" id="alphaVal" value="1" style="width:40px; background-color: white"/></span>
+                &nbsp; <-- Distance score<span id="alphaLevel">; use alpha (&#945) level <input type="text" id="alphaVal" value="1" style="width:40px; background-color: white"/></span>
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1111,7 +1111,7 @@
                     <option value="5">PC5</option>
                     <option value="6">PC6</option>
                 </select>
-                &nbsp<-- 1st PCoA axis (x-axis)
+                &nbsp; <-- 1st PCoA axis (x-axis)
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1126,7 +1126,7 @@
                     <option value="5">PC5</option>
                     <option value="6">PC6</option>
                 </select>
-                &nbsp<-- 2nd PCoA axis (y-axis)
+                &nbsp; <-- 2nd PCoA axis (y-axis)
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1137,7 +1137,7 @@
                     <option value=1 selected="selected">perMANOVA</option>
                     <option value=2>betaDisper</option>
                 </select>
-                &nbsp<-- Run test with <input type="text" id="perms" value="1000" style="width:40px; background-color: white"/> permutations
+                &nbsp; <-- Run test with <input type="text" id="perms" value="1000" style="width:40px; background-color: white"/> permutations
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1158,7 +1158,7 @@
                         <option value="Dark2">Dark2</option>
                         <option value="Accent">Accent</option>
                     </select>
-                    &nbsp<-- Color palette for symbol colors
+                    &nbsp; <-- Color palette for symbol colors
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -1170,7 +1170,7 @@
                     <select id="colorVal">
                         <option value="None">None</option>
                     </select>
-                    &nbsp<-- Grouping variable for symbol colors
+                    &nbsp; <-- Grouping variable for symbol colors
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -1182,7 +1182,7 @@
                     <select id="shapeVal">
                         <option value="None">None</option>
                     </select>
-                    &nbsp<-- Grouping variable for symbol shapes
+                    &nbsp; <-- Grouping variable for symbol shapes
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -1194,7 +1194,7 @@
                     <select id="ellipseVal">
                         <option value="None">None</option>
                     </select>
-                    &nbsp<-- Grouping variable for ordiellipse
+                    &nbsp; <-- Grouping variable for ordiellipse
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -1206,7 +1206,7 @@
                     <select id="surfVal">
                         <option value="None">None</option>
                     </select>
-                    &nbsp<-- Quantitative variable for ordisurf
+                    &nbsp; <-- Quantitative variable for ordisurf
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -1222,7 +1222,7 @@
                 <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
                 &nbsp;
                 <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
-                &nbsp<-- Start/stop analysis
+                &nbsp; <-- Start/stop analysis
             </td>
             <td bgcolor="white"></td>
         </tr>

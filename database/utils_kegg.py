@@ -764,7 +764,6 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         # create sample and species lists based on meta data selection
         wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S']
-        print savedDF
         profileDF = savedDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 

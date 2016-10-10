@@ -86,8 +86,15 @@ def getCatUnivData(request, RID, stops, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF, missingList = getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    if selectAll == 0:
+                        taxaString = all["taxa"]
+                        taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+                        filteredDF = savedDF.copy()
+                    else:
+                        taxaDict = ''
+                        filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+
+                    finalDF, missingList = getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
@@ -578,8 +585,14 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF, missingList = getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    if selectAll == 0:
+                        taxaString = all["taxa"]
+                        taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+                        filteredDF = savedDF.copy()
+                    else:
+                        taxaDict = ''
+                        filteredDF = filterDF(savedDF, DepVar, selectAll,  remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF, missingList = getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'

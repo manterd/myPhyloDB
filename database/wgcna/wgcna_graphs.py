@@ -1013,6 +1013,7 @@ def getWGCNA(request, stops, RID, PID):
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
+            myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')

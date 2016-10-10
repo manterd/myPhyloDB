@@ -668,7 +668,7 @@
                         <option value="2" >KEGG orthology</option>
                         <option value="3" >KEGG enzyme</option>
                     </select>
-                    &nbsp;<-- Sequence mapping
+                    &nbsp; <-- Sequence mapping
                 </td>
             </tr>
             <tr id="row_taxa">
@@ -682,7 +682,7 @@
                         <option value="7" selected="selected">Species</option>
                         <option value="8">PGPRs</option>
                     </select>
-                    &nbsp;<-- Taxa level
+                    &nbsp; <-- Taxa level
                 </td>
             </tr>
             <tr id="row_kegg" style="display:none">
@@ -692,7 +692,7 @@
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
                     </select>
-                    &nbsp;<-- KEGG pathway level
+                    &nbsp; <-- KEGG pathway level
                 </td>
             </tr>
             <tr id="row_nz" style="display:none">
@@ -705,7 +705,7 @@
                         <option value="5">GIBBs</option>
                         <option value="6">N cycle</option>
                     </select>
-                    &nbsp;<-- KEGG enzyme level
+                    &nbsp; <-- KEGG enzyme level
                 </td>
             </tr>
             <tr>
@@ -714,7 +714,7 @@
                         <option value="0">Abundance</option>
                         <option value="4">Total Abundance</option>
                     </select>
-                    &nbsp;<-- Dependent variable
+                    &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Total Abundance = 16S rRNA copies per g soil"><font color="red">[info]</font></span>
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>
@@ -724,17 +724,17 @@
             </tr>
             <tr>
                 <td bgcolor="white">
-                    <input type="checkbox" id="remUnclass" checked>&nbsp<-- Remove unassigned/unmapped reads
+                    <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
                 </td>
             </tr>
             <tr>
                 <td bgcolor="white">
-                    <input type="checkbox" id="remZeroes"/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+                    <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
                 </td>
             </tr>
             <tr>
                 <td bgcolor="white">
-                    <input type="checkbox" id="filterData"/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on
+                    <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on
                     <select id="filterMeth">
                         <!--<option value="1">None</option>-->
                         <option value="2" selected="selected">Interquantile range (IQR)</option>
@@ -754,7 +754,7 @@
                     <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
                     &nbsp;
                     <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
-                    &nbsp;<-- Start/stop analysis
+                    &nbsp; <-- Start/stop analysis
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>
@@ -815,7 +815,7 @@
                     <option value="8">sand-signika</option>
                     <option value="9">skies</option>
                 </select>
-                &nbsp&nbsp
+                &nbsp; &nbsp;
             </td>
             <td colspan="6" style="text-align: center">
                 <button id="button" title="Click to change an individual series color or symbol">Change series</button>

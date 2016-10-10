@@ -731,7 +731,7 @@
                     <option value="2" >KEGG orthology</option>
                     <option value="3" >KEGG enzyme</option>
                 </select>
-                &nbsp<-- Sequence mapping
+                &nbsp; <-- Sequence mapping
             </td>
             <td bgcolor="white" width="50px"></td>
         </tr>
@@ -746,7 +746,7 @@
                     <option value="7" selected="selected">Species</option>
                     <option value="8">PGPRs</option>
                 </select>
-                &nbsp<-- Taxa level
+                &nbsp; <-- Taxa level
             </td>
             <td bgcolor="white" width="50px"></td>
         </tr>
@@ -757,7 +757,7 @@
                     <option value="2">Level 2</option>
                     <option value="3">Level 3</option>
                 </select>
-                &nbsp<-- KEGG Pathway level
+                &nbsp; <-- KEGG Pathway level
             </td>
             <td bgcolor="white" width="50px"></td>
         </tr>
@@ -771,7 +771,7 @@
                     <option value="5">GIBBs</option>
                     <option value="6">N cycle</option>
                 </select>
-                &nbsp<-- KEGG Enzyme level
+                &nbsp; <-- KEGG Enzyme level
             </td>
             <td bgcolor="white" width="50px"></td>
         </tr>
@@ -784,7 +784,7 @@
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
                 </select>
-                &nbsp<-- Dependent variable
+                &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Relative Abundance = proportion<br>Total Abundance = 16S rRNA copies per g soil<br>Species Richness = Number of species<br>Species Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
             </td>
             <td bgcolor="white" width="50px"></td>
         </tr>
@@ -798,7 +798,7 @@
                     <!--<option value="4">Logit</option>
                     <option value="5">Arcsin</option>-->
                 </select>
-                &nbsp<-- Raw data transformation
+                &nbsp; <-- Raw data transformation
             </td>
             <td bgcolor="white" width="50px"></td>
         </tr>
@@ -809,19 +809,19 @@
 
         <tr>
             <td bgcolor="white">
-                <input type="checkbox" id="remUnclass" checked>&nbsp<-- Remove unassigned/unmapped reads
+                <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
             </td>
             <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white">
-                <input type="checkbox" id="remZeroes"/>&nbsp<-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+                <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
             </td>
             <td bgcolor="white"></td>
         </tr>
         <tr>
             <td bgcolor="white">
-                <input type="checkbox" id="filterData"/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
+                <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
                 <select id="filterMeth">
                     <!--<option value="1">None</option>-->
                     <option value="2" selected="selected">Interquantile range (IQR)</option>
@@ -851,11 +851,11 @@
                            <option value="signed">signed</option>
                            <option value="unsigned">unsigned</option>
                        </select>
-                       &nbsp<-- networkType<br>
+                       &nbsp; <-- networkType<br>
                    </td>
                    <td bgcolor="white" width="375" title="p-value ratio threshold for reassigning genes between modules">
                         <input id="reassignThreshold" type="text" value="1e-6" style="width: 50px;"/>
-                        &nbsp<-- reassignThreshold
+                        &nbsp; <-- reassignThreshold
                     </td>
                 </tr>
                 <tr>
@@ -864,52 +864,52 @@
                            <option value="pearson">pearson</option>
                            <option value="bicor">bicor</option>
                         </select>
-                        &nbsp<-- corType
+                        &nbsp; <-- corType
                     </td>
                     <td bgcolor="white" width="375" title="Modules without kME values above this threshold will be disbanded">
                         <input id="minCoreKME" type="text" value="0.5" style="width: 50px;"/>
-                        &nbsp<-- minCoreKME
+                        &nbsp; <-- minCoreKME
                     </td>
                 </tr>
                 <tr>
                     <td id="maxPOutliers-on" style="display:none" bgcolor="white" width="325" title="Maximum percentile of data that can be considered outliers on either side of the median (used when corType=bicor only)">
                         <input id="maxPOutliers" type="text" value="1" style="width: 50px;"/>
-                        &nbsp<-- maxPOutliers
+                        &nbsp; <-- maxPOutliers
                     </td>
                     <td id="maxPOutliers-off" bgcolor="white" width="325"></td>
                     <td bgcolor="white" width="375" title="Modules with fewer genes than this threshold will be disbanded. Recommended value is minModuleSize/3">
                         <input id="minCoreKMESize" type="text" value="2" style="width: 50px;">
-                        &nbsp<-- minCoreKMESize
+                        &nbsp; <-- minCoreKMESize
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325"><em>Basic tree cut</em></td>
                     <td bgcolor="white" width="375" title="Genes whose eigengene connectivity is below this threshold will be removed from the module">
                         <input id="minKMEtoStay" type="text" value="0.3" style="width: 50px;"/>
-                        &nbsp<-- minKMEtoStay
+                        &nbsp; <-- minKMEtoStay
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="Simplified control over module detection [0-4]">
                         <input id="deepSplit" type="text" value="2" style="width: 50px;"/>
-                        &nbsp<-- deepSplit
+                        &nbsp; <-- deepSplit
                     </td>
                     <td bgcolor="white" width="375"><em>Module merging</em></td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="Dendrogram cut height for module detection">
                         <input id="detectCutHeight" type="text" value="0.995" style="width: 50px;"/>
-                        &nbsp<-- detectCutHeight
+                        &nbsp; <-- detectCutHeight
                     </td>
                     <td bgcolor="white" width="375" title="Dendrogram cut height for module merging">
                         <input id="mergeCutHeight" type="text" value="0.15" style="width: 50px;"/>
-                        &nbsp<-- mergeCutHeight
+                        &nbsp; <-- mergeCutHeight
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="Minimum module size">
                         <input id="minModuleSize" type="text" value="6" style="width: 50px;"/>
-                        &nbsp<-- minModuleSize
+                        &nbsp; <-- minModuleSize
                     </td>
                     <td bgcolor="white" width="375"></td>
                 </tr>
@@ -922,17 +922,17 @@
                 <tr>
                     <td bgcolor="white" width="325" title="Adjacency threshold for including edges in network graph.">
                         <input id="minEdge" type="text" value="0.05" style="width: 50px;"/>
-                        &nbsp<-- minEdge
+                        &nbsp; <-- minEdge
                     </td>
                     <td bgcolor="white" width="375" title="Maximum number of genes per module (ranked by KME) to include to network graph">
                         <input id="maxNGenes" type="text" value="6" style="width: 50px;"/>
-                        &nbsp<-- maxNGenes
+                        &nbsp; <-- maxNGenes
                     </td>
                 </tr>
                 <tr>
                     <td bgcolor="white" width="325" title="kME threshold for including nodes in network graph">
                         <input id="minKME" type="text" value="0.80" style="width: 50px;"/>
-                        &nbsp<-- minKME
+                        &nbsp; <-- minKME
                     </td>
                     <td bgcolor="white" width="375" title="Network graph layout">
                        <select id="graphLayout">
@@ -954,7 +954,7 @@
                            <option value="star">star</option>
                            <option value="svd">svd</option>
                         </select>
-                        &nbsp<-- graphLayout
+                        &nbsp; <-- graphLayout
                     </td>
                 </tr>
                 <tr><td colspan="2" bgcolor="white"></td></tr>
@@ -966,7 +966,7 @@
                         <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
                         &nbsp;
                         <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
-                        &nbsp<-- Start/stop analysis
+                        &nbsp; <-- Start/stop analysis
                     </td>
                 </tr>
                 <tr><td colspan="2" bgcolor="white"></td></tr>
