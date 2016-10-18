@@ -426,12 +426,12 @@ def getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, Dep
     # Remove fields with only 1 level
     remCatFields = []
     if catFields:
-        for i in catFields:
+        tempList = catFields[:]
+        for i in tempList:
             noLevels = len(list(pd.unique(metaDF[i])))
             if noLevels < 2:
                 catFields.remove(i)
                 remCatFields.append(i)
-
         if remCatFields:
             allFields = catFields + quantFields
             wantedList = allFields + ['sampleid', 'sample_name']

@@ -170,7 +170,6 @@ def upErr(msg, request, dest, sid):
 
 @transaction.atomic
 def uploadFunc(request, stopList):
-    print "Starting uploadFunc!"
     ### create a savepoint
     sid = transaction.savepoint()
 

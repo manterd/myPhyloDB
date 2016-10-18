@@ -177,7 +177,6 @@ def projectid(Document):
 def parse_project(Document, p_uuid):
     try:
         global stage, perc
-        print "Parsing project!"
         perc = 50
         wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
         myDict = excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
@@ -204,7 +203,6 @@ def parse_project(Document, p_uuid):
 def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
     try:
         author = User.objects.get(id=userid)
-        print "Parsing reference!"
         align_ref = ''
         template_ref = ''
         taxonomy_ref = ''
@@ -248,7 +246,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         global stage, perc
         stage = "Step 2 of 5: Parsing sample file..."
         perc = 0
-        print "Parsing sample!"
+
         project = Project.objects.get(projectid=p_uuid)
         wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
         perc = 25
