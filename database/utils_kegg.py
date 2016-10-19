@@ -1042,27 +1042,35 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
 
     myLevel = 0
     myID = ''
+    numTaxa = 0
     if level == 1:
         myLevel = 'kingdomName'
         myID = 'kingdomid'
+        numTaxa = len(savedDF['kingdomid'].unique())
     elif level == 2:
         myLevel = 'phylaName'
         myID = 'phylaid'
+        numTaxa = len(savedDF['phylaid'].unique())
     elif level == 3:
         myLevel = 'className'
         myID = 'classid'
+        numTaxa = len(savedDF['classid'].unique())
     elif level == 4:
         myLevel = 'orderName'
         myID = 'orderid'
+        numTaxa = len(savedDF['orderid'].unique())
     elif level == 5:
         myLevel = 'familyName'
         myID = 'familyid'
+        numTaxa = len(savedDF['familyid'].unique())
     elif level == 6:
         myLevel = 'genusName'
         myID = 'genusid'
+        numTaxa = len(savedDF['genusid'].unique())
     elif level == 7:
         myLevel = 'speciesName'
         myID = 'speciesid'
+        numTaxa = len(savedDF['speciesid'].unique())
 
     if remUnclass == 'yes':
         savedDF = savedDF[~savedDF[myLevel].str.contains('unclassified')]
@@ -1073,8 +1081,8 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         tags = bytag[bytag[myVar] >= threshold].index.tolist()
         savedDF = savedDF[savedDF[myID].isin(tags)]
 
-    if filterData == 'yes' and filterPer < 100:
-        threshold = int(filterPer / 100.0 * numSamples)
+    if filterData == 'yes' and filterPer < 100 and not level == 8:
+        threshold = int(filterPer / 100.0 * numTaxa)
         if filterMeth == 1:
             pass
         elif filterMeth == 2:
