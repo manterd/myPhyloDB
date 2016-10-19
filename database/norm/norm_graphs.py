@@ -198,7 +198,7 @@ def getNorm(request, RID, stopList, PID):
             finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
 
             if 'rRNA_copies' in finalDF.columns:
-                finalDF['abund_16S'] = finalDF['rel_abund'] * finalDF['rRNA_copies']
+                finalDF['abund_16S'] = finalDF['rel_abund'] * finalDF['rRNA_copies'] / 1000
                 finalDF.fillna(0, inplace=True)
             else:
                 finalDF['abund_16S'] = 0
