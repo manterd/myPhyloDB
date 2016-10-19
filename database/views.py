@@ -15,6 +15,7 @@ import os
 import pandas as pd
 import pickle
 import simplejson
+import tarfile
 import time
 import zipfile
 from uuid import uuid4
@@ -748,10 +749,23 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 file_list = request.FILES.getlist('fastq_files')
-                for each in file_list:
-                    file = each
-                    handle_uploaded_file(file, mothurdest, each)
-                    handle_uploaded_file(file, dest, each)
+                ### Matthew, this works (still need to do sff, olig, fna, and qual)
+                for file in file_list:
+                    if file.name.endswith(('.tar.gz', '.tgz')):
+                        handle_uploaded_file(file, dest, file.name)
+                        tar = tarfile.open(os.path.join(dest, file.name))
+                        tar.extractall(path=mothurdest)
+                        tar.close()
+                    elif file.name.endswith('.zip'):
+                        handle_uploaded_file(file, dest, file.name)
+                        zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                        zip.extractall(mothurdest)
+                        zip.close()
+                    else:
+                        pass
+                    handle_uploaded_file(file, mothurdest, file.name)
+                    handle_uploaded_file(file, dest, file.name)
+
                     if stopList[PID] == RID:
                         remove_proj(dest)
                         transaction.savepoint_rollback(sid)
