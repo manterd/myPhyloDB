@@ -681,28 +681,6 @@ def uploadFunc(request, stopList):
                         else:
                             handle_uploaded_file(file, mothurdest, qual)
                         handle_uploaded_file(file, dest, file)
-                '''tempList = []
-                if len(file_list) > 1:
-                    for each in file_list:
-                        file = each
-                        handle_uploaded_file(file, mothurdest, each)
-                        handle_uploaded_file(file, dest, each)
-                        if os.name == 'nt':
-                            myStr = "mothur\\temp\\" + str(file.name)
-                        else:
-                            myStr = "mothur/temp/" + str(file.name)
-                        tempList.append(myStr)
-                    inputList = "-".join(tempList)
-                    if os.name == 'nt':
-                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
-                    else:
-                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
-                else:
-                    for each in file_list:
-                        file = each
-                        qual = 'temp.qual'
-                        handle_uploaded_file(file, mothurdest, qual)
-                        handle_uploaded_file(file, dest, each)'''
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
@@ -861,7 +839,7 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 file_list = request.FILES.getlist('fastq_files')  # JUMP
-                ### Matthew, this works (still need to do sff, olig, fna, and qual)
+
                 for file in file_list:
                     if file.name.endswith(('.gz', '.tgz', '.tar')):
                         handle_uploaded_file(file, dest, file.name)
@@ -1804,7 +1782,7 @@ def taxa(request):
 
 def pathJSON(request):
     results = {}
-    qs1 = ko_entry.objects.using('picrust').values_list('ko_lvl1_id__ko_lvl1_name', 'ko_lvl1_id', 'ko_lvl2_id__ko_lvl2_name', 'ko_lvl2_id', 'ko_lvl3_id__ko_lvl3_name', 'ko_lvl3_id', 'ko_lvl4_id', 'ko_orthology', 'ko_name', 'ko_desc')
+    qs1 = ko_entry.objects.using('picrust').values_list('ko_lvl1_id', 'ko_lvl1_id__ko_lvl1_name', 'ko_lvl2_id', 'ko_lvl2_id__ko_lvl2_name', 'ko_lvl3_id', 'ko_lvl3_id__ko_lvl3_name', 'ko_lvl4_id', 'ko_orthology', 'ko_name', 'ko_desc')
     results['data'] = list(qs1)
     myJson = simplejson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
@@ -1818,7 +1796,7 @@ def kegg_path(request):
 
 
 def nzJSON(request):
-    qs1 = nz_entry.objects.using('picrust').values_list('nz_lvl1_id__nz_lvl1_name', 'nz_lvl1_id', 'nz_lvl2_id__nz_lvl2_name', 'nz_lvl2_id', 'nz_lvl3_id__nz_lvl3_name', 'nz_lvl3_id', 'nz_lvl4_id__nz_lvl4_name', 'nz_lvl4_id', 'nz_lvl5_id', 'nz_orthology', 'nz_name', 'nz_desc')
+    qs1 = nz_entry.objects.using('picrust').values_list('nz_lvl1_id','nz_lvl1_id__nz_lvl1_name', 'nz_lvl2_id', 'nz_lvl2_id__nz_lvl2_name', 'nz_lvl3_id', 'nz_lvl3_id__nz_lvl3_name', 'nz_lvl4_id', 'nz_lvl4_id__nz_lvl4_name', 'nz_lvl5_id', 'nz_orthology', 'nz_name', 'nz_desc')
     results = {}
     results['data'] = list(qs1)
     myJson = simplejson.dumps(results, ensure_ascii=False)

@@ -761,30 +761,47 @@
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(true, false);
                 }
-            } else if (cat_n == 1) {    // nitrogenase
+            } else if (cat_n == 1) {    // N fixation
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
                 series[1].setVisible(true, false);
-            } else if (cat_n == 2) {    // urease
-                for (var i = 0; i < series.length; i++) {
-                    series[i].setVisible(false, false);
-                }
-                series[7].setVisible(true, false);
-            } else if (cat_n == 3) {    // nitrification
-                for (var i = 0; i < series.length; i++) {
-                    series[i].setVisible(false, false);
-                }
-                series[0].setVisible(true, false);
-                series[5].setVisible(true, false);
-                series[6].setVisible(true, false);
-            } else if (cat_n == 4) {    // denitrification
+            } else if (cat_n == 2) {    // Ammonification
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
                 series[2].setVisible(true, false);
-                series[3].setVisible(true, false);
+                series[13].setVisible(true, false);
+            } else if (cat_n == 3) {    // nitrification
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[12].setVisible(true, false);
+                series[0].setVisible(true, false);
+                series[10].setVisible(true, false);
+            } else if (cat_n == 4) {    // DNRA
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[12].setVisible(true, false);
                 series[4].setVisible(true, false);
+                series[7].setVisible(true, false);
+            } else if (cat_n == 5) {    // ANRA
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[12].setVisible(true, false);
+                series[3].setVisible(true, false);
+                series[5].setVisible(true, false);
+                series[11].setVisible(true, false)
+            } else if (cat_n == 6) {    // denitrification
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[12].setVisible(true, false);
+                series[6].setVisible(true, false);
+                series[8].setVisible(true, false);
+                series[9].setVisible(true, false);
             }
             chart1.redraw();
         }
@@ -1970,9 +1987,11 @@
                 <select id="N_cycle">
                     <option value="0" selected="selected">All</option>
                     <option value="1">Nitrogen fixation</option>
-                    <option value="2">Urease</option>
+                    <option value="2">Ammonification</option>
                     <option value="3">Nitrification</option>
-                    <option value="4">Denitrification</option>
+                    <option value="4">DNRA</option>
+                    <option value="5">ANRA</option>
+                    <option value="6">Denitrification</option>
                 </select>
 
             </td>
