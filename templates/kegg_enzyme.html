@@ -7,6 +7,8 @@
 
 {% block javascript %}
     <script type="text/javascript">
+        var taxaID = '';
+        var table1;
 
         $(function () {
             $('#myTable').DataTable({
@@ -20,15 +22,46 @@
                 sPaginationType: 'full_numbers',
                 buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
             });
-            $("div.toolbar").html('<br><br><br>')
+            $("div.toolbar").html('<br><br><br>');
+
+
+            $("#getTaxa").click(function() {
+                taxaID = document.getElementById("idTaxa").value;
+                updateTable();
+            });
+
+
+            table1 = $('#taxTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'nzTaxaJSON' %}",
+                    "data": {
+                        "key": function () {
+                            return JSON.stringify(taxaID);
+                        }
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+            $("div.toolbar").html('<br><br><br>');
+
         });
 
+        function updateTable() {
+            table1.ajax.reload();
+        }
     </script>
 {% endblock javascript %}
 
 {% block my_content %}
 
     <div style="width: 950px">
+        <h2>KEGG Enzymes</h2>
         <table id="myTable" class="display compact nowrap" cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
@@ -44,6 +77,33 @@
                     <th>KO</th>
                     <th>Name</th>
                     <th>Description</th>
+                </tr>
+            </thead>
+        </table>
+        <br><br>
+
+        <h2>List of Taxa Mapped to KEGG Enzyme Level</h2>
+        <input id="idTaxa" type="text" value="1e84f2700deb4d45b31138861548ab9e" style='font-style: italic; width: 300px;'/>&nbsp;<-- Enter Enzyme Lvl ID here
+        <br>
+        <input id="getTaxa" type="button" value="Populate DataTable"/>
+        <br><br><br><br>
+        <table id="taxTable" class="display compact nowrap" cellpadding="0" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Kingdom ID</th>
+                    <th>Kingdom Name</th>
+                    <th>Phyla ID</th>
+                    <th>Phyla Name</th>
+                    <th>Class ID</th>
+                    <th>Class Name</th>
+                    <th>Order ID</th>
+                    <th>Order Name</th>
+                    <th>Family ID</th>
+                    <th>Family Name</th>
+                    <th>Genus ID</th>
+                    <th>Genus Name</th>
+                    <th>Species ID</th>
+                    <th>Species Name</th>
                 </tr>
             </thead>
         </table>

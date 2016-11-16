@@ -36,6 +36,7 @@ urlpatterns = [
     url(r'^myPhyloDB/saveSampleList/$', views.saveSampleList, name='saveSampleList'),
     url(r'^myPhyloDB/taxaJSON/$', views.taxaJSON, name='taxaJSON'),
     url(r'^myPhyloDB/nzJSON/$', views.nzJSON, name='nzJSON'),
+    url(r'^myPhyloDB/nzTaxaJSON/$', views.nzTaxaJSON, name='nzTaxaJSON'),
     url(r'^myPhyloDB/pathJSON/$', views.pathJSON, name='pathJSON'),
     url(r'^myPhyloDB/projectTableJSON/$', views.projectTableJSON, name='projectTableJSON'),
     url(r'^myPhyloDB/sampleTableJSON/$', views.sampleTableJSON, name='sampleTableJSON'),

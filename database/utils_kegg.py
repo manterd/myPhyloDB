@@ -677,8 +677,6 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 
-
-
         elif nzAll == 7:
             # 1.18.6.1  nitrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
@@ -844,6 +842,19 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+        # JUMP
+        print taxaDF
+        # get list of species by gene
+        uniqueDF = taxaDF.reset_index(drop=False, inplace=False)
+        uniqueDF.rename(columns={'index': 'speciesid'}, inplace=True)
+        uniqueDF = uniqueDF.drop_duplicates(subset='speciesid', take_last=True)
+        taxaDict = {}
+        for i in levelList:
+            taxaList = uniqueDF.loc[uniqueDF[i] > 0].speciesid.tolist()
+            taxaDict[i] = taxaList
+        print taxaDict
+
+        # sum all species
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
 
@@ -1113,7 +1124,6 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
     if remUnclass == 'yes':
         # check if selecting based on level first, create else statement for tree usage
         savedDF = savedDF[~savedDF[myLevel].str.contains('unclassified')]
-        # /\ key error here when using tree JUMP
 
     if remZeroes == 'yes' and perZeroes > 0:
         threshold = int(perZeroes / 100.0 * numSamples)

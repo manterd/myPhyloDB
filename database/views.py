@@ -1803,6 +1803,23 @@ def nzJSON(request):
     return HttpResponse(myJson)
 
 
+# JUMP
+def nzTaxaJSON(request):
+    if request.is_ajax():
+        nzID = request.GET['key']
+        print nzID
+        #TODO: get list of KOs that match ID
+        #TODO: get list of species that contain gene
+        #TODO: filter qs1 based on species
+
+        speciesList = ['2e8376f9509c41b494de3f2c4e4dba6b']  # this is just temporary
+        results = {}
+        qs1 = Species.objects.filter(speciesid__in=speciesList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesName')
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
 def kegg_enzyme(request):
     return render_to_response(
         'kegg_enzyme.html',
