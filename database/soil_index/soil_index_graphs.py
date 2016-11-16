@@ -67,17 +67,8 @@ def getsoil_index(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n')
 
-                # filter phylotypes based on user settings
-                remUnclass = all['remUnclass']
-                remZeroes = all['remZeroes']
-                perZeroes = int(all['perZeroes'])
-                filterData = all['filterData']
-                filterPer = int(all['filterPer'])
-                filterMeth = int(all['filterMeth'])
-
-                filteredDF = filterDF(savedDF, 4, 7, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                finalDF, missingList = getTaxaDF(7, '', filteredDF, metaDF, allFields, 10, RID, stops, PID)
-                keggDF = getNZDF(7, '', filteredDF, metaDF, allFields, 4, RID, stops, PID)
+                finalDF, missingList = getTaxaDF(7, '', savedDF, metaDF, allFields, 10, RID, stops, PID)
+                keggDF = getNZDF(7, '', savedDF, metaDF, allFields, 4, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

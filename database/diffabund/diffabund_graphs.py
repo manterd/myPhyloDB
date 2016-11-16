@@ -131,19 +131,22 @@ def getDiffAbund(request, stops, RID, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    if selectAll != 8:
+                        filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    else:
+                        filteredDF = savedDF.copy()
+
                     finalDF, missingList = getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    filteredDF = filterDF(savedDF, DepVar, keggAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF = getKeggDF(keggAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF = getNZDF(nzAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

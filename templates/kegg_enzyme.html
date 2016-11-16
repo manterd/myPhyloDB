@@ -9,6 +9,7 @@
     <script type="text/javascript">
         var taxaID = '';
         var table1;
+        var reload = 'False';
 
         $(function () {
             $('#myTable').DataTable({
@@ -25,11 +26,15 @@
             $("div.toolbar").html('<br><br><br>');
 
 
+            $("#idTaxa").change(function() {
+                $("#getTaxa").css("background-color", "lightgray").val("Populate DataTable");
+
+            });
+
             $("#getTaxa").click(function() {
                 taxaID = document.getElementById("idTaxa").value;
                 updateTable();
             });
-
 
             table1 = $('#taxTable').DataTable({
                 "dom": 'B<"toolbar">lfrtip',
@@ -43,6 +48,12 @@
                         }
                     }
                 },
+                "fnDrawCallback": function(oSettings) {
+                    if (reload == 'True') {
+                        $("#getTaxa").css("background-color", "green").val("Done!");
+
+                    }
+                },
                 "scrollX": true,
                 "bPaginate": true,
                 "sPaginationType": 'full_numbers',
@@ -53,8 +64,11 @@
         });
 
         function updateTable() {
+            $("#getTaxa").css("background-color", "yellow").val("Processing!");
             table1.ajax.reload();
+            reload = 'True';
         }
+
     </script>
 {% endblock javascript %}
 
@@ -82,8 +96,8 @@
         </table>
         <br><br>
 
-        <h2>List of Taxa Mapped to KEGG Enzyme Level</h2>
-        <input id="idTaxa" type="text" value="1e84f2700deb4d45b31138861548ab9e" style='font-style: italic; width: 300px;'/>&nbsp;<-- Enter Enzyme Lvl ID here
+        <h2>List of taxa mapped to KEGG enzyme level</h2>
+        <input id="idTaxa" type="text" value="748e009b78c44d6c8525998c1cc7d2a5" style='font-style: italic; width: 300px;'/>&nbsp;<-- Enter Enzyme Level ID
         <br>
         <input id="getTaxa" type="button" value="Populate DataTable"/>
         <br><br><br><br>

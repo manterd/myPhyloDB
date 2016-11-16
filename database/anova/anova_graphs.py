@@ -84,11 +84,9 @@ def getCatUnivData(request, RID, stops, PID):
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
 
-                filteredDF = pd.DataFrame()
-
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    if selectAll == 0:
+                    if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
                         taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
                         filteredDF = savedDF.copy()
@@ -97,29 +95,24 @@ def getCatUnivData(request, RID, stops, PID):
                         filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
                     finalDF, missingList = getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
+                    keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
                         keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                        filteredDF = savedDF.copy()
-                    else:
-                        keggDict = ''
-                        filteredDF = filterDF(savedDF, DepVar, keggAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF = getKeggDF(keggAll, keggDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
+                    keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
                         keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                        filteredDF = savedDF.copy()
-                    else:
-                        keggDict = ''
-                        filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF = getNZDF(nzAll, keggDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF = getNZDF(nzAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -599,25 +592,33 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 finalDF = pd.DataFrame()
                 if button3 == 1:
-                    if selectAll == 0:
+                    if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
                         taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
                         filteredDF = savedDF.copy()
                     else:
                         taxaDict = ''
-                        filteredDF = filterDF(savedDF, DepVar, selectAll,  remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+
                     finalDF, missingList = getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    filteredDF = filterDF(savedDF, DepVar, keggAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF = getKeggDF(keggAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    keggDict = ''
+                    if keggAll == 0:
+                        keggString = all["kegg"]
+                        keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                    finalDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF = getNZDF(nzAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    keggDict = ''
+                    if nzAll == 0:
+                        keggString = all["nz"]
+                        keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                    finalDF = getNZDF(nzAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

@@ -166,26 +166,6 @@
                 checkButtons();
             });
 
-            $("#remUnclass").click(function () {
-                checkButtons();
-            });
-
-            $("#remZeroes").click(function () {
-                checkButtons();
-            });
-
-            $("#filterData").click(function () {
-                checkButtons();
-            });
-
-            $("#filterMeth").click(function () {
-                checkButtons();
-            });
-
-            $("#TabButton").click(function () {
-                getTab();
-            });
-
             // Capture all changes in textboxes, etc.
             $("#DepVar").change(function () {
                 DepVar = $(this).val();
@@ -457,28 +437,6 @@
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
 
-                if ($("#remUnclass").is(':checked')) {
-                    myDict['remUnclass'] = 'yes'
-                } else {
-                    myDict['remUnclass'] = 'no'
-                }
-
-                if ($("#remZeroes").is(':checked')) {
-                    myDict['remZeroes'] = 'yes'
-                } else {
-                    myDict['remZeroes'] = 'no'
-                }
-
-                if ($("#filterData").is(':checked')) {
-                    myDict['filterData'] = 'yes'
-                } else {
-                    myDict['filterData'] = 'no'
-                }
-
-                myDict['perZeroes'] = document.getElementById("perZeroes").value;
-                myDict['filterPer'] = document.getElementById("filterPer").value;
-                myDict['filterMeth'] = document.getElementById("filterMeth").value;
-
                 var jsonDict = JSON.stringify(myDict);
 
                 $.ajax({
@@ -607,34 +565,6 @@
                         <option value="4">Total Abundance</option>
                     </select>
                     &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Total Abundance = 16S rRNA copies per mg soil"><font color="red">[info]</font></span>
-                </td>
-            </tr>
-            <tr><td bgcolor="white"></td></tr>
-            <tr>
-                <td bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Filtering:</strong></em></td>
-            </tr>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
-                </td>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
-                </td>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <input type="checkbox" id="filterData"/>&nbsp<-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on
-                    <select id="filterMeth">
-                        <!--<option value="1">None</option>-->
-                        <option value="2" selected="selected">Interquantile range (IQR)</option>
-                        <option value="3">Coefficient of variation (CV)</option>
-                        <option value="4">Standard deviation (SD)</option>
-                        <option value="5">Mean abundance value</option>
-                        <option value="6">Median abundance value</option>
-                    </select>
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>

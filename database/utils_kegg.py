@@ -843,7 +843,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # JUMP
-        print taxaDF
+        '''
         # get list of species by gene
         uniqueDF = taxaDF.reset_index(drop=False, inplace=False)
         uniqueDF.rename(columns={'index': 'speciesid'}, inplace=True)
@@ -853,6 +853,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             taxaList = uniqueDF.loc[uniqueDF[i] > 0].speciesid.tolist()
             taxaDict[i] = taxaList
         print taxaDict
+        '''
 
         # sum all species
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -1089,7 +1090,7 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
     elif DepVar == 4:
         myVar = 'abund_16S'
 
-    myLevel = 0
+    myLevel = 'speciesName'
     myID = ''
     numTaxa = 0
     if level == 1:

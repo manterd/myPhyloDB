@@ -7,6 +7,9 @@
 
 {% block javascript %}
     <script type="text/javascript">
+        var taxaID = '';
+        var table1;
+        var reload = 'False';
 
         $(function () {
             $('#myTable').DataTable({
@@ -20,8 +23,50 @@
                 sPaginationType: 'full_numbers',
                 buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
             });
-            $("div.toolbar").html('<br><br><br>')
+            $("div.toolbar").html('<br><br><br>');
+
+            $("#idTaxa").change(function() {
+                $("#getTaxa").css("background-color", "lightgray").val("Populate DataTable");
+
+            });
+
+            $("#getTaxa").click(function() {
+                taxaID = document.getElementById("idTaxa").value;
+                updateTable();
+            });
+
+            table1 = $('#taxTable').DataTable({
+                "dom": 'B<"toolbar">lfrtip',
+                "deferRender": true,
+                "ajax": {
+                    "processing": false,
+                    "url": "{% url 'pathTaxaJSON' %}",
+                    "data": {
+                        "key": function () {
+                            return JSON.stringify(taxaID);
+                        }
+                    }
+                },
+                "fnDrawCallback": function(oSettings) {
+                    if (reload == 'True') {
+                        $("#getTaxa").css("background-color", "green").val("Done!");
+
+                    }
+                },
+                "scrollX": true,
+                "bPaginate": true,
+                "sPaginationType": 'full_numbers',
+                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+            $("div.toolbar").html('<br><br><br>');
+
         });
+
+        function updateTable() {
+            $("#getTaxa").css("background-color", "yellow").val("Processing!");
+            table1.ajax.reload();
+            reload = 'True';
+        }
 
     </script>
 {% endblock javascript %}
@@ -42,6 +87,33 @@
                     <th>KO</th>
                     <th>Name</th>
                     <th>Description</th>
+                </tr>
+            </thead>
+        </table>
+        <br><br>
+
+        <h2>List of taxa mapped to KEGG orthology level</h2>
+        <input id="idTaxa" type="text" value="481087886ea04dfea5e6494f9311da83" style='font-style: italic; width: 300px;'/>&nbsp;<-- Enter Enzyme Level ID
+        <br>
+        <input id="getTaxa" type="button" value="Populate DataTable"/>
+        <br><br><br><br>
+        <table id="taxTable" class="display compact nowrap" cellpadding="0" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Kingdom ID</th>
+                    <th>Kingdom Name</th>
+                    <th>Phyla ID</th>
+                    <th>Phyla Name</th>
+                    <th>Class ID</th>
+                    <th>Class Name</th>
+                    <th>Order ID</th>
+                    <th>Order Name</th>
+                    <th>Family ID</th>
+                    <th>Family Name</th>
+                    <th>Genus ID</th>
+                    <th>Genus Name</th>
+                    <th>Species ID</th>
+                    <th>Species Name</th>
                 </tr>
             </thead>
         </table>

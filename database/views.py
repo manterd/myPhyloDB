@@ -1,3 +1,4 @@
+import ast
 import datetime
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
@@ -6,6 +7,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.db import transaction
 from django.db.models import Q
 from django.http import *
+from django_pandas.io import read_frame
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 import fileinput
@@ -23,14 +25,16 @@ from uuid import uuid4
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm
 from models import Project, Reference, Sample, Air, Microbial, Human_Associated, Soil, Water, UserDefined, Species
-from models import ko_entry, nz_entry, UserProfile
+from models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
+from models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
+from models import PICRUSt, UserProfile
 from parsers import mothur, projectid, parse_project, parse_sample, parse_taxonomy, parse_profile
 from utils import handle_uploaded_file, remove_list, remove_proj
 from models import addQueue, getQueue, subQueue
 from database.pybake.pybake import koParse, nzParse
 from database.pybake.pybake import geneParse
 from database.utils import cleanup
-
+from database.utils_kegg import sumKEGG
 
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
@@ -390,7 +394,7 @@ def uploadFunc(request, stopList):
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file_list = request.FILES.getlist('sff_files')  # JUMP
+                file_list = request.FILES.getlist('sff_files')
                 for file in file_list:  # .tar.gz not included in this somehow?
                     if file.name.endswith(('.gz', '.tgz', '.tar')):
                         handle_uploaded_file(file, dest, file.name)
@@ -415,7 +419,7 @@ def uploadFunc(request, stopList):
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file_list = request.FILES.getlist('oligo_files')  # JUMP
+                file_list = request.FILES.getlist('oligo_files')
                 for file in file_list:
                     if file.name.endswith(('.gz', '.tgz', '.tar')):
                         handle_uploaded_file(file, dest, file.name)
@@ -567,7 +571,7 @@ def uploadFunc(request, stopList):
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
-                file_list = request.FILES.getlist('fna_files')  # JUMP
+                file_list = request.FILES.getlist('fna_files')
                 tempList = []
                 if len(file_list) > 1:
                     for file in file_list:
@@ -638,7 +642,7 @@ def uploadFunc(request, stopList):
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file_list = request.FILES.getlist('qual_files')  # JUMP
+                file_list = request.FILES.getlist('qual_files')
                 tempList = []
                 if len(file_list) > 1:
                     for file in file_list:
@@ -838,7 +842,7 @@ def uploadFunc(request, stopList):
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file_list = request.FILES.getlist('fastq_files')  # JUMP
+                file_list = request.FILES.getlist('fastq_files')
 
                 for file in file_list:
                     if file.name.endswith(('.gz', '.tgz', '.tar')):
@@ -1788,6 +1792,52 @@ def pathJSON(request):
     return HttpResponse(myJson)
 
 
+def pathTaxaJSON(request):
+    if request.is_ajax():
+        wanted = request.GET['key']
+        wanted = wanted.replace('"', '')
+        koList = []
+
+        if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=wanted).exists():
+            record = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=wanted)
+            koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
+        elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=wanted).exists():
+            record = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=wanted)
+            koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
+        elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=wanted).exists():
+            record = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=wanted)
+            koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
+        elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():
+            koList = ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).values_list('ko_orthology', flat=True)
+
+        finalSpeciesList = []
+        if koList:
+            qs = PICRUSt.objects.using('picrust')
+            picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'], verbose=False)
+            picrustDF.rename(columns={'speciesid__speciesid': 'speciesid'}, inplace=True)
+            specList = picrustDF['speciesid'].tolist()
+            picrustDF.set_index('speciesid', drop=True, inplace=True)
+            picrustDF['gene'] = 'No'
+
+            finalSpeciesList = []
+            for species in specList:
+                cell = picrustDF.at[species, 'geneCount']
+                d = ast.literal_eval(cell)
+                present = 'No'
+                for key, value in d.items():
+                    if key in koList and value > 0:
+                        present = 'Yes'
+                        break
+                if present == 'Yes':
+                    finalSpeciesList.append(species)
+
+        results = {}
+        qs1 = Species.objects.filter(speciesid__in=finalSpeciesList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesName')
+        results['data'] = list(qs1)
+        myJson = simplejson.dumps(results, ensure_ascii=False)
+        return HttpResponse(myJson)
+
+
 def kegg_path(request):
     return render_to_response(
         'kegg_path.html',
@@ -1803,18 +1853,50 @@ def nzJSON(request):
     return HttpResponse(myJson)
 
 
-# JUMP
 def nzTaxaJSON(request):
     if request.is_ajax():
-        nzID = request.GET['key']
-        print nzID
-        #TODO: get list of KOs that match ID
-        #TODO: get list of species that contain gene
-        #TODO: filter qs1 based on species
+        wanted = request.GET['key']
+        wanted = wanted.replace('"', '')
+        koList = []
 
-        speciesList = ['2e8376f9509c41b494de3f2c4e4dba6b']  # this is just temporary
+        if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=wanted).exists():
+            record = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=wanted)
+            koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
+        elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=wanted).exists():
+            record = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=wanted)
+            koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
+        elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=wanted).exists():
+            record = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=wanted)
+            koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
+        elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=wanted).exists():
+            record = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=wanted)
+            koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
+        elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).exists():
+            koList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).values_list('nz_orthology', flat=True)
+
+        finalSpeciesList = []
+        if koList:
+            qs = PICRUSt.objects.using('picrust')
+            picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'], verbose=False)
+            picrustDF.rename(columns={'speciesid__speciesid': 'speciesid'}, inplace=True)
+            specList = picrustDF['speciesid'].tolist()
+            picrustDF.set_index('speciesid', drop=True, inplace=True)
+            picrustDF['gene'] = 'No'
+
+            finalSpeciesList = []
+            for species in specList:
+                cell = picrustDF.at[species, 'geneCount']
+                d = ast.literal_eval(cell)
+                present = 'No'
+                for key, value in d.items():
+                    if key in koList and value > 0:
+                        present = 'Yes'
+                        break
+                if present == 'Yes':
+                    finalSpeciesList.append(species)
+
         results = {}
-        qs1 = Species.objects.filter(speciesid__in=speciesList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesName')
+        qs1 = Species.objects.filter(speciesid__in=finalSpeciesList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesName')
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
