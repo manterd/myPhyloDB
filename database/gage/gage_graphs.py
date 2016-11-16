@@ -308,7 +308,7 @@ def getGAGE(request, stops, RID, PID):
                 gage_table = gageDF.to_html(classes="table display")
                 gage_table = gage_table.replace('border="1"', 'border="0"')
                 finalDict['gage_table'] = str(gage_table)
-
+                # JUMP
                 diff_table = diffDF.to_html(classes="table display")
                 diff_table = diff_table.replace('border="1"', 'border="0"')
                 finalDict['diff_table'] = str(diff_table)

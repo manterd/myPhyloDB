@@ -117,6 +117,10 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
+                # status for stage 2 could have a loop counter or equivalent, currently the longest stage by far with
+                # no proper indicator of how long it will run
+
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']

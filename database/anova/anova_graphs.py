@@ -84,6 +84,8 @@ def getCatUnivData(request, RID, stops, PID):
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
 
+                filteredDF = pd.DataFrame()
+
                 finalDF = pd.DataFrame()
                 if button3 == 1:
                     if selectAll == 0:
@@ -100,12 +102,24 @@ def getCatUnivData(request, RID, stops, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    filteredDF = filterDF(savedDF, DepVar, keggAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF = getKeggDF(keggAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    if keggAll == 0:
+                        keggString = all["kegg"]
+                        keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                        filteredDF = savedDF.copy()
+                    else:
+                        keggDict = ''
+                        filteredDF = filterDF(savedDF, DepVar, keggAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF = getKeggDF(keggAll, keggDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF = getNZDF(nzAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    if nzAll == 0:
+                        keggString = all["nz"]
+                        keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                        filteredDF = savedDF.copy()
+                    else:
+                        keggDict = ''
+                        filteredDF = filterDF(savedDF, DepVar, nzAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF = getNZDF(nzAll, keggDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block pagetitle %}
-    <title>ANcOVA</title>
+    <title>Analysis Template</title>
 {% endblock pagetitle%}
 
 {% block user %}
@@ -1751,6 +1751,7 @@
     <br>
     <!-- tree tables -->
     <div>
+        {% block metaTree %}
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr style="height: 40px;">
                 <th>Select Meta Data:<br>
@@ -1759,11 +1760,17 @@
             </tr>
             <tr>
                 <td style="padding-right: 10px; vertical-align: top">
+                    {% block metaCat %}
                     <div id="tree_metaCat"></div>
+                    {% endblock metaCat %}
+                    {% block metaQuant %}
                     <div id="tree_metaQuant"></div>
+                    {% endblock metaQuant %}
                 </td>
             </tr>
         </table>
+        {% endblock metaTree %}
+        {% block responseTree %}
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable" style="margin-left:10px;">
             <tr style="height: 40px;">
                 <th>Select Response Variable:<br>
@@ -1772,12 +1779,20 @@
             </tr>
             <tr>
                 <td style="padding-right: 10px; vertical-align: top">
+                    {% block taxaTree %}
                     <div id="tree_taxa" ></div>
+                    {% endblock taxaTree %}
+                    {% block keggTree %}
                     <div id="tree_kegg" style="display:none">></div>
+                    {% endblock keggTree %}
+                    {% block nzTree %}
                     <div id="tree_nz" style="display:none">></div>
+                    {% endblock nzTree %}
                 </td>
             </tr>
         </table>
+        {% endblock responseTree %}
+        {% block plotOptions %}
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
                 <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Analysis Type:</em></strong></td>
@@ -1877,34 +1892,34 @@
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>
-        <tr>
-            <td bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use the taxonomy tree or PGPRs"><em><strong>Data Filtering:</strong></em></td>
-        </tr>
-        </tr>
-        <tr>
-            <td bgcolor="white">
-                <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
-            </td>
-        </tr>
-        <tr>
-            <td bgcolor="white">
-                <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
-            </td>
-        </tr>
-        <tr>
-            <td bgcolor="white">
-                <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
-                <select id="filterMeth">
-                    <!--<option value="1">None</option>-->
-                    <option value="2" selected="selected">Interquantile range (IQR)</option>
-                    <option value="3">Coefficient of variation (CV)</option>
-                    <option value="4">Standard deviation (SD)</option>
-                    <option value="5">Mean abundance value</option>
-                    <option value="6">Median abundance value</option>
-                </select>
-            </td>
-        </tr>
-        <tr><td bgcolor="white"></td></tr>
+            <tr>
+                <td bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use the taxonomy tree or PGPRs"><em><strong>Data Filtering:</strong></em></td>
+            </tr>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
+                </td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+                </td>
+            </tr>
+            <tr>
+                <td bgcolor="white">
+                    <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
+                    <select id="filterMeth">
+                        <!--<option value="1">None</option>-->
+                        <option value="2" selected="selected">Interquantile range (IQR)</option>
+                        <option value="3">Coefficient of variation (CV)</option>
+                        <option value="4">Standard deviation (SD)</option>
+                        <option value="5">Mean abundance value</option>
+                        <option value="6">Median abundance value</option>
+                    </select>
+                </td>
+            </tr>
+            <tr><td bgcolor="white"></td></tr>
             <tr>
                 <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
             </tr>
@@ -1926,6 +1941,7 @@
                 </td>
             </tr>
         </table>
+        {% endblock plotOptions %}
     </div>
     <br><br>
 

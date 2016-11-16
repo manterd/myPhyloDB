@@ -193,7 +193,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return HttpResponse(res, content_type='application/json')
 
 
-def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
+def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     try:
         koDict = {}
         if keggAll == 0:
@@ -300,7 +300,7 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'rel_abund', 'abund_16S']
+        wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
         profileDF = savedDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -322,7 +322,6 @@ def getKeggDF(keggAll, keggDict, savedDF, tempDF, allFields, DepVar, RID, stops,
 
         # merge to get final gene counts for all selected samples
         taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
-
         for level in levelList:
             if DepVar == 0:
                 taxaDF[level] = taxaDF['abund'] * taxaDF[level]
@@ -763,7 +762,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             nzDict[id] = idList
 
         # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S']
+        wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
         profileDF = savedDF.loc[:, wanted]
         profileDF.set_index('speciesid', inplace=True)
 
@@ -1073,7 +1072,9 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         numTaxa = len(savedDF['speciesid'].unique())
 
     if remUnclass == 'yes':
+        # check if selecting based on level first, create else statement for tree usage
         savedDF = savedDF[~savedDF[myLevel].str.contains('unclassified')]
+        # /\ key error here when using tree JUMP
 
     if remZeroes == 'yes' and perZeroes > 0:
         threshold = int(perZeroes / 100.0 * numSamples)

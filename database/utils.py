@@ -37,7 +37,7 @@ def ordered_set(seq, idfun=None):
     return result
 
 
-def handle_uploaded_file(f, path, name):
+def handle_uploaded_file(f, path, name):  # move file from memory to disc
     if not os.path.exists(path):
         os.makedirs(path)
     dest = "/".join([str(path), str(name)])

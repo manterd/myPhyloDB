@@ -390,22 +390,50 @@ def uploadFunc(request, stopList):
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file_list = request.FILES.getlist('sff_files')
-                for each in file_list:
+                file_list = request.FILES.getlist('sff_files')  # JUMP
+                for file in file_list:  # .tar.gz not included in this somehow?
+                    if file.name.endswith(('.gz', '.tgz', '.tar')):
+                        handle_uploaded_file(file, dest, file.name)
+                        tar = tarfile.open(os.path.join(dest, file.name))
+                        tar.extractall(path=mothurdest)
+                        tar.close()
+                    elif file.name.endswith('.zip'):
+                        handle_uploaded_file(file, dest, file.name)
+                        zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                        zip.extractall(mothurdest)
+                        zip.close()
+                    else:
+                        handle_uploaded_file(file, mothurdest, file.name)
+                    handle_uploaded_file(file, dest, file.name)
+                '''for each in file_list:
                     file = each
                     handle_uploaded_file(file, mothurdest, each)
-                    handle_uploaded_file(file, dest, each)
+                    handle_uploaded_file(file, dest, each)'''
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file_list = request.FILES.getlist('oligo_files')
-                for each in file_list:
+                file_list = request.FILES.getlist('oligo_files')  # JUMP
+                for file in file_list:
+                    if file.name.endswith(('.gz', '.tgz', '.tar')):
+                        handle_uploaded_file(file, dest, file.name)
+                        tar = tarfile.open(os.path.join(dest, file.name))
+                        tar.extractall(path=mothurdest)
+                        tar.close()
+                    elif file.name.endswith('.zip'):
+                        handle_uploaded_file(file, dest, file.name)
+                        zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                        zip.extractall(mothurdest)
+                        zip.close()
+                    else:
+                        handle_uploaded_file(file, mothurdest, file.name)
+                    handle_uploaded_file(file, dest, file.name)
+                '''for each in file_list:
                     file = each
                     handle_uploaded_file(file, mothurdest, each)
-                    handle_uploaded_file(file, dest, each)
+                    handle_uploaded_file(file, dest, each)'''
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
@@ -539,8 +567,50 @@ def uploadFunc(request, stopList):
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
-                file_list = request.FILES.getlist('fna_files')
+                file_list = request.FILES.getlist('fna_files')  # JUMP
                 tempList = []
+                if len(file_list) > 1:
+                    for file in file_list:
+                        if file.name.endswith(('.gz', '.tgz', '.tar')):
+                            handle_uploaded_file(file, dest, file.name)
+                            tar = tarfile.open(os.path.join(dest, file.name))
+                            tar.extractall(path=mothurdest)
+                            tar.close()
+                        elif file.name.endswith('.zip'):
+                            handle_uploaded_file(file, dest, file.name)
+                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                            zip.extractall(mothurdest)
+                            zip.close()
+                        else:
+                            handle_uploaded_file(file, mothurdest, file.name)
+                        handle_uploaded_file(file, dest, file.name)
+                        if os.name == 'nt':
+                            myStr = "mothur\\temp\\" + str(file.name)
+                        else:
+                            myStr = "mothur/temp/" + str(file.name)
+                        tempList.append(myStr)
+                    inputList = "-".join(tempList)
+                    if os.name == 'nt':
+                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
+                    else:
+                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
+                else:
+                    for file in file_list:
+                        fasta = 'temp.fasta'  # potentially change file.name for fasta on zip saves
+                        if file.name.endswith(('.gz', '.tgz')):
+                            handle_uploaded_file(file, dest, file.name)
+                            tar = tarfile.open(os.path.join(dest, file.name))
+                            tar.extractall(path=mothurdest)
+                            tar.close()
+                        elif file.name.endswith('.zip'):
+                            handle_uploaded_file(file, dest, file.name)
+                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                            zip.extractall(mothurdest)
+                            zip.close()
+                        else:
+                            handle_uploaded_file(file, mothurdest, fasta)
+                        handle_uploaded_file(file, dest, file.name)
+                '''tempList = []
                 if len(file_list) > 1:
                     for each in file_list:
                         file = each
@@ -561,15 +631,57 @@ def uploadFunc(request, stopList):
                         file = each
                         fasta = 'temp.fasta'
                         handle_uploaded_file(file, mothurdest, fasta)
-                        handle_uploaded_file(file, dest, each)
+                        handle_uploaded_file(file, dest, each)'''
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file_list = request.FILES.getlist('qual_files')
+                file_list = request.FILES.getlist('qual_files')  # JUMP
                 tempList = []
+                if len(file_list) > 1:
+                    for file in file_list:
+                        if file.name.endswith(('.gz', '.tgz', '.tar')):
+                            handle_uploaded_file(file, dest, file.name)
+                            tar = tarfile.open(os.path.join(dest, file.name))
+                            tar.extractall(path=mothurdest)
+                            tar.close()
+                        elif file.name.endswith('.zip'):
+                            handle_uploaded_file(file, dest, file.name)
+                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                            zip.extractall(mothurdest)
+                            zip.close()
+                        else:
+                            handle_uploaded_file(file, mothurdest, file.name)
+                        if os.name == 'nt':
+                            myStr = "mothur\\temp\\" + str(file.name)
+                        else:
+                            myStr = "mothur/temp/" + str(file.name)
+                        tempList.append(myStr)
+                        handle_uploaded_file(file, dest, file.name)
+                    inputList = "-".join(tempList)
+                    if os.name == 'nt':
+                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
+                    else:
+                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
+                else:
+                    for file in file_list:
+                        qual = 'temp.qual'
+                        if file.name.endswith(('.gz', '.tgz')):  # change file.name to qual potentially
+                            handle_uploaded_file(file, dest, file.name)
+                            tar = tarfile.open(os.path.join(dest, file.name))
+                            tar.extractall(path=mothurdest)
+                            tar.close()
+                        elif file.name.endswith('.zip'):
+                            handle_uploaded_file(file, dest, file.name)
+                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                            zip.extractall(mothurdest)
+                            zip.close()
+                        else:
+                            handle_uploaded_file(file, mothurdest, qual)
+                        handle_uploaded_file(file, dest, file)
+                '''tempList = []
                 if len(file_list) > 1:
                     for each in file_list:
                         file = each
@@ -590,7 +702,7 @@ def uploadFunc(request, stopList):
                         file = each
                         qual = 'temp.qual'
                         handle_uploaded_file(file, mothurdest, qual)
-                        handle_uploaded_file(file, dest, each)
+                        handle_uploaded_file(file, dest, each)'''
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
@@ -748,10 +860,10 @@ def uploadFunc(request, stopList):
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                file_list = request.FILES.getlist('fastq_files')
+                file_list = request.FILES.getlist('fastq_files')  # JUMP
                 ### Matthew, this works (still need to do sff, olig, fna, and qual)
                 for file in file_list:
-                    if file.name.endswith(('.tar.gz', '.tgz')):
+                    if file.name.endswith(('.gz', '.tgz', '.tar')):
                         handle_uploaded_file(file, dest, file.name)
                         tar = tarfile.open(os.path.join(dest, file.name))
                         tar.extractall(path=mothurdest)
@@ -762,8 +874,7 @@ def uploadFunc(request, stopList):
                         zip.extractall(mothurdest)
                         zip.close()
                     else:
-                        pass
-                    handle_uploaded_file(file, mothurdest, file.name)
+                        handle_uploaded_file(file, mothurdest, file.name)
                     handle_uploaded_file(file, dest, file.name)
 
                     if stopList[PID] == RID:
@@ -1843,7 +1954,7 @@ def saveSampleList(request):
             pass
 
         try:
-            # store dataID! userProfile attribute, generate UUID at end of selection # JUMP
+            # store dataID! userProfile attribute, generate UUID at end of selection
             thisUser = User.objects.get(username=request.user.username)
             userProfiles = UserProfile.objects.all()
             myData = UserProfile.objects.get(user=thisUser)
@@ -2187,7 +2298,7 @@ def updateInfo(request):
     if verified:
         thisUser = User.objects.get(username=request.user.username)
         myData = UserProfile.objects.get(user=thisUser)
-        for key in stuff:  # JUMP
+        for key in stuff:
             thisUser.__setattr__(key, stuff[key])
             myData.__setattr__(key, stuff[key])
         thisUser.save()
@@ -2200,5 +2311,25 @@ def updateInfo(request):
         'changeuser.html',
         {"form": UserRegForm,
             "error": error},
+        context_instance=RequestContext(request)
+    )
+
+
+def analysis(request):
+    state = ''
+    return render_to_response(
+        'analysis.html',
+        {'form5': UploadForm5,
+         'state': state},
+        context_instance=RequestContext(request)
+    )
+
+
+def directgraph(request):
+    state = ''
+    return render_to_response(
+        'directgraph.html',
+        {'form5': UploadForm5,
+         'state': state},
         context_instance=RequestContext(request)
     )

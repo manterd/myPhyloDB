@@ -377,7 +377,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                 row.pop('sample_name')
                 UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-            perc += 25/num_samp
+            perc += 20/num_samp
 
         ### add myPhyloDB generated IDs to excel metafile
         wb = openpyxl.load_workbook(Document, data_only=False, read_only=False)
@@ -389,7 +389,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
             j = i + 7
             ws.cell(row=j, column=1).value = refid
             ws.cell(row=j, column=2).value = idList[i]
-            perc += 25/num_samp
+            perc += 5/len(idList)
 
         wb.save(Document)
         return refDict
