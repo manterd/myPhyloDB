@@ -607,8 +607,8 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             nzDict[id] = idList
 
             ### Ammonification
-            # 1.4.1.3  glutamate dehydrogenase [NAD(P)+]
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.1.3  glutamate dehydrogenase [NAD(P)+]').nz_lvl4_id
+            # 3.5.1.4  amidase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 
@@ -628,7 +628,19 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 
+            # 1.7.99.4  nitrate reductase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
             ### Dissimilatory nitrate reduction
+            # 1.7.5.1  nitrate reductase (quinone)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.5.1  nitrate reductase (quinone)').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.99.4  nitrate reductase
+
             # 1.7.1.15  nitrite reductase (NADH)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.15  nitrite reductase (NADH)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
@@ -640,22 +652,31 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             nzDict[id] = idList
 
             ### Assimilatory nitrate reduction
-            # 1.7.1.1  nitrate reductase (NADH)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.1  nitrate reductase (NADH)').nz_lvl4_id
+            # 1.7.7.1  ferredoxin---nitrite reductase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.1  ferredoxin---nitrite reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
+
+            # 1.7.7.2  ferredoxin---nitrate reductase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.2  ferredoxin---nitrate reductase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.99.4  nitrate reductase
 
             # 1.7.1.4  nitrite reductase [NAD(P)H]
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.4  nitrite reductase [NAD(P)H]').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 
-            # 1.7.7.1  ferredoxin---nitrite reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.1  ferredoxin---nitrite reductase').nz_lvl4_id
+            # 1.7.1.1  nitrate reductase (NADH)
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.1  nitrate reductase (NADH)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 
             ### Denitrification
+            # 1.7.99.4  nitrate reductase
+
             # 1.7.2.1  nitrite reductase (NO-forming)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
@@ -671,9 +692,14 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 
-            ### Multiple pathways
-            # 1.7.99.4  nitrate reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
+            ### Anammox
+            # 1.7.2.7  hydrazine synthase subunit
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.7  hydrazine synthase').nz_lvl4_id
+            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            nzDict[id] = idList
+
+            # 1.7.2.8  hydrazine dehydrogenase
+            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.8  hydrazine dehydrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 

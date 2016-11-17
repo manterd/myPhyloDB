@@ -755,58 +755,66 @@
             anchor.dispatchEvent(ev);
         }
 
-        function ncycle(){
+        function ncycle() {
             var series = chart1.series;
-            if (cat_n == 0) {
+            if (cat_n == 0) {    // All
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(true, false);
                 }
-            } else if (cat_n == 1) {    // N fixation
+            } else if (cat_n == 1) {    // N-fixation
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[1].setVisible(true, false);
+                series[1].setVisible(true, false);  // 1.18.6.1  nitrogenase
             } else if (cat_n == 2) {    // Ammonification
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[2].setVisible(true, false);
-                series[13].setVisible(true, false);
+                series[16].setVisible(true, false);  // 3.5.1.4  amidase
+                series[17].setVisible(true, false);  // 3.5.1.5  urease
             } else if (cat_n == 3) {    // nitrification
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[12].setVisible(true, false);
-                series[0].setVisible(true, false);
-                series[10].setVisible(true, false);
+                series[0].setVisible(true, false);  // 1.14.99.39  ammonia monooxygenase
+                series[9].setVisible(true, false);  // 1.7.2.6  hydroxylamine dehydrogenase
+                series[15].setVisible(true, false);  // 1.7.99.4  nitrate reductase
             } else if (cat_n == 4) {    // DNRA
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[12].setVisible(true, false);
-                series[4].setVisible(true, false);
-                series[7].setVisible(true, false);
+                series[12].setVisible(true, false);  // 1.7.5.1  nitrate reductase (quinone)
+                series[15].setVisible(true, false);  // 1.7.99.4  nitrate reductase
+                series[3].setVisible(true, false);  // 1.7.1.15  nitrite reductase (NADH)
+                series[6].setVisible(true, false);  // 1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)
             } else if (cat_n == 5) {    // ANRA
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[12].setVisible(true, false);
-                series[3].setVisible(true, false);
-                series[5].setVisible(true, false);
-                series[11].setVisible(true, false)
+                series[13].setVisible(true, false);  // 1.7.7.1  ferredoxin---nitrite reductase
+                series[14].setVisible(true, false);  // 1.7.7.2  ferredoxin---nitrate reductase
+                series[15].setVisible(true, false);  // 1.7.99.4  nitrate reductase
+                series[4].setVisible(true, false);  // 1.7.1.4  nitrite reductase [NAD(P)H]
+                series[2].setVisible(true, false);  // 1.7.1.1  nitrate reductase (NADH)
             } else if (cat_n == 6) {    // denitrification
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[12].setVisible(true, false);
-                series[6].setVisible(true, false);
-                series[8].setVisible(true, false);
-                series[9].setVisible(true, false);
+                series[15].setVisible(true, false);  // 1.7.99.4  nitrate reductase
+                series[5].setVisible(true, false);  // 1.7.2.1  nitrite reductase (NO-forming)
+                series[8].setVisible(true, false);  // 1.7.2.5  nitric oxide reductase (cytochrome c)
+                series[7].setVisible(true, false);  // 1.7.2.4  nitrous-oxide reductase
+            } else if (cat_n == 7) {    // anammox
+                for (var i = 0; i < series.length; i++) {
+                    series[i].setVisible(false, false);
+                }
+                series[10].setVisible(true, false);  // 1.7.2.7  hydrazine synthase
+                series[11].setVisible(true, false);  // 1.7.2.8  hydrazine dehydrogenase
             }
             chart1.redraw();
         }
 
-        function gibbs(){
+        function gibbs() {
             var series = chart1.series;
             if (cat_gibbs == 0) {
                 for (var i = 0; i < series.length; i++) {
@@ -870,7 +878,7 @@
             chart1.redraw();
         }
 
-        function checkButtons(){
+        function checkButtons() {
             // get state of all buttons used here before proceeding
 
             // taxa kegg nz select
@@ -1992,6 +2000,7 @@
                     <option value="4">DNRA</option>
                     <option value="5">ANRA</option>
                     <option value="6">Denitrification</option>
+                    <option value="7">Anammox</option>
                 </select>
 
             </td>
