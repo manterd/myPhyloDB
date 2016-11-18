@@ -237,34 +237,36 @@
 
             var $button = $('#hide');
             $button.click(function() {
-                var series = chart1.series[0];
                 if (button1 == 1) {
-                    if (series.visible) {
+                    var series1 = chart1.series[0];
+                    if (series1.visible) {
                         $(chart1.series).each(function(){
                             this.setVisible(false, false);
                         });
                         chart1.redraw();
-                        $button.html('Show series');
+                        $button.html('Show all series');
                     } else {
                         $(chart1.series).each(function(){
                             this.setVisible(true, false);
                         });
                         chart1.redraw();
-                        $button.html('Hide series');
+                        $button.html('Hide all series');
                     }
-                } else {
-                    if (series.visible) {
+                }
+                if (button1 == 2) {
+                    var series2 = chart2.series[0];
+                    if (series2.visible) {
                         $(chart2.series).each(function(){
                             this.setVisible(false, false);
                         });
                         chart2.redraw();
-                        $button.html('Show series');
+                        $button.html('Show all series');
                     } else {
                         $(chart2.series).each(function(){
                             this.setVisible(true, false);
                         });
                         chart2.redraw();
-                        $button.html('Hide series');
+                        $button.html('Hide all series');
                     }
                 }
             });
@@ -824,56 +826,61 @@
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[8].setVisible(true, false);
-                series[9].setVisible(true, false);
-                series[10].setVisible(true, false);
-                series[11].setVisible(true, false);
-                series[12].setVisible(true, false);
+                series[10].setVisible(true, false);  //# 3.2.1.4  cellulase
+                series[13].setVisible(true, false);  //# 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
+                series[8].setVisible(true, false);  //# 3.2.1.21  beta-glucosidase
+                series[12].setVisible(true, false);  //# 3.2.1.8  endo-1,4-beta-xylanase
+                series[9].setVisible(true, false);  //# 3.2.1.37  xylan 1,4-beta-xylosidase
             } else if (cat_gibbs == 2) {    // decomposition - N
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[13].setVisible(true, false);
-                series[14].setVisible(true, false);
+                series[14].setVisible(true, false);  //# 3.5.1.4  amidase
+                series[15].setVisible(true, false);  //# 3.5.1.5  urease
             } else if (cat_gibbs == 3) {    // decomposition - P
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[4].setVisible(true, false);
-                series[5].setVisible(true, false);
+                series[4].setVisible(true, false);  //# 3.1.3.1  alkaline phosphatase
+                series[5].setVisible(true, false);  //# 3.1.3.2  acid phosphatase
             } else if (cat_gibbs == 4) {    // decomposition - S
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[6].setVisible(true, false);
-            } else if (cat_gibbs == 5) {    // nitrogenase
+                series[6].setVisible(true, false);  //# 3.1.6.1  arylsulfatase
+            } else if (cat_gibbs == 5) {    // N-fixation
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[1].setVisible(true, false);
+                series[1].setVisible(true, false);  //# 1.18.6.1  nitrogenase
             } else if (cat_gibbs == 6) {    // P solubility
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[2].setVisible(true, false);
+                series[2].setVisible(true, false);  //# 1.3.3.11  pyrroloquinoline-quinone synthase
             } else if (cat_gibbs == 7) {    // Biocontrol
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[0].setVisible(true, false);
-                series[3].setVisible(true, false);
-                series[7].setVisible(true, false);
+                series[3].setVisible(true, false);  //# 1.4.99.5  glycine dehydrogenase (cyanide-forming)
+                series[17].setVisible(true, false);  //# 4.1.1.5  acetolactate decarboxylase
+                series[0].setVisible(true, false);  //# 1.1.1.76  (S,S)-butanediol dehydrogenase
+                series[11].setVisible(true, false);  //# 3.2.1.6  endo-1,3(4)-beta-glucanase
+                series[7].setVisible(true, false);  //# 3.2.1.14  chitinase
             } else if (cat_gibbs == 8) {    // Root growth
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[15].setVisible(true, false);
-                series[16].setVisible(true, false);
+                series[18].setVisible(true, false);  //# 4.1.1.74  indolepyruvate decarboxylase
+                series[16].setVisible(true, false);  //# 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
             } else if (cat_gibbs == 9) {    // Siderophore
                 for (var i = 0; i < series.length; i++) {
                     series[i].setVisible(false, false);
                 }
-                series[17].setVisible(true, false);
+                series[19].setVisible(true, false);  //# 6.3.2.39  aerobactin synthase
+                series[20].setVisible(true, false);  //# 6.3.2.14  enterobactin synthase
+                series[21].setVisible(true, false);  //# K04787 mycobactin salicyl-AMP ligase [EC:6.3.2.-]
+                series[22].setVisible(true, false);  //# K04783 yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]
             }
             chart1.redraw();
         }
@@ -913,6 +920,12 @@
             $("#run").css("background-color", "lightgray");
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
+
+            if (dataType == "1") {
+                $("#unstackButton").show();
+            } else {
+                $("#unstackButton").hide();
+            }
 
             if (treeType == "1") {
 
