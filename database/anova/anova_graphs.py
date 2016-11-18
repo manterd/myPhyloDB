@@ -85,6 +85,7 @@ def getCatUnivData(request, RID, stops, PID):
                 filterMeth = int(all['filterMeth'])
 
                 finalDF = pd.DataFrame()
+                allDF = pd.DataFrame()
                 if button3 == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
@@ -105,14 +106,14 @@ def getCatUnivData(request, RID, stops, PID):
                     if keggAll == 0:
                         keggString = all["kegg"]
                         keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
                         keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getNZDF(nzAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -459,6 +460,12 @@ def getCatUnivData(request, RID, stops, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
 
+                jsn = {}
+                records = allDF.values.tolist()
+                columns = allDF.columns.values.tolist()
+                jsn['data'] = records
+                jsn['columns'] = columns
+                finalDict['taxJSON'] = simplejson.dumps(jsn)
 
                 finalDict['resType'] = 'res'
                 finalDict['error'] = 'none'

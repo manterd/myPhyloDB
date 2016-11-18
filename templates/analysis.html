@@ -1794,6 +1794,7 @@
         {% endblock responseTree %}
         {% block plotOptions %}
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
+            {% block dataType %}
             <tr>
                 <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Analysis Type:</em></strong></td>
             </tr>
@@ -1806,6 +1807,8 @@
                     &nbsp; <-- Displayed graph
                 </td>
             </tr>
+            {% endblock dataType %}
+            {% block dataSelect %}
             <tr><td bgcolor="white"></td></tr>
             <tr>
                 <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data Selection:</em></strong></td>
@@ -1891,6 +1894,8 @@
                     &nbsp; <-- Display only significant tests (p <= 0.05)
                 </td>
             </tr>
+            {% endblock dataSelect %}
+            {% block filterOptions %}
             <tr><td bgcolor="white"></td></tr>
             <tr>
                 <td bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use the taxonomy tree or PGPRs"><em><strong>Data Filtering:</strong></em></td>
@@ -1919,6 +1924,8 @@
                     </select>
                 </td>
             </tr>
+            {% endblock filterOptions %}
+            {% block runButtons %}
             <tr><td bgcolor="white"></td></tr>
             <tr>
                 <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
@@ -1940,11 +1947,13 @@
                     <input id="TabButton" type="button" disabled value="Export Data"/>
                 </td>
             </tr>
+            {% endblock runButtons %}
         </table>
         {% endblock plotOptions %}
     </div>
     <br><br>
-
+    {% block output %}
+    {% block chart %}
     <table width="950px" border="2" style="table-layout: fixed">
         <colgroup>
             <col width="5%"><col width="5%">
@@ -2023,7 +2032,7 @@
             </td>
         </tr>
     </table>
-
+    {% endblock chart %}
     <div id="txt-1">
         <h2>Test Results:</h2>
         <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
@@ -2034,4 +2043,5 @@
     <br>
     <br>
     <br>
+    {% endblock output %}
 {% endblock my_content%}

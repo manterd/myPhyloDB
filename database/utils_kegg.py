@@ -781,18 +781,46 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        # JUMP
-        '''
-        # get list of species by gene
-        uniqueDF = taxaDF.reset_index(drop=False, inplace=False)
-        uniqueDF.rename(columns={'index': 'speciesid'}, inplace=True)
-        uniqueDF = uniqueDF.drop_duplicates(subset='speciesid', take_last=True)
-        taxaDict = {}
-        for i in levelList:
-            taxaList = uniqueDF.loc[uniqueDF[i] > 0].speciesid.tolist()
-            taxaDict[i] = taxaList
-        print taxaDict
-        '''
+        # create dataframe with data by species
+        allDF = taxaDF[levelList]
+        allDF.insert(0, 'Species', None)
+        allDF.insert(0, 'Genus', None)
+        allDF.insert(0, 'Family', None)
+        allDF.insert(0, 'Order', None)
+        allDF.insert(0, 'Class', None)
+        allDF.insert(0, 'Phyla', None)
+        allDF.insert(0, 'Kingdom', None)
+
+        for level in levelList:
+            name = ''
+            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=level).exists():
+                name = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=level).nz_lvl1_name
+            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=level).exists():
+                name = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=level).nz_lvl2_name
+            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=level).exists():
+                name = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=level).nz_lvl3_name
+            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=level).exists():
+                name = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=level).nz_lvl4_name
+            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=level).exists():
+                name = nz_entry.objects.using('picrust').get(nz_lvl5_id=level).nz_desc
+            allDF.rename(columns={level: name}, inplace=True)
+
+        # get taxonomy names
+        idList = list(set(allDF.index.tolist()))
+        nameList = getFullTaxonomy(idList)
+
+        nameDict = {}
+        for idx, val in enumerate(idList):
+            nameDict[val] = nameList[idx]
+
+        for key, val in nameDict.iteritems():
+            allDF.at[key, 'Kingdom'] = val[0]
+            allDF.at[key, 'Phyla'] = val[1]
+            allDF.at[key, 'Class'] = val[2]
+            allDF.at[key, 'Order'] = val[3]
+            allDF.at[key, 'Family'] = val[4]
+            allDF.at[key, 'Genus'] = val[5]
+            allDF.at[key, 'Species'] = val[6]
 
         # sum all species
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -845,7 +873,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        return finalDF
+        return finalDF, allDF
 
     except:
         if not stops[PID] == RID:

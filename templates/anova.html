@@ -33,7 +33,7 @@
         var button3 = 1;
         var cat_gibbs = 0, cat_n = 0;
         var transform = 0;
-
+        var taxJSON;
         // restore HTML to default in case of refresh
 
 
@@ -226,6 +226,18 @@
                     $("#selectall-nz").val(0);
                 }
             });
+
+            $('#taxTable').DataTable({
+                dom: 'B<"toolbar">lfrtip',
+                deferRender: true,
+                scrollX: true,
+                bPaginate: true,
+                aaData: JSON.parse(taxJSON),
+                lengthMenu: [10, 25, 50, 100],
+                sPaginationType: 'full_numbers',
+                buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+            });
+            $("div.toolbar").html('<br><br><br>');
 
             // Initialize highcharts
             Highcharts.setOptions({
@@ -730,7 +742,7 @@
         function flipStack() {
             if (unstackButton) {
                 unstackButton = false;
-                document.getElementById("unstackButton").value = "Unstack";
+                document.getElementById("unstackButton").value = "Unstack bars";
 
                 $("#container-1").empty();
                 catOptions.plotOptions.column.stacking = "normal";
@@ -739,7 +751,7 @@
                 return;
             }
             unstackButton = true;
-            document.getElementById("unstackButton").value = "Stack";
+            document.getElementById("unstackButton").value = "Stack bars";
 
             $("#container-1").empty();
                 catOptions.plotOptions.column.stacking = null;
@@ -936,6 +948,10 @@
                 $("#cat_off").show();
                 $("#cat_gibbs").hide();
                 $("#cat_nitrogen").hide();
+
+                $("#taxTable").hide();
+                $("#taxTableH2").hide();
+
                 if (dataType == "1") {
                     $("#container-1").empty().show().append('Settings have been changed by the user!');
                     $("#container-2").empty().hide();
@@ -958,6 +974,10 @@
                 $("#cat_off").show();
                 $("#cat_gibbs").hide();
                 $("#cat_nitrogen").hide();
+
+                $("#taxTable").show();
+                $("#taxTableH2").show();
+
                 if (dataType == "1") {
                     $("#container-1").empty().show().append('Settings have been changed by the user!');
                     $("#container-2").empty().hide();
@@ -982,6 +1002,10 @@
                     $("#container-2").empty().hide();
                     $("#text-1").empty().show();
                     $("#text-2").empty().hide();
+
+                    $("#taxTable").show();
+                    $("#taxTableH2").show();
+
                     if (nzAll == 5) {
                         $("#cat_off").hide();
                         $("#cat_gibbs").show();
@@ -1086,6 +1110,9 @@
                                 }
                             }
                             $('#text-1').val(text);
+
+                            taxJSON = data['taxTable'];
+
                         } else {
                             if (empty == 0) {
                             $("#container-2").empty().append('No significant regressions!');
@@ -1984,8 +2011,8 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td colspan="8" style="text-align: center;"><input type="button" id="unstackButton" value="Unstack" onclick="flipStack();"></td>
-            <td colspan="4" style="text-align: center"></td>
+            <td colspan="8" style="text-align: center"></td>
+            <td colspan="4" style="text-align: center;"><input type="button" id="unstackButton" value="Unstack bars" onclick="flipStack();"></td>
             <td id="cat_off" colspan="8" style="text-align: center"></td>
             <td id="cat_gibbs" colspan="8" style="text-align: center; display: none">
                 Category:
@@ -2055,8 +2082,9 @@
         <textarea style="width: 950px; display: none" wrap="off" id="text-2" rows="20">No data selected</textarea>
         <br>
     </div>
-    <br>
-    <br>
-    <br>
-    <br>
+    <br><br>
+    <h2 id="taxTableH2">Mapped Taxa:</h2>
+    <table id="taxTable" class="display compact nowrap" cellpadding="0" cellspacing="0"></table>
+    <br><br>
+    <br><br>
 {% endblock my_content%}
