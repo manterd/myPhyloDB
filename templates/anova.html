@@ -33,7 +33,6 @@
         var button3 = 1;
         var cat_gibbs = 0, cat_n = 0;
         var transform = 0;
-        var taxJSON;
         // restore HTML to default in case of refresh
 
 
@@ -226,18 +225,6 @@
                     $("#selectall-nz").val(0);
                 }
             });
-
-            $('#taxTable').DataTable({
-                dom: 'B<"toolbar">lfrtip',
-                deferRender: true,
-                scrollX: true,
-                bPaginate: true,
-                aaData: JSON.parse(taxJSON),
-                lengthMenu: [10, 25, 50, 100],
-                sPaginationType: 'full_numbers',
-                buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-            });
-            $("div.toolbar").html('<br><br><br>');
 
             // Initialize highcharts
             Highcharts.setOptions({
@@ -949,7 +936,7 @@
                 $("#cat_gibbs").hide();
                 $("#cat_nitrogen").hide();
 
-                $("#taxTable").hide();
+                $("#taxDiv").hide();
                 $("#taxTableH2").hide();
 
                 if (dataType == "1") {
@@ -975,7 +962,7 @@
                 $("#cat_gibbs").hide();
                 $("#cat_nitrogen").hide();
 
-                $("#taxTable").show();
+                $("#taxDiv").show();
                 $("#taxTableH2").show();
 
                 if (dataType == "1") {
@@ -1003,7 +990,7 @@
                     $("#text-1").empty().show();
                     $("#text-2").empty().hide();
 
-                    $("#taxTable").show();
+                    $("#taxDiv").show();
                     $("#taxTableH2").show();
 
                     if (nzAll == 5) {
@@ -1094,10 +1081,33 @@
                         } else {
                             $("#run").css("background-color", "green");
                         }
+
                         var text = data['text'];
+
+                        if (button3 != "1") {
+                            var taxData = eval(data['taxData']);
+                            var taxColumns = JSON.parse(data['taxColumns']);
+                            var tableHeaders = '';
+                            for (var i = 0; i < taxColumns.length; i++) {
+                                tableHeaders += "<th>" + taxColumns[i] + "</th>";
+                            }
+
+                            $("#taxDiv").empty().append('<table id="taxTable" class="display" cellspacing="0" width="100%"><thead><tr>' + tableHeaders + '</tr></thead></table>');
+
+                            var table = $('#taxTable').DataTable({
+                                "dom": 'B<"toolbar">lfrtip',
+                                "deferRender": true,
+                                "data": taxData,
+                                "scrollX": true,
+                                "bPaginate": true,
+                                "sPaginationType": 'full_numbers',
+                                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
+                            });
+                            $("div.toolbar").html('<br><br><br>');
+                        }
                         if (document.getElementById("button1").value == 1) {
                             if (empty == 0) {
-                            $("#container-1").empty().append('No significant tests!');
+                                $("#container-1").empty().append('No significant tests!');
                             } else {
                                 barchart(xAxis, yAxis, series);
                                 if (button3 == 3) {
@@ -1110,8 +1120,6 @@
                                 }
                             }
                             $('#text-1').val(text);
-
-                            taxJSON = data['taxTable'];
 
                         } else {
                             if (empty == 0) {
@@ -2037,8 +2045,8 @@
                     <option value="1">Nitrogen fixation</option>
                     <option value="2">Ammonification</option>
                     <option value="3">Nitrification</option>
-                    <option value="4">DNRA</option>
-                    <option value="5">ANRA</option>
+                    <option value="4">Dissimilatory nitrate reduction (DNR)</option>
+                    <option value="5">Assimilatory nitrate reduction (ANR)</option>
                     <option value="6">Denitrification</option>
                     <option value="7">Anammox</option>
                 </select>
@@ -2084,7 +2092,7 @@
     </div>
     <br><br>
     <h2 id="taxTableH2">Mapped Taxa:</h2>
-    <table id="taxTable" class="display compact nowrap" cellpadding="0" cellspacing="0"></table>
+    <div id="taxDiv" style="width: 950px; overflow-x: auto;"></div>
     <br><br>
     <br><br>
 {% endblock my_content%}

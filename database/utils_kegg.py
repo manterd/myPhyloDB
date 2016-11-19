@@ -321,7 +321,9 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
+        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+        taxaDF.dropna(axis=0, how='any', inplace=True)
+
         for level in levelList:
             if DepVar == 0:
                 taxaDF[level] = taxaDF['abund'] * taxaDF[level]
@@ -342,6 +344,48 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+        # create dataframe with data by species
+        wanted = levelList[:]
+        wanted.insert(0, 'sampleid')
+        allDF = taxaDF[wanted]
+        allDF.insert(1, 'Species', None)
+        allDF.insert(1, 'Genus', None)
+        allDF.insert(1, 'Family', None)
+        allDF.insert(1, 'Order', None)
+        allDF.insert(1, 'Class', None)
+        allDF.insert(1, 'Phyla', None)
+        allDF.insert(1, 'Kingdom', None)
+
+        for level in levelList:
+            name = ''
+            if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=level).exists():
+                name = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=level).ko_lvl1_name
+            elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=level).exists():
+                name = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=level).ko_lvl2_name
+            elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=level).exists():
+                name = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=level).ko_lvl3_name
+            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=level).exists():
+                name = ko_entry.objects.using('picrust').get(ko_lvl4_id=level).ko_desc
+            allDF.rename(columns={level: name}, inplace=True)
+
+        # get taxonomy names
+        idList = list(set(allDF.index.tolist()))
+        nameList = getFullTaxonomy(idList)
+
+        nameDict = {}
+        for idx, val in enumerate(idList):
+            nameDict[val] = nameList[idx]
+
+        for key, val in nameDict.iteritems():
+            allDF.at[key, 'Kingdom'] = val[0]
+            allDF.at[key, 'Phyla'] = val[1]
+            allDF.at[key, 'Class'] = val[2]
+            allDF.at[key, 'Order'] = val[3]
+            allDF.at[key, 'Family'] = val[4]
+            allDF.at[key, 'Genus'] = val[5]
+            allDF.at[key, 'Species'] = val[6]
+
+        # sum all species
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
 
@@ -361,6 +405,11 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         metaDF.set_index('sampleid', drop=True, inplace=True)
         grouped = metaDF.groupby(level=0)
         metaDF = grouped.last()
+
+        allDF.set_index('sampleid', drop=True, inplace=True)
+        allDF = pd.merge(metaDF, allDF, left_index=True, right_index=True, how='outer')
+        allDF.reset_index(drop=False, inplace=True)
+        allDF = allDF.loc[(allDF.sum(axis=1) != 0)]
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
@@ -388,7 +437,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        return finalDF
+        return finalDF, allDF
 
     except:
         if not stops[PID] == RID:
@@ -759,7 +808,8 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
+        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+        taxaDF.dropna(axis=0, how='any', inplace=True)
 
         for level in levelList:
             if DepVar == 0:
@@ -782,14 +832,16 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # create dataframe with data by species
-        allDF = taxaDF[levelList]
-        allDF.insert(0, 'Species', None)
-        allDF.insert(0, 'Genus', None)
-        allDF.insert(0, 'Family', None)
-        allDF.insert(0, 'Order', None)
-        allDF.insert(0, 'Class', None)
-        allDF.insert(0, 'Phyla', None)
-        allDF.insert(0, 'Kingdom', None)
+        wanted = levelList[:]
+        wanted.insert(0, 'sampleid')
+        allDF = taxaDF[wanted]
+        allDF.insert(1, 'Species', None)
+        allDF.insert(1, 'Genus', None)
+        allDF.insert(1, 'Family', None)
+        allDF.insert(1, 'Order', None)
+        allDF.insert(1, 'Class', None)
+        allDF.insert(1, 'Phyla', None)
+        allDF.insert(1, 'Kingdom', None)
 
         for level in levelList:
             name = ''
@@ -842,6 +894,11 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         metaDF.set_index('sampleid', drop=True, inplace=True)
         grouped = metaDF.groupby(level=0)
         metaDF = grouped.last()
+
+        allDF.set_index('sampleid', drop=True, inplace=True)
+        allDF = pd.merge(metaDF, allDF, left_index=True, right_index=True, how='outer')
+        allDF.reset_index(drop=False, inplace=True)
+        allDF = allDF.loc[(allDF.sum(axis=1) != 0)]
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')

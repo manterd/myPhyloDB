@@ -460,12 +460,11 @@ def getCatUnivData(request, RID, stops, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
 
-                jsn = {}
+                # datatable of taxa mapped to selected kegg orthologies
                 records = allDF.values.tolist()
+                finalDict['taxData'] = simplejson.dumps(records)
                 columns = allDF.columns.values.tolist()
-                jsn['data'] = records
-                jsn['columns'] = columns
-                finalDict['taxJSON'] = simplejson.dumps(jsn)
+                finalDict['taxColumns'] = simplejson.dumps(columns)
 
                 finalDict['resType'] = 'res'
                 finalDict['error'] = 'none'
