@@ -1,0 +1,29 @@
+<tr>
+    <td bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use the taxonomy tree, PGPRs or KEGG mapping"><em><strong>Data Filtering:</strong></em></td>
+</tr>
+
+<tr>
+    <td bgcolor="white">
+        <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
+    </td>
+</tr>
+
+<tr>
+    <td bgcolor="white">
+        <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+    </td>
+</tr>
+
+<tr>
+    <td bgcolor="white">
+        <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
+        <select id="filterMeth">
+            <!--<option value="1">None</option>-->
+            <option value="2" selected="selected">Interquantile range (IQR)</option>
+            <option value="3">Coefficient of variation (CV)</option>
+            <option value="4">Standard deviation (SD)</option>
+            <option value="5">Mean abundance value</option>
+            <option value="6">Median abundance value</option>
+        </select>
+    </td>
+</tr>

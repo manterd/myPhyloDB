@@ -1,0 +1,32 @@
+$("#tree_nz").dynatree({
+    checkbox: true,
+    selectMode: 2,
+    initAjax: {
+        url: '/myPhyloDB/getNZTree/',
+        dataType: 'jsonp',
+        data: {}
+    },
+    onLazyRead: function (node) {
+        node.appendAjax({
+            url: '/myPhyloDB/getNZTreeChildren/',
+            data: {
+                tooltip: node.data.tooltip,
+                id: node.data.id
+            }
+        });
+    },
+    onSelect: function (flag, node) {
+        if (flag && node.childList == undefined) {
+            node.reloadChildren(function () {
+                node.select(false);
+                node.select(true);
+            });
+        }
+        nodesNZ = node.tree.getSelectedNodes();
+        $("#run").css("background-color", "lightgray");
+    },
+    onClick: function () {
+        nzAll = 0;
+        $("#selectall-nz").val(0);
+    }
+});

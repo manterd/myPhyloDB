@@ -1,0 +1,42 @@
+$("#tree_metaQuant").dynatree({
+    checkbox: true,
+    selectMode: 3,
+    initAjax: {
+        url: '/myPhyloDB/getSampleQuantTree/',
+        dataType: 'jsonp',
+        data: {}
+    },
+    onLazyRead: function (node) {
+        node.appendAjax({
+            url: '/myPhyloDB/getSampleQuantTreeChildren/',
+            data: {pType: node.data.pType, field: node.data.title},
+            success: function (node) {
+                if (node.childList == undefined) {
+                    alert('No samples are available for this variable!');
+                }
+            }
+        });
+    },
+    onSelect: function (flag, node) {
+        if (flag && node.childList == undefined) {
+            node.reloadChildren(function () {
+                node.select(false);
+                node.select(true);
+            });
+        }
+        nodesQuant = node.tree.getSelectedNodes();
+        $("#run").css("background-color", "lightgray");
+
+        var count = 0;
+        $.each(nodesQuant, function(key, value) {
+            if (value.data.pType != undefined) {
+                count = count + 1;
+            }
+        });
+
+        if (count > 1) {
+            alert("Please select only one quantitative variable!");
+            return false;
+        }
+    }
+});

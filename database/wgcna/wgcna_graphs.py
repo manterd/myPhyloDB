@@ -1,6 +1,7 @@
 import datetime
 from django.http import HttpResponse
 import logging
+import numpy as np
 from natsort import natsorted
 import pandas as pd
 from pyper import *
@@ -168,10 +169,10 @@ def getWGCNA(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -445,8 +446,8 @@ def getWGCNA(request, stops, RID, PID):
                     moduleDF.insert(3, 'Level_3', L3)
                     moduleDF.insert(4, 'Level_4', L4)
 
-                    moduleDF.fillna(value='N/A', inplace=True)
-
+                moduleDF.replace(to_replace='N/A', value=np.nan, inplace=True)
+                moduleDF.dropna(axis=1, how='all', inplace=True)
                 dist_table = moduleDF.to_html(classes="table display")
                 dist_table = dist_table.replace('border="1"', 'border="0"')
                 finalDict['dist_table'] = str(dist_table)
@@ -476,6 +477,8 @@ def getWGCNA(request, stops, RID, PID):
                     zipped = getFullNZ(list(kmeDF['rank_id']))
                     insertTaxaInfo(button3, zipped, kmeDF, pos=1)
 
+                kmeDF.replace(to_replace='N/A', value=np.nan, inplace=True)
+                kmeDF.dropna(axis=1, how='all', inplace=True)
                 kme_table = kmeDF.to_html(classes="table display")
                 kme_table = kme_table.replace('border="1"', 'border="0"')
                 finalDict['kme_table'] = str(kme_table)

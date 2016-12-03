@@ -305,9 +305,9 @@ def getCatUnivData(request, RID, stops, PID):
                     elif DepVar == 1:
                         result += 'Dependent Variable: Relative Abundance' + '\n'
                     elif DepVar == 2:
-                        result += 'Dependent Variable: Species Richness' + '\n'
+                        result += 'Dependent Variable: Phylotpe (species) Richness' + '\n'
                     elif DepVar == 3:
-                        result += 'Dependent Variable: Species Diversity' + '\n'
+                        result += 'Dependent Variable: Phylotpe (species) Diversity' + '\n'
                     elif DepVar == 4:
                         result += 'Dependent Variable: Total Abundance' + '\n'
 
@@ -423,9 +423,9 @@ def getCatUnivData(request, RID, stops, PID):
                 elif DepVar == 1:
                     yTitle['text'] = 'Relative Abundance'
                 elif DepVar == 2:
-                    yTitle['text'] = 'Species Richness'
+                    yTitle['text'] = 'Phylotype Richness'
                 elif DepVar == 3:
-                    yTitle['text'] = 'Species Diversity'
+                    yTitle['text'] = 'Phylotype Diversity'
                 elif DepVar == 4:
                     yTitle['text'] = 'Total Abundance'
                 yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
@@ -617,14 +617,14 @@ def getQuantUnivData(request, RID, stops, PID):
                     if keggAll == 0:
                         keggString = all["kegg"]
                         keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
                         keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF = getNZDF(nzAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -763,9 +763,9 @@ def getQuantUnivData(request, RID, stops, PID):
                     elif DepVar == 1:
                         result += 'Dependent Variable: Relative Abundance' + '\n'
                     elif DepVar == 2:
-                        result += 'Dependent Variable: Species Richness' + '\n'
+                        result += 'Dependent Variable: Phylotype (species) Richness' + '\n'
                     elif DepVar == 3:
-                        result += 'Dependent Variable: Species Diversity' + '\n'
+                        result += 'Dependent Variable: Phylotype (species) Diversity' + '\n'
                     elif DepVar == 4:
                         result += 'Dependent Variable: Total Abundance' + '\n'
 
@@ -893,7 +893,8 @@ def getQuantUnivData(request, RID, stops, PID):
 
                                 regrDict = {}
                                 regrDict['type'] = 'line'
-                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
+                                sup2 = u"\u00B2"
+                                regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R' + sup2 + ' = ' + str(r_square)
                                 regrDict['data'] = regrList
                                 regrDict['color'] = colors[colors_idx]
 
@@ -990,7 +991,8 @@ def getQuantUnivData(request, RID, stops, PID):
 
                             regrDict = {}
                             regrDict['type'] = 'line'
-                            regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
+                            sup2 = u"\u00B2"
+                            regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R' + sup2 + ' = ' + str(r_square)
                             regrDict['data'] = regrList
                             regrDict['color'] = colors[colors_idx]
 
@@ -1106,7 +1108,7 @@ def getQuantUnivData(request, RID, stops, PID):
                                 y = []
                                 if DepVar == 0:
                                     x = group1[quantFields[0]].values.astype(float).tolist()
-                                    y = group1['rel_abund'].values.astype(float).tolist()
+                                    y = group1['abund'].values.astype(float).tolist()
                                 elif DepVar == 1:
                                     x = group1[quantFields[0]].values.astype(float).tolist()
                                     y = group1['rel_abund'].values.astype(float).tolist()
@@ -1125,7 +1127,7 @@ def getQuantUnivData(request, RID, stops, PID):
                                         dataDict = {}
                                         dataDict['name'] = row['sample_name']
                                         dataDict['x'] = float(row[quantFields[0]])
-                                        dataDict['y'] = float(row['rel_abund'])
+                                        dataDict['y'] = float(row['abund'])
                                         dataList.append(dataDict)
                                 elif DepVar == 1:
                                     for index, row in group1.iterrows():
@@ -1216,9 +1218,9 @@ def getQuantUnivData(request, RID, stops, PID):
                 elif DepVar == 1:
                     yTitle['text'] = 'Relative Abundance'
                 elif DepVar == 2:
-                    yTitle['text'] = 'Species Richness'
+                    yTitle['text'] = 'Phylotpe (species) Richness'
                 elif DepVar == 3:
-                    yTitle['text'] = 'Shannon Diversity'
+                    yTitle['text'] = 'Phylotpe (species) Diversity'
                 elif DepVar == 4:
                     yTitle['text'] = 'Total Abundance'
                 yAxisDict['title'] = yTitle

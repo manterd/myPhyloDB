@@ -1,0 +1,32 @@
+$("#tree_kegg").dynatree({
+    checkbox: true,
+    selectMode: 2,
+    initAjax: {
+        url: '/myPhyloDB/getKEGGTree/',
+        dataType: 'jsonp',
+        data: {}
+    },
+    onLazyRead: function (node) {
+        node.appendAjax({
+            url: '/myPhyloDB/getKEGGTreeChildren/',
+            data: {
+                tooltip: node.data.tooltip,
+                id: node.data.id
+            }
+        });
+    },
+    onSelect: function (flag, node) {
+        if (flag && node.childList == undefined) {
+            node.reloadChildren(function () {
+                node.select(false);
+                node.select(true);
+            });
+        }
+        nodesKEGG = node.tree.getSelectedNodes();
+        $("#run").css("background-color", "lightgray");
+    },
+    onClick: function () {
+        keggAll = 0;
+        $("#selectall-kegg").val(0);
+    }
+});

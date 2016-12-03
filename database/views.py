@@ -2392,16 +2392,6 @@ def updateInfo(request):
     )
 
 
-def analysis(request):
-    state = ''
-    return render_to_response(
-        'analysis.html',
-        {'form5': UploadForm5,
-         'state': state},
-        context_instance=RequestContext(request)
-    )
-
-
 def directgraph(request):
     state = ''
     return render_to_response(

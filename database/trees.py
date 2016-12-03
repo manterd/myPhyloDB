@@ -88,7 +88,6 @@ def getSampleCatTree(request):
     for p in projectType:
         typeList.append(p.projectType)
 
-
     myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     air = {'title': 'Air', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
@@ -121,53 +120,53 @@ def getSampleCatTree(request):
             myNode = {'title': list[i], 'id': 'water', 'isFolder': True, 'pType': 'water', 'isLazy': True, 'children': []}
             water['children'].append(myNode)
 
-    if 'human_associated' in typeList:
+    if 'human associated' in typeList:
         samp_collect = {'title': 'Sample Collection', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_collect_device', 'samp_mat_process', 'samp_store_loc']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             samp_collect['children'].append(myNode)
         human_associated['children'].append(samp_collect)
 
         samp_class = {'title': 'Sample Classification', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_type', 'samp_location', 'samp_oxy_stat']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             samp_class['children'].append(myNode)
         human_associated['children'].append(samp_class)
 
         host = {'title': 'Host', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['host_subject_id', 'host_gender', 'host_ethnicity', 'host_occupation', 'pet_farm_animal', 'obesity', 'smoker']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             host['children'].append(myNode)
         human_associated['children'].append(host)
 
-        diet = {'title': 'Host', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+        diet = {'title': 'Diet', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['diet_type', 'diet_frequency', 'diet_last_six_month', 'last_meal']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             diet['children'].append(myNode)
         human_associated['children'].append(diet)
 
         disease = {'title': 'Disease', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['medic_hist_perform', 'disease_type', 'disease_location', 'tumor_location', 'tumor_stage']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             disease['children'].append(myNode)
         human_associated['children'].append(disease)
 
         drug_use = {'title': 'Drug Usage', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['drug_usage', 'drug_type', 'drug_frequency']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             drug_use['children'].append(myNode)
         human_associated['children'].append(drug_use)
 
         interven = {'title': 'Intervention', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['perturbation', 'pert_type', 'pert_frequency']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             interven['children'].append(myNode)
         human_associated['children'].append(interven)
 
@@ -262,7 +261,7 @@ def getSampleCatTree(request):
         user['children'].append(myNode)
 
     myTree['children'].append(mimark)
-    if 'human_associated' in typeList:
+    if 'human associated' in typeList:
         myTree['children'].append(human_associated)
     if 'soil' in typeList:
         myTree['children'].append(soil)
@@ -384,7 +383,7 @@ def getSampleCatTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in human_associated and pType == 'human_associated':
+        elif field in human_associated and pType == 'human associated':
             table_field = 'human_associated__' + field
             values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).distinct().order_by(table_field)
             for j in range(len(values)):
@@ -585,53 +584,53 @@ def getSampleQuantTree(request):
             myNode = {'title': list[i], 'id': 'water', 'isFolder': True, 'pType': 'water', 'isLazy': True, 'children': []}
             water['children'].append(myNode)
 
-    if 'human_associated' in typeList:
+    if 'human associated' in typeList:
         samp_collect = {'title': 'Sample Collection', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_size', 'samp_store_temp', 'samp_store_dur']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             samp_collect['children'].append(myNode)
         human_associated['children'].append(samp_collect)
 
         samp_class = {'title': 'Sample Classification', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['samp_temp', 'samp_ph', 'samp_salinity']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             samp_class['children'].append(myNode)
         human_associated['children'].append(samp_class)
 
         host = {'title': 'Host', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['host_age', 'host_pulse', 'host_height', 'host_weight', 'host_bmi', 'host_weight_loss_3_month', 'host_body_temp']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             host['children'].append(myNode)
         human_associated['children'].append(host)
 
         diet = {'title': 'Diet', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['diet_duration']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             diet['children'].append(myNode)
         human_associated['children'].append(diet)
 
         disease = {'title': 'Disease', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['disease_duration', 'organism_count', 'tumor_mass']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             disease['children'].append(myNode)
         human_associated['children'].append(disease)
 
         drug_use = {'title': 'Drug Usage', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['drug_duration']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             drug_use['children'].append(myNode)
         human_associated['children'].append(drug_use)
 
         interven = {'title': 'Intervention', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['pert_duration']
         for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human_associated', 'isLazy': True, 'children': []}
+            myNode = {'title': list[i], 'id': 'human_associated', 'isFolder': True, 'pType': 'human associated', 'isLazy': True, 'children': []}
             interven['children'].append(myNode)
         human_associated['children'].append(interven)
 
@@ -726,7 +725,7 @@ def getSampleQuantTree(request):
         user['children'].append(myNode)
 
     myTree['children'].append(mimark)
-    if 'human_associated' in typeList:
+    if 'human associated' in typeList:
         myTree['children'].append(human_associated)
     if 'soil' in typeList:
         myTree['children'].append(soil)
@@ -850,7 +849,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        elif field in human_associated and pType == 'human_associated':
+        elif field in human_associated and pType == 'human associated':
             table_field = 'human_associated__' + field
             values = Sample.objects.values_list(table_field, flat='True').filter(sampleid__in=filtered).distinct().order_by(table_field)
             for j in range(len(values)):

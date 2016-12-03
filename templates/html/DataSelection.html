@@ -1,0 +1,91 @@
+<tr>
+    <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data Selection:</em></strong></td>
+</tr>
+
+<tr>
+    <td bgcolor="white" width="350px">
+        <select id="selectTree">
+            <option value="1" selected="selected">Taxonomy</option>
+            <option value="2" >KEGG orthology</option>
+            <option value="3" >KEGG enzyme</option>
+        </select>
+        &nbsp; <-- Sequence mapping
+    </td>
+</tr>
+
+<tr id="row_taxa">
+    <td bgcolor="white">
+        <select id="selectall-taxa">
+            <option value="0" selected="selected">Off</option>
+            <option value="2">Phyla</option>
+            <option value="3">Classes</option>
+            <option value="4">Orders</option>
+            <option value="5">Families</option>
+            <option value="6">Genera</option>
+            <option value="7">Species</option>
+            <option value="8">PGPRs</option>
+        </select>
+        &nbsp; <-- Taxa level
+    </td>
+</tr>
+
+<tr id="row_kegg" style="display:none">
+    <td bgcolor="white">
+        <select id="selectall-kegg">
+            <option value="0" selected="selected">Off</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+        </select>
+        &nbsp; <-- KEGG orthology level
+    </td>
+</tr>
+
+<tr id="row_nz" style="display:none">
+    <td bgcolor="white">
+        <select id="selectall-nz">
+            <option value="0" selected="selected">Off</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">GIBBs</option>
+            <option value="6">N cycle</option>
+        </select>
+        &nbsp; <-- KEGG enzyme level
+    </td>
+</tr>
+
+<tr>
+    <td bgcolor="white">
+        <select id="DepVar">
+            <option value="0" selected="selected">Abundance</option>
+            <option value="1">Relative Abundance</option>
+            <option value="4">Total Abundance</option>
+            <option value="2">Phylotype Richness</option>
+            <option value="3">Phylotype Diversity</option>
+        </select>
+        &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Relative Abundance = proportion of total community<br>Total Abundance = 16S rRNA copies per mg soil<br>Phylotype Richness = number of phylotypes (species)<br>Phylotype (species) Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
+    </td>
+</tr>
+
+<tr>
+    <td bgcolor="white">
+        <select id="transform">
+            <option value="0" selected="selected">None</option>
+            <option value="1">Ln</option>
+            <option value="2">Log10</option>
+            <option value="3">Sqrt</option>
+            <!--<option value="4">Logit</option>
+            <option value="5">Arcsin</option>-->
+        </select>
+        &nbsp; <-- Raw data transformation
+    </td>
+</tr>
+
+<tr>
+    <td id="sig_text" bgcolor="white">
+        <input type="checkbox" id="sig_box">
+        &nbsp; <-- Display only significant tests (p &#8804 0.05)
+    </td>
+</tr>

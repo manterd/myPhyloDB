@@ -141,10 +141,10 @@ def getSPLS(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
@@ -177,9 +177,9 @@ def getSPLS(request, stops, RID, PID):
                 elif DepVar == 1:
                     result += 'Dependent Variable: Relative Abundance' + '\n'
                 elif DepVar == 2:
-                    result += 'Dependent Variable: Species Richness' + '\n'
+                    result += 'Dependent Variable: Phylotype (species) Richness' + '\n'
                 elif DepVar == 3:
-                    result += 'Dependent Variable: Species Diversity' + '\n'
+                    result += 'Dependent Variable: Phylotype (species) Diversity' + '\n'
                 elif DepVar == 4:
                     result += 'Dependent Variable: Total Abundance' + '\n'
                 result += '\n===============================================\n'

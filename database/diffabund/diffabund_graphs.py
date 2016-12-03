@@ -1,6 +1,7 @@
 import datetime
 from django.http import HttpResponse
 import logging
+import numpy as np
 import pandas as pd
 from pyper import *
 import simplejson
@@ -143,10 +144,10 @@ def getDiffAbund(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -373,9 +374,12 @@ def getDiffAbund(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 5 of 5:  Formatting nbinomTest results for display...')
 
+                finalDF.replace(to_replace='N/A', value=np.nan, inplace=True)
+                finalDF.dropna(axis=1, how='all', inplace=True)
                 res_table = finalDF.to_html(classes="table display")
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
+
                 finalDict['text'] = result
 
                 database.queue.setBase(RID, 'Step 5 of 5: Formatting nbinomTest results for display...done!')

@@ -1,6 +1,7 @@
 import datetime
 from django.http import HttpResponse
 import logging
+import numpy as np
 import pandas as pd
 from pyper import *
 import simplejson
@@ -124,10 +125,10 @@ def getPCA(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if button3 == 2:
-                    finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if button3 == 3:
-                    finalDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -420,6 +421,8 @@ def getPCA(request, stops, RID, PID):
                     zipped = getFullNZ(list(varCoordDF['rank_id']))
                     insertTaxaInfo(button3, zipped, varCoordDF, pos=1)
 
+                varCoordDF.replace(to_replace='N/A', value=np.nan, inplace=True)
+                varCoordDF.dropna(axis=1, how='all', inplace=True)
                 table = varCoordDF.to_html(classes="table display")
                 table = table.replace('border="1"', 'border="0"')
                 finalDict['varCoordDF'] = str(table)
@@ -448,8 +451,8 @@ def getPCA(request, stops, RID, PID):
                     zipped = getFullNZ(list(varContribDF['rank_id']))
                     insertTaxaInfo(button3, zipped, varContribDF, pos=1)
 
-                varContribDF.fillna(value='N/A', inplace=True)
-
+                varContribDF.replace(to_replace='N/A', value=np.nan, inplace=True)
+                varContribDF.dropna(axis=1, how='all', inplace=True)
                 table = varContribDF.to_html(classes="table display")
                 table = table.replace('border="1"', 'border="0"')
                 finalDict['varContribDF'] = str(table)

@@ -187,7 +187,7 @@ def getNorm(request, RID, stopList, PID):
                 result += "No minimum samples size was applied...\n"
 
             if remove == 1:
-                result += "Species with fewer than " + str(cutoff) + " read(s) were removed from your analysis\n"
+                result += "Phylotypes with fewer than " + str(cutoff) + " read(s) were removed from your analysis\n"
             else:
                 result += "No minimum species size was applied...\n"
 

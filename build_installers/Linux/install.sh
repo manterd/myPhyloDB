@@ -9,34 +9,41 @@ echo "Checking if myPhyloDB exists...\n"
 
 if [ -d "$HOME/myPhyloDB" ]
     then
-	echo "A previous installation of myPhyloDB was detected..."
-        echo -n "Would you like to keep your current database files [y/n]?"
-        read response
+        echo "A previous installation of myPhyloDB was detected..."
+            echo -n "Would you like to keep your current database files [y/n]?"
+            read response
     else
-	echo "No previous installations of myPhyloDB were detected..."
+	    echo "No previous installations of myPhyloDB were detected..."
         response=n
 fi
 
+mkdir $HOME/myPhyloDB_temp
+mkdir $HOME/myPhyloDB_temp/uploads
+
 if [ $response = y ]
     then
-	mkdir $HOME/myPhyloDB_temp
-	cp $HOME/myPhyloDB/db.Microbe $HOME/myPhyloDB_temp/db.Microbe
-	cp $HOME/myPhyloDB/db.PICRUSt $HOME/myPhyloDB_temp/db.PICRUSt
-	cp -r $HOME/myPhyloDB/uploads $HOME/myPhyloDB_temp/uploads
-	tar -zxf myPhyloDB.tar.gz -C $HOME
-	rm $HOME/myPhyloDB/db.Microbe
-	rm -rf $HOME/myPhyloDB/uploads
-	cp $HOME/myPhyloDB_temp/db.Microbe $HOME/myPhyloDB/db.Microbe
-	cp $HOME/myPhyloDB_temp/db.PICRUSt $HOME/myPhyloDB/db.PICRUSt
-	cp -r $HOME/myPhyloDB_temp/uploads $HOME/myPhyloDB/uploads
-	rm -rf $HOME/myPhyloDB_temp
+        mv $HOME/myPhyloDB/db.Microbe $HOME/myPhyloDB_temp/db.Microbe
+        mv $HOME/myPhyloDB/db.PICRUSt $HOME/myPhyloDB_temp/db.PICRUSt
+        mv $HOME/myPhyloDB/uploads/* $HOME/myPhyloDB_temp/uploads/
+        rm -rf $HOME/myPhyloDB
+        tar -zxf myPhyloDB.tar.gz -C $HOME
+        mv -f $HOME/myPhyloDB_temp/db.Microbe $HOME/myPhyloDB/db.Microbe
+        mv -f $HOME/myPhyloDB_temp/db.PICRUSt $HOME/myPhyloDB/db.PICRUSt
+        mkdir $HOME/myPhyloDB/uploads
+        mv -f $HOME/myPhyloDB_temp/uploads/* $HOME/myPhyloDB/uploads/
     else
-	if [ -d "$HOME/myPhyloDB" ]
-	    then
-		rm -rf $HOME/myPhyloDB
-	fi
-	tar -zxf myPhyloDB.tar.gz -C $HOME
+        if [ -d "$HOME/myPhyloDB" ]
+            then
+                mv $HOME/myPhyloDB/uploads/* $HOME/myPhyloDB_temp/uploads/
+                rm -rf $HOME/myPhyloDB
+        fi
+        tar -zxf myPhyloDB.tar.gz -C $HOME
+        mkdir $HOME/myPhyloDB/uploads
+        mv -f $HOME/myPhyloDB_temp/uploads/* $HOME/myPhyloDB/uploads/
+
 fi
+
+rm -rf $HOME/myPhyloDB_temp
 
 mkdir -p $HOME/.icons
 cp $HOME/myPhyloDB/media/images/myPhyloDB_Logo.png $HOME/.icons/myPhyloDB_Logo.png

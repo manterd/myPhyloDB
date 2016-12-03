@@ -56,6 +56,18 @@
         var normNorm = false;
         var dataID = "dataIDnotfound";
         //var normMethod = "None";  // save with normFiles and such, to be loaded without cookie dependency
+
+        Highcharts.wrap(Highcharts.Chart.prototype, 'init', function(proceed, options, callback) {
+            if (options.chart && options.chart.forExport && options.series) {
+                $.each(options.series, function() {
+                    if (this.visible === false) {
+                        this.showInLegend = false;
+                    }
+                });
+            }
+            return proceed.call(this, options, callback);
+        });
+
         $(function () {
             $('[title]').qtip({
                 style: {

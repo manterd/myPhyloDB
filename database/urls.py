@@ -26,6 +26,5 @@ urlpatterns = [
     url(r'^accounts/profile/$', views.profile, name='profile'),
     url(r'^accounts/changeuser/$', views.changeuser, name='changeuser'),
 
-    url(r'^analysis/$', views.analysis, name='analysis'),
     url(r'^directgraph/$', views.directgraph, name='directgraph'),
 ]
