@@ -1,0 +1,42 @@
+<td colspan="6" style="text-align: center">
+    <button id="hide" title="Click to show/hide all series in the graph" onClick="hideChange()">Hide all series</button>
+</td>
+
+
+<script type="text/javascript">
+    function hideChange() {
+
+        if (button1 == 1) {
+            if ($('#hide').html() == 'Hide all series') {
+                $(chart1.series).each(function(){
+                    this.setVisible(false, false);
+                });
+                chart1.redraw();
+                $('#hide').html('Show all series');
+            } else {
+                $(chart1.series).each(function(){
+                    this.setVisible(true, false);
+                });
+                chart1.redraw();
+                $('#hide').html('Hide all series');
+            }
+        }
+
+        if (button1 == 2) {
+            if ($('#hide').html() == 'Hide all series') {
+                $(chart2.series).each(function(){
+                    this.setVisible(false, false);
+                });
+                chart2.redraw();
+                $('#hide').html('Show all series');
+            } else {
+                $(chart2.series).each(function(){
+                    this.setVisible(true, false);
+                });
+                chart2.redraw();
+                $('#hide').html('Hide all series');
+            }
+        }
+
+    }
+</script>

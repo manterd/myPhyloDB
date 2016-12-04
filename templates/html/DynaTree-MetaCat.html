@@ -1,0 +1,40 @@
+<!--html-->
+<div id="tree_metaCat"></div>
+
+
+<!--javascript-->
+<script type="text/javascript">
+
+    $("#tree_metaCat").dynatree({
+        checkbox: true,
+        rootVisible: false,
+        selectMode: 3,
+        initAjax: {
+            url: '/myPhyloDB/getSampleCatTree/',
+            dataType: 'jsonp',
+            data: {}
+        },
+        onLazyRead: function (node) {
+            node.appendAjax({
+                url: '/myPhyloDB/getSampleCatTreeChildren/',
+                data: {pType: node.data.pType, field: node.data.title},
+                success: function (node) {
+                    if (node.childList == undefined) {
+                        alert('No samples are available for this variable!');
+                    }
+                }
+            });
+        },
+        onSelect: function (flag, node) {
+            if (flag && node.childList == undefined) {
+                node.reloadChildren(function () {
+                    node.select(false);
+                    node.select(true);
+                });
+            }
+            nodesCat = node.tree.getSelectedNodes();
+            $("#run").css("background-color", "lightgray");
+        }
+    });
+
+</script>

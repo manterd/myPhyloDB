@@ -1,0 +1,25 @@
+<td colspan="4" style="text-align: center;"><input type="button" id="unstackButton" value="Unstack bars" onclick="flipStack();"></td>
+
+<script>
+    function flipStack() {
+        if (unstackButton) {
+            unstackButton = false;
+            document.getElementById("unstackButton").value = "Unstack bars";
+
+            $("#container-1").empty();
+            catOptions.plotOptions.column.stacking = "normal";
+            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+            chart1.redraw();
+            return;
+        }
+
+        unstackButton = true;
+        document.getElementById("unstackButton").value = "Stack bars";
+
+        $("#container-1").empty();
+        catOptions.plotOptions.column.stacking = null;
+        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+        chart1.redraw();
+    }
+
+</script>

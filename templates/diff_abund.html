@@ -78,12 +78,6 @@
             });
 
             // Initialize highcharts
-            Highcharts.setOptions({
-                lang: {
-                    numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
-                }
-            });
-
             var $button = $('#hide');
             $button.click(function() {
                 var series = chart1.series[0];

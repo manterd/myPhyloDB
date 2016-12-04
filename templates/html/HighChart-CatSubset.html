@@ -1,0 +1,163 @@
+<td id="cat_off" colspan="8" style="text-align: center"></td>
+
+<td id="cat_gibbs" colspan="8" style="text-align: center; display: none">
+    Category:
+    <select id="GIBBs" onChange="gibbs(this.value)">
+        <option value="0" selected="selected">All</option>
+        <option value="1">C decomposition</option>
+        <option value="2">N decomposition</option>
+        <option value="3">P decomposition</option>
+        <option value="4">S decomposition</option>
+        <option value="5">Nitrogen fixation</option>
+        <option value="6">Phosphate solubility</option>
+        <option value="7">Biocontrol</option>
+        <option value="8">Root growth</option>
+        <option value="9">Siderophore</option>
+    </select>
+</td>
+
+<td id="cat_nitrogen" colspan="8" style="text-align: center; display: none">
+    Category:
+    <select id="N_cycle" onChange="ncycle(this.value)">
+        <option value="0" selected="selected">All</option>
+        <option value="1">Nitrogen fixation</option>
+        <option value="2">Ammonification</option>
+        <option value="3">Nitrification</option>
+        <option value="4">Dissimilatory nitrate reduction (DNR)</option>
+        <option value="5">Assimilatory nitrate reduction (ANR)</option>
+        <option value="6">Denitrification</option>
+        <option value="7">Anammox</option>
+    </select>
+</td>
+
+<script type="text/javascript">
+
+    function gibbs(cat_gibbs) {
+        var series = chart1.series;
+        if (cat_gibbs == 0) {
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(true, false);
+            }
+        } else if (cat_gibbs == 1) {    // decomposition - C
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[10].setVisible(true, false);  //# 3.2.1.4  cellulase
+            series[13].setVisible(true, false);  //# 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
+            series[8].setVisible(true, false);  //# 3.2.1.21  beta-glucosidase
+            series[12].setVisible(true, false);  //# 3.2.1.8  endo-1,4-beta-xylanase
+            series[9].setVisible(true, false);  //# 3.2.1.37  xylan 1,4-beta-xylosidase
+        } else if (cat_gibbs == 2) {    // decomposition - N
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[14].setVisible(true, false);  //# 3.5.1.4  amidase
+            series[15].setVisible(true, false);  //# 3.5.1.5  urease
+        } else if (cat_gibbs == 3) {    // decomposition - P
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[4].setVisible(true, false);  //# 3.1.3.1  alkaline phosphatase
+            series[5].setVisible(true, false);  //# 3.1.3.2  acid phosphatase
+        } else if (cat_gibbs == 4) {    // decomposition - S
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[6].setVisible(true, false);  //# 3.1.6.1  arylsulfatase
+        } else if (cat_gibbs == 5) {    // N-fixation
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[1].setVisible(true, false);  //# 1.18.6.1  nitrogenase
+        } else if (cat_gibbs == 6) {    // P solubility
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[2].setVisible(true, false);  //# 1.3.3.11  pyrroloquinoline-quinone synthase
+        } else if (cat_gibbs == 7) {    // Biocontrol
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[3].setVisible(true, false);  //# 1.4.99.5  glycine dehydrogenase (cyanide-forming)
+            series[17].setVisible(true, false);  //# 4.1.1.5  acetolactate decarboxylase
+            series[0].setVisible(true, false);  //# 1.1.1.76  (S,S)-butanediol dehydrogenase
+            series[11].setVisible(true, false);  //# 3.2.1.6  endo-1,3(4)-beta-glucanase
+            series[7].setVisible(true, false);  //# 3.2.1.14  chitinase
+        } else if (cat_gibbs == 8) {    // Root growth
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[18].setVisible(true, false);  //# 4.1.1.74  indolepyruvate decarboxylase
+            series[16].setVisible(true, false);  //# 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
+        } else if (cat_gibbs == 9) {    // Siderophore
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[19].setVisible(true, false);  //# 6.3.2.39  aerobactin synthase
+            series[20].setVisible(true, false);  //# 6.3.2.14  enterobactin synthase
+            series[21].setVisible(true, false);  //# K04787 mycobactin salicyl-AMP ligase [EC:6.3.2.-]
+            series[22].setVisible(true, false);  //# K04783 yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]
+        }
+        chart1.redraw();
+    }
+
+    function ncycle(cat_n) {
+        var series = chart1.series;
+        if (cat_n == 0) {    // All
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(true, false);
+            }
+        } else if (cat_n == 1) {    // N-fixation
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[1].setVisible(true, false);  // 1.18.6.1  nitrogenase
+        } else if (cat_n == 2) {    // Ammonification
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[16].setVisible(true, false);  // 3.5.1.4  amidase
+            series[17].setVisible(true, false);  // 3.5.1.5  urease
+        } else if (cat_n == 3) {    // nitrification
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[0].setVisible(true, false);  // 1.14.99.39  ammonia monooxygenase
+            series[9].setVisible(true, false);  // 1.7.2.6  hydroxylamine dehydrogenase
+            series[15].setVisible(true, false);  // 1.7.99.4  nitrate reductase
+        } else if (cat_n == 4) {    // DNRA
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[12].setVisible(true, false);  // 1.7.5.1  nitrate reductase (quinone)
+            series[15].setVisible(true, false);  // 1.7.99.4  nitrate reductase
+            series[3].setVisible(true, false);  // 1.7.1.15  nitrite reductase (NADH)
+            series[6].setVisible(true, false);  // 1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)
+        } else if (cat_n == 5) {    // ANRA
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[13].setVisible(true, false);  // 1.7.7.1  ferredoxin---nitrite reductase
+            series[14].setVisible(true, false);  // 1.7.7.2  ferredoxin---nitrate reductase
+            series[15].setVisible(true, false);  // 1.7.99.4  nitrate reductase
+            series[4].setVisible(true, false);  // 1.7.1.4  nitrite reductase [NAD(P)H]
+            series[2].setVisible(true, false);  // 1.7.1.1  nitrate reductase (NADH)
+        } else if (cat_n == 6) {    // denitrification
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[15].setVisible(true, false);  // 1.7.99.4  nitrate reductase
+            series[5].setVisible(true, false);  // 1.7.2.1  nitrite reductase (NO-forming)
+            series[8].setVisible(true, false);  // 1.7.2.5  nitric oxide reductase (cytochrome c)
+            series[7].setVisible(true, false);  // 1.7.2.4  nitrous-oxide reductase
+        } else if (cat_n == 7) {    // anammox
+            for (var i = 0; i < series.length; i++) {
+                series[i].setVisible(false, false);
+            }
+            series[10].setVisible(true, false);  // 1.7.2.7  hydrazine synthase
+            series[11].setVisible(true, false);  // 1.7.2.8  hydrazine dehydrogenase
+        }
+        chart1.redraw();
+    }
+
+</script>

@@ -48,6 +48,13 @@ def home(request):
     )
 
 
+def map(request):
+    return render_to_response(
+        'map.html',
+        context_instance=RequestContext(request)
+    )
+
+
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def upload(request):
     projects = Reference.objects.none()
@@ -409,10 +416,6 @@ def uploadFunc(request, stopList):
                     else:
                         handle_uploaded_file(file, mothurdest, file.name)
                     handle_uploaded_file(file, dest, file.name)
-                '''for each in file_list:
-                    file = each
-                    handle_uploaded_file(file, mothurdest, each)
-                    handle_uploaded_file(file, dest, each)'''
 
                 if stopList[PID] == RID:
                     remove_proj(dest)

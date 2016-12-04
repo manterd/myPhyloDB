@@ -4,20 +4,20 @@
 
 <tr>
     <td bgcolor="white">
-        <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
+        <input type="checkbox" id="remUnclass" onChange="checkButtons()">&nbsp; <-- Remove unassigned/unmapped reads
     </td>
 </tr>
 
 <tr>
     <td bgcolor="white">
-        <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
+        <input type="checkbox" id="remZeroes" onChange="checkButtons()"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
     </td>
 </tr>
 
 <tr>
     <td bgcolor="white">
-        <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
-        <select id="filterMeth">
+        <input type="checkbox" id="filterData" onClick="checkButtons()"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
+        <select id="filterMeth" onChange="checkButtons()">
             <!--<option value="1">None</option>-->
             <option value="2" selected="selected">Interquantile range (IQR)</option>
             <option value="3">Coefficient of variation (CV)</option>

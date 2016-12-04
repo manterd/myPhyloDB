@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.2">
+<NetworkLink>
+	<name>SoilWeb</name>
+	<description><![CDATA[Streaming, seamless interface to USDA-NCSS SSURGO and STATSGO Soil Survey Products. Source data changes with map scale. <a href="http://casoilresource.lawr.ucdavis.edu/">Copyright Ca Soil Resource Lab, 2008.</a>]]></description>
+	<Link>
+		<href>http://casoilresource.lawr.ucdavis.edu/soil_web/kml/mapunits.kml</href>
+	</Link>
+</NetworkLink>
+</kml>

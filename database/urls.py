@@ -25,6 +25,5 @@ urlpatterns = [
     url(r'^pybake/$', views.pybake, name='pybake'),
     url(r'^accounts/profile/$', views.profile, name='profile'),
     url(r'^accounts/changeuser/$', views.changeuser, name='changeuser'),
-
-    url(r'^directgraph/$', views.directgraph, name='directgraph'),
+    url(r'^map/$', views.map, name='map'),
 ]

@@ -1,0 +1,147 @@
+{% load static %}
+
+<td colspan="8" style="text-align: center">
+    Select chart theme:
+    <select id="theme" onChange="themeChange(this.value)">
+        <option value="1" selected="selected">default</option>
+        <option value="2">dark-blue</option>
+        <option value="3">dark-green</option>
+        <option value="4">dark-unica</option>
+        <option value="5">gray</option>
+        <option value="6">grid</option>
+        <option value="7">grid-light</option>
+        <option value="8">sand-signika</option>
+        <option value="9">skies</option>
+    </select>
+    &nbsp; &nbsp;
+</td>
+
+
+<script type="text/javascript">
+    function themeChange(selTheme) {
+        if (selTheme == 1) {
+            if (button1 == 1) {
+                $("#container-1").empty();
+                chart1 = new Highcharts.Chart(catOptions);
+                chart1.redraw();
+            }
+            else if (button1 == 2) {
+                $("#container-2").empty();
+                chart2 = new Highcharts.Chart(quantOptions);
+                chart2.redraw();
+            }
+        }
+        else if (selTheme == 2) {
+            $.getScript("{% static 'highcharts/themes/dark-blue.js' %}", function () {
+                if (button1 == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (button1 == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
+        }
+        else if (selTheme == 3) {
+            $.getScript("{% static 'highcharts/themes/dark-green.js' %}", function () {
+                if (button1 == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (button1 == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
+        }
+        else if (selTheme == 4) {
+            $.getScript("{% static 'highcharts/themes/dark-unica.js' %}", function () {
+                if (button1 == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (button1 == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
+        }
+        else if (selTheme == 5) {
+            $.getScript("{% static 'highcharts/themes/gray.js' %}", function () {
+                if (button1 == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (button1 == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
+        }
+        else if (selTheme == 6) {
+            $.getScript("{% static 'highcharts/themes/grid.js' %}", function () {
+                if (button1 == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (button1 == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
+        }
+        else if (selTheme == 7) {
+            $.getScript("{% static 'highcharts/themes/grid-light.js' %}", function () {
+                if (button1 == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (button1 == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
+        }
+        else if (selTheme == 8) {
+            $.getScript("{% static 'highcharts/themes/sand-signika.js' %}", function () {
+                if (button1 == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (button1 == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
+        }
+        else if (selTheme == 9) {
+            $.getScript("{% static 'highcharts/themes/skies.js' %}", function () {
+                if (button1 == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (button1 == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
+        }
+    }
+</script>
