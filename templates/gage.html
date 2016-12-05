@@ -22,16 +22,15 @@
     </style>
 
     <script type="text/javascript">
-        var button3 = 2, DepVar = 0, i = 0;
+        var button1 = 1, button3 = 2, DepVar = 0, i = 0;
         var nodesCat = "", nodesKEGG = "";
-        var chart1 = {};
-        var catOptions = {};
-        var refresh;
-        var running = false;
-        var RID = 0;
+        var chart1 = {}, catOptions = {};
+        var running = false, refresh = 0, RID = 0;
 
         $(function () {
-
+            $(window).load(function() {
+                checkButtons();
+            });
             $(window).bind('unload', function(){
                 $.ajax({
                     url: '/myPhyloDB/removeFiles/',
@@ -43,8 +42,6 @@
                     }
                 });
             });
-
-            // tree is unique to GAGE
             $("#tree_kegg").dynatree({
                 checkbox: true,
                 selectMode: 2,
@@ -58,169 +55,9 @@
                     $("#run").css("background-color", "lightgray");
                 }
             });
-
-            // Start stop and other 'click' functions
-            $("#run").show().click(function () {
-                if(running == true) {
-                    alert("myPhyloDB is currently running your previous analysis request!");
-                    return false;
-                }
-                $("#my_image").attr("src", "#");
-                $("#container-0").empty().show();
-                $("#container-2").hide();
-                $("#text-1").val('');
-                $("#gage_table").empty();
-                $("#diff_table").empty();
-                running = true;
-                chooseData();
-            });
-
-            $("#stop").show().click(function () {
-                running = false;
-                stopThis(RID);
-            });
-
-            $("#clearMeta").click(function () {
-                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                checkButtons();
-            });
-
-            // Capture all changes in textboxes, etc.
-            $("#DepVar").change(function () {
-                DepVar = $(this).val();
-                checkButtons();
-            });
-
         });
 
-        function chooseDisplay() {
-            if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
-                $("#container-0").hide();
-                $("#container-2").show();
-                $("#highchartButtons").hide();
-                {% static "" as baseUrl %}
-                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/gage/Rplots/" + RID + "/gage_final.pdf");
-            } else {
-                $("#container-0").show();
-                $("#container-2").hide();
-            }
-        }
-
-        function checkButtons(){
-            //set all buttons to their proper states given the current state of the independent buttons
-            $("#run").css("background-color", "lightgray");
-            $("#TabButton").css("background-color", "lightgray").val("Export Data");
-            document.getElementById("TabButton").disabled = true;
-
-            $("#container-0").empty().show().append('Settings have been changed by the user!');
-            $("#container-2").hide();
-            $("#my_image").attr("src", "#");
-
-        }
-
-        function stopThis(RID) {
-            clearInterval(refresh);
-            $.ajax({
-                url: '/myPhyloDB/stop/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
-                success: function (data) {
-                    $("#run").css("background-color", "red");
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var stage = obj['message'];
-                    $('#container-2').hide();
-                    $('#container-0').empty().show().append(stage);
-                }
-            });
-        }
-
-        function updateStatus(RID) {
-            var myDict = {};
-            myDict['reqType'] = "status";
-            myDict['RID'] = RID;
-            myDict['funcName'] = "getGAGE";
-            var jsonDict = JSON.stringify(myDict);
-            $.ajax({
-                url: '/myPhyloDB/funcCall/',
-                type: 'POST',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                success: function (data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var resType = obj['resType'];
-
-                    if (resType == "status") {
-                        var stage = obj['stage'];
-                        if (running) {
-                            $('#container-0').empty().append(stage);
-                        }
-                    } else {
-                        running = false;
-                        stopTimer();
-                        var xAxis = data['xAxis'];
-                        var series = data['series'];
-                        var yAxis = data['yAxis'];
-                        var empty = data['empty'];
-                        var error = data['error'];
-                        if (error != "none") {
-                            alert(error);
-                            $("#run").css("background-color", "red");
-                        } else {
-                            $("#run").css("background-color", "green");
-                        }
-                        if (empty == 0) {
-                            alert('No significant tests!');
-                        }
-
-                        var text = data['text'];
-                        $('#text-1').val(text);
-
-                        var gage_table = data['gage_table'];
-                        $('#gage_table').empty().append(gage_table).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-
-                        var diff_table = data['diff_table'];
-                        $('#diff_table').empty().append(diff_table).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-
-                        $("div.toolbar").html('<br><br><br>');
-
-                        chooseDisplay();
-                    }
-
-                }
-            });
-        }
-
-        function startTimer(RID) {
-            refresh = setInterval(function(){updateStatus(RID);}, 1000);
-            return refresh;
-        }
-
-        function stopTimer() {
-            clearInterval(refresh)
-        }
-
+        {% include "js/commonFunctions.js" %}
         function chooseData() {
             if (nodesCat == "") {
                 $("#container-0").empty().append('Please choose your meta variable(s)!');
@@ -235,30 +72,29 @@
                 getCatGraphData();
             }
         }
-
-        function makeGUID(){
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            })
-        }
-
-        function checkDupes(list) {
-            var bools = [];
-            var firsts = [];
-            for (var i=0; i<list.length; i++) {
-                var sub = list[i].split(':');
-                var found = firsts.indexOf(sub[0]);
-                if (found==-1) {
-                    firsts.push(sub[0]);
-                    bools.push(false);
-                } else {
-                    bools[found] = true;
-                }
+        function chooseDisplay() {
+            if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
+                $("#container-0").hide();
+                $("#container-2").show();
+                $("#highchartButtons").hide();
+                {% static "" as baseUrl %}
+                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/gage/Rplots/" + RID + "/gage_final.pdf");
+            } else {
+                $("#container-0").show();
+                $("#container-2").hide();
             }
-            return (bools.indexOf(false)==-1);
         }
+        function checkButtons() {
+            //set all buttons to their proper states given the current state of the independent buttons
+            $("#run").css("background-color", "lightgray");
+            $("#TabButton").css("background-color", "lightgray").val("Export Data");
+            document.getElementById("TabButton").disabled = true;
 
+            $("#container-0").empty().show().append('Settings have been changed by the user!');
+            $("#container-2").hide();
+            $("#my_image").attr("src", "#");
+
+        }
         function getCatGraphData() {
             RID = makeGUID();
             startTimer(RID);
@@ -341,7 +177,20 @@
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
             }
         }
-
+        function runAnalysis() {
+            if(running == true) {
+                alert("myPhyloDB is currently running your previous analysis request!");
+                return false;
+            }
+            $("#my_image").attr("src", "#");
+            $("#container-0").empty().show();
+            $("#container-2").hide();
+            $("#text-1").val('');
+            $("#gage_table").empty();
+            $("#diff_table").empty();
+            running = true;
+            chooseData();
+        }
         function scatter(xAxis, yAxis, series) {
            catOptions = {
                 chart: {
@@ -415,6 +264,104 @@
             };
             chart1 = new Highcharts.Chart(catOptions);
         }
+        function startTimer() {
+            refresh = setInterval(function(){updateStatus(RID);}, 1000);
+            return refresh;
+        }
+        function stopAnalysis() {
+            running = false;
+            clearInterval(refresh);
+            $.ajax({
+                url: '/myPhyloDB/stop/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['message'];
+                    $('#container-2').hide();
+                    $('#container-0').empty().show().append(stage);
+                }
+            });
+        }
+        function stopTimer() {
+            clearInterval(refresh)
+        }
+        function updateStatus() {
+            var myDict = {};
+            myDict['reqType'] = "status";
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getGAGE";
+            var jsonDict = JSON.stringify(myDict);
+            $.ajax({
+                url: '/myPhyloDB/funcCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var resType = obj['resType'];
+
+                    if (resType == "status") {
+                        var stage = obj['stage'];
+                        if (running) {
+                            $('#container-0').empty().append(stage);
+                        }
+                    } else {
+                        running = false;
+                        stopTimer();
+                        var xAxis = data['xAxis'];
+                        var series = data['series'];
+                        var yAxis = data['yAxis'];
+                        var empty = data['empty'];
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
+                        if (empty == 0) {
+                            alert('No significant tests!');
+                        }
+
+                        var text = data['text'];
+                        $('#text-1').val(text);
+
+                        var gage_table = data['gage_table'];
+                        $('#gage_table').empty().append(gage_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var diff_table = data['diff_table'];
+                        $('#diff_table').empty().append(diff_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        $("div.toolbar").html('<br><br><br>');
+
+                        chooseDisplay();
+                    }
+
+                }
+            });
+        }
     </script>
 {% endblock javascript %}
 
@@ -425,7 +372,7 @@
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr>
                 <th>Select Meta Data:<br>
-                    <a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+                    <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta(button1)">-Deselect all-</a></th>
             </tr>
             <tr>
                 <td style="padding-right: 10px; vertical-align: top">

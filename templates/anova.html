@@ -43,6 +43,7 @@
             });
         });
 
+        {% include "js/commonFunctions.js" %}
         function barChart(xAxis, yAxis, series) {
             var categories = series[0].data.length;
             var width = categories*100+600;
@@ -359,51 +360,6 @@
             }
 
         }
-        function checkDupes(list) {
-            var bools = [];
-            var firsts = [];
-            for (var i=0; i<list.length; i++) {
-                var sub = list[i].split(':');
-                var found = firsts.indexOf(sub[0]);
-                if (found==-1) {
-                    firsts.push(sub[0]);
-                    bools.push(false);
-                } else {
-                    bools[found] = true;
-                }
-            }
-            return (bools.indexOf(false)==-1);
-        }
-        function clearMeta() {
-            if (button1 == 1) {
-                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            }
-            else if (button1 == 2) {
-                $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            }
-            $("#run").css("background-color", "lightgray");
-        }
-        function clearTaxa() {
-            $("#selectall-taxa").val(0);
-            $("#selectall-kegg").val(0);
-            $("#selectall-nz").val(0);
-
-            $("#tree_taxa").dynatree("getRoot").visit(function (node) {
-                node.select(false);
-            });
-            $("#tree_kegg").dynatree("getRoot").visit(function (node) {
-                node.select(false);
-            });
-            $("#tree_nz").dynatree("getRoot").visit(function (node) {
-                node.select(false);
-            });
-
-            $("#run").css("background-color", "lightgray");
-        }
         function getCatGraphData() {
             RID = makeGUID();
             startTimer(RID);
@@ -706,8 +662,8 @@
                 myDict['metaIDsCat'] = metaIDsCat;
                 myDict['metaValsQuant'] = metaValsQuant;
                 myDict['metaIDsQuant'] = metaIDsQuant;
-                myDict['taxa'] = taxa;
                 myDict['RID'] = RID;
+                myDict['taxa'] = taxa;
                 myDict['kegg'] = kegg;
                 myDict['nz'] = nz;
                 myDict['button3'] = button3;
@@ -833,12 +789,6 @@
                 credits: { enabled: false }
             };
             chart2 = new Highcharts.Chart(quantOptions);
-        }
-        function makeGUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            })
         }
         function runAnalysis() {
             if (running == true) {
@@ -1058,7 +1008,7 @@
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr style="height: 40px;">
                 <th>Select Meta Data:<br>
-                    <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta()">-Deselect all-</a>
+                    <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta(button1)">-Deselect all-</a>
                 </th>
             </tr>
             <tr>
