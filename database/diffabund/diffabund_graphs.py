@@ -302,8 +302,7 @@ def getDiffAbund(request, stops, RID, PID):
                     nosigData = []
                     for index, row in nosigDF.iterrows():
                         dataDict = {}
-                        dataDict['name'] = row['Rank ID']
-
+                        dataDict['name'] = 'ID: ' + row['Rank ID']
                         dataDict['x'] = float(row['baseMean'])
                         dataDict['y'] = float(row['log2FoldChange'])
 

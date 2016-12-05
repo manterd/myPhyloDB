@@ -1,20 +1,26 @@
 <tr>
-    <td bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use the taxonomy tree, PGPRs or KEGG mapping"><em><strong>Data Filtering:</strong></em></td>
+    <td bgcolor="white" width="5px"></td>
+    <td colspan="2" bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use the taxonomy tree, PGPRs or KEGG mapping"><em><strong>Data Filtering:</strong></em></td>
 </tr>
 
 <tr>
+    <td bgcolor="white" width="5px"></td>
     <td bgcolor="white">
         <input type="checkbox" id="remUnclass" onChange="checkButtons()">&nbsp; <-- Remove unassigned/unmapped reads
     </td>
+    <td bgcolor="white"></td>
 </tr>
 
 <tr>
+    <td bgcolor="white" width="5px"></td>
     <td bgcolor="white">
         <input type="checkbox" id="remZeroes" onChange="checkButtons()"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
     </td>
+    <td bgcolor="white"></td>
 </tr>
 
 <tr>
+    <td bgcolor="white" width="5px"></td>
     <td bgcolor="white">
         <input type="checkbox" id="filterData" onClick="checkButtons()"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
         <select id="filterMeth" onChange="checkButtons()">
@@ -26,4 +32,5 @@
             <option value="6">Median abundance value</option>
         </select>
     </td>
+    <td bgcolor="white"></td>
 </tr>

@@ -323,6 +323,8 @@ def getRawData(request):
             zipped = getFullNZ(list(savedDF['rank_id']))
             insertTaxaInfo(button3, zipped, savedDF, pos=fCol)
 
+        savedDF.replace(to_replace='N/A', value=np.nan, inplace=True)
+        savedDF.dropna(axis=1, how='all', inplace=True)
         savedDF.drop('rank_name', axis=1, inplace=True)
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'

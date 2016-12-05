@@ -32,7 +32,7 @@
         $(function () {
 
             // remove R plot on close
-            $(window).bind('beforeunload', function(){
+            $(window).bind('unload', function(){
                 $.ajax({
                     url: '/myPhyloDB/removeFiles/',
                     async: false,
@@ -120,10 +120,6 @@
                 checkButtons();
             });
 
-            $("#TabButton").click(function () {
-                getTab();
-            });
-
             // Capture all changes in textboxes, etc.
             $("#selectTree").change(function () {
                 button3 = $(this).val();
@@ -187,38 +183,6 @@
             });
 
         });
-
-        function getTab(){
-            $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
-            $.ajax({
-                url: '/myPhyloDB/getRawData/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID,
-                    func: 'spac',
-                    button3: button3
-                },
-                success: function(data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var name = obj['name'];
-                    getFile(name, 'final_data.csv');
-                    $("#TabButton").css("background-color", "green").val("Done!");
-                }
-            });
-        }
-
-        function getFile(name, final) {
-            var anchor = document.createElement('a');
-            anchor.setAttribute('href', name);
-            anchor.setAttribute('download', final);
-
-            var ev = document.createEvent("MouseEvents");
-                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            anchor.dispatchEvent(ev);
-        }
-
 
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
@@ -584,17 +548,7 @@
             <td bgcolor="white"></td>
         </tr>
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
-        </tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td bgcolor="white">
-                <input id="TabButton" type="button" disabled value="Export Data"/>
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
+        {% include "html/Data-Export.html" %}
     </table>
     </div>
     <br>

@@ -22,7 +22,7 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar = 0, i = 0;
+        var button3 = 2, DepVar = 0, i = 0;
         var nodesCat = "", nodesKEGG = "";
         var chart1 = {};
         var catOptions = {};
@@ -32,7 +32,7 @@
 
         $(function () {
 
-            $(window).bind('beforeunload', function(){
+            $(window).bind('unload', function(){
                 $.ajax({
                     url: '/myPhyloDB/removeFiles/',
                     async: false,
@@ -44,39 +44,7 @@
                 });
             });
 
-            //Initialize dynatrees
-            $("#tree_metaCat").dynatree({
-                checkbox: true,
-                rootVisible: false,
-                selectMode: 3,
-                initAjax: {
-                    url: '/myPhyloDB/getSampleCatTree/',
-                    dataType: 'jsonp',
-                    data: {}
-                },
-                onLazyRead: function (node) {
-                    node.appendAjax({
-                        url: '/myPhyloDB/getSampleCatTreeChildren/',
-                        data: {pType: node.data.pType, field: node.data.title},
-                        success: function (node) {
-                            if (node.childList == undefined) {
-                                alert('No samples are available for this variable!');
-                            }
-                        }
-                    });
-                },
-                onSelect: function (flag, node) {
-                    if (flag && node.childList == undefined) {
-                        node.reloadChildren(function () {
-                            node.select(false);
-                            node.select(true);
-                        });
-                    }
-                    nodesCat = node.tree.getSelectedNodes();
-                    $("#run").css("background-color", "lightgray");
-                }
-            });
-
+            // tree is unique to GAGE
             $("#tree_kegg").dynatree({
                 checkbox: true,
                 selectMode: 2,
@@ -89,53 +57,6 @@
                     nodesKEGG = node.tree.getSelectedNodes();
                     $("#run").css("background-color", "lightgray");
                 }
-            });
-
-            // Initialize highcharts
-            Highcharts.setOptions({
-                lang: {
-                    numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
-                }
-            });
-
-            var $button = $('#hide');
-            $button.click(function() {
-                var series = chart1.series[0];
-                if (series.visible) {
-                    $(chart1.series).each(function(){
-                        this.setVisible(false, false);
-                    });
-                    chart1.redraw();
-                    $button.html('Show series');
-                } else {
-                    $(chart1.series).each(function(){
-                        this.setVisible(true, false);
-                    });
-                    chart1.redraw();
-                    $button.html('Hide series');
-                }
-            });
-
-            $('#button').click(function() {
-                var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
-                var color = prompt("Please enter your desired color:", "#008800");
-                var marker = prompt("Please enter your desired symbol:", "square");
-                var series = chart1.series[index];
-                if (color != '') {
-                    series.options.color = color;
-                    series.options.states.hover.color = color;
-                }
-                if (marker != '') {
-                    series.options.marker.symbol = marker;
-                }
-                if ((color != '') || (marker != '')) {
-                    series.update(series.options);
-                    chart1.redraw();
-                }
-            });
-
-            $("#TabButton").click(function () {
-                getTab();
             });
 
             // Start stop and other 'click' functions
@@ -173,37 +94,6 @@
             });
 
         });
-
-        function getTab(){
-            $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
-            $.ajax({
-                url: '/myPhyloDB/getRawData/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID,
-                    func: 'gage',
-                    button3: 2
-                },
-                success: function(data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var name = obj['name'];
-                    getFile(name, 'final_data.csv');
-                    $("#TabButton").css("background-color", "green").val("Done!");
-                }
-            });
-        }
-
-        function getFile(name, final) {
-            var anchor = document.createElement('a');
-            anchor.setAttribute('href', name);
-            anchor.setAttribute('download', final);
-
-            var ev = document.createEvent("MouseEvents");
-                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            anchor.dispatchEvent(ev);
-        }
 
         function chooseDisplay() {
             if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
@@ -539,10 +429,11 @@
             </tr>
             <tr>
                 <td style="padding-right: 10px; vertical-align: top">
-                    <div id="tree_metaCat"></div>
+                    {% include "html/DynaTree-MetaCat.html" %}
                 </td>
             </tr>
         </table>
+
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr>
                 <th>Select Pathway (graphing only):<br>
@@ -554,12 +445,16 @@
                 </td>
             </tr>
         </table>
+
         <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
             <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data selection:</em></strong></td>
+                <td bgcolor="white" width="5px"></td>
+                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data selection:</em></strong></td>
             </tr>
+
             <tr>
-                <td bgcolor="white" width="350px">
+                <td bgcolor="white" width="5px"></td>
+                <td bgcolor="white">
                     <select id="DepVar">
                         <option value="0" selected="selected">Abundance</option>
                         <option value="4">Total Abundance</option>
@@ -567,27 +462,11 @@
                     &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Total Abundance = 16S rRNA copies per mg soil"><font color="red">[info]</font></span>
                 </td>
             </tr>
-            <tr><td bgcolor="white"></td></tr>
-            <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
-                    &nbsp;
-                    <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
-                    &nbsp<-- Start/stop analysis
-                </td>
-            </tr>
-            <tr><td bgcolor="white"></td></tr>
-            <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <input id="TabButton" type="button" disabled value="Export Data"/>
-                </td>
-            </tr>
+
+            <tr><td colspan="3" bgcolor="white"></td></tr>
+            {% include "html/Data-RunButton.html" %}
+            <tr><td colspan="3" bgcolor="white"></td></tr>
+            {% include "html/Data-Export.html" %}
         </table>
     </div>
     <br><br>

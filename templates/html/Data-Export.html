@@ -1,0 +1,55 @@
+<tr>
+    <td bgcolor="white" width="5px"></td>
+    <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
+</tr>
+
+<tr>
+    <td bgcolor="white" width="5px"></td>
+    <td>
+        <input id="TabButton" type="button" disabled value="Export Data" onClick="getTab()"/>
+    </td>
+    <td bgcolor="white"></td>
+</tr>
+
+
+<script type="text/javascript">
+    function getTab() {
+        var func;
+        if (document.title == 'ANcOVA') {
+            func = 'anova';
+        } else if (document.title == 'DiffAbund') {
+            func = 'diffabund';
+        } else if (document.title == 'GAGE') {
+            func = 'gage';
+        } else if (document.title == 'PCA') {
+            func = 'pca';
+        } else if (document.title == 'PCoA') {
+            func = 'pcoa';
+        } else if (document.title == 'SpAC') {
+            func = 'spac';
+        } else if (document.title == 'sPLS-Regr') {
+            func = 'spls';
+        } else if (document.title == 'WGCNA') {
+            func = 'wgcna';
+        }
+
+        $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
+            $.ajax({
+                url: '/myPhyloDB/getRawData/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID,
+                    func: func,
+                    button3: button3
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    window.location.href = obj['name'];
+                    $("#TabButton").css("background-color", "green").val("Done!");
+                }
+            });
+        }
+
+</script>

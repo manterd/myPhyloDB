@@ -34,7 +34,7 @@
         $(function () {
 
             // remove R plot on close
-            $(window).bind('beforeunload', function(){
+            $(window).bind('unload', function(){
                 $.ajax({
                     url: '/myPhyloDB/removeFiles/',
                     async: false,
@@ -219,10 +219,6 @@
                 checkButtons();
             });
 
-            $("#TabButton").click(function () {
-                getTab();
-            });
-
             // Capture all changes in textboxes, etc.
             $("#selectTree").change(function () {
                 button3 = $(this).val();
@@ -389,37 +385,6 @@
             });
 
         });
-
-        function getTab(){
-            $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
-            $.ajax({
-                url: '/myPhyloDB/getRawData/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID,
-                    func: 'pcoa',
-                    button3: button3
-                },
-                success: function(data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var name = obj['name'];
-                    getFile(name, 'final_data.csv');
-                    $("#TabButton").css("background-color", "green").val("Done!");
-                }
-            });
-        }
-
-        function getFile(name, final) {
-            var anchor = document.createElement('a');
-            anchor.setAttribute('href', name);
-            anchor.setAttribute('download', final);
-
-            var ev = document.createEvent("MouseEvents");
-                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            anchor.dispatchEvent(ev);
-        }
 
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
@@ -1227,17 +1192,7 @@
             <td bgcolor="white"></td>
         </tr>
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
-        </tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td bgcolor="white">
-                <input id="TabButton" type="button" disabled value="Export Data"/>
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
+        {% include "html/Data-Export.html" %}
     </table>
     </div>
     <br>
@@ -1280,27 +1235,9 @@
             </td>
         </tr>
         <tr id="highchartButtons">
-            <td colspan="6" style="text-align: center">
-                <button id="hide" title="Click to show/hide all series in the graph">Hide all series</button>
-            </td>
-            <td colspan="8" style="text-align: center">
-                Select chart theme:
-                <select id="theme">
-                    <option value="1" selected="selected">default</option>
-                    <option value="2">dark-blue</option>
-                    <option value="3">dark-green</option>
-                    <option value="4">dark-unica</option>
-                    <option value="5">gray</option>
-                    <option value="6">grid</option>
-                    <option value="7">grid-light</option>
-                    <option value="8">sand-signika</option>
-                    <option value="9">skies</option>
-                </select>
-                &nbsp&nbsp
-            </td>
-            <td colspan="6" style="text-align: center">
-                <button id="button" title="Click to change an individual series color or symbol">Change series</button>
-            </td>
+            {% include "html/HighChart-HideButton.html" %}
+            {% include "html/HighChart-ThemeButton.html" %}
+            {% include "html/HighChart-ChangeButton.html" %}
         </tr>
     </table>
 
@@ -1317,8 +1254,6 @@
 
     <h2>Distance Scores:</h2>
     <div id="dist_table" style="width: 950px; overflow-x: auto;"></div>
-    <br>
-    <br>
-    <br>
+    <br><br><br>
     <br><br><br>
 {% endblock my_content%}

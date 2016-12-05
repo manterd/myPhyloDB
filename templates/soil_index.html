@@ -193,6 +193,7 @@
             }
         }
 
+        var button3 = 3;
         var nodesCat = "";
         var catOptions = {};
         var refresh = 0;
@@ -285,7 +286,7 @@
             });
 
             // remove R plot on close
-            $(window).bind('beforeunload', function(){
+            $(window).bind('unload', function(){
                 $.ajax({
                     url: '/myPhyloDB/removeFiles/',
                     async: false,
@@ -358,49 +359,9 @@
 
         });
 
-        //function myCallbackFunction(updatedCell, updatedRow, oldValue) {
-        //    console.log("The new value for the cell is: " + updatedCell.data());
-        //    console.log("The old value for that cell was: " + oldValue);
-        //    console.log("The values for each cell in that row are: " + updatedRow.data());
-        //}
-
-        function getTab(){
-            $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
-            $.ajax({
-                url: '/myPhyloDB/getRawData/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID,
-                    func: 'soil_index',
-                    button3: 3
-                },
-                success: function(data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var name = obj['name'];
-                    getFile(name, 'final_data.csv');
-                    $("#TabButton").css("background-color", "green").val("Done!");
-                }
-            });
-        }
-
-        function getFile(name, final) {
-            var anchor = document.createElement('a');
-            anchor.setAttribute('href', name);
-            anchor.setAttribute('download', final);
-
-            var ev = document.createEvent("MouseEvents");
-                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            anchor.dispatchEvent(ev);
-        }
-
-
         function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
-            $("#TabButton").css("background-color", "lightgray").val("Export Data");
-            document.getElementById("TabButton").disabled = true;
 
             $("#container-0").empty().show().append('Settings have been changed by the user!');
             $("#container-2").hide();
