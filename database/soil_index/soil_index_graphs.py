@@ -10,8 +10,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import simplejson
 
 from database.models import PICRUSt
-from database.utils import multidict, getMetaDF
-from database.utils_kegg import sumKEGG, filterDF
+from database.utils import getMetaDF
 from database.utils_kegg import getTaxaDF, getNZDF
 import database.queue
 
@@ -19,7 +18,7 @@ import database.queue
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
-
+# TODO: change variables to match new GIBBs
 def getsoil_index(request, stops, RID, PID):
     try:
         while True:
@@ -68,7 +67,8 @@ def getsoil_index(request, stops, RID, PID):
                 database.queue.setBase(RID, 'Step 2 of 3: Selecting your chosen taxa or KEGG level...\n')
 
                 finalDF, missingList = getTaxaDF(7, '', savedDF, metaDF, allFields, 10, RID, stops, PID)
-                keggDF = getNZDF(7, '', savedDF, metaDF, allFields, 4, RID, stops, PID)
+                nzAll = 5
+                keggDF, mtDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -241,7 +241,6 @@ def getsoil_index(request, stops, RID, PID):
 
                 bytrt1 = allDF.groupby(catFields)[wantList]
                 df1 = bytrt1.mean()
-                print df1
 
                 # merge with other df's before sending to R
                 df1 = pd.merge(df1, bioDF, left_index=True, right_index=True, how='outer')
