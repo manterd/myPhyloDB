@@ -20,7 +20,7 @@
     </style>
 
     <script type="text/javascript">
-        var dataType = 1, treeType = 2, DepVar = 0, i = 0;
+        var dataType = 1, treeType = 2;
         var nodesCat = "", nodesKEGG = "";
         var chart1 = {}, catOptions = {};
         var running = false, refresh = 0, RID = 0;
@@ -56,6 +56,15 @@
         });
 
         {% include "js/commonFunctions.js" %}
+        function checkButtons() {
+            //set all buttons to their proper states given the current state of the independent buttons
+            $("#run").css("background-color", "lightgray");
+            $("#TabButton").css("background-color", "lightgray").val("Export Data");
+            document.getElementById("TabButton").disabled = true;
+
+            $("#container-0").empty().show().append('Settings have been changed by the user!');
+            $("#container-2").hide();
+        }
         function chooseData() {
             if (nodesCat == "") {
                 $("#container-0").empty().append('Please choose your meta variable(s)!');
@@ -82,16 +91,10 @@
                 $("#container-2").hide();
             }
         }
-        function checkButtons() {
-            //set all buttons to their proper states given the current state of the independent buttons
-            $("#run").css("background-color", "lightgray");
-            $("#TabButton").css("background-color", "lightgray").val("Export Data");
-            document.getElementById("TabButton").disabled = true;
-
-            $("#container-0").empty().show().append('Settings have been changed by the user!');
-            $("#container-2").hide();
-            $("#my_image").attr("src", "#");
-
+        function clearPath() {
+            $("#tree_kegg").dynatree("getRoot").visit(function (node) {
+                node.select(false);
+            });
         }
         function getCatGraphData() {
             RID = makeGUID();
@@ -154,12 +157,12 @@
                 var myDict = {};
                 myDict['metaValsCat'] = metaValsCat;
                 myDict['metaIDsCat'] = metaIDsCat;
-                myDict['DepVar'] = DepVar;
                 myDict['kegg'] = kegg;
                 myDict['RID'] = RID;
                 myDict['funcName'] = "getGAGE";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
+                myDict['DepVar'] = document.getElementById("DepVar").value;
 
                 var jsonDict = JSON.stringify(myDict);
 
@@ -382,7 +385,7 @@
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr>
                 <th>Select Pathway (graphing only):<br>
-                    <a href="#" id="clearTaxa" style="font-size: 12px;">-Deselect all-</a></th>
+                    <a href="#" id="clearTaxa" style="font-size: 12px;" onClick="clearPath()">-Deselect all-</a></th>
             </tr>
             <tr>
                 <td style="padding-right: 10px; vertical-align: top">
@@ -400,11 +403,11 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="DepVar">
+                    <select id="DepVar" onChange="checkButtons()">
                         <option value="0" selected="selected">Abundance</option>
                         <option value="4">Total Abundance</option>
                     </select>
-                    &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Total Abundance = 16S rRNA copies per mg soil"><font color="red">[info]</font></span>
+                    &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Total Abundance = 16S rRNA copies per mg soil"><font color="red">[info]</font></span>
                 </td>
             </tr>
 

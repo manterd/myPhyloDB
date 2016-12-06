@@ -20,15 +20,15 @@
     </style>
 
     <script type="text/javascript">
-        var treeType = 1;
+        var dataType = 1, treeType = 1;
         var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1;
         var chart1 = {}, catOption = {};
-        var distance = 15, PC1 = 1, PC2 = 2;
         var running = false, refresh = 0, RID = 0;
 
         $(function () {
-
-            // remove R plot on close
+            $(window).load(function() {
+                checkButtons();
+            });
             $(window).bind('unload', function () {
                 $.ajax({
                     url: '/myPhyloDB/removeFiles/',
@@ -40,155 +40,11 @@
                     }
                 });
             });
-
-            // Initialize dynatrees
-            $("#tree_metaCat").dynatree({
-                checkbox: true,
-                selectMode: 3,
-                initAjax: {
-                    url: '/myPhyloDB/getSampleCatTree/',
-                    dataType: 'jsonp',
-                    data: {}
-                },
-                onLazyRead: function (node) {
-                    node.appendAjax({
-                        url: '/myPhyloDB/getSampleCatTreeChildren/',
-                        data: {pType: node.data.pType, field: node.data.title},
-                        success: function (node) {
-                            if (node.childList == undefined) {
-                                alert('No samples are available for this variable!');
-                            }
-                        }
-                    });
-                },
-                onSelect: function (flag, node) {
-                    if (flag && node.childList == undefined) {
-                        node.reloadChildren(function () {
-                            node.select(false);
-                            node.select(true);
-                        });
-                    }
-                    nodesCat = node.tree.getSelectedNodes();
-                    ellipseBox();
-                    colorBox();
-                    shapeBox();
-                    $("#run").css("background-color", "lightgray");
-                }
-            });
-
-            $("#tree_metaQuant").dynatree({
-                checkbox: true,
-                selectMode: 3,
-                initAjax: {
-                    url: '/myPhyloDB/getSampleQuantTree/',
-                    dataType: 'jsonp',
-                    data: {}
-                },
-                onLazyRead: function(node) {
-                    node.appendAjax({
-                        url: '/myPhyloDB/getSampleQuantTreeChildren/',
-                        data: {pType: node.data.pType, field: node.data.title},
-                        success: function(node) {
-                            if (node.childList == undefined) {
-                                alert('No samples are available for this variable!');
-                            }
-                        }
-                    });
-                },
-                onSelect: function(flag, node) {
-                    if (flag && node.childList == undefined) {
-                        node.reloadChildren(function () {
-                            node.select(false);
-                            node.select(true);
-                        });
-                    }
-                    nodesQuant = node.tree.getSelectedNodes();
-
-                    $("#run").css("background-color", "lightgray");
-                }
-            });
-
-            // Start stop and other 'click' functions
-            $("#run").click(function () {
-                if (running == true) {
-                    alert("myPhyloDB is currently running your previous analysis request!");
-                    return false;
-                }
-                $("#my_image").attr("src", "#");
-                $("#container-0").empty().show();
-                $("#container-2").hide();
-                $("#text-1").val('');
-                $("#res_table").empty();
-                running = true;
-                chooseData();
-            });
-
-            $("#stop").show().click(function () {
-                running = false;
-                stopThis(RID);
-            });
-
-            $("#clearMeta").click(function () {
-                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                checkButtons();
-            });
-
-            /*$("#ellipse").click(function () {
-                checkButtons();
-            });
-
-            $("#contrib1").click(function () {
-                checkButtons();
-            });
-
-            $("#contrib2").click(function () {
-                checkButtons();
-            });
-
-            $("#remUnclass").click(function () {
-                checkButtons();
-            });
-
-            $("#remZeroes").click(function () {
-                checkButtons();
-            });
-
-            $("#filterData").click(function () {
-                checkButtons();
-            });
-
-            $("#filterMeth").click(function () {
-                checkButtons();
-            });*/
-
-            // Capture all changes in textboxes, etc.
-            $("#selectTree").change(function () {
-                treeType = $(this).val();
-                checkButtons();
-                if (treeType == 1) {
-                    $('#row_taxa').show();
-                    $('#row_kegg').hide();
-                    $('#row_nz').hide();
-                    $('#text-1').val('');
-                } else if (treeType == 2) {
-                    $('#row_taxa').hide();
-                    $('#row_kegg').show();
-                    $('#row_nz').hide();
-                    $('#text-1').val('');
-                } else if (treeType == 3) {
-                    $('#row_taxa').hide();
-                    $('#row_kegg').hide();
-                    $('#row_nz').show();
-                    $('#text-1').val('');
-                }
-            });
-
         });
 
-        function checkButtons(){
-            //set all buttons to their proper states given the current state of the independent buttons
+        {% include "js/commonFunctions.js" %}
+        function checkButtons() {
+            treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
@@ -196,23 +52,33 @@
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
-                $("#my_image").attr("src", "#");
             }
-
             if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
-                $("#my_image").attr("src", "#");
             }
-
             if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
-                $("#my_image").attr("src", "#");
             }
 
         }
-
+        function chooseData() {
+            $("#run").css("background-color", "yellow");
+            $("#container-0").empty().append('Analysis is running...please be patient');
+            getGraphData();
+        }
+        function chooseDisplay() {
+            if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
+                {% static "" as baseUrl %}
+                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/pca/Rplots/"+ RID +".pca.pdf");
+                $("#container-2").show();
+                $("#container-0").hide();
+            } else {
+                $("#container-0").show();
+                $("#container-2").hide();
+            }
+        }
         function colorBox() {
             $("#colorVal").empty()
                     .prepend('<option selected="selected" value="None">None</option>')
@@ -243,38 +109,6 @@
                 $("#colorVal").append('<option value=interaction>interaction</option>');
             }
         }
-
-        function shapeBox() {
-            $("#shapeVal").empty()
-                    .prepend('<option selected="selected" value="None">None</option>')
-                    .append('<option value="k-means">k-means</option>');
-
-            var titleArray = [];
-            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
-                if (node.getLevel() == 3) {
-                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
-                        if (node.bSelected || node.hasSubSel) {
-                            var title = node.data.title;
-                            titleArray.push(title);
-                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
-                        }
-                    }
-                }
-                if (node.getLevel() == 4) {
-                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
-                        if (node.bSelected || node.hasSubSel) {
-                            var title = node.data.title;
-                            titleArray.push(title);
-                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
-                        }
-                    }
-                }
-            });
-            if (titleArray.length > 1) {
-                $("#shapeVal").append('<option value=interaction>interaction</option>');
-            }
-        }
-
         function ellipseBox() {
             $("#ellipseVal").empty()
                     .prepend('<option selected="selected" value="None">None</option>')
@@ -305,149 +139,6 @@
                 $("#ellipseVal").append('<option value=interaction>interaction</option>');
             }
         }
-
-        function stopThis(RID) {
-            clearInterval(refresh);
-            $.ajax({
-                url: '/myPhyloDB/stop/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
-                success: function (data) {
-                    $("#run").css("background-color", "red");
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var stage = obj['message'];
-                    $('#container-2').hide();
-                    $('#container-0').empty().show().append(stage);
-                }
-            });
-        }
-
-        function updateStatus(RID) {
-            var myDict = {};
-            myDict['RID'] = RID;
-            myDict['funcName'] = "getPCA";
-            myDict['reqType'] = "status";
-            var jsonDict = JSON.stringify(myDict);
-            $.ajax({
-                url: '/myPhyloDB/funcCall/',
-                type: 'POST',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                success: function (data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var resType = obj['resType'];
-                    if (resType == "status") {
-                        var stage = obj['stage'];
-                        if (running) {
-                            $('#container-0').empty().append(stage);
-                        }
-                    } else {
-
-                        running = false;
-                        stopTimer(refresh);
-                        var error = data['error'];
-                        if (error != "none") {
-                            alert(error);
-                            $("#run").css("background-color", "red");
-                        } else {
-                            $("#run").css("background-color", "green");
-                        }
-
-                        var text = obj['text'];
-                        $('#text-1').val(text);
-
-                        var varCoordDF = obj['varCoordDF'];
-                        $('#varCoordDF').empty().append(varCoordDF).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-                        }).draw();
-
-                        var varContribDF = obj['varContribDF'];
-                        $('#varContribDF').empty().append(varContribDF).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-                        }).draw();
-
-                        var indCoordDF = obj['indCoordDF'];
-                        $('#indCoordDF').empty().append(indCoordDF).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-                        }).draw();
-
-                        var indContribDF = obj['indContribDF'];
-                        $('#indContribDF').empty().append(indContribDF).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-                        }).draw();
-                        $("div.toolbar").html('<br><br><br>');
-
-                        document.getElementById("TabButton").disabled = false;
-
-                        chooseDisplay();
-                    }
-                }
-            });
-        }
-
-        function startTimer(RID) {
-            refresh = setInterval(function(){updateStatus(RID);}, 1000);
-            return refresh;
-        }
-
-        function stopTimer() {
-            clearInterval(refresh);
-
-        }
-
-        function chooseDisplay() {
-            if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
-                {% static "" as baseUrl %}
-                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/pca/Rplots/"+ RID +".pca.pdf");
-                $("#container-2").show();
-                $("#container-0").hide();
-            } else {
-                $("#container-0").show();
-                $("#container-2").hide();
-            }
-        }
-
-        function chooseData() {
-            $("#run").css("background-color", "yellow");
-            $("#container-0").empty().append('Analysis is running...please be patient');
-            getGraphData();
-        }
-
-        function makeGUID(){
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            })
-        }
-
         function getGraphData() {
             RID = makeGUID();
             startTimer(RID);
@@ -557,7 +248,6 @@
             myDict['metaValsQuant'] = metaValsQuant;
             myDict['metaIDsQuant'] = metaIDsQuant;
             myDict['treeType'] = treeType;
-            myDict['distance'] = distance;
             myDict['RID'] = RID;
             myDict['funcName'] = "getPCA";
             myDict['reqType'] = "call";
@@ -573,11 +263,12 @@
             myDict['palette'] = document.getElementById("palette").value;
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['transform'] = document.getElementById("transform").value;
-            myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
             myDict['contribVal1'] = document.getElementById("contribVal1").value;
+            myDict['contribVal2'] = document.getElementById("contribVal2").value;
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
+            myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
 
             if ($("#contrib1").is(':checked')) {
                 myDict['addContrib1'] = 'yes'
@@ -585,7 +276,6 @@
                 myDict['addContrib1'] = 'no'
             }
 
-            myDict['contribVal2'] = document.getElementById("contribVal2").value;
             if ($("#contrib2").is(':checked')) {
                 myDict['addContrib2'] = 'yes'
             } else {
@@ -631,6 +321,173 @@
                 }
             });
         }
+        function runAnalysis() {
+            if (running == true) {
+                alert("myPhyloDB is currently running your previous analysis request!");
+                return false;
+            }
+            $("#my_image").attr("src", "#");
+            $("#container-0").empty().show();
+            $("#container-2").hide();
+            $("#text-1").val('');
+            $("#res_table").empty();
+            running = true;
+            chooseData();
+        }
+        function selectTree() {
+            checkButtons();
+            if (treeType == 1) {
+                $('#row_taxa').show();
+                $('#row_kegg').hide();
+                $('#row_nz').hide();
+                $('#text-1').val('');
+            } else if (treeType == 2) {
+                $('#row_taxa').hide();
+                $('#row_kegg').show();
+                $('#row_nz').hide();
+                $('#text-1').val('');
+            } else if (treeType == 3) {
+                $('#row_taxa').hide();
+                $('#row_kegg').hide();
+                $('#row_nz').show();
+                $('#text-1').val('');
+            }
+        }
+        function shapeBox() {
+            $("#shapeVal").empty()
+                .prepend('<option selected="selected" value="None">None</option>')
+                .append('<option value="k-means">k-means</option>');
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
+            if (titleArray.length > 1) {
+                $("#shapeVal").append('<option value=interaction>interaction</option>');
+            }
+        }
+        function stopAnalysis() {
+            running = false;
+            clearInterval(refresh);
+            $.ajax({
+                url: '/myPhyloDB/stop/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['message'];
+                    $('#container-2').hide();
+                    $('#container-0').empty().show().append(stage);
+                }
+            });
+        }
+        function updateStatus() {
+            var myDict = {};
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getPCA";
+            myDict['reqType'] = "status";
+            var jsonDict = JSON.stringify(myDict);
+            $.ajax({
+                url: '/myPhyloDB/funcCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var resType = obj['resType'];
+                    if (resType == "status") {
+                        var stage = obj['stage'];
+                        if (running) {
+                            $('#container-0').empty().append(stage);
+                        }
+                    } else {
+                        running = false;
+                        clearInterval(refresh);
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
+
+                        var text = obj['text'];
+                        $('#text-1').val(text);
+
+                        var varCoordDF = obj['varCoordDF'];
+                        $('#varCoordDF').empty().append(varCoordDF).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                        }).draw();
+
+                        var varContribDF = obj['varContribDF'];
+                        $('#varContribDF').empty().append(varContribDF).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                        }).draw();
+
+                        var indCoordDF = obj['indCoordDF'];
+                        $('#indCoordDF').empty().append(indCoordDF).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                        }).draw();
+
+                        var indContribDF = obj['indContribDF'];
+                        $('#indContribDF').empty().append(indContribDF).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                        }).draw();
+                        $("div.toolbar").html('<br><br><br>');
+
+                        document.getElementById("TabButton").disabled = false;
+
+                        chooseDisplay();
+                    }
+                }
+            });
+        }
     </script>
 {% endblock javascript %}
 
@@ -641,12 +498,12 @@
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
             <th>Select Meta Data:<br>
-                <a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+                <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta()">-Deselect all-</a></th>
         </tr>
         <tr>
             <td style="padding-right: 10px; vertical-align: top">
-                <div id="tree_metaCat"></div>
-                <div id="tree_metaQuant"></div>
+                    {% include "html/DynaTree-MetaCat.html" %}
+                    {% include "html/DynaTree-MetaQuant.html" %}
             </td>
         </tr>
     </table>
@@ -656,10 +513,11 @@
             <td bgcolor="white"></td>
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Selection:</strong></em></td>
         </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectTree">
+                <select id="selectTree" onChange="selectTree()">
                     <option value="1" selected="selected">Taxonomy</option>
                     <option value="2" >KEGG orthology</option>
                     <option value="3" >KEGG enzyme</option>
@@ -668,10 +526,11 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr id="row_taxa">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectall-taxa">
+                <select id="selectall-taxa" onChange="checkButtons()">
                     <option value="2">Phyla</option>
                     <option value="3">Classes</option>
                     <option value="4">Orders</option>
@@ -684,10 +543,11 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr id="row_kegg" style="display:none">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectall-kegg">
+                <select id="selectall-kegg" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
                     <option value="3">Level 3</option>
@@ -696,10 +556,11 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr id="row_nz" style="display:none">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectall-nz">
+                <select id="selectall-nz" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
                     <option value="3">Level 3</option>
@@ -711,10 +572,11 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="DepVar">
+                <select id="DepVar" onChange="checkButtons()">
                     <option value="0" selected="selected">Abundance</option>
                     <option value="1">Relative Abundance</option>
                     <option value="4">Total Abundance</option>
@@ -725,10 +587,11 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="transform">
+                <select id="transform" onChange="checkButtons()">
                     <option value="0" selected="selected">None</option>
                     <option value="1">Ln</option>
                     <option value="2">Log10</option>
@@ -740,49 +603,19 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use PGPRs or KEGG mapping"><em><strong>Data Filtering:</strong></em></td>
-        </tr>
-        <tr>
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="checkbox" id="remUnclass" checked>&nbsp; <-- Remove unassigned/unmapped reads
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr>
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="checkbox" id="remZeroes"/>&nbsp; <-- Remove phylotypes with over <input type="text" id="perZeroes" style="background-color: white; width: 40px" value="50"/> percent zeroes
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr>
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="checkbox" id="filterData"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="90"/> percent of phylotypes based on:
-                <select id="filterMeth">
-                    <!--<option value="1">None</option>-->
-                    <option value="2" selected="selected">Interquantile range (IQR)</option>
-                    <option value="3">Coefficient of variation (CV)</option>
-                    <option value="4">Standard deviation (SD)</option>
-                    <option value="5">Mean abundance value</option>
-                    <option value="6">Median abundance value</option>
-                </select>
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr><td colspan="3" bgcolor="white"></td></tr>
+        {% include "html/Data-Filtering.html" %}
+
         <tr>
             <td bgcolor="white"></td>
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>PCA Settings:</strong></em></td>
         </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="PC1">
+                <select id="PC1" onChange="checkButtons()">
                     <option value="1" selected="selected">PC1</option>
                     <option value="2">PC2</option>
                     <option value="3">PC3</option>
@@ -794,10 +627,11 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white" id="PC2-text">
-                <select id="PC2">
+                <select id="PC2" onChange="checkButtons()">
                     <option value="1">PC1</option>
                     <option value="2" selected="selected">PC2</option>
                     <option value="3">PC3</option>
@@ -809,45 +643,51 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="checkbox" id="scaled" checked>&nbsp; <-- scale data
+                <input type="checkbox" id="scaled" checked onClick="checkButtons()">&nbsp; <-- scale data
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr><td colspan="3" bgcolor="white"></td></tr>
+
         <tr>
             <td bgcolor="white"></td>
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plots:</em></strong></td>
         </tr>
+
         <tr>
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <input type="checkbox" checked title="Click to turn on/off" id="contrib1"/>
-                    <input type="text" title="Enter the number of samples/variables to include in the plots.  Variables will be selected based on their contribution to axis 1." id="contribVal1" value="5" style="background-color: white; width: 50px"/>
+                    <input type="checkbox" checked title="Click to turn on/off" id="contrib1" onClick="checkButtons()"/>
+                    <input type="text" title="Enter the number of samples/variables to include in the plots.  Variables will be selected based on their contribution to axis 1." id="contribVal1" value="5" style="background-color: white; width: 50px" onChange="checkButtons()"/>
                     &nbsp; <-- Number of contributors to the 1st PCA Axis to display in plot
                 </div>
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <input type="checkbox" checked title="Click to turn on/off" id="contrib2"/>
-                    <input type="text" title="Enter the number of sample/variables to include in the plots.  Variables will be selected based on their contribution to axis 2." id="contribVal2" value="5" style="background-color: white; width: 50px"/>
+                    <input type="checkbox" checked title="Click to turn on/off" id="contrib2" onClick="checkButtons()"/>
+                    <input type="text" title="Enter the number of sample/variables to include in the plots.  Variables will be selected based on their contribution to axis 2." id="contribVal2" value="5" style="background-color: white; width: 50px" onChange="checkButtons()"/>
                     &nbsp; <-- Number of contributors to the 2nd PCA Axis to display in plot
                 </div>
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <select id="palette">
+                    <select id="palette" onChange="checkButtons()">
                         <option value="Set1">Set1</option>
                         <option value="Set2">Set2</option>
                         <option value="Set3">Set3</option>
@@ -860,11 +700,12 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <select id="colorVal">
+                    <select id="colorVal" onChange="checkButtons()">
                         <option value="None">None</option>
                         <option value="k-means">k-means</option>
                     </select>
@@ -873,11 +714,12 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <select id="shapeVal">
+                    <select id="shapeVal" onChange="checkButtons()">
                         <option value="None">None</option>
                         <option value="k-means">k-means</option>
                     </select>
@@ -886,11 +728,12 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <select id="ellipseVal">
+                    <select id="ellipseVal" onChange="checkButtons()">
                         <option value="None">None</option>
                         <option value="k-means">k-means</option>
                     </select>
@@ -899,21 +742,10 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
-        </tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td bgcolor="white">
-                <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
-                &nbsp;
-                <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
-                &nbsp; <-- Start/stop analysis
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
+        {% include "html/Data-RunButton.html" %}
+
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-Export.html" %}
     </table>

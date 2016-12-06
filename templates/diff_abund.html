@@ -20,9 +20,8 @@
     </style>
 
     <script type="text/javascript">
-        var  dataType = 1, treeType = 1, i = 0;
+        var  dataType = 1, treeType = 1;
         var nodesCat = "", nodesTaxa = "", taxaAll = 7, nzAll = 1, keggAll = 1;
-        var DepVar = 0;
         var chart1 = {}, catOptions = {};
         var running = false, refresh = 0, RID = 0;
 
@@ -44,16 +43,14 @@
         });
 
         {% include "js/commonFunctions.js" %}
-        function checkButtons(){
+        function checkButtons() {
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
             $("#container-1").empty().append('Settings have been changed by the user!');
-
         }
         function chooseData() {
-
             if (treeType == 1) {
                 taxaAll = document.getElementById("selectall-taxa").value;
             } else if (treeType == 2) {
@@ -131,16 +128,19 @@
                 var myDict = {};
                 myDict['metaValsCat'] = metaValsCat;
                 myDict['metaIDsCat'] = metaIDsCat;
-                myDict['DepVar'] = DepVar;
                 myDict['selectAll'] = taxaAll;
                 myDict['keggAll'] = keggAll;
                 myDict['nzAll'] = nzAll;
                 myDict['treeType'] = treeType;
                 myDict['RID'] = RID;
-                myDict['FdrVal'] = document.getElementById("FdrVal").value;
                 myDict['funcName'] = "getDiffAbund";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
+                myDict['DepVar'] = document.getElementById("DepVar").value;
+                myDict['FdrVal'] = document.getElementById("FdrVal").value;
+                myDict['perZeroes'] = document.getElementById("perZeroes").value;
+                myDict['filterPer'] = document.getElementById("filterPer").value;
+                myDict['filterMeth'] = document.getElementById("filterMeth").value;
 
                 if ($("#remUnclass").is(':checked')) {
                     myDict['remUnclass'] = 'yes'
@@ -159,10 +159,6 @@
                 } else {
                     myDict['filterData'] = 'no'
                 }
-
-                myDict['perZeroes'] = document.getElementById("perZeroes").value;
-                myDict['filterPer'] = document.getElementById("filterPer").value;
-                myDict['filterMeth'] = document.getElementById("filterMeth").value;
 
                 var jsonDict = JSON.stringify(myDict);
 
@@ -269,7 +265,7 @@
             };
             chart1 = new Highcharts.Chart(catOptions);
         }
-        function selectTree(treeType) {
+        function selectTree() {
                 checkButtons();
                 if (treeType == 1) {
                     $('#row_taxa').show();
@@ -394,7 +390,7 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectTree" onChange="selectTree(this.value)">
+                    <select id="selectTree" onChange="selectTree()">
                         <option value="1" selected="selected">Taxonomy</option>
                         <option value="2" >KEGG orthology</option>
                         <option value="3" >KEGG enzyme</option>
@@ -407,7 +403,7 @@
             <tr id="row_taxa">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-taxa">
+                    <select id="selectall-taxa" onChange="checkButtons()">
                         <option value="2">Phyla</option>
                         <option value="3">Classes</option>
                         <option value="4">Orders</option>
@@ -424,7 +420,7 @@
             <tr id="row_kegg" style="display:none">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-kegg">
+                    <select id="selectall-kegg" onChange="checkButtons()">
                         <option value="1" selected="selected">Level 1</option>
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
@@ -437,7 +433,7 @@
             <tr id="row_nz" style="display:none">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-nz">
+                    <select id="selectall-nz" onChange="checkButtons()">
                         <option value="1" selected="selected">Level 1</option>
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
@@ -453,11 +449,11 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="DepVar">
+                    <select id="DepVar" onChange="checkButtons()">
                         <option value="0">Abundance</option>
                         <option value="4">Total Abundance</option>
                     </select>
-                    &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Total Abundance = 16S rRNA copies per mg soil"><font color="red">[info]</font></span>
+                    &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Total Abundance = 16S rRNA copies per mg soil"><font color="red">[info]</font></span>
                 </td>
                 <td bgcolor="white"></td>
             </tr>

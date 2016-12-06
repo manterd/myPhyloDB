@@ -33,6 +33,13 @@
                 });
             }
             nodesCat = node.tree.getSelectedNodes();
+
+            if ((document.title == 'PCA') || (document.title == 'PCoA')) {
+                ellipseBox();
+                colorBox();
+                shapeBox();
+            }
+
             $("#run").css("background-color", "lightgray");
         }
     });

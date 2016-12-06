@@ -18,7 +18,7 @@
     </style>
 
     <script type="text/javascript">
-        var dataType = 1, treeType = 1, i = 0;
+        var dataType = 1, treeType = 1;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", nodesKEGG = "", nodesNZ = "";
         var taxaAll = 0; var nzAll = 0; var keggAll = 0;
         var chart1 = {}, catOptions = {};
@@ -124,14 +124,8 @@
             chart1 = new Highcharts.Chart(catOptions);
         }
         function checkButtons() {
-            // cat or quant selected
             dataType = document.getElementById("dataType").value;
-
-            // taxa, kegg, or nz selected
             treeType = document.getElementById("selectTree").value;
-
-            // set all menus and buttons to their proper states given the current state
-            // of the independent (saved to cache) buttons
             $("#run").css("background-color", "lightgray");
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
@@ -168,7 +162,6 @@
             }
 
             if (treeType == "2") {
-
                 $("#tree_taxa").hide();
                 $("#tree_kegg").show();
                 $("#tree_nz").hide();
@@ -516,7 +509,6 @@
                 myDict['perZeroes'] = document.getElementById("perZeroes").value;
                 myDict['filterPer'] = document.getElementById("filterPer").value;
                 myDict['filterMeth'] = document.getElementById("filterMeth").value;
-
                 myDict['DepVar'] = document.getElementById("DepVar").value;
                 myDict['sig_only'] = document.getElementById("sig_box").checked;
                 myDict['selectAll'] = document.getElementById("selectall-taxa").value;
@@ -697,7 +689,6 @@
                 myDict['perZeroes'] = document.getElementById("perZeroes").value;
                 myDict['filterPer'] = document.getElementById("filterPer").value;
                 myDict['filterMeth'] = document.getElementById("filterMeth").value;
-
                 myDict['DepVar'] = document.getElementById("DepVar").value;
                 myDict['sig_only'] = document.getElementById("sig_box").checked;
                 myDict['selectAll'] = document.getElementById("selectall-taxa").value;
@@ -1045,7 +1036,7 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="dataType" onChange="selectAnalysis();">
+                    <select id="dataType" onChange="selectAnalysis()">
                         <option value="1" selected="selected">Bar plot (factors)</option>
                         <option value="2" >Scatter plot (regression)</option>
                     </select>
@@ -1062,7 +1053,7 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectTree" onChange="selectTree();">
+                    <select id="selectTree" onChange="selectTree()">
                         <option value="1" selected="selected">Taxonomy</option>
                         <option value="2" >KEGG orthology</option>
                         <option value="3" >KEGG enzyme</option>
@@ -1075,7 +1066,7 @@
             <tr id="row_taxa">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-taxa">
+                    <select id="selectall-taxa" onChange="checkButtons()">
                         <option value="0" selected="selected">Off</option>
                         <option value="2">Phyla</option>
                         <option value="3">Classes</option>
@@ -1093,7 +1084,7 @@
             <tr id="row_kegg" style="display:none">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-kegg">
+                    <select id="selectall-kegg" onChange="checkButtons()">
                         <option value="0" selected="selected">Off</option>
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>
@@ -1107,7 +1098,7 @@
             <tr id="row_nz" style="display:none">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-nz">
+                    <select id="selectall-nz" onChange="checkButtons()">
                         <option value="0" selected="selected">Off</option>
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>
@@ -1124,7 +1115,7 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="DepVar">
+                    <select id="DepVar" onChange="checkButtons()">
                         <option value="0" selected="selected">Abundance</option>
                         <option value="1">Relative Abundance</option>
                         <option value="4">Total Abundance</option>
@@ -1139,7 +1130,7 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="transform">
+                    <select id="transform" onChange="checkButtons()">
                         <option value="0" selected="selected">None</option>
                         <option value="1">Ln</option>
                         <option value="2">Log10</option>
@@ -1155,7 +1146,7 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td id="sig_text" bgcolor="white">
-                    <input type="checkbox" id="sig_box">
+                    <input type="checkbox" id="sig_box" onChange="checkButtons()">
                     &nbsp; <-- Display only significant tests (p &#8804 0.05)
                 </td>
                 <td bgcolor="white"></td>

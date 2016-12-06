@@ -29,6 +29,11 @@ $("#tree_metaQuant").dynatree({
             });
         }
         nodesQuant = node.tree.getSelectedNodes();
+
+        if (document.title == 'PCoA') {
+            surfBox();
+        }
+
         $("#run").css("background-color", "lightgray");
 
         var count = 0;

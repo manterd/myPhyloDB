@@ -29,19 +29,19 @@ function clearMeta() {
 }
 
 function clearTaxa() {
-    $("#selectall-taxa").val(0);
-    $("#selectall-kegg").val(0);
-    $("#selectall-nz").val(0);
-
-    $("#tree_taxa").dynatree("getRoot").visit(function (node) {
-        node.select(false);
-    });
-    $("#tree_kegg").dynatree("getRoot").visit(function (node) {
-        node.select(false);
-    });
-    $("#tree_nz").dynatree("getRoot").visit(function (node) {
-        node.select(false);
-    });
+    if (treeType == 1) {
+        $("#tree_taxa").dynatree("getRoot").visit(function (node) {
+            node.select(false);
+        });
+    } else if (treeType == 2) {
+        $("#tree_kegg").dynatree("getRoot").visit(function (node) {
+            node.select(false);
+        });
+    } else if (treeType == 3) {
+        $("#tree_nz").dynatree("getRoot").visit(function (node) {
+            node.select(false);
+        });
+    }
 
     $("#run").css("background-color", "lightgray");
 }
