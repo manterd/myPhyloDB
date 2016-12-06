@@ -5,7 +5,7 @@
 
 <tr>
     <td bgcolor="white" width="5px"></td>
-    <td>
+    <td bgcolor="white">
         <input id="TabButton" type="button" disabled value="Export Data" onClick="getTab()"/>
     </td>
     <td bgcolor="white"></td>
@@ -31,6 +31,8 @@
             func = 'spls';
         } else if (document.title == 'WGCNA') {
             func = 'wgcna';
+        } else {
+            func = 'unknown';
         }
 
         $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
@@ -41,7 +43,7 @@
                 data: {
                     all: RID,
                     func: func,
-                    button3: button3
+                    treeType: treeType
                 },
                 success: function(data) {
                     var result = JSON.stringify(data);

@@ -6,7 +6,7 @@
 <script type="text/javascript">
     function hideChange() {
 
-        if (button1 == 1) {
+        if (dataType == 1) {
             if ($('#hide').html() == 'Hide all series') {
                 $(chart1.series).each(function(){
                     this.setVisible(false, false);
@@ -22,7 +22,7 @@
             }
         }
 
-        if (button1 == 2) {
+        if (dataType == 2) {
             if ($('#hide').html() == 'Hide all series') {
                 $(chart2.series).each(function(){
                     this.setVisible(false, false);

@@ -23,7 +23,7 @@
 
     <script type="text/javascript">
         var DepVar = 0, selTheme = 0;
-        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
+        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1, treeType = 1;
         var chart1 = {}, display = 1;
         var catOptions = {};
         var distance = 15, PC1 = 1, PC2 = 2, test = 1;
@@ -221,19 +221,19 @@
 
             // Capture all changes in textboxes, etc.
             $("#selectTree").change(function () {
-                button3 = $(this).val();
+                treeType = $(this).val();
                 checkButtons();
-                if (button3 == 1) {
+                if (treeType == 1) {
                     $('#row_taxa').show();
                     $('#row_kegg').hide();
                     $('#row_nz').hide();
                     $('#text-1').val('');
-                } else if (button3 == 2) {
+                } else if (treeType == 2) {
                     $('#row_taxa').hide();
                     $('#row_kegg').show();
                     $('#row_nz').hide();
                     $('#text-1').val('');
-                } else if (button3 == 3) {
+                } else if (treeType == 3) {
                     $('#row_taxa').hide();
                     $('#row_kegg').hide();
                     $('#row_nz').show();
@@ -392,21 +392,21 @@
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
 
-            if (button3 == 1) {
+            if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-1").empty().hide();
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
             }
 
-            if (button3 == 2) {
+            if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-1").empty().hide();
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
             }
 
-            if (button3 == 3) {
+            if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-1").empty().hide();
                 $("#container-2").hide();
@@ -791,7 +791,7 @@
             myDict['keggAll'] = keggAll;
             myDict['nzAll'] = nzAll;
             myDict['DepVar'] = DepVar;
-            myDict['button3'] = button3;
+            myDict['treeType'] = treeType;
             myDict['distance'] = distance;
             myDict['PC1'] = PC1;
             myDict['PC2'] = PC2;

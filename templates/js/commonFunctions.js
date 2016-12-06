@@ -1,4 +1,3 @@
-
 function checkDupes(list) {
             var bools = [];
             var firsts = [];
@@ -15,14 +14,13 @@ function checkDupes(list) {
             return (bools.indexOf(false)==-1);
         }
 
-function clearMeta(button1) {
-    alert(button1);
-    if (button1 == 1) {
+function clearMeta() {
+    if (dataType == 1) {
         $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
             node.select(false);
         });
     }
-    else if (button1 == 2) {
+    else if (dataType == 2) {
         $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
             node.select(false);
         });
@@ -55,3 +53,9 @@ function makeGUID() {
             })
         }
 
+function startTimer() {
+    refresh = setInterval(function() {
+        updateStatus(RID);
+    }, 1000);
+    return refresh;
+}

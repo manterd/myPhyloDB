@@ -159,10 +159,10 @@ def funcCall(request):
 
             myDict = {}
             myDict['resType'] = "status"
+            myDict['error'] = "none"
             json_data = simplejson.dumps(myDict, encoding="Latin-1")
             return HttpResponse(json_data, content_type='application/json')
         else:
-            print "THIS SHOULD BE AN ERROR!!!"
             myDict = {}
             myDict['error'] = "Error: Selected data has changed, please refresh the page"
             json_data = simplejson.dumps(myDict)

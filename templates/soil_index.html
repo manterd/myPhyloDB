@@ -193,7 +193,7 @@
             }
         }
 
-        var button3 = 3;
+        var treeType = 3;
         var nodesCat = "";
         var catOptions = {};
         var refresh = 0;
@@ -415,8 +415,6 @@
                         if (error != "none") {
                             alert(error);
                             $("#run").css("background-color", "red");
-                        } else {
-                            $("#run").css("background-color", "green");
                         }
 
                         var text = obj['text'];
@@ -663,7 +661,14 @@
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                success: function (data) {
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    }
+                }
             });
         }
     </script>

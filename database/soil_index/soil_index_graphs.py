@@ -45,7 +45,7 @@ def getsoil_index(request, stops, RID, PID):
                 maxVals = all['maxVals']
                 locMax = all['locMax']
 
-                button3 = 1
+                treeType = 1
                 DepVar = 4
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections

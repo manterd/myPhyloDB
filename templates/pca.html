@@ -11,8 +11,6 @@
     {% endif %}
 {% endblock user %}
 
-{% block menu_item %}{% endblock menu_item %}
-
 {% block javascript %}
     <style>
         .inlineTable {
@@ -22,15 +20,11 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar = 0, selTheme = 0;
-        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
-        var chart1 = {}, display = 1;
-        var catOptions = {};
+        var treeType = 1;
+        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1;
+        var chart1 = {}, catOption = {};
         var distance = 15, PC1 = 1, PC2 = 2;
-        var refresh = 0;
-        var running = false;
-        var RID = 0;
-        var transform = 0;
+        var running = false, refresh = 0, RID = 0;
 
         $(function () {
 
@@ -141,7 +135,7 @@
                 checkButtons();
             });
 
-            $("#ellipse").click(function () {
+            /*$("#ellipse").click(function () {
                 checkButtons();
             });
 
@@ -167,109 +161,28 @@
 
             $("#filterMeth").click(function () {
                 checkButtons();
-            });
+            });*/
 
             // Capture all changes in textboxes, etc.
             $("#selectTree").change(function () {
-                button3 = $(this).val();
+                treeType = $(this).val();
                 checkButtons();
-                if (button3 == 1) {
+                if (treeType == 1) {
                     $('#row_taxa').show();
                     $('#row_kegg').hide();
                     $('#row_nz').hide();
                     $('#text-1').val('');
-                } else if (button3 == 2) {
+                } else if (treeType == 2) {
                     $('#row_taxa').hide();
                     $('#row_kegg').show();
                     $('#row_nz').hide();
                     $('#text-1').val('');
-                } else if (button3 == 3) {
+                } else if (treeType == 3) {
                     $('#row_taxa').hide();
                     $('#row_kegg').hide();
                     $('#row_nz').show();
                     $('#text-1').val('');
                 }
-            });
-
-            $("#transform").change(function () {
-                transform = $(this).val();
-                chooseDisplay();
-                checkButtons();
-            });
-
-            $("#DepVar").change(function () {
-                DepVar = $(this).val();
-                if (DepVar == 0) {
-                    $('#transform').empty()
-                        .append('<option value="0" selected>None</option>')
-                        .append('<option value="1">Ln</option>')
-                        .append('<option value="2">Log10</option>')
-                        .append('<option value="3">Sqrt</option>')
-                        .val(0);
-                } else if (DepVar == 1) {
-                    $('#transform').empty()
-                        .append('<option value="0">None</option>')
-                        .append('<option value="3">Sqrt</option>')
-                        .append('<option value="4">Logit</option>')
-                        .append('<option value="5">Arcsin</option>')
-                        .val(0);
-                } else {
-                    $('#transform').empty()
-                        .append('<option value="0" selected>None</option>')
-                        .append('<option value="1">Ln</option>')
-                        .append('<option value="2">Log10</option>')
-                        .append('<option value="3">Sqrt</option>')
-                        .val(0);
-                }
-                transform = 0;
-                checkButtons();
-            });
-
-            $("#selectall-taxa").change(function () {
-                taxaAll = $(this).val();
-                checkButtons();
-            });
-
-            $("#selectall-kegg").change(function () {
-                keggAll = $(this).val();
-                checkButtons();
-                $("#tree_kegg").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            });
-
-            $("#selectall-nz").change(function () {
-                nzAll = $(this).val();
-                checkButtons();
-                $("#tree_nz").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            });
-
-            $("#PC1").change(function () {
-                PC1 = $(this).val();
-                checkButtons();
-            });
-
-            $("#PC2").change(function () {
-                PC2 = $(this).val();
-                checkButtons();
-            });
-
-            $("#colorVal").change(function () {
-                checkButtons();
-            });
-
-            $("#palette").change(function () {
-                checkButtons();
-            });
-
-            $("#shapeVal").change(function () {
-                checkButtons();
-            });
-
-            $("#ellipseVal").change(function () {
-                checkButtons();
             });
 
         });
@@ -280,19 +193,19 @@
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
 
-            if (button3 == 1) {
+            if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
             }
 
-            if (button3 == 2) {
+            if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
             }
 
-            if (button3 == 3) {
+            if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
@@ -643,26 +556,29 @@
             myDict['metaIDsCat'] = metaIDsCat;
             myDict['metaValsQuant'] = metaValsQuant;
             myDict['metaIDsQuant'] = metaIDsQuant;
-            myDict['selectAll'] = taxaAll;
-            myDict['keggAll'] = keggAll;
-            myDict['nzAll'] = nzAll;
-            myDict['DepVar'] = DepVar;
-            myDict['button3'] = button3;
+            myDict['treeType'] = treeType;
             myDict['distance'] = distance;
-            myDict['PC1'] = PC1;
-            myDict['PC2'] = PC2;
-            myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
-            myDict['colorVal'] = document.getElementById("colorVal").value;
-            myDict['palette'] = document.getElementById("palette").value;
-            myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['RID'] = RID;
             myDict['funcName'] = "getPCA";
             myDict['reqType'] = "call";
             myDict['dataID'] = dataID;
-            myDict['transform'] = transform;
+            myDict['selectAll'] = document.getElementById("selectall-taxa").value;
+            myDict['keggAll'] = document.getElementById("selectall-kegg").value;
+            myDict['nzAll'] = document.getElementById("selectall-nz").value;
+            myDict['DepVar'] = document.getElementById("DepVar").value;
+            myDict['PC1'] = document.getElementById("PC1").value;
+            myDict['PC2'] = document.getElementById("PC2").value;
+            myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
+            myDict['colorVal'] = document.getElementById("colorVal").value;
+            myDict['palette'] = document.getElementById("palette").value;
+            myDict['shapeVal'] = document.getElementById("shapeVal").value;
+            myDict['transform'] = document.getElementById("transform").value;
             myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
-
             myDict['contribVal1'] = document.getElementById("contribVal1").value;
+            myDict['perZeroes'] = document.getElementById("perZeroes").value;
+            myDict['filterPer'] = document.getElementById("filterPer").value;
+            myDict['filterMeth'] = document.getElementById("filterMeth").value;
+
             if ($("#contrib1").is(':checked')) {
                 myDict['addContrib1'] = 'yes'
             } else {
@@ -700,16 +616,19 @@
                 myDict['filterData'] = 'no'
             }
 
-            myDict['perZeroes'] = document.getElementById("perZeroes").value;
-            myDict['filterPer'] = document.getElementById("filterPer").value;
-            myDict['filterMeth'] = document.getElementById("filterMeth").value;
-
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                success: function (data) {
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    }
+                }
             });
         }
     </script>

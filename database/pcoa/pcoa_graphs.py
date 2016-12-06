@@ -45,7 +45,7 @@ def getPCoA(request, stops, RID, PID):
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
 
-                button3 = int(all['button3'])
+                treeType = int(all['treeType'])
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
@@ -65,7 +65,7 @@ def getPCoA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
-                if button3 == 1:
+                if treeType == 1:
                     if selectAll == 1:
                         result += 'Taxa level: Kingdom' + '\n'
                     elif selectAll == 2:
@@ -80,14 +80,14 @@ def getPCoA(request, stops, RID, PID):
                         result += 'Taxa level: Genus' + '\n'
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
-                elif button3 == 2:
+                elif treeType == 2:
                     if keggAll == 1:
                         result += 'KEGG Pathway level: 1' + '\n'
                     elif keggAll == 2:
                         result += 'KEGG Pathway level: 2' + '\n'
                     elif keggAll == 3:
                         result += 'KEGG Pathway level: 3' + '\n'
-                elif button3 == 3:
+                elif treeType == 3:
                     if nzAll == 1:
                         result += 'KEGG Enzyme level: 1' + '\n'
                     elif nzAll == 2:
@@ -157,7 +157,7 @@ def getPCoA(request, stops, RID, PID):
                 filterMeth = int(all['filterMeth'])
 
                 finalDF = pd.DataFrame()
-                if button3 == 1:
+                if treeType == 1:
                     if selectAll != 8:
                         filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
@@ -169,10 +169,10 @@ def getPCoA(request, stops, RID, PID):
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
-                if button3 == 2:
+                if treeType == 2:
                     finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
-                if button3 == 3:
+                if treeType == 3:
                     finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct

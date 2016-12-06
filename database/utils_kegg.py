@@ -193,6 +193,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return HttpResponse(res, content_type='application/json')
 
 
+# TODO: add more status functions here?
 def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     try:
         koDict = {}
@@ -448,7 +449,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
-
+# JUMP add more status calls?
 def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
     try:
         nzDict = {}
@@ -1074,8 +1075,8 @@ def getFullNZ(idList):
     return recordList
 
 
-def insertTaxaInfo(button3, zipped, DF, pos=1):
-    if button3 == 1:
+def insertTaxaInfo(treeType, zipped, DF, pos=1):
+    if treeType == 1:
         k, p, c, o, f, g, s = map(None, *zipped)
         DF.insert(pos, 'Kingdom', k)
         DF.insert(pos+1, 'Phyla', p)
@@ -1084,12 +1085,12 @@ def insertTaxaInfo(button3, zipped, DF, pos=1):
         DF.insert(pos+4, 'Family', f)
         DF.insert(pos+5, 'Genus', g)
         DF.insert(pos+6, 'Species', s)
-    elif button3 == 2:
+    elif treeType == 2:
         L1, L2, L3 = map(None, *zipped)
         DF.insert(pos, 'Level_1', L1)
         DF.insert(pos+1, 'Level_2', L2)
         DF.insert(pos+2, 'Level_3', L3)
-    elif button3 == 3:
+    elif treeType == 3:
         L1, L2, L3, L4 = map(None, *zipped)
         DF.insert(pos, 'Level_1', L1)
         DF.insert(pos+1, 'Level_2', L2)

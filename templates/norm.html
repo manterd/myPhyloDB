@@ -33,152 +33,202 @@
     </style>
 
     <script type="text/javascript">
-        var NormMeth = 1, selTheme = 0, i = 0;
-        var nodesCat = "", nodesQuant = "", nodesTaxa = "", selectAll = 0;
-        var refresh = 0;
-        var running = false;
+        var NormMeth = 1;
         var tabular= 0, biome = 0;
         var remove = 0, minsize = 0;
-        var RID = 0, Proc = 2;
         var res_table = null;
+        var running = false, refresh = 0, RID = 0;
 
         $(function () {
-
-            $("#run").show().click(function () {
-                if(running == true) {
-                    alert("myPhyloDB is currently running your previous analysis request!");
-                    return false;
-                }
-                running = true;
-                $("#run").css("background-color", "yellow");
-                $("#container-1").empty();
-                $("#biome-text").val('');
-                $("#res_table").empty();
-                chooseData();
-            });
-
-            $("#stop").show().click(function () {
-                $("#container-1").empty().append('Stop request has been received...');
-                running = false;
-                stopThis(RID);
-            });
-
             $("#NormMeth").change(function () {
                 NormMeth = $(this).val();
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
+                checkButtons();
                 if (NormMeth == 2) {
                     $("#NormVal").val("min");
                 } else {
                     $("#NormVal").val("median");
                 }
             });
-
-            $("#NormVal").change(function () {
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#Iters").change(function () {
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#Lambda").change(function () {
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#MinSize").change(function () {
-                if (document.getElementById('MinSize').checked) {
-                    minsize = 1;
-                } else {
-                    minsize = 0;
-                }
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#MinVal").change(function () {
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
             $("#Tabular").change(function () {
+                checkButtons();
                 if (document.getElementById('Tabular').checked) {
                     tabular = 1;
                 } else {
                     tabular = 0;
                 }
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
             });
-
             $("#Biom").change(function () {
+                checkButtons();
                 if (document.getElementById('Biom').checked) {
                     biome = 1;
                 } else {
                     biome = 0;
                 }
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
             });
-
+            $("#MinSize").change(function () {
+                checkButtons();
+                if (document.getElementById('MinSize').checked) {
+                    minsize = 1;
+                } else {
+                    minsize = 0;
+                }
+            });
             $("#Remove").change(function () {
+                checkButtons();
                 if (document.getElementById('Remove').checked) {
                     remove = 1;
                 } else {
                     remove = 0;
                 }
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
             });
-
-            $("#Cutoff").change(function () {
-                chooseDisplay();
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#clearMeta").click(function () {
-                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#clearTaxa").click(function () {
-                $("#selectall").val(0);
-                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                selectAll = 0;
-                $("#run").css("background-color", "lightgray");
-            });
-
-            $("#selectall").change(function () {
-                selectAll = $(this).val();
-                $("#run").css("background-color", "lightgray");
-                $("#tree_taxa").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            });
-
-            $("#TabButton").click(function () {
-                getTab();
-            });
-
-            $("#BiomButton").click(function () {
-                getBiom();
-            });
-
-
         });
 
-        function stopThis(RID) {
+        {% include "js/commonFunctions.js" %}
+        function checkButtons() {
+            $("#run").css("background-color", "lightgray");
+            $("#TabButton").css("background-color", "lightgray");
+            $("#BiomButton").css("background-color", "lightgray");
+            chooseDisplay();
+        }
+        function chooseData() {
+            if (document.getElementById("NormVal").value < 0) {
+                alert("Sample size can only be a positive integer, 'min', 'median', or 'max'");
+                running = false;
+                return;
+            }
+            if (document.getElementById("MinVal").value < 0) {
+                alert("Sample size can only be a positive integer");
+                running = false;
+                return;
+            }
+            getCatGraphData();
+        }
+        function chooseDisplay() {
+            if (NormMeth == 1) {
+                $("#NormRow").hide();
+                $("#IterRow").hide();
+                $("#LambdaRow").hide();
+                $("#MinRow").show();
+                $("#VSRow").hide();
+                $("#FilterRow").hide();
+            }
+            if (NormMeth == 2) {
+                $("#NormRow").show();
+                $("#IterRow").show();
+                $("#LambdaRow").hide();
+                $("#MinRow").show();
+                $("#VSRow").hide();
+                $("#FilterRow").hide();
+            }
+            if (NormMeth == 3) {
+                $("#NormRow").show();
+                $("#IterRow").show();
+                $("#LambdaRow").show();
+                $("#MinRow").show();
+                $("#VSRow").hide();
+                $("#FilterRow").hide();
+            }
+            if (NormMeth == 4) {
+                $("#NormRow").hide();
+                $("#IterRow").hide();
+                $("#LambdaRow").hide();
+                $("#MinRow").show();
+                $("#VSRow").hide();
+                $("#FilterRow").hide();
+            }
+            if (NormMeth == 5) {
+                $("#NormRow").hide();
+                $("#IterRow").hide();
+                $("#LambdaRow").hide();
+                $("#MinRow").show();
+                $("#VSRow").show();
+                $("#FilterRow").show();
+            }
+        }
+        function getCatGraphData() {
+            RID = makeGUID();
+            startTimer(RID);
+            var myDict = {};
+            myDict['Tabular'] = tabular;
+            myDict['Biome'] = biome;
+            myDict['Remove'] = remove;
+            myDict['Cutoff'] = document.getElementById("Cutoff").value;
+            myDict['NormVal'] = document.getElementById("NormVal").value;
+            myDict['Iters'] = document.getElementById("Iters").value;
+            myDict['Lambda'] = document.getElementById("Lambda").value;
+            myDict['MinSize'] = minsize;
+            myDict['MinVal'] = document.getElementById("MinVal").value;
+            myDict['NormMeth'] = NormMeth;
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getNorm";
+            myDict['reqType'] = "call";
+            myDict['dataID'] = dataID;
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                type: 'POST',
+                url: '/myPhyloDB/funcCall/',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                success: function (data) {
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    }
+                }
+            });
+        }
+        function getTab() {
+            $.ajax({
+                url: '/myPhyloDB/getTab/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    window.location.href = obj['name'];
+                    $("#TabButton").css("background-color", "green").val("Done!");
+                }
+            });
+        }
+        function getBiom() {
+            $.ajax({
+                url: '/myPhyloDB/getBiom/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    window.open(
+                        obj['name'],
+                        'Download'
+                    );
+                    $("#BiomButton").css("background-color", "green").val("Done!");
+                }
+            });
+        }
+        function runAnalysis() {
+            if(running == true) {
+                alert("myPhyloDB is currently running your previous analysis request!");
+                return false;
+            }
+            running = true;
+            $("#run").css("background-color", "yellow");
+            $("#container-1").empty();
+            $("#biome-text").val('');
+            $("#res_table").empty();
+            chooseData();
+        }
+        function stopAnalysis() {
             clearInterval(refresh);
+            $("#container-1").empty().append('Stop request has been received...');
+            running = false;
             $.ajax({
                 url: '/myPhyloDB/stop/',
                 type: 'GET',
@@ -195,8 +245,7 @@
                 }
             });
         }
-
-        function updateStatus(RID) {
+        function updateStatus() {
             var myDict = {};
             myDict['RID'] = RID;
             myDict['funcName'] = "getNorm";
@@ -261,7 +310,7 @@
                             $("#biome-text").val(biome_txt);
                         }
 
-                        stopTimer(refresh);
+                        clearInterval(refresh);
 
                         var text = data['text'];
                         $("#container-1").empty().append(text);
@@ -280,162 +329,6 @@
                 }
             });
         }
-
-        function startTimer(RID) {
-            refresh = setInterval(function(){
-                updateStatus(RID);
-            }, 1000);
-            return refresh;
-        }
-
-        function stopTimer() {
-            clearInterval(refresh);
-        }
-
-        function chooseDisplay() {
-            if (NormMeth == 1) {
-                $("#NormRow").hide();
-                $("#IterRow").hide();
-                $("#LambdaRow").hide();
-                $("#MinRow").show();
-                $("#VSRow").hide();
-                $("#FilterRow").hide();
-            }
-            if (NormMeth == 2) {
-                $("#NormRow").show();
-                $("#IterRow").show();
-                $("#LambdaRow").hide();
-                $("#MinRow").show();
-                $("#VSRow").hide();
-                $("#FilterRow").hide();
-            }
-            if (NormMeth == 3) {
-                $("#NormRow").show();
-                $("#IterRow").show();
-                $("#LambdaRow").show();
-                $("#MinRow").show();
-                $("#VSRow").hide();
-                $("#FilterRow").hide();
-            }
-            if (NormMeth == 4) {
-                $("#NormRow").hide();
-                $("#IterRow").hide();
-                $("#LambdaRow").hide();
-                $("#MinRow").show();
-                $("#VSRow").hide();
-                $("#FilterRow").hide();
-            }
-            if (NormMeth == 5) {
-                $("#NormRow").hide();
-                $("#IterRow").hide();
-                $("#LambdaRow").hide();
-                $("#MinRow").show();
-                $("#VSRow").show();
-                $("#FilterRow").show();
-            }
-        }
-
-        function chooseData() {
-            if (document.getElementById("NormVal").value < 0) {
-                alert("Sample size can only be a positive integer, 'min', 'median', or 'max'");
-                running = false;
-                return;
-            }
-
-            if (document.getElementById("MinVal").value < 0) {
-                alert("Sample size can only be a positive integer");
-                running = false;
-                return;
-            }
-
-            //if (NormMeth == 1) normMethod = "None";
-            //if (NormMeth == 2) normMethod = "Rem";
-            //if (NormMeth == 3) normMethod = "Keep";
-            //if (NormMeth == 4) normMethod = "Prop";
-            //if (NormMeth == 5) normMethod = "Des";
-
-            getCatGraphData();
-        }
-
-        function makeGUID(){
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            })
-        }
-
-        function getCatGraphData() {
-            RID = makeGUID();
-            startTimer(RID);
-            var myDict = {};
-            myDict['Tabular'] = tabular;
-            myDict['Biome'] = biome;
-            myDict['Remove'] = remove;
-            myDict['Cutoff'] = document.getElementById("Cutoff").value;
-            myDict['NormVal'] = document.getElementById("NormVal").value;
-            myDict['Iters'] = document.getElementById("Iters").value;
-            myDict['Lambda'] = document.getElementById("Lambda").value;
-            myDict['MinSize'] = minsize;
-            myDict['MinVal'] = document.getElementById("MinVal").value;
-            myDict['selectAll'] = selectAll;
-            myDict['NormMeth'] = NormMeth;
-            myDict['RID'] = RID;
-            myDict['funcName'] = "getNorm";
-            myDict['reqType'] = "call";
-            myDict['dataID'] = dataID;
-            var jsonDict = JSON.stringify(myDict);
-
-            $.ajax({
-                type: 'POST',
-                url: '/myPhyloDB/funcCall/',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
-            });
-        }
-
-        function getTab(){
-            $.ajax({
-                url: '/myPhyloDB/getTab/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
-                success: function(data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var name = obj['name'];
-                    getFile(name, 'normalized_data.csv');
-                }
-            });
-        }
-
-        function getBiom(){
-            $.ajax({
-                url: '/myPhyloDB/getBiom/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
-                success: function(data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var name = obj['name'];
-                    getFile(name, 'normalized_data.biom');
-                }
-            });
-        }
-
-        function getFile(name, final) {
-            var anchor = document.createElement('a');
-            anchor.setAttribute('href', name);
-            anchor.setAttribute('download', final);
-
-            var ev = document.createEvent("MouseEvents");
-                ev.initMouseEvent("click", true, false, self, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            anchor.dispatchEvent(ev);
-        }
-
     </script>
 
 {% endblock javascript %}
@@ -518,9 +411,9 @@
             </tr>
             <tr>
                 <td bgcolor="white">
-                    <input id="run" type="submit" value="Run!" style="background-color: lightgray"/>
+                    <input id="run" type="submit" value="Run!" style="background-color: lightgray" onClick="runAnalysis()"/>
                     &nbsp
-                    <input id="stop" type="submit" value="Stop!" style="background-color: lightgray"/>
+                    <input id="stop" type="submit" value="Stop!" style="background-color: lightgray" onClick="stopAnalysis()"/>
                     &nbsp<-- Start/stop normalization
                 </td>
             </tr>
@@ -530,9 +423,9 @@
             </tr>
             <tr>
                 <td bgcolor="white">
-                    <input id="TabButton" type="button" disabled value="Tabular"/>
+                    <input id="TabButton" type="button" disabled value="Tabular" onClick="getTab()"/>
                     &nbsp
-                    <input id="BiomButton" type="button" disabled value="BIOM"/>
+                    <input id="BiomButton" type="button" disabled value="BIOM" onClick="getBiom()"/>
                 </td>
             </tr>
         </table>

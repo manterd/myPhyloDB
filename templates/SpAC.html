@@ -23,7 +23,7 @@
 
     <script type="text/javascript">
         var DepVar_taxa = 1, DepVar_kegg = 1, DepVar_nz = 1, selTheme = 0;
-        var nodesCat = "", taxaAll = 7, nzAll = 1, keggAll = 1, button3 = 1;
+        var nodesCat = "", taxaAll = 7, nzAll = 1, keggAll = 1, treeType = 1;
         var catOptions = {};
         var refresh = 0;
         var running = false;
@@ -122,19 +122,19 @@
 
             // Capture all changes in textboxes, etc.
             $("#selectTree").change(function () {
-                button3 = $(this).val();
+                treeType = $(this).val();
                 checkButtons();
-                if (button3 == 1) {
+                if (treeType == 1) {
                     $('#row_taxa').show();
                     $('#row_kegg').hide();
                     $('#row_nz').hide();
                     $('#text-1').val('');
-                } else if (button3 == 2) {
+                } else if (treeType == 2) {
                     $('#row_taxa').hide();
                     $('#row_kegg').show();
                     $('#row_nz').hide();
                     $('#text-1').val('');
-                } else if (button3 == 3) {
+                } else if (treeType == 3) {
                     $('#row_taxa').hide();
                     $('#row_kegg').hide();
                     $('#row_nz').show();
@@ -190,19 +190,19 @@
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
 
-            if (button3 == 1) {
+            if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
             }
 
-            if (button3 == 2) {
+            if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
             }
 
-            if (button3 == 3) {
+            if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
@@ -364,7 +364,7 @@
             myDict['DepVar_taxa'] = DepVar_taxa;
             myDict['DepVar_kegg'] = DepVar_kegg;
             myDict['DepVar_nz'] = DepVar_nz;
-            myDict['button3'] = button3;
+            myDict['treeType'] = treeType;
             myDict['RID'] = RID;
             myDict['funcName'] = "getSpAC";
             myDict['method'] = document.getElementById("method").value;
@@ -398,7 +398,14 @@
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
                 type: 'POST',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                success: function (data) {
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    }
+                }
             });
         }
     </script>

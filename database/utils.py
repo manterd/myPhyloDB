@@ -306,22 +306,22 @@ def getRawData(request):
     if request.is_ajax():
         RID = request.GET["all"]
         func = request.GET["func"]
-        button3 = int(request.GET["button3"])
+        treeType = int(request.GET["treeType"])
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
         fRow, fCol = savedDF.shape
-        if button3 == 1:
+        if treeType == 1:
             zipped = getFullTaxonomy(list(savedDF['rank_id']))
-            insertTaxaInfo(button3, zipped, savedDF, pos=fCol)
-        elif button3 == 2:
+            insertTaxaInfo(treeType, zipped, savedDF, pos=fCol)
+        elif treeType == 2:
             zipped = getFullKO(list(savedDF['rank_id']))
-            insertTaxaInfo(button3, zipped, savedDF, pos=fCol)
-        elif button3 == 3:
+            insertTaxaInfo(treeType, zipped, savedDF, pos=fCol)
+        elif treeType == 3:
             zipped = getFullNZ(list(savedDF['rank_id']))
-            insertTaxaInfo(button3, zipped, savedDF, pos=fCol)
+            insertTaxaInfo(treeType, zipped, savedDF, pos=fCol)
 
         savedDF.replace(to_replace='N/A', value=np.nan, inplace=True)
         savedDF.dropna(axis=1, how='all', inplace=True)

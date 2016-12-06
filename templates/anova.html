@@ -18,7 +18,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, button3 = 1, i = 0;
+        var dataType = 1, treeType = 1, i = 0;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", nodesKEGG = "", nodesNZ = "";
         var taxaAll = 0; var nzAll = 0; var keggAll = 0;
         var chart1 = {}, catOptions = {};
@@ -94,7 +94,7 @@
                     x: -25,
                     y: 25,
                     labelFormatter: function () {
-                        if (button3 == 3) {
+                        if (treeType == 3) {
                             return this.name[1] + '<br/>'
                         } else {
                             return this.name[0] + ': ' + this.name[1] + '<br/>'
@@ -125,12 +125,10 @@
         }
         function checkButtons() {
             // cat or quant selected
-            var dataType = document.getElementById("button1").value;
-            button1 = dataType;
+            dataType = document.getElementById("dataType").value;
 
             // taxa, kegg, or nz selected
-            var treeType = document.getElementById("selectTree").value;
-            button3 = treeType;
+            treeType = document.getElementById("selectTree").value;
 
             // set all menus and buttons to their proper states given the current state
             // of the independent (saved to cache) buttons
@@ -236,9 +234,9 @@
             return 0;
         }
         function chooseData() {
-            if (button3 == 1) {
+            if (treeType == 1) {
                 taxaAll = document.getElementById("selectall-taxa").value;
-                if (button1 == 1) {
+                if (dataType == 1) {
                     if ( (nodesCat != "") && ( (nodesTaxa != "") || (taxaAll != 0) ) ) {
                         $("#run").css("background-color", "yellow");
                         $("#container-1").empty().append('Analysis is running...please be patient');
@@ -256,7 +254,7 @@
                         $("#container-1").empty().append('Please choose your taxa level(s)!');
                         running = false;
                     }
-                } else if (button1 == 2) {
+                } else if (dataType == 2) {
                     if ( (nodesQuant != "") && ( (nodesTaxa != "") || (taxaAll != 0) ) ) {
                         $("#run").css("background-color", "yellow");
                         $("#container-2").empty().append('Analysis is running...please be patient');
@@ -277,9 +275,9 @@
                 }
             }
 
-            if (button3 == 2) {
+            if (treeType == 2) {
                 keggAll = document.getElementById("selectall-kegg").value;
-                if (button1 == 1) {
+                if (dataType == 1) {
                     if ( (nodesCat != "") && ( (nodesKEGG != "") || (keggAll != 0) ) ) {
                         $("#run").css("background-color", "yellow");
                         $("#container-1").empty().append('Analysis is running...please be patient');
@@ -297,7 +295,7 @@
                         $("#container-1").empty().append('Please choose your KEGG level(s)!');
                         running = false;
                     }
-                } else if (button1 == 2) {
+                } else if (dataType == 2) {
                     if ( (nodesQuant != "") && ( (nodesKEGG != "") || (keggAll != 0) ) ) {
                         $("#run").css("background-color", "yellow");
                         $("#container-2").empty().append('Analysis is running...please be patient');
@@ -318,9 +316,9 @@
                 }
             }
 
-            if (button3 == 3) {
+            if (treeType == 3) {
                 var nzAll = document.getElementById("selectall-nz").value;
-                if (button1 == 1) {
+                if (dataType == 1) {
                     if ( (nodesCat != "") && ( (nodesNZ != "") || (nzAll != 0) ) ) {
                         $("#run").css("background-color", "yellow");
                         $("#container-1").empty().append('Analysis is running...please be patient');
@@ -338,7 +336,7 @@
                         $("#container-1").empty().append('Please choose your KEGG level(s)!');
                         running = false;
                     }
-                } else if (button1 == 2) {
+                } else if (dataType == 2) {
                     if ( (nodesQuant != "") && ( (nodesNZ != "") || (nzAll != 0) ) ) {
                         $("#run").css("background-color", "yellow");
                         $("#container-2").empty().append('Analysis is running...please be patient');
@@ -422,7 +420,7 @@
             }
 
             if (!checkDupes(arrayValsCat)) {
-                stopTimer(RID);
+                clearInterval(refresh);
                 $("#run").css("background-color", "lightgray");
                 $("#container-1").empty().append('Analysis has been cancelled!');
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
@@ -492,7 +490,7 @@
                 myDict['kegg'] = kegg;
                 myDict['nz'] = nz;
                 myDict['RID'] = RID;
-                myDict['button3'] = button3;
+                myDict['treeType'] = treeType;
                 myDict['funcName'] = "getCatUnivData";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
@@ -530,13 +528,20 @@
                 $.ajax({
                     type: 'POST',
                     url: '/myPhyloDB/funcCall/',
-                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
+                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                    success: function (data) {
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        }
+                    }
                 });
 
             }
         }
         function getQuantGraphData() {
-            var RID = makeGUID();
+            RID = makeGUID();
             startTimer(RID);
             var arrayValsCat = [];
             var arrayIDsCat = [];
@@ -597,7 +602,7 @@
             }
 
             if (!checkDupes(arrayValsCat)) {
-                stopTimer(RID);
+                clearInterval(refresh);
                 $("#run").css("background-color", "lightgray");
                 $("#container-1").empty().append('Analysis has been cancelled!');
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
@@ -666,7 +671,7 @@
                 myDict['taxa'] = taxa;
                 myDict['kegg'] = kegg;
                 myDict['nz'] = nz;
-                myDict['button3'] = button3;
+                myDict['treeType'] = treeType;
                 myDict['funcName'] = "getQuantUnivData";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
@@ -705,7 +710,15 @@
                 $.ajax({
                     url: '/myPhyloDB/funcCall/',
                     type: 'POST',
-                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
+                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                    success: function (data) {
+                        var result = JSON.stringify(data);
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        }
+                    }
                 });
             }
         }
@@ -804,8 +817,9 @@
             checkButtons();
             chooseData();
         }
-        function selectAnalysis(button1) {
-            if (button1 == 1) {
+        function selectAnalysis() {
+            checkButtons();
+            if (dataType == 1) {
                 $("#tree_metaQuant").show();
                 $("#tree_metaCat").show();
                 $("#container-2").hide();
@@ -813,7 +827,7 @@
                 $("#text-1").show();
                 $("#text-2").hide();
             }
-            else if (button1 == 2) {
+            else if (dataType == 2) {
                 $("#tree_metaCat").show();
                 $("#tree_metaQuant").show();
                 $("#container-1").hide();
@@ -823,9 +837,9 @@
             }
             checkButtons();
         }
-        function selectTree(button3) {
+        function selectTree() {
             checkButtons();
-            if (button3 == 1) {
+            if (treeType == 1) {
                 $('#tree_taxa').show().dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
@@ -840,7 +854,7 @@
                 $('#row_nz').hide();
                 $('#text-1').val('');
                 $('#text-2').val('');
-            } else if (button3 == 2) {
+            } else if (treeType == 2) {
                 $('#tree_taxa').hide().dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
@@ -855,7 +869,7 @@
                 $('#row_nz').hide();
                 $('#text-1').val('');
                 $('#text-2').val('');
-            } else if (button3 == 3) {
+            } else if (treeType == 3) {
                 $('#tree_taxa').hide().dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
@@ -872,12 +886,6 @@
                 $('#text-2').val('');
             }
         }
-        function startTimer() {
-            refresh = setInterval(function() {
-                updateStatus(RID);
-            }, 1000);
-            return refresh;
-        }
         function stopAnalysis() {
             running = false;
             clearInterval(refresh);
@@ -893,16 +901,13 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var stage = obj['message'];
-                    if (button1 == 1) {
+                    if (dataType == 1) {
                         $('#container-1').empty().append(stage);
-                    } else if (button1 == 2) {
+                    } else if (dataType == 2) {
                         $('#container-2').empty().append(stage);
                     }
                 }
             });
-        }
-        function stopTimer() {
-            clearInterval(refresh);
         }
         function updateStatus() {
             var myDict = {};
@@ -921,14 +926,14 @@
                     if (resType == "status") {
                         var stage = obj['stage'];
                         if (running) {
-                            if (button1 == 1) {
+                            if (dataType == 1) {
                                 $('#container-1').empty().append(stage);
-                            } else if (button1 == 2) {
+                            } else if (dataType == 2) {
                                 $('#container-2').empty().append(stage);
                             }
                         }
                     } else {
-                        stopTimer(refresh);
+                        clearInterval(refresh);
                         running = false;
                         var xAxis = data['xAxis'];
                         var series = data['series'];
@@ -946,7 +951,7 @@
 
                         var text = data['text'];
 
-                        if (button3 != "1") {
+                        if (treeType != "1") {
                             var taxData = eval(data['taxData']);
                             var taxColumns = JSON.parse(data['taxColumns']);
                             var tableHeaders = '';
@@ -968,13 +973,13 @@
                             $("div.toolbar").html('<br><br><br>');
                         }
 
-                        if (document.getElementById("button1").value == 1) {
+                        if (document.getElementById("dataType").value == 1) {
 
                             if (empty == 0) {
                                 $("#container-1").empty().append('No significant tests!');
                             } else {
                                 barChart(xAxis, yAxis, series);
-                                if (button3 == 3) {
+                                if (treeType == 3) {
                                     if (nzAll == 5) {
                                         gibbs();
                                     }
@@ -1008,7 +1013,7 @@
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr style="height: 40px;">
                 <th>Select Meta Data:<br>
-                    <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta(button1)">-Deselect all-</a>
+                    <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta()">-Deselect all-</a>
                 </th>
             </tr>
             <tr>
@@ -1040,7 +1045,7 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="button1" onChange="selectAnalysis(this.value);">
+                    <select id="dataType" onChange="selectAnalysis();">
                         <option value="1" selected="selected">Bar plot (factors)</option>
                         <option value="2" >Scatter plot (regression)</option>
                     </select>
@@ -1057,7 +1062,7 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectTree" onChange="selectTree(this.value);">
+                    <select id="selectTree" onChange="selectTree();">
                         <option value="1" selected="selected">Taxonomy</option>
                         <option value="2" >KEGG orthology</option>
                         <option value="3" >KEGG enzyme</option>

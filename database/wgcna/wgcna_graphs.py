@@ -45,7 +45,7 @@ def getWGCNA(request, stops, RID, PID):
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
 
-                button3 = int(all['button3'])
+                treeType = int(all['treeType'])
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
@@ -53,7 +53,7 @@ def getWGCNA(request, stops, RID, PID):
                 allFields = catFields + quantFields
 
                 result = ''
-                if button3 == 1:
+                if treeType == 1:
                     if selectAll == 1:
                         result += 'Taxa level: Kingdom' + '\n'
                     elif selectAll == 2:
@@ -68,14 +68,14 @@ def getWGCNA(request, stops, RID, PID):
                         result += 'Taxa level: Genus' + '\n'
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
-                elif button3 == 2:
+                elif treeType == 2:
                     if keggAll == 1:
                         result += 'KEGG Pathway level: 1' + '\n'
                     elif keggAll == 2:
                         result += 'KEGG Pathway level: 2' + '\n'
                     elif keggAll == 3:
                         result += 'KEGG Pathway level: 3' + '\n'
-                elif button3 == 3:
+                elif treeType == 3:
                     if nzAll == 1:
                         result += 'KEGG Enzyme level: 1' + '\n'
                     elif nzAll == 2:
@@ -156,7 +156,7 @@ def getWGCNA(request, stops, RID, PID):
                 filterMeth = int(all['filterMeth'])
 
                 finalDF = pd.DataFrame()
-                if button3 == 1:
+                if treeType == 1:
                     if selectAll != 8:
                         filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
@@ -168,10 +168,10 @@ def getWGCNA(request, stops, RID, PID):
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
-                if button3 == 2:
+                if treeType == 2:
                     finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
-                if button3 == 3:
+                if treeType == 3:
                     finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
@@ -415,14 +415,14 @@ def getWGCNA(request, stops, RID, PID):
                 moduleDF.insert(0, 'rank_id', index)
 
                 zipped = []  # JUMP  Potentially run an if to check for all select level
-                if button3 == 1:
+                if treeType == 1:
                     zipped = getFullTaxonomy(moduleDF['rank_id'])  # had selectAll AND moduleDF
-                elif button3 == 2:
+                elif treeType == 2:
                     zipped = getFullKO(moduleDF['rank_id'])
-                elif button3 == 3:
+                elif treeType == 3:
                     zipped = getFullNZ(moduleDF['rank_id'])
 
-                if button3 == 1:
+                if treeType == 1:
                     # removed split based on select level as getFullTaxonomy returns a full set
                     k, p, c, o, f, g, s = map(None, *zipped)
                     moduleDF.insert(1, 'Kingdom', k)
@@ -432,13 +432,13 @@ def getWGCNA(request, stops, RID, PID):
                     moduleDF.insert(5, 'Family', f)
                     moduleDF.insert(6, 'Genus', g)
                     moduleDF.insert(7, 'Species', s)
-                if button3 == 2:
+                if treeType == 2:
                     # same as taxa
                     L1, L2, L3 = map(None, *zipped)
                     moduleDF.insert(1, 'Level_1', L1)
                     moduleDF.insert(2, 'Level_2', L2)
                     moduleDF.insert(3, 'Level_3', L3)
-                if button3 == 3:
+                if treeType == 3:
                     # same as taxa
                     L1, L2, L3, L4 = map(None, *zipped)
                     moduleDF.insert(1, 'Level_1', L1)
@@ -467,15 +467,15 @@ def getWGCNA(request, stops, RID, PID):
                 kmeDF.insert(0, 'rank_id', index)
 
                 zipped = []
-                if button3 == 1:
+                if treeType == 1:
                     zipped = getFullTaxonomy(list(kmeDF['rank_id']))
-                    insertTaxaInfo(button3, zipped, kmeDF, pos=1)
-                elif button3 == 2:
+                    insertTaxaInfo(treeType, zipped, kmeDF, pos=1)
+                elif treeType == 2:
                     zipped = getFullKO(list(kmeDF['rank_id']))
-                    insertTaxaInfo(button3, zipped, kmeDF, pos=1)
-                elif button3 == 3:
+                    insertTaxaInfo(treeType, zipped, kmeDF, pos=1)
+                elif treeType == 3:
                     zipped = getFullNZ(list(kmeDF['rank_id']))
-                    insertTaxaInfo(button3, zipped, kmeDF, pos=1)
+                    insertTaxaInfo(treeType, zipped, kmeDF, pos=1)
 
                 kmeDF.replace(to_replace='N/A', value=np.nan, inplace=True)
                 kmeDF.dropna(axis=1, how='all', inplace=True)
@@ -579,7 +579,7 @@ def getWGCNA(request, stops, RID, PID):
                 r.assign("annotDF", moduleDF)
                 r("annotDF$key <- paste(net$colors, '-', rownames(annotDF), sep='')")
 
-                if button3 == 1:
+                if treeType == 1:
                     if selectAll == 2:
                         moduleDF["name"] = moduleDF[['Kingdom', 'Phyla']].apply(lambda x: ';'.join(x), axis=1)
                         r.assign("annotDF$name", moduleDF['name'])
@@ -598,7 +598,7 @@ def getWGCNA(request, stops, RID, PID):
                     elif selectAll == 7:
                         moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order', 'Family', 'Genus', 'Species']].apply(lambda x: ';'.join(x), axis=1)
                         r.assign("annotDF$name", moduleDF['name'])
-                elif button3 == 2:
+                elif treeType == 2:
                     if keggAll == 1:
                         moduleDF["name"] = moduleDF['Level_1']
                         r.assign("annotDF$name", moduleDF['name'])
@@ -608,7 +608,7 @@ def getWGCNA(request, stops, RID, PID):
                     elif keggAll == 3:
                         moduleDF['name'] = moduleDF[['Level_1', 'Level_2', 'Level_3']].apply(lambda x: ';'.join(x), axis=1)
                         r.assign("annotDF$name", moduleDF['name'])
-                elif button3 == 3:
+                elif treeType == 3:
                     if nzAll == 1:
                         moduleDF["name"] = moduleDF['Level_1']
                         r.assign("annotDF$name", moduleDF['name'])

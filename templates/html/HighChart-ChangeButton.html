@@ -4,7 +4,7 @@
 
 <script type="text/javascript">
     function seriesChange() {
-        if (button1 == 1) {
+        if (dataType == 1) {
             var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
             var color = prompt("Please enter your desired color:", "#008800");
             var series = chart1.series[index];
@@ -29,7 +29,7 @@
                 });
             });
         }
-        if (button1 == 2) {
+        if (dataType == 2) {
             var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
             var color = prompt("Please enter your desired color:", "#008800");
             var line = 0;

@@ -11,8 +11,6 @@
     {% endif %}
 {% endblock user %}
 
-{% block menu_item %}{% endblock menu_item %}
-
 {% block javascript %}
     <style>
         .inlineTable {
@@ -22,7 +20,7 @@
     </style>
 
     <script type="text/javascript">
-        var button1 = 1, button3 = 2, DepVar = 0, i = 0;
+        var dataType = 1, treeType = 2, DepVar = 0, i = 0;
         var nodesCat = "", nodesKEGG = "";
         var chart1 = {}, catOptions = {};
         var running = false, refresh = 0, RID = 0;
@@ -168,10 +166,17 @@
                 $.ajax({
                     url: '/myPhyloDB/funcCall/',
                     type: 'POST',
-                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}')
+                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                    success: function (data) {
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        }
+                    }
                 });
             } else {
-                stopTimer();
+                clearInterval(refresh);
                 $("#run").css("background-color", "lightgray");
                 $("#container-1").empty().append('Analysis has been cancelled!');
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
@@ -264,10 +269,6 @@
             };
             chart1 = new Highcharts.Chart(catOptions);
         }
-        function startTimer() {
-            refresh = setInterval(function(){updateStatus(RID);}, 1000);
-            return refresh;
-        }
         function stopAnalysis() {
             running = false;
             clearInterval(refresh);
@@ -287,9 +288,6 @@
                     $('#container-0').empty().show().append(stage);
                 }
             });
-        }
-        function stopTimer() {
-            clearInterval(refresh)
         }
         function updateStatus() {
             var myDict = {};
@@ -313,7 +311,7 @@
                         }
                     } else {
                         running = false;
-                        stopTimer();
+                        clearInterval(refresh);
                         var xAxis = data['xAxis'];
                         var series = data['series'];
                         var yAxis = data['yAxis'];
@@ -372,7 +370,7 @@
         <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
             <tr>
                 <th>Select Meta Data:<br>
-                    <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta(button1)">-Deselect all-</a></th>
+                    <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta()">-Deselect all-</a></th>
             </tr>
             <tr>
                 <td style="padding-right: 10px; vertical-align: top">

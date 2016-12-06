@@ -41,7 +41,7 @@ def getCatUnivData(request, RID, stops, PID):
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
 
-                button3 = int(all['button3'])
+                treeType = int(all['treeType'])
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
@@ -86,7 +86,7 @@ def getCatUnivData(request, RID, stops, PID):
 
                 finalDF = pd.DataFrame()
                 allDF = pd.DataFrame()
-                if button3 == 1:
+                if treeType == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
                         taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
@@ -101,14 +101,14 @@ def getCatUnivData(request, RID, stops, PID):
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
-                if button3 == 2:
+                if treeType == 2:
                     keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
                         keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                     finalDF, allDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
-                if button3 == 3:
+                if treeType == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
@@ -559,7 +559,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
 
-                button3 = int(all['button3'])
+                treeType = int(all['treeType'])
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
@@ -597,7 +597,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 filterMeth = int(all['filterMeth'])
 
                 finalDF = pd.DataFrame()
-                if button3 == 1:
+                if treeType == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
                         taxaDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
@@ -612,14 +612,14 @@ def getQuantUnivData(request, RID, stops, PID):
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
-                if button3 == 2:
+                if treeType == 2:
                     keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
                         keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                     finalDF, allDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
-                if button3 == 3:
+                if treeType == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
