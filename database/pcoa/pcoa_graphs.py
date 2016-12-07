@@ -6,7 +6,7 @@ import pandas as pd
 from pyper import *
 import simplejson
 
-from database.utils import multidict, getMetaDF, wOdum
+from database.utils import getMetaDF, wOdum
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
 import database.queue
 

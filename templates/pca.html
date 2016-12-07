@@ -20,9 +20,8 @@
     </style>
 
     <script type="text/javascript">
-        var dataType = 1, treeType = 1;
-        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1;
-        var chart1 = {}, catOption = {};
+        var dataType = 0, treeType = 1;
+        var nodesCat = "", nodesQuant = "";
         var running = false, refresh = 0, RID = 0;
 
         $(function () {
@@ -583,7 +582,7 @@
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
                 </select>
-                &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Relative Abundance = proportion<br>Total Abundance = 16S rRNA copies per mg soil<br>Species Richness = Number of species<br>Species Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
+                &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Relative Abundance = proportion of total community<br>Total Abundance = 16S rRNA copies per mg soil<br>Phylotype Richness = number of phylotypes (species)<br>Phylotype (species) Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
             </td>
             <td bgcolor="white"></td>
         </tr>

@@ -9,7 +9,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import simplejson
 import sys
 
-from database.utils import multidict, getMetaDF, transformDF
+from database.utils import getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
 from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
 import database.queue

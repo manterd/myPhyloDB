@@ -36,16 +36,18 @@ $("#tree_metaQuant").dynatree({
 
         $("#run").css("background-color", "lightgray");
 
-        var count = 0;
-        $.each(nodesQuant, function(key, value) {
-            if (value.data.pType != undefined) {
-                count = count + 1;
-            }
-        });
+        if (document.title == 'ANcOVA') {
+            var count = 0;
+            $.each(nodesQuant, function (key, value) {
+                if (value.data.pType != undefined) {
+                    count = count + 1;
+                }
+            });
 
-        if (count > 1) {
-            alert("Please select only one quantitative variable!");
-            return false;
+            if (count > 1) {
+                alert("Please select only one quantitative variable!");
+                return false;
+            }
         }
     }
 });

@@ -20,9 +20,9 @@
     </style>
 
     <script type="text/javascript">
-        var dataType = 1, treeType = 1;
-        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1;
-        var chart1 = {}, catOptions = {}, graphType = 1;
+        var dataType = 0, treeType = 1;
+        var nodesCat = "", nodesQuant = "";
+        var chart1 = {}, catOptions = {};
         var running = false, refresh = 0, RID = 0;
 
         $(function () {
@@ -45,7 +45,6 @@
         {% include "js/commonFunctions.js" %}
         function checkButtons() {
             treeType = document.getElementById("selectTree").value;
-            graphType = document.getElementById("graphDisplay").value;
             $("#run").css("background-color", "lightgray");
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
@@ -122,8 +121,7 @@
             }
         }
         function chooseDisplay() {
-            graphType = document.getElementById("graphDisplay").value;
-
+            var graphType = document.getElementById("graphDisplay").value;
             if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
                 if (graphType == 1) {
                     $("#container-0").hide();
@@ -282,14 +280,14 @@
             myDict['metaIDsCat'] = metaIDsCat;
             myDict['metaValsQuant'] = metaValsQuant;
             myDict['metaIDsQuant'] = metaIDsQuant;
-            myDict['selectAll'] = taxaAll;
-            myDict['keggAll'] = keggAll;
-            myDict['nzAll'] = nzAll;
             myDict['treeType'] = treeType;
             myDict['RID'] = RID;
             myDict['funcName'] = "getPCoA";
             myDict['reqType'] = "call";
             myDict['dataID'] = dataID;
+            myDict['selectAll'] = document.getElementById("selectall-taxa").value;
+            myDict['keggAll'] = document.getElementById("selectall-kegg").value;
+            myDict['nzAll'] = document.getElementById("selectall-nz").value;
             myDict['DepVar'] = document.getElementById("DepVar").value;
             myDict['PC1'] = document.getElementById("PC1").value;
             myDict['PC2'] = document.getElementById("PC2").value;
@@ -673,7 +671,7 @@
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
                 </select>
-                &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Relative Abundance = proportion<br>Total Abundance = 16S rRNA copies per mg soil<br>Species Richness = Number of species<br>Species Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
+                &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Relative Abundance = proportion of total community<br>Total Abundance = 16S rRNA copies per mg soil<br>Phylotype Richness = number of phylotypes (species)<br>Phylotype (species) Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -830,12 +828,6 @@
                 </div>
             </td>
             <td bgcolor="white"></td>
-        </tr>
-
-        <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
-            <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run Analysis:</em></strong></td>
         </tr>
 
         <tr><td colspan="3" bgcolor="white"></td></tr>

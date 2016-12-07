@@ -15,7 +15,15 @@ function checkDupes(list) {
         }
 
 function clearMeta() {
-    if (dataType == 1) {
+    if (dataType == 0) {
+        $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+            node.select(false);
+        });
+        $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
+            node.select(false);
+        });
+    }
+    else if (dataType == 1) {
         $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
             node.select(false);
         });

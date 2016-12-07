@@ -9,7 +9,7 @@ import simplejson
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4
-from database.utils import multidict, getMetaDF, transformDF
+from database.utils import getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
 import database.queue
 

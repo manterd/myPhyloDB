@@ -22,23 +22,14 @@
     </style>
 
     <script type="text/javascript">
-        var DepVar = 0, selTheme = 0;
-        var nodesCat = "", nodesQuant = "", taxaAll = 7, nzAll = 1, keggAll = 1, treeType = 1;
-        var display = 1;
-        var catOptions = {};
-        var networkType = "signed", corType = "pearson", maxPOutliers = 1;
-        var deepSplit = 2,detectCutHeight = 0.995, minModuleSize = 3;
-        var reassignThreshold = 0.000001, minCoreKME = 0.5, minCoreKMESize = 1, minKMEtoStay = 0.3;
-        var mergeCutHeight = 0.15;
-        var minEdge = 0.05, minKME = 0.80, maxNGenes = 6, graphLayout='auto';
-        var refresh = 0;
-        var running = false;
-        var RID = 0;
-        var transform = 0;
+        var dataType = 0, treeType = 1;
+        var nodesCat = "", nodesQuant = "";
+        var running = false, refresh = 0, RID = 0;
 
         $(function () {
-
-            // remove R plot on close
+            $(window).load(function() {
+                checkButtons();
+            });
             $(window).bind('unload', function(){
                 $.ajax({
                     url: '/myPhyloDB/removeFiles/',
@@ -50,221 +41,22 @@
                     }
                 });
             });
-
-            // Start stop and other 'click' functions
-            $("#run").click(function () {
-                if(running == true) {
-                    alert("myPhyloDB is currently running your previous analysis request!");
-                    return false;
-                }
-                $("#my_image").attr("src", "#");
-                $("#container-0").empty().show();
-                $("#container-2").hide();
-                $("#text-1").val('');
-                $("#legend").empty();
-                $("#dist_table").empty();
-                $("#res_table").empty();
-                $("#kme_table").empty();
-                running = true;
-                chooseData();
-            });
-
-           $("#stop").show().click(function () {
-                running = false;
-                stopThis(RID);
-            });
-
-            $("#clearMeta").click(function(){
-                $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                checkButtons();
-            });
-
-            $("#remUnclass").click(function () {
-                checkButtons();
-            });
-
-            $("#remZeroes").click(function () {
-                checkButtons();
-            });
-
-            $("#filterData").click(function () {
-                checkButtons();
-            });
-
-            $("#filterMeth").click(function () {
-                checkButtons();
-            });
-
-            // Capture all changes in textboxes, etc.
-            $("#selectTree").change(function () {
-                treeType = $(this).val();
-                checkButtons();
-                if (treeType == 1) {
-                    $('#row_taxa').show();
-                    $('#row_kegg').hide();
-                    $('#row_nz').hide();
-                    $('#text-1').val('');
-                } else if (treeType == 2) {
-                    $('#row_taxa').hide();
-                    $('#row_kegg').show();
-                    $('#row_nz').hide();
-                    $('#text-1').val('');
-                } else if (treeType == 3) {
-                    $('#row_taxa').hide();
-                    $('#row_kegg').hide();
-                    $('#row_nz').show();
-                    $('#text-1').val('');
-                }
-            });
-
-            $("#transform").change(function () {
-                transform = $(this).val();
-                chooseDisplay();
-                checkButtons();
-            });
-
-            $("#DepVar").change(function () {
-                DepVar = $(this).val();
-                if (DepVar == 0) {
-                    $('#transform').empty()
-                        .append('<option value="0" selected>None</option>')
-                        .append('<option value="1">Ln</option>')
-                        .append('<option value="2">Log10</option>')
-                        .append('<option value="3">Sqrt</option>')
-                        .val(0);
-                } else if (DepVar == 1) {
-                    $('#transform').empty()
-                        .append('<option value="0">None</option>')
-                        .append('<option value="3">Sqrt</option>')
-                        .append('<option value="4">Logit</option>')
-                        .append('<option value="5">Arcsin</option>')
-                        .val(0);
-                } else {
-                    $('#transform').empty()
-                        .append('<option value="0" selected>None</option>')
-                        .append('<option value="1">Ln</option>')
-                        .append('<option value="2">Log10</option>')
-                        .append('<option value="3">Sqrt</option>')
-                        .val(0);
-                }
-                transform = 0;
-                checkButtons();
-            });
-
-            $("#selectall-taxa").change(function () {
-                taxaAll = $(this).val();
-                checkButtons();
-            });
-
-            $("#selectall-kegg").change(function () {
-                keggAll = $(this).val();
-                checkButtons();
-                $("#tree_kegg").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            });
-
-            $("#selectall-nz").change(function () {
-                nzAll = $(this).val();
-                checkButtons();
-                $("#tree_nz").dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-            });
-
-            $("#networkType").change(function () {
-                networkType = $(this).val();
-                checkButtons();
-            });
-
-            $("#corType").change(function () {
-                corType = $(this).val();
-                checkButtons();
-                if (corType=='bicor') {
-                    $("#maxPOutliers-on").show();
-                    $("#maxPOutliers-off").hide();
-                } else {
-                    $("#maxPOutliers-on").hide();
-                    $("#maxPOutliers-off").show();
-                }
-            });
-
-            $("#maxPOutliers").change(function () {
-                maxPOutliers = $(this).val();
-                checkButtons();
-            });
-
-            $("#deepSplit").change(function () {
-                deepSplit = $(this).val();
-                checkButtons();
-            });
-
-            $("#detectCutHeight").change(function () {
-                detectCutHeight = $(this).val();
-                checkButtons();
-            });
-
-            $("#minModuleSize").change(function () {
-                minModuleSize = $(this).val();
-                checkButtons();
-            });
-
-            $("#reassignThreshold").change(function () {
-                reassignThreshold = $(this).val();
-                checkButtons();
-            });
-
-            $("#minCoreKME").change(function () {
-                minCoreKME = $(this).val();
-                checkButtons();
-            });
-
-            $("#minCoreKMESize").change(function () {
-                minCoreKMESize = $(this).val();
-                checkButtons();
-            });
-
-            $("#minKMEtoStay").change(function () {
-                minKMEtoStay = $(this).val();
-                checkButtons();
-            });
-
-            $("#mergeCutHeight").change(function () {
-                mergeCutHeight = $(this).val();
-                checkButtons();
-            });
-
-            $("#minEdge").change(function () {
-                minEdge = $(this).val();
-                checkButtons();
-            });
-
-            $("#minKME").change(function () {
-                minKME = $(this).val();
-                checkButtons();
-            });
-
-            $("#maxNGenes").change(function () {
-                maxNGenes = $(this).val();
-                checkButtons();
-            });
-
-            $("#graphLayout").change(function () {
-                graphLayout = $(this).val();
-                checkButtons();
-            });
         });
 
-        function checkButtons(){
-            //set all buttons to their proper states given the current state of the independent buttons
+        {% include "js/commonFunctions.js" %}
+        function checkButtons() {
+            treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
+
+            if (document.getElementById("corType").value == 'bicor') {
+                $("#maxPOutliers-off").hide();
+                $("#maxPOutliers-on").show();
+            } else {
+                $("#maxPOutliers-on").hide();
+                $("#maxPOutliers-off").show();
+            }
 
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
@@ -282,127 +74,6 @@
             }
 
         }
-
-        function stopThis(RID) {
-            clearInterval(refresh);
-            $.ajax({
-                url: '/myPhyloDB/stop/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
-                success: function (data) {
-                    $("#run").css("background-color", "red");
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var stage = obj['message'];
-                    $('#container-2').hide();
-                    $('#container-0').empty().show().append(stage);
-                }
-            });
-        }
-
-        function updateStatus(RID) {
-            var myDict = {};
-            myDict['reqType'] = "status";
-            myDict['RID'] = RID;
-            myDict['funcName'] = "getWGCNA";
-            var jsonDict = JSON.stringify(myDict);
-            $.ajax({
-                url: '/myPhyloDB/funcCall/',
-                type: 'POST',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                success: function (data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var resType = obj['resType'];
-                    if (resType == "status") {
-                        var stage = obj['stage'];
-                        if (running) {
-                            $('#container-0').empty().append(stage);
-                        }
-                    } else {
-                        running = false;
-                        stopTimer(refresh);
-                        var xAxis = obj['xAxis'];
-                        var series = obj['series'];
-                        var yAxis = obj['yAxis'];
-                        var error = data['error'];
-                        if (error != "none") {
-                            alert(error);
-                            $("#run").css("background-color", "red");
-                        } else {
-                            $("#run").css("background-color", "green");
-                        }
-
-                        var text = obj['text'];
-                        $('#text-1').val(text);
-
-                        var legend = obj['legend'];
-                        $('#legend').empty().append(legend).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-
-                        var res_table = obj['res_table'];
-                        $('#res_table').empty().append(res_table).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-
-                        var dist_table = obj['dist_table'];
-                        $('#dist_table').empty().append(dist_table).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-
-                        var kme_table = obj['kme_table'];
-                        $('#kme_table').empty().append(kme_table).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
-                        }).draw();
-
-                        $("div.toolbar").html('<br><br><br>');
-                        document.getElementById("TabButton").disabled = false;
-
-                        chooseDisplay();
-                    }
-
-                }
-            });
-        }
-
-        function startTimer(RID) {
-            refresh = setInterval(function(){updateStatus(RID);}, 1000);
-            return refresh;
-        }
-
-        function stopTimer() {
-            clearInterval(refresh);
-
-        }
-
         function chooseDisplay() {
             if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
                 $("#container-0").hide();
@@ -415,21 +86,12 @@
                 $("#container-2").hide();
             }
         }
-
         function chooseData() {
             $("#run").css("background-color", "yellow");
             $("#container-0").empty().append('Analysis is running...please be patient');
             getGraphData();
 
         }
-
-        function makeGUID(){
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            })
-        }
-
         function getGraphData() {
             RID = makeGUID();
             startTimer(RID);
@@ -540,31 +202,34 @@
             myDict['metaIDsCat'] = metaIDsCat;
             myDict['metaValsQuant'] = metaValsQuant;
             myDict['metaIDsQuant'] = metaIDsQuant;
-            myDict['selectAll'] = taxaAll;
-            myDict['keggAll'] = keggAll;
-            myDict['nzAll'] = nzAll;
-            myDict['DepVar'] = DepVar;
             myDict['treeType'] = treeType;
-            myDict['networkType'] = networkType;
-            myDict['corType'] = corType;
-            myDict['maxPOutliers'] = maxPOutliers;
-            myDict['deepSplit'] = deepSplit;
-            myDict['detectCutHeight'] = detectCutHeight;
-            myDict['minModuleSize'] = minModuleSize;
-            myDict['reassignThreshold'] = reassignThreshold;
-            myDict['minCoreKME'] = minCoreKME;
-            myDict['minCoreKMESize'] = minCoreKMESize;
-            myDict['minKMEtoStay'] = minKMEtoStay;
-            myDict['mergeCutHeight'] = mergeCutHeight;
-            myDict['minEdge'] = minEdge;
-            myDict['minKME'] = minKME;
-            myDict['maxNGenes'] = maxNGenes;
-            myDict['graphLayout'] = graphLayout;
             myDict['RID'] = RID;
             myDict['reqType'] = "call";
             myDict['funcName'] = "getWGCNA";
             myDict['dataID'] = dataID;
-            myDict['transform'] = transform;
+            myDict['selectAll'] = document.getElementById("selectall-taxa").value;
+            myDict['keggAll'] = document.getElementById("selectall-kegg").value;
+            myDict['nzAll'] = document.getElementById("selectall-nz").value;
+            myDict['DepVar'] = document.getElementById("DepVar").value;
+            myDict['transform'] = document.getElementById("transform").value;
+            myDict['networkType'] = document.getElementById("networkType").value;
+            myDict['corType'] = document.getElementById("corType").value;
+            myDict['maxPOutliers'] = document.getElementById("maxPOutliers").value;
+            myDict['deepSplit'] = document.getElementById("deepSplit").value;
+            myDict['detectCutHeight'] = document.getElementById("detectCutHeight").value;
+            myDict['minModuleSize'] = document.getElementById("minModuleSize").value;
+            myDict['reassignThreshold'] = document.getElementById("reassignThreshold").value;
+            myDict['minCoreKME'] = document.getElementById("minCoreKME").value;
+            myDict['minCoreKMESize'] = document.getElementById("minCoreKMESize").value;
+            myDict['minKMEtoStay'] = document.getElementById("minKMEtoStay").value;
+            myDict['mergeCutHeight'] = document.getElementById("mergeCutHeight").value;
+            myDict['minEdge'] = document.getElementById("minEdge").value;
+            myDict['minKME'] = document.getElementById("minKME").value;
+            myDict['maxNGenes'] = document.getElementById("maxNGenes").value;
+            myDict['graphLayout'] = document.getElementById("graphLayout").value;
+            myDict['perZeroes'] = document.getElementById("perZeroes").value;
+            myDict['filterPer'] = document.getElementById("filterPer").value;
+            myDict['filterMeth'] = document.getElementById("filterMeth").value;
 
             if ($("#remUnclass").is(':checked')) {
                 myDict['remUnclass'] = 'yes'
@@ -584,10 +249,6 @@
                 myDict['filterData'] = 'no'
             }
 
-            myDict['perZeroes'] = document.getElementById("perZeroes").value;
-            myDict['filterPer'] = document.getElementById("filterPer").value;
-            myDict['filterMeth'] = document.getElementById("filterMeth").value;
-
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -603,7 +264,154 @@
                 }
             });
         }
+        function runAnalysis() {
+            if(running == true) {
+                alert("myPhyloDB is currently running your previous analysis request!");
+                return false;
+            }
+            $("#my_image").attr("src", "#");
+            $("#container-0").empty().show();
+            $("#container-2").hide();
+            $("#text-1").val('');
+            $("#legend").empty();
+            $("#dist_table").empty();
+            $("#res_table").empty();
+            $("#kme_table").empty();
+            running = true;
+            chooseData();
+        }
+        function selectTree() {
+            checkButtons();
+            if (treeType == 1) {
+                $('#row_taxa').show();
+                $('#row_kegg').hide();
+                $('#row_nz').hide();
+                $('#text-1').val('');
+            } else if (treeType == 2) {
+                $('#row_taxa').hide();
+                $('#row_kegg').show();
+                $('#row_nz').hide();
+                $('#text-1').val('');
+            } else if (treeType == 3) {
+                $('#row_taxa').hide();
+                $('#row_kegg').hide();
+                $('#row_nz').show();
+                $('#text-1').val('');
+            }
+        }
+        function startTimer() {
+            refresh = setInterval(function(){updateStatus(RID);}, 1000);
+            return refresh;
+        }
+        function stopAnalysis() {
+            running = false;
+            clearInterval(refresh);
+            $.ajax({
+                url: '/myPhyloDB/stop/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    $("#run").css("background-color", "red");
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['message'];
+                    $('#container-2').hide();
+                    $('#container-0').empty().show().append(stage);
+                }
+            });
+        }
+        function updateStatus() {
+            var myDict = {};
+            myDict['reqType'] = "status";
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getWGCNA";
+            var jsonDict = JSON.stringify(myDict);
+            $.ajax({
+                url: '/myPhyloDB/funcCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var resType = obj['resType'];
+                    if (resType == "status") {
+                        var stage = obj['stage'];
+                        if (running) {
+                            $('#container-0').empty().append(stage);
+                        }
+                    } else {
+                        running = false;
+                        clearInterval(refresh);
+                        var xAxis = obj['xAxis'];
+                        var series = obj['series'];
+                        var yAxis = obj['yAxis'];
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        } else {
+                            $("#run").css("background-color", "green");
+                        }
 
+                        var text = obj['text'];
+                        $('#text-1').val(text);
+
+                        var legend = obj['legend'];
+                        $('#legend').empty().append(legend).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var res_table = obj['res_table'];
+                        $('#res_table').empty().append(res_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var dist_table = obj['dist_table'];
+                        $('#dist_table').empty().append(dist_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var kme_table = obj['kme_table'];
+                        $('#kme_table').empty().append(kme_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        $("div.toolbar").html('<br><br><br>');
+                        document.getElementById("TabButton").disabled = false;
+
+                        chooseDisplay();
+                    }
+
+                }
+            });
+        }
     </script>
 {% endblock javascript %}
 
@@ -633,7 +441,7 @@
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectTree">
+                <select id="selectTree" onClick="selectTree()">
                     <option value="1" selected="selected">Taxonomy</option>
                     <option value="2" >KEGG orthology</option>
                     <option value="3" >KEGG enzyme</option>
@@ -646,7 +454,7 @@
         <tr id="row_taxa">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectall-taxa">
+                <select id="selectall-taxa" onChange="checkButtons()">
                     <option value="2">Phyla</option>
                     <option value="3">Classes</option>
                     <option value="4">Orders</option>
@@ -663,7 +471,7 @@
         <tr id="row_kegg" style="display:none">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectall-kegg">
+                <select id="selectall-kegg" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
                     <option value="3">Level 3</option>
@@ -676,7 +484,7 @@
         <tr id="row_nz" style="display:none">
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectall-nz">
+                <select id="selectall-nz" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
                     <option value="3">Level 3</option>
@@ -692,14 +500,14 @@
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="DepVar">
+                <select id="DepVar" onChange="checkButtons()">
                     <option value="0" selected="selected">Abundance</option>
                     <option value="1">Relative Abundance</option>
                     <option value="4">Total Abundance</option>
                     <option value="2">Species Richness</option>
                     <option value="3">Species Diversity</option>
                 </select>
-                &nbsp; <-- Dependent variable <span title="Abundance = raw counts<br>Relative Abundance = proportion<br>Total Abundance = 16S rRNA copies per mg soil<br>Species Richness = Number of species<br>Species Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
+                &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Relative Abundance = proportion of total community<br>Total Abundance = 16S rRNA copies per mg soil<br>Phylotype Richness = number of phylotypes (species)<br>Phylotype (species) Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -707,7 +515,7 @@
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="transform">
+                <select id="transform" onChange="checkButtons()">
                     <option value="0" selected="selected">None</option>
                     <option value="1">Ln</option>
                     <option value="2">Log10</option>
@@ -737,60 +545,66 @@
                         <td bgcolor="white" width="325"><em>Network construction</em></td>
                         <td bgcolor="white" width="375"><em>Gene reassignment</em></td>
                     </tr>
+
                     <tr>
                        <td bgcolor="white" width="325" title="Ignore sign of correlations?">
-                           <select id="networkType">
+                           <select id="networkType" onChange="checkButtons()">
                                <option value="signed">signed</option>
                                <option value="unsigned">unsigned</option>
                            </select>
                            &nbsp; <-- networkType<br>
                        </td>
                        <td bgcolor="white" width="375" title="p-value ratio threshold for reassigning genes between modules">
-                            <input id="reassignThreshold" type="text" value="1e-6" style="width: 50px;"/>
+                            <input id="reassignThreshold" type="text" value="1e-6" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- reassignThreshold
                         </td>
                     </tr>
+
                     <tr>
                         <td bgcolor="white" width="325" title="Correlation type to be used">
-                           <select id="corType">
+                           <select id="corType" onChange="checkButtons()">
                                <option value="pearson">pearson</option>
                                <option value="bicor">bicor</option>
                             </select>
                             &nbsp; <-- corType
                         </td>
                         <td bgcolor="white" width="375" title="Modules without kME values above this threshold will be disbanded">
-                            <input id="minCoreKME" type="text" value="0.5" style="width: 50px;"/>
+                            <input id="minCoreKME" type="text" value="0.5" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- minCoreKME
                         </td>
                     </tr>
+
                     <tr>
                         <td id="maxPOutliers-on" style="display:none" bgcolor="white" width="325" title="Maximum percentile of data that can be considered outliers on either side of the median (used when corType=bicor only)">
-                            <input id="maxPOutliers" type="text" value="1" style="width: 50px;"/>
+                            <input id="maxPOutliers" type="text" value="1" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- maxPOutliers
                         </td>
                         <td id="maxPOutliers-off" bgcolor="white" width="325"></td>
                         <td bgcolor="white" width="375" title="Modules with fewer genes than this threshold will be disbanded. Recommended value is minModuleSize/3">
-                            <input id="minCoreKMESize" type="text" value="2" style="width: 50px;">
+                            <input id="minCoreKMESize" type="text" value="2" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- minCoreKMESize
                         </td>
                     </tr>
+
                     <tr>
                         <td bgcolor="white" width="325"><em>Basic tree cut</em></td>
                         <td bgcolor="white" width="375" title="Genes whose eigengene connectivity is below this threshold will be removed from the module">
-                            <input id="minKMEtoStay" type="text" value="0.3" style="width: 50px;"/>
+                            <input id="minKMEtoStay" type="text" value="0.3" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- minKMEtoStay
                         </td>
                     </tr>
+
                     <tr>
                         <td bgcolor="white" width="325" title="Simplified control over module detection [0-4]">
-                            <input id="deepSplit" type="text" value="2" style="width: 50px;"/>
+                            <input id="deepSplit" type="text" value="2" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- deepSplit
                         </td>
                         <td bgcolor="white" width="375"><em>Module merging</em></td>
                     </tr>
+
                     <tr>
                         <td bgcolor="white" width="325" title="Dendrogram cut height for module detection">
-                            <input id="detectCutHeight" type="text" value="0.995" style="width: 50px;"/>
+                            <input id="detectCutHeight" type="text" value="0.995" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- detectCutHeight
                         </td>
                         <td bgcolor="white" width="375" title="Dendrogram cut height for module merging">
@@ -798,36 +612,40 @@
                             &nbsp; <-- mergeCutHeight
                         </td>
                     </tr>
+
                     <tr>
                         <td bgcolor="white" width="325" title="Minimum module size">
-                            <input id="minModuleSize" type="text" value="6" style="width: 50px;"/>
+                            <input id="minModuleSize" type="text" value="6" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- minModuleSize
                         </td>
                         <td bgcolor="white" width="375"></td>
                     </tr>
+
                     <tr><td colspan="2" bgcolor="white"></td></tr>
                     <tr>
                         <td bgcolor="lightgray" colspan="2" style="outline: thin solid">
                             <strong><em>Network Graph Settings:</em></strong>
                         </td>
                     </tr>
+
                     <tr>
                         <td bgcolor="white" width="325" title="Adjacency threshold for including edges in network graph.">
-                            <input id="minEdge" type="text" value="0.05" style="width: 50px;"/>
+                            <input id="minEdge" type="text" value="0.05" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- minEdge
                         </td>
                         <td bgcolor="white" width="375" title="Maximum number of genes per module (ranked by KME) to include to network graph">
-                            <input id="maxNGenes" type="text" value="6" style="width: 50px;"/>
+                            <input id="maxNGenes" type="text" value="6" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- maxNGenes
                         </td>
                     </tr>
+
                     <tr>
                         <td bgcolor="white" width="325" title="kME threshold for including nodes in network graph">
-                            <input id="minKME" type="text" value="0.80" style="width: 50px;"/>
+                            <input id="minKME" type="text" value="0.80" style="width: 50px;" onChange="checkButtons()"/>
                             &nbsp; <-- minKME
                         </td>
                         <td bgcolor="white" width="375" title="Network graph layout">
-                           <select id="graphLayout">
+                           <select id="graphLayout" onChange="checkButtons()">
                                <option value="auto">auto</option>
                                <option value="circle">circle</option>
                                <option value="drl">drl</option>
@@ -852,8 +670,10 @@
                 </table>
             </td>
         </tr>
+
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-RunButton.html" %}
+
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-Export.html" %}
     </table>

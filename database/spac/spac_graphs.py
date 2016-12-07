@@ -8,7 +8,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import simplejson
 
 from database.utils import multidict
-from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
+from database.utils_kegg import getTaxaDF, filterDF
 import database.queue
 
 
@@ -30,8 +30,6 @@ def getSpAC(request, stops, RID, PID):
                     savedDF = pd.read_csv(f, index_col=0, sep=',')
 
                 selectAll = int(all["selectAll"])
-                keggAll = int(all["keggAll"])
-                nzAll = int(all["nzAll"])
 
                 result = ''
                 treeType = int(all['treeType'])
@@ -50,26 +48,6 @@ def getSpAC(request, stops, RID, PID):
                         result += 'Taxa level: Genus' + '\n'
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
-                elif treeType == 2:
-                    if keggAll == 1:
-                        result += 'KEGG Pathway level: 1' + '\n'
-                    elif keggAll == 2:
-                        result += 'KEGG Pathway level: 2' + '\n'
-                    elif keggAll == 3:
-                        result += 'KEGG Pathway level: 3' + '\n'
-                elif treeType == 3:
-                    if nzAll == 1:
-                        result += 'KEGG Enzyme level: 1' + '\n'
-                    elif nzAll == 2:
-                        result += 'KEGG Enzyme level: 2' + '\n'
-                    elif nzAll == 3:
-                        result += 'KEGG Enzyme level: 3' + '\n'
-                    elif nzAll == 4:
-                        result += 'KEGG Enzyme level: 4' + '\n'
-                    elif keggAll == 5:
-                        result += 'KEGG Enzyme level: GIBBs' + '\n'
-                    elif keggAll == 6:
-                        result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
 
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
@@ -157,12 +135,6 @@ def getSpAC(request, stops, RID, PID):
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
-
-                if treeType == 2:
-                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
-
-                if treeType == 3:
-                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
