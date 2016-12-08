@@ -248,11 +248,6 @@
                 metaIDs = "{" + arrayIDsCat.join(",") + "}";
             }
 
-            // User feedback alert
-            if ((nodesCat.length == 0) && (nodesQuant.length == 0) && (document.getElementById("constrain").checked)) {
-                alert("Warning: Constrain flag will be ignored as no meta variables are selected");
-            }
-
             var myDict = {};
             myDict['metaVals'] = metaVals;
             myDict['metaIDs'] = metaIDs;
@@ -346,7 +341,7 @@
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
-            $("#my_image").attr("src", "#");
+            //$("#my_image").attr("src", "#");
             $("#container-0").empty().show();
             $("#container-2").hide();
             $("#text-1").val('');
@@ -686,7 +681,7 @@
                 <div style="background-color: white">
                     <input type="checkbox" title="Click to turn on/off" id="contrib1" onClick="checkButtons()"/>
                     <input type="text" title="Enter the p-value cutoff for displaying species scores" id="contribVal1" value="0.05" style="background-color: white; width: 50px" onChange="checkButtons()"/>
-                    &nbsp; <-- p-value cutoff for displaying species scores
+                    &nbsp; <-- p-value (BH-adjusted) cutoff for displaying species score vectors
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -698,7 +693,7 @@
                 <div style="background-color: white">
                     <input type="checkbox" title="Click to turn on/off" id="contrib2" onClick="checkButtons()"/>
                     <input type="text" title="Enter the p-value cutoff for displaying quantitative variable(s)" id="contribVal2" value="0.05" style="background-color: white; width: 50px" onChange="checkButtons()"/>
-                    &nbsp; <-- p-value cutoff for displaying quantitative variables
+                    &nbsp; <-- p-value (BH-adjusted) cutoff for displaying quantitative vectors
                 </div>
             </td>
             <td bgcolor="white"></td>

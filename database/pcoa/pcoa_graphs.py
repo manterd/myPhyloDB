@@ -281,11 +281,17 @@ def getPCoA(request, stops, RID, PID):
                 r.assign("PC1", PC1)
                 r.assign("PC2", PC2)
 
+                addContrib2 = all['addContrib2']
+                contribVal2 = float(all['contribVal2'])
+
                 if trtLength > 0:
                     r.assign("meta", metaDF)
                     pcoa_string = "ord <- capscale(dist ~ " + str(trtString) + ", meta)"
                     r.assign("cmd", pcoa_string)
                     r("eval(parse(text=cmd))")
+
+                    result += str(r('print(ord)')) + '\n'
+                    result += '===============================================\n'
 
                     r("res <- summary(ord)")
                     r("id <- rownames(meta)")
@@ -300,14 +306,11 @@ def getPCoA(request, stops, RID, PID):
                     eigDF = r.get("eig")
 
                     if quantFields:
-                        # correlation between quantFields and ordination axes
-                        trtString = " + ".join(quantFields)
-                        envfit_str = "ef <- envfit(ord ~ " + str(trtString) + ", meta, choices=c(" + str(PC1) + "," + str(PC2) + "))"
-                        r.assign("cmd", envfit_str)
-                        r("eval(parse(text=cmd))")
+                        r.assign("quantFields", quantFields)
+                        r("ef <- envfit(ord, meta[,paste(quantFields)])")
 
                         # create dataframe from envfit for export and adding to biplot
-                        r('efDF <- as.data.frame(ef$vectors$arrows)')
+                        r('efDF <- as.data.frame(ef$vectors$arrows*ef$vectors$r)')
                         r('efDF$r2 <- ef$vectors$r')
                         r('efDF$p <- ef$vectors$pvals')
                         r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
@@ -315,7 +318,7 @@ def getPCoA(request, stops, RID, PID):
 
                         # send data to result string
                         envfit = r("efDF")
-                        result += 'Regression of quantitative variables with ordination axes (e.g., envfit)\n'
+                        result += 'EnvFit for selected quantitative variables\n'
                         result += str(envfit) + '\n'
                         result += '===============================================\n'
 
@@ -418,11 +421,12 @@ def getPCoA(request, stops, RID, PID):
                         r("tmp <- unique(DT, by='level', fromLast=TRUE)")
                         r("p <- p + geom_text(aes(label=level, z=NULL), data=tmp)")
 
-                    if quantFields:
+                    if quantFields and addContrib2 == 'yes':
                         # scale and remove non-significant objects from efDF
                         r('names(efDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
                         r('efDF$label <- row.names(efDF)')
-                        r('efDF.adj <- efDF[efDF$p.adj < 0.05,]')
+                        r.assign("contribVal2", contribVal2)
+                        r('efDF.adj <- efDF[efDF$p.adj <= contribVal2,]')
                         r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
                         r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                         r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
@@ -433,10 +437,10 @@ def getPCoA(request, stops, RID, PID):
                     r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
 
                     r("p <- p + ggtitle('Principal Coordinates Analysis')")
-                    r.assign("PerExp1", eigDF.iloc[1, PC1] * 100.0)
-                    r.assign("PerExp2", eigDF.iloc[1, PC2] * 100.0)
-                    r("p <- p + xlab(paste('Dim.', PC1, ' (', round(PerExp1, 1), '%)', sep=''))")
-                    r("p <- p + ylab(paste('Dim.', PC2, ' (', round(PerExp2, 1), '%)', sep=''))")
+                    r("eig <- eigenvals(ord)")
+                    r("perExp <- eig / sum(eig) * 100")
+                    r("p <- p + xlab(paste(names(perExp)[PC1], ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
+                    r("p <- p + ylab(paste(names(perExp)[PC2], ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
 
                     r("print(p)")
 
@@ -635,12 +639,7 @@ def getPCoA(request, stops, RID, PID):
                 else:
                     bigf = bigf.decode('utf-8')
                     result += bigf + '\n'
-                result += '===============================================\n'
-
-                result += '\nEigenvalues\n'
-                eigStr = eigDF.to_string()
-                result += str(eigStr) + '\n'
-                result += '===============================================\n\n\n\n'
+                result += '===============================================\n\n\n'
 
                 finalDict['text'] = result
 

@@ -289,6 +289,7 @@
             myDict['keggAll'] = document.getElementById("selectall-kegg").value;
             myDict['nzAll'] = document.getElementById("selectall-nz").value;
             myDict['DepVar'] = document.getElementById("DepVar").value;
+            myDict['contribVal2'] = document.getElementById("contribVal2").value;
             myDict['PC1'] = document.getElementById("PC1").value;
             myDict['PC2'] = document.getElementById("PC2").value;
             myDict['test'] = document.getElementById("test").value;
@@ -304,6 +305,12 @@
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
             myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
+
+            if ($("#contrib2").is(':checked')) {
+                myDict['addContrib2'] = 'yes'
+            } else {
+                myDict['addContrib2'] = 'no'
+            }
 
             if ($("#remUnclass").is(':checked')) {
                 myDict['remUnclass'] = 'yes'
@@ -758,6 +765,18 @@
         <tr>
             <td bgcolor="white"></td>
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plot:</em></strong></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <input type="checkbox" title="Click to turn on/off" id="contrib2" onClick="checkButtons()"/>
+                    <input type="text" title="Enter the p-value cutoff for displaying quantitative variable(s)" id="contribVal2" value="0.05" style="background-color: white; width: 50px" onChange="checkButtons()"/>
+                    &nbsp; <-- p-value (BH-adjusted) cutoff for displaying quantitative variable vectors
+                </div>
+            </td>
+            <td bgcolor="white"></td>
         </tr>
 
         <tr>

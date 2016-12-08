@@ -228,7 +228,6 @@ def getPCA(request, stops, RID, PID):
                             pca_string = 'res.pca <- ' + method + '(data, scale=FALSE)'
                             r.assign("cmd", pca_string)
                             r("eval(parse(text=cmd))")
-                        r("ef1 <- envfit(res.pca, data)")
 
                     if constrain2 == 'yes':
                         if scale == 'yes':
@@ -239,26 +238,27 @@ def getPCA(request, stops, RID, PID):
                             pca_string = 'res.pca <- ' + method + '(data ~ ., data=meta, scale=FALSE)'
                             r.assign("cmd", pca_string)
                             r("eval(parse(text=cmd))")
-                        r("ef1 <- envfit(res.pca, data)")
 
                 if method == 'decorana':
                     pca_string = 'res.pca <- ' + method + '(data)'
                     r.assign("cmd", pca_string)
                     r("eval(parse(text=cmd))")
-                    r("ef1 <- envfit(res.pca, data)")
 
                 result += str(r('print(res.pca)')) + '\n'
                 result += '===============================================\n'
-
-                # Use vegan to calculate regression between ord axes and quantFields
-                if quantFields:
-                    r.assign('quantFields', quantFields)
-                    r('ef2 <- envfit(res.pca, meta[,paste(quantFields)])')
 
                 addContrib1 = all['addContrib1']
                 contribVal1 = float(all['contribVal1'])
                 addContrib2 = all['addContrib2']
                 contribVal2 = float(all['contribVal2'])
+
+                # Use vegan to calculate regression between ord axes and quantFields
+                if addContrib1 == 'yes':
+                    r("ef1 <- envfit(res.pca, data)")
+
+                if quantFields and addContrib2 == 'yes':
+                    r.assign('quantFields', quantFields)
+                    r('ef2 <- envfit(res.pca, meta[,paste(quantFields)])')
 
                 # get scores from vegan
                 r('sites <- scores(res.pca, display="sites", choices=c(PC1,PC2))')
@@ -329,10 +329,6 @@ def getPCA(request, stops, RID, PID):
 
                 # rescale
                 r("mult <- min(max(indDF$x)-min(indDF$x)/(max(varDF$x)-min(varDF$x)), max(indDF$y)-min(indDF$y)/(max(varDF$y)-min(varDF$y)))")
-                r("indDF$v1 <- indDF$x * mult * 0.7")
-                r("indDF$v2 <- indDF$y * mult * 0.7")
-                r("varDF$v1 <- varDF$x * mult * 0.7")
-                r("varDF$v2 <- varDF$y * mult * 0.7")
 
                 # Create biplot using ggplot
                 r("p <- ggplot(indDF, aes(x,y))")
@@ -369,14 +365,22 @@ def getPCA(request, stops, RID, PID):
                 if addContrib1 == 'yes':
                     r('efDF <- as.data.frame(ef1$vectors$arrows*ef1$vectors$r)')
                     r('efDF$p <- ef1$vectors$pvals')
+                    r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
+                    r('efDF$p.adj <- pvals.adj')
                     r('efDF$label <- varDF$rank_name')
 
                     # scale and remove non-significant objects
                     r.assign("contribVal1", contribVal1)
-                    r('efDF.adj <- efDF[efDF$p <= paste(contribVal1),]')
+                    r('efDF.adj <- efDF[efDF$p.adj <= paste(contribVal1),]')
                     r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                     r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
                     efDF_adj = r.get("efDF.adj")
+
+                    # send data to result string
+                    envfit = r("efDF")
+                    result += 'Envfit results for species scores\n'
+                    result += str(envfit) + '\n'
+                    result += '===============================================\n'
 
                     if not efDF_adj.empty:
                         r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='blue')")
@@ -385,35 +389,36 @@ def getPCA(request, stops, RID, PID):
                 if quantFields and addContrib2 == 'yes':
                     r('efDF <- as.data.frame(ef2$vectors$arrows*sqrt(ef2$vectors$r))')
                     r('efDF$p <- ef2$vectors$pvals')
+                    r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
+                    r('efDF$p.adj <- pvals.adj')
                     r('efDF$label <- quantFields')
 
                     # scale and remove non-significant objects
                     r.assign("contribVal2", contribVal2)
-                    r('efDF.adj <- efDF[efDF$p <= paste(contribVal2),]')
+                    r('efDF.adj <- efDF[efDF$p.adj <= paste(contribVal2),]')
                     r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                     r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
                     efDF_adj = r.get("efDF.adj")
+
+                    # send data to result string
+                    envfit = r("efDF")
+                    result += 'EnvFit for selected quantitative variables\n'
+                    result += str(envfit) + '\n'
+                    result += '===============================================\n'
 
                     if not efDF_adj.empty:
                         r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
                         r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
 
-                    # send data to result string
-                    envfit = r("ef1$vectors")
-                    result += 'Regression of species scores with ordination axes (e.g., envfit)\n'
-                    result += str(envfit) + '\n'
-                    result += '===============================================\n'
-
-                    # send data to result string
-                    envfit = r("ef2$vectors")
-                    result += 'Regression of quantitative variables with ordination axes (e.g., envfit)\n'
-                    result += str(envfit) + '\n'
-                    result += '===============================================\n'
-
                 # add labels to plot
                 r("p <- p + ggtitle('Biplot of variables and individuals')")
-                r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$CA$eig[[PC1]], 1), '%)', sep=''))")
-                r("p <- p + ylab(paste('Dim.', PC2, ' (', round(res.pca$CA$eig[[PC2]], 1), '%)', sep=''))")
+                if method != 'decorana':
+                    r("eig <- eigenvals(res.pca)")
+                else:
+                    r("eig <- res.pca$evals")
+                r("perExp <- eig / sum(eig) * 100")
+                r("p <- p + xlab(paste(names(perExp)[PC1], ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
+                r("p <- p + ylab(paste(names(perExp)[PC2], ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
 
                 r("print(p)")
 
@@ -430,14 +435,6 @@ def getPCA(request, stops, RID, PID):
 
                 finalDict = {}
                 r("options(width=5000)")
-
-                result += 'Eigenvalues\n'
-                out = r("res.pca$CA$eig")
-                temp = out.split('\n')
-                for line in temp:
-                    if line != temp[0]:
-                        result += line + '\n'
-                result += '\n===============================================\n'
                 finalDict['text'] = result
 
                 ## variables
