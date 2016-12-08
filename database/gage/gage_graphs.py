@@ -243,7 +243,6 @@ def getGAGE(request, stops, RID, PID):
                         r("sig <- sig * binary")
                         r("names(sig) <- row.names(res)")
 
-
                         for key in keggDict.iterkeys():
                             r.assign("pathway", key)
                             r("pid <- substr(pathway, start=1, stop=7)")
@@ -253,8 +252,9 @@ def getGAGE(request, stops, RID, PID):
                             r("pdf(paste('gage_temp', pdf_counter, '.pdf', sep=''))")
                             r("plot.new()")
                             r("pngRaster <- readPNG(paste(pid, 'pathview.png', sep='.'))")
-                            r("grid.raster(pngRaster, width=unit(0.8, 'npc'), height=unit(0.8, 'npc'))")
-                            r("title(paste(trt1, ' vs ', trt2, sep=''))")
+                            #r("grid.raster(pngRaster, width=unit(0.8, 'npc'), height=unit(0.8, 'npc'))")
+                            r("grid.raster(pngRaster)")
+                            r("mtext(paste(trt1, ' vs ', trt2, sep=''), side=1, line=2)")
                             r("dev.off()")
                             r("pdf_counter <- pdf_counter + 1")
 

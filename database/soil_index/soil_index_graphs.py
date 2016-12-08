@@ -291,6 +291,7 @@ def getsoil_index(request, stops, RID, PID):
                            u'nitrite reductase (NO-forming)', u'nitric oxide reductase (cytochrome c)',
                            u'nitrous-oxide reductase']
 
+                # \/ JUMP KeyError here \/
                 dataDF = pd.merge(dataDF, starDF[myList], left_index=True, right_index=True, how='outer')
                 want = ['sample_name']
                 dataDF = pd.merge(metaDF[want], dataDF, left_index=True, right_index=True, how='outer')

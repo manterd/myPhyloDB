@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block pagetitle %}
-    <title>WGCNA</title>
+    <title>PCA</title>
 {% endblock pagetitle %}
 
 {% block user %}
@@ -10,8 +10,6 @@
         <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
     {% endif %}
 {% endblock user %}
-
-{% block menu_item %}{% endblock menu_item %}
 
 {% block javascript %}
     <style>
@@ -30,14 +28,14 @@
             $(window).load(function() {
                 checkButtons();
             });
-            $(window).bind('unload', function(){
+            $(window).bind('unload', function () {
                 $.ajax({
                     url: '/myPhyloDB/removeFiles/',
                     async: false,
                     dataType: 'json',
                     data: {
                         all: RID,
-                        func: 'wgcna'
+                        func: 'pca'
                     }
                 });
             });
@@ -50,47 +48,95 @@
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
 
-            if (document.getElementById("corType").value == 'bicor') {
-                $("#maxPOutliers-off").hide();
-                $("#maxPOutliers-on").show();
-            } else {
-                $("#maxPOutliers-on").hide();
-                $("#maxPOutliers-off").show();
-            }
-
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
             }
-
             if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
             }
-
             if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
             }
 
         }
+        function chooseData() {
+            $("#run").css("background-color", "yellow");
+            $("#container-0").empty().append('Analysis is running...please be patient');
+            getGraphData();
+        }
         function chooseDisplay() {
             if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
-                $("#container-0").hide();
-                $("#container-2").show();
-                $("#highchartButtons").hide();
                 {% static "" as baseUrl %}
-                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/wgcna/Rplots/" + RID + "/wgcna_final.pdf");
+                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/pca/Rplots/"+ RID +".pca.pdf");
+                $("#container-2").show();
+                $("#container-0").hide();
             } else {
                 $("#container-0").show();
                 $("#container-2").hide();
             }
         }
-        function chooseData() {
-            $("#run").css("background-color", "yellow");
-            $("#container-0").empty().append('Analysis is running...please be patient');
-            getGraphData();
+        function colorBox() {
+            $("#colorVal").empty()
+                    .prepend('<option selected="selected" value="None">None</option>')
+                    .append('<option value="k-means">k-means</option>');
 
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
+            if (titleArray.length > 1) {
+                $("#colorVal").append('<option value=interaction>interaction</option>');
+            }
+        }
+        function ellipseBox() {
+            $("#ellipseVal").empty()
+                    .prepend('<option selected="selected" value="None">None</option>')
+                    .append('<option value="k-means">k-means</option>');
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#ellipseVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
+            if (titleArray.length > 1) {
+                $("#ellipseVal").append('<option value=interaction>interaction</option>');
+            }
         }
         function getGraphData() {
             RID = makeGUID();
@@ -104,6 +150,7 @@
             var vals = '';
             var id = '';
             var ids = '';
+
             for (var i = 0; i < nodesQuant.length; i++) {
                 if (nodesQuant[i].getLevel() == 5) {
                     if ((nodesQuant[i].data.table == 'mimark') || (nodesQuant[i].data.table == 'user')) {
@@ -128,6 +175,7 @@
                     }
                 }
             }
+
             for (var i = 0; i < nodesCat.length; i++) {
                 if (nodesCat[i].getLevel() == 5) {
                     if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
@@ -176,22 +224,18 @@
             var metaVals = '';
             if ((nodesCat.length > 0) && (nodesQuant.length > 0)) {
                 metaVals = "{" + arrayValsCat.join(",") + "," + arrayValsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
+            } else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
                 metaVals = "{" + arrayValsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
+            } else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
                 metaVals = "{" + arrayValsCat.join(",") + "}";
             }
 
             var metaIDs = '';
             if ((nodesCat.length > 0) && (nodesQuant.length > 0)) {
                 metaIDs = "{" + arrayIDsCat.join(",") + "," + arrayIDsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
+            } else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
                 metaIDs = "{" + arrayIDsQuant.join(",") + "}";
-            }
-            else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
+            }  else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
                 metaIDs = "{" + arrayIDsCat.join(",") + "}";
             }
 
@@ -204,32 +248,44 @@
             myDict['metaIDsQuant'] = metaIDsQuant;
             myDict['treeType'] = treeType;
             myDict['RID'] = RID;
+            myDict['funcName'] = "getPCA";
             myDict['reqType'] = "call";
-            myDict['funcName'] = "getWGCNA";
             myDict['dataID'] = dataID;
             myDict['selectAll'] = document.getElementById("selectall-taxa").value;
             myDict['keggAll'] = document.getElementById("selectall-kegg").value;
             myDict['nzAll'] = document.getElementById("selectall-nz").value;
             myDict['DepVar'] = document.getElementById("DepVar").value;
+            myDict['PC1'] = document.getElementById("PC1").value;
+            myDict['PC2'] = document.getElementById("PC2").value;
+            myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
+            myDict['colorVal'] = document.getElementById("colorVal").value;
+            myDict['palette'] = document.getElementById("palette").value;
+            myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['transform'] = document.getElementById("transform").value;
-            myDict['networkType'] = document.getElementById("networkType").value;
-            myDict['corType'] = document.getElementById("corType").value;
-            myDict['maxPOutliers'] = document.getElementById("maxPOutliers").value;
-            myDict['deepSplit'] = document.getElementById("deepSplit").value;
-            myDict['detectCutHeight'] = document.getElementById("detectCutHeight").value;
-            myDict['minModuleSize'] = document.getElementById("minModuleSize").value;
-            myDict['reassignThreshold'] = document.getElementById("reassignThreshold").value;
-            myDict['minCoreKME'] = document.getElementById("minCoreKME").value;
-            myDict['minCoreKMESize'] = document.getElementById("minCoreKMESize").value;
-            myDict['minKMEtoStay'] = document.getElementById("minKMEtoStay").value;
-            myDict['mergeCutHeight'] = document.getElementById("mergeCutHeight").value;
-            myDict['minEdge'] = document.getElementById("minEdge").value;
-            myDict['minKME'] = document.getElementById("minKME").value;
-            myDict['maxNGenes'] = document.getElementById("maxNGenes").value;
-            myDict['graphLayout'] = document.getElementById("graphLayout").value;
+            myDict['contribVal1'] = document.getElementById("contribVal1").value;
+            myDict['contribVal2'] = document.getElementById("contribVal2").value;
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
+            myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
+
+            if ($("#contrib1").is(':checked')) {
+                myDict['addContrib1'] = 'yes'
+            } else {
+                myDict['addContrib1'] = 'no'
+            }
+
+            if ($("#contrib2").is(':checked')) {
+                myDict['addContrib2'] = 'yes'
+            } else {
+                myDict['addContrib2'] = 'no'
+            }
+
+            if ($("#scaled").is(':checked')) {
+                myDict['scaled'] = 'yes'
+            } else {
+                myDict['scaled'] = 'no'
+            }
 
             if ($("#remUnclass").is(':checked')) {
                 myDict['remUnclass'] = 'yes'
@@ -265,7 +321,7 @@
             });
         }
         function runAnalysis() {
-            if(running == true) {
+            if (running == true) {
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
@@ -273,10 +329,7 @@
             $("#container-0").empty().show();
             $("#container-2").hide();
             $("#text-1").val('');
-            $("#legend").empty();
-            $("#dist_table").empty();
             $("#res_table").empty();
-            $("#kme_table").empty();
             running = true;
             chooseData();
         }
@@ -299,9 +352,35 @@
                 $('#text-1').val('');
             }
         }
-        function startTimer() {
-            refresh = setInterval(function(){updateStatus(RID);}, 1000);
-            return refresh;
+        function shapeBox() {
+            $("#shapeVal").empty()
+                .prepend('<option selected="selected" value="None">None</option>')
+                .append('<option value="k-means">k-means</option>');
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
+            if (titleArray.length > 1) {
+                $("#shapeVal").append('<option value=interaction>interaction</option>');
+            }
         }
         function stopAnalysis() {
             running = false;
@@ -325,9 +404,9 @@
         }
         function updateStatus() {
             var myDict = {};
-            myDict['reqType'] = "status";
             myDict['RID'] = RID;
-            myDict['funcName'] = "getWGCNA";
+            myDict['funcName'] = "getPCA";
+            myDict['reqType'] = "status";
             var jsonDict = JSON.stringify(myDict);
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
@@ -345,9 +424,6 @@
                     } else {
                         running = false;
                         clearInterval(refresh);
-                        var xAxis = obj['xAxis'];
-                        var series = obj['series'];
-                        var yAxis = obj['yAxis'];
                         var error = data['error'];
                         if (error != "none") {
                             alert(error);
@@ -359,56 +435,55 @@
                         var text = obj['text'];
                         $('#text-1').val(text);
 
-                        var legend = obj['legend'];
-                        $('#legend').empty().append(legend).find('.table').DataTable({
+                        var varCoordDF = obj['varCoordDF'];
+                        $('#varCoordDF').empty().append(varCoordDF).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
                             deferRender: true,
                             scrollX: true,
                             bSort: true,
                             bPaginate: true,
                             sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
                         }).draw();
 
-                        var res_table = obj['res_table'];
-                        $('#res_table').empty().append(res_table).find('.table').DataTable({
+                        var varContribDF = obj['varContribDF'];
+                        $('#varContribDF').empty().append(varContribDF).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
                             deferRender: true,
                             scrollX: true,
                             bSort: true,
                             bPaginate: true,
                             sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
                         }).draw();
 
-                        var dist_table = obj['dist_table'];
-                        $('#dist_table').empty().append(dist_table).find('.table').DataTable({
+                        var indCoordDF = obj['indCoordDF'];
+                        $('#indCoordDF').empty().append(indCoordDF).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
                             deferRender: true,
                             scrollX: true,
                             bSort: true,
                             bPaginate: true,
                             sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
                         }).draw();
 
-                        var kme_table = obj['kme_table'];
-                        $('#kme_table').empty().append(kme_table).find('.table').DataTable({
+                        var indContribDF = obj['indContribDF'];
+                        $('#indContribDF').empty().append(indContribDF).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
                             deferRender: true,
                             scrollX: true,
                             bSort: true,
                             bPaginate: true,
                             sPaginationType: 'full_numbers',
-                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
                         }).draw();
-
                         $("div.toolbar").html('<br><br><br>');
+
                         document.getElementById("TabButton").disabled = false;
 
                         chooseDisplay();
                     }
-
                 }
             });
         }
@@ -417,7 +492,7 @@
 
 {% block my_content %}
     <br>
-
+    <!-- tree tables -->
     <div>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
@@ -426,22 +501,22 @@
         </tr>
         <tr>
             <td style="padding-right: 10px; vertical-align: top">
-                {% include "html/DynaTree-MetaCat.html" %}
-                {% include "html/DynaTree-MetaQuant.html" %}
+                    {% include "html/DynaTree-MetaCat.html" %}
+                    {% include "html/DynaTree-MetaQuant.html" %}
             </td>
         </tr>
     </table>
 
     <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
-            <td bgcolor="white" width="5px"></td>
-            <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data Selection:</em></strong></td>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Selection:</strong></em></td>
         </tr>
 
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectTree" onClick="selectTree()">
+                <select id="selectTree" onChange="selectTree()">
                     <option value="1" selected="selected">Taxonomy</option>
                     <option value="2" >KEGG orthology</option>
                     <option value="3" >KEGG enzyme</option>
@@ -530,145 +605,141 @@
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-Filtering.html" %}
-        <tr><td colspan="3" bgcolor="white"></td></tr>
 
         <tr>
-            <td bgcolor="white" width="5px"></td>
-            <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>WGCNA Settings:</em></strong></td>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>PCA Settings:</strong></em></td>
         </tr>
 
         <tr>
             <td bgcolor="white" width="5px"></td>
-            <td colspan="2" bgcolor="white">
-                <table class="inlineTable" cellspacing="0" cellpadding="5" width="700px">
-                    <tr>
-                        <td bgcolor="white" width="325"><em>Network construction</em></td>
-                        <td bgcolor="white" width="375"><em>Gene reassignment</em></td>
-                    </tr>
-
-                    <tr>
-                       <td bgcolor="white" width="325" title="Ignore sign of correlations?">
-                           <select id="networkType" onChange="checkButtons()">
-                               <option value="signed">signed</option>
-                               <option value="unsigned">unsigned</option>
-                           </select>
-                           &nbsp; <-- networkType<br>
-                       </td>
-                       <td bgcolor="white" width="375" title="p-value ratio threshold for reassigning genes between modules">
-                            <input id="reassignThreshold" type="text" value="1e-6" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- reassignThreshold
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="white" width="325" title="Correlation type to be used">
-                           <select id="corType" onChange="checkButtons()">
-                               <option value="pearson">pearson</option>
-                               <option value="bicor">bicor</option>
-                            </select>
-                            &nbsp; <-- corType
-                        </td>
-                        <td bgcolor="white" width="375" title="Modules without kME values above this threshold will be disbanded">
-                            <input id="minCoreKME" type="text" value="0.5" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- minCoreKME
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td id="maxPOutliers-on" style="display:none" bgcolor="white" width="325" title="Maximum percentile of data that can be considered outliers on either side of the median (used when corType=bicor only)">
-                            <input id="maxPOutliers" type="text" value="1" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- maxPOutliers
-                        </td>
-                        <td id="maxPOutliers-off" bgcolor="white" width="325"></td>
-                        <td bgcolor="white" width="375" title="Modules with fewer genes than this threshold will be disbanded. Recommended value is minModuleSize/3">
-                            <input id="minCoreKMESize" type="text" value="2" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- minCoreKMESize
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="white" width="325"><em>Basic tree cut</em></td>
-                        <td bgcolor="white" width="375" title="Genes whose eigengene connectivity is below this threshold will be removed from the module">
-                            <input id="minKMEtoStay" type="text" value="0.3" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- minKMEtoStay
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="white" width="325" title="Simplified control over module detection [0-4]">
-                            <input id="deepSplit" type="text" value="2" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- deepSplit
-                        </td>
-                        <td bgcolor="white" width="375"><em>Module merging</em></td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="white" width="325" title="Dendrogram cut height for module detection">
-                            <input id="detectCutHeight" type="text" value="0.995" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- detectCutHeight
-                        </td>
-                        <td bgcolor="white" width="375" title="Dendrogram cut height for module merging">
-                            <input id="mergeCutHeight" type="text" value="0.15" style="width: 50px;"/>
-                            &nbsp; <-- mergeCutHeight
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="white" width="325" title="Minimum module size">
-                            <input id="minModuleSize" type="text" value="6" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- minModuleSize
-                        </td>
-                        <td bgcolor="white" width="375"></td>
-                    </tr>
-
-                    <tr><td colspan="2" bgcolor="white"></td></tr>
-                    <tr>
-                        <td bgcolor="lightgray" colspan="2" style="outline: thin solid">
-                            <strong><em>Network Graph Settings:</em></strong>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="white" width="325" title="Adjacency threshold for including edges in network graph.">
-                            <input id="minEdge" type="text" value="0.05" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- minEdge
-                        </td>
-                        <td bgcolor="white" width="375" title="Maximum number of genes per module (ranked by KME) to include to network graph">
-                            <input id="maxNGenes" type="text" value="6" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- maxNGenes
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td bgcolor="white" width="325" title="kME threshold for including nodes in network graph">
-                            <input id="minKME" type="text" value="0.80" style="width: 50px;" onChange="checkButtons()"/>
-                            &nbsp; <-- minKME
-                        </td>
-                        <td bgcolor="white" width="375" title="Network graph layout">
-                           <select id="graphLayout" onChange="checkButtons()">
-                               <option value="auto">auto</option>
-                               <option value="circle">circle</option>
-                               <option value="drl">drl</option>
-                               <option value="fruchterman.reingold">fruchterman.reingold</option>
-                               <option value="fruchterman.reingold.grid">fruchterman.reingold.grid</option>
-                               <option value="graphopt">graphopt</option>
-                               <option value="grid">grid</option>
-                               <option value="grid.3d">grid.3d</option>
-                               <option value="kamada.kawai">kamada.kawai</option>
-                               <option value="lgl">lgl</option>
-                               <option value="mds">mds</option>
-                               <option value="random">random</option>
-                               <option value="reingold.tilford">reingold.tilford</option>
-                               <option value="sphere">sphere</option>
-                               <option value="spring">spring</option>
-                               <option value="star">star</option>
-                               <option value="svd">svd</option>
-                            </select>
-                            &nbsp; <-- graphLayout
-                        </td>
-                    </tr>
-                </table>
+            <td bgcolor="white">
+                <select id="PC1" onChange="checkButtons()">
+                    <option value="1" selected="selected">PC1</option>
+                    <option value="2">PC2</option>
+                    <option value="3">PC3</option>
+                    <option value="4">PC4</option>
+                    <option value="5">PC5</option>
+                    <option value="6">PC6</option>
+                </select>
+                &nbsp; <-- 1st PCA axis (x-axis)
             </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white" id="PC2-text">
+                <select id="PC2" onChange="checkButtons()">
+                    <option value="1">PC1</option>
+                    <option value="2" selected="selected">PC2</option>
+                    <option value="3">PC3</option>
+                    <option value="4">PC4</option>
+                    <option value="5">PC5</option>
+                    <option value="6">PC6</option>
+                </select>
+                &nbsp; <-- 2nd PCA axis (y-axis)
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="checkbox" id="scaled" checked onClick="checkButtons()">&nbsp; <-- scale data
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plots:</em></strong></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <input type="checkbox" checked title="Click to turn on/off" id="contrib1" onClick="checkButtons()"/>
+                    <input type="text" title="Enter the number of samples/variables to include in the plots.  Variables will be selected based on their contribution to axis 1." id="contribVal1" value="5" style="background-color: white; width: 50px" onChange="checkButtons()"/>
+                    &nbsp; <-- Number of contributors to the 1st PCA Axis to display in plot
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <input type="checkbox" checked title="Click to turn on/off" id="contrib2" onClick="checkButtons()"/>
+                    <input type="text" title="Enter the number of sample/variables to include in the plots.  Variables will be selected based on their contribution to axis 2." id="contribVal2" value="5" style="background-color: white; width: 50px" onChange="checkButtons()"/>
+                    &nbsp; <-- Number of contributors to the 2nd PCA Axis to display in plot
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="palette" onChange="checkButtons()">
+                        <option value="Set1">Set1</option>
+                        <option value="Set2">Set2</option>
+                        <option value="Set3">Set3</option>
+                        <option value="Paired">Paired</option>
+                        <option value="Dark2">Dark2</option>
+                        <option value="Accent">Accent</option>
+                    </select>
+                    &nbsp; <-- Color palette for symbol colors
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="colorVal" onChange="checkButtons()">
+                        <option value="None">None</option>
+                        <option value="k-means">k-means</option>
+                    </select>
+                    &nbsp; <-- Grouping variable for symbol colors
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="shapeVal" onChange="checkButtons()">
+                        <option value="None">None</option>
+                        <option value="k-means">k-means</option>
+                    </select>
+                    &nbsp; <-- Grouping variable for symbol shapes
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="ellipseVal" onChange="checkButtons()">
+                        <option value="None">None</option>
+                        <option value="k-means">k-means</option>
+                    </select>
+                    &nbsp; <-- Grouping variable for ordiellipse
+                </div>
+            </td>
+            <td bgcolor="white"></td>
         </tr>
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
@@ -719,23 +790,20 @@
     </div>
     <br>
 
-    <h2>Network Graph Legend:</h2>
-    <div id="legend" style="width: 600px; overflow-x: auto;"></div>
+    <h2>Coordinates for the variables:</h2>
+    <div id="varCoordDF" style="width: 900px; overflow-x: auto;"></div>
     <br>
 
-    <h2>Module Membership:</h2>
-    <div id="kme_table" style="width: 950px; overflow-x: auto;"></div>
+    <h2>Contributions of the variables:</h2>
+    <div id="varContribDF" style="width: 900px; overflow-x: auto;"></div>
     <br>
 
-    <h2>Module Eigengenes:</h2>
-    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
+    <h2>Coordinates for the individuals:</h2>
+    <div id="indCoordDF" style="width: 900px; overflow-x: auto;"></div>
     <br>
 
-    <h2>Network Statistics:</h2>
-    <div id="dist_table" style="width: 950px; overflow-x: auto;"></div>
-    <br>
-
-    <br>
+    <h2>Contributions of the individuals:</h2>
+    <div id="indContribDF" style="width: 900px; overflow-x: auto;"></div>
     <br>
     <br><br><br>
 {% endblock my_content%}

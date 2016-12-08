@@ -61,6 +61,15 @@
                 $("#container-2").hide();
             }
 
+            var method = document.getElementById("Method").value;
+            if (method == "decorana") {
+                $("#scaleRow").hide();
+                $("#constrainRow").hide();
+            } else {
+                $("#scaleRow").show();
+                $("#constrainRow").show();
+            }
+
         }
         function chooseData() {
             $("#run").css("background-color", "yellow");
@@ -235,8 +244,13 @@
                 metaIDs = "{" + arrayIDsCat.join(",") + "," + arrayIDsQuant.join(",") + "}";
             } else if ((nodesCat.length == 0) && (nodesQuant.length > 0)) {
                 metaIDs = "{" + arrayIDsQuant.join(",") + "}";
-            }  else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
+            } else if ((nodesCat.length > 0) && (nodesQuant.length == 0)) {
                 metaIDs = "{" + arrayIDsCat.join(",") + "}";
+            }
+
+            // User feedback alert
+            if ((nodesCat.length == 0) && (nodesQuant.length == 0) && (document.getElementById("constrain").checked)) {
+                alert("Warning: Constrain flag will be ignored as no meta variables are selected");
             }
 
             var myDict = {};
@@ -255,6 +269,7 @@
             myDict['keggAll'] = document.getElementById("selectall-kegg").value;
             myDict['nzAll'] = document.getElementById("selectall-nz").value;
             myDict['DepVar'] = document.getElementById("DepVar").value;
+            myDict['Method'] = document.getElementById("Method").value;
             myDict['PC1'] = document.getElementById("PC1").value;
             myDict['PC2'] = document.getElementById("PC2").value;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
@@ -268,6 +283,12 @@
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
             myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
+
+            if ($("#constrain").is(':checked')) {
+                myDict['constrain'] = 'yes'
+            } else {
+                myDict['constrain'] = 'no'
+            }
 
             if ($("#contrib1").is(':checked')) {
                 myDict['addContrib1'] = 'yes'
@@ -446,17 +467,6 @@
                             buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
                         }).draw();
 
-                        var varContribDF = obj['varContribDF'];
-                        $('#varContribDF').empty().append(varContribDF).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-                        }).draw();
-
                         var indCoordDF = obj['indCoordDF'];
                         $('#indCoordDF').empty().append(indCoordDF).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
@@ -468,16 +478,6 @@
                             buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
                         }).draw();
 
-                        var indContribDF = obj['indContribDF'];
-                        $('#indContribDF').empty().append(indContribDF).find('.table').DataTable({
-                            dom: 'B<"toolbar">lfrtip',
-                            deferRender: true,
-                            scrollX: true,
-                            bSort: true,
-                            bPaginate: true,
-                            sPaginationType: 'full_numbers',
-                            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-                        }).draw();
                         $("div.toolbar").html('<br><br><br>');
 
                         document.getElementById("TabButton").disabled = false;
@@ -614,6 +614,36 @@
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
+                <select id="Method" onChange="checkButtons()">
+                    <option value="rda" selected="selected">Principal Components Analysis (PCA)</option>
+                    <option value="cca">Correspondence Analysis (CCA)</option>
+                    <option value="decorana">Detrended Correspondences Analysis (DCA)</option>
+                </select>
+                &nbsp; <-- Ordination Method
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr id="scaleRow">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="checkbox" id="scaled" checked onClick="checkButtons()">&nbsp; <-- scale data
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr id="constrainRow">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="checkbox" title="Click to turn on/off" id="constrain" onClick="checkButtons()"/>
+                &nbsp; <-- Constrain analysis using selected meta-variables
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
                 <select id="PC1" onChange="checkButtons()">
                     <option value="1" selected="selected">PC1</option>
                     <option value="2">PC2</option>
@@ -643,14 +673,6 @@
             <td bgcolor="white"></td>
         </tr>
 
-        <tr>
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="checkbox" id="scaled" checked onClick="checkButtons()">&nbsp; <-- scale data
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-
         <tr><td colspan="3" bgcolor="white"></td></tr>
 
         <tr>
@@ -662,9 +684,9 @@
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <input type="checkbox" checked title="Click to turn on/off" id="contrib1" onClick="checkButtons()"/>
-                    <input type="text" title="Enter the number of samples/variables to include in the plots.  Variables will be selected based on their contribution to axis 1." id="contribVal1" value="5" style="background-color: white; width: 50px" onChange="checkButtons()"/>
-                    &nbsp; <-- Number of contributors to the 1st PCA Axis to display in plot
+                    <input type="checkbox" title="Click to turn on/off" id="contrib1" onClick="checkButtons()"/>
+                    <input type="text" title="Enter the p-value cutoff for displaying species scores" id="contribVal1" value="0.05" style="background-color: white; width: 50px" onChange="checkButtons()"/>
+                    &nbsp; <-- p-value cutoff for displaying species scores
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -674,9 +696,9 @@
             <td bgcolor="white"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
-                    <input type="checkbox" checked title="Click to turn on/off" id="contrib2" onClick="checkButtons()"/>
-                    <input type="text" title="Enter the number of sample/variables to include in the plots.  Variables will be selected based on their contribution to axis 2." id="contribVal2" value="5" style="background-color: white; width: 50px" onChange="checkButtons()"/>
-                    &nbsp; <-- Number of contributors to the 2nd PCA Axis to display in plot
+                    <input type="checkbox" title="Click to turn on/off" id="contrib2" onClick="checkButtons()"/>
+                    <input type="text" title="Enter the p-value cutoff for displaying quantitative variable(s)" id="contribVal2" value="0.05" style="background-color: white; width: 50px" onChange="checkButtons()"/>
+                    &nbsp; <-- p-value cutoff for displaying quantitative variables
                 </div>
             </td>
             <td bgcolor="white"></td>
@@ -794,16 +816,7 @@
     <div id="varCoordDF" style="width: 900px; overflow-x: auto;"></div>
     <br>
 
-    <h2>Contributions of the variables:</h2>
-    <div id="varContribDF" style="width: 900px; overflow-x: auto;"></div>
-    <br>
-
     <h2>Coordinates for the individuals:</h2>
     <div id="indCoordDF" style="width: 900px; overflow-x: auto;"></div>
-    <br>
-
-    <h2>Contributions of the individuals:</h2>
-    <div id="indContribDF" style="width: 900px; overflow-x: auto;"></div>
-    <br>
-    <br><br><br>
+    <br><br><br><br>
 {% endblock my_content%}

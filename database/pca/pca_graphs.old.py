@@ -33,9 +33,6 @@ def getPCA(request, stops, RID, PID):
                 keggAll = int(all["keggAll"])
                 nzAll = int(all["nzAll"])
 
-                method = all["Method"]
-                scale = all['scaled']
-                constrain = all["constrain"]
                 PC1 = int(all["PC1"])
                 PC2 = int(all["PC2"])
 
@@ -182,7 +179,6 @@ def getPCA(request, stops, RID, PID):
                 r.assign("cols", count_rDF.columns.values.tolist())
                 r("colnames(data) <- cols")
 
-                metaDF.drop('sample_name', axis=1, inplace=True)
                 r.assign("meta", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())
                 r("rownames(meta) <- rows")
@@ -204,65 +200,38 @@ def getPCA(request, stops, RID, PID):
                 r.assign("cmd", file)
                 r("eval(parse(text=cmd))")
 
-                r('library(ggplot2)')
+                r("library(FactoMineR)")
+                r("library(factoextra)")
+                r("library(fpc)")
                 r('library(vegan)')
 
                 r.assign("PC1", PC1)
                 r.assign("PC2", PC2)
 
-                # Can only constrain if meta-variables have been selected
-                constrain2 = 'no'
-                if constrain == 'yes':
-                    if catFields or quantFields:
-                        constrain2 = 'yes'
-                    else:
-                        constrain2 = 'no'
-
-                if not method == 'decorana':
-                    if constrain2 == 'no':
-                        if scale == 'yes':
-                            pca_string = 'res.pca <- ' + method + '(data, scale=TRUE)'
-                            r.assign("cmd", pca_string)
-                            r("eval(parse(text=cmd))")
-                        else:
-                            pca_string = 'res.pca <- ' + method + '(data, scale=FALSE)'
-                            r.assign("cmd", pca_string)
-                            r("eval(parse(text=cmd))")
-                        r("ef1 <- envfit(res.pca, data)")
-
-                    if constrain2 == 'yes':
-                        if scale == 'yes':
-                            pca_string = 'res.pca <- ' + method + '(data ~ ., data=meta, scale=TRUE)'
-                            r.assign("cmd", pca_string)
-                            r("eval(parse(text=cmd))")
-                        else:
-                            pca_string = 'res.pca <- ' + method + '(data ~ ., data=meta, scale=FALSE)'
-                            r.assign("cmd", pca_string)
-                            r("eval(parse(text=cmd))")
-                        r("ef1 <- envfit(res.pca, data)")
-
-                if method == 'decorana':
-                    pca_string = 'res.pca <- ' + method + '(data)'
-                    r.assign("cmd", pca_string)
-                    r("eval(parse(text=cmd))")
-                    r("ef1 <- envfit(res.pca, data)")
-
-                result += str(r('print(res.pca)')) + '\n'
-                result += '===============================================\n'
+                scale = all['scaled']
+                if scale == 'yes':
+                    r("res.pca <- PCA(data, ncp=(nrow(data)-1), scale.unit=TRUE, graph=FALSE)")
+                else:
+                    r("res.pca <- PCA(data, ncp=(nrow(data)-1), scale.unit=FALSE, graph=FALSE)")
 
                 # Use vegan to calculate regression between ord axes and quantFields
                 if quantFields:
                     r.assign('quantFields', quantFields)
-                    r('ef2 <- envfit(res.pca, meta[,paste(quantFields)])')
+                    r('ef <- envfit(res.pca$ind$coord, meta[,paste(quantFields)], choices=c(PC1,PC2))')
 
                 addContrib1 = all['addContrib1']
-                contribVal1 = float(all['contribVal1'])
-                addContrib2 = all['addContrib2']
-                contribVal2 = float(all['contribVal2'])
+                if addContrib1 == 'yes':
+                    contrib1 = int(all["contribVal1"])
+                else:
+                    contrib1 = 0
+                r.assign("contrib1", contrib1)
 
-                # get scores from vegan
-                r('sites <- scores(res.pca, display="sites", choices=c(PC1,PC2))')
-                r('species <- scores(res.pca, display="species", choices=c(PC1,PC2))')
+                addContrib2 = all['addContrib2']
+                if addContrib2 == 'yes':
+                    contrib2 = int(all["contribVal2"])
+                else:
+                    contrib2 = 0
+                r.assign("contrib2", contrib2)
 
                 ellipseVal = all['ellipseVal']
                 if ellipseVal == 'None':
@@ -274,7 +243,8 @@ def getPCA(request, stops, RID, PID):
                     r.assign("ellipseVal", ellipseVal)
                     r("ellipseTrt <- as.factor(meta[,paste(ellipseVal)])")
                 if ellipseVal != 'None' and ellipseVal == 'k-means':
-                    r("pamk.best <- pamk(sites)")
+                    r("scores <- res.pca$ind$coord")
+                    r("pamk.best <- pamk(scores)")
                     r("km <- kmeans(scores, centers=pamk.best$nc)")
                     r("ellipseTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
 
@@ -309,16 +279,18 @@ def getPCA(request, stops, RID, PID):
                     r("shapeTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
 
                 r("indDF <- data.frame( \
-                    x=sites[,PC1], \
-                    y=sites[,PC2], \
+                    x=res.pca$ind$coord[,PC1], \
+                    y=res.pca$ind$coord[,PC2], \
                     Color=colorTrt, \
                     Shape=shapeTrt, \
                     Fill=ellipseTrt) \
                 ")
 
                 r("varDF <- data.frame( \
-                    x=species[,PC1], \
-                    y=species[,PC2]) \
+                    x=res.pca$var$coord[,PC1], \
+                    y=res.pca$var$coord[,PC2], \
+                    contr1 = res.pca$var$contrib[,PC1], \
+                    contr2 = res.pca$var$contrib[,PC2]) \
                 ")
 
                 # get taxa rank names
@@ -327,12 +299,15 @@ def getPCA(request, stops, RID, PID):
                 r.assign('rankNameDF', rankNameDF['rank_name'])
                 r('varDF <- merge(varDF, rankNameDF, by="row.names", all.x=TRUE)')
 
-                # rescale
+                # rescale variable coordinates (from factoextra)
                 r("mult <- min(max(indDF$x)-min(indDF$x)/(max(varDF$x)-min(varDF$x)), max(indDF$y)-min(indDF$y)/(max(varDF$y)-min(varDF$y)))")
-                r("indDF$v1 <- indDF$x * mult * 0.7")
-                r("indDF$v2 <- indDF$y * mult * 0.7")
                 r("varDF$v1 <- varDF$x * mult * 0.7")
                 r("varDF$v2 <- varDF$y * mult * 0.7")
+
+                # filter data to top contributors (max correlation with selected axes)
+                r('varDF$PC1.rank = rank(-varDF$contr1, ties.method="min")')
+                r('varDF$PC2.rank = rank(-varDF$contr2, ties.method="min")')
+                r('varDF <- varDF[varDF$PC1.rank <= contrib1 | varDF$PC2.rank <= contrib2,]')
 
                 # Create biplot using ggplot
                 r("p <- ggplot(indDF, aes(x,y))")
@@ -356,7 +331,7 @@ def getPCA(request, stops, RID, PID):
                         r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
                         r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
                     else:
-                        r("p <- p + geom_point(color='gray', size=4)")
+                        r("p <- p + geom_point(size=4)")
 
                 if not ellipseVal == 'None':
                     r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=0.95, alpha=0)")
@@ -366,30 +341,18 @@ def getPCA(request, stops, RID, PID):
                 r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
                 r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
 
-                if addContrib1 == 'yes':
-                    r('efDF <- as.data.frame(ef1$vectors$arrows*ef1$vectors$r)')
-                    r('efDF$p <- ef1$vectors$pvals')
-                    r('efDF$label <- varDF$rank_name')
+                if addContrib1 == 'yes' or addContrib2 == 'yes':
+                    r("p <- p + geom_segment(data=varDF, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='blue')")
+                    r("p <- p + geom_text(data=varDF, aes(x=v1, y=v2, label=rank_name, vjust=ifelse(v2 >= 0, -1, 2)), size=2, position=position_jitter(width=0, height=0), color='blue')")
+
+                if quantFields:
+                    # create dataframe from envfit for export and adding to biplot
+                    r('efDF <- as.data.frame(ef$vectors$arrows)')
+                    r('efDF$p <- ef$vectors$pvals')
+                    r('efDF$label <- row.names(efDF)')
 
                     # scale and remove non-significant objects
-                    r.assign("contribVal1", contribVal1)
-                    r('efDF.adj <- efDF[efDF$p <= paste(contribVal1),]')
-                    r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
-                    r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
-                    efDF_adj = r.get("efDF.adj")
-
-                    if not efDF_adj.empty:
-                        r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='blue')")
-                        r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='blue')")
-
-                if quantFields and addContrib2 == 'yes':
-                    r('efDF <- as.data.frame(ef2$vectors$arrows*sqrt(ef2$vectors$r))')
-                    r('efDF$p <- ef2$vectors$pvals')
-                    r('efDF$label <- quantFields')
-
-                    # scale and remove non-significant objects
-                    r.assign("contribVal2", contribVal2)
-                    r('efDF.adj <- efDF[efDF$p <= paste(contribVal2),]')
+                    r('efDF.adj <- efDF[efDF$p < 0.05,]')
                     r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                     r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
                     efDF_adj = r.get("efDF.adj")
@@ -399,21 +362,15 @@ def getPCA(request, stops, RID, PID):
                         r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
 
                     # send data to result string
-                    envfit = r("ef1$vectors")
-                    result += 'Regression of species scores with ordination axes (e.g., envfit)\n'
-                    result += str(envfit) + '\n'
-                    result += '===============================================\n'
-
-                    # send data to result string
-                    envfit = r("ef2$vectors")
+                    envfit = r("ef$vectors")
                     result += 'Regression of quantitative variables with ordination axes (e.g., envfit)\n'
                     result += str(envfit) + '\n'
                     result += '===============================================\n'
 
                 # add labels to plot
                 r("p <- p + ggtitle('Biplot of variables and individuals')")
-                r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$CA$eig[[PC1]], 1), '%)', sep=''))")
-                r("p <- p + ylab(paste('Dim.', PC2, ' (', round(res.pca$CA$eig[[PC2]], 1), '%)', sep=''))")
+                r("p <- p + xlab(paste('Dim.', PC1, ' (', round(res.pca$eig[PC1,2], 1), '%)', sep=''))")
+                r("p <- p + ylab(paste('Dim.', PC2, ' (', round(res.pca$eig[PC2,2], 1), '%)', sep=''))")
 
                 r("print(p)")
 
@@ -432,7 +389,7 @@ def getPCA(request, stops, RID, PID):
                 r("options(width=5000)")
 
                 result += 'Eigenvalues\n'
-                out = r("res.pca$CA$eig")
+                out = r("res.pca$eig")
                 temp = out.split('\n')
                 for line in temp:
                     if line != temp[0]:
@@ -444,7 +401,9 @@ def getPCA(request, stops, RID, PID):
                 nameDF = finalDF[['rank_id']].drop_duplicates(subset='rank_id', take_last=True)
                 nameDF.set_index('rank_id', inplace=True)
 
-                r("df <- data.frame(species)")
+                r("var <- get_pca_var(res.pca)")
+
+                r("df <- data.frame(var$coord)")
                 tempDF = r.get("df")
                 tempDF['id'] = count_rDF.columns.values
                 tempDF.set_index('id', inplace=True)
@@ -474,10 +433,42 @@ def getPCA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                r("df <- data.frame(var$contrib)")
+                tempDF = r.get("df")
+                tempDF['id'] = count_rDF.columns.values
+                tempDF.set_index('id', inplace=True)
+                varContribDF = pd.merge(nameDF, tempDF, left_index=True, right_index=True, how='inner')
+                varContribDF.reset_index(drop=False, inplace=True)
+                varContribDF.rename(columns={'index': 'rank_id'}, inplace=True)
+
+                if treeType == 1:
+                    zipped = getFullTaxonomy(list(varContribDF['rank_id']))
+                    insertTaxaInfo(treeType, zipped, varContribDF, pos=1)
+                elif treeType == 2:
+                    zipped = getFullKO(list(varContribDF['rank_id']))
+                    insertTaxaInfo(treeType, zipped, varContribDF, pos=1)
+                elif treeType == 3:
+                    zipped = getFullNZ(list(varContribDF['rank_id']))
+                    insertTaxaInfo(treeType, zipped, varContribDF, pos=1)
+
+                varContribDF.replace(to_replace='N/A', value=np.nan, inplace=True)
+                varContribDF.dropna(axis=1, how='all', inplace=True)
+                table = varContribDF.to_html(classes="table display")
+                table = table.replace('border="1"', 'border="0"')
+                finalDict['varContribDF'] = str(table)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                r("ind <- get_pca_ind(res.pca)")
+
                 if ellipseVal == 'k-means' or colorVal == 'k-means' or shapeVal == 'k-means':
-                    r("df <- data.frame(km$cluster, sites)")
+                    r("df <- data.frame(km$cluster, ind$coord)")
                 else:
-                    r("df <- data.frame(sites)")
+                    r("df <- data.frame(ind$coord)")
 
                 tempDF = r.get("df")
                 if not metaDF.empty:
@@ -492,6 +483,26 @@ def getPCA(request, stops, RID, PID):
                 table = indCoordDF.to_html(classes="table display")
                 table = table.replace('border="1"', 'border="0"')
                 finalDict['indCoordDF'] = str(table)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                r("df <- data.frame(ind$contrib)")
+                tempDF = r.get("df")
+                if not metaDF.empty:
+                    tempDF['id'] = metaDF.index.values
+                    tempDF.set_index('id', inplace=True)
+                    indContribDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
+                    indContribDF.reset_index(drop=False, inplace=True)
+                    indContribDF.rename(columns={'index': 'rank_id'}, inplace=True)
+                else:
+                    indContribDF = tempDF.copy()
+                table = indContribDF.to_html(classes="table display")
+                table = table.replace('border="1"', 'border="0"')
+                finalDict['indContribDF'] = str(table)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
