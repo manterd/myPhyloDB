@@ -534,7 +534,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         r.assign("count", df3)
         r.assign("metaDF", metaDF)
 
-        #R adds Xs to colnames that begin with a number, need to replace
         r("rows <- rownames(metaDF)")
         r("colnames(count) <- rows")
 

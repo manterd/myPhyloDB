@@ -1993,6 +1993,16 @@ def PCoA(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
+def RF(request):
+    cleanup('myPhyloDB/media/temp/rf')
+
+    return render_to_response(
+        'rf.html',
+        context_instance=RequestContext(request)
+    )
+
+
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def SPLS(request):
     cleanup('myPhyloDB/media/temp/spls')
 

@@ -10,6 +10,7 @@ from database.gage import gage_graphs
 from database.norm import norm_graphs
 from database.pca import pca_graphs
 from database.pcoa import pcoa_graphs
+from database.rf import rf_graphs
 from database.spls import spls_graphs
 from database.soil_index import soil_index_graphs
 from database.wgcna import wgcna_graphs
@@ -86,6 +87,7 @@ urlpatterns = [
     url(r'^myPhyloDB/getGAGE/$', gage_graphs.getGAGE, name='getGAGE'),
     url(r'^myPhyloDB/getPCA/$', pca_graphs.getPCA, name='getPCA'),
     url(r'^myPhyloDB/getPCoA/$', pcoa_graphs.getPCoA, name='getPCoA'),
+    url(r'^myPhyloDB/getRF/$', rf_graphs.getRF, name='getRF'),
     url(r'^myPhyloDB/getsoil_index/$', soil_index_graphs.getsoil_index, name='getsoil_index'),
     url(r'^myPhyloDB/getSpAC/$', spac_graphs.getSpAC, name='getSpAC'),
     url(r'^myPhyloDB/getSPLS/$', spls_graphs.getSPLS, name='getSPLS'),

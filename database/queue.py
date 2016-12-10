@@ -10,6 +10,7 @@ from diffabund import diffabund_graphs
 from norm import norm_graphs
 from pcoa import pcoa_graphs
 from pca import pca_graphs
+from rf import rf_graphs
 from gage import gage_graphs
 from spls import spls_graphs
 from wgcna import wgcna_graphs
@@ -114,6 +115,8 @@ def process(pid):
                     recent[RID] = pca_graphs.getPCA(request, stopList, RID, pid)
                 if funcName == "getPCoA":
                     recent[RID] = pcoa_graphs.getPCoA(request, stopList, RID, pid)
+                if funcName == "getRF":
+                    recent[RID] = rf_graphs.getRF(request, stopList, RID, pid)
                 if funcName == "getDiffAbund":
                     recent[RID] = diffabund_graphs.getDiffAbund(request, stopList, RID, pid)
                 if funcName == "getGAGE":
