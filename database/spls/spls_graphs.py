@@ -203,12 +203,21 @@ def getSPLS(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                # R packages from cran
+                r("list.of.packages <- c('mixOmics', 'spls', 'pheatmap', 'RColorBrewer')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                print r("library(mixOmics)")
+                print r("library(spls)")
+                print r("library(pheatmap)")
+                print r("library(RColorBrewer)")
+
                 r.assign("X", count_rDF)
                 r.assign("Y", metaDF[quantFields])
                 r.assign("names", count_rDF.columns.values)
                 r("colnames(X) <- names")
 
-                r("library(mixOmics)")
                 freqCut = all["freqCut"]
                 num = int(freqCut.split('/')[0])
                 den = int(freqCut.split('/')[1])
@@ -239,7 +248,6 @@ def getSPLS(request, stops, RID, PID):
                     r("Y_scaled <- scale(Y, center=FALSE, scale=FALSE)")
 
                 r("detach('package:mixOmics', unload=TRUE)")
-                r("library(spls)")
                 r("set.seed(1)")
                 r("maxK <- length(Y)")
 
@@ -532,8 +540,6 @@ def getSPLS(request, stops, RID, PID):
 
                     r.assign("rows", taxNameList)
                     r("rownames(df) <- rows")
-                    r("library(pheatmap)")
-                    r("library(RColorBrewer)")
                     r("col.pal <- brewer.pal(9,'RdBu')")
 
                     if row > 2 and col > 3:

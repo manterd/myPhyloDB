@@ -46,6 +46,7 @@ stri_count_coll	stri_count
 stri_count_fixed	stri_count
 stri_count_regex	stri_count
 stri_count_words	stri_count_boundaries
+stri_c_list	stri_join_list
 stri_datetime_add	stri_datetime_add
 stri_datetime_add<-	stri_datetime_add
 stri_datetime_create	stri_datetime_create
@@ -115,6 +116,7 @@ stri_install_check	stri_install
 stri_install_icudt	stri_install
 stri_isempty	stri_isempty
 stri_join	stri_join
+stri_join_list	stri_join_list
 stri_length	stri_length
 stri_list2matrix	stri_list2matrix
 stri_locale_get	stri_locale_set
@@ -161,6 +163,7 @@ stri_pad_both	stri_pad
 stri_pad_left	stri_pad
 stri_pad_right	stri_pad
 stri_paste	stri_join
+stri_paste_list	stri_join_list
 stri_rand_lipsum	stri_rand_lipsum
 stri_rand_shuffle	stri_rand_shuffle
 stri_rand_strings	stri_rand_strings
@@ -202,10 +205,15 @@ stri_stats_latex	stri_stats_latex
 stri_sub	stri_sub
 stri_sub<-	stri_sub
 stri_subset	stri_subset
+stri_subset<-	stri_subset
 stri_subset_charclass	stri_subset
+stri_subset_charclass<-	stri_subset
 stri_subset_coll	stri_subset
+stri_subset_coll<-	stri_subset
 stri_subset_fixed	stri_subset
+stri_subset_fixed<-	stri_subset
 stri_subset_regex	stri_subset
+stri_subset_regex<-	stri_subset
 stri_timezone_get	stri_timezone_set
 stri_timezone_info	stri_timezone_info
 stri_timezone_list	stri_timezone_list

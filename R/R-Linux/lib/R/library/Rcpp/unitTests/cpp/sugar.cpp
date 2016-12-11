@@ -217,6 +217,11 @@ LogicalVector runit_any_isna( NumericVector xx){
 }
 
 // [[Rcpp::export]]
+NumericVector runit_na_omit( NumericVector xx ){
+    return na_omit( xx ) ;
+}
+
+// [[Rcpp::export]]
 List runit_lapply( IntegerVector xx){
     List res = lapply( xx, seq_len );
     return res ;
@@ -296,6 +301,18 @@ NumericVector runit_Range(){
     xx[ Range(0,3) ] = exp( seq_len(4) ) ;
     xx[ Range(4,7) ] = exp( - seq_len(4) ) ;
     return xx ;
+}
+
+// [[Rcpp::export]]
+IntegerVector runit_range_plus(int start, int end, int n) {
+    IntegerVector vec = Range(start, end) + n;
+    return vec;
+}
+
+// [[Rcpp::export]]
+IntegerVector runit_range_minus(int start, int end, int n) {
+    IntegerVector vec = Range(start, end) - n;
+    return vec;
 }
 
 // [[Rcpp::export]]
@@ -576,6 +593,21 @@ double runit_RangeIndexer( NumericVector x ){
 // [[Rcpp::export]]
 IntegerVector runit_self_match( CharacterVector x){
     return self_match( x ) ;
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector runit_unique_int(Rcpp::IntegerVector x) {
+    return Rcpp::unique(x);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector runit_unique_dbl(Rcpp::NumericVector x) {
+    return Rcpp::unique(x);
+}
+
+// [[Rcpp::export]]
+Rcpp::CharacterVector runit_unique_ch(Rcpp::CharacterVector x) {
+    return Rcpp::unique(x);
 }
 
 // [[Rcpp::export]]
@@ -1023,5 +1055,91 @@ c_cbind6(Rcpp::CharacterMatrix m1, Rcpp::CharacterVector v1,
          Rcpp::CharacterMatrix m2, Rcpp::CharacterVector v2,
          Rcpp::CharacterMatrix m3, Rcpp::CharacterVector v3) {
     return Rcpp::cbind(m1, v1, m2, v2, m3, v3);
+}
+
+
+// 04 September 2016: rowSums, colSums, rowMeans, colMeans
+
+// [[Rcpp::export]]
+Rcpp::NumericVector dbl_row_sums(Rcpp::NumericMatrix x, bool na_rm = false) {
+    return rowSums(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector int_row_sums(Rcpp::IntegerMatrix x, bool na_rm = false) {
+    return rowSums(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector lgl_row_sums(Rcpp::LogicalMatrix x, bool na_rm = false) {
+    return rowSums(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::ComplexVector cx_row_sums(Rcpp::ComplexMatrix x, bool na_rm = false) {
+    return rowSums(x, na_rm);
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericVector dbl_col_sums(Rcpp::NumericMatrix x, bool na_rm = false) {
+    return colSums(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector int_col_sums(Rcpp::IntegerMatrix x, bool na_rm = false) {
+    return colSums(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector lgl_col_sums(Rcpp::LogicalMatrix x, bool na_rm = false) {
+    return colSums(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::ComplexVector cx_col_sums(Rcpp::ComplexMatrix x, bool na_rm = false) {
+    return colSums(x, na_rm);
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericVector dbl_row_means(Rcpp::NumericMatrix x, bool na_rm = false) {
+    return rowMeans(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector int_row_means(Rcpp::IntegerMatrix x, bool na_rm = false) {
+    return rowMeans(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector lgl_row_means(Rcpp::LogicalMatrix x, bool na_rm = false) {
+    return rowMeans(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::ComplexVector cx_row_means(Rcpp::ComplexMatrix x, bool na_rm = false) {
+    return rowMeans(x, na_rm);
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericVector dbl_col_means(Rcpp::NumericMatrix x, bool na_rm = false) {
+    return colMeans(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector int_col_means(Rcpp::IntegerMatrix x, bool na_rm = false) {
+    return colMeans(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector lgl_col_means(Rcpp::LogicalMatrix x, bool na_rm = false) {
+    return colMeans(x, na_rm);
+}
+
+// [[Rcpp::export]]
+Rcpp::ComplexVector cx_col_means(Rcpp::ComplexMatrix x, bool na_rm = false) {
+    return colMeans(x, na_rm);
 }
 

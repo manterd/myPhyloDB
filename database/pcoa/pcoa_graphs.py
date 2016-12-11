@@ -217,11 +217,18 @@ def getPCoA(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                r("list.of.packages <- c('vegan', 'ggplot2', 'data.table')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                print r("library(vegan)")
+                print r("library(ggplot2)")
+                print r('library(data.table)')
+
                 r.assign("data", count_rDF)
                 r.assign("cols", count_rDF.columns.values.tolist())
                 r("colnames(data) <- cols")
 
-                r("library(vegan)")
                 if distance == 1:
                     r("dist <- vegdist(data, method='manhattan')")
                 elif distance == 2:
@@ -383,7 +390,6 @@ def getPCoA(request, stops, RID, PID):
                     r.assign("cmd", file)
                     r("eval(parse(text=cmd))")
 
-                    r("library(ggplot2)")
                     r("p <- ggplot(indDF, aes(x, y))")
 
                     myPalette = all['palette']
@@ -413,7 +419,6 @@ def getPCoA(request, stops, RID, PID):
                         r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
 
                     if not surfVal == 'None':
-                        r('library(data.table)')
                         r("p <- p + stat_contour(data=ordi.mat, aes(x, y, z=z, label=..level..), color='red')")
                         # get the last element in p (i.e., the one with the contour lines)
                         r("p.data <- tail(ggplot_build(p)$data, n=1)")

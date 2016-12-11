@@ -1,7 +1,7 @@
 Package: permute
 Title: Functions for Generating Restricted Permutations of Data
-Version: 0.9-0
-Date: 2016-01-24
+Version: 0.9-4
+Date: 2016-08-08
 Authors@R: c(person(given = "Gavin L.", family = "Simpson",
                     email = "ucfagls@gmail.com",
                     role = c("aut", "cph", "cre")),
@@ -18,12 +18,12 @@ URL: https://github.com/gavinsimpson/permute
 BugReports: https://github.com/gavinsimpson/permute/issues
 Copyright: see file COPYRIGHTS
 NeedsCompilation: no
-Packaged: 2016-01-24 20:09:19 UTC; gavin
+Packaged: 2016-09-08 23:08:56.064 UTC; gavin
 Author: Gavin L. Simpson [aut, cph, cre],
   R Core Team [cph],
   Douglas M. Bates [ctb],
   Jari Oksanen [ctb]
 Maintainer: Gavin L. Simpson <ucfagls@gmail.com>
 Repository: CRAN
-Date/Publication: 2016-01-24 21:39:11
-Built: R 3.2.3; ; 2016-04-06 22:24:59 UTC; unix
+Date/Publication: 2016-09-09 10:13:49
+Built: R 3.2.3; ; 2016-12-11 22:51:26 UTC; unix

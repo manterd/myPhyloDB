@@ -396,6 +396,7 @@ print.ranef	random.effects
 print.ranef.lme	ranef.lme
 print.reStruct	reStruct
 print.simulate.lme	simulate.lme
+print.summary.lme	summary.lme
 print.summary.pdMat	print.summary.pdMat
 print.varComb	print.varFunc
 print.VarCorr.lme	VarCorr

@@ -22,4 +22,5 @@ rainbow_hcl             HCL and HSV Color Palettes
 readRGB                 Read RGB Color Descriptions
 readhex                 Read Hexadecimal Color Descriptions
 sRGB                    Create sRGB Colors
+specplot                Color Spectrum Plot
 writehex                Write Hexadecimal Color Descriptions

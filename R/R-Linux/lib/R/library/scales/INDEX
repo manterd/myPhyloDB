@@ -36,6 +36,7 @@ extended_breaks         Extended breaks. Uses Wilkinson's extended
 format_format           Format with using any arguments to 'format'.
 gradient_n_pal          Arbitrary colour gradient palette (continous).
 grey_pal                Grey scale palette (discrete).
+hms_trans               Transformation for times (class hms).
 hue_pal                 Hue palette (discrete).
 identity_pal            Identity palette.
 identity_trans          Identity transformation (do nothing).
@@ -76,7 +77,7 @@ show_col                Show colours.
 sqrt_trans              Square-root transformation.
 squish                  Squish values into range.
 squish_infinite         Squish infinite values to range.
-time_trans              Transformation for times (class POSIXt).
+time_trans              Transformation for date-times (class POSIXt).
 train_continuous        Train (update) a continuous scale
 train_discrete          Train (update) a discrete scale
 trans_breaks            Pretty breaks on transformed scale.

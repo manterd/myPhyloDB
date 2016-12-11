@@ -50,5 +50,9 @@ cp $HOME/myPhyloDB/media/images/myPhyloDB_Logo.png $HOME/.icons/myPhyloDB_Logo.p
 cp myPhyloDB.desktop $HOME/Desktop/myPhyloDB.desktop
 chmod +x $HOME/Desktop/myPhyloDB.desktop
 
+# fix path in R file
+sed -i 's/PycharmProjects\///g' $HOME/myPhyloDB/R/R-Linux/bin/R
+sed -i 's/PycharmProjects\///g' $HOME/myPhyloDB/R/R-Linux/lib/R/bin/R
+
 echo ""
 echo "myPhyloDB v.1.2.0 installation is finished!"

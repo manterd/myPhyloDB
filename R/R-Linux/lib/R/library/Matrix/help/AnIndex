@@ -1600,8 +1600,6 @@ pCholesky-class	Cholesky-class
 pMatrix-class	pMatrix-class
 print,diagonalMatrix-method	diagonalMatrix-class
 print,sparseMatrix-method	sparseMatrix-class
-print.Matrix	Matrix-class
-print.sparseMatrix	sparseMatrix-class
 printSpMatrix	printSpMatrix
 printSpMatrix2	printSpMatrix
 prod,ddiMatrix-method	diagonalMatrix-class

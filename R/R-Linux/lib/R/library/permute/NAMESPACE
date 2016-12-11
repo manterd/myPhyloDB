@@ -1,5 +1,6 @@
 ### Visible functions:
 export("allPerms",
+       "as.allPerms",
        "Blocks",
        "check",
        "getBlocks",
@@ -19,6 +20,8 @@ export("allPerms",
        "getMake",
        "getObserved",
        "getAllperms",
+       "getControl",
+       "getHow",
        "how",
        "numPerms",
        "permute",
@@ -82,6 +85,7 @@ S3method("nobs", "integer")
 S3method("nobs", "matrix")
 S3method("nobs", "data.frame")
 S3method("nobs", "factor")
+S3method("nobs", "character")
 ## getFoo methods
 S3method("getBlocks", "default")
 S3method("getBlocks", "how")
@@ -129,6 +133,8 @@ S3method("getObserved", "default")
 S3method("getObserved", "how")
 S3method("getAllperms", "default")
 S3method("getAllperms", "how")
+S3method("getControl", "default")
+S3method("getControl", "allPerms")
 
 ## setFoo methods
 S3method("setBlocks<-", "default")

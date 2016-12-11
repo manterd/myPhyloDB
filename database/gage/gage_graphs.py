@@ -79,6 +79,23 @@ def getGAGE(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                # R packages from biocLite
+                r("list.of.packages <- c('gage', 'DESeq2', 'pathview')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+                print r("if (length(new.packages)) biocLite(new.packages)")
+
+                # R packages from cran
+                r("list.of.packages <- c('png', 'grid')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                print r("library(gage)")
+                print r("library(DESeq2)")
+                print r("library(pathview)")
+                print r("library(png)")
+                print r("library(grid)")
+
                 keggString = all["kegg"]
                 keggDict = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                 nameList = []
@@ -88,7 +105,6 @@ def getGAGE(request, stops, RID, PID):
                     else:
                         nameList.append(value)
 
-                r("library(gage)")
                 r("load('myPhyloDB/media/kegg/kegg.gs.RData')")
 
                 keggDict = {}
@@ -158,7 +174,6 @@ def getGAGE(request, stops, RID, PID):
                 r.assign("sampleIDs", count_rDF.columns.values.tolist())
                 r("names(count) <- sampleIDs")
 
-                r("library(DESeq2)")
                 r("colData <- data.frame(row.names=colnames(count), trt=trt)")
                 r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design = ~ trt)")
 
@@ -176,10 +191,6 @@ def getGAGE(request, stops, RID, PID):
                 levels = list(set(metaDF['merge'].tolist()))
                 levels = natsorted(levels, key=lambda y: y.lower())
 
-                r("library(pathview)")
-                r("library(png)")
-                r("library(png)")
-                r("library(grid)")
                 r("pdf_counter <- 1")
 
                 path = os.path.join('myPhyloDB', 'media', 'temp', 'gage', 'Rplots', RID)

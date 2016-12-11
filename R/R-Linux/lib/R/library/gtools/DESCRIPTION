@@ -35,4 +35,4 @@ Date/Publication: 2015-05-29 10:36:40
 NeedsCompilation: yes
 Packaged: 2015-05-27 16:45:10 UTC; rforge
 Depends: R (>= 2.10)
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:24:21 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-12-10 07:22:11 UTC; unix

@@ -177,6 +177,12 @@ def getSpAC(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                r("list.of.packages <- c('vegan')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                print r("library(vegan)")
+
                 path = os.path.join('myPhyloDB', 'media', 'temp', 'spac', 'Rplots', RID)
                 if not os.path.exists(path):
                     os.makedirs(path)
@@ -185,7 +191,6 @@ def getSpAC(request, stops, RID, PID):
                 r("setwd(path)")
                 r("options('width'=5000)")
                 r.assign("RID", RID)
-                r("library(vegan)")
 
                 method = all['method']
                 r.assign('method', method)

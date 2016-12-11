@@ -2,7 +2,7 @@
 //
 // Matrix.cpp: Rcpp R/C++ interface class library -- Matrix unit tests
 //
-// Copyright (C) 2013 - 2014    Dirk Eddelbuettel, Romain Francois and Kevin Ushey
+// Copyright (C) 2013 - 2016  Dirk Eddelbuettel, Romain Francois and Kevin Ushey
 //
 // This file is part of Rcpp.
 //
@@ -313,21 +313,87 @@ CharacterMatrix transposeCharacter(const CharacterMatrix & x) {
 }
 
 // [[Rcpp::export]]
-NumericMatrix matrix_scalar_plus(const NumericMatrix & x, int y) {
+NumericMatrix matrix_scalar_plus(const NumericMatrix & x, double y) {
     return x + y;
 }
 
 // [[Rcpp::export]]
-NumericMatrix matrix_scalar_plus2(const NumericMatrix & x, int y) {
+NumericMatrix matrix_scalar_plus2(const NumericMatrix & x, double y) {
     return y + x;
 }
 
 // [[Rcpp::export]]
-NumericMatrix matrix_scalar_divide(const NumericMatrix & x, int y) {
+NumericMatrix matrix_scalar_divide(const NumericMatrix & x, double y) {
     return x / y;
 }
 
 // [[Rcpp::export]]
-NumericMatrix matrix_scalar_divide2(const NumericMatrix & x, int y) {
+NumericMatrix matrix_scalar_divide2(const NumericMatrix & x, double y) {
     return y / x;
 }
+
+// 24 October 2016 
+// eye, ones, and zeros static member functions
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix dbl_eye(int n) {
+    return Rcpp::NumericMatrix::eye(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerMatrix int_eye(int n) {
+    return Rcpp::IntegerMatrix::eye(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::ComplexMatrix cx_eye(int n) {
+    return Rcpp::ComplexMatrix::eye(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::LogicalMatrix lgl_eye(int n) {
+    return Rcpp::LogicalMatrix::eye(n);
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix dbl_ones(int n) {
+    return Rcpp::NumericMatrix::ones(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerMatrix int_ones(int n) {
+    return Rcpp::IntegerMatrix::ones(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::ComplexMatrix cx_ones(int n) {
+    return Rcpp::ComplexMatrix::ones(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::LogicalMatrix lgl_ones(int n) {
+    return Rcpp::LogicalMatrix::ones(n);
+}
+
+
+// [[Rcpp::export]]
+Rcpp::NumericMatrix dbl_zeros(int n) {
+    return Rcpp::NumericMatrix::zeros(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerMatrix int_zeros(int n) {
+    return Rcpp::IntegerMatrix::zeros(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::ComplexMatrix cx_zeros(int n) {
+    return Rcpp::ComplexMatrix::zeros(n);
+}
+
+// [[Rcpp::export]]
+Rcpp::LogicalMatrix lgl_zeros(int n) {
+    return Rcpp::LogicalMatrix::zeros(n);
+}
+

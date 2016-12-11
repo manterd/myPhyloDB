@@ -38,40 +38,26 @@ Step 2: Make sure the following R dependencies are installed
 Step 3: Build new R installation
 
     ./configure --prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux --with-x=yes --with-cairo=yes --with-lapack=yes --with-blas=yes --enable-R-shlib
-    make prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux
-    make prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux install
+    make && make install
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 4: Install required packages
-
-    open terminal and navigate to '/home/manterd/PycharmProjects/myPhyloDB/R/R-Linux/bin'
-
-    type "./R"
-
-    install.packages(c("lsmeans", "vegan", "spls", "mixOmics", "DMwR", "pheatmap", "RColorBrewer", "lme4", "FactoMineR", "ggplot2", "stringi", "devtools", "fpc", "png", "pbkrtest", "quadprog", "directlabels"))
-
-    library("devtools")
-    install_github("kassambara/factoextra")
-    install_github("guiastrennec/ggplus")
-
-    source("http://bioconductor.org/biocLite.R")
-
-    biocLite("XML")
-    biocLite(c("DESeq2", "GO.db", "impute", "preprocessCore", "gage", "pathview"))
-
-    install.packages("WGCNA")
-
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Step 5:
+Step 4:  Edit files
 
     edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/bin/R" file
         replace all instances of "$HOME/PycharmProjects/myPhyloDB"
         with "${PWD}"
 
-        For example, line 4 should now be:
-            R_HOME_DIR=${PWD}/R/R-Linux/lib/R
-
-    edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/pkgconfig/libR.pc" file
+    edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R/bin/R" file
         replace all instances of "$HOME/PycharmProjects/myPhyloDB"
         with "${PWD}"
+
+        For example, line 4 should now be:
+            R_HOME_DIR=${PWD}/R/R-Linux/lib/R
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Optional: If needed here is a list of all R packages employed by myPhyloDB
+
+# cran
+'devtools', 'ggplot2', 'reshape2', 'WGCNA', 'cluster', 'igraph'
+
+
+

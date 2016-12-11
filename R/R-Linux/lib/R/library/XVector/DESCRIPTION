@@ -22,4 +22,4 @@ Collate: io-utils.R SharedVector-class.R SharedRaw-class.R
         updateObject-methods.R debug.R zzz.R
 NeedsCompilation: yes
 Packaged: 2015-10-14 02:56:50 UTC; biocbuild
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:43:32 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-12-11 23:01:44 UTC; unix

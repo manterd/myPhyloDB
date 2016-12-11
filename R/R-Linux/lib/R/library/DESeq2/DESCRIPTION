@@ -24,4 +24,4 @@ biocViews: Sequencing, ChIPSeq, RNASeq, SAGE, DifferentialExpression,
 RoxygenNote: 5.0.1
 NeedsCompilation: yes
 Packaged: 2015-12-21 03:33:03 UTC; biocbuild
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:44:35 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-12-11 23:02:28 UTC; unix

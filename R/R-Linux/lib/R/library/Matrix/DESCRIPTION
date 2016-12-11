@@ -1,6 +1,6 @@
 Package: Matrix
-Version: 1.2-4
-Date: 2016-03-02
+Version: 1.2-3
+Date: 2015-11-19
 Priority: recommended
 Title: Sparse and Dense Matrix Classes and Methods
 Author: Douglas Bates <bates@stat.wisc.edu> and Martin Maechler
@@ -17,10 +17,14 @@ LazyData: no
 LazyDataNote: not possible, since we use data/*.R *and* our classes
 ByteCompile: yes
 BuildResaveData: no
-License: GPL (>= 2) | file LICENCE
+License: GPL (>= 2)
+LicenseNote: The Matrix package includes libraries AMD, CHOLMOD,
+        COLAMD, CSparse and SPQR from the SuiteSparse collection of Tim
+        Davis.  All sections of that code are covered by the GPL or
+        LGPL licenses.  See the directory doc/UFsparse for details.
 URL: http://Matrix.R-forge.R-project.org/
 NeedsCompilation: yes
-Packaged: 2016-03-02 10:23:02 UTC; maechler
+Packaged: 2015-11-27 14:50:41 UTC; maechler
 Repository: CRAN
-Date/Publication: 2016-03-02 16:10:51
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:38:28 UTC; unix
+Date/Publication: 2015-11-28 14:44:50
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-12 19:57:24 UTC; unix

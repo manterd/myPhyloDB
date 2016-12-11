@@ -14,6 +14,7 @@ coords,color-method	color-class
 desaturate	desaturate
 diverge_hcl	rainbow_hcl
 diverge_hsv	rainbow_hcl
+hclwizard	choose_palette
 heat_hcl	rainbow_hcl
 hex	hex
 hex2RGB	hex2RGB
@@ -38,6 +39,7 @@ RGB	RGB
 RGB-class	color-class
 sequential_hcl	rainbow_hcl
 show,color-method	color-class
+specplot	specplot
 sRGB	sRGB
 sRGB-class	color-class
 terrain_hcl	rainbow_hcl

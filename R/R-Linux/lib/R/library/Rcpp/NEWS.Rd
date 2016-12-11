@@ -1,8 +1,189 @@
 \name{NEWS}
-\title{News for Package 'Rcpp'}
+\title{News for Package \pkg{Rcpp}}
 \newcommand{\ghpr}{\href{https://github.com/RcppCore/Rcpp/pull/#1}{##1}}
 \newcommand{\ghit}{\href{https://github.com/RcppCore/Rcpp/issues/#1}{##1}}
 
+\section{Changes in Rcpp version 0.12.8 (2016-11-16)}{
+  \itemize{
+    \item Changes in Rcpp API:
+    \itemize{
+      \item String and vector elements now use extended \code{R_xlen_t} indices
+      (Qiang in PR \ghpr{560})
+      \item Hashing functions now return unsigned int (Qiang in PR \ghpr{561}) 
+      \item Added static methods \code{eye()}, \code{ones()}, and \code{zeros()} 
+      for select matrix types (Nathan Russell in PR \ghpr{569})
+      \item The exception call stack is again correctly reported; print methods
+      and tests added too (Jim Hester in PR \ghpr{582} fixing \ghit{579})
+      \item Variatic macros no longer use a GNU extensions (Nathan in PR
+      \ghpr{575})
+      \item Hash index functions were standardized on returning unsigned
+      integers (Also PR \ghpr{575})
+    }
+    \item Changes in Rcpp Sugar:
+    \itemize{
+      \item Added new Sugar functions \code{rowSums()}, \code{colSums()},
+      \code{rowMeans()}, \code{colMeans()} (PR \ghpr{551} by Nathan Russell 
+      fixing \ghit{549})
+      \item \code{Range} Sugar now used \code{R_xlen_t} type for start/end
+      (PR \ghpr{568} by Qiang Kou)
+      \item Defining \code{RCPP_NO_SUGAR} no longer breaks the build.
+      (PR \ghpr{585} by Daniel C. Dillon)
+    }
+    \item Changes in Rcpp unit tests
+    \itemize{
+      \item A test for expression vectors was corrected.
+      \item The constructor test for datetime vectors reflects the new classes
+      which treats Inf correctly (and still as a non-finite value)
+    }
+    \item Changes in Rcpp Attributes
+    \itemize{
+      \item An 'empty' return was corrected (PR \ghpr{589} fixing issue
+      \ghit{588}, and with thanks to Duncan Murdoch for the heads-up)
+    }
+    \item Updated Date and Datetime vector classes:
+    \itemize{
+      \item The \code{DateVector} and \code{DatetimeVector} classes were renamed
+      with a prefix \code{old}; they are currently \code{typedef}'ed to the
+      existing name (\ghpr{557})
+      \item New variants \code{newDateVector} and \code{newDatetimeVector} were
+      added based on \code{NumericVector} (also \ghpr{557}, \ghpr{577},
+      \ghpr{581}, \ghpr{587})
+      \item By defining \code{RCPP_NEW_DATE_DATETIME_VECTORS} the new classes
+      can activated. We intend to make the new classes the default no sooner
+      than twelve months from this release.
+      \item The \code{capabilities()} function can also be used for presence of
+      this feature 
+    }
+  }
+}
+
+\section{Changes in Rcpp version 0.12.7 (2016-09-04)}{
+  \itemize{
+    \item Changes in Rcpp API:
+    \itemize{
+      \item The \code{NORET} macro is now defined if it was not already defined
+      by R itself (Kevin fixing issue \ghit{512}). 
+      \item Environment functions get() & find() now accept a Symbol
+      (James Balamuta in \ghpr{513} addressing issue \ghit{326}).
+      \item Several uses of \code{Rf_eval} were replaced by the preferred
+      \code{Rcpp::Rcpp_eval} (Qiang in PR \ghpr{523} closing \ghit{498}).
+      \item Improved Autogeneration Warning for RcppExports
+      (James Balamuta in \ghpr{528} addressing issue \ghit{526}).
+      \item Fixed invalid C++ prefix identifiers in auto-generated code 
+      (James Balamuta in \ghpr{528} and \ghpr{531} addressing issue
+      \ghit{387}; Simon Dirmeier in \ghpr{548}). 
+      \item String constructors now set default UTF-8 encoding (Qiang Kou in
+      \ghpr{529} fixing \ghit{263}).
+      \item Add variadic variants of the \code{RCPP_RETURN_VECTOR} and
+      \code{RCPP_RETURN_MATRIX} macro when C++11 compiler used (Artem Klevtsov
+      in \ghpr{537} fixing \ghit{38}).
+    }
+    \item Changes in Rcpp build system
+    \itemize{
+      \item Travis CI is now driven via \code{run.sh} from our fork, and deploys
+      all packages as .deb binaries using our PPA where needed (Dirk in
+      \ghpr{540} addressing issue \ghit{517}).
+    }
+    \item Changes in Rcpp unit tests
+    \itemize{
+      \item New unit tests for random number generators the R namespace which 
+      call the standalone Rmath library. (James Balamuta in \ghpr{514} 
+      addressing issue \ghit{28}).
+    }
+    \item Changes in Rcpp Examples:
+    \itemize{
+      \item Examples that used cxxfunction() from the inline package have been
+      rewritten to use either sourceCpp() or cppFunction() 
+      (James Balamuta in \ghpr{541}, \ghpr{535}, \ghpr{534}, and \ghpr{532} 
+      addressing issue \ghit{56}).
+    }
+  }
+}
+
+\section{Changes in Rcpp version 0.12.6 (2016-07-18)}{
+  \itemize{
+    \item Changes in Rcpp API:
+    \itemize{
+      \item The \code{long long} data type is used only if it is available,
+      to avoid compiler warnings (Kirill Müller in \ghpr{488}).
+      \item The compiler is made aware that \code{stop()} never returns, to
+      improve code path analysis (Kirill Müller in \ghpr{487} addressing issue
+      \ghit{486}).
+      \item String replacement was corrected (Qiang in \ghpr{479} following
+      mailing list bug report by Masaki Tsuda)
+      \item Allow for UTF-8 encoding in error messages via
+      \code{RCPP_USING_UTF8_ERROR_STRING} macro (Qin Wenfeng in \ghpr{493}) 
+      \item The R function \code{Rf_warningcall} is now provided as well (as
+      usual without leading \code{Rf_}) (\ghpr{497} fixing \ghit{495}) 
+    }
+    \item Changes in Rcpp Sugar:
+    \itemize{
+      \item Const-ness of \code{min} and \code{max} functions has been corrected.
+      (Dan Dillon in PR \ghpr{478} fixing issue \ghit{477}).
+      \item Ambiguities for matrix/vector and scalar operations have been fixed
+      (Dan Dillon in PR \ghpr{476} fixing issue \ghit{475}).
+      \item New \code{algorithm} header using iterator-based approach for
+      vectorized functions (Dan in PR \ghpr{481} revisiting PR \ghpr{428} and
+      addressing issue \ghit{426}, with futher work by Kirill in PR \ghpr{488}
+      and Nathan in \ghpr{503} fixing issue \ghit{502}).
+      \item The \code{na_omit()} function is now faster for vectors without
+      \code{NA} values (Artem Klevtsov in PR \ghpr{492})
+    }
+    \item Changes in Rcpp Attributes:
+    \itemize{
+      \item Add \code{cacheDir} argument to \code{sourceCpp()} to enable caching of 
+        shared libraries across R sessions (JJ in \ghpr{504}).
+      \item Code generation now deals correctly which packages containing a dot
+      in their name (Qiang in \ghpr{501} fixing \ghit{500}).
+    }
+    \item Changes in Rcpp Documentation:
+    \itemize{
+      \item A section on default parameters was added to the Rcpp FAQ vignette
+      (James Balamuta in \ghpr{505} fixing \ghit{418}).
+      \item The Rcpp-attributes vignette is now mentioned more prominently in
+      question one of the Rcpp FAQ vignette.
+      \item The Rcpp Quick Reference vignette received a facelift with new
+      sections on Rcpp attributes and plugins begin added. (James Balamuta in
+      \ghpr{509} fixing \ghit{484}).
+      \item The bib file was updated with respect to the recent JSS publication
+      for RProtoBuf.
+    }
+  }
+}
+      
+\section{Changes in Rcpp version 0.12.5 (2016-05-14)}{
+  \itemize{
+    \item Changes in Rcpp API:
+    \itemize{
+      \item The checks for different C library implementations now also check for Musl
+      used by Alpine Linux (Sergio Marques in PR \ghpr{449}).
+      \item \code{Rcpp::Nullable} works better with Rcpp::String (Dan Dillon in
+      PR \ghpr{453}).
+    }
+    \item Changes in Rcpp Attributes:
+    \itemize{
+      \item R 3.3.0 Windows with Rtools 3.3 is now supported (Qin Wenfeng in PR
+      \ghpr{451}). 
+      \item Correct handling of dependent file paths on Windows (use winslash = "/").
+    }
+    \item Changes in Rcpp Modules:
+    \itemize{
+      \item An apparent race condition in Module loading seen with R 3.3.0 was
+      fixed (Ben Goodrich in \ghpr{461} fixing \ghit{458}).
+      \item The (older) \code{loadRcppModules()} is now deprecated in favour of
+      \code{loadModule()} introduced around R 2.15.1 and Rcpp 0.9.11 (PR \ghpr{470}).
+    }
+    \item Changes in Rcpp support functions:
+    \itemize{
+      \item The \code{Rcpp.package.skeleton()} function was again updated in
+      order to create a \code{DESCRIPTION} file which passes \code{R CMD check}
+      without notes. warnings, or error under R-release and R-devel (PR \ghpr{471}).
+      \item A new function \code{compilerCheck} can test for minimal \code{g++}
+      versions (PR \ghpr{474}).
+    }
+  }
+}
+      
 \section{Changes in Rcpp version 0.12.4 (2016-03-22)}{
   \itemize{
     \item Changes in Rcpp API:

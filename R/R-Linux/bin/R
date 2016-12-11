@@ -1,8 +1,8 @@
 #!/bin/bash
 # Shell wrapper for R executable.
 
-R_HOME_DIR=${PWD}/R/R-Linux/lib/R
-if test "${R_HOME_DIR}" = "${PWD}/R/R-Linux/lib/R"; then
+R_HOME_DIR=$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R
+if test "${R_HOME_DIR}" = "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R"; then
    case "linux-gnu" in
    linux*)
      run_arch=`uname -m`
@@ -16,10 +16,10 @@ if test "${R_HOME_DIR}" = "${PWD}/R/R-Linux/lib/R"; then
           libnn_fallback=lib64
         ;;
      esac
-     if [ -x "${PWD}/R/R-Linux/${libnn}/R/bin/exec/R" ]; then
-        R_HOME_DIR="${PWD}/R/R-Linux/${libnn}/R"
-     elif [ -x "${PWD}/R/R-Linux/${libnn_fallback}/R/bin/exec/R" ]; then
-        R_HOME_DIR="${PWD}/R/R-Linux/${libnn_fallback}/R"
+     if [ -x "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/${libnn}/R/bin/exec/R" ]; then
+        R_HOME_DIR="$HOME/PycharmProjects/myPhyloDB/R/R-Linux/${libnn}/R"
+     elif [ -x "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/${libnn_fallback}/R/bin/exec/R" ]; then
+        R_HOME_DIR="$HOME/PycharmProjects/myPhyloDB/R/R-Linux/${libnn_fallback}/R"
      ## else -- leave alone (might be a sub-arch)
      fi
      ;;
@@ -32,11 +32,11 @@ if test -n "${R_HOME}" && \
 fi
 R_HOME="${R_HOME_DIR}"
 export R_HOME
-R_SHARE_DIR=${PWD}/R/R-Linux/lib/R/share
+R_SHARE_DIR=$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R/share
 export R_SHARE_DIR
-R_INCLUDE_DIR=${PWD}/R/R-Linux/lib/R/include
+R_INCLUDE_DIR=$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R/include
 export R_INCLUDE_DIR
-R_DOC_DIR=${PWD}/R/R-Linux/lib/R/doc
+R_DOC_DIR=$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R/doc
 export R_DOC_DIR
 
 # Since this script can be called recursively, we allow R_ARCH to

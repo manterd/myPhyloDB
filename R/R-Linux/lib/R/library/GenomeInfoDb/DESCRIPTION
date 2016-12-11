@@ -26,4 +26,4 @@ VignetteBuilder: knitr
 Video: http://youtu.be/wdEjCYSXa7w
 NeedsCompilation: no
 Packaged: 2016-01-26 04:05:50 UTC; biocbuild
-Built: R 3.2.3; ; 2016-04-06 22:43:29 UTC; unix
+Built: R 3.2.3; ; 2016-12-11 23:00:58 UTC; unix

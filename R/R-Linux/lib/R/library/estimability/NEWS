@@ -1,5 +1,8 @@
 Update history for **estimability***
 
+1.2
+    Modified license to make it more compatible with dependents
+
 1.1-1
     Added imports of non-base packages that are referenced
 

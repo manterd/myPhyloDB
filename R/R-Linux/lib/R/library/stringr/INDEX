@@ -11,6 +11,7 @@ str_detect              Detect the presence or absence of a pattern in
 str_dup                 Duplicate and concatenate strings within a
                         character vector.
 str_extract             Extract matching patterns from a string.
+str_interp              String interpolation.
 str_length              The length of a string.
 str_locate              Locate the position of patterns in a string.
 str_match               Extract matched groups from a string.
@@ -23,6 +24,10 @@ str_sub                 Extract and replace substrings from a character
                         vector.
 str_subset              Keep strings matching a pattern.
 str_trim                Trim whitespace from start and end of string.
+str_trunc               Truncate a character string.
+str_view                View HTML rendering of regular expression
+                        match.
 str_wrap                Wrap strings into nicely formatted paragraphs.
-stringr                 Fast and friendly string manipulation.
+stringr-data            Sample character vectors for practicing string
+                        manipulations.
 word                    Extract words from a sentence.

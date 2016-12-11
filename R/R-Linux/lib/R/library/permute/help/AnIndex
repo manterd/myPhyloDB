@@ -3,6 +3,7 @@ allGrid	allUtils
 allPerms	allPerms
 allSeries	allUtils
 allStrata	allUtils
+as.allPerms	allPerms
 as.matrix.allPerms	allPerms
 as.matrix.permutationMatrix	shuffleSet
 Blocks	how
@@ -30,12 +31,16 @@ getConstant.default	get-methods
 getConstant.how	get-methods
 getConstant.permControl	get-methods
 getConstant.Within	get-methods
+getControl	get-methods
+getControl.allPerms	get-methods
+getControl.default	get-methods
 getDim	get-methods
 getDim.default	get-methods
 getDim.how	get-methods
 getDim.permControl	get-methods
 getDim.Plots	get-methods
 getDim.Within	get-methods
+getHow	get-methods
 getMake	get-methods
 getMake.default	get-methods
 getMake.how	get-methods
@@ -88,7 +93,9 @@ getWithin.permControl	get-methods
 how	how
 jackal	jackal
 nobs-methods	nobs
+nobs.character	nobs
 nobs.data.frame	nobs
+nobs.factor	nobs
 nobs.integer	nobs
 nobs.matrix	nobs
 nobs.numeric	nobs

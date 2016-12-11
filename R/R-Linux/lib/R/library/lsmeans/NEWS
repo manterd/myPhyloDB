@@ -1,5 +1,63 @@
 Changelog for 'lsmeans' package
 
+2.25
+    Now supports models with just the intercept
+    Added support for lsmeans(model, ~1) or lsmeans(model, "1")
+        so that you may obtain the average over all factors.
+    Corrected bug in lme support when data are subsetted
+    Updated and clarified license info to make it more compatible
+        with licenses of packages that depend on this one
+
+2.24
+    lsm.options now returns the options visibly if no arguments are 
+        provided
+    S4 class definitions modernized to use `slots` instead of 
+        `representation`
+    'ref.grid' gets a new 'transform' argument that can be used instead
+        of following it with a call to 'regrid'
+    lstrends now correctly handles response transformations when 
+        constructed with transform = "response"
+    lsmeans with a 'trend' argument can now have character 'specs',
+        and is generally more robust to user errors.
+    contrast() now handles log and logit models somewhat differently:
+      - inverse transformations are labeled as ratios whenever all the
+        linear functions sum to 0 (previously just pairwise comparisons)
+      - contrasts of logits are now annotated as being on the 
+        "log odds ratio" scale
+    ref.grid and related functions previously did not detect response
+        transformations when model call had no argument named "formula" 
+        (e.g., nlme::lme(fixed, random, ...) didn't work)
+    Now can handle not only models where covariates are made into factors,
+        but ones where factors are made into covariates, e.g.,
+        y ~ factor(x) + unclass(trt)
+    New option 'lmer.df' and corresponding 'mode' argument for 'merMod'
+        objects, allows user to specify Satterthwaite (new default), 
+        K-R, or asymptotic degrees of freedom.
+        CAUTION: This may alter the results obtained by default with 
+            'merMod' objects. Use 'lsm.options(lmer.df = "ken")' if you 
+            want the same behavior as before
+    Added a 'df' argument to 'ref.grid' to make it more user-friendly
+    Fixed bug in recover.data.call with incorrect call to 'complete.cases'
+        This fix could change the reference values for covariates from 
+        past results - especially for lme models or where 'data' is used
+    Addition to "extending" vignette illustrating how the 'rsm' package
+        supports 'lsmeans'
+    Misc. minor bug fixes and code improvements
+
+
+2.23-5
+    More graceful handling of mu.hat <= 0 in regrid(., "log")
+    Added 'predict.type' argument to 'regrid'
+    Bug fixes related to the case where all estimates are NA
+    Addition of 'reversed' argument to 'cld'
+    Bug fixes for na.action handling. Results may now differ somewhat
+        from past versions, especially if you have covariates
+    Fixed bug in 'lstrends' when there is a response transformation
+    Fixed new bug that popped up when tbl_df objects are used
+    Under-the-radar support for Satterthwaite method from lmerTest.
+        To try it: `lsm.options(disable.satterth = FALSE)`
+
+
 2.23
     Added xtable support (actually uses xtableList)
     Corrected bugs in rbind.ref.grid that caused error when rank-deficient,

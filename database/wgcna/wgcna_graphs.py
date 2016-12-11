@@ -221,11 +221,37 @@ def getWGCNA(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                r("library(ggplot2)")
-                r("library(reshape2)")
-                r("library(WGCNA)")
-                r("library(cluster)")
-                r("library(ggplus)")
+                # R packages from biocLite
+                r("list.of.packages <- c('XML')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+                r("if (length(new.packages)) biocLite(new.packages)")
+
+                # R packages from biocLite
+                r("list.of.packages <- c('impute', 'preprocessCore', 'GO.db', 'AnnotationDbi')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+                r("if (length(new.packages)) biocLite(new.packages)")
+
+                # R packages from cran
+                r("list.of.packages <- c('devtools', 'ggplot2', 'reshape2', 'WGCNA', 'cluster', 'igraph')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                # R packages from github
+                r("list.of.packages <- c('ggplus')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) library('devtools')")
+                print r("if (length(new.packages)) install_github('guiastrennec/ggplus')")
+
+                # Load R libraries
+                print r("library(ggplot2)")
+                print r("library(reshape2)")
+                print r("library(WGCNA)")
+                print r("library(cluster)")
+                print r("library(ggplus)")
+                print r("library(igraph)")
+
                 r("allowWGCNAThreads()")
                 r("options(stringAsFactors=FALSE)")
                 r("pdf_counter <- 1")
@@ -293,7 +319,6 @@ def getWGCNA(request, stops, RID, PID):
                 r.assign("minKME", minKME)
                 r.assign("maxNGenes", maxNGenes)
                 r.assign("graphLayout", graphLayout)
-
 
                 # Set soft-thresholding power based on number of samples
                 nSamples, col = metaDF.shape
@@ -630,8 +655,6 @@ def getWGCNA(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 3 of 6: WGCNA analysis...done!')
                 database.queue.setBase(RID, 'Step 4 of 6: Creating network graph...')
-
-                r("library('igraph')")
 
                 ### now apply the kME filter created above
                 r("modProbes <- probes[filter]")

@@ -178,6 +178,13 @@ def getPCA(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                r("list.of.packages <- c('vegan', 'ggplot2')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                print r('library(ggplot2)')
+                print r('library(vegan)')
+
                 r.assign("data", count_rDF)
                 r.assign("cols", count_rDF.columns.values.tolist())
                 r("colnames(data) <- cols")
@@ -203,9 +210,6 @@ def getPCA(request, stops, RID, PID):
                 file = "pdf('myPhyloDB/media/temp/pca/Rplots/" + str(RID) + ".pca.pdf')"
                 r.assign("cmd", file)
                 r("eval(parse(text=cmd))")
-
-                r('library(ggplot2)')
-                r('library(vegan)')
 
                 r.assign("PC1", PC1)
                 r.assign("PC2", PC2)

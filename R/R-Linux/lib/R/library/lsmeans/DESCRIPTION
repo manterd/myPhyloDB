@@ -1,14 +1,15 @@
 Package: lsmeans
 Type: Package
 Title: Least-Squares Means
-Version: 2.23
-Date: 2016-03-09
-Authors@R: c(person("Russell", "Lenth", role = c("aut", "cre"), 
+Version: 2.25
+Date: 2016-11-18
+Authors@R: c(person("Russell", "Lenth", role = c("aut", "cre", "cph"), 
     email = "russell-lenth@uiowa.edu"))
 Depends: estimability, methods, R (>= 3.2)
 Suggests: car, lattice, MCMCpack, mediation, multcompView, ordinal,
         pbkrtest (>= 0.4-1), CARBayes, coxme, gee, geepack, glmmADMB,
-        lme4.0, lme4, MASS, MCMCglmm, nnet, pscl, survival
+        lme4.0, lme4, lmerTest (>= 2.0.32), MASS, MCMCglmm, nnet, pscl,
+        rsm, survival
 Imports: graphics, stats, utils, nlme, coda (>= 0.17), multcomp, plyr,
         mvtnorm, xtable (>= 1.8-2)
 Additional_repositories: http://glmmadmb.r-forge.r-project.org/repos,
@@ -18,11 +19,11 @@ ByteCompile: yes
 Description: Obtain least-squares means for many linear, generalized linear, 
   and mixed models. Compute contrasts or linear functions of least-squares
   means, and comparisons of slopes. Plots and compact letter displays.
-License: GPL-2
+License: GPL-2 | GPL-3
 NeedsCompilation: no
-Packaged: 2016-03-09 23:09:13 UTC; rlenth
-Author: Russell Lenth [aut, cre]
+Packaged: 2016-11-19 02:12:07 UTC; rlenth
+Author: Russell Lenth [aut, cre, cph]
 Maintainer: Russell Lenth <russell-lenth@uiowa.edu>
 Repository: CRAN
-Date/Publication: 2016-03-10 08:00:28
-Built: R 3.2.3; ; 2016-04-06 22:34:02 UTC; unix
+Date/Publication: 2016-11-19 10:15:04
+Built: R 3.2.3; ; 2016-12-11 23:29:38 UTC; unix

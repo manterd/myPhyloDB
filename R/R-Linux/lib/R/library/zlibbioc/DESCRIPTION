@@ -15,4 +15,4 @@ LazyLoad: yes
 biocViews: Infrastructure
 NeedsCompilation: yes
 Packaged: 2015-10-14 01:54:11 UTC; biocbuild
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:41:07 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-12-11 23:00:55 UTC; unix

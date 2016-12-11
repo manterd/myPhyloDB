@@ -28,8 +28,7 @@ bioenv                  Best Subset of Environmental Variables with
                         Maximum (Rank) Correlation with Community
                         Dissimilarities
 biplot.rda              PCA biplot
-capscale                [Partial] Constrained Analysis of Principal
-                        Coordinates or distance-based RDA
+capscale                [Partial] Distance-based Redundancy Analysis
 cascadeKM               K-means partitioning using a range of values of
                         K
 cca                     [Partial] [Constrained] Correspondence Analysis
@@ -38,7 +37,7 @@ cca.object              Result Object from Constrained Ordination with
                         cca, rda or capscale
 clamtest                Multinomial Species Classification Method
                         (CLAM)
-commsim                 Create a Object for Null Model Algorithms
+commsim                 Create an Object for Null Model Algorithms
 contribdiv              Contribution Diversity Approach
 decorana                Detrended Correspondence Analysis and Basic
                         Reciprocal Averaging

@@ -32,6 +32,7 @@ bpower.sim	bpower
 bpplot	bpplot
 bpplotM	panel.bpplot
 bpplt	panel.bpplot
+bppltp	panel.bpplot
 bpx	Hmisc-internal
 bsamsize	bpower
 bystats	bystats
@@ -88,6 +89,8 @@ describe.vector	describe
 discrete	discrete
 dotchart2	dotchart2
 dotchart3	dotchart3
+dotchartp	dotchart3
+dotchartpl	dotchartpl
 Dotplot	xYplot
 drawPlot	labcurve
 dvi	latex
@@ -123,6 +126,7 @@ format.timePOSIXt	Hmisc-internal
 formatCats	Hmisc-internal
 formatCons	Hmisc-internal
 formatDateTime	Hmisc-internal
+formatdescribeSingle	describe
 formatSep	Hmisc-internal
 formatTestStats	Hmisc-internal
 formula.summary.formula.cross	summary.formula
@@ -143,15 +147,20 @@ getLatestSource	Misc
 GetModelFrame	Hmisc-internal
 getRs	getRs
 getZip	getZip
+ggfreqScatter	ggfreqScatter
 ggplot.summaryP	summaryP
 ggplot.transcan	transcan
+GiniMd	GiniMd
 Gompertz2	spower
 groupn	Hmisc-internal
+grType	Misc
 hdquantile	hdquantile
 hist.data.frame	hist.data.frame
 histbackback	histbackback
+histboxp	histboxp
 histSpike	scat1d
 histSpikeg	scat1d
+histSpikep	scat1d
 Hmisc.Overview	Overview
 HmiscOverview	Overview
 hoeffd	hoeffd
@@ -159,7 +168,13 @@ html	html
 html.contents.data.frame	contents
 html.data.frame	html
 html.default	html
+html.describe	describe
+html.describe.single	describe
 html.latex	html
+html.summaryM	summaryM
+htmlSN	latex
+htmlTranslate	latex
+htmlVerbatim	html
 importConvertDateTime	Hmisc-internal
 improveProb	rcorrp.cens
 impute	impute
@@ -233,6 +248,7 @@ makeNames	Hmisc-internal
 makeNstr	makeNstr
 makeSteps	Misc
 mApply	mApply
+markupSpecs	Hmisc-internal
 mask	Hmisc-internal
 match.mChoice	mChoice
 matchCases	find.matches
@@ -245,6 +261,7 @@ mdb.get	mdb.get
 Mean	transace
 Mean.areg.boot	transace
 medvPanel	summaryS
+Merge	Merge
 mgp.axis	mgp.axis
 mgp.axis.labels	mgp.axis
 mhgr	epi
@@ -299,6 +316,7 @@ plot.areg.boot	transace
 plot.aregImpute	aregImpute
 plot.biVar	biVar
 plot.curveRep	curveRep
+plot.describe	describe
 plot.drawPlot	labcurve
 plot.gbayes	gbayes
 plot.Quantile2	spower
@@ -311,9 +329,13 @@ plot.summaryS	summaryS
 plot.transcan	transcan
 plot.varclus	varclus
 plotCorrPrecision	plotCorrPrecision
+plotlyParm	Misc
+plotlySave	knitrSet
 plotmathTranslate	label
 plotMultSim	varclus
+plotpsummaryM	Hmisc-internal
 plsmo	plsmo
+pngNeedle	latexTherm
 popower	popower
 posamsize	popower
 predict.areg	areg
@@ -342,7 +364,6 @@ print.describe.single	describe
 print.dvi	latex
 print.find.matches	find.matches
 print.hoeffd	hoeffd
-print.html	html
 print.improveProb	rcorrp.cens
 print.impute	impute
 print.labelled	label
@@ -370,9 +391,12 @@ print.t.test.cluster	t.test.cluster
 print.timePOSIXt	Hmisc-internal
 print.transcan	transcan
 print.varclus	varclus
+prList	label
 prn	prnz
 prselect	prselect
+prType	Misc
 pstamp	pstamp
+putHfig	label
 putKey	labcurve
 putKeyEmpty	labcurve
 Quantile	transace
@@ -418,7 +442,6 @@ setParNro	Hmisc-internal
 setTrellis	xYplot
 show.col	show.pch
 show.dvi	latex
-show.html	html
 show.latex	latex
 show.pch	show.pch
 showPsfrag	showPsfrag

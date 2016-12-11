@@ -1,5 +1,5 @@
 Package: plyr
-Version: 1.8.3
+Version: 1.8.4
 Title: Tools for Splitting, Applying and Combining Data
 Description: A set of tools that solves a common set of problems: you
     need to break a big problem down into manageable pieces, operate on each
@@ -15,13 +15,14 @@ Depends: R (>= 3.1.0)
 Imports: Rcpp (>= 0.11.0)
 LinkingTo: Rcpp
 Suggests: abind, testthat, tcltk, foreach, doParallel, itertools,
-        iterators
+        iterators, covr
 License: MIT + file LICENSE
 LazyData: true
+RoxygenNote: 5.0.1
 NeedsCompilation: yes
-Packaged: 2015-06-11 13:04:58 UTC; hadley
+Packaged: 2016-06-07 19:58:36 UTC; hadley
 Author: Hadley Wickham [aut, cre]
 Maintainer: Hadley Wickham <hadley@rstudio.com>
 Repository: CRAN
-Date/Publication: 2015-06-12 11:05:51
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:30:25 UTC; unix
+Date/Publication: 2016-06-08 10:40:15
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-12-10 07:11:17 UTC; unix

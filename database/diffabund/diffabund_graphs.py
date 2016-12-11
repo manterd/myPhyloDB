@@ -194,6 +194,13 @@ def getDiffAbund(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                r("list.of.packages <- c('DESeq2')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+                print r("if (length(new.packages)) biocLite(new.packages)")
+
+                print r("library(DESeq2)")
+
                 r.assign("metaDF", metaDF)
                 r("trt <- factor(metaDF$merge)")
 
@@ -211,7 +218,6 @@ def getDiffAbund(request, stops, RID, PID):
                     result += 'Dependent Variable: Total Abundance' + '\n'
                 result += '\n===============================================\n\n\n'
 
-                r("library(DESeq2)")
                 r("colData <- data.frame(row.names=colnames(count), trt=trt)")
                 r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design = ~ trt)")
 

@@ -9,21 +9,23 @@ importFrom(stats, anova, approx, as.formula, coef, coefficients,
            resid, residuals, runif, stat.anova, terms, var, vcov,
            .checkMFClasses, .getXlevels)
 importFrom(graphics, plot, points, lines, axis, box, matlines, matplot, 
-           matpoints, par)
+           matpoints, par, segments,
+           arrows, frame, strheight, strwidth, text)
+importFrom(Matrix, expm)
 importFrom(methods, as)
-importFrom(utils, getS3method, type.convert)
+importFrom(utils, getS3method, type.convert, methods)
 export(Surv, aareg, agreg.fit,
        agexact.fit, attrassign, 
        basehaz, cch, clogit, cluster, cox.zph, 
        coxph, coxph.control, coxph.detail, coxph.fit,
-       coxph.wtest, format.Surv, 
+       coxph.wtest, finegray, format.Surv, 
        frailty,  frailty.gamma, 
        frailty.gaussian, frailty.t, is.Surv, 
        is.na.Surv, is.ratetable, 
        labels.survreg, match.ratetable, neardate,
        psurvreg, qsurvreg, dsurvreg,
        pspline, pyears, ratetable, ratetableDate, 
-       ridge, strata, survConcordance,
+       ridge, rsurvreg, statefig, strata, survConcordance,
        survSplit, survdiff, survexp,  survfit ,
        survfit.formula,
        survfitcoxph.fit, survfitKM, survfitCI,
@@ -59,6 +61,7 @@ S3method(attrassign, default)
 S3method(attrassign, lm)
 S3method(extractAIC,coxph.penal)
 S3method(dim, survfit)
+S3method(dim, survfitms)
 S3method(format, Surv)
 S3method(is.na, Surv)
 S3method(is.na, coxph.penalty)
@@ -104,6 +107,7 @@ S3method(print, survConcordance)
 S3method(print, survdiff)
 S3method(print, survexp)
 S3method(print, survfit)
+S3method(print, survfitms)
 S3method(print, survreg)
 S3method(print, survreg.penal)
 S3method(quantile, survfit)
@@ -130,6 +134,7 @@ S3method(summary, survreg)
 S3method(summary,cch)
 S3method(survfit, coxph)
 S3method(survfit, formula)
+S3method(survfit, matrix)
 S3method(survfit, Surv)
 S3method(vcov, cch)
 S3method(vcov, coxph)

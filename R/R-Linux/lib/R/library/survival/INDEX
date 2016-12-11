@@ -22,9 +22,11 @@ coxph.detail            Details of a Cox Model Fit
 coxph.object            Proportional Hazards Regression Object
 coxph.wtest             Compute a quadratic form
 dsurvreg                Distributions available in survreg.
+finegray                Create data for a Fine-Gray model
 flchain                 Assay of serum free light chain for 7874
                         subjects.
 frailty                 Random effects terms
+genfan                  Generator fans
 heart                   Stanford Heart Transplant data
 is.ratetable            Verify that an object is of class ratetable.
 kidney                  Kidney catheter data
@@ -36,6 +38,7 @@ mgus                    Monoclonal gammapothy data
 mgus2                   Monoclonal gammapothy data
 model.frame.coxph       Model.frame method for coxph objects
 model.matrix.coxph      Model.matrix method for coxph models
+myeloid                 Acute myeloid leukemia
 neardate                Find the index of the closest value in data set
                         2, for each entry in data set one.
 nwtco                   Data from the National Wilm's Tumor Study
@@ -62,8 +65,11 @@ rats                    Rat treatment data from Mantel et al
 rats2                   Rat data from Gail et al.
 residuals.coxph         Calculate Residuals for a 'coxph' Fit
 residuals.survreg       Compute Residuals for 'survreg' Objects
+retinopathy             Diabetic Retinopathy
+rhDNase                 rhDNASE data set
 ridge                   Ridge regression
 stanford2               More Stanford Heart Transplant data
+statefig                Draw a state space figure.
 strata                  Identify Stratification Variables
 summary.aareg           Summarize an aareg fit
 summary.coxph           Summary method for Cox models
@@ -74,11 +80,14 @@ survSplit               Split a survival data set at specified times
 survdiff                Test Survival Curve Differences
 survexp                 Compute Expected Survival
 survexp.fit             Compute Expected Survival
+survexp.object          Expected Survival Curve Object
 survexp.us              Census Data Sets for the Expected Survival and
                         Person Years Functions
 survfit                 Create survival curves
 survfit.coxph           Compute a Survival Curve from a Cox model
 survfit.formula         Compute a Survival Curve for Censored Data
+survfit.matrix          Create Aalen-Johansen estimates of multi-state
+                        survival from a matrix of hazards.
 survfit.object          Survival Curve Object
 survfitcoxph.fit        A direct interface to the 'computational
                         engine' of survfit.coxph

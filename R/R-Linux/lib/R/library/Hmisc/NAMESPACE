@@ -11,6 +11,7 @@ import(ggplot2)
 ## import(scales)
 
 importFrom(acepack, ace, avas)
+importFrom(base64, img)
 importFrom(latticeExtra, useOuterStrips, resizePanels)
 importFrom(cluster, clara)
 importFrom(foreign, read.dta, lookup.xport, read.spss, read.xport)
@@ -19,24 +20,30 @@ importFrom(nnet, multinom)
 importFrom(rpart, rpart, rpart.control)
 importFrom(grid, convertX, convertY, grid.segments, gpar, convertUnit, grid.polygon, is.unit, grid.rect, grid.xaxis, grid.yaxis, convertWidth, convertHeight, grid.text, viewport, grobWidth, grobHeight)
 importFrom(gridExtra, arrangeGrob)
+importFrom(htmlTable, htmlTable, txtRound)
+importFrom(htmltools, HTML)
+
 ## importFrom(tables, tabular, table_options)
 ## importFrom(ggplot2, geom_segment)
 
-importFrom(grDevices, adjustcolor, col2rgb, dev.list, gray,
-           xy.coords)
+importFrom(grDevices, adjustcolor, col2rgb, dev.list, gray, rainbow,
+           xy.coords, png, dev.off)
 importFrom(graphics, abline, arrows, axis, axis.Date,
            axis.POSIXct, barplot, box, hist, legend, lines,
            locator, mtext, par, plot, plot.new,
            plot.window, points, polygon, rect, segments,
            strheight, strwidth, symbols, text, title)
-importFrom(utils, browseURL, download.file, find,
+importFrom(utils, browseURL, capture.output, download.file, find,
            getFromNamespace, object.size, read.csv, read.table)
+           
+importFrom(data.table, is.data.table, key)
 
 S3method(print, arrGrob)
 S3method(ggplot, transcan)
 S3method(ggplot, summaryP)
 S3method(print, spower)
 S3method(print, Quantile2)
+S3method(plot, describe)
 S3method(plot, Quantile2)
 S3method(plot, summaryP)
 S3method(plot, summaryS)
@@ -110,6 +117,9 @@ S3method(hist,data.frame)
 S3method(html,contents.data.frame)
 S3method(html,data.frame)
 S3method(html,default)
+S3method(html,describe)
+S3method(html,describe.single)
+S3method(html,summaryM)
 
 S3method(html,latex)
 S3method(impute,default)
@@ -157,8 +167,8 @@ S3method(plot,summary.formula.response)
 S3method(plot,summary.formula.reverse)
 S3method(plot,summaryM)
 S3method(plot,varclus)
-S3method(predict,areg)
 
+S3method(predict,areg)
 S3method(predict,areg.boot)
 S3method(predict,dataRep)
 S3method(predict,transcan)
@@ -185,7 +195,7 @@ S3method(print,describe.single)
 S3method(print,dvi)
 S3method(print,find.matches)
 S3method(print,hoeffd)
-S3method(print,html)
+# S3method(print,html)
 
 S3method(print,improveProb)
 S3method(print,impute)

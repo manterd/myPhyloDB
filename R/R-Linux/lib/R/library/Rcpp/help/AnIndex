@@ -15,6 +15,7 @@ C++Function-class	CppFunction-class
 C++Object-class	CppObject-class
 C++OverloadedMethods-class	CppOverloadedMethods-class
 compileAttributes	compileAttributes
+compilerCheck	compilerCheck
 cppFunction	cppFunction
 cpp_object_dummy	Rcpp-internal
 cpp_object_initializer	Rcpp-internal
@@ -30,7 +31,7 @@ interfacesAttribute	interfacesAttribute
 LdFlags	RcppLdFlags
 loadModule	loadModule
 loadRcppClass	setRcppClass
-loadRcppModules	loadRcppModules
+loadRcppModules	loadRcppModules-deprecated
 Module	Module
 Module-class	Module-class
 pluginsAttribute	pluginsAttribute
@@ -38,6 +39,7 @@ populate	populate
 print.bytes	demangle
 prompt,Module-method	Module-class
 Rcpp	Rcpp-package
+Rcpp-deprecated	Rcpp-deprecated
 Rcpp-internal	Rcpp-internal
 Rcpp.package.skeleton	Rcpp.package.skeleton
 Rcpp.plugin.maker	Rcpp.plugin.maker

@@ -11,7 +11,7 @@
 <div style="text-align: center;">
 <a href="../../../doc/html/packages.html"><img class="arrow" src="../../../doc/html/left.jpg" alt="[Up]" /></a>
 <a href="../../../doc/html/index.html"><img class="arrow" src="../../../doc/html/up.jpg" alt="[Top]" /></a>
-</div><h2>Documentation for package &lsquo;rgl&rsquo; version 0.95.1441</h2>
+</div><h2>Documentation for package &lsquo;rgl&rsquo; version 0.96.0</h2>
 
 <ul><li><a href="../DESCRIPTION">DESCRIPTION file</a>.</li>
 <li><a href="../doc/index.html">User guides, package vignettes and other documentation.</a></li>
@@ -65,8 +65,16 @@
 <td>Add normal vectors to objects so they render more smoothly.</td></tr>
 <tr><td style="width: 25%;"><a href="subscene3d.html">addToSubscene3d</a></td>
 <td>Create, select or modify a subscene.</td></tr>
+<tr><td style="width: 25%;"><a href="ageControl.html">ageControl</a></td>
+<td>Set attributes of vertices based on their age.</td></tr>
 <tr><td style="width: 25%;"><a href="ageSetter.html">ageSetter</a></td>
 <td>Set WebGL scene properties based on the age of components of objects.</td></tr>
+<tr><td style="width: 25%;"><a href="arrow3d.html">arrow3d</a></td>
+<td>Draw an arrow in a scene.</td></tr>
+<tr><td style="width: 25%;"><a href="mesh3d.html">as.mesh3d</a></td>
+<td>3D Mesh objects</td></tr>
+<tr><td style="width: 25%;"><a href="persp3d.deldir.html">as.mesh3d.deldir</a></td>
+<td>Plot a Delaunay triangulation.</td></tr>
 <tr><td style="width: 25%;"><a href="matrices.html">asEuclidean</a></td>
 <td>Work with homogeneous coordinates</td></tr>
 <tr><td style="width: 25%;"><a href="matrices.html">asHomogeneous</a></td>
@@ -95,10 +103,14 @@
 <h2><a name="C">-- C --</a></h2>
 
 <table width="100%">
+<tr><td style="width: 25%;"><a href="check3d.html">check3d</a></td>
+<td>Check for an open rgl window.</td></tr>
 <tr><td style="width: 25%;"><a href="scene.html">clear3d</a></td>
 <td>scene management</td></tr>
 <tr><td style="width: 25%;"><a href="mfrow3d.html">clearSubsceneList</a></td>
 <td>Set up multiple figure layouts in rgl.</td></tr>
+<tr><td style="width: 25%;"><a href="clipplaneControl.html">clipplaneControl</a></td>
+<td>Sets attributes of a clipping plane.</td></tr>
 <tr><td style="width: 25%;"><a href="planes.html">clipplanes3d</a></td>
 <td>add planes</td></tr>
 <tr><td style="width: 25%;"><a href="webGLcontrols.html">clipplaneSlider</a></td>
@@ -137,6 +149,8 @@
 <h2><a name="E">-- E --</a></h2>
 
 <table width="100%">
+<tr><td style="width: 25%;"><a href="elementId2Prefix.html">elementId2Prefix</a></td>
+<td>Use widget with old-style controls.</td></tr>
 <tr><td style="width: 25%;"><a href="ellipse3d.html">ellipse3d</a></td>
 <td>Make an ellipsoid</td></tr>
 <tr><td style="width: 25%;"><a href="ellipse3d.html">ellipse3d.default</a></td>
@@ -167,6 +181,8 @@
 <h2><a name="H">-- H --</a></h2>
 
 <table width="100%">
+<tr><td style="width: 25%;"><a href="rglIds.html">highlevel</a></td>
+<td>rgl id values</td></tr>
 <tr><td style="width: 25%;"><a href="hook_rgl.html">hook_rgl</a></td>
 <td>Hook functions to use with 'knitr'</td></tr>
 <tr><td style="width: 25%;"><a href="hook_rgl.html">hook_webgl</a></td>
@@ -195,6 +211,8 @@
 <td>add light source</td></tr>
 <tr><td style="width: 25%;"><a href="3dobjects.html">lines3d</a></td>
 <td>add primitive set shape</td></tr>
+<tr><td style="width: 25%;"><a href="rglIds.html">lowlevel</a></td>
+<td>rgl id values</td></tr>
 </table>
 
 <h2><a name="M">-- M --</a></h2>
@@ -251,20 +269,38 @@
 <td>Write HTML/Javascript code to control a WebGL display.</td></tr>
 <tr><td style="width: 25%;"><a href="sprites.html">particles3d</a></td>
 <td>add sprite set shape</td></tr>
+<tr><td style="width: 25%;"><a href="pch3d.html">pch3d</a></td>
+<td>Plot symbols similar to base graphics.</td></tr>
 <tr><td style="width: 25%;"><a href="persp3d.html">persp3d</a></td>
 <td>Surface plots</td></tr>
 <tr><td style="width: 25%;"><a href="persp3d.html">persp3d.default</a></td>
 <td>Surface plots</td></tr>
+<tr><td style="width: 25%;"><a href="persp3d.deldir.html">persp3d.deldir</a></td>
+<td>Plot a Delaunay triangulation.</td></tr>
 <tr><td style="width: 25%;"><a href="persp3d.function.html">persp3d.function</a></td>
 <td>Plot a function of two variables</td></tr>
 <tr><td style="width: 25%;"><a href="planes.html">planes3d</a></td>
 <td>add planes</td></tr>
 <tr><td style="width: 25%;"><a href="play3d.html">play3d</a></td>
 <td>Play animation of rgl scene</td></tr>
+<tr><td style="width: 25%;"><a href="playwidget.html">playwidget</a></td>
+<td>Add a widget to play animations.</td></tr>
+<tr><td style="width: 25%;"><a href="playwidget.html">playwidget.default</a></td>
+<td>Add a widget to play animations.</td></tr>
+<tr><td style="width: 25%;"><a href="playwidget.html">playwidget.rglPlayer</a></td>
+<td>Add a widget to play animations.</td></tr>
+<tr><td style="width: 25%;"><a href="playwidget.html">playwidget.rglWebGL</a></td>
+<td>Add a widget to play animations.</td></tr>
+<tr><td style="width: 25%;"><a href="playwidget.html">playwidget.shiny.tag.list</a></td>
+<td>Add a widget to play animations.</td></tr>
+<tr><td style="width: 25%;"><a href="shiny.html">playwidgetOutput</a></td>
+<td>Functions for integration of 'rglwidget' into Shiny app.</td></tr>
 <tr><td style="width: 25%;"><a href="plot3d.html">plot3d</a></td>
 <td>3D Scatterplot</td></tr>
 <tr><td style="width: 25%;"><a href="plot3d.html">plot3d.default</a></td>
 <td>3D Scatterplot</td></tr>
+<tr><td style="width: 25%;"><a href="persp3d.deldir.html">plot3d.deldir</a></td>
+<td>Plot a Delaunay triangulation.</td></tr>
 <tr><td style="width: 25%;"><a href="persp3d.function.html">plot3d.function</a></td>
 <td>Plot a function of two variables</td></tr>
 <tr><td style="width: 25%;"><a href="plot3d.html">plot3d.mesh3d</a></td>
@@ -279,10 +315,14 @@
 <td>Triangulate and draw a polygon in three dimensions.</td></tr>
 <tr><td style="width: 25%;"><a href="scene.html">pop3d</a></td>
 <td>scene management</td></tr>
+<tr><td style="width: 25%;"><a href="rglIds.html">print.rglId</a></td>
+<td>rgl id values</td></tr>
 <tr><td style="width: 25%;"><a href="scene3d.html">print.rglobject</a></td>
 <td>Saves the current scene to a variable, and displays such variables.</td></tr>
 <tr><td style="width: 25%;"><a href="scene3d.html">print.rglscene</a></td>
 <td>Saves the current scene to a variable, and displays such variables.</td></tr>
+<tr><td style="width: 25%;"><a href="propertyControl.html">propertyControl</a></td>
+<td>Controls to use with playwidget().</td></tr>
 <tr><td style="width: 25%;"><a href="propertySetter.html">propertySetter</a></td>
 <td>Write HTML/Javascript code to control a WebGL display.</td></tr>
 <tr><td style="width: 25%;"><a href="propertySetter.html">propertySlider</a></td>
@@ -309,6 +349,12 @@
 <td>Write Wavefront OBJ format files; read simple ones</td></tr>
 <tr><td style="width: 25%;"><a href="readSTL.html">readSTL</a></td>
 <td>Read and write STL (stereolithography) format files</td></tr>
+<tr><td style="width: 25%;"><a href="sceneChange.html">registerSceneChange</a></td>
+<td>Make large change to a scene from Shiny</td></tr>
+<tr><td style="width: 25%;"><a href="shiny.html">renderPlaywidget</a></td>
+<td>Functions for integration of 'rglwidget' into Shiny app.</td></tr>
+<tr><td style="width: 25%;"><a href="shiny.html">renderRglwidget</a></td>
+<td>Functions for integration of 'rglwidget' into Shiny app.</td></tr>
 <tr><td style="width: 25%;"><a href="rgl-package.html">rgl</a></td>
 <td>3D visualization device system</td></tr>
 <tr><td style="width: 25%;"><a href="abclines.html">rgl.abclines</a></td>
@@ -317,8 +363,10 @@
 <td>3D visualization device system</td></tr>
 <tr><td style="width: 25%;"><a href="attributes.html">rgl.attrib</a></td>
 <td>Get information about shapes</td></tr>
-<tr><td style="width: 25%;"><a href="attributes.html">rgl.attrib.count</a></td>
-<td>Get information about shapes</td></tr>
+<tr><td style="width: 25%;"><a href="rgl.attrib.info.html">rgl.attrib.count</a></td>
+<td>Get information about attributes of objects</td></tr>
+<tr><td style="width: 25%;"><a href="rgl.attrib.info.html">rgl.attrib.info</a></td>
+<td>Get information about attributes of objects</td></tr>
 <tr><td style="width: 25%;"><a href="bbox.html">rgl.bbox</a></td>
 <td>Set up Bounding Box decoration</td></tr>
 <tr><td style="width: 25%;"><a href="bg.html">rgl.bg</a></td>
@@ -365,6 +413,8 @@
 <td>export screenshot</td></tr>
 <tr><td style="width: 25%;"><a href="primitive.html">rgl.primitive</a></td>
 <td>add primitive set shape</td></tr>
+<tr><td style="width: 25%;"><a href="rglwidget.html">rgl.printRglwidget</a></td>
+<td>An htmlwidget to hold an rgl scene.</td></tr>
 <tr><td style="width: 25%;"><a href="rgl.user2window.html">rgl.projection</a></td>
 <td>Convert between rgl user and window coordinates</td></tr>
 <tr><td style="width: 25%;"><a href="primitive.html">rgl.quads</a></td>
@@ -407,10 +457,24 @@
 <td>Convert between rgl user and window coordinates</td></tr>
 <tr><td style="width: 25%;"><a href="texts.html">rglFonts</a></td>
 <td>add text</td></tr>
+<tr><td style="width: 25%;"><a href="rglIds.html">rglHighlevel</a></td>
+<td>rgl id values</td></tr>
+<tr><td style="width: 25%;"><a href="rglIds.html">rglId</a></td>
+<td>rgl id values</td></tr>
+<tr><td style="width: 25%;"><a href="rglIds.html">rglLowlevel</a></td>
+<td>rgl id values</td></tr>
 <tr><td style="width: 25%;"><a href="scene3d.html">rglobject-class</a></td>
 <td>Saves the current scene to a variable, and displays such variables.</td></tr>
 <tr><td style="width: 25%;"><a href="scene3d.html">rglscene-class</a></td>
 <td>Saves the current scene to a variable, and displays such variables.</td></tr>
+<tr><td style="width: 25%;"><a href="rglToLattice.html">rglToBase</a></td>
+<td>Convert rgl userMatrix to lattice or base angles</td></tr>
+<tr><td style="width: 25%;"><a href="rglToLattice.html">rglToLattice</a></td>
+<td>Convert rgl userMatrix to lattice or base angles</td></tr>
+<tr><td style="width: 25%;"><a href="rglwidget.html">rglwidget</a></td>
+<td>An htmlwidget to hold an rgl scene.</td></tr>
+<tr><td style="width: 25%;"><a href="shiny.html">rglwidgetOutput</a></td>
+<td>Functions for integration of 'rglwidget' into Shiny app.</td></tr>
 <tr><td style="width: 25%;"><a href="matrices.html">rotate3d</a></td>
 <td>Work with homogeneous coordinates</td></tr>
 <tr><td style="width: 25%;"><a href="matrices.html">rotationMatrix</a></td>
@@ -426,6 +490,8 @@
 <td>Work with homogeneous coordinates</td></tr>
 <tr><td style="width: 25%;"><a href="scene3d.html">scene3d</a></td>
 <td>Saves the current scene to a variable, and displays such variables.</td></tr>
+<tr><td style="width: 25%;"><a href="sceneChange.html">sceneChange</a></td>
+<td>Make large change to a scene from Shiny</td></tr>
 <tr><td style="width: 25%;"><a href="3dobjects.html">segments3d</a></td>
 <td>add primitive set shape</td></tr>
 <tr><td style="width: 25%;"><a href="select3d.html">select3d</a></td>
@@ -464,6 +530,8 @@
 <td>Get information on subscenes</td></tr>
 <tr><td style="width: 25%;"><a href="mfrow3d.html">subsceneList</a></td>
 <td>Set up multiple figure layouts in rgl.</td></tr>
+<tr><td style="width: 25%;"><a href="propertyControl.html">subsetControl</a></td>
+<td>Controls to use with playwidget().</td></tr>
 <tr><td style="width: 25%;"><a href="webGLcontrols.html">subsetSetter</a></td>
 <td>Write HTML/Javascript code to control a WebGL display.</td></tr>
 <tr><td style="width: 25%;"><a href="webGLcontrols.html">subsetSlider</a></td>
@@ -515,6 +583,8 @@
 <h2><a name="V">-- V --</a></h2>
 
 <table width="100%">
+<tr><td style="width: 25%;"><a href="vertexControl.html">vertexControl</a></td>
+<td>Set attributes of vertices.</td></tr>
 <tr><td style="width: 25%;"><a href="propertySetter.html">vertexSetter</a></td>
 <td>Write HTML/Javascript code to control a WebGL display.</td></tr>
 <tr><td style="width: 25%;"><a href="viewpoint.html">view3d</a></td>
@@ -530,6 +600,8 @@
 <td>3D Mesh objects</td></tr>
 <tr><td style="width: 25%;"><a href="mesh3d.html">wire3d.qmesh3d</a></td>
 <td>3D Mesh objects</td></tr>
+<tr><td style="width: 25%;"><a href="writeASY.html">writeASY</a></td>
+<td>Write Asymptote code for an rgl scene</td></tr>
 <tr><td style="width: 25%;"><a href="writeOBJ.html">writeOBJ</a></td>
 <td>Write Wavefront OBJ format files; read simple ones</td></tr>
 <tr><td style="width: 25%;"><a href="writePLY.html">writePLY</a></td>
@@ -543,6 +615,8 @@
 <h2><a name="misc">-- misc --</a></h2>
 
 <table width="100%">
+<tr><td style="width: 25%;"><a href="import.html">%&gt;%</a></td>
+<td>Imported from magrittr</td></tr>
 <tr><td style="width: 25%;"><a href="check3d.html">.check3d</a></td>
 <td>Check for an open rgl window.</td></tr>
 </table>

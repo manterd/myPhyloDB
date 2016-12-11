@@ -16,4 +16,4 @@ NeedsCompilation: yes
 Packaged: 2015-10-06 18:28:23 UTC; Liawand
 Repository: CRAN
 Date/Publication: 2015-10-07 08:38:34
-Built: R 3.0.2; x86_64-pc-linux-gnu; 2016-12-09 20:21:19 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-12-10 07:11:13 UTC; unix

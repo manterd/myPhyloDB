@@ -328,6 +328,10 @@ def getsoil_index(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                #r("list.of.packages <- c(' ')")
+                #r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                #r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
                 path = os.path.join('myPhyloDB', 'media', 'temp', 'soil_index', 'Rplots', RID)
                 if not os.path.exists(path):
                     os.makedirs(path)

@@ -2,6 +2,314 @@
 \title{vegan News}
 \encoding{UTF-8}
 
+\section{Changes in version 2.4-1}{
+  \subsection{INSTALLATION}{
+    \itemize{
+
+      \item Fortran code was modernized to avoid warnings in latest
+      \R. The modernization should have no visible effect in
+      functions. Please report all suspect cases as
+      \href{https://github.com/vegandevs/vegan/issues/}{vegan issues}.
+
+    } %itemize
+  } % installation
+
+  
+  \subsection{BUG FIXES}{
+    \itemize{
+
+      \item Several support functions for ordination methods failed if
+      the solution had only one ordination axis, for instance, if
+      there was only one constraining variable in CCA, RDA and
+      friends. This concerned \code{goodness} for constrained
+      ordination, \code{inertcomp}, \code{fitted} for
+      \code{capscale}, \code{stressplot} for RDA, CCA (GitHub issue
+      \href{https://github.com/vegandevs/vegan/issues/189}{#189}).
+
+      \item \code{goodness} for CCA & friends ignored \code{choices}
+      argument (GitHub issue
+      \href{https://github.com/vegandevs/vegan/issues/190}{#190}).
+
+      \item \code{goodness} function did not consider negative
+      eigenvalues of db-RDA (function \code{dbrda}).
+
+      \item Function \code{meandist} failed in some cases when one of
+      the groups had only one observation.
+
+      \item \code{linestack} could not handle expressions in
+      \code{labels}. This regression is discussed in GitHub issue
+      \href{https://github.com/vegandevs/vegan/issues/195}{#195}.
+
+      \item Nestedness measures \code{nestedbetajac} and
+      \code{nestedbetasor} expecting binary data did not cope with
+      quantitative input in evaluating Baselga's matrix-wide Jaccard
+      or Sørensen dissimilarity indices.
+
+      \item Function \code{as.mcmc} to cast \code{oecosimu} result to an
+      MCMC object (\pkg{coda} package) failed if there was only one
+      chain.
+
+    } % itemize
+  } % bug fixes
+
+  \subsection{NEW FEATURES}{
+    \itemize{
+
+      \item \code{diversity} function returns now \code{NA} if the
+      observation had \code{NA} values instead of returning
+      \code{0}. The function also checks the input and refuses to
+      handle data with negative values.  GitHub issue
+      \href{https://github.com/vegandevs/vegan/issues/187}{#187}.
+
+      \item \code{rarefy} function will work more robustly in marginal
+      case when the user asks for only one individual which can only
+      be one species with zero variance.
+
+      \item Several functions are more robust if their factor arguments
+      contain missing values (\code{NA}): \code{betadisper},
+      \code{adipart}, \code{multipart}, \code{hiersimu}, \code{envfit}
+      and constrained ordination methods \code{cca}, \code{rda},
+      \code{capscale} and \code{dbrda}. GitHub issues
+      \href{https://github.com/vegandevs/vegan/issues/192}{#192} and
+      \href{https://github.com/vegandevs/vegan/issues/193}{#193}.
+
+    } % itemize
+  } % new features
+
+} % 2.4-1
+
+\section{Changes in version 2.4-0}{
+  \subsection{DISTANCE-BASED ANALYSIS}{
+     \itemize{
+
+       \item Distance-based methods were redesigned and made
+       consistent for ordination (\code{capscale}, new \code{dbrda}),
+       permutational ANOVA (\code{adonis}, new \code{adonis2}),
+       multivariate dispersion (\code{betadisper}) and variation
+       partitioning (\code{varpart}).  These methods can produce
+       negative eigenvalues with several popular semimetric
+       dissimilarity indices, and they were not handled similarly by
+       all functions. Now all functions are designed after McArdle &
+       Anderson (\emph{Ecology} 82, 290--297; 2001).
+
+       \item \code{dbrda} is a new function for distance-based
+       Redundancy Analysis following McArdle & Anderson
+       (\emph{Ecology} 82, 290--297; 2001). With metric
+       dissimilarities, the function is equivalent to old
+       \code{capscale}, but negative eigenvalues of semimetric indices
+       are handled differently. In \code{dbrda} the dissimilarities
+       are decomposed directly into conditions, constraints and
+       residuals with their negative eigenvalues, and any of the
+       components can have imaginary dimensions. Function is mostly
+       compatible with \code{capscale} and other constrained
+       ordination methods, but full compatibility cannot be achieved
+       (see issue
+       \href{https://github.com/vegandevs/vegan/issues/140}{#140} in
+       Github). The function is based on the code by Pierre Legendre.
+
+       \item The old \code{capscale} function for constrained
+       ordination is still based only on real components, but the
+       total inertia of the components is assessed similarly as in
+       \code{dbrda}.
+
+       The significance tests will differ from the previous version,
+       but function \code{oldCapscale} will cast the \code{capscale}
+       result to a similar form as previously.
+
+       \item \code{adonis2} is a new function for permutational ANOVA
+       of dissimilarities. It is based on the same algorithm as the
+       \code{dbrda}. The function can perform overall tests of all
+       independent variables as well as sequential and marginal tests
+       of each term. The old \code{adonis} is still available, but it
+       can only perform sequential tests. With same settings,
+       \code{adonis} and \code{adonis2} give identical results (but
+       see Github issue
+       \href{https://github.com/vegandevs/vegan/issues/156}{#156} for
+       differences).
+
+       \item Function \code{varpart} can partition dissimilarities
+       using the same algorithm as \code{dbrda}.
+
+       \item Argument \code{sqrt.dist} takes square roots of
+       dissimilarities and these can change many popular semimetric
+       indices to metric distances in \code{capscale}, \code{dbrda},
+       \code{wcmdscale}, \code{adonis2}, \code{varpart} and
+       \code{betadisper} (issue
+       \href{https://github.com/vegandevs/vegan/issues/179}{#179} in
+       Github).
+
+       \item Lingoes and Cailliez adjustments change any dissimilarity
+       into metric distance in \code{capscale}, \code{dbrda},
+       \code{adonis2}, \code{varpart}, \code{betadisper} and
+       \code{wcmdscale}.  Earlier we had only Cailliez adjustment in
+       \code{capscale} (issue
+       \href{https://github.com/vegandevs/vegan/issues/179}{#179} in
+       Github).
+
+       \item \code{RsquareAdj} works with \code{capscale} and
+       \code{dbrda} and this allows using \code{ordiR2step} in model
+       building.
+
+     } % itemize
+  } % distance-based
+
+  \subsection{BUG FIXES}{
+    \itemize{
+
+      \item \code{specaccum}: \code{plot} failed if line type
+      (\code{lty}) was given. Reported by Lila Nath Sharma (Univ
+      Bergen, Norway)
+
+    } %itemize
+  } %bug fixes
+
+  \subsection{NEW FUNCTIONS}{
+    \itemize{
+
+      \item \code{ordibar} is a new function to draw crosses of
+      standard deviations or standard errors in ordination diagrams
+      instead of corresponding ellipses.
+
+      \item Several \code{permustats} results can be combined with a
+      new \code{c()} function.
+
+      \item New function \code{smbind} binds together null models by
+      row, column or replication. If sequential models are bound
+      together, they can be treated as parallel chains in subsequent
+      analysis (e.g., after \code{as.mcmc}). See issue
+      \href{https://github.com/vegandevs/vegan/issues/164}{#164} in
+      Github.
+
+    } %itemize
+  } % new functions
+  
+  \subsection{NEW FEATURES}{
+    \itemize{
+
+      \item Null model analysis was upgraded:
+
+      New \code{"curveball"} algorithm provides a fast null model with
+      fixed row and column sums for binary matrices after Strona et
+      al. (\emph{Nature Commun.} 5: 4114; 2014).
+
+      The \code{"quasiswap"} algorithm gained argument \code{thin}
+      which can reduce the bias of null models.
+
+      \code{"backtracking"} is now much faster, but it is still very
+      slow, and provided mainly to allow comparison against better and
+      faster methods.
+
+      Compiled code can now be interrupted in null model simulations.
+
+      \item \code{designdist} can now use beta diversity notation
+      (\code{gamma}, \code{alpha}) for easier definition of beta
+      diversity indices.
+
+      \item \code{metaMDS} has new iteration strategy: Argument
+      \code{try} gives the minimum number of random starts, and
+      \code{trymax} the maximum number. Earlier we only hand
+      \code{try} which gave the maximum number, but now we run at
+      least \code{try} times. This reduces the risk of being trapped
+      in a local optimum (issue
+      \href{https://github.com/vegandevs/vegan/issues/154}{#154} in
+      Github).
+
+      If there were no convergent solutions, \code{metaMDS} will now
+      tabulate stopping criteria (if \code{trace = TRUE}).  This can
+      help in deciding if any of the criteria should be made more
+      stringent or the number of iterations increased. The
+      documentation for \code{monoMDS} and \code{metaMDS} give more
+      detailed information on convergence criteria.
+
+      \item The \code{summary} of \code{permustats} prints now
+      \emph{P}-values, and the test direction (\code{alternative}) can
+      be changed.
+
+      The \code{qqmath} function of \code{permustats} can now plot
+      standardized statistics. This is a partial solution to issue
+      \href{https://github.com/vegandevs/vegan/issues/172}{#172} in
+      Github.
+
+      \item \code{MDSrotate} can rotate ordination to show maximum
+      separation of factor levels (classes) using linear discriminant
+      analysis (\code{lda} in \pkg{MASS} package).
+
+      \item \code{adipart}, \code{hiersimu} and \code{multipart}
+      expose argument \code{method} to specify the null model.
+
+      \item \code{RsquareAdj} works with \code{cca} and this allows
+      using \code{ordiR2step} in model building. The code was
+      developed by Dan McGlinn (issue
+      \href{https://github.com/vegandevs/vegan/issues/161}{#161} in
+      Github). However, \code{cca} still cannot be used in
+      \code{varpart}.
+
+      \item \code{ordiellipse} and \code{ordihull} allow setting
+      colours, line types and other graphical parameters.
+
+      The alpha channel can now be given also as a real number in 0 \dots 1
+      in addition to integer 0 \dots 255.
+
+      \item \code{ordiellipse} can now draw ellipsoid hulls that
+      enclose points in a group.
+      
+      \item \code{ordicluster}, \code{ordisegments}, \code{ordispider}
+      and \code{lines} and \code{plot} functions for \code{isomap} and
+      \code{spantree} can use a mixture of colours of connected
+      points. Their behaviour is similar as in analogous functions in
+      the the \pkg{vegan3d} package.
+
+      \item \code{plot} of \code{betadisper} is more configurable. See
+      issues
+      \href{https://github.com/vegandevs/vegan/issues/128}{#128} and
+      \href{https://github.com/vegandevs/vegan/issues/166}{#166} in
+      Github for details.
+
+      \item \code{text} and \code{points} methods for
+      \code{orditkplot} respect stored graphical parameters.
+
+      \item Environmental data for the Barro Colorado Island forest
+      plots gained new variables from Harms et al. (\emph{J. Ecol.} 89,
+      947--959; 2001). Issue
+      \href{https://github.com/vegandevs/vegan/issues/178}{#178} in
+      Github.
+
+    } %itemize
+  } % features
+
+  \subsection{DEPRECATED AND DEFUNCT}{
+    \itemize{
+
+      \item Function \code{metaMDSrotate} was removed and replaced
+      with \code{MDSrotate}.
+
+      \item \code{density} and \code{densityplot} methods for
+      various \pkg{vegan} objects were deprecated and replaced with
+      \code{density} and \code{densityplot} for \code{permustats}.
+      Function \code{permustats} can extract the permutation and
+      simulation results of \pkg{vegan} result objects.
+
+    } %itemize
+  } % deprecated & defunct
+
+} % v2.4-0
+
+\section{Changes in version 2.3-5}{
+  \subsection{BUG FIXES}{
+    \itemize{
+
+      \item \code{eigenvals} fails with \code{prcomp} results in
+      \R-devel. The next version of \code{prcomp} will have an
+      argument to limit the number of eigenvalues shown
+      (\code{rank.}), and this breaks \code{eigenvals} in \pkg{vegan}.
+
+      \item \code{calibrate} failed for \code{cca} and friends if
+      \code{rank} was given.
+
+    } % itemise
+  } % bug fixes
+} % v2.3-5
+
 \section{Changes in version 2.3-4}{
 
   \subsection{BUG FIXES}{

@@ -43,6 +43,7 @@ stri_info               Query Default Settings for 'stringi'
 stri_install_check      Installation-Related Utilities [DEPRECATED]
 stri_isempty            Determine if a String is of Length Zero
 stri_join               Concatenate Character Vectors
+stri_join_list          Concatenate Strings in a List
 stri_length             Count the Number of Code Points
 stri_list2matrix        Convert a List to a Character Matrix
 stri_locale_info        Query Given Locale

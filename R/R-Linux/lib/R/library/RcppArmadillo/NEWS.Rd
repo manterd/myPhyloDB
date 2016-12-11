@@ -1,7 +1,99 @@
 \name{NEWS}
-\title{News for Package 'RcppArmadillo'}
+\title{News for Package \pkg{RcppArmadillo}}
 \newcommand{\ghpr}{\href{https://github.com/RcppCore/RcppArmadillo/pull/#1}{##1}}
 \newcommand{\ghit}{\href{https://github.com/RcppCore/RcppArmadillo/issues/#1}{##1}}
+
+\section{Changes in RcppArmadillo version 0.7.500.0.0 (2016-10-20)}{
+  \itemize{
+    \item Upgraded to Armadillo release 7.500.0 (Coup d'Etat)
+    \itemize{
+      \item Expanded \code{qz()} to optionally specify ordering of the Schur form
+      \item Expanded \code{each_slice()} to support matrix multiplication
+    }
+  }
+}
+
+\section{Changes in RcppArmadillo version 0.7.400.2.0 (2016-08-24)}{
+  \itemize{
+    \item Upgraded to Armadillo release 7.400.2 (Feral Winter Deluxe)
+    \itemize{
+      \item added \code{expmat_sym()}, \code{logmat_sympd()},
+        \code{sqrtmat_sympd()}
+      \item added \code{.replace()}
+      }
+  }
+}
+
+\section{Changes in RcppArmadillo version 0.7.300.1.0 (2016-07-30)}{
+  \itemize{
+    \item Upgraded to Armadillo release 7.300.1
+    \itemize{
+      \item added \code{index_min()} and \code{index_max()} standalone functions
+      \item expanded \code{.subvec()} to accept \code{size()} arguments
+      \item more robust handling of non-square matrices by \code{lu()}
+    }
+  }
+}
+
+\section{Changes in RcppArmadillo version 0.7.200.2.0 (2016-07-22)}{
+  \itemize{
+    \item Upgraded to Armadillo release 7.200.2 
+    \item The sampling extension was rewritten to use Armadillo vector types
+    instead of Rcpp types (PR \ghpr{101} by James Balamuta)
+  }
+}
+
+\section{Changes in RcppArmadillo version 0.7.200.1.0 (2016-06-06)}{
+  \itemize{
+    \item Upgraded to Armadillo release 7.200.1 
+    \itemize{
+      \item added \code{.index_min()} and \code{.index_max()}
+      \item expanded \code{ind2sub()} to handle vectors of indices
+      \item expanded \code{sub2ind()} to handle matrix of subscripts
+      \item expanded \code{expmat()}, \code{logmat()} and
+      \code{sqrtmat()} to optionally return a bool indicating success
+      \item faster handling of compound expressions by \code{vectorise()}
+    }
+    \item The \code{configure} code now (once again) sets the values for
+    the LAPACK feature \code{#define} correctly.
+  }
+}
+
+\section{Changes in RcppArmadillo version 0.7.100.3.0 (2016-05-25)}{
+  \itemize{
+    \item Upgraded to Armadillo test release 7.100.3 
+    \itemize{
+      \item added \code{erf()}, \code{erfc()}, \code{lgamma()}
+      \item added \code{.head_slices()} and \code{.tail_slices()} to
+      subcube views 
+      \item \code{spsolve()} now requires SuperLU 5.2
+      \item \code{eigs_sym()}, \code{eigs_gen()} and \code{svds()} now
+      use a built-in reimplementation of ARPACK for real (non-complex)
+      matrices (code contributed by Yixuan Qiu) 
+    }
+    \item The \code{configure} code now checks against old \code{g++}
+    version which are no longer sufficient to build the package.
+  }
+}
+
+\section{Changes in RcppArmadillo version 0.6.700.6.0 (2016-05-05)}{
+  \itemize{
+    \item Upgraded to Armadillo 6.700.6 (Catabolic Amalgamator Deluxe)
+    \itemize{
+      \item fix for handling empty matrices by \code{kron()}
+      \item fix for clang warning in advanced matrix constructors
+      \item fix for false deprecated warning in \code{trunc_log()} and
+      \code{trunc_exp()} 
+      \item fix for gcc-6.1 warning about misleading indentation
+      \item corrected documentation for the \code{solve()} function
+    }
+    \item Added support for \code{int64_t} (\code{ARMA_64BIT_WORD}) when
+    required during compilation time. (PR \ghpr{90} by George G. Vega
+    Yon, fixing \ghpr{88}) 
+    \item Fixed bug in \code{SpMat} exporter (PR \ghpr{91} by George G. Vega Yon,
+    fixing \ghit{89} and \ghit{72})
+  }
+}
 
 \section{Changes in RcppArmadillo version 0.6.700.3.0 (2016-04-05)}{
   \itemize{

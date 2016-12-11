@@ -24,13 +24,13 @@ if (.runThisTest) {
     .setUp <- Rcpp:::unitTestSetup("String.cpp")
 
     test.replace_all <- function(){
-        checkEquals( String_replace_all("foobar", "o", "*"), "f**bar")
+        checkEquals( String_replace_all("abcdbacdab", "ab", "AB"), "ABcdbacdAB")
     }
     test.replace_first <- function(){
-        checkEquals( String_replace_first("foobar", "o", "*"), "f*obar")
+        checkEquals( String_replace_first("abcdbacdab", "ab", "AB"), "ABcdbacdab")
     }
     test.replace_last <- function(){
-        checkEquals( String_replace_last("foobar", "o", "*"), "fo*bar")
+        checkEquals( String_replace_last("abcdbacdab", "ab", "AB"), "abcdbacdAB")
     }
 
     test.String.sapply <- function(){
@@ -87,8 +87,8 @@ if (.runThisTest) {
         a <- b <- "å"
         Encoding(a) <- "unknown"
         Encoding(b) <- "UTF-8"
-        checkEquals(test_String_encoding(a), "unknown")
-        checkEquals(test_String_encoding(b), "UTF-8")
+        checkEquals(test_String_encoding(a), 0)
+        checkEquals(test_String_encoding(b), 1)
         checkEquals(Encoding(test_String_set_encoding(a)), "UTF-8")
         checkEquals(Encoding(test_String_ctor_encoding(a)), "UTF-8")
         checkEquals(Encoding(test_String_ctor_encoding2()), "UTF-8")

@@ -188,8 +188,14 @@ def getCatUnivData(request, RID, stops, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                # group DataFrame by each taxa level selected
+                # R packages from cran
+                r("list.of.packages <- c('lsmeans')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
+                print r("library(lsmeans)")
+
+                # group DataFrame by each taxa level selected
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 pValDict = {}
                 counter = 1
@@ -258,7 +264,6 @@ def getCatUnivData(request, RID, stops, PID):
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                         D += "\nLSmeans & Tukey's HSD post-hoc test:\n\n"
-                        r("library(lsmeans)")
                         # r('TukeyHSD(fit)')
 
                         if len(quantFields) == 0:

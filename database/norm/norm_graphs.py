@@ -529,6 +529,14 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         else:
             r = R(RCMD="R/R-Linux/bin/R")
+
+        r("list.of.packages <- c('DESeq2')")
+        r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+        r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+        print r("if (length(new.packages)) biocLite(new.packages)")
+
+        print r("library(DESeq2)")
+
         df3 = df2.drop(taxaID, axis=1)
 
         r.assign("count", df3)
@@ -539,7 +547,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
 
         r("trt <- factor(metaDF$merge)")
 
-        r("library(DESeq2)")
         r("dds <- DESeqDataSetFromMatrix(countData = count, colData = metaDF, design = ~ sample_name)")
 
         r("dds <- estimateSizeFactors(dds)")

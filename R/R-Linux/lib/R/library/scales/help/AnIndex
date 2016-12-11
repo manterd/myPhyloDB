@@ -36,6 +36,7 @@ format_format	format_format
 fullseq	fullseq
 gradient_n_pal	gradient_n_pal
 grey_pal	grey_pal
+hms_trans	hms_trans
 hue_pal	hue_pal
 identity_pal	identity_pal
 identity_trans	identity_trans

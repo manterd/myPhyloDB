@@ -4,15 +4,45 @@
 ## Known bugs in ICU
 
 * [REGEX] #147: regex look-behind assertions may fail to find a multibyte
-Unicode search pattern [scheduled for ICU4C 56.1, see
+Unicode search pattern [solved in ICU4C 57m1, see
 http://bugs.icu-project.org/trac/ticket/11554]
+
+-------------------------------------------------------------------------------
+
+## 1.1.2 (2016-09-30) **CRAN**
+
+* [BUGFIX] round(), snprintf() is not C++98
+
+-------------------------------------------------------------------------------
+
+## 1.1.1 (2016-05-25) **CRAN**
+
+* [BUGFIX] #214: allow a regex pattern like `.*`  to match an empty string.
+
+* [BUGFIX] #210: `stri_replace_all_fixed(c("1", "NULL"), "NULL", NA)`
+now results in `c("1", NA)`.
+
+* [NEW FEATURE] #199: `stri_sub<-` now allows for ignoring `NA` locations
+(a new `omit_na` argument added).
+
+* [NEW FEATURE] #207: `stri_sub<-` now allows for substring insertions
+(via `length=0`).
+
+* [NEW FUNCTION] #124: `stri_subset<-` functions added.
+
+* [NEW FEATURE] #216: `stri_detect`, `stri_subset`, `stri_subset<-` gained
+a `negate` argument.
+
+* [NEW FUNCTION] #175: `stri_join_list` concatenates all strings
+in a list of character vectors. Useful with, e.g., `stri_extract_all_regex`,
+`stri_extract_all_words` etc.
 
 -------------------------------------------------------------------------------
 
 ## 1.0-1 (2015-10-22) **CRAN**
 
-* [GENERAL] #88: C++ API is now available for use in, e.g., Rcpp packages, see
-https://github.com/Rexamine/ExampleRcppStringi for an exemple.
+* [GENERAL] #88: C API is now available for use in, e.g., Rcpp packages, see
+https://github.com/gagolews/ExampleRcppStringi for an example.
 
 * [BUGFIX] #183: Floating point exception raised in `stri_sub()` and
 `stri_sub<-()` when `to` or `length` was a zero-length numeric vector.
@@ -46,8 +76,8 @@ C++ compiler if a C++11 one is not properly configured.
 `AC_SUBST` and `AC_CONFIG_FILES` so that the build process is now
 more similar across different platforms.
 
-* [NEW FEATURE] `stri_info()` now also gives information on which ICU4C is
-used (system or bundle).
+* [NEW FEATURE] `stri_info()` now also gives information about which version
+of ICU4C is in use (system or bundle).
 
 -------------------------------------------------------------------------------
 

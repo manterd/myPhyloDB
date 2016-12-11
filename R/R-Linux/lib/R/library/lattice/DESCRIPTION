@@ -23,4 +23,4 @@ NeedsCompilation: yes
 Packaged: 2015-07-13 09:04:45 UTC; deepayan
 Repository: CRAN
 Date/Publication: 2015-07-14 15:58:29
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:12:49 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-12 19:57:14 UTC; unix

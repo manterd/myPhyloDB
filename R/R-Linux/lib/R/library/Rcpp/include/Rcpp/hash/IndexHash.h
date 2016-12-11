@@ -167,10 +167,10 @@ namespace Rcpp{
         bool add_value(int i){
             RCPP_DEBUG_2( "%s::add_value(%d)", DEMANGLE(IndexHash), i )
             STORAGE val = src[i++] ;
-            int addr = get_addr(val) ;
+            unsigned int addr = get_addr(val) ;
             while (data[addr] && not_equal( src[data[addr] - 1], val)) {
               addr++;
-              if (addr == m) {
+              if (addr == static_cast<unsigned int>(m)) {
                 addr = 0;
               }
             }
@@ -185,28 +185,28 @@ namespace Rcpp{
         }
 
         /* NOTE: we are returning a 1-based index ! */
-        inline int get_index(STORAGE value) const {
-            int addr = get_addr(value) ;
+        inline unsigned int get_index(STORAGE value) const {
+            unsigned int addr = get_addr(value) ;
             while (data[addr]) {
               if (src[data[addr] - 1] == value)
                 return data[addr];
               addr++;
-              if (addr == m) addr = 0;
+              if (addr == static_cast<unsigned int>(m)) addr = 0;
             }
             return NA_INTEGER;
         }
 
         // defined below
-        int get_addr(STORAGE value) const ;
+        unsigned int get_addr(STORAGE value) const ;
     } ;
 
     template <>
-    inline int IndexHash<INTSXP>::get_addr(int value) const {
+    inline unsigned int IndexHash<INTSXP>::get_addr(int value) const {
         return RCPP_HASH(value) ;
     }
     template <>
-    inline int IndexHash<REALSXP>::get_addr(double val) const {
-      int addr;
+    inline unsigned int IndexHash<REALSXP>::get_addr(double val) const {
+      unsigned int addr;
       union dint_u {
           double d;
           unsigned int u[2];
@@ -222,9 +222,9 @@ namespace Rcpp{
     }
 
     template <>
-    inline int IndexHash<STRSXP>::get_addr(SEXP value) const {
+    inline unsigned int IndexHash<STRSXP>::get_addr(SEXP value) const {
         intptr_t val = (intptr_t) value;
-        int addr;
+        unsigned int addr;
         #if (defined _LP64) || (defined __LP64__) || (defined WIN64)
           addr = RCPP_HASH((val & 0xffffffff) ^ (val >> 32));
         #else

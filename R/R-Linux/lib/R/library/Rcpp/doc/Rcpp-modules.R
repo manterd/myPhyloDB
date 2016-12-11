@@ -185,11 +185,17 @@ options( prompt = " ", continue = " " )
 ###################################################
 ### code chunk number 42: Rcpp-modules.Rnw:910-911 (eval = FALSE)
 ###################################################
-## import( Rcpp )
+## import(Rcpp)
 
 
 ###################################################
-### code chunk number 43: Rcpp-modules.Rnw:918-921 (eval = FALSE)
+### code chunk number 43: Rcpp-modules.Rnw:916-917 (eval = FALSE)
+###################################################
+## import(Rcpp, evalCpp)
+
+
+###################################################
+### code chunk number 44: Rcpp-modules.Rnw:931-934 (eval = FALSE)
 ###################################################
 ## .onLoad <- function(libname, pkgname) {
 ##     loadRcppModules()
@@ -197,7 +203,7 @@ options( prompt = " ", continue = " " )
 
 
 ###################################################
-### code chunk number 44: Rcpp-modules.Rnw:947-950 (eval = FALSE)
+### code chunk number 45: Rcpp-modules.Rnw:962-965 (eval = FALSE)
 ###################################################
 ## loadModule("yada")
 ## loadModule("stdVector")
@@ -205,7 +211,7 @@ options( prompt = " ", continue = " " )
 
 
 ###################################################
-### code chunk number 45: Rcpp-modules.Rnw:962-967 (eval = FALSE)
+### code chunk number 46: Rcpp-modules.Rnw:977-982 (eval = FALSE)
 ###################################################
 ## yada <- Module( "yada" )
 ## 
@@ -215,19 +221,19 @@ options( prompt = " ", continue = " " )
 
 
 ###################################################
-### code chunk number 46: Rcpp-modules.Rnw:970-971
+### code chunk number 47: Rcpp-modules.Rnw:985-986
 ###################################################
 options( prompt = "> ", continue = "+ " )
 
 
 ###################################################
-### code chunk number 47: Rcpp-modules.Rnw:981-982 (eval = FALSE)
+### code chunk number 48: Rcpp-modules.Rnw:996-997 (eval = FALSE)
 ###################################################
 ## Rcpp.package.skeleton( "testmod", module = TRUE )
 
 
 ###################################################
-### code chunk number 48: Rcpp-modules.Rnw:995-997 (eval = FALSE)
+### code chunk number 49: Rcpp-modules.Rnw:1010-1012 (eval = FALSE)
 ###################################################
 ## yada <- Module( "yada" )
 ## prompt( yada, "yada-module.Rd" )

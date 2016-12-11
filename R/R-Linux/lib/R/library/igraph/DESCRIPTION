@@ -34,4 +34,4 @@ NeedsCompilation: yes
 Packaged: 2015-06-26 01:04:44 UTC; gaborcsardi
 Repository: CRAN
 Date/Publication: 2015-06-26 11:13:24
-Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-04-06 22:34:33 UTC; unix
+Built: R 3.2.3; x86_64-pc-linux-gnu; 2016-12-10 07:13:38 UTC; unix

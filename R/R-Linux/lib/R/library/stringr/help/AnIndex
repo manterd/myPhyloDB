@@ -3,13 +3,15 @@ boundary	modifiers
 case	case
 coll	modifiers
 fixed	modifiers
+fruit	stringr-data
 ignore.case	modifier-deprecated
 invert_match	invert_match
 modifier-deprecated	modifier-deprecated
 modifiers	modifiers
 perl	modifier-deprecated
 regex	modifiers
-stringr	stringr
+sentences	stringr-data
+stringr-data	stringr-data
 str_c	str_c
 str_conv	str_conv
 str_count	str_count
@@ -17,6 +19,7 @@ str_detect	str_detect
 str_dup	str_dup
 str_extract	str_extract
 str_extract_all	str_extract
+str_interp	str_interp
 str_join	str_c
 str_length	str_length
 str_locate	str_locate
@@ -38,5 +41,9 @@ str_to_lower	case
 str_to_title	case
 str_to_upper	case
 str_trim	str_trim
+str_trunc	str_trunc
+str_view	str_view
+str_view_all	str_view
 str_wrap	str_wrap
 word	word
+words	stringr-data

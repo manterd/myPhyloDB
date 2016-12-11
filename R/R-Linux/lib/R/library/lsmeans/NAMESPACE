@@ -110,7 +110,7 @@ S3method(confint, ref.grid)
 S3method(confint, lsm.list)
 
 S3method(contrast, ref.grid)
-S3method(contrast,lsm.list)
+S3method(contrast, lsm.list)
 
 #S3method(glht, lsmlf)   # in namespace block above
 #S3method(glht, ref.grid)
