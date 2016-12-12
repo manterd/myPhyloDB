@@ -3,8 +3,8 @@ This is for development purposes only...
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 1: Download R source file
 
-    R-3.2.5.tar.gz
-    unzip to $HOME/R-3.2.5
+    R-3.2.3.tar.gz
+    unzip to $HOME/R-3.2.3
     open terminal and navigate to your temporary folder
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -21,17 +21,11 @@ Step 2: Make sure the following R dependencies are installed
     exit
 
     sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-
     sudo apt-get update
-
     sudo apt-get build-dep r-base
-
     sudo apt-get install libcurl4-openssl-dev
-
     sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-
     sudo apt-get install libxml2-dev
-
     sudo apt-get install libtcl8.5 libtk8.5 tcl8.5 tk8.5
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -54,10 +48,46 @@ Step 4:  Edit files
         For example, line 4 should now be:
             R_HOME_DIR=${PWD}/R/R-Linux/lib/R
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Optional: If needed here is a list of all R packages employed by myPhyloDB
+Optional: R-packages
+When each analysis is run the first time, myPhyloDB will attempt to install the necessary packages.
+Below is a full list of all R packages employed by myPhyloDB.
 
-# cran
-'devtools', 'ggplot2', 'reshape2', 'WGCNA', 'cluster', 'igraph'
+### cran ###
+caret
+cluster
+data.table
+devtools
+e1071
+forestFloor
+ggplot2
+grid
+igraph
+lsmeans
+mixOmics
+NeuralNetTools
+reshape2
+pheatmap
+png
+pROC
+randomForest
+RColorBrewer
+spls
+stargazer
+vegan
+WGCNA
 
 
+### github ###
+guiastrennec/ggplus
+
+
+### biocLite ##
+AnnotationDbi
+DESeq2
+gage
+GO.db
+impute
+pathview
+preprocessCore
+XLM
 
