@@ -79,6 +79,8 @@ def getGAGE(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
                 # R packages from biocLite
                 r("list.of.packages <- c('gage', 'DESeq2', 'pathview')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
@@ -89,6 +91,8 @@ def getGAGE(request, stops, RID, PID):
                 r("list.of.packages <- c('png', 'grid')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                database.queue.setBase(RID, 'Step 2 of 5: Mapping phylotypes to KEGG pathways...')
 
                 print r("library(gage)")
                 print r("library(DESeq2)")

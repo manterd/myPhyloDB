@@ -328,6 +328,8 @@ def getsoil_index(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                #database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
                 #r("list.of.packages <- c(' ')")
                 #r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 #r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")

@@ -221,6 +221,8 @@ def getWGCNA(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
                 # R packages from biocLite
                 r("list.of.packages <- c('XML')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
@@ -243,6 +245,8 @@ def getWGCNA(request, stops, RID, PID):
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) library('devtools')")
                 print r("if (length(new.packages)) install_github('guiastrennec/ggplus')")
+
+                database.queue.setBase(RID, 'Step 3 of 6: WGCNA analysis...')
 
                 # Load R libraries
                 print r("library(ggplot2)")

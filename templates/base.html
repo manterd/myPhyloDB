@@ -210,23 +210,23 @@
 
             <p id="link1" style="display: none;"><strong>Univariate</strong></p>
             <div id="link2" style="display: none;" >
-                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run ANcOVA analyses." >ANcOVA</li></a>
-                <a class="Offmouse" href="{% url "spac" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Calculate Species Accumulation Curves." >SpAccCurve</li></a>
-                <a class="Offmouse" href="{% url "soil_index" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Calculate Soil Health Indices." >SoilHealth</li></a>
+                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>AN</u>alysis of <u>cO</u>-variance <u>A</u>nalyses" >ANcOVA</li></a>
+                <a class="Offmouse" href="{% url "spac" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>Sp</u>ecies <u>Acc</u>umulation <u>Curve</u>s" >SpAccCurve</li></a>
+                <a class="Offmouse" href="{% url "soil_index" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Soil Health Indices" >SoilHealth</li></a>
             </div>
             <br>
 
             <p id="link3" style="display: none;"><strong>Multivariate</strong></p>
             <div id="link4" style="display: none;">
-                <a class="Offmouse" href="{% url "diffabund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Differential Abundance analysis">Diff Abund</li></a>
-                <a class="Offmouse" href="{% url "gage" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Generally Applicable Gene-set/Pathway Analysis">GAGE</li></a>
+                <a class="Offmouse" href="{% url "diffabund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>Diff</u>erential <u>Abund</u>ance analysis (DESeq2)">DiffAbund</li></a>
+                <a class="Offmouse" href="{% url "gage" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>G</u>enerally <u>A</u>pplicable <u>GE</u>ne-set/Pathway Analysis">GAGE</li></a>
             </div>
             <div id="link6" style="display: none;" >
-                <a class="Offmouse" href="{% url "pca" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run abundance-based ordination analyses:</br>Principal Components Analysis (PCA)</br>Canonical Correspondence Analysis (CCA)</br>Detrended Correspondence Analysis (DCA)">PCA+</li></a>
-                <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run distance-based ordination analyses:</br>Principal Coordinates Analysis (PCoA)">PCoA</li></a>
-                <a class="Offmouse" href="{% url "rf" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run classification analyses:</br>Random Forest</br>Neural Network (feed-forward)</br>Support Vector Machine">RandForest+</li></a>
-                <a class="Offmouse" href="{% url "spls" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Sparse Partial Least Squares Regression">sPLS-Regr</li></a>
-                <a class="Offmouse" href="{% url "wgcna" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Run Weighted Correlation Network Analysis">WGCNA</li></a>
+                <a class="Offmouse" href="{% url "pca" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Abundance-based ordination analyses:</br><u>P</u>rincipal <u>C</u>omponents <u>A</u>nalysis (PCA)</br><u>C</u>anonical <u>C</u>orrespondence <u>A</u>nalysis (CCA)</br><u>D</u>etrended <u>C</u>orrespondence <u>A</u>nalysis (DCA)">PCA+</li></a>
+                <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Distance-based ordination analyses:</br><u>P</u>rincipal <u>Co</u>ordinates <u>A</u>nalysis (PCoA)">PCoA</li></a>
+                <a class="Offmouse" href="{% url "rf" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>C</u>lassification <u>A</u>nd <u>RE</u>gression <u>T</u>raining">CARET</li></a>
+                <a class="Offmouse" href="{% url "spls" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>s</u>parse <u>P</u>artial <u>L</u>east <u>S</u>quares Regression">sPLS</li></a>
+                <a class="Offmouse" href="{% url "wgcna" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>W</u>eighted <u>C</u>orrelation <u>N</u>etwork <u>A</u>nalysis">WGCNA</li></a>
             </div>
             <br>
 

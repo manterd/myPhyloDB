@@ -56,19 +56,6 @@
                 return false;
             }
 
-            if (document.title == 'RF') {
-                countCat = 0;
-                $.each(nodesCat, function (key, value) {
-                    if (value.data.pType != undefined) {
-                        countCat = countCat + 1;
-                    }
-                });
-                if ((countCat > 0) && (countQuant > 0)) {
-                    alert("Please select only one categorical or quantitative variable!");
-                    clearMeta();
-                    return false;
-                }
-            }
         }
 
     });

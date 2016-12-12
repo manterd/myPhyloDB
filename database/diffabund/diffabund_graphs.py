@@ -194,10 +194,14 @@ def getDiffAbund(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
                 r("list.of.packages <- c('DESeq2')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
                 print r("if (length(new.packages)) biocLite(new.packages)")
+
+                database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...')
 
                 print r("library(DESeq2)")
 

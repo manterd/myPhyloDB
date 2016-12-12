@@ -90,11 +90,11 @@ def getSampleCatTree(request):
 
     myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    air = {'title': 'Air', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    human_associated = {'title': 'Human Associated', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    microbial = {'title': 'Microbial', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    soil = {'title': 'Soil', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    water = {'title': 'Water', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    air = {'title': 'Air Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    human_associated = {'title': 'Human Associated Project', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    microbial = {'title': 'Microbial Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    soil = {'title': 'Soil Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    water = {'title': 'Water Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     user = {'title': 'User-defined', 'id': 'user', 'isFolder': True,  'hideCheckbox': True, 'children': []}
 
     list = ['sample_name', 'organism', 'collection_date', 'depth', 'elev', 'seq_platform', 'seq_gene', 'seq_gene_region', 'seq_barcode', 'seq_for_primer', 'seq_rev_primer', 'env_biome', 'env_feature', 'env_material', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot']
@@ -554,11 +554,11 @@ def getSampleQuantTree(request):
 
     myTree = {'title': 'Meta Data: Quantitative', 'id': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    air = {'title': 'Air', 'id': 'air', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    human_associated = {'title': 'Human Associated', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    microbial = {'title': 'Microbial', 'id': 'microbial', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    soil = {'title': 'Soil', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    water = {'title': 'Water', 'id': 'water', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    air = {'title': 'Air Project', 'id': 'air', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    human_associated = {'title': 'Human Associated Project', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    microbial = {'title': 'Microbial Project', 'id': 'microbial', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    soil = {'title': 'Soil Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    water = {'title': 'Water Project', 'id': 'water', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     user = {'title': 'User-defined', 'id': 'user', 'isFolder': True,  'hideCheckbox': True, 'children': []}
 
     list = ['latitude', 'longitude', 'annual_season_temp', 'annual_season_precpt']

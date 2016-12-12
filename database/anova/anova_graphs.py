@@ -188,10 +188,14 @@ def getCatUnivData(request, RID, stops, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
                 # R packages from cran
                 r("list.of.packages <- c('lsmeans')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
 
                 print r("library(lsmeans)")
 

@@ -170,17 +170,25 @@ def getRF(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
                 # R packages from cran
-                r("list.of.packages <- c('stargazer', 'e1071', 'randomForest', 'caret', 'NeuralNetTools')")
+                r("list.of.packages <- c('caret', 'randomForest', 'NeuralNetTools', 'e1071', 'stargazer')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
+                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
+
+                method = all['Method']
                 print r('library(caret)')
                 print r('library(reshape2)')
                 print r('library(stargazer)')
-                print r('library(randomForest)')
-                print r('library(NeuralNetTools)')
-                print r('library(e1071)')
+                if method == 'rf':
+                    print r('library(randomForest)')
+                if method == 'nnet':
+                    print r('library(NeuralNetTools)')
+                if method == 'svm':
+                    print r('library(e1071)')
 
                 # Wrangle data into R
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
@@ -202,8 +210,8 @@ def getRF(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 r("X = data")
-                r("nzv_cols <- X[,-nearZeroVar(X)]")
-                r("if(length(nzv_col > 0)) X <- X[,-nzv_cols]")
+                r("nzv_cols <- nearZeroVar(X)")
+                r("if(length(nzv_cols > 0)) X <- X[,-nzv_cols]")
                 r.assign("allFields", allFields)
                 r("Y = meta[,allFields]")
                 r("n <- names(data)")
@@ -219,7 +227,6 @@ def getRF(request, stops, RID, PID):
                 r.assign("RID", RID)
                 r("pdf_counter <- 1")
 
-                method = all['Method']
                 finalDict = {}
                 if method == 'rf':
                     r("set.seed(1)")

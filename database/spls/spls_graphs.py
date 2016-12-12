@@ -203,10 +203,14 @@ def getSPLS(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
                 # R packages from cran
                 r("list.of.packages <- c('mixOmics', 'spls', 'pheatmap', 'RColorBrewer')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                database.queue.setBase(RID, 'Step 3 of 5: Calculating sPLS...')
 
                 print r("library(mixOmics)")
                 print r("library(spls)")
@@ -227,20 +231,19 @@ def getSPLS(request, stops, RID, PID):
                 uniqueCut = int(all["uniqueCut"])
                 r.assign("uniqueCut", uniqueCut)
 
-                r("ZeroVar <- nearZeroVar(X, freqCut=num/den, uniqueCut=uniqueCut)")
-                r("List <- row.names(ZeroVar$Metrics)")
-                r("X_new <- X[,-which(names(X) %in% List)]")
-                r("if (length(X_new) == 0) {X_new <- X}")
-                columns = r.get("ncol(X_new)")
+                r("nzv_cols <- nearZeroVar(X, freqCut=num/den, uniqueCut=uniqueCut)")
+                r("if(length(nzv_cols$Position > 0)) X <- X[,-nzv_cols$Position]")
+
+                columns = r.get("ncol(X)")
                 if columns == 0:
                     myDict = {'error': "All predictor variables have zero variance.\nsPLS-Regr was aborted!"}
                     res = simplejson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 if x_scale == 'yes':
-                    r("X_scaled <- scale(X_new, center=FALSE, scale=TRUE)")
+                    r("X_scaled <- scale(X, center=FALSE, scale=TRUE)")
                 else:
-                    r("X_scaled <- scale(X_new, center=FALSE, scale=FALSE)")
+                    r("X_scaled <- scale(X, center=FALSE, scale=FALSE)")
 
                 if y_scale == 'yes':
                     r("Y_scaled <- scale(Y, center=FALSE, scale=TRUE)")

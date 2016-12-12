@@ -27,22 +27,22 @@ Step 2: Make sure the following R dependencies are installed
     sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
     sudo apt-get install libxml2-dev
     sudo apt-get install libtcl8.5 libtk8.5 tcl8.5 tk8.5
-
+    sudo apt-get install xorg-dev libreadline-dev libssl-dev
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 3: Build new R installation
 
-    ./configure --prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux --with-x=yes --with-cairo=yes --with-lapack=yes --with-blas=yes --enable-R-shlib
+    ./configure --prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux
     make && make install
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 4:  Edit files
 
     edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/bin/R" file
-        replace all instances of "$HOME/PycharmProjects/myPhyloDB"
-        with "${PWD}"
+        replace all instances of "/home/<username>/PycharmProjects/myPhyloDB"
+        with "$HOME"
 
     edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R/bin/R" file
-        replace all instances of "$HOME/PycharmProjects/myPhyloDB"
+        replace all instances of "/home/<username>/PycharmProjects/myPhyloDB"
         with "${PWD}"
 
         For example, line 4 should now be:
@@ -71,6 +71,7 @@ png
 pROC
 randomForest
 RColorBrewer
+rgl
 spls
 stargazer
 vegan
