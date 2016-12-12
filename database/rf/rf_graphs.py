@@ -171,7 +171,7 @@ def getRF(request, stops, RID, PID):
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
                 # R packages from cran
-                r("list.of.packages <- c('stargazer', 'e1071', 'randomForest', 'forestFloor', 'caret', 'NeuralNetTools', 'pROC')")
+                r("list.of.packages <- c('stargazer', 'e1071', 'randomForest', 'caret', 'NeuralNetTools')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
@@ -181,9 +181,6 @@ def getRF(request, stops, RID, PID):
                 print r('library(randomForest)')
                 print r('library(NeuralNetTools)')
                 print r('library(e1071)')
-
-                #r('library(pROC)')
-                #r('library(forestFloor)')
 
                 # Wrangle data into R
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
