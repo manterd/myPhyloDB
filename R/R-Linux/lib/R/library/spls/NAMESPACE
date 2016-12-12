@@ -1,9 +1,0 @@
-## pls is badly written, so selective import is not possible
-import(pls)
-export( ci.spls, coefplot.spls, correct.spls )
-export( plot.spls, heatmap.spls )
-export( cv.sgpls, cv.splsda, cv.spls )
-export( predict.sgpls, predict.splsda, predict.spls )
-export( print.sgpls, print.splsda, print.spls )
-export( coef.sgpls, coef.splsda, coef.spls )
-export( sgpls, splsda, spls )
