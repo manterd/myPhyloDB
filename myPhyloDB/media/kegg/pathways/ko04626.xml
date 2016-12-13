@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Jan 19, 2015 14:31:58 +0900 (GMT+09:00) -->
 <pathway name="path:ko04626" org="ko" number="04626"
          title="Plant-pathogen interaction"

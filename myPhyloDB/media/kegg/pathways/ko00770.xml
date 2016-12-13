@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Feb 10, 2015 10:36:08 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 21, 2016 15:01:45 +0900 (GMT+9) -->
 <pathway name="path:ko00770" org="ko" number="00770"
          title="Pantothenate and CoA biosynthesis"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00770.png"
@@ -165,9 +165,9 @@
         <graphics name="K00997" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="771" y="535" width="46" height="17"/>
     </entry>
-    <entry id="64" name="ko:K01513" type="ortholog" reaction="rn:R03036"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K01513">
-        <graphics name="K01513" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="64" name="ko:K01513 ko:K04765" type="ortholog" reaction="rn:R03036"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K01513+K04765">
+        <graphics name="K01513..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="646" y="535" width="46" height="17"/>
     </entry>
     <entry id="65" name="ko:K08682" type="ortholog" reaction="rn:R01623"
@@ -465,8 +465,8 @@
     <reaction id="63" name="rn:R01625" type="irreversible">
         <substrate id="27" name="cpd:C00010"/>
         <substrate id="5" name="cpd:C03688"/>
-        <product id="25" name="cpd:C00054"/>
         <product id="26" name="cpd:C00229"/>
+        <product id="25" name="cpd:C00054"/>
     </reaction>
     <reaction id="64" name="rn:R03036" type="reversible">
         <substrate id="23" name="cpd:C01134"/>
@@ -474,8 +474,8 @@
     </reaction>
     <reaction id="65" name="rn:R01623" type="irreversible">
         <substrate id="26" name="cpd:C00229"/>
-        <product id="5" name="cpd:C03688"/>
         <product id="23" name="cpd:C01134"/>
+        <product id="5" name="cpd:C03688"/>
     </reaction>
     <reaction id="66" name="rn:R02971" type="irreversible">
         <substrate id="28" name="cpd:C00831"/>
@@ -490,8 +490,8 @@
         <product id="22" name="cpd:C04352"/>
     </reaction>
     <reaction id="70" name="rn:R04230 rn:R04231" type="irreversible">
-        <substrate id="21" name="cpd:C00097"/>
         <substrate id="97" name="cpd:C03492"/>
+        <substrate id="21" name="cpd:C00097"/>
         <product id="22" name="cpd:C04352"/>
     </reaction>
     <reaction id="71" name="rn:R03018" type="irreversible">
@@ -566,7 +566,7 @@
     <reaction id="98" name="rn:R01625" type="irreversible">
         <substrate id="27" name="cpd:C00010"/>
         <substrate id="5" name="cpd:C03688"/>
-        <product id="25" name="cpd:C00054"/>
         <product id="26" name="cpd:C00229"/>
+        <product id="25" name="cpd:C00054"/>
     </reaction>
 </pathway>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Mar 31, 2009 11:05:44 +0900 (JST) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Nov 11, 2016 17:31:15 +0900 (GMT+9) -->
 <pathway name="path:ko04320" org="ko" number="04320"
          title="Dorso-ventral axis formation"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04320.png"
@@ -70,9 +70,9 @@
         <graphics name="K02359" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="164" y="401" width="46" height="17"/>
     </entry>
-    <entry id="14" name="ko:K02599" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K02599">
-        <graphics name="K02599" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="14" name="ko:K02599 ko:K20994 ko:K20995 ko:K20996" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K02599+K20994+K20995+K20996">
+        <graphics name="K02599..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="164" y="291" width="46" height="17"/>
     </entry>
     <entry id="16" name="ko:K02174" type="ortholog"
@@ -105,9 +105,9 @@
         <graphics name="K04368" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="418" y="203" width="46" height="17"/>
     </entry>
-    <entry id="22" name="ko:K02644" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K02644">
-        <graphics name="K02644" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="22" name="ko:K04365" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K04365">
+        <graphics name="K04365" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="345" y="203" width="46" height="17"/>
     </entry>
     <entry id="23" name="ko:K07827" type="ortholog"

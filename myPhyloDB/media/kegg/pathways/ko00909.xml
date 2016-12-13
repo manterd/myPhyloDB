@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Mar 2, 2016 17:16:15 +0900 (GMT+9) -->
 <pathway name="path:ko00909" org="ko" number="00909"
          title="Sesquiterpenoid and triterpenoid biosynthesis"
@@ -565,8 +565,8 @@
         <graphics name="K15822" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="994" y="1271" width="46" height="17"/>
     </entry>
-    <entry id="187" name="ko:K15815 ko:K15813" type="ortholog" reaction="rn:R06469"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K15815+K15813">
+    <entry id="187" name="ko:K15815 ko:K15813 ko:K20658" type="ortholog" reaction="rn:R06469"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K15815+K15813+K20658">
         <graphics name="K15815..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="994" y="756" width="46" height="17"/>
     </entry>
@@ -575,9 +575,9 @@
         <graphics name="C08615" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="1047" y="791" width="8" height="8"/>
     </entry>
-    <entry id="189" name="ko:K15815" type="ortholog" reaction="rn:R06471"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K15815">
-        <graphics name="K15815" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="189" name="ko:K15815 ko:K20658" type="ortholog" reaction="rn:R06471"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K15815+K20658">
+        <graphics name="K15815..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="994" y="793" width="46" height="17"/>
     </entry>
     <entry id="190" name="cpd:C19732" type="compound"
@@ -610,8 +610,8 @@
         <graphics name="K15816" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="994" y="873" width="46" height="17"/>
     </entry>
-    <entry id="196" name="ko:K15816 ko:K15815" type="ortholog" reaction="rn:R06466"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K15816+K15815">
+    <entry id="196" name="ko:K15816 ko:K15815 ko:K20659" type="ortholog" reaction="rn:R06466"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K15816+K15815+K20659">
         <graphics name="K15816..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="994" y="833" width="46" height="17"/>
     </entry>

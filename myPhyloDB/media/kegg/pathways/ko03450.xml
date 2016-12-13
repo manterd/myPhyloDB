@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Jan 20, 2015 17:57:27 +0900 (GMT+09:00) -->
 <pathway name="path:ko03450" org="ko" number="03450"
          title="Non-homologous end-joining"

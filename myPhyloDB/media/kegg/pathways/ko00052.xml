@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Dec 16, 2014 14:56:11 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Apr 22, 2016 17:26:39 +0900 (GMT+9) -->
 <pathway name="path:ko00052" org="ko" number="00052"
          title="Galactose metabolism"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00052.png"
@@ -193,7 +193,7 @@
     <entry id="92" name="path:ko00052" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00052">
         <graphics name="TITLE:Galactose metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="141" y="58" width="202" height="25"/>
+             type="roundrectangle" x="139" y="58" width="197" height="25"/>
     </entry>
     <entry id="93" name="ko:K18819" type="ortholog" reaction="rn:R01192"
         link="http://www.kegg.jp/dbget-bin/www_bget?K18819">
@@ -1218,8 +1218,8 @@
     </reaction>
     <reaction id="111" name="rn:R01101" type="irreversible">
         <substrate id="153" name="cpd:C05402"/>
-        <product id="137" name="cpd:C00031"/>
         <product id="138" name="cpd:C00124"/>
+        <product id="137" name="cpd:C00031"/>
     </reaction>
     <reaction id="66" name="rn:R02410" type="irreversible">
         <substrate id="127" name="cpd:C00492"/>
@@ -1240,18 +1240,18 @@
     </reaction>
     <reaction id="70" name="rn:R01329" type="reversible">
         <substrate id="130" name="cpd:C05400"/>
-        <product id="118" name="cpd:C00124"/>
         <product id="133" name="cpd:C00159"/>
+        <product id="118" name="cpd:C00124"/>
     </reaction>
     <reaction id="71" name="rn:R02926" type="reversible">
         <substrate id="129" name="cpd:C05399"/>
-        <product id="134" name="cpd:C00794"/>
         <product id="118" name="cpd:C00124"/>
+        <product id="134" name="cpd:C00794"/>
     </reaction>
     <reaction id="72" name="rn:R01194" type="reversible">
         <substrate id="128" name="cpd:C01235"/>
-        <product id="118" name="cpd:C00124"/>
         <product id="115" name="cpd:C00137"/>
+        <product id="118" name="cpd:C00124"/>
     </reaction>
     <reaction id="73" name="rn:R01786" type="reversible">
         <substrate id="155" name="cpd:C00267"/>

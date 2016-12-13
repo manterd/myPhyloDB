@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Jun 23, 2010 16:39:05 +0900 (JST) -->
 <pathway name="path:ko02040" org="ko" number="02040"
          title="Flagellar assembly"

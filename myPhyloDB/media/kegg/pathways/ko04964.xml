@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: May 12, 2014 12:24:58 +0900 (GMT+09:00) -->
 <pathway name="path:ko04964" org="ko" number="04964"
          title="Proximal tubule bicarbonate reclamation"

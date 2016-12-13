@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Jun 3, 2013 16:49:56 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 7, 2016 16:01:49 +0900 (GMT+9) -->
 <pathway name="path:ko00511" org="ko" number="00511"
          title="Other glycan degradation"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00511.png"
@@ -40,9 +40,9 @@
         <graphics name="K01444" fgcolor="#6666CC" bgcolor="#FFFFFF"
              type="line" coords="591,196,621,196"/>
     </entry>
-    <entry id="9" name="ko:K12373" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K12373">
-        <graphics name="K12373" fgcolor="#6666CC" bgcolor="#FFFFFF"
+    <entry id="9" name="ko:K12373 ko:K20730" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K12373+K20730">
+        <graphics name="K12373..." fgcolor="#6666CC" bgcolor="#FFFFFF"
              type="line" coords="259,149,289,149"/>
     </entry>
     <entry id="10" name="ko:K01186 ko:K12357" type="ortholog"
@@ -55,8 +55,8 @@
         <graphics name="K01190..." fgcolor="#6666CC" bgcolor="#FFFFFF"
              type="line" coords="168,240,198,240"/>
     </entry>
-    <entry id="12" name="ko:K12373 ko:K14459" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K12373+K14459">
+    <entry id="12" name="ko:K12373 ko:K20730 ko:K14459" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K12373+K20730+K14459">
         <graphics name="K12373..." fgcolor="#6666CC" bgcolor="#FFFFFF"
              type="line" coords="259,240,289,240"/>
     </entry>

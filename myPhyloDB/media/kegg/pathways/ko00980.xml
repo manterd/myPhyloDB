@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Jan 8, 2016 14:59:54 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: May 11, 2016 09:59:31 +0900 (GMT+9) -->
 <pathway name="path:ko00980" org="ko" number="00980"
          title="Metabolism of xenobiotics by cytochrome P450"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00980.png"
@@ -1045,11 +1045,6 @@
         <graphics name="K07415" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="820" y="886" width="46" height="17"/>
     </entry>
-    <entry id="318" name="ko:K19700" type="ortholog" reaction="rn:R10105"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K19700">
-        <graphics name="K19700" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="1095" y="433" width="46" height="17"/>
-    </entry>
     <relation entry1="223" entry2="229" type="ECrel">
         <subtype name="compound" value="234"/>
     </relation>
@@ -1820,11 +1815,7 @@
     </reaction>
     <reaction id="317" name="rn:R07022 rn:R07021" type="irreversible">
         <substrate id="104" name="cpd:C14040"/>
-        <product id="116" name="cpd:C14802"/>
         <product id="117" name="cpd:C14800"/>
-    </reaction>
-    <reaction id="318" name="rn:R10105" type="irreversible">
-        <substrate id="240" name="cpd:C19567"/>
-        <product id="249" name="cpd:C19569"/>
+        <product id="116" name="cpd:C14802"/>
     </reaction>
 </pathway>

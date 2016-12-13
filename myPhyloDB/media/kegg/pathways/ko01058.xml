@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Oct 6, 2011 16:16:14 +0900 (GMT+09:00) -->
 <pathway name="path:ko01058" org="ko" number="01058"
          title="Acridone alkaloid biosynthesis"
@@ -10,7 +10,7 @@
         <graphics name="C10738" fgcolor="none" bgcolor="none"
              type="rectangle" x="141" y="521" width="168" height="138"/>
     </entry>
-    <entry id="6" name="BR:br08003(Acridone alkaloids)" type="other"
+    <entry id="6" name="BR:br08003(Acridone alkaloids)" type="brite"
         link="http://www.kegg.jp/kegg-bin/search_htext?htext=br08003&amp;search_string=%22Acridone%20alkaloids%22&amp;option=-n">
         <graphics name="BR:br08003(Acridone alkaloids)" fgcolor="none" bgcolor="none"
              type="rectangle" x="341" y="393" width="100" height="15"/>

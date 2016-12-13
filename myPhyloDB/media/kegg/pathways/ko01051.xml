@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Jul 29, 2013 16:42:20 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Apr 26, 2016 16:59:14 +0900 (GMT+9) -->
 <pathway name="path:ko01051" org="ko" number="01051"
          title="Biosynthesis of ansamycins"
          image="http://www.kegg.jp/kegg/pathway/ko/ko01051.png"
@@ -178,7 +178,7 @@
     <entry id="47" name="path:ko01051" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko01051">
         <graphics name="TITLE:Biosynthesis of ansamycins" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="161" y="58" width="242" height="25"/>
+             type="roundrectangle" x="157" y="58" width="234" height="25"/>
     </entry>
     <entry id="48" name="cpd:C12107" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C12107">

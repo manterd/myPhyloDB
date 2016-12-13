@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Jun 19, 2015 11:24:10 +0900 (GMT+9) -->
 <pathway name="path:ko04142" org="ko" number="04142"
          title="Lysosome"
@@ -7,7 +7,7 @@
          link="http://www.kegg.jp/kegg-bin/show_pathway?ko04142">
     <entry id="1" name="path:ko04140" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko04140">
-        <graphics name="Regulation of autophagy" fgcolor="#000000" bgcolor="#FFFFFF"
+        <graphics name="Autophagy" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="416" y="618" width="124" height="25"/>
     </entry>
     <entry id="2" name="ko:K02154 ko:K02146 ko:K02144 ko:K03662 ko:K02155 ko:K03661" type="ortholog"

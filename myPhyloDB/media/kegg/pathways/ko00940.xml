@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Aug 22, 2014 10:48:10 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Apr 5, 2016 16:36:05 +0900 (GMT+9) -->
 <pathway name="path:ko00940" org="ko" number="00940"
          title="Phenylpropanoid biosynthesis"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00940.png"
@@ -305,9 +305,9 @@
         <graphics name="K01904" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="336" y="317" width="46" height="17"/>
     </entry>
-    <entry id="136" name="ko:K12468" type="ortholog" reaction="rn:R02952"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K12468">
-        <graphics name="K12468" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="136" name="ko:K20039 ko:K03186" type="ortholog" reaction="rn:R02952"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20039+K03186">
+        <graphics name="K20039..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="380" y="297" width="46" height="17"/>
     </entry>
     <entry id="137" name="ko:K13065" type="ortholog" reaction="rn:R02416"
@@ -335,9 +335,9 @@
         <graphics name="K13065" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="560" y="338" width="46" height="17"/>
     </entry>
-    <entry id="146" name="ko:K12468" type="ortholog" reaction="rn:R03367"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K12468">
-        <graphics name="K12468" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="146" name="ko:K20039 ko:K03186" type="ortholog" reaction="rn:R03367"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20039+K03186">
+        <graphics name="K20039..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="654" y="296" width="46" height="17"/>
     </entry>
     <entry id="147" name="ko:K01904" type="ortholog" reaction="rn:R01943"

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Mar 31, 2016 15:03:25 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Nov 28, 2016 13:08:09 +0900 (GMT+9) -->
 <pathway name="path:ko04360" org="ko" number="04360"
          title="Axon guidance"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04360.png"
@@ -10,9 +10,9 @@
         <graphics name="K06093" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="768" y="1138" width="46" height="17"/>
     </entry>
-    <entry id="2" name="ko:K04235" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K04235">
-        <graphics name="K04235" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="2" name="ko:K04237" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K04237">
+        <graphics name="K04237" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="768" y="1104" width="46" height="17"/>
     </entry>
     <entry id="3" name="ko:K04630" type="ortholog"
@@ -475,9 +475,9 @@
         <graphics name="C00076" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="595" y="1074" width="8" height="8"/>
     </entry>
-    <entry id="95" name="ko:K17554 ko:K08818 ko:K02649" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K17554+K08818+K02649">
-        <graphics name="K17554..." fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="95" name="ko:K00922 ko:K02649" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K00922+K02649">
+        <graphics name="K00922..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="593" y="1121" width="46" height="17"/>
     </entry>
     <entry id="96" name="ko:K03083" type="ortholog"
@@ -580,9 +580,9 @@
         <graphics name="C00076" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="593" y="910" width="8" height="8"/>
     </entry>
-    <entry id="116" name="ko:K02677" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K02677">
-        <graphics name="K02677" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="116" name="ko:K18952" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K18952">
+        <graphics name="K18952" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="768" y="1121" width="46" height="17"/>
     </entry>
     <entry id="117" name="ko:K05765" type="ortholog"

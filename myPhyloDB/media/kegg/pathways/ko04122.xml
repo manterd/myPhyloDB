@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: May 15, 2014 10:18:32 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Nov 21, 2016 17:55:15 +0900 (GMT+9) -->
 <pathway name="path:ko04122" org="ko" number="04122"
          title="Sulfur relay system"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04122.png"
@@ -155,9 +155,9 @@
         <graphics name="K03636" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="724" y="588" width="46" height="17"/>
     </entry>
-    <entry id="31" name="ko:K11996" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K11996">
-        <graphics name="K11996" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="31" name="ko:K21029" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K21029">
+        <graphics name="K21029" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="818" y="588" width="46" height="17"/>
     </entry>
     <entry id="32" name="cpd:C00378" type="compound"
@@ -265,6 +265,11 @@
         <graphics name="K03635" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="887" y="471" width="46" height="17"/>
     </entry>
+    <entry id="53" name="ko:K21028" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K21028">
+        <graphics name="K21028" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="772" y="552" width="46" height="17"/>
+    </entry>
     <relation entry1="6" entry2="9" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
     </relation>
@@ -325,5 +330,7 @@
     </relation>
     <relation entry1="22" entry2="23" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
+    </relation>
+    <relation entry1="53" entry2="28" type="PPrel">
     </relation>
 </pathway>

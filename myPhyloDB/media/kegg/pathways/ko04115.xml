@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Dec 24, 2015 16:27:12 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Jun 21, 2016 10:35:03 +0900 (GMT+9) -->
 <pathway name="path:ko04115" org="ko" number="04115"
          title="p53 signaling pathway"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04115.png"
@@ -270,9 +270,9 @@
         <graphics name="K10135" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="564" y="388" width="46" height="17"/>
     </entry>
-    <entry id="56" name="ko:K10141" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K10141">
-        <graphics name="K10141" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="56" name="ko:K10141 ko:K20394" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K10141+K20394">
+        <graphics name="K10141..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="721" y="509" width="46" height="17"/>
     </entry>
     <entry id="57" name="ko:K05868" type="ortholog"

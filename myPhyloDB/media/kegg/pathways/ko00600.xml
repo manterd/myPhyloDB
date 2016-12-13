@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Sep 28, 2015 15:12:14 +0900 (GMT+9) -->
 <pathway name="path:ko00600" org="ko" number="00600"
          title="Sphingolipid metabolism"
@@ -127,7 +127,7 @@
     </entry>
     <entry id="63" name="path:ko00603" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00603">
-        <graphics name="Glycosphingolipid biosynthesis - globo series" fgcolor="#000000" bgcolor="#FFFFFF"
+        <graphics name="Glycosphingolipid biosynthesis - globo and isoglobo series" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="182" y="562" width="170" height="34"/>
     </entry>
     <entry id="64" name="path:ko00601" type="map"

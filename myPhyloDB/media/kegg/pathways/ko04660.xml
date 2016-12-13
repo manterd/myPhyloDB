@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Feb 24, 2016 14:40:53 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Oct 28, 2016 13:22:03 +0900 (GMT+9) -->
 <pathway name="path:ko04660" org="ko" number="04660"
          title="T cell receptor signaling pathway"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04660.png"
@@ -407,17 +407,17 @@
     </entry>
     <entry id="82" name="undefined" type="group">
         <graphics fgcolor="#000000" bgcolor="#FFFFFF"
-             type="rectangle" x="651" y="832" width="46" height="51"/>
-        <component id="15"/>
-        <component id="16"/>
-        <component id="17"/>
-    </entry>
-    <entry id="83" name="undefined" type="group">
-        <graphics fgcolor="#000000" bgcolor="#FFFFFF"
              type="rectangle" x="524" y="805" width="46" height="51"/>
         <component id="21"/>
         <component id="22"/>
         <component id="23"/>
+    </entry>
+    <entry id="83" name="undefined" type="group">
+        <graphics fgcolor="#000000" bgcolor="#FFFFFF"
+             type="rectangle" x="651" y="832" width="46" height="51"/>
+        <component id="15"/>
+        <component id="16"/>
+        <component id="17"/>
     </entry>
     <relation entry1="61" entry2="63" type="PPrel">
         <subtype name="binding/association" value="---"/>
@@ -455,20 +455,6 @@
     <relation entry1="47" entry2="53" type="PPrel">
         <subtype name="binding/association" value="---"/>
     </relation>
-    <relation entry1="54" entry2="56" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-        <subtype name="binding/association" value="---"/>
-    </relation>
-    <relation entry1="54" entry2="53" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-        <subtype name="binding/association" value="---"/>
-    </relation>
-    <relation entry1="60" entry2="59" type="PPrel">
-        <subtype name="dephosphorylation" value="-p"/>
-    </relation>
-    <relation entry1="60" entry2="54" type="PPrel">
-        <subtype name="dephosphorylation" value="-p"/>
-    </relation>
     <relation entry1="61" entry2="47" type="PPrel">
         <subtype name="inhibition" value="--|"/>
         <subtype name="dephosphorylation" value="-p"/>
@@ -486,26 +472,8 @@
         <subtype name="inhibition" value="--|"/>
     </relation>
     <relation entry1="58" entry2="47" type="PPrel">
-        <subtype name="ubiquitination" value="+u"/>
         <subtype name="inhibition" value="--|"/>
-    </relation>
-    <relation entry1="59" entry2="47" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="47" entry2="46" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="47" entry2="40" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="37" entry2="42" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="37" entry2="38" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="45" entry2="44" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
+        <subtype name="ubiquitination" value="+u"/>
     </relation>
     <relation entry1="29" entry2="30" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
@@ -524,21 +492,6 @@
     </relation>
     <relation entry1="32" entry2="33" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
-    </relation>
-    <relation entry1="25" entry2="20" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="20" entry2="19" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="19" entry2="18" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="18" entry2="82" type="PPrel">
-        <subtype name="phosphorylation" value="+p"/>
-    </relation>
-    <relation entry1="36" entry2="35" type="PPrel">
-        <subtype name="dephosphorylation" value="-p"/>
     </relation>
     <relation entry1="39" entry2="31" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
@@ -579,7 +532,7 @@
     </relation>
     <relation entry1="71" entry2="34" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
-        <subtype name="phosphorylation" value="+p"/>
+        <subtype name="dephosphorylation" value="-p"/>
     </relation>
     <relation entry1="33" entry2="70" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
@@ -617,7 +570,7 @@
         <subtype name="activation" value="--&gt;"/>
         <subtype name="phosphorylation" value="+p"/>
     </relation>
-    <relation entry1="83" entry2="16" type="PPrel">
+    <relation entry1="82" entry2="16" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
         <subtype name="ubiquitination" value="+u"/>
     </relation>
@@ -625,7 +578,79 @@
         <subtype name="activation" value="--&gt;"/>
         <subtype name="phosphorylation" value="+p"/>
     </relation>
+    <relation entry1="60" entry2="59" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="dephosphorylation" value="-p"/>
+    </relation>
+    <relation entry1="60" entry2="54" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="dephosphorylation" value="-p"/>
+    </relation>
+    <relation entry1="56" entry2="54" type="PPrel">
+        <subtype name="phosphorylation" value="+p"/>
+        <subtype name="binding/association" value="---"/>
+    </relation>
+    <relation entry1="53" entry2="54" type="PPrel">
+        <subtype name="phosphorylation" value="+p"/>
+        <subtype name="binding/association" value="---"/>
+    </relation>
+    <relation entry1="54" entry2="59" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="54" entry2="47" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="47" entry2="40" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="47" entry2="46" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="45" entry2="44" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="37" entry2="42" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="37" entry2="38" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="36" entry2="35" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="dephosphorylation" value="-p"/>
+    </relation>
+    <relation entry1="20" entry2="19" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="19" entry2="18" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="18" entry2="83" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
     <relation entry1="15" entry2="13" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="25" entry2="20" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
+        <subtype name="phosphorylation" value="+p"/>
+    </relation>
+    <relation entry1="75" entry2="76" type="PPrel">
+        <subtype name="binding/association" value="---"/>
+    </relation>
+    <relation entry1="59" entry2="47" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
         <subtype name="phosphorylation" value="+p"/>
     </relation>
 </pathway>

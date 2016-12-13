@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Mar 2, 2016 17:53:44 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 6, 2016 14:34:24 +0900 (GMT+9) -->
 <pathway name="path:ko04075" org="ko" number="04075"
          title="Plant hormone signal transduction"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04075.png"
@@ -80,9 +80,9 @@
         <graphics name="K14510" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="449" y="848" width="46" height="17"/>
     </entry>
-    <entry id="19" name="ko:K14511" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K14511">
-        <graphics name="K14511" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="19" name="ko:K13413" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K13413">
+        <graphics name="K13413" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="449" y="900" width="46" height="17"/>
     </entry>
     <entry id="20" name="ko:K14512" type="ortholog"

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Nov 30, 2015 17:12:11 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Nov 21, 2016 15:18:09 +0900 (GMT+9) -->
 <pathway name="path:ko00901" org="ko" number="00901"
          title="Indole alkaloid biosynthesis"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00901.png"
@@ -23,7 +23,7 @@
     <entry id="14" name="path:ko00902" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00902">
         <graphics name="Monoterpenoid biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="586" y="225" width="93" height="34"/>
+             type="roundrectangle" x="586" y="226" width="93" height="34"/>
     </entry>
     <entry id="15" name="cpd:C11812" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C11812">
@@ -163,7 +163,7 @@
     <entry id="42" name="path:ko00901" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00901">
         <graphics name="TITLE:Indole alkaloid biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="173" y="58" width="266" height="25"/>
+             type="roundrectangle" x="166" y="58" width="251" height="25"/>
     </entry>
     <entry id="43" name="cpd:C00398" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C00398">
@@ -305,6 +305,11 @@
         <graphics name="K12695" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="623" y="714" width="46" height="17"/>
     </entry>
+    <entry id="122" name="ko:K21026" type="ortholog" reaction="rn:R05880"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K21026">
+        <graphics name="K21026" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="507" y="747" width="46" height="17"/>
+    </entry>
     <entry id="124" name="ko:K01593" type="ortholog" reaction="rn:R00685"
         link="http://www.kegg.jp/dbget-bin/www_bget?K01593">
         <graphics name="K01593" fgcolor="#000000" bgcolor="#BFBFFF"
@@ -334,8 +339,8 @@
     </reaction>
     <reaction id="105" name="rn:R03820" type="irreversible">
         <substrate id="44" name="cpd:C03470"/>
-        <product id="40" name="cpd:C00031"/>
         <product id="45" name="cpd:C03309"/>
+        <product id="40" name="cpd:C00031"/>
     </reaction>
     <reaction id="124" name="rn:R00685" type="reversible">
         <substrate id="46" name="cpd:C00078"/>
@@ -374,5 +379,9 @@
     <reaction id="119" name="rn:R03703" type="irreversible">
         <substrate id="33" name="cpd:C02074"/>
         <product id="34" name="cpd:C01761"/>
+    </reaction>
+    <reaction id="122" name="rn:R05880" type="irreversible">
+        <substrate id="13" name="cpd:C11809"/>
+        <product id="31" name="cpd:C11810"/>
     </reaction>
 </pathway>

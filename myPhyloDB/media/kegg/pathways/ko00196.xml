@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Nov 16, 2010 16:55:37 +0900 (GMT+09:00) -->
 <pathway name="path:ko00196" org="ko" number="00196"
          title="Photosynthesis - antenna proteins"
@@ -120,13 +120,13 @@
         <graphics name="K02290" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="364" y="516" width="46" height="17"/>
     </entry>
-    <entry id="24" name="ko:K02289 ko:K02632" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K02289+K02632">
+    <entry id="24" name="ko:K02289 ko:K20713 ko:K02632" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K02289+K20713+K02632">
         <graphics name="K02289..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="318" y="516" width="46" height="17"/>
     </entry>
-    <entry id="25" name="ko:K02288 ko:K02631" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K02288+K02631">
+    <entry id="25" name="ko:K02288 ko:K20713 ko:K02631" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K02288+K20713+K02631">
         <graphics name="K02288..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="272" y="516" width="46" height="17"/>
     </entry>

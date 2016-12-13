@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Jan 22, 2016 17:28:44 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: May 31, 2016 17:29:48 +0900 (GMT+9) -->
 <pathway name="path:ko00340" org="ko" number="00340"
          title="Histidine metabolism"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00340.png"
@@ -93,7 +93,7 @@
     <entry id="59" name="path:ko00030" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00030">
         <graphics name="Pentose phosphate pathway" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="112" y="215" width="152" height="26"/>
+             type="roundrectangle" x="114" y="215" width="155" height="26"/>
     </entry>
     <entry id="60" name="ko:K00765 ko:K02502" type="ortholog" reaction="rn:R01071"
         link="http://www.kegg.jp/dbget-bin/www_bget?K00765+K02502">
@@ -148,7 +148,7 @@
     <entry id="70" name="path:ko00340" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00340">
         <graphics name="TITLE:Histidine metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="139" y="58" width="198" height="25"/>
+             type="roundrectangle" x="130" y="58" width="179" height="25"/>
     </entry>
     <entry id="71" name="ko:K02500 ko:K01663" type="ortholog" reaction="rn:R04558"
         link="http://www.kegg.jp/dbget-bin/www_bget?K02500+K01663">
@@ -415,9 +415,9 @@
         <graphics name="K17363" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="899" y="414" width="46" height="17"/>
     </entry>
-    <entry id="144" name="ko:K18911" type="ortholog" reaction="rn:R01169"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K18911">
-        <graphics name="K18911" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="144" name="ko:K20246 ko:K18911" type="ortholog" reaction="rn:R01169"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20246+K18911">
+        <graphics name="K20246..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="870" y="341" width="46" height="17"/>
     </entry>
     <entry id="145" name="ko:K18912" type="ortholog" reaction="rn:R11013"
@@ -440,12 +440,17 @@
         <graphics name="C20994" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="1101" y="340" width="8" height="8"/>
     </entry>
-    <entry id="151" name="ko:K18913" type="ortholog" reaction="rn:R11023"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K18913">
-        <graphics name="K18913" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="151" name="ko:K20247 ko:K18913" type="ortholog" reaction="rn:R11023"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20247+K18913">
+        <graphics name="K20247..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="1143" y="341" width="46" height="17"/>
     </entry>
-    <entry id="152" name="undefined" type="group">
+    <entry id="153" name="ko:K20246" type="ortholog" reaction="rn:R11014"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20246">
+        <graphics name="K20246" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="1010" y="374" width="46" height="17"/>
+    </entry>
+    <entry id="154" name="undefined" type="group">
         <graphics fgcolor="#000000" bgcolor="#FFFFFF"
              type="rectangle" x="500" y="135" width="46" height="34"/>
         <component id="126"/>
@@ -601,13 +606,13 @@
     <relation entry1="39" entry2="66" type="maplink">
         <subtype name="compound" value="122"/>
     </relation>
-    <relation entry1="67" entry2="152" type="ECrel">
+    <relation entry1="67" entry2="154" type="ECrel">
         <subtype name="compound" value="86"/>
     </relation>
-    <relation entry1="152" entry2="65" type="ECrel">
+    <relation entry1="154" entry2="65" type="ECrel">
         <subtype name="compound" value="88"/>
     </relation>
-    <relation entry1="152" entry2="72" type="maplink">
+    <relation entry1="154" entry2="72" type="maplink">
         <subtype name="compound" value="87"/>
     </relation>
     <relation entry1="48" entry2="75" type="ECrel">
@@ -649,8 +654,20 @@
     <relation entry1="145" entry2="148" type="ECrel">
         <subtype name="compound" value="146"/>
     </relation>
+    <relation entry1="151" entry2="153" type="ECrel">
+        <subtype name="compound" value="149"/>
+    </relation>
     <relation entry1="151" entry2="148" type="ECrel">
         <subtype name="compound" value="149"/>
+    </relation>
+    <relation entry1="153" entry2="148" type="ECrel">
+        <subtype name="compound" value="149"/>
+    </relation>
+    <relation entry1="153" entry2="144" type="ECrel">
+        <subtype name="compound" value="112"/>
+    </relation>
+    <relation entry1="153" entry2="145" type="ECrel">
+        <subtype name="compound" value="112"/>
     </relation>
     <reaction id="38" name="rn:R02286" type="irreversible">
         <substrate id="119" name="cpd:C00439"/>
@@ -758,8 +775,8 @@
     </reaction>
     <reaction id="71" name="rn:R04558" type="irreversible">
         <substrate id="86" name="cpd:C04916"/>
-        <product id="87" name="cpd:C04677"/>
         <product id="88" name="cpd:C04666"/>
+        <product id="87" name="cpd:C04677"/>
     </reaction>
     <reaction id="75" name="rn:R01166" type="irreversible">
         <substrate id="104" name="cpd:C00386"/>
@@ -775,8 +792,8 @@
     </reaction>
     <reaction id="126" name="rn:R04558" type="irreversible">
         <substrate id="86" name="cpd:C04916"/>
-        <product id="87" name="cpd:C04677"/>
         <product id="88" name="cpd:C04666"/>
+        <product id="87" name="cpd:C04677"/>
     </reaction>
     <reaction id="143" name="rn:R10330" type="irreversible">
         <substrate id="113" name="cpd:C00785"/>
@@ -797,5 +814,9 @@
     <reaction id="151" name="rn:R11023" type="reversible">
         <substrate id="149" name="cpd:C20994"/>
         <product id="111" name="cpd:C05570"/>
+    </reaction>
+    <reaction id="153" name="rn:R11014" type="reversible">
+        <substrate id="112" name="cpd:C05575"/>
+        <product id="149" name="cpd:C20994"/>
     </reaction>
 </pathway>

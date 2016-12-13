@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: May 21, 2015 11:04:53 +0900 (GMT+9) -->
 <pathway name="path:ko00740" org="ko" number="00740"
          title="Riboflavin metabolism"
@@ -130,8 +130,8 @@
         <graphics name="K18453" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="784" y="284" width="46" height="17"/>
     </entry>
-    <entry id="46" name="ko:K00861 ko:K11753" type="ortholog" reaction="rn:R00549"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K00861+K11753">
+    <entry id="46" name="ko:K00861 ko:K20884 ko:K11753" type="ortholog" reaction="rn:R00549"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K00861+K20884+K11753">
         <graphics name="K00861..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="650" y="305" width="46" height="17"/>
     </entry>
@@ -260,6 +260,11 @@
         <graphics name="K05368" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="613" y="365" width="46" height="17"/>
     </entry>
+    <entry id="81" name="ko:K20146" type="ortholog" reaction="rn:R05705"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20146">
+        <graphics name="K20146" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="749" y="365" width="46" height="17"/>
+    </entry>
     <relation entry1="48" entry2="47" type="ECrel">
         <subtype name="compound" value="10"/>
     </relation>
@@ -353,6 +358,9 @@
     <relation entry1="67" entry2="74" type="ECrel">
         <subtype name="compound" value="60"/>
     </relation>
+    <relation entry1="67" entry2="81" type="ECrel">
+        <subtype name="compound" value="60"/>
+    </relation>
     <relation entry1="75" entry2="45" type="ECrel">
         <subtype name="compound" value="23"/>
     </relation>
@@ -393,6 +401,21 @@
         <subtype name="compound" value="54"/>
     </relation>
     <relation entry1="74" entry2="46" type="ECrel">
+        <subtype name="compound" value="54"/>
+    </relation>
+    <relation entry1="81" entry2="73" type="ECrel">
+        <subtype name="compound" value="54"/>
+    </relation>
+    <relation entry1="81" entry2="44" type="ECrel">
+        <subtype name="compound" value="54"/>
+    </relation>
+    <relation entry1="81" entry2="45" type="ECrel">
+        <subtype name="compound" value="54"/>
+    </relation>
+    <relation entry1="81" entry2="53" type="ECrel">
+        <subtype name="compound" value="54"/>
+    </relation>
+    <relation entry1="81" entry2="46" type="ECrel">
         <subtype name="compound" value="54"/>
     </relation>
     <reaction id="40" name="rn:R07281" type="irreversible">
@@ -486,5 +509,9 @@
     <reaction id="75" name="rn:R09748" type="irreversible">
         <substrate id="23" name="cpd:C00016"/>
         <product id="63" name="cpd:C01352"/>
+    </reaction>
+    <reaction id="81" name="rn:R05705" type="irreversible">
+        <substrate id="54" name="cpd:C00061"/>
+        <product id="60" name="cpd:C01847"/>
     </reaction>
 </pathway>

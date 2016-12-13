@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Mar 2, 2016 11:33:22 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 26, 2016 12:14:54 +0900 (GMT+9) -->
 <pathway name="path:ko00100" org="ko" number="00100"
          title="Steroid biosynthesis"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00100.png"
@@ -228,7 +228,7 @@
     <entry id="88" name="path:ko00100" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00100">
         <graphics name="TITLE:Steroid biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="132" y="58" width="184" height="25"/>
+             type="roundrectangle" x="130" y="58" width="180" height="25"/>
     </entry>
     <entry id="89" name="ko:K01852" type="ortholog" reaction="rn:R03199"
         link="http://www.kegg.jp/dbget-bin/www_bget?K01852">

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Jun 4, 2012 15:07:46 +0900 (GMT+09:00) -->
 <pathway name="path:ko00512" org="ko" number="00512"
-         title="Mucin type O-Glycan biosynthesis"
+         title="Mucin type O-glycan biosynthesis"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00512.png"
          link="http://www.kegg.jp/kegg-bin/show_pathway?ko00512">
     <entry id="14" name="path:ko00533" type="map"
@@ -122,7 +122,7 @@
     </entry>
     <entry id="41" name="path:ko00512" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00512">
-        <graphics name="TITLE:Mucin type O-Glycan biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
+        <graphics name="TITLE:Mucin type O-glycan biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="190" y="58" width="299" height="25"/>
     </entry>
     <entry id="42" name="cpd:C02189" type="compound"

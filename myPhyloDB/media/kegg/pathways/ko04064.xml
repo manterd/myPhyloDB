@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Oct 23, 2015 16:23:02 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Oct 28, 2016 13:48:03 +0900 (GMT+9) -->
 <pathway name="path:ko04064" org="ko" number="04064"
          title="NF-kappa B signaling pathway"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04064.png"
@@ -75,9 +75,9 @@
         <graphics name="K03156" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="114" y="334" width="46" height="17"/>
     </entry>
-    <entry id="15" name="path:ko04210" type="map"
-        link="http://www.kegg.jp/dbget-bin/www_bget?ko04210">
-        <graphics name="Apoptosis" fgcolor="#000000" bgcolor="#FFFFFF"
+    <entry id="15" name="path:ko04064" type="map"
+        link="http://www.kegg.jp/dbget-bin/www_bget?ko04064">
+        <graphics name="TITLE:NF-kappa B signaling pathway" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="178" y="58" width="275" height="25"/>
     </entry>
     <entry id="16" name="ko:K05477" type="ortholog"
@@ -195,9 +195,9 @@
         <graphics name="K18052" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="578" y="145" width="46" height="17"/>
     </entry>
-    <entry id="39" name="ko:K07367" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K07367">
-        <graphics name="K07367" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="39" name="ko:K20912 ko:K07367 ko:K20913" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20912+K07367+K20913">
+        <graphics name="K20912..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="583" y="269" width="46" height="17"/>
     </entry>
     <entry id="40" name="ko:K07368" type="ortholog"

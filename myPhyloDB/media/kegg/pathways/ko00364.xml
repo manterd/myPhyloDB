@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Sep 28, 2015 15:55:38 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 27, 2016 17:20:42 +0900 (GMT+9) -->
 <pathway name="path:ko00364" org="ko" number="00364"
          title="Fluorobenzoate degradation"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00364.png"
@@ -138,7 +138,7 @@
     <entry id="60" name="path:ko00364" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00364">
         <graphics name="TITLE:Fluorobenzoate degradation" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="171" y="58" width="262" height="25"/>
+             type="roundrectangle" x="166" y="58" width="252" height="25"/>
     </entry>
     <entry id="61" name="cpd:C11272" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C11272">
@@ -250,9 +250,14 @@
         <graphics name="C16249" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="845" y="238" width="8" height="8"/>
     </entry>
-    <entry id="90" name="ko:K01721" type="ortholog" reaction="rn:R07780"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K01721">
-        <graphics name="K01721" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="88" name="ko:K20806" type="ortholog" reaction="rn:R04349"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20806">
+        <graphics name="K20806" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="719" y="143" width="46" height="17"/>
+    </entry>
+    <entry id="90" name="ko:K01721 ko:K20807" type="ortholog" reaction="rn:R07780"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K01721+K20807">
+        <graphics name="K01721..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="676" y="176" width="46" height="17"/>
     </entry>
     <entry id="91" name="cpd:C16246" type="compound"
@@ -265,9 +270,9 @@
         <graphics name="C03925" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="808" y="175" width="8" height="8"/>
     </entry>
-    <entry id="97" name="ko:K08686" type="ortholog" reaction="rn:R01033"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K08686">
-        <graphics name="K08686" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="97" name="ko:K08686 ko:K20808 ko:K20809" type="ortholog" reaction="rn:R01033"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K08686+K20808+K20809">
+        <graphics name="K08686..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="851" y="410" width="46" height="17"/>
     </entry>
     <entry id="98" name="cpd:C02357" type="compound"
@@ -454,6 +459,10 @@
     <reaction id="86" name="rn:R07781" type="irreversible">
         <substrate id="87" name="cpd:C16249"/>
         <product id="51" name="cpd:C02222"/>
+    </reaction>
+    <reaction id="88" name="rn:R04349" type="irreversible">
+        <substrate id="85" name="cpd:C04178"/>
+        <product id="94" name="cpd:C03925"/>
     </reaction>
     <reaction id="90" name="rn:R07780" type="irreversible">
         <substrate id="85" name="cpd:C04178"/>

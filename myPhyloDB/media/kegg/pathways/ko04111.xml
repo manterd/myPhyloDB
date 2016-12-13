@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Nov 30, 2015 16:18:47 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Apr 5, 2016 13:23:51 +0900 (GMT+9) -->
 <pathway name="path:ko04111" org="ko" number="04111"
          title="Cell cycle - yeast"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04111.png"
@@ -895,6 +895,7 @@
         <subtype name="ubiquitination" value="+u"/>
     </relation>
     <relation entry1="146" entry2="39" type="PPrel">
+        <subtype name="inhibition" value="--|"/>
         <subtype name="ubiquitination" value="+u"/>
     </relation>
     <relation entry1="1" entry2="54" type="PPrel">
@@ -1092,17 +1093,15 @@
     </relation>
     <relation entry1="82" entry2="113" type="PPrel">
         <subtype name="inhibition" value="--|"/>
-        <subtype name="indirect effect" value="..&gt;"/>
     </relation>
     <relation entry1="82" entry2="112" type="PPrel">
         <subtype name="inhibition" value="--|"/>
-        <subtype name="indirect effect" value="..&gt;"/>
     </relation>
     <relation entry1="82" entry2="114" type="PPrel">
         <subtype name="inhibition" value="--|"/>
-        <subtype name="indirect effect" value="..&gt;"/>
     </relation>
     <relation entry1="75" entry2="74" type="PPrel">
+        <subtype name="activation" value="--&gt;"/>
         <subtype name="indirect effect" value="..&gt;"/>
     </relation>
     <relation entry1="151" entry2="87" type="PPrel">

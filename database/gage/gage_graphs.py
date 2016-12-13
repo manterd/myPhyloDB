@@ -109,14 +109,31 @@ def getGAGE(request, stops, RID, PID):
                     else:
                         nameList.append(value)
 
-                r("load('myPhyloDB/media/kegg/kegg.gs.RData')")
+                # Enable this to update gage data and pathways
+                '''
+                r("list.of.packages <- c('gageData')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+                print r("if (length(new.packages)) biocLite(new.packages)")
+
+                r('library(gageData)')
+                r("data(kegg.sets.ko)")
+                r("save(kegg.sets.ko, file='myPhyloDB/media/kegg/kegg.sets.ko.RData')")
+                r("for (name in names(kegg.sets.ko)) { \
+                    id = substr(name, 3, 7); \
+                    download.kegg(pathway.id=id, species='ko', kegg.dir='myPhyloDB/media/kegg/pathways', file.type=c('xml', 'png')) \
+                    } \
+                ")
+                '''
+
+                r("load('myPhyloDB/media/kegg/kegg.sets.ko.RData')")
 
                 keggDict = {}
                 r("selPaths <- vector()")
                 for i in nameList:
                     pathStr = i.split('[PATH:')[1].split(']')[0]
                     r.assign("pathStr", pathStr)
-                    r("selPath <- kegg.gs[grepl(paste(pathStr), names(kegg.gs))]")
+                    r("selPath <- kegg.sets.ko[grepl(paste(pathStr), names(kegg.sets.ko))]")
                     key = r.get("names(selPath)")
                     value = r.get("selPath$ko")
                     keggDict[key] = value.tolist()
@@ -239,7 +256,7 @@ def getGAGE(request, stops, RID, PID):
                         diffDF = diffDF.ix[:, all_columns]
 
                         ### GAGE analysis on all pathways...
-                        r("gage.res <- gage(change, gsets=kegg.gs, species='ko', same.dir=FALSE)")
+                        r("gage.res <- gage(change, gsets=kegg.sets.ko, species='ko', same.dir=FALSE)")
                         r("df <- data.frame(pathway=rownames(gage.res$greater), p.geomean=gage.res$greater[, 1], stat.mean=gage.res$greater[, 2], \
                             p.val=gage.res$greater[, 3], q.val=gage.res$greater[, 4], \
                             set.size=gage.res$greater[, 5])")
@@ -261,15 +278,15 @@ def getGAGE(request, stops, RID, PID):
                         for key in keggDict.iterkeys():
                             r.assign("pathway", key)
                             r("pid <- substr(pathway, start=1, stop=7)")
-                            r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../kegg/pathways', kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
+                            r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../kegg/pathways', \
+                                kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
 
                             # convert to pdf
                             r("pdf(paste('gage_temp', pdf_counter, '.pdf', sep=''))")
                             r("plot.new()")
                             r("pngRaster <- readPNG(paste(pid, 'pathview.png', sep='.'))")
-                            #r("grid.raster(pngRaster, width=unit(0.8, 'npc'), height=unit(0.8, 'npc'))")
                             r("grid.raster(pngRaster)")
-                            r("mtext(paste(trt1, ' vs ', trt2, sep=''), side=1, line=2)")
+                            r("mtext(paste(trt1, ' vs ', trt2, sep=''), side=3, line=4, col='blue')")
                             r("dev.off()")
                             r("pdf_counter <- pdf_counter + 1")
 

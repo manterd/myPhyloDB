@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Feb 25, 2016 13:49:54 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 26, 2016 10:23:18 +0900 (GMT+9) -->
 <pathway name="path:ko00633" org="ko" number="00633"
          title="Nitrotoluene degradation"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00633.png"
@@ -118,7 +118,7 @@
     <entry id="52" name="path:ko00633" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00633">
         <graphics name="TITLE:Nitrotoluene degradation" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="158" y="58" width="236" height="25"/>
+             type="roundrectangle" x="153" y="58" width="226" height="25"/>
     </entry>
     <entry id="54" name="cpd:C16391" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C16391">

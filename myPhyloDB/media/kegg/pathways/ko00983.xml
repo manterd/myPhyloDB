@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Oct 28, 2013 16:29:10 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 26, 2016 10:40:52 +0900 (GMT+9) -->
 <pathway name="path:ko00983" org="ko" number="00983"
          title="Drug metabolism - other enzymes"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00983.png"

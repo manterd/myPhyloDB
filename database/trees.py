@@ -1242,14 +1242,14 @@ def getKEGGTree2(request):
     else:
         r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-    r("load('myPhyloDB/media/kegg/kegg.gs.RData')")
-    pathArray = r.get("names(kegg.gs)")
+    r("load('myPhyloDB/media/kegg/kegg.sets.ko.RData')")
+    pathArray = r.get("names(kegg.sets.ko)")
 
     pathList = []
     for i in pathArray:
         pathList.append(i.split()[0])
 
-    level1 = ko_lvl1.objects.using('picrust').all().exclude(ko_lvl1_name='Human Diseases').order_by('ko_lvl1_name').distinct()
+    level1 = ko_lvl1.objects.using('picrust').all().order_by('ko_lvl1_name').distinct()
     for item in level1:
         myNode = {
             'title': item.ko_lvl1_name,
@@ -1261,7 +1261,7 @@ def getKEGGTree2(request):
             'expand': False,
             'children': []
         }
-        level2 = item.ko_lvl2_set.all().exclude(ko_lvl2_name='Aging').exclude(ko_lvl2_name='Enzyme families').order_by('ko_lvl2_name').distinct()
+        level2 = item.ko_lvl2_set.all().order_by('ko_lvl2_name').distinct()
         for thing1 in level2:
             myNode1 = {
                 'title': thing1.ko_lvl2_name,

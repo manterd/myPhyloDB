@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Sep 10, 2015 16:58:51 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 5, 2016 09:58:45 +0900 (GMT+9) -->
 <pathway name="path:ko00630" org="ko" number="00630"
          title="Glyoxylate and dicarboxylate metabolism"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00630.png"
@@ -118,12 +118,12 @@
     <entry id="112" name="ko:K00015" type="ortholog" reaction="rn:R01388"
         link="http://www.kegg.jp/dbget-bin/www_bget?K00015">
         <graphics name="K00015" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="300" y="588" width="46" height="17"/>
+             type="rectangle" x="302" y="588" width="46" height="17"/>
     </entry>
     <entry id="113" name="ko:K00042" type="ortholog" reaction="rn:R01745 rn:R01747"
         link="http://www.kegg.jp/dbget-bin/www_bget?K00042">
         <graphics name="K00042" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="259" y="518" width="46" height="17"/>
+             type="rectangle" x="260" y="518" width="46" height="17"/>
     </entry>
     <entry id="114" name="ko:K01608" type="ortholog" reaction="rn:R00013"
         link="http://www.kegg.jp/dbget-bin/www_bget?K01608">
@@ -178,7 +178,7 @@
     <entry id="129" name="path:ko00630" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00630">
         <graphics name="TITLE:Glyoxylate and dicarboxylate metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="229" y="58" width="378" height="25"/>
+             type="roundrectangle" x="225" y="58" width="369" height="25"/>
     </entry>
     <entry id="130" name="path:ko00053" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00053">
@@ -203,7 +203,7 @@
     <entry id="134" name="path:ko00750" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00750">
         <graphics name="Vitamin B6 metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="463" y="550" width="140" height="25"/>
+             type="roundrectangle" x="468" y="550" width="129" height="25"/>
     </entry>
     <entry id="135" name="path:ko00230" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00230">
@@ -215,10 +215,10 @@
         <graphics name="Nitrogen metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="1032" y="367" width="119" height="25"/>
     </entry>
-    <entry id="137" name="ko:K15788 ko:K00865 ko:K15918" type="ortholog" reaction="rn:R01514"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K15788+K00865+K15918">
-        <graphics name="K15788..." fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="257" y="632" width="46" height="17"/>
+    <entry id="137" name="ko:K15918" type="ortholog" reaction="rn:R01514"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K15918">
+        <graphics name="K15918" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="260" y="632" width="46" height="17"/>
     </entry>
     <entry id="138" name="ko:K01601 ko:K01602" type="ortholog" reaction="rn:R03140"
         link="http://www.kegg.jp/dbget-bin/www_bget?K01601+K01602">
@@ -238,7 +238,7 @@
     <entry id="141" name="ko:K00018 ko:K15893 ko:K15919" type="ortholog" reaction="rn:R01388"
         link="http://www.kegg.jp/dbget-bin/www_bget?K00018+K15893+K15919">
         <graphics name="K00018..." fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="300" y="609" width="46" height="17"/>
+             type="rectangle" x="302" y="609" width="46" height="17"/>
     </entry>
     <entry id="142" name="cpd:C00898" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C00898">
@@ -699,6 +699,21 @@
         link="http://www.kegg.jp/dbget-bin/www_bget?K19280">
         <graphics name="K19280" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="828" y="334" width="46" height="17"/>
+    </entry>
+    <entry id="246" name="ko:K00865 ko:K11529" type="ortholog" reaction="rn:R08572"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K00865+K11529">
+        <graphics name="K00865..." fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="162" y="632" width="46" height="17"/>
+    </entry>
+    <entry id="247" name="cpd:C00631" type="compound"
+        link="http://www.kegg.jp/dbget-bin/www_bget?C00631">
+        <graphics name="C00631" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="circle" x="161" y="671" width="8" height="8"/>
+    </entry>
+    <entry id="248" name="path:ko00010" type="map"
+        link="http://www.kegg.jp/dbget-bin/www_bget?ko00010">
+        <graphics name="Glycolysis / Gluconeogenesis" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="roundrectangle" x="222" y="758" width="164" height="25"/>
     </entry>
     <relation entry1="124" entry2="126" type="ECrel">
         <subtype name="compound" value="142"/>
@@ -1423,6 +1438,39 @@
     <relation entry1="199" entry2="244" type="ECrel">
         <subtype name="compound" value="186"/>
     </relation>
+    <relation entry1="137" entry2="246" type="ECrel">
+        <subtype name="compound" value="152"/>
+    </relation>
+    <relation entry1="246" entry2="113" type="ECrel">
+        <subtype name="compound" value="152"/>
+    </relation>
+    <relation entry1="246" entry2="112" type="ECrel">
+        <subtype name="compound" value="152"/>
+    </relation>
+    <relation entry1="246" entry2="141" type="ECrel">
+        <subtype name="compound" value="152"/>
+    </relation>
+    <relation entry1="246" entry2="110" type="ECrel">
+        <subtype name="compound" value="152"/>
+    </relation>
+    <relation entry1="246" entry2="111" type="ECrel">
+        <subtype name="compound" value="152"/>
+    </relation>
+    <relation entry1="246" entry2="248" type="maplink">
+        <subtype name="compound" value="247"/>
+    </relation>
+    <relation entry1="208" entry2="248" type="maplink">
+        <subtype name="compound" value="217"/>
+    </relation>
+    <relation entry1="208" entry2="138" type="maplink">
+        <subtype name="compound" value="217"/>
+    </relation>
+    <relation entry1="248" entry2="137" type="maplink">
+        <subtype name="compound" value="217"/>
+    </relation>
+    <relation entry1="248" entry2="138" type="maplink">
+        <subtype name="compound" value="217"/>
+    </relation>
     <reaction id="75" name="rn:R01394" type="irreversible">
         <substrate id="155" name="cpd:C00168"/>
         <product id="151" name="cpd:C01146"/>
@@ -1676,5 +1724,9 @@
     <reaction id="244" name="rn:R10904" type="irreversible">
         <substrate id="238" name="cpd:C01732"/>
         <product id="186" name="cpd:C06028"/>
+    </reaction>
+    <reaction id="246" name="rn:R08572" type="irreversible">
+        <substrate id="152" name="cpd:C00258"/>
+        <product id="247" name="cpd:C00631"/>
     </reaction>
 </pathway>

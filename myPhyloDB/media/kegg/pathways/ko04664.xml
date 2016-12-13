@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Oct 23, 2015 16:06:07 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 7, 2016 11:13:41 +0900 (GMT+9) -->
 <pathway name="path:ko04664" org="ko" number="04664"
          title="Fc epsilon RI signaling pathway"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04664.png"
@@ -53,7 +53,7 @@
     <entry id="10" name="cpd:C00219" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C00219">
         <graphics name="C00219" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="circle" x="706" y="536" width="8" height="8"/>
+             type="circle" x="710" y="530" width="8" height="8"/>
     </entry>
     <entry id="11" name="cpd:C00374" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C00374">
@@ -273,21 +273,31 @@
     <entry id="54" name="path:ko00590" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00590">
         <graphics name="Arachidonic acid metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="728" y="581" width="111" height="34"/>
+             type="roundrectangle" x="729" y="596" width="111" height="34"/>
     </entry>
     <entry id="55" name="path:ko04664" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko04664">
         <graphics name="TITLE:Fc epsilon RI signaling pathway" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="147" y="58" width="214" height="25"/>
     </entry>
-    <entry id="56" name="undefined" type="group">
+    <entry id="56" name="ko:K00461" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K00461">
+        <graphics name="K00461" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="741" y="546" width="46" height="17"/>
+    </entry>
+    <entry id="57" name="ko:K20735" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20735">
+        <graphics name="K20735" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="741" y="563" width="46" height="17"/>
+    </entry>
+    <entry id="58" name="undefined" type="group">
         <graphics fgcolor="#000000" bgcolor="#FFFFFF"
              type="rectangle" x="179" y="307" width="46" height="51"/>
         <component id="15"/>
         <component id="16"/>
         <component id="39"/>
     </entry>
-    <entry id="57" name="undefined" type="group">
+    <entry id="59" name="undefined" type="group">
         <graphics fgcolor="#000000" bgcolor="#FFFFFF"
              type="rectangle" x="179" y="381" width="46" height="51"/>
         <component id="3"/>
@@ -405,10 +415,10 @@
     <relation entry1="34" entry2="39" type="PPrel">
         <subtype name="binding/association" value="---"/>
     </relation>
-    <relation entry1="2" entry2="56" type="PPrel">
+    <relation entry1="2" entry2="58" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
     </relation>
-    <relation entry1="1" entry2="57" type="PPrel">
+    <relation entry1="1" entry2="59" type="PPrel">
         <subtype name="activation" value="--&gt;"/>
     </relation>
 </pathway>

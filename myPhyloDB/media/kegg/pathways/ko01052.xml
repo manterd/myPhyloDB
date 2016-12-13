@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Apr 14, 2015 18:01:14 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 23, 2016 15:56:31 +0900 (GMT+9) -->
 <pathway name="path:ko01052" org="ko" number="01052"
          title="Type I polyketide structures"
          image="http://www.kegg.jp/kegg/pathway/ko/ko01052.png"
@@ -13,7 +13,7 @@
     <entry id="2" name="cpd:C12151" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C12151">
         <graphics name="C12151" fgcolor="none" bgcolor="none"
-             type="rectangle" x="260" y="3080" width="70" height="14"/>
+             type="rectangle" x="548" y="3063" width="91" height="14"/>
     </entry>
     <entry id="3" name="cpd:C12157" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C12157">
@@ -113,26 +113,26 @@
     <entry id="22" name="ko:K16419" type="ortholog"
         link="http://www.kegg.jp/dbget-bin/www_bget?K16419">
         <graphics name="K16419" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="332" y="2981" width="46" height="17"/>
+             type="rectangle" x="332" y="3017" width="46" height="17"/>
     </entry>
     <entry id="23" name="ko:K16418" type="ortholog"
         link="http://www.kegg.jp/dbget-bin/www_bget?K16418">
         <graphics name="K16418" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="246" y="2888" width="46" height="17"/>
+             type="rectangle" x="246" y="2924" width="46" height="17"/>
     </entry>
     <entry id="24" name="ko:K16450" type="ortholog"
         link="http://www.kegg.jp/dbget-bin/www_bget?K16450">
         <graphics name="K16450" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="98" y="2981" width="46" height="17"/>
+             type="rectangle" x="98" y="3017" width="46" height="17"/>
     </entry>
     <entry id="25" name="ko:K15641" type="ortholog"
         link="http://www.kegg.jp/dbget-bin/www_bget?K15641">
         <graphics name="K15641" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="755" y="2667" width="46" height="17"/>
     </entry>
-    <entry id="26" name="ko:K15642" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K15642">
-        <graphics name="K15642" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="26" name="ko:K20788" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20788">
+        <graphics name="K20788" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="706" y="2681" width="46" height="17"/>
     </entry>
     <entry id="27" name="ko:K15642" type="ortholog"
@@ -285,9 +285,9 @@
         <graphics name="K16388" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="847" y="2113" width="46" height="17"/>
     </entry>
-    <entry id="57" name="ko:K16384" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K16384">
-        <graphics name="K16384" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="57" name="ko:K20787" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20787">
+        <graphics name="K20787" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="696" y="2152" width="46" height="17"/>
     </entry>
     <entry id="58" name="ko:K16393" type="ortholog"
@@ -615,9 +615,9 @@
         <graphics name="K16372" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="469" y="822" width="46" height="17"/>
     </entry>
-    <entry id="123" name="ko:K16372" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K16372">
-        <graphics name="K16372" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="123" name="ko:K20786" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20786">
+        <graphics name="K20786" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="498" y="771" width="46" height="17"/>
     </entry>
     <entry id="124" name="ko:K15994" type="ortholog"
@@ -758,7 +758,7 @@
     <entry id="151" name="path:ko01052" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko01052">
         <graphics name="TITLE:Type I polyketide structures" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="172" y="58" width="263" height="25"/>
+             type="roundrectangle" x="166" y="58" width="251" height="25"/>
     </entry>
     <entry id="152" name="PATH:map07020(D00140)" type="map"
         link="http://www.kegg.jp/kegg-bin/show_pathway?@map07020/dr:D00140">
@@ -939,5 +939,30 @@
         link="http://www.kegg.jp/dbget-bin/www_bget?K15988">
         <graphics name="K15988" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="280" y="904" width="46" height="17"/>
+    </entry>
+    <entry id="188" name="ko:K20789" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20789">
+        <graphics name="K20789" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="414" y="2984" width="46" height="17"/>
+    </entry>
+    <entry id="189" name="cpd:C21275" type="compound"
+        link="http://www.kegg.jp/dbget-bin/www_bget?C21275">
+        <graphics name="C21275" fgcolor="none" bgcolor="none"
+             type="rectangle" x="542" y="3166" width="80" height="14"/>
+    </entry>
+    <entry id="190" name="cpd:C21276" type="compound"
+        link="http://www.kegg.jp/dbget-bin/www_bget?C21276">
+        <graphics name="C21276" fgcolor="none" bgcolor="none"
+             type="rectangle" x="543" y="3262" width="81" height="14"/>
+    </entry>
+    <entry id="191" name="cpd:C21277" type="compound"
+        link="http://www.kegg.jp/dbget-bin/www_bget?C21277">
+        <graphics name="C21277" fgcolor="none" bgcolor="none"
+             type="rectangle" x="541" y="3359" width="78" height="14"/>
+    </entry>
+    <entry id="192" name="cpd:C21278" type="compound"
+        link="http://www.kegg.jp/dbget-bin/www_bget?C21278">
+        <graphics name="C21278" fgcolor="none" bgcolor="none"
+             type="rectangle" x="541" y="3455" width="78" height="14"/>
     </entry>
 </pathway>

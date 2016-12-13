@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Jan 20, 2015 17:53:36 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 28, 2016 15:44:00 +0900 (GMT+9) -->
 <pathway name="path:ko03410" org="ko" number="03410"
          title="Base excision repair"
          image="http://www.kegg.jp/kegg/pathway/ko/ko03410.png"
@@ -233,12 +233,12 @@
     <entry id="46" name="ko:K03649" type="ortholog"
         link="http://www.kegg.jp/dbget-bin/www_bget?K03649">
         <graphics name="K03649" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="636" y="252" width="46" height="17"/>
+             type="rectangle" x="533" y="277" width="46" height="17"/>
     </entry>
     <entry id="47" name="ko:K10800" type="ortholog"
         link="http://www.kegg.jp/dbget-bin/www_bget?K10800">
         <graphics name="K10800" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="636" y="278" width="46" height="17"/>
+             type="rectangle" x="636" y="252" width="46" height="17"/>
     </entry>
     <entry id="48" name="ko:K10567" type="ortholog"
         link="http://www.kegg.jp/dbget-bin/www_bget?K10567">
@@ -309,5 +309,10 @@
         link="http://www.kegg.jp/dbget-bin/www_bget?K05522">
         <graphics name="K05522" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="158" y="252" width="46" height="17"/>
+    </entry>
+    <entry id="62" name="ko:K20813" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20813">
+        <graphics name="K20813" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="748" y="252" width="46" height="17"/>
     </entry>
 </pathway>

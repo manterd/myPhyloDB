@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Jun 6, 2012 11:23:25 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Dec 9, 2016 16:09:50 +0900 (GMT+9) -->
 <pathway name="path:ko00563" org="ko" number="00563"
-         title="Glycosylphosphatidylinositol(GPI)-anchor biosynthesis"
+         title="Glycosylphosphatidylinositol (GPI)-anchor biosynthesis"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00563.png"
          link="http://www.kegg.jp/kegg-bin/show_pathway?ko00563">
     <entry id="9" name="ko:K11001 ko:K11002" type="ortholog" reaction="rn:R05916"
@@ -187,7 +187,7 @@
     </entry>
     <entry id="45" name="path:ko00563" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00563">
-        <graphics name="TITLE:Glycosylphosphatidylinositol(GPI)-anchor biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
+        <graphics name="TITLE:Glycosylphosphatidylinositol (GPI)-anchor biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="278" y="58" width="475" height="25"/>
     </entry>
     <entry id="46" name="path:ko00510" type="map"
@@ -413,33 +413,33 @@
         <subtype name="compound" value="48"/>
     </relation>
     <reaction id="9" name="rn:R05916" type="irreversible">
-        <substrate id="51" name="cpd:C01194"/>
         <substrate id="50" name="gl:G10610"/>
+        <substrate id="51" name="cpd:C01194"/>
         <product id="23" name="gl:G00143"/>
     </reaction>
     <reaction id="10" name="rn:R05916" type="irreversible">
-        <substrate id="51" name="cpd:C01194"/>
         <substrate id="50" name="gl:G10610"/>
+        <substrate id="51" name="cpd:C01194"/>
         <product id="23" name="gl:G00143"/>
     </reaction>
     <reaction id="11" name="rn:R05916" type="irreversible">
-        <substrate id="51" name="cpd:C01194"/>
         <substrate id="50" name="gl:G10610"/>
+        <substrate id="51" name="cpd:C01194"/>
         <product id="23" name="gl:G00143"/>
     </reaction>
     <reaction id="12" name="rn:R05916" type="irreversible">
-        <substrate id="51" name="cpd:C01194"/>
         <substrate id="50" name="gl:G10610"/>
+        <substrate id="51" name="cpd:C01194"/>
         <product id="23" name="gl:G00143"/>
     </reaction>
     <reaction id="13" name="rn:R05916" type="irreversible">
-        <substrate id="51" name="cpd:C01194"/>
         <substrate id="50" name="gl:G10610"/>
+        <substrate id="51" name="cpd:C01194"/>
         <product id="23" name="gl:G00143"/>
     </reaction>
     <reaction id="14" name="rn:R05916" type="irreversible">
-        <substrate id="51" name="cpd:C01194"/>
         <substrate id="50" name="gl:G10610"/>
+        <substrate id="51" name="cpd:C01194"/>
         <product id="23" name="gl:G00143"/>
     </reaction>
     <reaction id="15" name="rn:R05919" type="irreversible">
@@ -472,8 +472,8 @@
         <product id="27" name="gl:G00147"/>
     </reaction>
     <reaction id="39" name="rn:R05916" type="irreversible">
-        <substrate id="51" name="cpd:C01194"/>
         <substrate id="50" name="gl:G10610"/>
+        <substrate id="51" name="cpd:C01194"/>
         <product id="23" name="gl:G00143"/>
     </reaction>
     <reaction id="40" name="rn:R06623" type="irreversible">

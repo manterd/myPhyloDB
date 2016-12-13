@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Mar 7, 2016 16:23:17 +0900 (GMT+9) -->
 <pathway name="path:ko00625" org="ko" number="00625"
          title="Chloroalkane and chloroalkene degradation"
@@ -19,6 +19,11 @@
         link="http://www.kegg.jp/dbget-bin/www_bget?K08726">
         <graphics name="K08726" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="601" y="423" width="46" height="17"/>
+    </entry>
+    <entry id="32" name="ko:K20625" type="ortholog" reaction="rn:R05380"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20625">
+        <graphics name="K20625" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="606" y="334" width="46" height="17"/>
     </entry>
     <entry id="33" name="path:ko00620" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00620">
@@ -340,6 +345,12 @@
         <graphics name="K17067..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="409" y="612" width="46" height="17"/>
     </entry>
+    <relation entry1="27" entry2="32" type="ECrel">
+        <subtype name="compound" value="42"/>
+    </relation>
+    <relation entry1="32" entry2="33" type="maplink">
+        <subtype name="compound" value="40"/>
+    </relation>
     <relation entry1="30" entry2="35" type="maplink">
         <subtype name="compound" value="28"/>
     </relation>
@@ -369,6 +380,9 @@
     </relation>
     <relation entry1="51" entry2="57" type="ECrel">
         <subtype name="compound" value="52"/>
+    </relation>
+    <relation entry1="32" entry2="68" type="ECrel">
+        <subtype name="compound" value="40"/>
     </relation>
     <relation entry1="68" entry2="33" type="maplink">
         <subtype name="compound" value="40"/>
@@ -437,6 +451,10 @@
     <reaction id="30" name="rn:R05842" type="irreversible">
         <substrate id="36" name="cpd:C06548"/>
         <product id="28" name="cpd:C01380"/>
+    </reaction>
+    <reaction id="32" name="rn:R05380" type="irreversible">
+        <substrate id="42" name="cpd:C01548"/>
+        <product id="40" name="cpd:C00084"/>
     </reaction>
     <reaction id="48" name="rn:R05367" type="irreversible">
         <substrate id="45" name="cpd:C06609"/>

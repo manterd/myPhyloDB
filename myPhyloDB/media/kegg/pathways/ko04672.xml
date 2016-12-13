@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Sep 2, 2010 10:55:09 +0900 (JST) -->
 <pathway name="path:ko04672" org="ko" number="04672"
          title="Intestinal immune network for IgA production"

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Dec 24, 2015 15:06:36 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 28, 2016 16:57:05 +0900 (GMT+9) -->
 <pathway name="path:ko00310" org="ko" number="00310"
          title="Lysine degradation"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00310.png"
@@ -30,9 +30,9 @@
         <graphics name="K19743" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="576" y="262" width="46" height="17"/>
     </entry>
-    <entry id="41" name="ko:K00291 ko:K14157" type="ortholog" reaction="rn:R00716"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K00291+K14157">
-        <graphics name="K00291..." fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="41" name="ko:K14157" type="ortholog" reaction="rn:R00716"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K14157">
+        <graphics name="K14157" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="311" y="106" width="46" height="17"/>
     </entry>
     <entry id="42" name="ko:K00293" type="ortholog" reaction="rn:R02315"
@@ -70,9 +70,9 @@
         <graphics name="K00290" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="311" y="85" width="46" height="17"/>
     </entry>
-    <entry id="52" name="ko:K00292 ko:K14157" type="ortholog" reaction="rn:R02313"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K00292+K14157">
-        <graphics name="K00292..." fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="52" name="ko:K14157" type="ortholog" reaction="rn:R02313"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K14157">
+        <graphics name="K14157" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="533" y="85" width="46" height="17"/>
     </entry>
     <entry id="53" name="ko:K00143 ko:K14085" type="ortholog" reaction="rn:R03102 rn:R03103"
@@ -123,7 +123,7 @@
     <entry id="69" name="path:ko00310" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00310">
         <graphics name="TITLE:Lysine degradation" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="129" y="58" width="177" height="25"/>
+             type="roundrectangle" x="125" y="58" width="169" height="25"/>
     </entry>
     <entry id="72" name="ko:K00306" type="ortholog" reaction="rn:R02204"
         link="http://www.kegg.jp/dbget-bin/www_bget?K00306">
@@ -305,8 +305,8 @@
         <graphics name="K18804" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="356" y="714" width="46" height="17"/>
     </entry>
-    <entry id="124" name="ko:K06101 ko:K11427 ko:K11420 ko:K09186 ko:K09187 ko:K09188 ko:K14959 ko:K09189 ko:K15588 ko:K11424 ko:K11425 ko:K11422 ko:K11423 ko:K11431 ko:K11428 ko:K11421 ko:K18494 ko:K11433 ko:K11419 ko:K11429" type="ortholog" reaction="rn:R03875"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K06101+K11427+K11420+K09186+K09187+K09188+K14959+K09189+K15588+K11424+K11425+K11422+K11423+K11431+K11428+K11421+K18494+K11433+K11419+K11429">
+    <entry id="124" name="ko:K06101 ko:K11427 ko:K11420 ko:K09186 ko:K09187 ko:K09188 ko:K14959 ko:K09189 ko:K15588 ko:K11424 ko:K11425 ko:K11422 ko:K11423 ko:K19199 ko:K11431 ko:K11428 ko:K11421 ko:K18494 ko:K11433 ko:K11419 ko:K11429 ko:K17451 ko:K11430 ko:K11432 ko:K20795 ko:K20796" type="ortholog" reaction="rn:R03875"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K06101+K11427+K11420+K09186+K09187+K09188+K14959+K09189+K15588+K11424+K11425+K11422+K11423+K19199+K11431+K11428+K11421+K18494+K11433+K11419+K11429+K17451+K11430+K11432+K20795+K20796">
         <graphics name="K06101..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="237" y="695" width="46" height="17"/>
     </entry>
@@ -325,8 +325,8 @@
         <graphics name="K18804" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="237" y="714" width="46" height="17"/>
     </entry>
-    <entry id="128" name="ko:K06101 ko:K11427 ko:K11420 ko:K09186 ko:K09187 ko:K09188 ko:K14959 ko:K09189 ko:K15588 ko:K11424 ko:K11425 ko:K11422 ko:K11423 ko:K11431 ko:K11428 ko:K11421 ko:K18494 ko:K11433 ko:K11419 ko:K11429" type="ortholog" reaction="rn:R04866"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K06101+K11427+K11420+K09186+K09187+K09188+K14959+K09189+K15588+K11424+K11425+K11422+K11423+K11431+K11428+K11421+K18494+K11433+K11419+K11429">
+    <entry id="128" name="ko:K06101 ko:K11427 ko:K11420 ko:K09186 ko:K09187 ko:K09188 ko:K14959 ko:K09189 ko:K15588 ko:K11424 ko:K11425 ko:K11422 ko:K11423 ko:K19199 ko:K11431 ko:K11428 ko:K11421 ko:K18494 ko:K11433 ko:K11419 ko:K11429 ko:K17451 ko:K11430 ko:K11432 ko:K20795 ko:K20796" type="ortholog" reaction="rn:R04866"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K06101+K11427+K11420+K09186+K09187+K09188+K14959+K09189+K15588+K11424+K11425+K11422+K11423+K19199+K11431+K11428+K11421+K18494+K11433+K11419+K11429+K17451+K11430+K11432+K20795+K20796">
         <graphics name="K06101..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="356" y="695" width="46" height="17"/>
     </entry>
@@ -345,8 +345,8 @@
         <graphics name="K18804" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="473" y="714" width="46" height="17"/>
     </entry>
-    <entry id="132" name="ko:K06101 ko:K11427 ko:K11420 ko:K09186 ko:K09187 ko:K09188 ko:K14959 ko:K09189 ko:K15588 ko:K11424 ko:K11425 ko:K11422 ko:K11423 ko:K11431 ko:K11428 ko:K11421 ko:K18494 ko:K11433 ko:K11419 ko:K11429" type="ortholog" reaction="rn:R04867"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K06101+K11427+K11420+K09186+K09187+K09188+K14959+K09189+K15588+K11424+K11425+K11422+K11423+K11431+K11428+K11421+K18494+K11433+K11419+K11429">
+    <entry id="132" name="ko:K06101 ko:K11427 ko:K11420 ko:K09186 ko:K09187 ko:K09188 ko:K14959 ko:K09189 ko:K15588 ko:K11424 ko:K11425 ko:K11422 ko:K11423 ko:K19199 ko:K11431 ko:K11428 ko:K11421 ko:K18494 ko:K11433 ko:K11419 ko:K11429 ko:K17451 ko:K11430 ko:K11432 ko:K20795 ko:K20796" type="ortholog" reaction="rn:R04867"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K06101+K11427+K11420+K09186+K09187+K09188+K14959+K09189+K15588+K11424+K11425+K11422+K11423+K19199+K11431+K11428+K11421+K18494+K11433+K11419+K11429+K17451+K11430+K11432+K20795+K20796">
         <graphics name="K06101..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="473" y="695" width="46" height="17"/>
     </entry>
@@ -935,16 +935,16 @@
     </reaction>
     <reaction id="168" name="rn:R10564" type="irreversible">
         <substrate id="105" name="cpd:C03656"/>
-        <product id="169" name="cpd:C05231"/>
         <product id="176" name="cpd:C00164"/>
+        <product id="169" name="cpd:C05231"/>
     </reaction>
     <reaction id="171" name="rn:R03030" type="irreversible">
         <substrate id="169" name="cpd:C05231"/>
         <product id="75" name="cpd:C00877"/>
     </reaction>
     <reaction id="175" name="rn:R01365" type="irreversible">
-        <substrate id="172" name="cpd:C00136"/>
         <substrate id="176" name="cpd:C00164"/>
+        <substrate id="172" name="cpd:C00136"/>
         <product id="77" name="cpd:C00332"/>
     </reaction>
     <reaction id="178" name="rn:R10270" type="irreversible">

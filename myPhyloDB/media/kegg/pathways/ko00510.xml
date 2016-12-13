@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Aug 27, 2014 15:41:25 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Dec 8, 2016 16:18:12 +0900 (GMT+9) -->
 <pathway name="path:ko00510" org="ko" number="00510"
          title="N-Glycan biosynthesis"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00510.png"
@@ -177,8 +177,8 @@
     </entry>
     <entry id="72" name="path:ko00563" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00563">
-        <graphics name="Glycosylphosphatidylinositol(GPI)-anchor biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="620" y="182" width="123" height="45"/>
+        <graphics name="Glycosylphosphatidylinositol (GPI)-anchor biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="roundrectangle" x="619" y="160" width="123" height="45"/>
     </entry>
     <entry id="73" name="ko:K07252" type="ortholog" reaction="rn:R01004"
         link="http://www.kegg.jp/dbget-bin/www_bget?K07252">
@@ -498,7 +498,7 @@
     <entry id="151" name="ko:K13748" type="ortholog" reaction="rn:R05992"
         link="http://www.kegg.jp/dbget-bin/www_bget?K13748">
         <graphics name="K13748" fgcolor="#6666CC" bgcolor="#FFFFFF"
-             type="line" coords="290,1130,310,1130"/>
+             type="line" coords="294,1130,314,1130"/>
     </entry>
     <entry id="152" name="ko:K07966 ko:K07967 ko:K07968" type="ortholog" reaction="rn:R05989"
         link="http://www.kegg.jp/dbget-bin/www_bget?K07966+K07967+K07968">
@@ -585,20 +585,25 @@
         <graphics name="C00096" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="353" y="177" width="8" height="8"/>
     </entry>
-    <entry id="170" name="undefined" type="group">
+    <entry id="170" name="path:ko00515" type="map"
+        link="http://www.kegg.jp/dbget-bin/www_bget?ko00515">
+        <graphics name="Mannose type O-glycan biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="roundrectangle" x="507" y="208" width="130" height="34"/>
+    </entry>
+    <entry id="171" name="undefined" type="group">
         <graphics fgcolor="#000000" bgcolor="#FFFFFF"
              type="rectangle" x="410" y="247" width="91" height="34"/>
         <component id="100"/>
         <component id="39"/>
         <component id="40"/>
     </entry>
-    <entry id="171" name="undefined" type="group">
+    <entry id="172" name="undefined" type="group">
         <graphics fgcolor="#000000" bgcolor="#FFFFFF"
              type="rectangle" x="242" y="455" width="92" height="17"/>
         <component id="158"/>
         <component id="94"/>
     </entry>
-    <entry id="172" name="undefined" type="group">
+    <entry id="173" name="undefined" type="group">
         <graphics fgcolor="#000000" bgcolor="#FFFFFF"
              type="rectangle" x="286" y="121" width="46" height="34"/>
         <component id="38"/>
@@ -610,7 +615,7 @@
     <relation entry1="95" entry2="103" type="ECrel">
         <subtype name="compound" value="80"/>
     </relation>
-    <relation entry1="170" entry2="103" type="ECrel">
+    <relation entry1="171" entry2="103" type="ECrel">
         <subtype name="compound" value="80"/>
     </relation>
     <relation entry1="101" entry2="103" type="ECrel">
@@ -619,31 +624,31 @@
     <relation entry1="73" entry2="95" type="ECrel">
         <subtype name="compound" value="80"/>
     </relation>
-    <relation entry1="73" entry2="170" type="ECrel">
+    <relation entry1="73" entry2="171" type="ECrel">
         <subtype name="compound" value="80"/>
     </relation>
     <relation entry1="73" entry2="101" type="ECrel">
         <subtype name="compound" value="80"/>
     </relation>
-    <relation entry1="95" entry2="170" type="ECrel">
+    <relation entry1="95" entry2="171" type="ECrel">
         <subtype name="compound" value="80"/>
     </relation>
     <relation entry1="95" entry2="101" type="ECrel">
         <subtype name="compound" value="80"/>
     </relation>
-    <relation entry1="170" entry2="101" type="ECrel">
+    <relation entry1="171" entry2="101" type="ECrel">
         <subtype name="compound" value="80"/>
     </relation>
-    <relation entry1="46" entry2="170" type="ECrel">
+    <relation entry1="46" entry2="171" type="ECrel">
         <subtype name="compound" value="77"/>
     </relation>
     <relation entry1="43" entry2="95" type="ECrel">
         <subtype name="compound" value="76"/>
     </relation>
-    <relation entry1="98" entry2="170" type="ECrel">
+    <relation entry1="98" entry2="171" type="ECrel">
         <subtype name="compound" value="169"/>
     </relation>
-    <relation entry1="73" entry2="171" type="ECrel">
+    <relation entry1="73" entry2="172" type="ECrel">
         <subtype name="compound" value="78"/>
     </relation>
     <relation entry1="97" entry2="98" type="ECrel">
@@ -661,10 +666,10 @@
     <relation entry1="43" entry2="161" type="ECrel">
         <subtype name="compound" value="62"/>
     </relation>
-    <relation entry1="163" entry2="171" type="ECrel">
+    <relation entry1="163" entry2="172" type="ECrel">
         <subtype name="compound" value="61"/>
     </relation>
-    <relation entry1="92" entry2="171" type="ECrel">
+    <relation entry1="92" entry2="172" type="ECrel">
         <subtype name="compound" value="60"/>
     </relation>
     <relation entry1="91" entry2="92" type="ECrel">
@@ -717,19 +722,19 @@
     </relation>
     <relation entry1="163" entry2="162" type="ECrel">
     </relation>
-    <relation entry1="101" entry2="172" type="ECrel">
+    <relation entry1="101" entry2="173" type="ECrel">
         <subtype name="compound" value="68"/>
     </relation>
-    <relation entry1="98" entry2="172" type="ECrel">
+    <relation entry1="98" entry2="173" type="ECrel">
         <subtype name="compound" value="67"/>
     </relation>
-    <relation entry1="170" entry2="72" type="maplink">
+    <relation entry1="171" entry2="72" type="maplink">
         <subtype name="compound" value="77"/>
     </relation>
     <relation entry1="46" entry2="72" type="maplink">
         <subtype name="compound" value="77"/>
     </relation>
-    <relation entry1="170" entry2="74" type="maplink">
+    <relation entry1="171" entry2="74" type="maplink">
         <subtype name="compound" value="169"/>
     </relation>
     <relation entry1="98" entry2="74" type="maplink">
@@ -759,7 +764,7 @@
     <relation entry1="73" entry2="157" type="maplink">
         <subtype name="compound" value="78"/>
     </relation>
-    <relation entry1="171" entry2="157" type="maplink">
+    <relation entry1="172" entry2="157" type="maplink">
         <subtype name="compound" value="78"/>
     </relation>
     <relation entry1="166" entry2="89" type="ECrel">
@@ -791,8 +796,8 @@
         <product id="108" name="gl:G10599"/>
     </reaction>
     <reaction id="43" name="rn:R06262" type="irreversible">
-        <substrate id="62" name="gl:G00007"/>
         <substrate id="76" name="gl:G10618"/>
+        <substrate id="62" name="gl:G00007"/>
         <product id="107" name="gl:G10598"/>
     </reaction>
     <reaction id="44" name="rn:R06260" type="irreversible">
@@ -804,8 +809,8 @@
         <product id="42" name="gl:G10596"/>
     </reaction>
     <reaction id="46" name="rn:R06258" type="irreversible">
-        <substrate id="77" name="gl:G10617"/>
         <substrate id="63" name="gl:G00006"/>
+        <substrate id="77" name="gl:G10617"/>
         <product id="105" name="gl:G10595"/>
     </reaction>
     <reaction id="70" name="rn:R05991" type="irreversible">
@@ -895,8 +900,8 @@
         <product id="65" name="gl:G00004"/>
     </reaction>
     <reaction id="98" name="rn:R05972" type="irreversible">
-        <substrate id="67" name="gl:G00002"/>
         <substrate id="169" name="gl:G10614"/>
+        <substrate id="67" name="gl:G00002"/>
         <product id="66" name="gl:G00003"/>
     </reaction>
     <reaction id="99" name="rn:R05970" type="irreversible">

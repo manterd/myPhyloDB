@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Dec 14, 2015 16:05:52 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 26, 2016 11:30:24 +0900 (GMT+9) -->
 <pathway name="path:ko00860" org="ko" number="00860"
          title="Porphyrin and chlorophyll metabolism"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00860.png"
@@ -198,7 +198,7 @@
     <entry id="63" name="path:ko00860" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00860">
         <graphics name="TITLE:Porphyrin and chlorophyll metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="217" y="58" width="353" height="25"/>
+             type="roundrectangle" x="210" y="58" width="339" height="25"/>
     </entry>
     <entry id="64" name="path:ko00260" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00260">
@@ -1814,8 +1814,8 @@
         <product id="78" name="cpd:C05775"/>
     </reaction>
     <reaction id="304" name="rn:R05223" type="irreversible">
-        <substrate id="74" name="cpd:C06510"/>
         <substrate id="78" name="cpd:C05775"/>
+        <substrate id="74" name="cpd:C06510"/>
         <product id="75" name="cpd:C00194"/>
     </reaction>
     <reaction id="59" name="rn:R00097" type="irreversible">

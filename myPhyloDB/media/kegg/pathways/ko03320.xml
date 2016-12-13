@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Aug 10, 2015 14:21:33 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Jun 3, 2016 10:41:11 +0900 (GMT+9) -->
 <pathway name="path:ko03320" org="ko" number="03320"
          title="PPAR signaling pathway"
          image="http://www.kegg.jp/kegg/pathway/ko/ko03320.png"
@@ -10,12 +10,12 @@
         <graphics name="C02165..." fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="435" y="161" width="8" height="8"/>
     </entry>
-    <entry id="2" name="BR:br08303(C10AB fibrates)" type="other"
+    <entry id="2" name="BR:br08303(C10AB fibrates)" type="brite"
         link="http://www.kegg.jp/kegg-bin/search_htext?htext=br08303&amp;search_string=%22C10AB%20fibrates%22&amp;option=-n">
         <graphics name="BR:br08303(C10AB fibrates)" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="435" y="184" width="8" height="8"/>
     </entry>
-    <entry id="3" name="BR:br08303(S01BC Antiinflammatory agents, non-steroids)" type="other"
+    <entry id="3" name="BR:br08303(S01BC Antiinflammatory agents, non-steroids)" type="brite"
         link="http://www.kegg.jp/kegg-bin/search_htext?htext=br08303&amp;search_string=%22S01BC%20Antiinflammatory%20agents%2c%20non%2dsteroids%22&amp;option=-n">
         <graphics name="BR:br08303(S01BC Antiinflammatory agents, non-steroids)" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="435" y="199" width="8" height="8"/>
@@ -30,7 +30,7 @@
         <graphics name="C15493" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="435" y="697" width="8" height="8"/>
     </entry>
-    <entry id="6" name="BR:br08303(S01BC Antiinflammatory agents, non-steroids)" type="other"
+    <entry id="6" name="BR:br08303(S01BC Antiinflammatory agents, non-steroids)" type="brite"
         link="http://www.kegg.jp/kegg-bin/search_htext?htext=br08303&amp;search_string=%22S01BC%20Antiinflammatory%20agents%2c%20non%2dsteroids%22&amp;option=-n">
         <graphics name="BR:br08303(S01BC Antiinflammatory agents, non-steroids)" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="435" y="651" width="8" height="8"/>
@@ -50,9 +50,9 @@
         <graphics name="K01596" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="836" y="810" width="46" height="17"/>
     </entry>
-    <entry id="10" name="ko:K08768" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K08768">
-        <graphics name="K08768" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="10" name="ko:K08768 ko:K17284 ko:K20254 ko:K20255" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K08768+K17284+K20254+K20255">
+        <graphics name="K08768..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="886" y="626" width="46" height="17"/>
     </entry>
     <entry id="11" name="ko:K06259" type="ortholog"
@@ -265,7 +265,7 @@
         <graphics name="K07296" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="886" y="649" width="46" height="17"/>
     </entry>
-    <entry id="54" name="BR:br08303(A10BG Thiazolidinediones)" type="other"
+    <entry id="54" name="BR:br08303(A10BG Thiazolidinediones)" type="brite"
         link="http://www.kegg.jp/kegg-bin/search_htext?htext=br08303&amp;search_string=%22A10BG%20Thiazolidinediones%22&amp;option=-n">
         <graphics name="BR:br08303(A10BG Thiazolidinediones)" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="435" y="636" width="8" height="8"/>

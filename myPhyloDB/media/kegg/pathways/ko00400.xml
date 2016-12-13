@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Jul 3, 2014 09:56:10 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Apr 15, 2016 09:40:44 +0900 (GMT+9) -->
 <pathway name="path:ko00400" org="ko" number="00400"
          title="Phenylalanine, tyrosine and tryptophan biosynthesis"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00400.png"
@@ -33,7 +33,7 @@
     <entry id="36" name="path:ko00901" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00901">
         <graphics name="Indole alkaloid biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="116" y="490" width="91" height="34"/>
+             type="roundrectangle" x="80" y="490" width="91" height="34"/>
     </entry>
     <entry id="37" name="path:ko00402" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00402">
@@ -68,7 +68,7 @@
     <entry id="43" name="path:ko00380" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00380">
         <graphics name="Tryptophan metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="78" y="452" width="76" height="34"/>
+             type="roundrectangle" x="72" y="452" width="76" height="34"/>
     </entry>
     <entry id="44" name="path:ko00360" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00360">
@@ -559,6 +559,11 @@
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00403">
         <graphics name="Indole diterpene alkaloid biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="326" y="360" width="109" height="34"/>
+    </entry>
+    <entry id="154" name="path:ko00404" type="map"
+        link="http://www.kegg.jp/dbget-bin/www_bget?ko00404">
+        <graphics name="Staurosporine biosynthesis" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="roundrectangle" x="114" y="528" width="81" height="34"/>
     </entry>
     <relation entry1="79" entry2="10" type="ECrel">
         <subtype name="compound" value="92"/>
@@ -1550,6 +1555,21 @@
     <relation entry1="153" entry2="54" type="maplink">
         <subtype name="compound" value="106"/>
     </relation>
+    <relation entry1="53" entry2="154" type="maplink">
+        <subtype name="compound" value="108"/>
+    </relation>
+    <relation entry1="52" entry2="154" type="maplink">
+        <subtype name="compound" value="108"/>
+    </relation>
+    <relation entry1="51" entry2="154" type="maplink">
+        <subtype name="compound" value="108"/>
+    </relation>
+    <relation entry1="43" entry2="154" type="maplink">
+        <subtype name="compound" value="108"/>
+    </relation>
+    <relation entry1="36" entry2="154" type="maplink">
+        <subtype name="compound" value="108"/>
+    </relation>
     <reaction id="38" name="rn:R02413 rn:R06847" type="reversible">
         <substrate id="97" name="cpd:C00493"/>
         <product id="95" name="cpd:C02637"/>
@@ -1584,8 +1604,8 @@
     </reaction>
     <reaction id="56" name="rn:R01073" type="reversible">
         <substrate id="104" name="cpd:C04302"/>
-        <product id="103" name="cpd:C00108"/>
         <product id="102" name="cpd:C00119"/>
+        <product id="103" name="cpd:C00108"/>
     </reaction>
     <reaction id="57" name="rn:R00985 rn:R00986" type="irreversible">
         <substrate id="100" name="cpd:C00251"/>

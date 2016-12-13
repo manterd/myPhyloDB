@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Mar 31, 2009 11:06:20 +0900 (JST) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Nov 11, 2016 17:32:34 +0900 (GMT+9) -->
 <pathway name="path:ko04330" org="ko" number="04330"
          title="Notch signaling pathway"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04330.png"
@@ -110,9 +110,9 @@
         <graphics name="K06052" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="83" y="266" width="46" height="17"/>
     </entry>
-    <entry id="22" name="ko:K02599" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K02599">
-        <graphics name="K02599" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="22" name="ko:K02599 ko:K20994 ko:K20995 ko:K20996" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K02599+K20994+K20995+K20996">
+        <graphics name="K02599..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="189" y="220" width="46" height="17"/>
     </entry>
     <entry id="23" name="ko:K02353" type="ortholog"

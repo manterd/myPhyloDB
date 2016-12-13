@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Nov 5, 2015 15:44:24 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: May 20, 2016 16:22:53 +0900 (GMT+9) -->
 <pathway name="path:ko00380" org="ko" number="00380"
          title="Tryptophan metabolism"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00380.png"
@@ -185,6 +185,11 @@
         <graphics name="K00816..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="469" y="641" width="46" height="17"/>
     </entry>
+    <entry id="114" name="ko:K20219 ko:K20204" type="ortholog" reaction="rn:R00074"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20219+K20204">
+        <graphics name="K20219..." fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="831" y="741" width="46" height="17"/>
+    </entry>
     <entry id="115" name="ko:K00274" type="ortholog" reaction="rn:R04907"
         link="http://www.kegg.jp/dbget-bin/www_bget?K00274">
         <graphics name="K00274" fgcolor="#000000" bgcolor="#BFBFFF"
@@ -223,7 +228,7 @@
     <entry id="130" name="path:ko00380" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00380">
         <graphics name="TITLE:Tryptophan metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="147" y="61" width="213" height="25"/>
+             type="roundrectangle" x="143" y="61" width="205" height="25"/>
     </entry>
     <entry id="131" name="path:ko00010" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00010">
@@ -250,9 +255,9 @@
         <graphics name="K00274" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="755" y="323" width="46" height="17"/>
     </entry>
-    <entry id="141" name="ko:K01721" type="ortholog" reaction="rn:R04020"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K01721">
-        <graphics name="K01721" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="141" name="ko:K01721 ko:K20807" type="ortholog" reaction="rn:R04020"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K01721+K20807">
+        <graphics name="K01721..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="875" y="492" width="46" height="17"/>
     </entry>
     <entry id="142" name="ko:K01426" type="ortholog" reaction="rn:R03096"
@@ -1402,6 +1407,10 @@
     <reaction id="113" name="rn:R01956" type="irreversible">
         <substrate id="171" name="cpd:C00328"/>
         <product id="170" name="cpd:C01252"/>
+    </reaction>
+    <reaction id="114" name="rn:R00074" type="irreversible">
+        <substrate id="196" name="cpd:C01987"/>
+        <product id="195" name="cpd:C02161"/>
     </reaction>
     <reaction id="115" name="rn:R04907" type="irreversible">
         <substrate id="193" name="cpd:C05636"/>

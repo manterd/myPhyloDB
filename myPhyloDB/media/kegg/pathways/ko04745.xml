@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: May 30, 2013 16:53:16 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Apr 5, 2016 10:53:22 +0900 (GMT+9) -->
 <pathway name="path:ko04745" org="ko" number="04745"
          title="Phototransduction - fly"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04745.png"
@@ -10,9 +10,9 @@
         <graphics name="TITLE:Phototransduction - fly" fgcolor="#000000" bgcolor="#FFFFFF"
              type="roundrectangle" x="152" y="58" width="224" height="25"/>
     </entry>
-    <entry id="2" name="ko:K05328" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K05328">
-        <graphics name="K05328" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="2" name="ko:K04967" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K04967">
+        <graphics name="K04967" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="695" y="133" width="46" height="17"/>
     </entry>
     <entry id="3" name="ko:K13802" type="ortholog"
@@ -75,9 +75,9 @@
         <graphics name="C01330" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="748" y="492" width="8" height="8"/>
     </entry>
-    <entry id="15" name="ko:K05328" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K05328">
-        <graphics name="K05328" fgcolor="#000000" bgcolor="#BFBFFF"
+    <entry id="15" name="ko:K04967" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K04967">
+        <graphics name="K04967" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="695" y="538" width="46" height="17"/>
     </entry>
     <entry id="16" name="ko:K05692" type="ortholog"

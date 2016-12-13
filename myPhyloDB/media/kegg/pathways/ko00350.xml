@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Sep 17, 2015 15:02:09 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Sep 14, 2016 11:25:06 +0900 (GMT+9) -->
 <pathway name="path:ko00350" org="ko" number="00350"
          title="Tyrosine metabolism"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00350.png"
@@ -99,11 +99,6 @@
         link="http://www.kegg.jp/dbget-bin/www_bget?K00457">
         <graphics name="K00457" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="500" y="453" width="46" height="17"/>
-    </entry>
-    <entry id="69" name="ko:K00680" type="ortholog" reaction="rn:R04777"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K00680">
-        <graphics name="K00680" fgcolor="#000000" bgcolor="#BFBFFF"
-             type="rectangle" x="360" y="647" width="46" height="17"/>
     </entry>
     <entry id="72" name="ko:K00129" type="ortholog" reaction="rn:R02695 rn:R02697"
         link="http://www.kegg.jp/dbget-bin/www_bget?K00129">
@@ -278,7 +273,7 @@
     <entry id="114" name="cpd:C00164" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C00164">
         <graphics name="C00164" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="circle" x="500" y="793" width="8" height="8"/>
+             type="circle" x="500" y="782" width="8" height="8"/>
     </entry>
     <entry id="115" name="cpd:C00122" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C00122">
@@ -328,7 +323,7 @@
     <entry id="124" name="cpd:C00022" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C00022">
         <graphics name="C00022" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="circle" x="629" y="795" width="8" height="8"/>
+             type="circle" x="629" y="784" width="8" height="8"/>
     </entry>
     <entry id="125" name="cpd:C02514" type="compound"
         link="http://www.kegg.jp/dbget-bin/www_bget?C02514">
@@ -834,6 +829,21 @@
         link="http://www.kegg.jp/dbget-bin/www_bget?K10774">
         <graphics name="K10774" fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="592" y="295" width="46" height="17"/>
+    </entry>
+    <entry id="286" name="ko:K20758" type="ortholog" reaction="rn:R11257"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K20758">
+        <graphics name="K20758" fgcolor="#000000" bgcolor="#BFBFFF"
+             type="rectangle" x="723" y="718" width="46" height="17"/>
+    </entry>
+    <entry id="287" name="cpd:C01384" type="compound"
+        link="http://www.kegg.jp/dbget-bin/www_bget?C01384">
+        <graphics name="C01384" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="circle" x="723" y="812" width="8" height="8"/>
+    </entry>
+    <entry id="288" name="path:ko00650" type="map"
+        link="http://www.kegg.jp/dbget-bin/www_bget?ko00650">
+        <graphics name="Butanoate metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
+             type="roundrectangle" x="724" y="870" width="76" height="34"/>
     </entry>
     <relation entry1="85" entry2="92" type="ECrel">
         <subtype name="compound" value="108"/>
@@ -1762,6 +1772,27 @@
     <relation entry1="283" entry2="221" type="ECrel">
         <subtype name="compound" value="134"/>
     </relation>
+    <relation entry1="58" entry2="286" type="ECrel">
+        <subtype name="compound" value="126"/>
+    </relation>
+    <relation entry1="56" entry2="286" type="ECrel">
+        <subtype name="compound" value="126"/>
+    </relation>
+    <relation entry1="55" entry2="280" type="ECrel">
+        <subtype name="compound" value="124"/>
+    </relation>
+    <relation entry1="55" entry2="286" type="ECrel">
+        <subtype name="compound" value="124"/>
+    </relation>
+    <relation entry1="280" entry2="286" type="ECrel">
+        <subtype name="compound" value="124"/>
+    </relation>
+    <relation entry1="286" entry2="152" type="maplink">
+        <subtype name="compound" value="124"/>
+    </relation>
+    <relation entry1="286" entry2="288" type="maplink">
+        <subtype name="compound" value="287"/>
+    </relation>
     <reaction id="195" name="rn:R03673" type="irreversible">
         <substrate id="234" name="cpd:C01693"/>
         <product id="194" name="cpd:C04185"/>
@@ -1877,8 +1908,8 @@
     </reaction>
     <reaction id="151" name="rn:R01364" type="irreversible">
         <substrate id="116" name="cpd:C01061"/>
-        <product id="115" name="cpd:C00122"/>
         <product id="114" name="cpd:C00164"/>
+        <product id="115" name="cpd:C00122"/>
     </reaction>
     <reaction id="61" name="rn:R03181" type="irreversible">
         <substrate id="122" name="cpd:C01036"/>
@@ -1907,10 +1938,6 @@
     <reaction id="67" name="rn:R02521" type="irreversible">
         <substrate id="132" name="cpd:C01179"/>
         <product id="160" name="cpd:C00544"/>
-    </reaction>
-    <reaction id="69" name="rn:R04777" type="irreversible">
-        <substrate id="121" name="cpd:C05338"/>
-        <product id="117" name="cpd:C05596"/>
     </reaction>
     <reaction id="72" name="rn:R02695 rn:R02697" type="reversible">
         <substrate id="130" name="cpd:C03765"/>
@@ -2076,5 +2103,10 @@
     <reaction id="283" name="rn:R00737" type="reversible">
         <substrate id="134" name="cpd:C00082"/>
         <product id="282" name="cpd:C00811"/>
+    </reaction>
+    <reaction id="286" name="rn:R11257" type="irreversible">
+        <substrate id="126" name="cpd:C02167"/>
+        <product id="287" name="cpd:C01384"/>
+        <product id="124" name="cpd:C00022"/>
     </reaction>
 </pathway>

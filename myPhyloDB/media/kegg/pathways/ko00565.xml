@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Jan 5, 2015 15:36:55 +0900 (GMT+09:00) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Nov 1, 2016 15:19:48 +0900 (GMT+9) -->
 <pathway name="path:ko00565" org="ko" number="00565"
          title="Ether lipid metabolism"
          image="http://www.kegg.jp/kegg/pathway/ko/ko00565.png"
@@ -128,7 +128,7 @@
     <entry id="29" name="path:ko00565" type="map"
         link="http://www.kegg.jp/dbget-bin/www_bget?ko00565">
         <graphics name="TITLE:Ether lipid metabolism" fgcolor="#000000" bgcolor="#FFFFFF"
-             type="roundrectangle" x="149" y="58" width="218" height="25"/>
+             type="roundrectangle" x="144" y="58" width="207" height="25"/>
     </entry>
     <entry id="58" name="ko:K06123" type="ortholog" reaction="rn:R04360"
         link="http://www.kegg.jp/dbget-bin/www_bget?K06123">

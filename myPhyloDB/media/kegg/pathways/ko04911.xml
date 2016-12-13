@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
-<!-- Creation date: Oct 23, 2015 10:16:42 +0900 (GMT+9) -->
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
+<!-- Creation date: Apr 5, 2016 09:33:24 +0900 (GMT+9) -->
 <pathway name="path:ko04911" org="ko" number="04911"
          title="Insulin secretion"
          image="http://www.kegg.jp/kegg/pathway/ko/ko04911.png"
@@ -290,8 +290,8 @@
         <graphics name="C16114" fgcolor="#000000" bgcolor="#FFFFFF"
              type="circle" x="96" y="530" width="8" height="8"/>
     </entry>
-    <entry id="58" name="ko:K04936 ko:K05274 ko:K04937 ko:K04938 ko:K04939 ko:K04941 ko:K04942 ko:K04943 ko:K04944 ko:K04945 ko:K05325" type="ortholog"
-        link="http://www.kegg.jp/dbget-bin/www_bget?K04936+K05274+K04937+K04938+K04939+K04941+K04942+K04943+K04944+K04945+K05325">
+    <entry id="58" name="ko:K04936 ko:K05274 ko:K04937 ko:K04938 ko:K04939 ko:K04941 ko:K04942 ko:K04943 ko:K04944 ko:K04945" type="ortholog"
+        link="http://www.kegg.jp/dbget-bin/www_bget?K04936+K05274+K04937+K04938+K04939+K04941+K04942+K04943+K04944+K04945">
         <graphics name="K04936..." fgcolor="#000000" bgcolor="#BFBFFF"
              type="rectangle" x="979" y="130" width="46" height="17"/>
     </entry>

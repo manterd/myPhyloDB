@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.1_.dtd">
+<!DOCTYPE pathway SYSTEM "http://www.kegg.jp/kegg/xml/KGML_v0.7.2_.dtd">
 <!-- Creation date: Nov 7, 2014 14:24:02 +0900 (GMT+09:00) -->
 <pathway name="path:ko00750" org="ko" number="00750"
          title="Vitamin B6 metabolism"
