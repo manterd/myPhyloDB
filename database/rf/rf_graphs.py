@@ -183,6 +183,7 @@ def getRF(request, stops, RID, PID):
                 print r('library(reshape2)')
                 print r('library(RColorBrewer)')
                 print r('library(stargazer)')
+                print r('source("database/myFunctions.R")')
 
                 method = all['Method']
                 if method == 'rf':
@@ -239,16 +240,16 @@ def getRF(request, stops, RID, PID):
                 r("set.seed(1)")
                 if method == 'rf':
                     r("method <- 'rf' ")
-                    r("subtitle <- 'Random Forest' ")
+                    r("title <- 'Random Forest' ")
                     r("grid <- expand.grid(.mtry=c(1,2,5))")
                 elif method == 'nnet':
                     r("method <- 'nnet' ")
                     r("grid <- expand.grid(.size=c(1, 5, 10), .decay=c(0, 0.05, 1, 2, 3, 4, 5))")
-                    r("subtitle <- 'Neural Network' ")
+                    r("title <- 'Neural Network' ")
                 elif method == 'svm':
                     r("method <- 'svm ")
                     r("grid <- expand.grid(.cost=c(1))")
-                    r("subtitle <- 'Support Vector Machine' ")
+                    r("title <- 'Support Vector Machine' ")
 
                 if catFields:
                     r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
@@ -261,24 +262,23 @@ def getRF(request, stops, RID, PID):
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=T, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
 
-                fit = r.get('fit')
-                if not fit:
-                    myDict = {}
-                    myDict['error'] = "Model could not be fit:\nPlease try a different model"
-                    res = simplejson.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
-
                 r("predY <- predict(fit)")
 
-                result += str(r('print(fit)')) + '\n'
-                result += '===============================================\n'
+                r("if (exists('predY')) {fitError <- FALSE} else {fitError <- TRUE}")
+                fitError = r.get("fitError")
+                if fitError:
+                    myDict = {'error': "Model could not be fit:\nPlease try a different model"}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+                else:
+                    result += str(r('print(fit)')) + '\n'
+                    result += '===============================================\n'
 
                 if catFields:
                     r("varDF <- filterVarImp(X, Y)")
                     r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
-                    r("rankDF <- (rankDF <= 3)")
+                    r("rankDF <- (rankDF <= 6)")
                     r("rankDF <- rankDF * 1")
-
                     r("myFilter <- as.vector(rowSums(rankDF) > 0)")
                     r("fVarDF <- varDF[myFilter,]")
                     r("fVarDF['rank_id'] <- row.names(fVarDF)")
@@ -287,20 +287,26 @@ def getRF(request, stops, RID, PID):
                     r("graphDF['taxa'] <- foo$X1")
 
                     r("pdf_counter <- pdf_counter + 1")
-                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=3+nlevels(graphDF$variable)*0.2, height=2+nlevels(graphDF$taxa)*0.4)")
-                    r("par(mar=c(3,4,1,1),family='serif')")
-                    r("p <- ggplot(graphDF, aes(x=variable, y=value, fill=taxa))")
-                    r("p <- p + geom_bar(stat='identity')")
-                    r("p <- p + facet_grid(taxa ~ .)")
-                    r("p <- p + theme(strip.text.y=element_text(size=7, colour='blue', angle = 0))")
+                    r("par(mar=c(2,2,1,1),family='serif')")
+                    r("p <- ggplot(graphDF, aes(x=taxa, y=value, fill=variable))")
+                    r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
+                    r("p <- p + facet_grid(variable ~ .)")
+                    r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
+                    r("p <- p + theme(strip.text.y=element_text(size=5, colour='blue', angle=0))")
                     r("p <- p + theme(legend.position='none')")
-                    r("p <- p + theme(axis.text.x = element_text(size=7, angle = 90, hjust = 0))")
-                    r("p <- p + theme(axis.text.y = element_text(size=5))")
-                    r("p <- p + labs(y='Relative Importance', x='', \
-                        title='Relative Importance', \
-                        subtitle=subtitle)")
-                    r("print(p)")
-                    r("dev.off()")
+                    r("p <- p + theme(axis.title.y=element_text(size=8))")
+                    r("p <- p + theme(axis.text.x = element_text(size=5, angle = 90, hjust = 0))")
+                    r("p <- p + theme(axis.text.y = element_text(size=4))")
+                    r("p <- p + theme(plot.title = element_text(size=10))")
+                    r("p <- p + theme(plot.subtitle = element_text(size=7))")
+                    r("p <- p + labs(y='Importance', x='', \
+                        title=title, \
+                        subtitle='Relative importance (top 6 for each factor)')")
+
+                    r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                    r("panel.width <- nlevels(graphDF$taxa)*0.4")
+                    r("p <- set_panel_size(p, height=unit(0.75, 'cm'), width=unit(panel.width, 'cm'))")
+                    r("ggsave(filename=file, plot=p, units='cm', height=4+nlevels(graphDF$variable), width=5+panel.width)")
 
                     r("tab <- table(predY, Y)")
                     r("cm <- confusionMatrix(tab)")
@@ -317,40 +323,46 @@ def getRF(request, stops, RID, PID):
                 if quantFields:
                     r("varDF <- filterVarImp(X, Y)")
                     r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
-                    r("rankDF <- (rankDF <= 6)")
+                    r("rankDF <- (rankDF <= 10)")
                     r("rankDF <- rankDF * 1")
                     r("myFilter <- as.vector((rowSums(rankDF) > 0))")
                     r("Overall <- varDF[myFilter,]")
                     r("rank_id <- row.names(varDF)[myFilter]")
-                    r("graphDF <- data.frame(taxa, Overall)")
+                    r("graphDF <- data.frame(rank_id, Overall)")
                     r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=TRUE)))")
                     r("graphDF['taxa'] <- foo$X1")
-                    r("graphDF <- within(graphDF, taxa <- data.frame(do.call('rbind', strsplit(as.character(taxa), '.', fixed=TRUE))))")
-                    r(" names(graphDF)[names(graphDF)=='taxa.X1'] <- 'taxa' ")
 
                     r("pdf_counter <- pdf_counter + 1")
-                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(graphDF)*0.2)")
-                    r("par(mar=c(3,4,1,1),family='serif')")
+                    r("par(mar=c(2,2,1,1),family='serif')")
                     r("p <- ggplot(graphDF, aes(x=taxa, y=Overall))")
-                    r("p <- p + geom_bar(stat='identity', fill='blue')")
-                    r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
-                    r("p <- p + labs(y='Relative Importance', x='', \
-                        title='Relative Importance', \
-                        subtitle=subtitle)")
-                    r("print(p)")
-                    r("dev.off()")
+                    r("p <- p + geom_bar(stat='identity', alpha=0.9, , fill='blue', colour='black', size=0.1)")
+                    r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
+                    r("p <- p + theme(strip.text.y=element_text(size=5, colour='blue', angle=0))")
+                    r("p <- p + theme(legend.position='none')")
+                    r("p <- p + theme(axis.title.y=element_text(size=8))")
+                    r("p <- p + theme(axis.text.x = element_text(size=5, angle = 90, hjust = 0))")
+                    r("p <- p + theme(axis.text.y = element_text(size=4))")
+                    r("p <- p + theme(plot.title = element_text(size=10))")
+                    r("p <- p + theme(plot.subtitle = element_text(size=7))")
+                    r("p <- p + labs(y='Importance', x='', \
+                        title=title, \
+                        subtitle='Overall importance (top 10)')")
+
+                    r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                    r("panel.width <- nlevels(graphDF$taxa)*0.5")
+                    r("p <- set_panel_size(p, height=unit(2, 'cm'), width=unit(panel.width, 'cm'))")
+                    r("ggsave(filename=file, plot=p, units='cm', height=5, width=5+panel.width)")
 
                     r("pdf_counter <- pdf_counter + 1")
-                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''))")
                     r("graphDF <- data.frame(x=Y, y=predY)")
                     r("p <- ggplot(graphDF, aes(x=x, y=y))")
                     r("p <- p + geom_point(shape=1)")
                     r("p <- p + geom_smooth(method='lm')")
                     r("p <- p + labs(y='Predicted', x='Observed', \
-                        title='Predicted vs Observed', \
-                        subtitle=subtitle)")
-                    r("print(p)")
-                    r("dev.off()")
+                        title=title, \
+                        subtitle='Predicted vs Observed')")
+                    r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                    r("ggsave(filename=file, plot=p, units='in', height=4, width=4)")
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:

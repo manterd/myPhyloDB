@@ -2,55 +2,77 @@
 
 <script type="text/javascript">
 
-$("#tree_metaQuant").dynatree({
-    checkbox: true,
-    selectMode: 3,
-    initAjax: {
-        url: '/myPhyloDB/getSampleQuantTree/',
-        dataType: 'jsonp',
-        data: {}
-    },
-    onLazyRead: function (node) {
-        node.appendAjax({
-            url: '/myPhyloDB/getSampleQuantTreeChildren/',
-            data: {pType: node.data.pType, field: node.data.title},
-            success: function (node) {
-                if (node.childList == undefined) {
-                    alert('No samples are available for this variable!');
-                }
-            }
-        });
-    },
-    onSelect: function (flag, node) {
-        if (flag && node.childList == undefined) {
-            node.reloadChildren(function () {
-                node.select(false);
-                node.select(true);
-            });
-        }
-        nodesQuant = node.tree.getSelectedNodes();
-
-        if (document.title == 'PCoA') {
-            surfBox();
-        }
-
-        $("#run").css("background-color", "lightgray");
-
-        if (document.title == 'ANcOVA') {
-            var count = 0;
-            $.each(nodesQuant, function (key, value) {
-                if (value.data.pType != undefined) {
-                    count = count + 1;
+    $("#tree_metaQuant").dynatree({
+        checkbox: true,
+        selectMode: 3,
+        initAjax: {
+            url: '/myPhyloDB/getSampleQuantTree/',
+            dataType: 'jsonp',
+            data: {}
+        },
+        onLazyRead: function (node) {
+            node.appendAjax({
+                url: '/myPhyloDB/getSampleQuantTreeChildren/',
+                data: {pType: node.data.pType, field: node.data.title},
+                success: function (node) {
+                    if (node.childList == undefined) {
+                        alert('No samples are available for this variable!');
+                    }
                 }
             });
-
-            if (count > 1) {
-                alert("Please select only one quantitative variable!");
-                clearMeta();
-                return false;
+        },
+        onSelect: function (flag, node) {
+            if (flag && node.childList == undefined) {
+                node.reloadChildren(function () {
+                    node.select(false);
+                    node.select(true);
+                });
             }
-        }
+            nodesQuant = node.tree.getSelectedNodes();
 
-    }
-});
+            if (document.title == 'PCoA') {
+                surfBox();
+            }
+
+            $("#run").css("background-color", "lightgray");
+
+            if (document.title == 'ANcOVA') {
+                var count = 0;
+                $.each(nodesQuant, function (key, value) {
+                    if (value.data.pType != undefined) {
+                        count = count + 1;
+                    }
+                });
+
+                if (count > 1) {
+                    alert("Please select only one quantitative variable!");
+                    node.select(false);
+                    return false;
+                }
+            }
+
+            if (document.title == 'CARET') {
+                countCat = 0;
+                $.each(nodesCat, function (key, value) {
+                    if (value.data.pType != undefined) {
+                        countCat = countCat + 1;
+                    }
+                });
+                countQuant = 0;
+                $.each(nodesQuant, function (key, value) {
+                    if (value.data.pType != undefined) {
+                        countQuant = countQuant + 1;
+                    }
+                });
+                total = countCat + countQuant;
+                if (total > 1) {
+                    alert("Selected method requires only one categorical or quantitative variable!");
+                    node.select(false);
+                    total = total - 1;
+                    return false;
+                }
+            }
+
+        }
+    });
 </script>

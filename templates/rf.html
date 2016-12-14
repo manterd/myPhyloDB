@@ -23,7 +23,7 @@
         var dataType = 0, treeType = 1;
         var nodesCat = "", nodesQuant = "";
         var running = false, refresh = 0, RID = 0;
-        var countCat = 0, countQuant = 0;
+        var countCat = 0, countQuant = 0, total = 0;
 
         $(function () {
             $(window).load(function() {
@@ -48,24 +48,6 @@
             $("#run").css("background-color", "lightgray");
             $("#TabButton").css("background-color", "lightgray").val("Export Data");
             document.getElementById("TabButton").disabled = true;
-
-            countCat = 0;
-            $.each(nodesCat, function (key, value) {
-                if (value.data.pType != undefined) {
-                    countCat = countCat + 1;
-                }
-            });
-            countQuant = 0;
-            $.each(nodesQuant, function (key, value) {
-                if (value.data.pType != undefined) {
-                    countQuant = countQuant + 1;
-                }
-            });
-            if ((countCat > 0) && (countQuant > 0)) {
-                alert("Selected method requires only one categorical or quantitative variable!");
-                clearMeta();
-                return false;
-            }
 
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
@@ -324,6 +306,7 @@
             $("#text-1").val('');
             $("#res_table").empty();
             running = true;
+            checkButtons();
             chooseData();
         }
         function selectTree() {

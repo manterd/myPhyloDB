@@ -41,21 +41,28 @@
             }
 
             $("#run").css("background-color", "lightgray");
-            if (document.title == 'ANcOVA') {
-                var count = 0;
+
+
+            if (document.title == 'CARET') {
+                countCat = 0;
                 $.each(nodesCat, function (key, value) {
                     if (value.data.pType != undefined) {
-                        count = count + 1;
+                        countCat = countCat + 1;
                     }
                 });
+                countQuant = 0;
+                $.each(nodesQuant, function (key, value) {
+                    if (value.data.pType != undefined) {
+                        countQuant = countQuant + 1;
+                    }
+                });
+                var total = countCat + countQuant;
+                if (total > 1) {
+                    alert("Selected method requires only one categorical or quantitative variable!");
+                    node.select(false);
+                    return false;
+                }
             }
-
-            if (count > 1) {
-                alert("Please select only one categorical variable!");
-                clearMeta();
-                return false;
-            }
-
         }
 
     });
