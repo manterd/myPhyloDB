@@ -74,6 +74,7 @@ urlpatterns = [
     url(r'^myPhyloDB/makeReproTree/$', trees.makeReproTree, name='makeReproTree'),
     url(r'^myPhyloDB/getDownloadTree/$', trees.getDownloadTree, name='getDownloadTree'),
     url(r'^myPhyloDB/getDownloadTreeChildren/$', trees.getDownloadTreeChildren, name='getDownloadTreeChildren'),
+    url(r'^myPhyloDB/getPermissionTree/$', trees.getPermissionTree, name='getPermissionTree'),
 
     ### urls from normalization page
     url(r'^myPhyloDB/getNorm/$', norm_graphs.getNorm, name='getNorm'),

@@ -15,6 +15,74 @@
 
 {% block javascript %}
     <script type="text/javascript">
+        var num = 0;
+        function addMoreNamesFunc() {
+            var namebox = document.getElementById("addNamesList");
+            namebox.appendChild(document.createTextNode("  "));
+            var input = document.createElement("input");
+            input.type = "text";
+            input.id = "name_" + num;
+            input.value = "username #" + num;
+            namebox.appendChild(input);
+            namebox.appendChild(document.createElement("br"));
+            num++;
+        }
+
+        function submitNames() {
+            var nameList = "";
+            var curID;
+            var curName;
+            for (var c=0; c<num; c++) {
+                curID = "name_"+c;
+                curName = document.getElementById(curID).value;
+                nameList +=  curName + ";";
+            }
+            alert(nameList);
+            if (document.getElementById("permLevel").checked) {
+                // Adding permission to edit, reprocess, etc (not permission granting permission, check later)
+                alert("Adding editing permission");
+            }
+            else {
+                // default, view perm only
+                alert("Default!");
+            }
+            // Send list back through ajax to views, add names to list for selected projects
+
+            var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                if (node.getLevel() == 3) {
+                    return node.data.id;
+                }
+                $("#submit").css("background-color", "yellow").val("Running!");
+            });
+            $.ajax({
+                type: 'POST',
+                url: '/myPhyloDB/funcCall/',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                success: function (data) {
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    }
+                }
+            });
+        }
+
+        $(function () {
+            $("#tree").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/myPhyloDB/getPermissionTree/",
+                    dataType: "jsonp",
+                    data: {}
+                },
+                onclick: function () {
+                    $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
+                }
+            });
+            addMoreNamesFunc();
+        });
     </script>
 {% endblock javascript %}
 
@@ -25,6 +93,25 @@
         <br>
         <a class="Offmouse" href="{% url 'changeuser' %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 0px">Click here to change/update your user profile</li></a>
     </ul>
-    <br><br>
+    <br>
+    <h2>Project Management:</h2>
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <th>Select projects to update permissions<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="tree"></div>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <h2>Add users to selected project(s):</h2>
+    <div id="addNamesList"></div>
+    <br>
+    <input type="button" id="addMoreNames" onclick="addMoreNamesFunc()" value="+">  <input type="submit" id="addNames" value="Submit permission changes" onclick="submitNames()">
+    <br>
+    <input type="checkbox" id="permLevel" value="false"> Grant editing permission
+    <br>
     <br><br>
 {% endblock my_content %}

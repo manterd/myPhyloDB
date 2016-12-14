@@ -34,6 +34,9 @@ class Project(models.Model):
     pi_email = models.EmailField(blank=True)
     pi_phone = models.CharField(max_length=15, blank=True)
 
+    #whitelist_view = JSONField(default={})
+    #whitelist_edit = JSONField(default={})
+
     def __unicode__(self):
         return self.project_name
 

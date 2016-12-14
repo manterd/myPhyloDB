@@ -274,6 +274,7 @@
             myDict['nzAll'] = document.getElementById("selectall-nz").value;
             myDict['DepVar'] = document.getElementById("DepVar").value;
             myDict['Method'] = document.getElementById("Method").value;
+            myDict['palette'] = document.getElementById("palette").value;
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
@@ -541,7 +542,7 @@
         <tr><td colspan="3" bgcolor="white"></td></tr>
         <tr>
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Ordination Settings:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>CARET Settings:</strong></em></td>
         </tr>
 
         <tr>
@@ -553,6 +554,30 @@
                     <option value="svm">Support Vector Machine</option>
                 </select>
                 &nbsp; <-- Ordination Method
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr>
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Optimize R plots:</strong></em></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="palette" onChange="checkButtons()">
+                        <option value="Set1">Set1</option>
+                        <option value="Set2">Set2</option>
+                        <option value="Set3">Set3</option>
+                        <option value="Paired">Paired</option>
+                        <option value="Dark2">Dark2</option>
+                        <option value="Accent">Accent</option>
+                    </select>
+                    &nbsp; <-- Color palette for symbol colors
+                </div>
             </td>
             <td bgcolor="white"></td>
         </tr>

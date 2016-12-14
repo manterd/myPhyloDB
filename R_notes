@@ -31,7 +31,7 @@ Step 2: Make sure the following R dependencies are installed
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 3: Build new R installation
 
-    ./configure --prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux
+    ./configure --prefix=$HOME/PycharmProjects/myPhyloDB/R/R-Linux --with-x=yes --with-cairo=yes --with-png=yes
     make && make install
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

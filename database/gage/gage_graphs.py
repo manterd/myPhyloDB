@@ -267,9 +267,9 @@ def getGAGE(request, stops, RID, PID):
                         gageDF = gageDF.append(compDF, ignore_index=True)
 
                         ### Get data way for pathview
-                        # merge sign and sig to get vector (1=sig. postive, 0=not sig., -1=sig. negative)
+                        # merge sign and sig to get vector (1=sig. positive, 0=not sig., -1=sig. negative)
                         r("binary <- change / abs(change)")
-                        r("sig <- (res$pvalue <= 0.05)")
+                        r("sig <- as.vector((res$pvalue <= 0.05))")
                         r("sig <- sig * 1")
 
                         r("sig <- sig * binary")
@@ -278,7 +278,7 @@ def getGAGE(request, stops, RID, PID):
                         for key in keggDict.iterkeys():
                             r.assign("pathway", key)
                             r("pid <- substr(pathway, start=1, stop=7)")
-                            r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../kegg/pathways', \
+                            print r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../kegg/pathways', \
                                 kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
 
                             # convert to pdf

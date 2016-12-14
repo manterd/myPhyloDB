@@ -1567,3 +1567,38 @@ def getDownloadTreeChildren(request):
 
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
+
+
+def getPermissionTree(request):
+    myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+
+    projects = Project.objects.none()
+
+    if request.user.is_superuser:
+        projects = Project.objects.all()
+    elif request.user.is_authenticated():
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+
+        projects = Project.objects.all().filter(Q(projectid__in=path_list))
+
+    for project in projects:
+        if Sample.objects.filter(projectid=project.projectid).exists():
+            myNode = {
+                'title': project.project_name,
+                'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
+                'id': project.projectid,
+                'isFolder': False,
+                'isLazy': False
+            }
+            myTree['children'].append(myNode)
+    # Convert result list to a JSON string
+    res = simplejson.dumps(myTree, encoding="Latin-1")
+
+    # Support for the JSONP protocol.
+    response_dict = {}
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+    response_dict.update({'children': myTree})
+    return HttpResponse(response_dict, content_type='application/javascript')

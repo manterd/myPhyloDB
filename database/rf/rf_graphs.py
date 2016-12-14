@@ -179,10 +179,12 @@ def getRF(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
 
-                method = all['Method']
                 print r('library(caret)')
                 print r('library(reshape2)')
+                print r('library(RColorBrewer)')
                 print r('library(stargazer)')
+
+                method = all['Method']
                 if method == 'rf':
                     print r('library(randomForest)')
                 if method == 'nnet':
@@ -192,13 +194,17 @@ def getRF(request, stops, RID, PID):
 
                 # Wrangle data into R
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
-                rankNameDF.set_index('rank_id', inplace=True)
-                r.assign('rankNames', rankNameDF.rank_name.values)
+                rankNameDF['name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
+                r.assign('rankNames', rankNameDF.name_id.values)
 
                 r.assign("data", count_rDF)
                 r("names(data) <- rankNames")
 
                 metaDF.drop('sample_name', axis=1, inplace=True)
+                myList = list(metaDF.select_dtypes(include=['object']).columns)
+                for i in myList:
+                    metaDF[i] = metaDF[i].str.replace(' ', '_')
+
                 r.assign("meta", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())
                 r("rownames(meta) <- rows")
@@ -223,306 +229,127 @@ def getRF(request, stops, RID, PID):
                 if not os.path.exists(path):
                     os.makedirs(path)
 
+                palette = all['palette']
                 r.assign("path", path)
                 r.assign("RID", RID)
                 r("pdf_counter <- 1")
 
                 finalDict = {}
+
+                # set up tuneGrid
+                r("set.seed(1)")
+                r.assign("palette", palette)
                 if method == 'rf':
-                    r("set.seed(1)")
-                    r("grid <- expand.grid(.mtry=c(1,2,5,10))")
-                    if catFields:
-                        r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
-                            classProbs=T, savePredictions=T)")
-                        r("fit <- train(Y ~ ., data=myData, method='rf', linout=F, trace=F, trControl=ctrl, \
-                            tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
-                    if quantFields:
-                        r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
-                            classProbs=F, savePredictions=T)")
-                        r("fit <- train(Y ~ ., data=myData, method='rf', linout=T, trace=F, trControl=ctrl, \
-                            tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
-
-                    r("predY <- predict(fit)")
-
-                    result += str(r('print(fit)')) + '\n'
-                    result += '===============================================\n'
-
-                    if catFields:
-                        r("varDF <- filterVarImp(X, Y)")    # calculated from area under the ROC curve
-                        r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
-                        r("rankDF <- (rankDF <= 6)")
-                        r("rankDF <- rankDF * 1")
-                        r("myFilter <- as.vector((rowSums(rankDF) > 0))")
-                        r("fVarDF <- varDF[myFilter,]")
-
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(fVarDF)*0.2)")
-                        r("par(mar=c(3,4,1,1),family='serif')")
-                        r("fVarDF['taxa'] <- row.names(fVarDF)")
-                        r("graphDF <- melt(fVarDF, id='taxa')")
-                        r("p <- ggplot(graphDF, aes(x=taxa, y=value, fill=variable))")
-                        r("p <- p + geom_bar(stat='identity')")
-                        r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
-                        r("p <- p + labs(y='Relative Importance', x='', \
-                            title='Relative Importance of Variables', \
-                            subtitle='Random Forest')")
-                        r("print(p)")
-                        r("dev.off()")
-
-                        r("tab <- table(predY, Y)")
-                        r("cm <- confusionMatrix(tab)")
-
-                        result += str(r('print(cm)')) + '\n'
-                        result += '===============================================\n'
-
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID] == RID:
-                            res = ''
-                            return HttpResponse(res, content_type='application/json')
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                    if quantFields:
-                        r("varDF <- filterVarImp(X, Y)")
-                        r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
-                        r("rankDF <- (rankDF <= 6)")
-                        r("rankDF <- rankDF * 1")
-                        r("myFilter <- as.vector((rowSums(rankDF) > 0))")
-                        r("Overall <- varDF[myFilter,]")
-                        r("taxa <- row.names(varDF)[myFilter]")
-                        r("graphDF <- data.frame(taxa, Overall)")
-
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(graphDF)*0.2)")
-                        r("par(mar=c(3,4,1,1),family='serif')")
-                        r("p <- ggplot(graphDF, aes(x=taxa, y=Overall))")
-                        r("p <- p + geom_bar(stat='identity', fill='blue')")
-                        r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
-                        r("p <- p + labs(y='Relative Importance', x='', \
-                            title='Relative Importance of Variables', \
-                            subtitle='Random Forest')")
-                        r("print(p)")
-                        r("dev.off()")
-
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''))")
-                        r("graphDF <- data.frame(x=Y, y=predY)")
-                        r("p <- ggplot(graphDF, aes(x=x, y=y))")
-                        r("p <- p + geom_point(shape=1)")
-                        r("p <- p + geom_smooth(method='lm')")
-                        r("p <- p + labs(y='Predicted', x='Observed', \
-                            title='Predicted vs Observed', \
-                            subtitle='Random Forest')")
-                        r("print(p)")
-                        r("dev.off()")
-
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID] == RID:
-                            res = ''
-                            return HttpResponse(res, content_type='application/json')
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                if method == 'nnet':
-                    r("set.seed(1)")
+                    r("method <- 'rf' ")
+                    r("subtitle <- 'Random Forest' ")
+                    r("grid <- expand.grid(.mtry=c(1,2,5))")
+                elif method == 'nnet':
+                    r("method <- 'nnet' ")
                     r("grid <- expand.grid(.size=c(1, 5, 10), .decay=c(0, 0.05, 1, 2, 3, 4, 5))")
-                    if catFields:
-                        r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
-                            classProbs=T, savePredictions=T)")
-                        r("fit <- train(Y ~ ., data=myData, method='nnet', linout=F, trace=F, trControl=ctrl, \
-                            tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
-                    if quantFields:
-                        r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
-                            classProbs=F, savePredictions=T)")
-                        r("fit <- train(Y ~ ., data=myData, method='nnet', linout=T, trace=F, trControl=ctrl, \
-                            tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
+                    r("subtitle <- 'Neural Network' ")
+                elif method == 'svm':
+                    r("method <- 'svm ")
+                    r("grid <- expand.grid(.cost=c(1))")
+                    r("subtitle <- 'Support Vector Machine' ")
 
-                    r("predY <- predict(fit)")
+                if catFields:
+                    r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
+                        classProbs=T, savePredictions=T)")
+                    r("fit <- train(Y ~ ., data=myData, method=method, linout=F, trace=F, trControl=ctrl, \
+                        tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
+                if quantFields:
+                    r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
+                        classProbs=F, savePredictions=T)")
+                    r("fit <- train(Y ~ ., data=myData, method=method, linout=T, trace=F, trControl=ctrl, \
+                        tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
 
-                    result += str(r('print(fit)')) + '\n'
-                    result += '===============================================\n'
+                r("predY <- predict(fit)")
 
-                    if catFields:
-                        r("varDF <- filterVarImp(X, Y)")    # calculated from area under the ROC curve
-                        r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
-                        r("rankDF <- (rankDF <= 6)")
-                        r("rankDF <- rankDF * 1")
-                        r("myFilter <- as.vector((rowSums(rankDF) > 0))")
-                        r("fVarDF <- varDF[myFilter,]")
+                result += str(r('print(fit)')) + '\n'
+                result += '===============================================\n'
 
-                        # decision boundary
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(fVarDF)*0.2)")
-                        r("hs <- 0.01")
-                        r("x_min <- min(X)")
-                        r("x_max <- max(X)")
-                        r("y_min <- min(X)")
-                        r("y_max <- max(X)")
-                        r('grid <- as.matrix(expand.grid())')
-                        r("dev.off()")
+                if catFields:
+                    r("varDF <- filterVarImp(X, Y)")
+                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
+                    r("rankDF <- (rankDF <= 3)")
+                    r("rankDF <- rankDF * 1")
 
-                        # relative importance
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(fVarDF)*0.2)")
-                        r("par(mar=c(3,4,1,1),family='serif')")
-                        r("fVarDF['taxa'] <- row.names(fVarDF)")
-                        r("graphDF <- melt(fVarDF, id='taxa')")
-                        r("p <- ggplot(graphDF, aes(x=taxa, y=value, fill=variable))")
-                        r("p <- p + geom_bar(stat='identity')")
-                        r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
-                        r("p <- p + labs(y='Relative Importance', x='', \
-                            title='Relative Importance of Variables', \
-                            subtitle='Neural Network')")
-                        r("print(p)")
-                        r("dev.off()")
-
-                        r("tab <- table(predY, Y)")
-                        r("cm <- confusionMatrix(tab)")
-
-                        result += str(r('print(cm)')) + '\n'
-                        result += '===============================================\n'
-
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID] == RID:
-                            res = ''
-                            return HttpResponse(res, content_type='application/json')
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                    if quantFields:
-                        r("varDF <- filterVarImp(X, Y)")
-                        r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
-                        r("rankDF <- (rankDF <= 6)")
-                        r("rankDF <- rankDF * 1")
-                        r("myFilter <- as.vector((rowSums(rankDF) > 0))")
-                        r("Overall <- varDF[myFilter,]")
-                        r("taxa <- row.names(varDF)[myFilter]")
-                        r("graphDF <- data.frame(taxa, Overall)")
-
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(graphDF)*0.2)")
-                        r("par(mar=c(3,4,1,1),family='serif')")
-                        r("p <- ggplot(graphDF, aes(x=taxa, y=Overall))")
-                        r("p <- p + geom_bar(stat='identity', fill='blue')")
-                        r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
-                        r("p <- p + labs(y='Relative Importance', x='', \
-                            title='Relative Importance of Variables', \
-                            subtitle='Neural Network')")
-                        r("print(p)")
-                        r("dev.off()")
-
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''))")
-                        r("graphDF <- data.frame(x=Y, y=predY)")
-                        r("p <- ggplot(graphDF, aes(x=x, y=y))")
-                        r("p <- p + geom_point(shape=1)")
-                        r("p <- p + geom_smooth(method='lm')")
-                        r("p <- p + labs(y='Predicted', x='Observed', \
-                            title='Predicted vs Observed', \
-                            subtitle='Neural Network')")
-                        r("print(p)")
-                        r("dev.off()")
-
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID] == RID:
-                            res = ''
-                            return HttpResponse(res, content_type='application/json')
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    r("myFilter <- as.vector(rowSums(rankDF) > 0)")
+                    r("fVarDF <- varDF[myFilter,]")
+                    r("fVarDF['rank_id'] <- row.names(fVarDF)")
+                    r("graphDF <- melt(fVarDF, id='rank_id')")
+                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=TRUE)))")
+                    r("graphDF['taxa'] <- foo$X1")
 
                     r("pdf_counter <- pdf_counter + 1")
-                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), height= 5 + ncol(data)*0.1)")
-                    r("plotnet(fit, cex=0.6)")
+                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(fVarDF)*0.2, height=0.5+nrow(fVarDF)*0.5)")
+                    r("par(mar=c(3,4,1,1),family='serif')")
+                    r("p <- ggplot(graphDF, aes(x=taxa, y=value, fill=variable))")
+                    r("p <- p + geom_bar(stat='identity')")
+                    r("p <- p + facet_grid(variable ~ .)")
+                    r("p <- p + scale_fill_brewer(palette=palette)")
+                    r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
+                    r("p <- p + labs(y='Relative Importance', x='', \
+                        title='Relative Importance of Variables', \
+                        subtitle=subtitle)")
+                    r("print(p)")
                     r("dev.off()")
 
-                if method == 'svm':
-                    r("set.seed(1)")
-                    r("grid <- expand.grid(.cost=c(1))")
-                    if catFields:
-                        r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
-                            classProbs=T, savePredictions=T)")
-                        r("fit <- train(Y ~ ., data=myData, method='svmLinear2', linout=F, trace=F, trControl=ctrl, \
-                            tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
-                    if quantFields:
-                        r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
-                            classProbs=F, savePredictions=T)")
-                        r("fit <- train(Y ~ ., data=myData, method='svmLinear2', linout=T, trace=F, trControl=ctrl, \
-                            tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
+                    r("tab <- table(predY, Y)")
+                    r("cm <- confusionMatrix(tab)")
 
-                    r("predY <- predict(fit)")
-
-                    result += str(r('print(fit)')) + '\n'
+                    result += str(r('print(cm)')) + '\n'
                     result += '===============================================\n'
 
-                    if catFields:
-                        r("varDF <- filterVarImp(X, Y)")    # calculated from area under the ROC curve
-                        r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
-                        r("rankDF <- (rankDF <= 6)")
-                        r("rankDF <- rankDF * 1")
-                        r("myFilter <- as.vector((rowSums(rankDF) > 0))")
-                        r("fVarDF <- varDF[myFilter,]")
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[PID] == RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(fVarDF)*0.2)")
-                        r("par(mar=c(3,4,1,1),family='serif')")
-                        r("fVarDF['taxa'] <- row.names(fVarDF)")
-                        r("graphDF <- melt(fVarDF, id='taxa')")
-                        r("p <- ggplot(graphDF, aes(x=taxa, y=value, fill=variable))")
-                        r("p <- p + geom_bar(stat='identity')")
-                        r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
-                        r("p <- p + labs(y='Relative Importance', x='', \
-                            title='Relative Importance of Variables', \
-                            subtitle='Support Vector Machine')")
-                        r("print(p)")
-                        r("dev.off()")
+                if quantFields:
+                    r("varDF <- filterVarImp(X, Y)")
+                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
+                    r("rankDF <- (rankDF <= 6)")
+                    r("rankDF <- rankDF * 1")
+                    r("myFilter <- as.vector((rowSums(rankDF) > 0))")
+                    r("Overall <- varDF[myFilter,]")
+                    r("rank_id <- row.names(varDF)[myFilter]")
+                    r("graphDF <- data.frame(taxa, Overall)")
+                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=TRUE)))")
+                    r("graphDF['taxa'] <- foo$X1")
+                    r("graphDF <- within(graphDF, taxa <- data.frame(do.call('rbind', strsplit(as.character(taxa), '.', fixed=TRUE))))")
+                    r(" names(graphDF)[names(graphDF)=='taxa.X1'] <- 'taxa' ")
 
-                        r("tab <- table(predY, Y)")
-                        r("cm <- confusionMatrix(tab)")
+                    r("pdf_counter <- pdf_counter + 1")
+                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(graphDF)*0.2)")
+                    r("par(mar=c(3,4,1,1),family='serif')")
+                    r("p <- ggplot(graphDF, aes(x=taxa, y=Overall))")
+                    r("p <- p + geom_bar(stat='identity', fill='blue')")
+                    r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
+                    r("p <- p + labs(y='Relative Importance', x='', \
+                        title='Relative Importance of Variables', \
+                        subtitle='Random Forest')")
+                    r("print(p)")
+                    r("dev.off()")
 
-                        result += str(r('print(cm)')) + '\n'
-                        result += '===============================================\n'
+                    r("pdf_counter <- pdf_counter + 1")
+                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''))")
+                    r("graphDF <- data.frame(x=Y, y=predY)")
+                    r("p <- ggplot(graphDF, aes(x=x, y=y))")
+                    r("p <- p + geom_point(shape=1)")
+                    r("p <- p + geom_smooth(method='lm')")
+                    r("p <- p + labs(y='Predicted', x='Observed', \
+                        title='Predicted vs Observed', \
+                        subtitle=subtitle)")
+                    r("print(p)")
+                    r("dev.off()")
 
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID] == RID:
-                            res = ''
-                            return HttpResponse(res, content_type='application/json')
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                    if quantFields:
-                        r("varDF <- filterVarImp(X, Y)")
-                        r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
-                        r("rankDF <- (rankDF <= 6)")
-                        r("rankDF <- rankDF * 1")
-                        r("myFilter <- as.vector((rowSums(rankDF) > 0))")
-                        r("Overall <- varDF[myFilter,]")
-                        r("taxa <- row.names(varDF)[myFilter]")
-                        r("graphDF <- data.frame(taxa, Overall)")
-
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(graphDF)*0.2)")
-                        r("par(mar=c(3,4,1,1),family='serif')")
-                        r("p <- ggplot(graphDF, aes(x=taxa, y=Overall))")
-                        r("p <- p + geom_bar(stat='identity', fill='blue')")
-                        r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
-                        r("p <- p + labs(y='Relative Importance', x='', \
-                            title='Relative Importance of Variables', \
-                            subtitle='Support Vector Machine')")
-                        r("print(p)")
-                        r("dev.off()")
-
-                        r("pdf_counter <- pdf_counter + 1")
-                        r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''))")
-                        r("graphDF <- data.frame(x=Y, y=predY)")
-                        r("p <- ggplot(graphDF, aes(x=x, y=y))")
-                        r("p <- p + geom_point(shape=1)")
-                        r("p <- p + geom_smooth(method='lm')")
-                        r("p <- p + labs(y='Predicted', x='Observed', \
-                            title='Predicted vs Observed', \
-                            subtitle='Support Vector Machine')")
-                        r("print(p)")
-                        r("dev.off()")
-
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID] == RID:
-                            res = ''
-                            return HttpResponse(res, content_type='application/json')
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[PID] == RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 r("myTable <- stargazer(varDF, type='text', summary=F, rownames=T)")
                 result += 'Variable Importance\n'
@@ -535,6 +362,13 @@ def getRF(request, stops, RID, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                # Neural Network Plot
+                if method == 'nnet':
+                    r("pdf_counter <- pdf_counter + 1")
+                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), height= 5 + ncol(data)*0.1)")
+                    r("plotnet(fit, cex=0.6)")
+                    r("dev.off()")
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/rf/Rplots/' + str(RID) + '/rf_final.pdf'
