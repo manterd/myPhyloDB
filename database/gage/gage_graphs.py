@@ -278,7 +278,7 @@ def getGAGE(request, stops, RID, PID):
                         for key in keggDict.iterkeys():
                             r.assign("pathway", key)
                             r("pid <- substr(pathway, start=1, stop=7)")
-                            print r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../kegg/pathways', \
+                            r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../kegg/pathways', \
                                 kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
 
                             # convert to pdf
@@ -286,7 +286,7 @@ def getGAGE(request, stops, RID, PID):
                             r("plot.new()")
                             r("pngRaster <- readPNG(paste(pid, 'pathview.png', sep='.'))")
                             r("grid.raster(pngRaster)")
-                            r("mtext(paste(trt1, ' vs ', trt2, sep=''), side=3, line=4, col='blue')")
+                            r("mtext(paste(trt1, ' vs ', trt2, sep=''), side=3, line=3, col='blue')")
                             r("dev.off()")
                             r("pdf_counter <- pdf_counter + 1")
 
