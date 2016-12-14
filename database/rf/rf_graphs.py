@@ -187,9 +187,9 @@ def getRF(request, stops, RID, PID):
                 method = all['Method']
                 if method == 'rf':
                     print r('library(randomForest)')
-                if method == 'nnet':
+                elif method == 'nnet':
                     print r('library(NeuralNetTools)')
-                if method == 'svm':
+                elif method == 'svm':
                     print r('library(e1071)')
 
                 # Wrangle data into R
@@ -229,7 +229,6 @@ def getRF(request, stops, RID, PID):
                 if not os.path.exists(path):
                     os.makedirs(path)
 
-                palette = all['palette']
                 r.assign("path", path)
                 r.assign("RID", RID)
                 r("pdf_counter <- 1")
@@ -238,7 +237,6 @@ def getRF(request, stops, RID, PID):
 
                 # set up tuneGrid
                 r("set.seed(1)")
-                r.assign("palette", palette)
                 if method == 'rf':
                     r("method <- 'rf' ")
                     r("subtitle <- 'Random Forest' ")
@@ -263,6 +261,13 @@ def getRF(request, stops, RID, PID):
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=T, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
 
+                fit = r.get('fit')
+                if not fit:
+                    myDict = {}
+                    myDict['error'] = "Model could not be fit:\nPlease try a different model"
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
                 r("predY <- predict(fit)")
 
                 result += str(r('print(fit)')) + '\n'
@@ -282,15 +287,17 @@ def getRF(request, stops, RID, PID):
                     r("graphDF['taxa'] <- foo$X1")
 
                     r("pdf_counter <- pdf_counter + 1")
-                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=4+nrow(fVarDF)*0.2, height=0.5+nrow(fVarDF)*0.5)")
+                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), width=3+nlevels(graphDF$variable)*0.2, height=2+nlevels(graphDF$taxa)*0.4)")
                     r("par(mar=c(3,4,1,1),family='serif')")
-                    r("p <- ggplot(graphDF, aes(x=taxa, y=value, fill=variable))")
+                    r("p <- ggplot(graphDF, aes(x=variable, y=value, fill=taxa))")
                     r("p <- p + geom_bar(stat='identity')")
-                    r("p <- p + facet_grid(variable ~ .)")
-                    r("p <- p + scale_fill_brewer(palette=palette)")
-                    r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
+                    r("p <- p + facet_grid(taxa ~ .)")
+                    r("p <- p + theme(strip.text.y=element_text(size=7, colour='blue', angle = 0))")
+                    r("p <- p + theme(legend.position='none')")
+                    r("p <- p + theme(axis.text.x = element_text(size=7, angle = 90, hjust = 0))")
+                    r("p <- p + theme(axis.text.y = element_text(size=5))")
                     r("p <- p + labs(y='Relative Importance', x='', \
-                        title='Relative Importance of Variables', \
+                        title='Relative Importance', \
                         subtitle=subtitle)")
                     r("print(p)")
                     r("dev.off()")
@@ -328,8 +335,8 @@ def getRF(request, stops, RID, PID):
                     r("p <- p + geom_bar(stat='identity', fill='blue')")
                     r("p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 0))")
                     r("p <- p + labs(y='Relative Importance', x='', \
-                        title='Relative Importance of Variables', \
-                        subtitle='Random Forest')")
+                        title='Relative Importance', \
+                        subtitle=subtitle)")
                     r("print(p)")
                     r("dev.off()")
 
