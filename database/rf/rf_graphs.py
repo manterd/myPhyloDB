@@ -195,6 +195,7 @@ def getRF(request, stops, RID, PID):
 
                 # Wrangle data into R
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
+                rankNameDF.sort(columns='rank_id', inplace=True)
                 rankNameDF['name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
                 r.assign('rankNames', rankNameDF.name_id.values)
 
@@ -241,14 +242,14 @@ def getRF(request, stops, RID, PID):
                 if method == 'rf':
                     r("method <- 'rf' ")
                     r("title <- 'Random Forest' ")
-                    r("grid <- expand.grid(.mtry=c(1,2,5))")
+                    r("grid <- expand.grid(.mtry=c(1, 2, 5))")
                 elif method == 'nnet':
                     r("method <- 'nnet' ")
                     r("grid <- expand.grid(.size=c(1, 5, 10), .decay=c(0, 0.05, 1, 2, 3, 4, 5))")
                     r("title <- 'Neural Network' ")
                 elif method == 'svm':
-                    r("method <- 'svm ")
-                    r("grid <- expand.grid(.cost=c(1))")
+                    r("method <- 'svmLinear2' ")
+                    r("grid <- expand.grid(.cost=c(1, 5, 10))")
                     r("title <- 'Support Vector Machine' ")
 
                 if catFields:
@@ -276,7 +277,7 @@ def getRF(request, stops, RID, PID):
 
                 if catFields:
                     r("varDF <- filterVarImp(X, Y)")
-                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
+                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='random')")
                     r("rankDF <- (rankDF <= 6)")
                     r("rankDF <- rankDF * 1")
                     r("myFilter <- as.vector(rowSums(rankDF) > 0)")
@@ -308,6 +309,44 @@ def getRF(request, stops, RID, PID):
                     r("p <- set_panel_size(p, height=unit(0.75, 'cm'), width=unit(panel.width, 'cm'))")
                     r("ggsave(filename=file, plot=p, units='cm', height=4+nlevels(graphDF$variable), width=5+panel.width)")
 
+                    # graph probabilites
+                    r("probY <- predict(fit, type='prob')")
+                    r("newX <- X[,myFilter]")
+                    r("tempDF <- cbind(newX, Y, probY)")
+                    r("tempDF['sampleid'] <- row.names(tempDF)")
+                    r("myFactors <- levels(Y)")
+                    r("myTaxa <- names(newX)")
+
+                    r("df1 <- melt(tempDF, id.vars=c('sampleid', 'Y', myTaxa), measure.vars=myFactors)")
+                    r("names(df1) <- c('sampleid', 'Y', myTaxa, 'variable', 'prob')")
+                    r("dfeq <- df1[df1$Y==df1$variable,]")
+
+                    r("graphDF <- melt(dfeq, id.vars=c('variable', 'prob'), measure.vars=myTaxa)")
+                    r("names(graphDF) <- c('trt', 'prob', 'rank_id', 'count')")
+                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=TRUE)))")
+                    r("graphDF['taxa'] <- foo$X1")
+
+                    r("pdf_counter <- pdf_counter + 1")
+                    r("par(mar=c(2,2,1,1),family='serif')")
+                    r("p <- ggplot(graphDF, aes(x=count, y=prob, colour=trt))")
+                    r("p <- p + geom_point(size=0.5)")
+                    r("p <- p + facet_grid(taxa ~ .)")
+                    r("p <- p + theme(strip.text.y=element_text(size=5, colour='blue', angle=0))")
+                    #r("p <- p + scale_x_log10()")
+                    r("p <- p + theme(axis.title=element_text(size=8))")
+                    r("p <- p + theme(axis.text.x = element_text(size=5, angle = 90, hjust = 0))")
+                    r("p <- p + theme(axis.text.y = element_text(size=4))")
+                    r("p <- p + theme(plot.title = element_text(size=10))")
+                    r("p <- p + theme(plot.subtitle = element_text(size=7))")
+                    r("p <- p + labs(y='Probability', x='Abundance', \
+                        title=title, \
+                        subtitle='Probability by factor')")
+
+                    r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                    r("p <- set_panel_size(p, height=unit(1.5, 'cm'), width=unit(4, 'cm'))")
+                    r("ggsave(filename=file, plot=p, units='cm', height=1.5*length(myTaxa)+7, width=10)")
+
+                    # confusion matrix
                     r("tab <- table(predY, Y)")
                     r("cm <- confusionMatrix(tab)")
 
@@ -322,7 +361,7 @@ def getRF(request, stops, RID, PID):
 
                 if quantFields:
                     r("varDF <- filterVarImp(X, Y)")
-                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='min')")
+                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='random')")
                     r("rankDF <- (rankDF <= 10)")
                     r("rankDF <- rankDF * 1")
                     r("myFilter <- as.vector((rowSums(rankDF) > 0))")
@@ -383,11 +422,11 @@ def getRF(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 # Neural Network Plot
-                if method == 'nnet':
-                    r("pdf_counter <- pdf_counter + 1")
-                    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), height= 5 + ncol(data)*0.1)")
-                    r("plotnet(fit, cex=0.6)")
-                    r("dev.off()")
+                #if method == 'nnet':
+                #    r("pdf_counter <- pdf_counter + 1")
+                #    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), height= 5 + ncol(data)*0.1)")
+                #    r("plotnet(fit, cex=0.6)")
+                #    r("dev.off()")
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/rf/Rplots/' + str(RID) + '/rf_final.pdf'
