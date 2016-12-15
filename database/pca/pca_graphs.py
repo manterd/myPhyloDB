@@ -451,7 +451,8 @@ def getPCA(request, stops, RID, PID):
 
                 r("df <- data.frame(species)")
                 tempDF = r.get("df")
-                tempDF['id'] = count_rDF.columns.values
+                IDs = r.get("row.names(df)")
+                tempDF['id'] = IDs
                 tempDF.set_index('id', inplace=True)
                 varCoordDF = pd.merge(nameDF, tempDF, left_index=True, right_index=True, how='inner')
                 varCoordDF.reset_index(drop=False, inplace=True)
