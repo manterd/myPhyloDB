@@ -2,15 +2,14 @@ import datetime
 from django.http import HttpResponse
 import logging
 from natsort import natsorted
-import numpy as np
 import pandas as pd
 from PyPDF2 import PdfFileReader, PdfFileMerger
 from pyper import *
 import simplejson
 
-from database.utils import getMetaDF, transformDF
+from database.utils import getMetaDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
-from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo, filterDF
+from database.utils_kegg import filterDF
 import database.queue
 
 
@@ -217,13 +216,15 @@ def getRF(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                # Predictors
                 r("X = data")
                 r("nzv_cols <- nearZeroVar(X)")
                 r("if(length(nzv_cols > 0)) X <- X[,-nzv_cols]")
+                r("n.vars <- ncol(data)")
+
+                # Response
                 r.assign("allFields", allFields)
                 r("Y = meta[,allFields]")
-                r("n <- names(data)")
-                r("n.vars <- ncol(data)")
                 r("myData <- data.frame(Y, X)")
 
                 # Initialize R output to pdf
@@ -238,27 +239,26 @@ def getRF(request, stops, RID, PID):
                 finalDict = {}
 
                 # set up tuneGrid
-                r("set.seed(1)")
                 if method == 'rf':
                     r("method <- 'rf' ")
                     r("title <- 'Random Forest' ")
-                    r("grid <- expand.grid(.mtry=c(1, 2, 5))")
+                    r("grid <- expand.grid(.mtry=seq(1:10))")
                 elif method == 'nnet':
                     r("method <- 'nnet' ")
-                    r("grid <- expand.grid(.size=c(1, 5, 10), .decay=c(0, 0.05, 1, 2, 3, 4, 5))")
+                    r("grid <- expand.grid(.size=seq(1:5), .decay=seq(0, 2, 0.5))")
                     r("title <- 'Neural Network' ")
                 elif method == 'svm':
                     r("method <- 'svmLinear2' ")
-                    r("grid <- expand.grid(.cost=c(1, 5, 10))")
+                    r("grid <- expand.grid(.cost=seq(1:10))")
                     r("title <- 'Support Vector Machine' ")
 
                 if catFields:
-                    r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
+                    r("ctrl <- trainControl(method='repeatedcv', repeats=3, number=10, \
                         classProbs=T, savePredictions=T)")
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=F, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
                 if quantFields:
-                    r("ctrl <- trainControl(method='cv', repeats=3, number=10, \
+                    r("ctrl <- trainControl(method='repeatedcv', repeats=3, number=10, \
                         classProbs=F, savePredictions=T)")
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=T, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
@@ -276,19 +276,20 @@ def getRF(request, stops, RID, PID):
                     result += '===============================================\n'
 
                 if catFields:
-                    r("varDF <- filterVarImp(X, Y)")
-                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='random')")
+                    r("vi <- varImp(fit, scale=F)")
+                    r("varDF = as.data.frame(vi[[1]])")
+
+                    r("rankDF <- apply(-varDF, 2, rank, ties.method='random')")
                     r("rankDF <- (rankDF <= 6)")
                     r("rankDF <- rankDF * 1")
                     r("myFilter <- as.vector(rowSums(rankDF) > 0)")
                     r("fVarDF <- varDF[myFilter,]")
                     r("fVarDF['rank_id'] <- row.names(fVarDF)")
                     r("graphDF <- melt(fVarDF, id='rank_id')")
-                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=TRUE)))")
+                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), '.id..', fixed=TRUE)))")
                     r("graphDF['taxa'] <- foo$X1")
 
                     r("pdf_counter <- pdf_counter + 1")
-                    r("par(mar=c(2,2,1,1),family='serif')")
                     r("p <- ggplot(graphDF, aes(x=taxa, y=value, fill=variable))")
                     r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
                     r("p <- p + facet_grid(variable ~ .)")
@@ -302,10 +303,10 @@ def getRF(request, stops, RID, PID):
                     r("p <- p + theme(plot.subtitle = element_text(size=7))")
                     r("p <- p + labs(y='Importance', x='', \
                         title=title, \
-                        subtitle='Relative importance (top 6 for each factor)')")
+                        subtitle='Importance (top 6 for each factor)')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("panel.width <- nlevels(graphDF$taxa)*0.4")
+                    r("panel.width <- nlevels(graphDF$taxa)*0.3")
                     r("p <- set_panel_size(p, height=unit(0.75, 'cm'), width=unit(panel.width, 'cm'))")
                     r("ggsave(filename=file, plot=p, units='cm', height=4+nlevels(graphDF$variable), width=5+panel.width)")
 
@@ -332,19 +333,21 @@ def getRF(request, stops, RID, PID):
                     r("p <- p + geom_point(size=0.5)")
                     r("p <- p + facet_grid(taxa ~ .)")
                     r("p <- p + theme(strip.text.y=element_text(size=5, colour='blue', angle=0))")
-                    #r("p <- p + scale_x_log10()")
+                    r("p <- p + scale_x_log10()")
+                    r("p <- p + theme(legend.title=element_blank())")
+                    r("p <- p + theme(legend.text=element_text(size=4))")
                     r("p <- p + theme(axis.title=element_text(size=8))")
                     r("p <- p + theme(axis.text.x = element_text(size=5, angle = 90, hjust = 0))")
                     r("p <- p + theme(axis.text.y = element_text(size=4))")
                     r("p <- p + theme(plot.title = element_text(size=10))")
                     r("p <- p + theme(plot.subtitle = element_text(size=7))")
-                    r("p <- p + labs(y='Probability', x='Abundance', \
+                    r("p <- p + labs(y='Probability', x='log10(Abundance)', \
                         title=title, \
                         subtitle='Probability by factor')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
                     r("p <- set_panel_size(p, height=unit(1.5, 'cm'), width=unit(4, 'cm'))")
-                    r("ggsave(filename=file, plot=p, units='cm', height=1.5*length(myTaxa)+7, width=10)")
+                    r("ggsave(filename=file, plot=p, units='cm', height=1.5*length(myTaxa)+10, width=12)")
 
                     # confusion matrix
                     r("tab <- table(predY, Y)")
@@ -360,15 +363,17 @@ def getRF(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 if quantFields:
-                    r("varDF <- filterVarImp(X, Y)")
-                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='random')")
+                    r("vi <- filterVarImp(X, Y)")
+                    r("varDF = as.data.frame(vi[[1]])")
+
+                    r("rankDF <- apply(-varDF, 2, rank, ties.method='random')")
                     r("rankDF <- (rankDF <= 10)")
                     r("rankDF <- rankDF * 1")
                     r("myFilter <- as.vector((rowSums(rankDF) > 0))")
                     r("Overall <- varDF[myFilter,]")
                     r("rank_id <- row.names(varDF)[myFilter]")
                     r("graphDF <- data.frame(rank_id, Overall)")
-                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=TRUE)))")
+                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), 'id..', fixed=TRUE)))")
                     r("graphDF['taxa'] <- foo$X1")
 
                     r("pdf_counter <- pdf_counter + 1")
@@ -420,13 +425,6 @@ def getRF(request, stops, RID, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                # Neural Network Plot
-                #if method == 'nnet':
-                #    r("pdf_counter <- pdf_counter + 1")
-                #    r("pdf(paste(path, '/rf_temp', pdf_counter, '.pdf', sep=''), height= 5 + ncol(data)*0.1)")
-                #    r("plotnet(fit, cex=0.6)")
-                #    r("dev.off()")
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/rf/Rplots/' + str(RID) + '/rf_final.pdf'

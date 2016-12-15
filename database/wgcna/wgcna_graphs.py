@@ -590,7 +590,7 @@ def getWGCNA(request, stops, RID, PID):
                 r("filter1 <- as.vector((rowSums(modKME)) > 0)")
 
                 # Filter genes based on kME Rank
-                r("rankKME <- apply(-abs(datKME), 2, rank, ties.method='min')")
+                r("rankKME <- apply(-abs(datKME), 2, rank, ties.method='random')")
                 r("rownames(rankKME) <- names(datExpr)")
                 r("rankKME <- (rankKME <= maxNGenes)")
                 r("rankKME <- rankKME * 1")
