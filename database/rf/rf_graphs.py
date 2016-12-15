@@ -7,7 +7,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 from pyper import *
 import simplejson
 
-from database.utils import getMetaDF
+from database.utils import getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
 from database.utils_kegg import filterDF
 import database.queue
@@ -130,6 +130,10 @@ def getRF(request, stops, RID, PID):
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
+
+                # transform Y, if requested
+                transform = int(all["transform"])
+                finalDF = transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/rf/'
@@ -331,9 +335,8 @@ def getRF(request, stops, RID, PID):
                     r("par(mar=c(2,2,1,1),family='serif')")
                     r("p <- ggplot(graphDF, aes(x=count, y=prob, colour=trt))")
                     r("p <- p + geom_point(size=0.5)")
-                    r("p <- p + facet_grid(taxa ~ .)")
-                    r("p <- p + theme(strip.text.y=element_text(size=5, colour='blue', angle=0))")
-                    r("p <- p + scale_x_log10()")
+                    r("p <- p + facet_wrap(~taxa, nc=3)")
+                    r("p <- p + theme(strip.text.x=element_text(size=5, colour='blue', angle=0))")
                     r("p <- p + theme(legend.title=element_blank())")
                     r("p <- p + theme(legend.text=element_text(size=4))")
                     r("p <- p + theme(axis.title=element_text(size=8))")
@@ -341,13 +344,14 @@ def getRF(request, stops, RID, PID):
                     r("p <- p + theme(axis.text.y = element_text(size=4))")
                     r("p <- p + theme(plot.title = element_text(size=10))")
                     r("p <- p + theme(plot.subtitle = element_text(size=7))")
-                    r("p <- p + labs(y='Probability', x='log10(Abundance)', \
+                    r("p <- p + labs(y='Probability', x='Abundance', \
                         title=title, \
-                        subtitle='Probability by factor')")
+                        subtitle='Probability of correct assignment')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("p <- set_panel_size(p, height=unit(1.5, 'cm'), width=unit(4, 'cm'))")
-                    r("ggsave(filename=file, plot=p, units='cm', height=1.5*length(myTaxa)+10, width=12)")
+                    r("p <- set_panel_size(p, height=unit(1.5, 'cm'), width=unit(2, 'cm'))")
+                    r("n_wrap <- ceiling(length(myTaxa)/3)")
+                    r("ggsave(filename=file, plot=p, units='cm', height=1.5*n_wrap+10, width=10)")
 
                     # confusion matrix
                     r("tab <- table(predY, Y)")
@@ -363,7 +367,7 @@ def getRF(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 if quantFields:
-                    r("vi <- filterVarImp(X, Y)")
+                    r("vi <- varImp(fit, scale=F)")
                     r("varDF = as.data.frame(vi[[1]])")
 
                     r("rankDF <- apply(-varDF, 2, rank, ties.method='random')")

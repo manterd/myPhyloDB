@@ -256,11 +256,11 @@
             myDict['nzAll'] = document.getElementById("selectall-nz").value;
             myDict['DepVar'] = document.getElementById("DepVar").value;
             myDict['Method'] = document.getElementById("Method").value;
+            myDict['transform'] = document.getElementById("transform").value;
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
             myDict['csrfmiddlewaretoken'] = '{{ csrf_token }}';
-
 
             if ($("#remUnclass").is(':checked')) {
                 myDict['remUnclass'] = 'yes'
@@ -514,6 +514,22 @@
                     <option value="3">Species Diversity</option>-->
                 </select>
                 &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Relative Abundance = proportion of total community<br>Total Abundance = 16S rRNA copies per mg soil<br>Phylotype Richness = number of phylotypes (species)<br>Phylotype (species) Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="transform" onChange="checkButtons()">
+                    <option value="0" selected="selected">None</option>
+                    <option value="1">Ln</option>
+                    <option value="2">Log10</option>
+                    <option value="3">Sqrt</option>
+                    <!--<option value="4">Logit</option>
+                    <option value="5">Arcsin</option>-->
+                </select>
+                &nbsp; <-- Raw data transformation
             </td>
             <td bgcolor="white"></td>
         </tr>
