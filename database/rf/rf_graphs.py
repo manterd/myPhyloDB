@@ -205,7 +205,7 @@ def getRF(request, stops, RID, PID):
                 r.assign("data", count_rDF)
                 r("names(data) <- rankNames")
 
-                metaDF.drop('sample_name', axis=1, inplace=True)
+                #metaDF.drop('sample_name', axis=1, inplace=True)
                 myList = list(metaDF.select_dtypes(include=['object']).columns)
                 for i in myList:
                     metaDF[i] = metaDF[i].str.replace(' ', '_')
@@ -294,9 +294,10 @@ def getRF(request, stops, RID, PID):
                     r("graphDF['taxa'] <- foo$X1")
 
                     r("pdf_counter <- pdf_counter + 1")
-                    r("p <- ggplot(graphDF, aes(x=taxa, y=value, fill=variable))")
+                    r("p <- ggplot(graphDF, aes(x=rank_id, y=value, fill=variable))")
                     r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
                     r("p <- p + facet_grid(variable ~ .)")
+                    r("p <- p + scale_x_discrete(labels=graphDF$taxa)")
                     r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
                     r("p <- p + theme(strip.text.y=element_text(size=5, colour='blue', angle=0))")
                     r("p <- p + theme(legend.position='none')")
@@ -310,11 +311,44 @@ def getRF(request, stops, RID, PID):
                         subtitle='Importance (top 6 for each factor)')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("panel.width <- nlevels(graphDF$taxa)*0.3")
-                    r("p <- set_panel_size(p, height=unit(0.75, 'cm'), width=unit(panel.width, 'cm'))")
-                    r("ggsave(filename=file, plot=p, units='cm', height=4+nlevels(graphDF$variable), width=5+panel.width)")
+                    r("panel.width <- nlevels(graphDF$taxa)*0.2")
+                    r("p <- set_panel_size(p, height=unit(1, 'in'), width=unit(panel.width, 'in'))")
+                    r("ggsave(filename=file, plot=p, units='in', height=2+nlevels(graphDF$variable), width=2+panel.width)")
 
-                    # graph probabilites
+                    # graph probabilites by sample
+                    r("probY <- predict(fit, type='prob')")
+                    r("myFactors <- levels(Y)")
+                    r("nFactors <- nlevels(Y)")
+                    r("tempDF <- cbind(meta, probY)")
+                    r("tempDF['sampleid'] = row.names(meta)")
+                    r("graphDF <- melt(tempDF, id.vars=c('sampleid', 'sample_name', allFields), measure.vars=myFactors)")
+                    r("names(graphDF) <- c('sampleid', 'sample_name', 'obs', 'variable', 'value')")
+
+                    r("pdf_counter <- pdf_counter + 1")
+                    r("p <- ggplot(graphDF, aes(x=sampleid, y=value, fill=variable))")
+                    r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
+                    r("p <- p + facet_wrap(~ obs, scales='free', nc=2)")
+                    r("p <- p + scale_x_discrete(labels=graphDF$sample_name)")
+                    r("p <- p + theme(strip.text.x=element_text(size=5, colour='blue', angle=0))")
+                    r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
+                    r("p <- p + theme(legend.title=element_blank())")
+                    r("p <- p + theme(legend.text=element_text(size=4))")
+                    r("p <- p + theme(axis.title.y=element_text(size=8))")
+                    r("p <- p + theme(axis.text.x = element_text(size=5, angle = 90, hjust = 0))")
+                    r("p <- p + theme(axis.text.y = element_text(size=4))")
+                    r("p <- p + theme(plot.title = element_text(size=10))")
+                    r("p <- p + theme(plot.subtitle = element_text(size=7))")
+                    r("p <- p + labs(y='Probability', x='', \
+                        title=title, \
+                        subtitle='Probability of correct assignment for each sample')")
+
+                    r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                    r("panel.width <- nlevels(graphDF$sample_name)*0.05")
+                    r("p <- set_panel_size(p, height=unit(1.5, 'in'), width=unit(panel.width, 'in'))")
+                    r("n_wrap <- ceiling(nFactors/2)")
+                    r("ggsave(filename=file, plot=p, units='in', height=2+(2*n_wrap), width=2+(panel.width*2))")
+
+                    # graph probabilites by taxa
                     r("probY <- predict(fit, type='prob')")
                     r("newX <- X[,myFilter]")
                     r("tempDF <- cbind(newX, Y, probY)")
@@ -335,7 +369,7 @@ def getRF(request, stops, RID, PID):
                     r("par(mar=c(2,2,1,1),family='serif')")
                     r("p <- ggplot(graphDF, aes(x=count, y=prob, colour=trt))")
                     r("p <- p + geom_point(size=0.5)")
-                    r("p <- p + facet_wrap(~taxa, nc=3)")
+                    r("p <- p + facet_wrap(~taxa, nc=4)")
                     r("p <- p + theme(strip.text.x=element_text(size=5, colour='blue', angle=0))")
                     r("p <- p + theme(legend.title=element_blank())")
                     r("p <- p + theme(legend.text=element_text(size=4))")
@@ -346,12 +380,12 @@ def getRF(request, stops, RID, PID):
                     r("p <- p + theme(plot.subtitle = element_text(size=7))")
                     r("p <- p + labs(y='Probability', x='Abundance', \
                         title=title, \
-                        subtitle='Probability of correct assignment')")
+                        subtitle='Probability of correct assignment vs taxa abundance')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("p <- set_panel_size(p, height=unit(1.5, 'cm'), width=unit(2, 'cm'))")
-                    r("n_wrap <- ceiling(length(myTaxa)/3)")
-                    r("ggsave(filename=file, plot=p, units='cm', height=1.5*n_wrap+10, width=10)")
+                    r("p <- set_panel_size(p, height=unit(0.75, 'in'), width=unit(1, 'in'))")
+                    r("n_wrap <- ceiling(length(myTaxa)/4)")
+                    r("ggsave(filename=file, plot=p, units='in', height=1*n_wrap+1, width=4+2)")
 
                     # confusion matrix
                     r("tab <- table(predY, Y)")
@@ -420,6 +454,13 @@ def getRF(request, stops, RID, PID):
 
                 r("myTable <- stargazer(varDF, type='text', summary=F, rownames=T)")
                 result += 'Variable Importance\n'
+                myString = r.get("myTable")
+                result += str(myString)
+                result += '\n===============================================\n'
+
+                r("mergeDF <- cbind(meta, probY)")
+                r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                result += 'Probabilities\n'
                 myString = r.get("myTable")
                 result += str(myString)
                 result += '\n===============================================\n'
