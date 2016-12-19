@@ -75,7 +75,6 @@ def getRF(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
-                print "meta: ", metaIDsCat
                 metaValsQuant = all['metaValsQuant']
                 metaIDsQuant = all['metaIDsQuant']
 
@@ -206,14 +205,12 @@ def getRF(request, stops, RID, PID):
                 r.assign("data", count_rDF)
                 r("names(data) <- rankNames")
 
-                #metaDF.drop('sample_name', axis=1, inplace=True)
                 myList = list(metaDF.select_dtypes(include=['object']).columns)
                 for i in myList:
                     metaDF[i] = metaDF[i].str.replace(' ', '_')
 
-                r.assign("meta", metaDF)
+                r.assign("meta_full", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())
-                r("rownames(meta) <- rows")
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -222,15 +219,33 @@ def getRF(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 # Predictors
-                r("X = data")
-                r("nzv_cols <- nearZeroVar(X)")
-                r("if(length(nzv_cols > 0)) X <- X[,-nzv_cols]")
+                r("X_full = data")
+                r("nzv_cols <- nearZeroVar(X_full)")
+                r("if(length(nzv_cols > 0)) X_full <- X_full[,-nzv_cols]")
                 r("n.vars <- ncol(data)")
 
                 # Response
                 r.assign("allFields", allFields)
-                r("Y = meta[,allFields]")
+                r("Y_full = meta_full")
+
+                # Subset train data
+                trainIDs = all['trainArray']
+                r.assign("trainIDs", trainIDs)
+                r("X <- X_full[row.names(X_full) %in% trainIDs,]")
+                r("meta <- meta_full[row.names(meta_full) %in% trainIDs,]")
+                r("Y <- Y_full[row.names(Y_full) %in% trainIDs,]")
+                r("Y <- Y[,allFields]")
                 r("myData <- data.frame(Y, X)")
+
+                # Subset test data
+                testIDs = list(all['testArray'])
+                if testIDs:
+                    r.assign("testIDs", testIDs)
+                    r("X_test <- X_full[row.names(X_full) %in% testIDs,]")
+                    r("meta_test <- meta_full[row.names(meta_full) %in% testIDs,]")
+                    r("Y_test <- Y_full[row.names(Y_full) %in% testIDs,]")
+                    r("Y_test <- Y_test[,allFields]")
+                    r("myData_test <- data.frame(Y_test, X_test)")
 
                 # Initialize R output to pdf
                 path = 'myPhyloDB/media/temp/rf/Rplots/%s' % RID
@@ -258,12 +273,12 @@ def getRF(request, stops, RID, PID):
                     r("title <- 'Support Vector Machine' ")
 
                 if catFields:
-                    r("ctrl <- trainControl(method='repeatedcv', repeats=3, number=10, \
+                    r("ctrl <- trainControl(method='repeatedcv', \
                         classProbs=T, savePredictions=T)")
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=F, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
                 if quantFields:
-                    r("ctrl <- trainControl(method='repeatedcv', repeats=3, number=10, \
+                    r("ctrl <- trainControl(method='repeatedcv', \
                         classProbs=F, savePredictions=T)")
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=T, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
@@ -312,11 +327,11 @@ def getRF(request, stops, RID, PID):
                         subtitle='Importance (top 6 for each factor)')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("panel.width <- nlevels(graphDF$taxa)*0.2")
+                    r("panel.width <- nlevels(as.factor(graphDF$rank_id))*0.2")
                     r("p <- set_panel_size(p, height=unit(1, 'in'), width=unit(panel.width, 'in'))")
                     r("ggsave(filename=file, plot=p, units='in', height=2+nlevels(graphDF$variable), width=2+panel.width)")
 
-                    # graph probabilites by sample
+                    # graph probabilites for each training sample
                     r("probY <- predict(fit, type='prob')")
                     r("myFactors <- levels(Y)")
                     r("nFactors <- nlevels(Y)")
@@ -341,13 +356,49 @@ def getRF(request, stops, RID, PID):
                     r("p <- p + theme(plot.subtitle = element_text(size=7))")
                     r("p <- p + labs(y='Probability', x='', \
                         title=title, \
-                        subtitle='Probability of correct assignment for each sample')")
+                        subtitle='Training Dataset: probabilities')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("panel.width <- nlevels(graphDF$sample_name)*0.05")
+                    r("panel.width <- nlevels(as.factor(graphDF$sampleid))*0.05")
+                    r("if (panel.width < 1) {panel.width = 1}")
                     r("p <- set_panel_size(p, height=unit(1.5, 'in'), width=unit(panel.width, 'in'))")
                     r("n_wrap <- ceiling(nFactors/2)")
                     r("ggsave(filename=file, plot=p, units='in', height=2+(2*n_wrap), width=2+(panel.width*2))")
+
+                    # graph probabilites for each test sample
+                    if testIDs:
+                        r("probY_test <- predict(fit, myData_test, type='prob')")
+                        r("myFactors <- levels(Y_test)")
+                        r("nFactors <- nlevels(Y_test)")
+                        r("tempDF <- cbind(meta_test, probY_test)")
+                        r("tempDF['sampleid'] = row.names(meta_test)")
+                        r("graphDF <- melt(tempDF, id.vars=c('sampleid', 'sample_name', allFields), measure.vars=myFactors)")
+                        r("names(graphDF) <- c('sampleid', 'sample_name', 'obs', 'variable', 'value')")
+
+                        r("pdf_counter <- pdf_counter + 1")
+                        r("p <- ggplot(graphDF, aes(x=sampleid, y=value, fill=variable))")
+                        r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
+                        r("p <- p + facet_wrap(~ obs, scales='free', nc=2)")
+                        r("p <- p + scale_x_discrete(labels=graphDF$sample_name)")
+                        r("p <- p + theme(strip.text.x=element_text(size=5, colour='blue', angle=0))")
+                        r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
+                        r("p <- p + theme(legend.title=element_blank())")
+                        r("p <- p + theme(legend.text=element_text(size=4))")
+                        r("p <- p + theme(axis.title.y=element_text(size=8))")
+                        r("p <- p + theme(axis.text.x = element_text(size=5, angle = 90, hjust = 0))")
+                        r("p <- p + theme(axis.text.y = element_text(size=4))")
+                        r("p <- p + theme(plot.title = element_text(size=10))")
+                        r("p <- p + theme(plot.subtitle = element_text(size=7))")
+                        r("p <- p + labs(y='Probability', x='', \
+                            title=title, \
+                            subtitle='Test dataset: assignment probabilities')")
+
+                        r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                        r("panel.width <- nlevels(as.factor(graphDF$sampleid))*0.05")
+                        r("if (panel.width < 1) {panel.width = 1}")
+                        r("p <- set_panel_size(p, height=unit(1.5, 'in'), width=unit(panel.width, 'in'))")
+                        r("n_wrap <- ceiling(nFactors/2)")
+                        r("ggsave(filename=file, plot=p, units='in', height=2+(2*n_wrap), width=2+(panel.width*2))")
 
                     # graph probabilites by taxa
                     r("probY <- predict(fit, type='prob')")
@@ -363,14 +414,17 @@ def getRF(request, stops, RID, PID):
 
                     r("graphDF <- melt(dfeq, id.vars=c('variable', 'prob'), measure.vars=myTaxa)")
                     r("names(graphDF) <- c('trt', 'prob', 'rank_id', 'count')")
-                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=TRUE)))")
+                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=T)))")
                     r("graphDF['taxa'] <- foo$X1")
 
                     r("pdf_counter <- pdf_counter + 1")
                     r("par(mar=c(2,2,1,1),family='serif')")
                     r("p <- ggplot(graphDF, aes(x=count, y=prob, colour=trt))")
                     r("p <- p + geom_point(size=0.5)")
-                    r("p <- p + facet_wrap(~taxa, nc=4)")
+                    r("parse_labels <- function(value) { \
+                        myVec <- unlist(strsplit(value, ' id: ', fixed=T)); \
+                        myVec[c(TRUE, FALSE)] } ")
+                    r("p <- p + facet_wrap(~rank_id, nc=4, labeller=as_labeller(parse_labels))")
                     r("p <- p + theme(strip.text.x=element_text(size=5, colour='blue', angle=0))")
                     r("p <- p + theme(legend.title=element_blank())")
                     r("p <- p + theme(legend.text=element_text(size=4))")
@@ -388,12 +442,23 @@ def getRF(request, stops, RID, PID):
                     r("n_wrap <- ceiling(length(myTaxa)/4)")
                     r("ggsave(filename=file, plot=p, units='in', height=1*n_wrap+1, width=4+2)")
 
-                    # confusion matrix
-                    r("tab <- table(predY, Y)")
+                    # confusion matrix - train
+                    r("tab <- table(Observed=Y, Predicted=predY)")
                     r("cm <- confusionMatrix(tab)")
 
+                    result += '\nTraining Dataset\n'
                     result += str(r('print(cm)')) + '\n'
                     result += '===============================================\n'
+
+                    # confusion matrix - test
+                    if testIDs:
+                        r("predY_test <- predict(fit, myData_test)")
+                        r("tab <- table(Observed=Y_test, Predicted=predY_test)")
+                        r("cm <- confusionMatrix(tab)")
+
+                        result += '\nTest Dataset\n'
+                        result += str(r('print(cm)')) + '\n'
+                        result += '===============================================\n'
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
@@ -432,18 +497,31 @@ def getRF(request, stops, RID, PID):
                         subtitle='Overall importance (top 10)')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("panel.width <- nlevels(graphDF$taxa)*0.5")
+                    r("panel.width <- nlevels(as.factor(graphDF$rank_id))*0.5")
                     r("p <- set_panel_size(p, height=unit(2, 'cm'), width=unit(panel.width, 'cm'))")
                     r("ggsave(filename=file, plot=p, units='cm', height=5, width=5+panel.width)")
 
                     r("pdf_counter <- pdf_counter + 1")
                     r("graphDF <- data.frame(x=Y, y=predY)")
-                    r("p <- ggplot(graphDF, aes(x=x, y=y))")
-                    r("p <- p + geom_point(shape=1)")
-                    r("p <- p + geom_smooth(method='lm')")
+                    r("p <- ggplot(graphDF, aes(x=x, y=y, color='blue'))")
+                    r("p <- p + geom_point()")
+                    r("p <- p + geom_smooth(method='lm', colour='black')")
+                    r("p <- p + xlim(range(Y))")
+                    r("p <- p + ylim(range(Y))")
                     r("p <- p + labs(y='Predicted', x='Observed', \
                         title=title, \
                         subtitle='Predicted vs Observed')")
+
+                    # Add test data if available
+                    if testIDs:
+                        r("probY_test <- predict(fit, myData_test, type='prob')")
+                        r("predY_test <- predict(fit, myData_test)")
+                        r("graphDF2 <- data.frame(x=Y_test, y=predY_test)")
+                        r("p <- p + geom_point(data=graphDF2, aes(x=x, y=y, color='red'))")
+                        r("p <- p + geom_smooth(data=graphDF2, method='lm', colour='black')")
+
+                    r("p <- p + theme(legend.position='right')")
+                    r("p <- p + scale_color_manual(name='Dataset', values=c('blue', 'red'), labels=c('Train', 'Test'))")
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
                     r("ggsave(filename=file, plot=p, units='in', height=4, width=4)")
 
@@ -459,12 +537,35 @@ def getRF(request, stops, RID, PID):
                 result += str(myString)
                 result += '\n===============================================\n'
 
-                r("mergeDF <- cbind(meta, probY)")
-                r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
-                result += 'Probabilities\n'
-                myString = r.get("myTable")
-                result += str(myString)
-                result += '\n===============================================\n'
+                if catFields:
+                    r("mergeDF <- cbind(meta, probY)")
+                    r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                    result += 'Train Dataset: Probabilities\n'
+                    myString = r.get("myTable")
+                    result += str(myString)
+                    result += '\n===============================================\n'
+
+                    r("mergeDF <- cbind(meta_test, probY_test)")
+                    r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                    result += 'Test Dataset: Probabilities\n'
+                    myString = r.get("myTable")
+                    result += str(myString)
+                    result += '\n===============================================\n'
+
+                if quantFields:
+                    r("mergeDF <- cbind(meta, predY)")
+                    r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                    result += 'Train Dataset: Observed vs. Predicted\n'
+                    myString = r.get("myTable")
+                    result += str(myString)
+                    result += '\n===============================================\n'
+
+                    r("mergeDF <- cbind(meta_test, predY_test)")
+                    r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                    result += 'Test Dataset: Observed vs. Predicted\n'
+                    myString = r.get("myTable")
+                    result += str(myString)
+                    result += '\n===============================================\n'
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
