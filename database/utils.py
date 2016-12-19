@@ -4,6 +4,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 import inspect
+import math
 import multiprocessing as mp
 import numpy as np
 import os
@@ -492,7 +493,7 @@ def transformDF(transform, DepVar, finalDF):
         elif DepVar == 4:
             myList = finalDF.abund_16S.tolist()
             nonZero = filter(lambda a: a != 0, myList)
-            value = min(nonZero) / 2
+            value = min(nonZero) / 2.0
             finalDF.abund_16S.replace(to_replace=0, value=value, inplace=True)
 
     if transform == 1:
