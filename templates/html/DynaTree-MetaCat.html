@@ -58,7 +58,7 @@
                 });
                 var total = countCat + countQuant;
                 if (total > 1) {
-                    alert("Selected method requires only one categorical or quantitative variable!");
+                    alert("Only one fully selected categorical or quantitative variable is allowed!\nHowever, additional partial selections are allowed.");
                     node.select(false);
                     return false;
                 }

@@ -27,41 +27,6 @@
         var running = false, refresh = 0, RID = 0;
         var countCat = 0, countQuant = 0, total = 0;
 
-        var dataSet = {
-           "data":[
-              {
-                 "Index": 4,
-                 "Name": "Bob",
-                 "Age": 7,
-                 "Image": "None"
-              },
-              {
-                 "Index": 2,
-                 "Name": "Timmy",
-                 "Age": 4,
-                 "Image": "None"
-              },
-              {
-                 "Index": 3,
-                 "Name": "Heather",
-                 "Age": 55,
-                 "Image": "None"
-              },
-              {
-                 "Index": 5,
-                 "Name": "Sally",
-                 "Age": 22,
-                 "Image": "None"
-              }
-           ],
-            "columns": [
-                { "title": "Index", "data" : "Index" },
-                { "title": "Name",  "data": "Name" },
-                { "title": "Age", "data": "Age" },
-                { "title": "Image", "data": "Image" }
-            ]
-        };
-
         $(function () {
             $(window).load(function() {
                 checkButtons();
@@ -99,12 +64,7 @@
                 nArrays++;
             });
 
-            var wantedIDs = [];
-            if (nArrays == 1) {
-                wantedIDs = arrayIDs;
-            } else {
-                wantedIDs = findCommonElements(arrayIDs);
-            }
+            var wantedIDs = findCommonElements(arrayIDs);
 
             // Add data to HTML table
             var indexNo = 1;
@@ -129,7 +89,7 @@
                         var sid = rowData[2];
                         var name = rowData[3];
                         var trt = rowData[4].slice(0, -1);
-                        if ($.inArray(sid, wantedIDs) != -1) {
+                        if ($.inArray(sid, wantedIDs) >= 0) {
                             newRow += '<tr id=row-' + sid + '>';
                             newRow += '<td>';
                             newRow += '<input type="radio" name="test-' + count + '" value="test">Test</br>';
