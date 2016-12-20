@@ -306,24 +306,27 @@ def getRF(request, stops, RID, PID):
                     r("fVarDF <- varDF[myFilter,]")
                     r("fVarDF['rank_id'] <- row.names(fVarDF)")
                     r("graphDF <- melt(fVarDF, id='rank_id')")
-                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), '.id..', fixed=TRUE)))")
-                    r("graphDF['taxa'] <- foo$X1")
+                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), '.id..', fixed=F)))")
+                    r("graphDF$taxa <- foo$X1")
+                    r("graphDF$id <- foo$X2")
+                    r("graphDF <- graphDF[with(graphDF, order(taxa, id)),] ")
+
 
                     r("pdf_counter <- pdf_counter + 1")
                     r("p <- ggplot(graphDF, aes(x=variable, y=value, fill=rank_id))")
-                    r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
                     r("parse_labels <- function(value) { \
                         myVec <- unlist(strsplit(value, '.id..', fixed=T)); \
                         myVec[c(TRUE, FALSE)] } ")
                     r("p <- p + facet_wrap(~rank_id, nc=4, labeller=as_labeller(parse_labels))")
+                    r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
                     r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
                     r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
                     r("p <- p + theme(legend.position='none')")
                     r("p <- p + theme(axis.title.y=element_text(size=10))")
-                    r("p <- p + theme(axis.text.x = element_text(size=7, angle = 45, hjust = 0))")
-                    r("p <- p + theme(axis.text.y = element_text(size=6))")
-                    r("p <- p + theme(plot.title = element_text(size=12))")
-                    r("p <- p + theme(plot.subtitle = element_text(size=9))")
+                    r("p <- p + theme(axis.text.x=element_text(size=7, angle=90, hjust=1))")
+                    r("p <- p + theme(axis.text.y=element_text(size=6))")
+                    r("p <- p + theme(plot.title=element_text(size=12))")
+                    r("p <- p + theme(plot.subtitle=element_text(size=9))")
                     r("p <- p + labs(y='Importance', x='', \
                         title=title, \
                         subtitle='Importance (top 6 for each factor)')")
@@ -332,7 +335,7 @@ def getRF(request, stops, RID, PID):
                     r("panel.width <- 0.2+(nlevels(as.factor(graphDF$rank_id))*0.05)")
                     r("n_wrap <- ceiling(nlevels(as.factor(graphDF$rank_id))/4)")
                     r("p <- set_panel_size(p, height=unit(1.5, 'in'), width=unit(panel.width, 'in'))")
-                    r("ggsave(filename=file, plot=p, units='in', height=2+(1.75*n_wrap), width=3+(2*panel.width))")
+                    r("ggsave(filename=file, plot=p, units='in', height=2+(1.75*n_wrap), width=4+(2*panel.width))")
 
                     # graph probabilites for each training sample
                     r("probY <- predict(fit, type='prob')")
@@ -354,10 +357,9 @@ def getRF(request, stops, RID, PID):
                     r("p <- p + theme(legend.title=element_blank())")
                     r("p <- p + theme(legend.text=element_text(size=6))")
                     r("p <- p + theme(axis.title.y=element_text(size=10))")
-                    r("p <- p + theme(axis.text.x = element_text(size=7, angle = 90, hjust = 0))")
-                    r("p <- p + theme(axis.text.y = element_text(size=6))")
-                    r("p <- p + theme(plot.title = element_text(size=12))")
-                    r("p <- p + theme(plot.subtitle = element_text(size=9))")
+                    r("p <- p + theme(axis.text.y=element_text(size=6))")
+                    r("p <- p + theme(plot.title=element_text(size=12))")
+                    r("p <- p + theme(plot.subtitle=element_text(size=9))")
                     r("p <- p + labs(y='Probability', x='', \
                         title=title, \
                         subtitle='Training Dataset: probabilities')")
@@ -390,10 +392,9 @@ def getRF(request, stops, RID, PID):
                         r("p <- p + theme(legend.title=element_blank())")
                         r("p <- p + theme(legend.text=element_text(size=6))")
                         r("p <- p + theme(axis.title.y=element_text(size=10))")
-                        r("p <- p + theme(axis.text.x = element_text(size=7, angle = 90, hjust = 0))")
-                        r("p <- p + theme(axis.text.y = element_text(size=6))")
-                        r("p <- p + theme(plot.title = element_text(size=12))")
-                        r("p <- p + theme(plot.subtitle = element_text(size=9))")
+                        r("p <- p + theme(axis.text.y=element_text(size=6))")
+                        r("p <- p + theme(plot.title=element_text(size=12))")
+                        r("p <- p + theme(plot.subtitle=element_text(size=9))")
                         r("p <- p + labs(y='Probability', x='', \
                             title=title, \
                             subtitle='Test dataset: assignment probabilities')")
@@ -419,33 +420,37 @@ def getRF(request, stops, RID, PID):
 
                     r("graphDF <- melt(dfeq, id.vars=c('variable', 'prob'), measure.vars=myTaxa)")
                     r("names(graphDF) <- c('trt', 'prob', 'rank_id', 'count')")
-                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), ' id: ', fixed=T)))")
-                    r("graphDF['taxa'] <- foo$X1")
+                    r("graphDF$rank_id <- gsub(' ', '.', graphDF$rank_id)")
+                    r("graphDF$rank_id <- gsub(':', '.', graphDF$rank_id)")
+                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), '.id..', fixed=F)))")
+                    r("graphDF$taxa <- foo$X1")
+                    r("graphDF$id <- foo$X2")
+                    r("graphDF <- graphDF[with(graphDF, order(taxa, id)),] ")
 
                     r("pdf_counter <- pdf_counter + 1")
                     r("par(mar=c(2,2,1,1),family='serif')")
                     r("p <- ggplot(graphDF, aes(x=count, y=prob, colour=trt))")
-                    r("p <- p + geom_point(size=0.5)")
                     r("parse_labels <- function(value) { \
-                        myVec <- unlist(strsplit(value, ' id: ', fixed=T)); \
+                        myVec <- unlist(strsplit(value, '.id..', fixed=T)); \
                         myVec[c(TRUE, FALSE)] } ")
                     r("p <- p + facet_wrap(~rank_id, nc=4, labeller=as_labeller(parse_labels))")
+                    r("p <- p + geom_point(size=0.5)")
                     r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
                     r("p <- p + theme(legend.title=element_blank())")
                     r("p <- p + theme(legend.text=element_text(size=6))")
                     r("p <- p + theme(axis.title=element_text(size=10))")
-                    r("p <- p + theme(axis.text.x = element_text(size=7, angle = 90, hjust = 0))")
-                    r("p <- p + theme(axis.text.y = element_text(size=6))")
-                    r("p <- p + theme(plot.title = element_text(size=12))")
-                    r("p <- p + theme(plot.subtitle = element_text(size=9))")
+                    r("p <- p + theme(axis.text.x=element_text(size=7, angle = 90, hjust = 1))")
+                    r("p <- p + theme(axis.text.y=element_text(size=6))")
+                    r("p <- p + theme(plot.title=element_text(size=12))")
+                    r("p <- p + theme(plot.subtitle=element_text(size=9))")
                     r("p <- p + labs(y='Probability', x='Abundance', \
                         title=title, \
                         subtitle='Probability of correct assignment vs taxa abundance')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("p <- set_panel_size(p, height=unit(0.75, 'in'), width=unit(1, 'in'))")
+                    r("p <- set_panel_size(p, height=unit(1, 'in'), width=unit(1.5, 'in'))")
                     r("n_wrap <- ceiling(length(myTaxa)/4)")
-                    r("ggsave(filename=file, plot=p, units='in', height=1*n_wrap+1, width=4+2)")
+                    r("ggsave(filename=file, plot=p, units='in', height=1.25*n_wrap+3, width=8)")
 
                     # confusion matrix - train
                     r("tab <- table(Observed=Y, Predicted=predY)")
