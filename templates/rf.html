@@ -787,7 +787,7 @@
             // get table data
             var testIDs = [];
             var trainIDs = [];
-            for (var i=1, row; row=table.rows[i]; i++) {
+            for (var i=0, row; row=table.rows[i]; i++) {
                 var select = $('input[name=test-'+i+']:checked').val();
                 if (select == 'train') {
                     trainIDs.push(row.cells[3].innerHTML);
