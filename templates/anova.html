@@ -224,7 +224,6 @@
                     $("#cat_nitrogen").hide();
                 }
             }
-            return 0;
         }
         function chooseData() {
             if (treeType == 1) {
@@ -703,7 +702,6 @@
                     type: 'POST',
                     data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                     success: function (data) {
-                        var result = JSON.stringify(data);
                         var error = data['error'];
                         if (error != "none") {
                             alert(error);

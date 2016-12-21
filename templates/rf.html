@@ -141,10 +141,56 @@
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
             }
+
+            var trainMethod = document.getElementById("trainMethod").value;
+            if (trainMethod == 'boot') {
+                $("#number1-row").hide();
+                $("#number2-row").show();
+                $("#repeats-row").hide();
+                $("#proportion-row").hide();
+            }
+            if (trainMethod == 'cv') {
+                $("#number1-row").show();
+                $("#number2-row").hide();
+                $("#repeats-row").hide();
+                $("#proportion-row").hide();
+            }
+            if (trainMethod == 'repeatedcv') {
+                $("#number1-row").show();
+                $("#number2-row").hide();
+                $("#repeats-row").show();
+                $("#proportion-row").hide();
+            }
+            if (trainMethod == 'LOOCV') {
+                $("#number1-row").hide();
+                $("#number2-row").hide();
+                $("#repeats-row").show();
+                $("#proportion-row").hide();
+            }
+            if (trainMethod == 'LGOCV') {
+                $("#number1-row").hide();
+                $("#number2-row").hide();
+                $("#repeats-row").show();
+                $("#proportion-row").show();
+            }
         }
         function chooseData() {
             $("#run").css("background-color", "yellow");
             $("#container-0").empty().append('Analysis is running...please be patient');
+            var number2 = document.getElementById("number1").value;
+            if (number2 < 2) {
+                $("#run").css("background-color", "red");
+                alert('Number of folds in cross-fold validation must be 2 or more');
+                running = false;
+                return;
+            }
+            var proportion = document.getElementById("proportion").value;
+            if ((proportion < 0) || (proportion > 1)) {
+                $("#run").css("background-color", "red");
+                alert('proportion of samples to include in each training set must be betwee 0 and 1');
+                running = false;
+                return;
+            }
             getGraphData();
         }
         function chooseDisplay() {
@@ -314,6 +360,10 @@
             myDict['DepVar'] = document.getElementById("DepVar").value;
             myDict['Method'] = document.getElementById("Method").value;
             myDict['trainMethod'] = document.getElementById("trainMethod").value;
+            myDict['number1'] = document.getElementById("number1").value;
+            myDict['number2'] = document.getElementById("number2").value;
+            myDict['repeats'] = document.getElementById("repeats").value;
+            myDict['proportion'] = document.getElementById("proportion").value;
             myDict['transform'] = document.getElementById("transform").value;
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
@@ -1025,7 +1075,7 @@
                     <option value="nnet">Neural Network (feed-forward)</option>
                     <option value="svm">Support Vector Machine</option>
                 </select>
-                &nbsp; <-- Classification method
+                &nbsp; <-- Classification method / model
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1034,16 +1084,49 @@
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <select id="trainMethod" onChange="checkButtons()">
-                    <option value="none" selected="selected">None</option>
-                    <option value="boot">Bootstrap</option>
-                    <option value="cv">Cross-validation</option>
-                    <option value="repeatedcv">repeated random sub-sampling</option>
-                    <option value="LOOCV">Leave-one-out cross validation</option>
+                    <option value="boot" selected="selected">bootstrap</option>
+                    <option value="cv">k-fold cross-validation</option>
+                    <option value="repeatedcv">repeated k-fold cross-validation</option>
+                    <option value="LOOCV">leave-one-out cross validation</option>
+                    <option value="LGOCV">leave-group-out cross validation</option>
                 </select>
-                &nbsp; <-- Re-sampling method
+                &nbsp; <-- Re-sampling method for model development
             </td>
             <td bgcolor="white"></td>
         </tr>
+
+        <tr id="number1-row" style="display:none">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="text" id="number1" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of folds in cross-fold validation
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr id="number2-row">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="text" id="number2" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of resampling iterations
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr id="repeats-row" style="display:none">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="text" id="repeats" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of independent cross-fold validations to perform
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr id="proportion-row" style="display:none">
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="text" id="proportion" style="background-color: white; width: 40px" value="0.75"/>&nbsp; <-- proportion of training dataset to include in each iteration
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">

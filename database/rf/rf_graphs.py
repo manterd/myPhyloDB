@@ -176,7 +176,7 @@ def getRF(request, stops, RID, PID):
                 database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 # R packages from cran
-                r("list.of.packages <- c('caret', 'randomForest', 'NeuralNetTools', 'e1071', 'stargazer')")
+                r("list.of.packages <- c('caret', 'randomForest', 'NeuralNetTools', 'e1071', 'stargazer', 'stringr')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
@@ -185,8 +185,10 @@ def getRF(request, stops, RID, PID):
                 print r('library(caret)')
                 print r('library(reshape2)')
                 print r('library(RColorBrewer)')
+                print r("library(plyr)")
                 print r('library(stargazer)')
-                print r('source("database/myFunctions.R")')
+                print r('library(stringr)')
+                print r('source("myFunctions.R")')
 
                 method = all['Method']
                 if method == 'rf':
@@ -202,6 +204,7 @@ def getRF(request, stops, RID, PID):
                 rankNameDF['name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
                 r.assign('rankNames', rankNameDF.name_id.values)
 
+                r.assign("treeType", treeType)
                 r.assign("data", count_rDF)
                 r("names(data) <- rankNames")
 
@@ -246,6 +249,12 @@ def getRF(request, stops, RID, PID):
                     r("Y_test <- Y_full[row.names(Y_full) %in% testIDs,]")
                     r("Y_test <- Y_test[,allFields]")
                     r("myData_test <- data.frame(Y_test, X_test)")
+                    print r("names(myData_test)")
+                    r("nameVec <- c('Y_test', names(X_test))")
+                    r("nameVec <- gsub(' ', '.', nameVec)")
+                    r("nameVec <- gsub(':', '.', nameVec)")
+                    r("names(myData_test) <- nameVec")
+                    print r("names(myData_test)")
 
                 # Initialize R output to pdf
                 path = 'myPhyloDB/media/temp/rf/Rplots/%s' % RID
@@ -274,14 +283,56 @@ def getRF(request, stops, RID, PID):
 
                 trainMethod = all['trainMethod']
                 r.assign("trainMethod", trainMethod)
+
+                number1 = int(all['number1'])
+                r.assign("number1", number1)
+                number2 = int(all['number2'])
+                r.assign("number2", number2)
+                repeats = int(all['repeats'])
+                r.assign("repeats", repeats)
+                proportion = float(all['proportion'])
+                r.assign("proportion", proportion)
+
+                if trainMethod == 'boot':
+                    if catFields:
+                        r("ctrl <- trainControl(method='boot', number=number2, \
+                            classProbs=T, savePredictions=T)")
+                    if quantFields:
+                        r("ctrl <- trainControl(method='boot', number=number2, \
+                            classProbs=F, savePredictions=T)")
+                elif trainMethod == 'cv':
+                    if catFields:
+                        r("ctrl <- trainControl(method='cv', number=number1, \
+                            classProbs=T, savePredictions=T)")
+                    if quantFields:
+                        r("ctrl <- trainControl(method='cv', number=number1, \
+                            classProbs=F, savePredictions=T)")
+                elif trainMethod == 'repeatedcv':
+                    if catFields:
+                        r("ctrl <- trainControl(method='repeatedcv', number=number1, \
+                            repeats=repeats, classProbs=T, savePredictions=T)")
+                    if quantFields:
+                        r("ctrl <- trainControl(method='repeatedcv', number=number1, \
+                            repeats=repeats, classProbs=F, savePredictions=T)")
+                elif trainMethod == 'LOOCV':
+                    if catFields:
+                        r("ctrl <- trainControl(method='LOOCV', number=number1, \
+                            classProbs=T, savePredictions=T)")
+                    if quantFields:
+                        r("ctrl <- trainControl(method='LOOCV', number=number1, \
+                            classProbs=F, savePredictions=T)")
+                elif trainMethod == 'LGOCV':
+                    if catFields:
+                        r("ctrl <- trainControl(method='LGOCV', number=number1, \
+                            p=proportion, classProbs=T, savePredictions=T)")
+                    if quantFields:
+                        r("ctrl <- trainControl(method='LGOCV', number=number1, \
+                            p=proportion, classProbs=F, savePredictions=T)")
+
                 if catFields:
-                    print r("ctrl <- trainControl(method='repeatedcv', \
-                        classProbs=T, savePredictions=T)")
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=F, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
                 if quantFields:
-                    r("ctrl <- trainControl(method=trainMethod, number=ifelse(grepl('cv', method), 10, 25), \
-                        repeats=ifelse(grepl('cv', method), 1, number), classProbs=F, savePredictions=T)")
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=T, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
 
@@ -300,6 +351,9 @@ def getRF(request, stops, RID, PID):
                 if catFields:
                     r("vi <- varImp(fit, scale=F)")
                     r("varDF = as.data.frame(vi[[1]])")
+                    r("goodNameVec <- names(X)")
+                    r("badNameVec <- names(myData)[2:length(names(myData))]")
+                    r("row.names(varDF) <- mapvalues(row.names(varDF), from=badNameVec, to=goodNameVec)")
 
                     r("rankDF <- apply(-varDF, 2, rank, ties.method='random')")
                     r("rankDF <- (rankDF <= 6)")
@@ -308,24 +362,26 @@ def getRF(request, stops, RID, PID):
                     r("fVarDF <- varDF[myFilter,]")
                     r("fVarDF['rank_id'] <- row.names(fVarDF)")
                     r("graphDF <- melt(fVarDF, id='rank_id')")
-                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), '.id..', fixed=F)))")
-                    r("graphDF$taxa <- foo$X1")
-                    r("graphDF$id <- foo$X2")
+                    r("graphDF$rank_id <- gsub(' ', '.', graphDF$rank_id)")
+                    r("graphDF$rank_id <- gsub(':', '.', graphDF$rank_id)")
+                    r("myVec <- unlist(str_split_fixed(as.character(graphDF$rank_id), '\\.id\\.\\.', 2))")
+                    r("graphDF$taxa <- myVec[,1]")
+                    r("graphDF$id <- myVec[,2]")
                     r("graphDF <- graphDF[with(graphDF, order(taxa, id)),] ")
-
 
                     r("pdf_counter <- pdf_counter + 1")
                     r("p <- ggplot(graphDF, aes(x=variable, y=value, fill=rank_id))")
                     r("parse_labels <- function(value) { \
-                        myVec <- unlist(strsplit(value, '.id..', fixed=T)); \
-                        myVec[c(TRUE, FALSE)] } ")
+                        myVec <- unlist(str_split_fixed(value, '\\.id\\.\\.', 2)); \
+                        myVec[,1]; \
+                    }")
                     r("p <- p + facet_wrap(~rank_id, nc=4, labeller=as_labeller(parse_labels))")
                     r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
                     r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
                     r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
                     r("p <- p + theme(legend.position='none')")
                     r("p <- p + theme(axis.title.y=element_text(size=10))")
-                    r("p <- p + theme(axis.text.x=element_text(size=7, angle=90, hjust=1))")
+                    r("p <- p + theme(axis.text.x=element_text(size=7, angle=90, hjust=1, vjust=0.5))")
                     r("p <- p + theme(axis.text.y=element_text(size=6))")
                     r("p <- p + theme(plot.title=element_text(size=12))")
                     r("p <- p + theme(plot.subtitle=element_text(size=9))")
@@ -334,10 +390,13 @@ def getRF(request, stops, RID, PID):
                         subtitle='Importance (top 6 for each factor)')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("panel.width <- 0.2+(nlevels(as.factor(graphDF$rank_id))*0.05)")
+                    r("char.width <- max(nchar(as.character(graphDF$rank_id)))/35")
+                    r("bar.width <- 0.2+(nlevels(as.factor(graphDF$rank_id))*0.05)")
+                    r("panel.width <- max(char.width, bar.width)")
                     r("n_wrap <- ceiling(nlevels(as.factor(graphDF$rank_id))/4)")
-                    r("p <- set_panel_size(p, height=unit(1.5, 'in'), width=unit(panel.width, 'in'))")
-                    r("ggsave(filename=file, plot=p, units='in', height=2+(1.75*n_wrap), width=4+(2*panel.width))")
+                    r("p <- set_panel_size(p, height=unit(1.25, 'in'), width=unit(panel.width, 'in'))")
+                    r("char.width <- max(nchar(as.character(graphDF$variable)))/35")
+                    r("ggsave(filename=file, plot=p, units='in', height=2+(1.5*n_wrap)+char.width, width=2+(4*panel.width))")
 
                     # graph probabilites for each training sample
                     r("probY <- predict(fit, type='prob')")
@@ -351,7 +410,7 @@ def getRF(request, stops, RID, PID):
                     r("pdf_counter <- pdf_counter + 1")
                     r("p <- ggplot(graphDF, aes(x=sampleid, y=value, fill=variable))")
                     r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
-                    r("p <- p + facet_wrap(~ obs, scales='free', nc=2)")
+                    r("p <- p + facet_wrap(~ obs, scales='free_x', nc=3)")
                     r("p <- p + scale_x_discrete(labels=element_blank())")
                     r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
                     r("p <- p + theme(axis.ticks.x=element_blank())")
@@ -367,11 +426,9 @@ def getRF(request, stops, RID, PID):
                         subtitle='Training Dataset: probabilities')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("panel.width <- nlevels(as.factor(graphDF$sampleid))*0.05")
-                    r("if (panel.width < 1) {panel.width = 1}")
-                    r("p <- set_panel_size(p, height=unit(1.5, 'in'), width=unit(panel.width, 'in'))")
-                    r("n_wrap <- ceiling(nFactors/2)")
-                    r("ggsave(filename=file, plot=p, units='in', height=2+(2*n_wrap), width=2+(panel.width*2))")
+                    r("p <- set_panel_size(p, height=unit(1, 'in'), width=unit(1.5, 'in'))")
+                    r("n_wrap <- ceiling(nlevels(graphDF$obs)/3)")
+                    r("ggsave(filename=file, plot=p, units='in', height=2+(1.25*n_wrap), width=2+6)")
 
                     # graph probabilites for each test sample
                     if testIDs:
@@ -386,7 +443,7 @@ def getRF(request, stops, RID, PID):
                         r("pdf_counter <- pdf_counter + 1")
                         r("p <- ggplot(graphDF, aes(x=sampleid, y=value, fill=variable))")
                         r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
-                        r("p <- p + facet_wrap(~ obs, scales='free', nc=2)")
+                        r("p <- p + facet_wrap(~ obs, scales='free_x', nc=3)")
                         r("p <- p + scale_x_discrete(labels=element_blank())")
                         r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
                         r("p <- p + theme(axis.ticks.x=element_blank())")
@@ -402,11 +459,9 @@ def getRF(request, stops, RID, PID):
                             subtitle='Test dataset: assignment probabilities')")
 
                         r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                        r("panel.width <- nlevels(as.factor(graphDF$sampleid))*0.05")
-                        r("if (panel.width < 1) {panel.width = 1}")
-                        r("p <- set_panel_size(p, height=unit(1.5, 'in'), width=unit(panel.width, 'in'))")
-                        r("n_wrap <- ceiling(nFactors/2)")
-                        r("ggsave(filename=file, plot=p, units='in', height=2+(2*n_wrap), width=2+(panel.width*2))")
+                        r("p <- set_panel_size(p, height=unit(1, 'in'), width=unit(1.5, 'in'))")
+                        r("n_wrap <- ceiling(nlevels(obs)/3)")
+                        r("ggsave(filename=file, plot=p, units='in', height=2+(1.25*n_wrap), width=2+6)")
 
                     # graph probabilites by taxa
                     r("probY <- predict(fit, type='prob')")
@@ -424,35 +479,40 @@ def getRF(request, stops, RID, PID):
                     r("names(graphDF) <- c('trt', 'prob', 'rank_id', 'count')")
                     r("graphDF$rank_id <- gsub(' ', '.', graphDF$rank_id)")
                     r("graphDF$rank_id <- gsub(':', '.', graphDF$rank_id)")
-                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), '.id..', fixed=F)))")
-                    r("graphDF$taxa <- foo$X1")
-                    r("graphDF$id <- foo$X2")
+                    r("myVec <- unlist(str_split_fixed(as.character(graphDF$rank_id), '\\.id\\.\\.', 2))")
+                    r("graphDF$taxa <- myVec[,1]")
+                    r("graphDF$id <- myVec[,2]")
                     r("graphDF <- graphDF[with(graphDF, order(taxa, id)),] ")
 
                     r("pdf_counter <- pdf_counter + 1")
                     r("par(mar=c(2,2,1,1),family='serif')")
                     r("p <- ggplot(graphDF, aes(x=count, y=prob, colour=trt))")
                     r("parse_labels <- function(value) { \
-                        myVec <- unlist(strsplit(value, '.id..', fixed=T)); \
-                        myVec[c(TRUE, FALSE)] } ")
+                        myVec <- unlist(str_split_fixed(value, '\\.id\\.\\.', 2)); \
+                        myVec[,1]; \
+                    }")
                     r("p <- p + facet_wrap(~rank_id, nc=4, labeller=as_labeller(parse_labels))")
                     r("p <- p + geom_point(size=0.5)")
                     r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
                     r("p <- p + theme(legend.title=element_blank())")
                     r("p <- p + theme(legend.text=element_text(size=6))")
                     r("p <- p + theme(axis.title=element_text(size=10))")
-                    r("p <- p + theme(axis.text.x=element_text(size=7, angle = 90, hjust = 1))")
+                    r("p <- p + theme(axis.text.x=element_text(size=7, angle=0))")
                     r("p <- p + theme(axis.text.y=element_text(size=6))")
                     r("p <- p + theme(plot.title=element_text(size=12))")
                     r("p <- p + theme(plot.subtitle=element_text(size=9))")
                     r("p <- p + labs(y='Probability', x='Abundance', \
                         title=title, \
-                        subtitle='Probability of correct assignment vs taxa abundance')")
+                        subtitle='Probability of correct sample assignment vs taxa abundance')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("p <- set_panel_size(p, height=unit(1, 'in'), width=unit(1.5, 'in'))")
-                    r("n_wrap <- ceiling(length(myTaxa)/4)")
-                    r("ggsave(filename=file, plot=p, units='in', height=1.25*n_wrap+3, width=8)")
+                    r("char.width <- max(nchar(as.character(graphDF$rank_id)))/35")
+                    r("bar.width <- 1.5")
+                    r("panel.width <- max(char.width, bar.width)")
+                    r("n_wrap <- ceiling(nlevels(as.factor(graphDF$rank_id))/4)")
+                    r("p <- set_panel_size(p, height=unit(1.25, 'in'), width=unit(panel.width, 'in'))")
+                    r("char.width <- max(nchar(as.character(graphDF$count)))/35")
+                    r("ggsave(filename=file, plot=p, units='in', height=2+(1.5*n_wrap)+char.width, width=2+(4*panel.width))")
 
                     # confusion matrix - train
                     r("tab <- table(Observed=Y, Predicted=predY)")
@@ -481,6 +541,9 @@ def getRF(request, stops, RID, PID):
                 if quantFields:
                     r("vi <- varImp(fit, scale=F)")
                     r("varDF = as.data.frame(vi[[1]])")
+                    r("goodNameVec <- names(X)")
+                    r("badNameVec <- names(myData)[2:length(names(myData))]")
+                    r("row.names(varDF) <- mapvalues(row.names(varDF), from=badNameVec, to=goodNameVec)")
 
                     r("rankDF <- apply(-varDF, 2, rank, ties.method='random')")
                     r("rankDF <- (rankDF <= 10)")
@@ -489,11 +552,11 @@ def getRF(request, stops, RID, PID):
                     r("Overall <- varDF[myFilter,]")
                     r("rank_id <- row.names(varDF)[myFilter]")
                     r("graphDF <- data.frame(rank_id, Overall)")
-                    r("foo <- data.frame(do.call('rbind', strsplit(as.character(graphDF$rank_id), '.id..', fixed=TRUE)))")
-                    r("graphDF['taxa'] <- foo$X1")
+                    r("myVec <- unlist(str_split_fixed(as.character(graphDF$rank_id), '\\.id\\.\\.', 2))")
+                    r("graphDF$taxa <- myVec[,1]")
+                    r("graphDF$id <- myVec[,2]")
                     r("unique <- make.unique(as.vector(graphDF$taxa))")
                     r("graphDF['taxa2'] <- unique")
-                    r("charWidth <- max(nchar(graphDF$taxa2))")
 
                     r("pdf_counter <- pdf_counter + 1")
                     r("par(mar=c(2,2,1,1),family='serif')")
@@ -503,7 +566,7 @@ def getRF(request, stops, RID, PID):
                     r("p <- p + theme(strip.text.y=element_text(size=7, colour='blue', angle=0))")
                     r("p <- p + theme(legend.position='none')")
                     r("p <- p + theme(axis.title.y=element_text(size=10))")
-                    r("p <- p + theme(axis.text.x = element_text(size=7, angle = 45, hjust=1))")
+                    r("p <- p + theme(axis.text.x = element_text(size=7, angle = 90))")
                     r("p <- p + theme(axis.text.y = element_text(size=6))")
                     r("p <- p + theme(plot.title = element_text(size=12))")
                     r("p <- p + theme(plot.subtitle = element_text(size=9))")
@@ -512,9 +575,10 @@ def getRF(request, stops, RID, PID):
                         subtitle='Overall importance (top 10)')")
 
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
-                    r("panel.width <- nlevels(as.factor(graphDF$rank_id))*0.5")
-                    r("p <- set_panel_size(p, height=unit(3, 'cm'), width=unit(panel.width, 'cm'))")
-                    r("ggsave(filename=file, plot=p, units='cm', height=5+(0.1*charWidth), width=5+panel.width)")
+                    r("panel.width <- nlevels(as.factor(graphDF$rank_id))*0.2")
+                    r("p <- set_panel_size(p, height=unit(2, 'in'), width=unit(panel.width, 'in'))")
+                    r("charWidth <- max(nchar(graphDF$taxa2))/12")
+                    r("ggsave(filename=file, plot=p, units='in', height=1+(2)+charWidth, width=1+panel.width)")
 
                     r("pdf_counter <- pdf_counter + 1")
                     r("graphDF <- data.frame(x=Y, y=predY)")
