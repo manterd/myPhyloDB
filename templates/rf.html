@@ -313,6 +313,7 @@
             myDict['nzAll'] = document.getElementById("selectall-nz").value;
             myDict['DepVar'] = document.getElementById("DepVar").value;
             myDict['Method'] = document.getElementById("Method").value;
+            myDict['trainMethod'] = document.getElementById("trainMethod").value;
             myDict['transform'] = document.getElementById("transform").value;
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
@@ -1024,11 +1025,25 @@
                     <option value="nnet">Neural Network (feed-forward)</option>
                     <option value="svm">Support Vector Machine</option>
                 </select>
-                &nbsp; <-- Method
+                &nbsp; <-- Classification method
             </td>
             <td bgcolor="white"></td>
         </tr>
 
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="trainMethod" onChange="checkButtons()">
+                    <option value="none" selected="selected">None</option>
+                    <option value="boot">Bootstrap</option>
+                    <option value="cv">Cross-validation</option>
+                    <option value="repeatedcv">repeated random sub-sampling</option>
+                    <option value="LOOCV">Leave-one-out cross validation</option>
+                </select>
+                &nbsp; <-- Re-sampling method
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">

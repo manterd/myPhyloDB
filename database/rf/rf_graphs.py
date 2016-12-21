@@ -272,14 +272,16 @@ def getRF(request, stops, RID, PID):
                     r("grid <- expand.grid(.cost=seq(1:10))")
                     r("title <- 'Support Vector Machine' ")
 
+                trainMethod = all['trainMethod']
+                r.assign("trainMethod", trainMethod)
                 if catFields:
-                    r("ctrl <- trainControl(method='repeatedcv', \
+                    print r("ctrl <- trainControl(method='repeatedcv', \
                         classProbs=T, savePredictions=T)")
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=F, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
                 if quantFields:
-                    r("ctrl <- trainControl(method='repeatedcv', \
-                        classProbs=F, savePredictions=T)")
+                    r("ctrl <- trainControl(method=trainMethod, number=ifelse(grepl('cv', method), 10, 25), \
+                        repeats=ifelse(grepl('cv', method), 1, number), classProbs=F, savePredictions=T)")
                     r("fit <- train(Y ~ ., data=myData, method=method, linout=T, trace=F, trControl=ctrl, \
                         tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
 
