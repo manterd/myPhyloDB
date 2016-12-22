@@ -110,6 +110,7 @@ a.datas += extra_datas('mothur/reference/align')
 a.datas += extra_datas('mothur/reference/taxonomy')
 a.datas += extra_datas('mothur/reference/template')
 a.datas += extra_datas('R/R-Linux')
+a.datas += extra_datas('R/myFunctions')
 a.datas += extra_datas('templates')
 a.datas += extra_datas('uploads')
 

@@ -63,6 +63,12 @@
                 $("#container-1").empty().hide();
                 $("#container-2").hide();
             }
+            var ellipse = document.getElementById("ellipseVal").value;
+            if (ellipse != 'None') {
+                $("#CI-row").show();
+            } else {
+                $("#CI-row").hide();
+            }
         }
         function colorBox() {
             $("#colorVal").empty().prepend('<option selected="selected" value="None">None</option>');
@@ -300,7 +306,9 @@
             myDict['palette'] = document.getElementById("palette").value;
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
+            myDict['CI'] = document.getElementById("CI").value;
             myDict['surfVal'] = document.getElementById("surfVal").value;
+            myDict['transform'] = document.getElementById("transform").value;
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
@@ -683,6 +691,22 @@
             <td bgcolor="white"></td>
         </tr>
 
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="transform" onChange="checkButtons()">
+                    <option value="0" selected="selected">None</option>
+                    <option value="1">Ln</option>
+                    <option value="2">Log10</option>
+                    <option value="3">Sqrt</option>
+                    <!--<option value="4">Logit</option>
+                    <option value="5">Arcsin</option>-->
+                </select>
+                &nbsp; <-- Raw data transformation
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-Filtering.html" %}
 
@@ -832,6 +856,15 @@
                     </select>
                     &nbsp; <-- Grouping variable for ordiellipse
                 </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr id="CI-row" style="display:none">
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <input type="text" title="Confidence interval must be between 0 and 1" id="CI" value="0.95" style="background-color: white; width: 50px" onChange="checkButtons()"/>
+                &nbsp; <-- Enter the confidence interval to be displayed by the ellipse
             </td>
             <td bgcolor="white"></td>
         </tr>

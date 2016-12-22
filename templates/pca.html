@@ -69,7 +69,12 @@
                 $("#scaleRow").show();
                 $("#constrainRow").show();
             }
-
+            var ellipse = document.getElementById("ellipseVal").value;
+            if (ellipse != 'None') {
+                $("#CI-row").show();
+            } else {
+                $("#CI-row").hide();
+            }
         }
         function chooseData() {
             $("#run").css("background-color", "yellow");
@@ -268,6 +273,7 @@
             myDict['PC1'] = document.getElementById("PC1").value;
             myDict['PC2'] = document.getElementById("PC2").value;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
+            myDict['CI'] = document.getElementById("CI").value;
             myDict['colorVal'] = document.getElementById("colorVal").value;
             myDict['palette'] = document.getElementById("palette").value;
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
@@ -755,6 +761,15 @@
                     </select>
                     &nbsp; <-- Grouping variable for ordiellipse
                 </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr id="CI-row" style="display:none">
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <input type="text" title="Confidence interval must be between 0 and 1" id="CI" value="0.95" style="background-color: white; width: 50px" onChange="checkButtons()"/>
+                &nbsp; <-- Enter the confidence interval to be displayed by the ellipse
             </td>
             <td bgcolor="white"></td>
         </tr>

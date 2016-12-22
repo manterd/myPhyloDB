@@ -188,7 +188,7 @@ def getRF(request, stops, RID, PID):
                 print r("library(plyr)")
                 print r('library(stargazer)')
                 print r('library(stringr)')
-                print r('source("myFunctions.R")')
+                print r('source("R/myFunctions/myFunctions.R")')
 
                 method = all['Method']
                 if method == 'rf':

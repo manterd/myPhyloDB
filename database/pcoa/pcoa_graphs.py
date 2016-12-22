@@ -6,7 +6,7 @@ import pandas as pd
 from pyper import *
 import simplejson
 
-from database.utils import getMetaDF, wOdum
+from database.utils import getMetaDF, transformDF, wOdum
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
 import database.queue
 
@@ -178,6 +178,10 @@ def getPCoA(request, stops, RID, PID):
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
+
+                # transform Y, if requested
+                transform = int(all["transform"])
+                finalDF = transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/pcoa/'
@@ -418,7 +422,9 @@ def getPCoA(request, stops, RID, PID):
                             r("p <- p + geom_point(color='gray', size=4)")
 
                     if not ellipseVal == 'None':
-                        r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=0.95, alpha=0)")
+                        myCI = float(all["CI"])
+                        r.assign("myCI", myCI)
+                        r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=myCI, alpha=0)")
                         r("p <- p + scale_color_brewer(palette=myPalette)")
                         r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
 

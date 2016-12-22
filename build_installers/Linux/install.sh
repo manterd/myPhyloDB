@@ -29,6 +29,7 @@ if [ $response = y ]
         tar -zxf myPhyloDB.tar.gz -C $HOME
         mv -f $HOME/myPhyloDB_temp/db.Microbe $HOME/myPhyloDB/db.Microbe
         mv -f $HOME/myPhyloDB_temp/db.PICRUSt $HOME/myPhyloDB/db.PICRUSt
+        rm -rf $HOME/myPhyloDB/uploads
         mkdir $HOME/myPhyloDB/uploads
         mv -f $HOME/myPhyloDB_temp/uploads/* $HOME/myPhyloDB/uploads/
     else
@@ -38,9 +39,12 @@ if [ $response = y ]
                 rm -rf $HOME/myPhyloDB
         fi
         tar -zxf myPhyloDB.tar.gz -C $HOME
-        mkdir $HOME/myPhyloDB/uploads
-        mv -f $HOME/myPhyloDB_temp/uploads/* $HOME/myPhyloDB/uploads/
-
+        if [ -d "$HOME/myPhyloDB_temp/uploads" ]
+            then
+                rm -rf $HOME/myPhyloDB/uploads
+                mkdir $HOME/myPhyloDB/uploads
+                mv -f $HOME/myPhyloDB_temp/uploads/* $HOME/myPhyloDB/uploads/
+        fi
 fi
 
 rm -rf $HOME/myPhyloDB_temp
