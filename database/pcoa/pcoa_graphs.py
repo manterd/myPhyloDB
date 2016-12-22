@@ -415,7 +415,7 @@ def getPCoA(request, stops, RID, PID):
                             r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
                             r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
                         else:
-                            r("p <- p + geom_point(size=4)")
+                            r("p <- p + geom_point(color='gray', size=4)")
 
                     if not ellipseVal == 'None':
                         r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=0.95, alpha=0)")
@@ -439,8 +439,10 @@ def getPCoA(request, stops, RID, PID):
                         r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
                         r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                         r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
-                        r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
-                        r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
+                        sigVar = r.get("nrow(efDF.adj)")
+                        if sigVar >= 1:
+                            r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
+                            r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
 
                     r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
                     r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")

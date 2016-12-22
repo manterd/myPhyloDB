@@ -180,12 +180,13 @@ def getPCA(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
-                r("list.of.packages <- c('vegan', 'ggplot2')")
+                r("list.of.packages <- c('fpc', 'vegan', 'ggplot2')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
                 database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
 
+                print r('library(fpc)')
                 print r('library(ggplot2)')
                 print r('library(vegan)')
 
@@ -283,7 +284,7 @@ def getPCA(request, stops, RID, PID):
                     r("ellipseTrt <- as.factor(meta[,paste(ellipseVal)])")
                 if ellipseVal != 'None' and ellipseVal == 'k-means':
                     r("pamk.best <- pamk(sites)")
-                    r("km <- kmeans(scores, centers=pamk.best$nc)")
+                    r("km <- kmeans(sites, centers=pamk.best$nc)")
                     r("ellipseTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
 
                 colorVal = all['colorVal']
@@ -296,9 +297,8 @@ def getPCA(request, stops, RID, PID):
                     r.assign("colorVal", colorVal)
                     r("colorTrt <- as.factor(meta[,paste(colorVal)])")
                 if colorVal != 'None' and colorVal == 'k-means':
-                    r("scores <- res.pca$ind$coord")
-                    r("pamk.best <- pamk(scores)")
-                    r("km <- kmeans(scores, centers=pamk.best$nc)")
+                    r("pamk.best <- pamk(sites)")
+                    r("km <- kmeans(sites, centers=pamk.best$nc)")
                     r("colorTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
 
                 shapeVal = all['shapeVal']
@@ -311,9 +311,8 @@ def getPCA(request, stops, RID, PID):
                     r.assign("shapeVal", shapeVal)
                     r("shapeTrt <- as.factor(meta[,paste(shapeVal)])")
                 if shapeVal != 'None' and shapeVal == 'k-means':
-                    r("scores <- res.pca$ind$coord")
-                    r("pamk.best <- pamk(scores)")
-                    r("km <- kmeans(scores, centers=pamk.best$nc)")
+                    r("pamk.best <- pamk(sites)")
+                    r("km <- kmeans(sites, centers=pamk.best$nc)")
                     r("shapeTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
 
                 r("indDF <- data.frame( \
