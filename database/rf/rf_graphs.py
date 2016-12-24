@@ -250,10 +250,7 @@ def getRF(request, stops, RID, PID):
                     r("Y_test <- Y_test[,allFields]")
                     r("myData_test <- data.frame(Y_test, X_test)")
                     r("nameVec <- c('Y_test', names(X_test))")
-                    r("nameVec <- gsub(' ', '.', nameVec)")
-                    r("nameVec <- gsub('-', '.', nameVec)")
-                    r("nameVec <- gsub(':', '.', nameVec)")
-                    r("names(myData_test) <- nameVec")
+                    r("names(myData_test) <- make.names(nameVec)")
 
                 # Initialize R output to pdf
                 path = 'myPhyloDB/media/temp/rf/Rplots/%s' % RID
