@@ -664,7 +664,7 @@ def rarefaction_remove(M, RID, depth=0, seed=0):
     Mrarefied = np.empty_like(M)
     for i in range(nsamp):
         p = M[i] / float(noccur[i])
-        choice = prng.choice(nvar, size=depth, replace=True, p=p)
+        choice = prng.choice(nvar, size=depth, replace=False, p=p)
         Mrarefied[i] = np.bincount(choice, minlength=nvar)
         curSamples[RID] += 1
         database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
