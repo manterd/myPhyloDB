@@ -33,19 +33,11 @@
             var curID;
             var curName;
             for (var c=0; c<num; c++) {
-                curID = "name_"+c;
+                curID = "name_" + c;
                 curName = document.getElementById(curID).value;
-                nameList +=  curName + ";";
+                nameList += curName + ";";
             }
-            alert(nameList);
-            if (document.getElementById("permLevel").checked) {
-                // Adding permission to edit, reprocess, etc (not permission granting permission, check later)
-                alert("Adding editing permission");
-            }
-            else {
-                // default, view perm only
-                alert("Default!");
-            }
+            nameList = nameList.slice(0, -1);
             // Send list back through ajax to views, add names to list for selected projects
 
             var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
@@ -54,10 +46,17 @@
                 }
                 $("#submit").css("background-color", "yellow").val("Running!");
             });
+            var dataDict = {};
+            dataDict['keys'] = selKeys;
+            dataDict['names'] = nameList;
+            dataDict['mode'] = document.getElementById("permLevel").checked;
+            var jsonDict = JSON.stringify(dataDict);
+
             $.ajax({
-                type: 'POST',
+                type: 'GET',
                 url: '/myPhyloDB/addPerms/',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                dataType: 'json',
+                data: {all: jsonDict},
                 success: function (data) {
                     var error = data['error'];
                     if (error != "none") {

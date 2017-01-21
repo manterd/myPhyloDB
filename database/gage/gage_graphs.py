@@ -13,7 +13,7 @@ from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, getMetaDF
-from database.models import Phyla, Class, Order, Family, Genus, Species
+from database.models import Phyla, Class, Order, Family, Genus, Species, OTU_97
 import database.queue
 
 
@@ -352,27 +352,27 @@ def getGAGE(request, stops, RID, PID):
 
 def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
     try:
-        # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S']
+        # create sample and otu lists based on meta data selection
+        wanted = ['sampleid', 'otuid', 'abund', 'rel_abund', 'abund_16S']
         profileDF = savedDF.loc[:, wanted]
-        profileDF.set_index('speciesid', inplace=True)
+        profileDF.set_index('otuid', inplace=True)
 
         # get PICRUSt data for species
-        speciesList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
-        picrustDF.set_index('speciesid__speciesid', inplace=True)
-        picrustSpeciesList = pd.unique(picrustDF.index.ravel().tolist())
+        otuList = pd.unique(profileDF.index.ravel().tolist())
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
+        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
+        picrustDF.set_index('otuid__otuid', inplace=True)
+        picrustotuList = pd.unique(picrustDF.index.ravel().tolist())
 
         finalKeys = []
-        total = len(speciesList)
+        total = len(otuList)
         counter = 0
-        for species in speciesList:
-            if species in picrustSpeciesList:
-                cell = picrustDF.at[species, 'geneCount']
+        for otu in otuList:
+            if otu in picrustotuList:
+                cell = picrustDF.at[otu, 'geneCount']
                 d = ast.literal_eval(cell)
                 for key in d:
-                    picrustDF.at[species, key] = d[key]
+                    picrustDF.at[otu, key] = d[key]
                     if key not in finalKeys:
                         finalKeys.append(str(key))
 
@@ -451,6 +451,8 @@ def getFullTaxonomy(level, id):
         record = Genus.objects.all().filter(genusid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
     elif level == 7:
         record = Species.objects.all().filter(speciesid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
+    elif level == 8:
+        record = OTU_97.objects.all().filter(otuid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'species_id__speciesName', 'otuName')
 
     return record
 

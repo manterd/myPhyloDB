@@ -350,6 +350,23 @@
             }
 
         }
+        function DepVar() {
+            var DepVar = document.getElementById("DepVar").value;
+            if (DepVar == 1) {
+                $('#transform').empty()
+                    .append('<option value="0">None</option>')
+                    .append('<option value="3">Sqrt</option>')
+                    .append('<option value="4">Logit</option>')
+                    .append('<option value="5">Arcsin</option>');
+            } else {
+                $('#transform').empty()
+                    .append('<option value="0" selected>None</option>')
+                    .append('<option value="1">Ln</option>')
+                    .append('<option value="2">Log10</option>')
+                    .append('<option value="3">Sqrt</option>');
+            }
+            checkButtons();
+        }
         function getCatGraphData() {
             RID = makeGUID();
             startTimer(RID);
@@ -1072,6 +1089,7 @@
                         <option value="5">Families</option>
                         <option value="6">Genera</option>
                         <option value="7">Species</option>
+                        <option value="9">OTU_97</option>
                         <option value="8">PGPRs</option>
                     </select>
                     &nbsp; <-- Taxa level
@@ -1113,14 +1131,14 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="DepVar" onChange="checkButtons()">
+                    <select id="DepVar" onChange="DepVar()">
                         <option value="0" selected="selected">Abundance</option>
                         <option value="1">Relative Abundance</option>
                         <option value="4">Total Abundance</option>
-                        <option value="2">Phylotype Richness</option>
-                        <option value="3">Phylotype Diversity</option>
+                        <option value="2">OTU Richness</option>
+                        <option value="3">OTU Diversity</option>
                     </select>
-                    &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Relative Abundance = proportion of total community<br>Total Abundance = 16S rRNA copies per mg soil<br>Phylotype Richness = number of phylotypes (species)<br>Phylotype (species) Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
+                &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Relative Abundance = proportion of total community<br>Total Abundance = 16S rRNA copies per mg soil<br>OTU Richness = number of OTUs<br>OTU Diversity = Shannon's Diversity Index"><font color="red">[info]</font></span>
                 </td>
                 <td bgcolor="white"></td>
             </tr>

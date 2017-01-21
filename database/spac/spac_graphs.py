@@ -48,6 +48,8 @@ def getSpAC(request, stops, RID, PID):
                         result += 'Taxa level: Genus' + '\n'
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
+                    elif selectAll == 9:
+                        result += 'Taxa level: OTU_97' + '\n'
 
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
@@ -114,7 +116,7 @@ def getSpAC(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
-                # filter phylotypes based on user settings
+                # filter otus based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
                 perZeroes = int(all['perZeroes'])
@@ -170,7 +172,7 @@ def getSpAC(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 4: Calculating Species Accumulation Curves...')
+                database.queue.setBase(RID, 'Step 3 of 4: Calculating OTU Accumulation Curves...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -183,7 +185,7 @@ def getSpAC(request, stops, RID, PID):
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-                database.queue.setBase(RID, 'Step 3 of 4: Calculating Species Accumulation Curves...')
+                database.queue.setBase(RID, 'Step 3 of 4: Calculating OTU Accumulation Curves...')
 
                 print r("library(vegan)")
 
@@ -257,7 +259,7 @@ def getSpAC(request, stops, RID, PID):
                     r("dev.off()")
                     r("pdf_counter <- pdf_counter + 1")
 
-                database.queue.setBase(RID, 'Step 3 of 4: Calculating Species Accumulation Curves...done!')
+                database.queue.setBase(RID, 'Step 3 of 4: Calculating OTU Accumulation Curves...done!')
 
                 database.queue.setBase(RID, 'Step 4 of 4: Pooling pdf files for display...')
 

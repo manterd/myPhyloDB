@@ -184,7 +184,7 @@ def upErr(msg, request, dest, sid):
 def uploadFunc(request, stopList):
     ### create a savepoint
     sid = transaction.savepoint()
-
+    curUser = User.objects.get(username=request.user.username)
     ### start of main upload function
     projects = Reference.objects.none()
     if request.method == 'POST' and 'Upload' in request.POST:
@@ -245,7 +245,7 @@ def uploadFunc(request, stopList):
 
             try:
                 handle_uploaded_file(file1, dest, metaName)
-                res = parse_project(metaFile, p_uuid)
+                res = parse_project(metaFile, p_uuid, curUser)
                 if res == "none":
                     print "Parsed project with no errors"
                 else:
@@ -2119,6 +2119,7 @@ def updaStop(request):
 def updateFunc(request, stopList):
     form5 = UploadForm5(request.POST, request.FILES)
     state = ''
+    curUser = User.objects.get(username=request.user.username)
 
     PID = 0
     RID = request.POST['RID']
@@ -2151,7 +2152,7 @@ def updateFunc(request, stopList):
         try:
             metaFile = '/'.join([dest, file1.name])
             handle_uploaded_file(file1, dest, file1.name)
-            parse_project(metaFile, p_uuid)
+            parse_project(metaFile, p_uuid, curUser)
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
             return render_to_response(
@@ -2350,7 +2351,7 @@ def login_usr_callback(sender, user, request, **kwargs):
         os.makedirs('myPhyloDB/media/usr_temp/'+str(user))
     cleanup('myPhyloDB/media/usr_temp/'+str(user))
 
-user_logged_in.connect(login_usr_callback)
+user_logged_in.connect(login_usr_callback)  # JUMP does this belong in a function?
 
 
 # Function has been added to context processor in setting file
@@ -2417,123 +2418,98 @@ def directgraph(request):
 
 def addPerms(request):
     print "Adding permissions"
-    if request.method == 'POST':
-        uploaded = request.FILES["normFile"]
-        savedDF = pd.read_csv(uploaded, index_col=0, sep='\t')
-        selList = list(set(savedDF['sampleid']))
 
-        # save selected samples file to users temp/ folder
-        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_sel_samples.pkl'
+    if request.is_ajax():
 
-        if not os.path.exists(myDir):
-            os.makedirs(myDir)
+        allJson = simplejson.loads(request.GET["all"])
+        # get selected projects list (files? not samples as subsets though)
+        selList = allJson['keys']
+        # get list of names to add
+        nameList = allJson['names']
+        nameList = nameList.split(';')
+        # get permission mode (view vs edit)  * view is redundant if project is public
+        permLevel = allJson['mode']
+        # permLevel 0 means view only
+        # permLevel 1 means editing as well
+        print "PermLevel: ", permLevel
 
-        with open(path, 'wb') as f:
-            pickle.dump(selList, f)
+        thisUser = User.objects.get(username=request.user.username)
+        userProfiles = UserProfile.objects.all()
+        myData = UserProfile.objects.get(user=thisUser)
 
-        # save normalized file to users temp/ folder
-        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_norm_data.csv'
+        print "Selected: ", selList
+        print "Names:", nameList
+        # loop through nameList, verify each exists
+        errorList = []
+        for name in nameList:
+            try:
+                User.objects.get(username=name)
+            except:
+                # add failed names to error list, to alert back to user of likely typo
+                errorList.append(name)
+                print "Failed to find ", name
+                # remove name from nameList
+                # nameList.pop?
+        print "User: ", thisUser
 
-        if not os.path.exists(myDir):
-            os.makedirs(myDir)
-        savedDF.to_csv(path, sep='\t')
+        # get project by id from selList  # JUMP
+        for pid in selList:
+            print "Id: ", pid
+            print "Proj: ", Project.objects.get(projectid=pid)
+            curProj = Project.objects.get(projectid=pid)
+            projectList = Project.objects.none()
+            if request.user.is_superuser:
+                projectList = Project.objects.all().filter(reference__raw=True)
+            elif request.user.is_authenticated():
+                path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+                projectList = Project.objects.all().filter( Q(projectid__in=path_list) ).filter(reference__raw=True)
+            for proj in projectList:
+                if curProj == proj:
+                    print "Found match!"
+            # check if thisUser is owner of project (or super, check old edit perms basically)
+            if thisUser == curProj.owner:
+                # loop through nameList, check if name is present on permList already
+                for curName in nameList:
+                    viewList = curProj.whitelist_view.split(';')
+                    found = False
+                    for name in viewList:
+                        if name == curName:
+                            found = True
+                    if not found:
+                        # add current name to current project's viewPerms
+                        curProj.whitelist_view += curName+";"
+                    # check if mode grants edit perm as well
+                    if permLevel:
+                        editList = curProj.whitelist_edit.split(';')
+                        found = False
+                        for name in editList:
+                            if name == curName:
+                                found = True
+                        if not found:
+                            # add current name to current project's editPerms
+                            curProj.whitelist_edit += curName+";"
+            # save changes
+            curProj.save()
+        # return new profile page (boxes cleared, perhaps success alert message)
 
-        projectList = list(set(savedDF['projectid']))
-
-        if not Project.objects.filter(projectid__in=projectList).exists():
-            return render_to_response(
-                'select.html',
-                {'form9': UploadForm9,
-                 'selList': '',
-                 'normpost': 'error',
-                 'method': 'POST'},
-                 context_instance=RequestContext(request)
-            )
-
-        if not Reference.objects.filter(projectid__in=projectList).exists():
-            return render_to_response(
-                'select.html',
-                {'form9': UploadForm9,
-                 'selList': '',
-                 'normpost': 'error',
-                 'method': 'POST'},
-                context_instance=RequestContext(request)
-            )
-
-        if not Sample.objects.filter(sampleid__in=selList).exists():
-            return render_to_response(
-                'select.html',
-                {'form9': UploadForm9,
-                 'selList': '',
-                 'normpost': 'error',
-                 'method': 'POST'},
-                context_instance=RequestContext(request)
-            )
-
-        biome = {}
-        tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-        tempDF.set_index('sampleid', drop=True, inplace=True)
-
-        metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
-        myList = list(tempDF.index.values)
-
-        nameList = []
-        for i in myList:
-            nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
-
-        # get list of lists with abundances
-        taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
-        taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
-        dataList = taxaOnlyDF.values.tolist()
-
-        # get list of taxa
-        namesDF = savedDF.loc[:, ['sampleid', 'speciesid']]
-        namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
-        namesDF = namesDF.pivot(index='speciesid', columns='sampleid', values='taxa')
-
-        taxaList = []
-        for index, row in namesDF.iterrows():
-            metaDict = {}
-            metaDict['taxonomy'] = row[0]
-            taxaList.append({"id": index, "metadata": metaDict})
-
-        biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
-        biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
-        biome['type'] = 'OTU table'
-        biome['generated_by'] = 'myPhyloDB'
-        biome['date'] = str(datetime.datetime.now())
-        biome['matrix_type'] = 'dense'
-        biome['matrix_element_type'] = 'float'
-        biome['rows'] = taxaList
-        biome['columns'] = nameList
-        biome['data'] = dataList
-
-        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_norm_data.biom'
-        with open(path, 'w') as outfile:
-            simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
-
-        return render_to_response(
-            'select.html',
-            {'form9': UploadForm9,
-             'selList': selList,
-             'normpost': 'Success',
-             'method': 'POST'},
-            context_instance=RequestContext(request)
-        )
-
-    else:
-        return render_to_response(
-            'select.html',
-            {'form9': UploadForm9,
-             'selList': '',
-             'normpost': '',
-             'method': 'GET'},
-            context_instance=RequestContext(request))
+        text = ""
+        # check if errorList has entries
+        if len(errorList) > 0:
+            # set return text to be an error reporting failed names
+            text = "Name(s) not found: "
+            iter = 1
+            for name in errorList:
+                if iter == len(errorList):
+                    text += name
+                else:
+                    text += name + ", "
+                iter += 1
+        else:
+            text = 'Users have been added to selected project(s)'
+        res = simplejson.dumps(text, encoding="Latin-1")
+        return HttpResponse(res, content_type='application/json')
 
 
 def remPerms(request):
-    print "Removing permissions"
+    print "NYI"
     return

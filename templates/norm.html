@@ -349,7 +349,7 @@
                         <option value="4">Proportion</option>
                         <option value="5">DESeq2</option>
                     </select>
-                    &nbsp<-- Normalization method
+                    &nbsp<-- Normalization method <span title="None = no sub-sampling<br>Rarefaction (remove) = sub-sampling <strong><em>without</strong></em> replacement<br>Rarefaction (keep) = laplace smoothing followed by sub-sampling <em><strong>with</strong></em> replacement<br>Proportion = all abundances are divided by the total number of sequence reads for that sample<br>DESeq2 = normalization by the geometic mean (see DESeq manual for more details)"><font color="red">[info]</font></span>
                 </td>
             </tr>
             <tr id="NormRow" style="display: none;" bgcolor="white">
@@ -373,7 +373,7 @@
             </tr>
             <tr><td bgcolor="white"></td></tr>
             <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Select sample/species cutoffs:</em></strong></td>
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Select sample/OTU cutoffs:</em></strong></td>
             </tr>
             <tr id="MinRow" bgcolor="white">
                 <td>
@@ -386,7 +386,7 @@
                 <td bgcolor="white">
                     <input type="checkbox" title="Click to turn on/off" id="Remove"/>
                     <input style="background-color: white"  type="text" id="Cutoff" value="0"/>
-                    &nbsp<-- Minimum species size
+                    &nbsp<-- Minimum OTU size
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>

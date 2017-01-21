@@ -6,7 +6,7 @@ from pyper import *
 from scipy import stats
 import simplejson
 
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_97
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4
 from database.utils import getMetaDF, transformDF
@@ -69,6 +69,8 @@ def getSPLS(request, stops, RID, PID):
                         result += 'Taxa level: Genus' + '\n'
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
+                    elif selectAll == 9:
+                        result += 'Taxa level: OTU_97' + '\n'
                 elif treeType == 2:
                     if keggAll == 1:
                         result += 'KEGG Pathway level: 1' + '\n'
@@ -119,7 +121,7 @@ def getSPLS(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
 
-                # filter phylotypes based on user settings
+                # filter otus based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
                 perZeroes = int(all['perZeroes'])
@@ -177,9 +179,9 @@ def getSPLS(request, stops, RID, PID):
                 elif DepVar == 1:
                     result += 'Dependent Variable: Relative Abundance' + '\n'
                 elif DepVar == 2:
-                    result += 'Dependent Variable: Phylotype (species) Richness' + '\n'
+                    result += 'Dependent Variable: OTU Richness' + '\n'
                 elif DepVar == 3:
-                    result += 'Dependent Variable: Phylotype (species) Diversity' + '\n'
+                    result += 'Dependent Variable: OTU Diversity' + '\n'
                 elif DepVar == 4:
                     result += 'Dependent Variable: Total Abundance' + '\n'
                 result += '\n===============================================\n'
@@ -379,6 +381,11 @@ def getSPLS(request, stops, RID, PID):
                             taxNameList = Species.objects.filter(speciesid__in=taxIDList).values('speciesid', 'speciesName')
                             namesDF = pd.DataFrame(list(taxNameList))
                             namesDF.rename(columns={'speciesName': 'rank_name', 'speciesid': 'rank_id'}, inplace=True)
+                            namesDF.set_index('rank_id', inplace=True)
+                        elif selectAll == 9:
+                            taxNameList = OTU_97.objects.filter(otuid__in=taxIDList).values('otuid', 'otuName')
+                            namesDF = pd.DataFrame(list(taxNameList))
+                            namesDF.rename(columns={'otuName': 'rank_name', 'otuid': 'rank_id'}, inplace=True)
                             namesDF.set_index('rank_id', inplace=True)
 
                     elif treeType == 2:

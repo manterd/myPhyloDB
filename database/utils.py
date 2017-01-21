@@ -4,7 +4,6 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 import inspect
-import math
 import multiprocessing as mp
 import numpy as np
 import os
@@ -14,6 +13,8 @@ import shutil
 import simplejson
 import threading
 import time
+
+from django.db.models import Q
 
 from models import Project, Reference, Profile
 from config import local_cfg
@@ -98,9 +99,9 @@ def multidict(ordered_pairs):
 
 
 def taxaProfileDF(mySet):
-    qs1 = Profile.objects.filter(sampleid__in=mySet).values('sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'count')
-    df = pd.DataFrame.from_records(qs1, columns=['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'count'])
-    df = df.groupby(['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid'])['count'].sum()
+    qs1 = Profile.objects.filter(sampleid__in=mySet).values('sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'otuid', 'count')
+    df = pd.DataFrame.from_records(qs1, columns=['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'otuid', 'count'])
+    df = df.groupby(['sampleid', 'kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'otuid'])['count'].sum()
     df = df.to_frame(name='count')
     df2 = df.unstack(['sampleid']).fillna(0).stack(['sampleid'])
     df3 = df2.unstack(['sampleid'])
@@ -448,7 +449,7 @@ def getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, Dep
         metaDF = metaDF.loc[metaDF['sampleid'].isin(finalSampleIDs)]
 
     # remove unnecessary fields
-    wantedList = catFields + quantFields + ['sampleid', 'kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+    wantedList = catFields + quantFields + ['sampleid', 'kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
     savedDF = savedDF[wantedList]
 
     wantedList = catFields + quantFields + ['sampleid', 'sample_name']
@@ -459,6 +460,10 @@ def getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, Dep
     # make sure column types are correct
     metaDF[catFields] = metaDF[catFields].astype(str)
     metaDF[quantFields] = metaDF[quantFields].astype(float)
+
+    savedDF.dropna(axis=0, inplace=True)
+    metaDF.dropna(axis=0, inplace=True)
+    finalSampleIDs = metaDF.index.tolist()
 
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
 
@@ -553,3 +558,74 @@ def transformDF(transform, DepVar, finalDF):
             finalDF['abund_16S'] = np.arcsin(finalDF.abund_16S)
 
     return finalDF
+
+
+def getViewProjects(request):  # JUMP
+
+    projects = Project.objects.none()
+    if request.user.is_superuser:
+        projects = Project.objects.all().order_by('project_name')
+    elif request.user.is_authenticated():
+        print "View check on ", request.user.username
+        # run through list of projects, when valid project is found, append filterIDS with ID
+        # projects will be a queryset set to all projects, then filtered by ids in filterIDS
+        filterIDS = []
+        for proj in Project.objects.all():
+            good = False  # good to add to list
+            if proj.owner == request.user:
+                good = True
+                print "Owned!"
+            if proj.status == 'public':
+                good = True
+                print "Pub!"
+            checkList = proj.whitelist_view.split(';')
+            for name in checkList:
+                if name == request.user.username:
+                    good = True
+                    print "Whitelist!"
+            if good:
+                filterIDS.append(proj.projectid)
+                print "Can view!"
+        projects = Project.objects.all().filter(projectid__in=filterIDS)
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        # impossible to have guest user be on whitelist (hopefully), so public only check
+        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
+    return projects
+
+
+def getEditProjects(request):
+
+    '''projects = Project.objects.none()
+    if request.user.is_superuser:
+        projects = Project.objects.all()
+    elif request.user.is_authenticated():
+        # replace owner check with owner/whitelist_edit check
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) )
+    return projects'''
+
+    projects = Project.objects.none()
+    if request.user.is_superuser:
+        projects = Project.objects.all().order_by('project_name')
+
+    elif request.user.is_authenticated():
+        print "Edit check on ", request.user.username
+        # run through list of projects, when valid project is found, append filterIDS with ID
+        # projects will be a queryset set to all projects, then filtered by ids in filterIDS
+        filterIDS = []
+        for proj in Project.objects.all():
+            good = False  # good to add to list
+            if proj.owner == request.user:
+                good = True
+                print "Owned!"
+            checkList = proj.whitelist_edit.split(';')
+            for name in checkList:
+                if name == request.user.username:
+                    good = True
+                    print "Whitelist!"
+            if good:
+                filterIDS.append(proj.projectid)
+                print "Can edit!"
+        projects = Project.objects.all().filter(projectid__in=filterIDS)
+
+    return projects

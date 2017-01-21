@@ -7,7 +7,7 @@ import gzip
 import re
 from uuid import uuid4
 
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_97
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.models import PICRUSt
@@ -132,6 +132,11 @@ def geneParse(file1, file2, file3):
             Species.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
 
         s = Species.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
+        if not OTU_97.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
+            oid = uuid4().hex
+            OTU_97.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName=taxon[7])
+
+        o = OTU_97.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).otuid
 
         rRNACount = row['16S_rRNA_Count']
         row.drop('16S_rRNA_Count', inplace=True)
@@ -141,8 +146,8 @@ def geneParse(file1, file2, file3):
         for key in geneCount:
             geneCount[key] = round(geneCount[key] / rRNACount, 4)
 
-        if not PICRUSt.objects.using('picrust').filter(speciesid_id=s).exists():
-            PICRUSt.objects.using('picrust').create(speciesid_id=s, rRNACount=rRNACount, geneCount=geneCount)
+        if not PICRUSt.objects.using('picrust').filter(otuid_id=o).exists():
+            PICRUSt.objects.using('picrust').create(otuid_id=o, rRNACount=rRNACount, geneCount=geneCount)
 
         counter += 1
         stage = 'Step 4 of 4: Adding PICRUSt data to your database... ' + str(counter) + ' OTUs out of ' + str(total) + ' are complete!'

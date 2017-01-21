@@ -76,7 +76,7 @@ def getCatUnivData(request, RID, stops, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
-                # filter phylotypes based on user settings
+                # filter otus based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
                 perZeroes = int(all['perZeroes'])
@@ -314,9 +314,9 @@ def getCatUnivData(request, RID, stops, PID):
                     elif DepVar == 1:
                         result += 'Dependent Variable: Relative Abundance' + '\n'
                     elif DepVar == 2:
-                        result += 'Dependent Variable: Phylotpe (species) Richness' + '\n'
+                        result += 'Dependent Variable: OTU Richness' + '\n'
                     elif DepVar == 3:
-                        result += 'Dependent Variable: Phylotpe (species) Diversity' + '\n'
+                        result += 'Dependent Variable: OTU Diversity' + '\n'
                     elif DepVar == 4:
                         result += 'Dependent Variable: Total Abundance' + '\n'
 
@@ -432,9 +432,9 @@ def getCatUnivData(request, RID, stops, PID):
                 elif DepVar == 1:
                     yTitle['text'] = 'Relative Abundance'
                 elif DepVar == 2:
-                    yTitle['text'] = 'Phylotype Richness'
+                    yTitle['text'] = 'OTU Richness'
                 elif DepVar == 3:
-                    yTitle['text'] = 'Phylotype Diversity'
+                    yTitle['text'] = 'OTU Diversity'
                 elif DepVar == 4:
                     yTitle['text'] = 'Total Abundance'
                 yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
@@ -597,7 +597,7 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or kegg level...')
 
-                # filter phylotypes based on user settings
+                # filter otus based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
                 perZeroes = int(all['perZeroes'])
@@ -772,9 +772,9 @@ def getQuantUnivData(request, RID, stops, PID):
                     elif DepVar == 1:
                         result += 'Dependent Variable: Relative Abundance' + '\n'
                     elif DepVar == 2:
-                        result += 'Dependent Variable: Phylotype (species) Richness' + '\n'
+                        result += 'Dependent Variable: OTU Richness' + '\n'
                     elif DepVar == 3:
-                        result += 'Dependent Variable: Phylotype (species) Diversity' + '\n'
+                        result += 'Dependent Variable: OTU Diversity' + '\n'
                     elif DepVar == 4:
                         result += 'Dependent Variable: Total Abundance' + '\n'
 
@@ -1227,9 +1227,9 @@ def getQuantUnivData(request, RID, stops, PID):
                 elif DepVar == 1:
                     yTitle['text'] = 'Relative Abundance'
                 elif DepVar == 2:
-                    yTitle['text'] = 'Phylotpe (species) Richness'
+                    yTitle['text'] = 'OTU Richness'
                 elif DepVar == 3:
-                    yTitle['text'] = 'Phylotpe (species) Diversity'
+                    yTitle['text'] = 'OTU Diversity'
                 elif DepVar == 4:
                     yTitle['text'] = 'Total Abundance'
                 yAxisDict['title'] = yTitle

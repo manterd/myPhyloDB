@@ -19,10 +19,11 @@ def subQueue():
     global queue
     queue -= 1
 
+# default_user = Users.objects.create_user("UNSPECIFIED")
 
 class Project(models.Model):
     projectid = models.CharField(max_length=50, primary_key=True)
-    status = models.CharField(max_length=15, blank=False)
+    status = models.CharField(max_length=15, blank=False)  # visibility, "public" and "private", error if other value
     projectType = models.CharField(max_length=90, blank=False)
     project_name = models.CharField(max_length=100, blank=True)
     project_desc = models.TextField(blank=True)
@@ -34,8 +35,19 @@ class Project(models.Model):
     pi_email = models.EmailField(blank=True)
     pi_phone = models.CharField(max_length=15, blank=True)
 
-    #whitelist_view = JSONField(default={})
-    #whitelist_edit = JSONField(default={})
+    owner = models.ForeignKey(Users, null=True, default=None)  # user who first uploaded files for this project
+    # note that future additions to the project will require edit permissions to be granted
+    # by the owner of the project. Retroactive solution is to fill this slot manually
+
+    whitelist_view = models.TextField(blank=True)  # default empty, contains list of users
+    # who can view the project if it is private
+    # if project is public, this field is ignored
+    # field is text, usernames separated by ;
+
+    whitelist_edit = models.TextField(blank=True)  # default empty, contains list of users
+    # who can edit the project (update, reprocess, or upload extra/new references)
+    # edit perm does NOT grant removal or permissions management perms
+    # field is text, usernames separated by ;
 
     def __unicode__(self):
         return self.project_name
@@ -573,6 +585,18 @@ class Species(models.Model):
     speciesName = models.CharField(max_length=90, blank=True)
 
 
+class OTU_97(models.Model):
+    kingdomid = models.ForeignKey(Kingdom)
+    phylaid = models.ForeignKey(Phyla)
+    classid = models.ForeignKey(Class)
+    orderid = models.ForeignKey(Order)
+    familyid = models.ForeignKey(Family)
+    genusid = models.ForeignKey(Genus)
+    speciesid = models.ForeignKey(Species)
+    otuid = models.TextField(primary_key=True)
+    otuName = models.CharField(max_length=90, blank=True)
+
+
 class Profile(models.Model):
     projectid = models.ForeignKey(Project)
     sampleid = models.ForeignKey(Sample)
@@ -585,6 +609,7 @@ class Profile(models.Model):
     familyid = models.ForeignKey(Family)
     genusid = models.ForeignKey(Genus)
     speciesid = models.ForeignKey(Species)
+    otuid = models.ForeignKey(OTU_97)
     count = models.IntegerField()
 
 
@@ -654,7 +679,7 @@ class nz_entry(models.Model):
 
 
 class PICRUSt(models.Model):
-    speciesid = models.ForeignKey(Species)
+    otuid = models.ForeignKey(OTU_97)
     rRNACount = models.FloatField(blank=True, null=True)
     geneCount = JSONField(default={})
 

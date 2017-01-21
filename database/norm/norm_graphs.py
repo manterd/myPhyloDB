@@ -12,7 +12,7 @@ from pyper import *
 import simplejson
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
-from database.models import Species, Profile
+from database.models import OTU_97, Profile
 from database.utils import taxaProfileDF
 import database.queue
 
@@ -137,8 +137,8 @@ def getNorm(request, RID, stopList, PID):
 
             # Select only the taxa of interest if user used the selectAll button
             taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('speciesid', flat='True').distinct()
-            taxaDict['Species'] = qs3
+            qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('otuid', flat='True').distinct()
+            taxaDict['OTU_97'] = qs3
 
             database.queue.setBase(RID, 'Step 1 of 6: Querying database...done!')
 
@@ -160,12 +160,12 @@ def getNorm(request, RID, stopList, PID):
             normDF['diversity'] = normDF['diversity'].astype(float)
 
             if remove == 1:
-                grouped = normDF.groupby('speciesid')
+                grouped = normDF.groupby('otuid')
                 goodIDs = []
                 for name, group in grouped:
                     if group['abund'].sum() > cutoff:
                         goodIDs.append(name)
-                normDF = normDF.loc[normDF['speciesid'].isin(goodIDs)]
+                normDF = normDF.loc[normDF['otuid'].isin(goodIDs)]
 
             finalDict = {}
             if NormMeth == 1:
@@ -189,7 +189,7 @@ def getNorm(request, RID, stopList, PID):
             if remove == 1:
                 result += "Phylotypes with fewer than " + str(cutoff) + " read(s) were removed from your analysis\n"
             else:
-                result += "No minimum species size was applied...\n"
+                result += "No minimum otu size was applied...\n"
 
             result += '===============================================\n\n\n'
             finalDict['text'] = result
@@ -216,7 +216,7 @@ def getNorm(request, RID, stopList, PID):
                 if x in metaDFList:
                     metaDFList.remove(x)
             metaDFList = ['projectid', 'refid', 'sampleid', 'sample_name'] + metaDFList
-            metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+            metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
             finalDF = finalDF[metaDFList]
 
             # save location info to session and save in temp/norm
@@ -254,14 +254,14 @@ def getNorm(request, RID, stopList, PID):
                 nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
             # get list of lists with abundances
-            taxaOnlyDF = finalDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
-            taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
+            taxaOnlyDF = finalDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund']]
+            taxaOnlyDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
             dataList = taxaOnlyDF.values.tolist()
 
             # get list of taxa
-            namesDF = finalDF.loc[:, ['sampleid', 'speciesid']]
-            namesDF['taxa'] = finalDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
-            namesDF = namesDF.pivot(index='speciesid', columns='sampleid', values='taxa')
+            namesDF = finalDF.loc[:, ['sampleid', 'otuid']]
+            namesDF['taxa'] = finalDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName']].values.tolist()
+            namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
 
             taxaList = []
             for index, row in namesDF.iterrows():
@@ -472,7 +472,7 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
 def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, stopList, PID):
     global curSamples, totSamples
     df2 = df.reset_index()
-    taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid']
+    taxaID = ['kingdomid', 'phylaid', 'classid', 'orderid', 'familyid', 'genusid', 'speciesid', 'otuid']
 
     countDF = pd.DataFrame()
     DESeq_error = 'no'
@@ -486,17 +486,13 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             curSamples[RID] = 0
             totSamples[RID] = len(mySet)
 
-            totReads = reads*iters
             myArr = df2[mySet].as_matrix()
             probArr = myArr.T
-            finalArr = rarefaction_remove(probArr, RID, depth=totReads, seed=0)
+            finalArr = rarefaction_remove(probArr, RID, reads=reads, iters=iters)
             for i in xrange(len(mySet)):
                 countDF[mySet[i]] = finalArr[i]
 
             curSamples[RID] = 0
-
-            for i in mySet:
-                countDF[i] = countDF[i]/iters
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
@@ -508,17 +504,13 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             curSamples[RID] = 0
             totSamples[RID] = len(mySet)
 
-            totReads = reads*iters
             myArr = df2[mySet].as_matrix()
             probArr = myArr.T
-            finalArr = rarefaction_keep(probArr, RID, depth=totReads, myLambda=Lambda, seed=0)
+            finalArr = rarefaction_keep(probArr, RID, reads=reads, iters=iters, myLambda=Lambda)
             for i in xrange(len(mySet)):
                 countDF[mySet[i]] = finalArr[i]
 
             curSamples[RID] = 0
-
-            for i in mySet:
-                countDF[i] = countDF[i]/iters
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
@@ -585,13 +577,13 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         binaryDF[i] = countDF[i].apply(lambda x: 1 if x != 0 else 0)
         diversityDF[i] = relabundDF[i].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
 
-    field = 'speciesid'
-    taxaList = taxaDict['Species']
+    field = 'otuid'
+    taxaList = taxaDict['OTU_97']
 
-    qs = Species.objects.filter(speciesid__in=taxaList)
-    namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid'])
-    namesDF.rename(columns={'kingdomid__kingdomid': 'kingdomid', 'phylaid__phylaid': 'phylaid', 'classid__classid' : 'classid', 'orderid__orderid' : 'orderid', 'familyid__familyid' : 'familyid', 'genusid__genusid' : 'genusid'}, inplace=True)
-    namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName'}, inplace=True)
+    qs = OTU_97.objects.filter(otuid__in=taxaList)
+    namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesid__speciesName', 'otuName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid__speciesid', 'otuid'])
+    namesDF.rename(columns={'kingdomid__kingdomid': 'kingdomid', 'phylaid__phylaid': 'phylaid', 'classid__classid' : 'classid', 'orderid__orderid' : 'orderid', 'familyid__familyid' : 'familyid', 'genusid__genusid' : 'genusid', 'speciesid__speciesid' : 'speciesid'}, inplace=True)
+    namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName', 'speciesid__speciesName' : 'speciesName'}, inplace=True)
 
     curSamples[RID] = 0
     totSamples[RID] = len(mySet)
@@ -638,8 +630,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
 
         DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'taxa_id', 'rel_abund', 'abund', 'rich', 'diversity'])
 
-        DF1.rename(columns={'taxa_id': 'speciesid'}, inplace=True)
-        DF1 = DF1.merge(namesDF, on='speciesid', how='outer')
+        DF1.rename(columns={'taxa_id': 'otuid'}, inplace=True)
+        DF1 = DF1.merge(namesDF, on='otuid', how='outer')
 
         if normDF.empty:
             normDF = DF1
@@ -654,35 +646,51 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     return normDF, DESeq_error
 
 
-def rarefaction_remove(M, RID, depth=0, seed=0):
+def rarefaction_remove(M, RID, reads=0, iters=0):
     global curSamples, totSamples
-    prng = RandomState(seed) # reproducible results
-    noccur = np.sum(M, axis=1) # number of occurrences for each sample
-    nvar = M.shape[1] # number of variables
-    nsamp = M.shape[0] # number of samples
+    nsamp = M.shape[0]
 
     Mrarefied = np.empty_like(M)
     for i in range(nsamp):
-        p = M[i] / float(noccur[i])
-        choice = prng.choice(nvar, size=depth, replace=False, p=p)
-        Mrarefied[i] = np.bincount(choice, minlength=nvar)
+        counts = M[i]
+        nz = counts.nonzero()[0]
+        unpacked = np.concatenate([np.repeat(np.array(j,), counts[j]) for j in nz])
+        myArr = np.zeros(len(counts), dtype=int)
+        for n in xrange(iters):
+            permuted = np.random.permutation(unpacked)[:reads]
+            binArr = np.zeros(len(counts), dtype=int)
+            for p in permuted:
+                binArr[p] += 1
+            if n == 0:
+                myArr = binArr
+            else:
+                myArr = np.vstack((myArr, binArr))
+        Mrarefied[i] = np.mean(myArr, axis=0)
         curSamples[RID] += 1
         database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
 
 
-def rarefaction_keep(M, RID, depth=0, myLambda=0.1, seed=0):
+def rarefaction_keep(M, RID, reads=0, iters=0, myLambda=0.1):
     global curSamples, totSamples
-    prng = RandomState(seed) # reproducible results
-    noccur = np.sum(M, axis=1) # number of occurrences for each sample
-    nvar = M.shape[1] # number of variables
-    nsamp = M.shape[0] # number of samples
+    noccur = np.sum(M, axis=1)  # number of occurrences for each sample
+    nvar = M.shape[1]  # number of variables
+    nsamp = M.shape[0]  # number of samples
 
     Mrarefied = np.empty_like(M)
     for i in range(nsamp):
         p = (M[i] + myLambda) / (float(noccur[i]) + nvar * myLambda)
-        choice = prng.choice(nvar, size=depth, replace=True, p=p)
-        Mrarefied[i] = np.bincount(choice, minlength=nvar)
+        myArr = np.zeros(nvar)
+        for n in xrange(iters):
+            prng = RandomState()
+            choice = prng.choice(nvar, size=reads, replace=True, p=p)
+            binArr = np.bincount(choice, minlength=nvar)
+            if n == 0:
+                myArr = binArr
+            else:
+                myArr = np.vstack((myArr, binArr))
+
+        Mrarefied[i] = np.mean(myArr, axis=0)
         curSamples[RID] += 1
         database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied

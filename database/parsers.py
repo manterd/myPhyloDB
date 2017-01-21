@@ -20,7 +20,7 @@ import subprocess
 from uuid import uuid4
 
 from models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
-from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, Profile
+from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_97, Profile
 from utils import purge, handle_uploaded_file, excel_to_dict
 import database.dataqueue
 
@@ -174,7 +174,7 @@ def projectid(Document):
         return None
 
 
-def parse_project(Document, p_uuid):
+def parse_project(Document, p_uuid, curUser):
     try:
         global stage, perc
         perc = 50
@@ -187,7 +187,10 @@ def parse_project(Document, p_uuid):
             for key in rowDict.keys():
                 if key == 'projectid':
                     rowDict[key] = p_uuid
-            Project.objects.create(**rowDict)
+            myProj = Project.objects.create(**rowDict)  # save pointer to this somehow (myProj = ?)
+            # get project and set owner to current user (if project is new)
+            myProj.owner = curUser
+            myProj.save()
         else:
             rowDict.pop('projectid')
             Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, **rowDict)
@@ -423,7 +426,7 @@ def parse_taxonomy(Document):
             if row:
                 step += 1.0
                 perc = int(step / total * 100)
-                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', '', row[2])
+                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])
                 subbed = subbed[:-1]
                 taxon = subbed.split(';')
 
@@ -456,7 +459,6 @@ def parse_taxonomy(Document):
                     gid = uuid4().hex
                     Genus.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
 
-                # try handles classifications without species (ie, RDP)
                 try:
                     g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                     if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
@@ -467,6 +469,17 @@ def parse_taxonomy(Document):
                     if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName='unclassified').exists():
                         sid = uuid4().hex
                         Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName='unclassified')
+
+                try:
+                    s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
+                    if not OTU_97.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
+                        oid = uuid4().hex
+                        OTU_97.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName=taxon[7])
+                except:
+                    s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
+                    if not OTU_97.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName='unclassified').exists():
+                        oid = uuid4().hex
+                        OTU_97.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName='unclassified')
 
     except:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -501,7 +514,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
         file4.close()
 
         df3 = pd.merge(df1, df2, left_index=True, right_index=True, how='inner')
-        df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__)', value='', regex=True, inplace=True)
+        df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', value='', regex=True, inplace=True)
         df3.reset_index(drop=True, inplace=True)
         del df1, df2
 
@@ -527,6 +540,10 @@ def parse_profile(file3, file4, p_uuid, refDict):
                 s = taxaList[6]
             except:
                 s = 'unclassified'
+            try:
+                o = taxaList[7]
+            except:
+                o = 'unclassified'
 
             t_kingdom = Kingdom.objects.get(kingdomName=k)
             t_phyla = Phyla.objects.get(kingdomid=t_kingdom, phylaName=p)
@@ -535,6 +552,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
             t_family = Family.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyName=f)
             t_genus = Genus.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusName=g)
             t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesName=s)
+            t_otu = OTU_97.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuName=o)
 
             for name in sampleList:
                 count = int(row[name])
@@ -545,14 +563,14 @@ def parse_profile(file3, file4, p_uuid, refDict):
                     refid = refDict[sampid]
                     reference = Reference.objects.get(refid=refid)
 
-                    if Profile.objects.filter(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species).exists():
-                        t = Profile.objects.get(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species)
+                    if Profile.objects.filter(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu).exists():
+                        t = Profile.objects.get(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu)
                         old = t.count
                         new = old + int(count)
                         t.count = new
                         t.save()
                     else:
-                        Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, count=count)
+                        Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
     except:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -567,7 +585,6 @@ def repStop(request):
 
 @transaction.atomic
 def reanalyze(request, stopList):
-
     ### create savepoint
     sid = transaction.savepoint()
 

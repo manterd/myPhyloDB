@@ -51,6 +51,8 @@ def getRF(request, stops, RID, PID):
                         result += 'Taxa level: Genus' + '\n'
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
+                    elif selectAll == 9:
+                        result += 'Taxa level: OTU_97' + '\n'
                 elif treeType == 2:
                     if keggAll == 1:
                         result += 'KEGG Pathway level: 1' + '\n'
@@ -101,7 +103,7 @@ def getRF(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
-                # filter phylotypes based on user settings
+                # filter otus based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
                 perZeroes = int(all['perZeroes'])

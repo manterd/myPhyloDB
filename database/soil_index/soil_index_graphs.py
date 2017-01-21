@@ -205,11 +205,11 @@ def getsoil_index(request, stops, RID, PID):
                 metaDF = metaDF[wantedList]
                 metaDF.set_index('sampleid', drop=True, inplace=True)
 
-                speciesList = finalDF['rank_id'].tolist()
-                speciesList = list(set(speciesList))
-                qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-                df = read_frame(qs, fieldnames=['speciesid__speciesid', 'rRNACount'])
-                df.rename(columns={'speciesid__speciesid': 'rank_id'}, inplace=True)
+                otuList = finalDF['rank_id'].tolist()
+                otuList = list(set(otuList))
+                qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
+                df = read_frame(qs, fieldnames=['otuid__otuid', 'rRNACount'])
+                df.rename(columns={'otuid__otuid': 'rank_id'}, inplace=True)
                 finalDF = pd.merge(finalDF, df, left_on='rank_id', right_on='rank_id', how='outer')
 
                 rnaDF = finalDF.replace(r'\s+', np.nan, regex=True)

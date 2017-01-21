@@ -7,10 +7,11 @@ from pyper import *
 import simplejson
 
 from models import Project, Sample, Reference
-from models import Kingdom, Class, Order, Family, Genus, Species, Profile
+from models import Kingdom, Class, Order, Family, Genus, Species, OTU_97, Profile
 from models import Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from models import ko_lvl1, ko_entry
 from models import nz_lvl1, nz_entry
+from utils import getViewProjects, getEditProjects
 
 pd.set_option('display.max_colwidth', -1)
 time1 = time.time()
@@ -19,14 +20,19 @@ time1 = time.time()
 def getProjectTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = Project.objects.none()
+    projects = getViewProjects(request)
+
+    '''projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all().order_by('project_name')
     elif request.user.is_authenticated():
+        # replace owner/public check with owner/public/whitelist_view check
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
     if not request.user.is_superuser and not request.user.is_authenticated():
+        # impossible to have guest user be on whitelist (hopefully), so public only check
         projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
+    '''
 
     for project in projects:
         if Sample.objects.filter(projectid=project.projectid).exists():
@@ -52,7 +58,7 @@ def getProjectTree(request):
 
 
 def getProjectTreeChildren(request):
-    # get project children which are visible to current user (check
+    # get project children (samples) which are visible to current user (check
     if request.is_ajax():
         projectid = request.GET["id"]
         samples = Sample.objects.filter(projectid=projectid)
@@ -1148,6 +1154,17 @@ def getTaxaTreeChildren(request):
                 nodes.append(myNode)
 
         elif taxa == 'Species':
+            qs = OTU_97.objects.filter(otuid__in=selected_taxa.values_list('otuid').distinct()).filter(**{'genusid': id}).order_by('otuName')
+            for item in qs:
+                myNode = {
+                    'title': item.otuName,
+                    'id': item.otuid,
+                    'tooltip': "OTU_97",
+                    'isLazy': True
+                }
+                nodes.append(myNode)
+
+        elif taxa == 'OTU_97':
             pass
 
         res = simplejson.dumps(nodes, encoding="Latin-1")
@@ -1401,12 +1418,16 @@ def getNZTreeChildren(request):
 def makeUpdateTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = Project.objects.none()
+    projects = getEditProjects(request)
+
+    '''projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all()
     elif request.user.is_authenticated():
+        # replace owner check with owner/whitelist_edit check
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) )
+    '''
 
     for project in projects:
         myNode = {
@@ -1448,12 +1469,17 @@ def makeUpdateTree(request):
 def makeReproTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
+    projects = getEditProjects(request)
+
+    '''
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all().filter(reference__raw=True)
     elif request.user.is_authenticated():
+        # replace owner check with owner/whitelist_edit check
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
         projects = Project.objects.all().filter( Q(projectid__in=path_list) ).filter(reference__raw=True)
+    '''
 
     for project in projects:
         myNode = {
@@ -1570,7 +1596,10 @@ def getDownloadTreeChildren(request):
 
 
 def getPermissionTree(request):
-    myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    myTree = {'title': 'My Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    publicTree = {'title': 'Public', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    privateTree = {'title': 'Private', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    # split tree into private and public projects via status flag
 
     projects = Project.objects.none()
 
@@ -1590,7 +1619,13 @@ def getPermissionTree(request):
                 'isFolder': False,
                 'isLazy': False
             }
-            myTree['children'].append(myNode)
+            if project.status == "public":  # should only be private and public, defaulting to private just in case
+                publicTree['children'].append(myNode)
+            else:
+                privateTree['children'].append(myNode)
+            # myTree['children'].append(myNode)
+    myTree['children'].append(publicTree)
+    myTree['children'].append(privateTree)
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 

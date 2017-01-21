@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import simplejson
 
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_97
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
@@ -69,6 +69,12 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
                         tempDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Species'
                         taxaDF = taxaDF.append(tempDF)
+                    elif key == 'OTU_97':
+                        tempDF = savedDF.loc[savedDF['otuid'] == taxaList]
+                        tempDF = tempDF[['sampleid', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+                        tempDF.rename(columns={'otuid': 'rank_id', 'otuName': 'rank_name'}, inplace=True)
+                        tempDF.loc[:, 'rank'] = 'OTU_97'
+                        taxaDF = taxaDF.append(tempDF)
                 else:
                     if key == 'Kingdom':
                         tempDF = savedDF.loc[savedDF['kingdomid'].isin(taxaList)]
@@ -112,6 +118,12 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
                         tempDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Species'
                         taxaDF = taxaDF.append(tempDF)
+                    elif key == 'OTU_97':
+                        tempDF = savedDF.loc[savedDF['otuid'].isin(taxaList)]
+                        tempDF = tempDF[['sampleid', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+                        tempDF.rename(columns={'otuid': 'rank_id', 'otuName': 'rank_name'}, inplace=True)
+                        tempDF.loc[:, 'rank'] = 'OTU_97'
+                        taxaDF = taxaDF.append(tempDF)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -147,6 +159,10 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             taxaDF = savedDF.loc[:, ['sampleid', 'speciesid', 'speciesName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
             taxaDF.loc[:, 'rank'] = 'Species'
+        elif selectAll == 9:
+            taxaDF = savedDF.loc[:, ['sampleid', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
+            taxaDF.rename(columns={'otuid': 'rank_id', 'otuName': 'rank_name'}, inplace=True)
+            taxaDF.loc[:, 'rank'] = 'OTU_97'
         elif selectAll == 8:
             taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
@@ -193,7 +209,6 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return HttpResponse(res, content_type='application/json')
 
 
-# TODO: add more status functions here?
 def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     try:
         koDict = {}
@@ -300,16 +315,16 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+        # create sample and otu lists based on meta data selection
+        wanted = ['sampleid', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
         profileDF = savedDF.loc[:, wanted]
-        profileDF.set_index('speciesid', inplace=True)
+        profileDF.set_index('otuid', inplace=True)
 
-        # get PICRUSt data for species
-        speciesList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'])
-        picrustDF.set_index('speciesid__speciesid', inplace=True)
+        # get PICRUSt data for otu
+        otuList = pd.unique(profileDF.index.ravel().tolist())
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
+        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
+        picrustDF.set_index('otuid__otuid', inplace=True)
 
         levelList = []
         for key in koDict:
@@ -317,7 +332,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
 
         picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
         picrustDF.fillna(0.0, inplace=True)
-        picrustDF = sumKEGG(speciesList, picrustDF, koDict, RID, PID, stops)
+        picrustDF = sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
@@ -345,10 +360,11 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        # create dataframe with data by species
+        # create dataframe with data by otu
         wanted = levelList[:]
         wanted.insert(0, 'sampleid')
         allDF = taxaDF[wanted]
+        allDF.insert(1, 'OTU_97', None)
         allDF.insert(1, 'Species', None)
         allDF.insert(1, 'Genus', None)
         allDF.insert(1, 'Family', None)
@@ -385,8 +401,9 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             allDF.at[key, 'Family'] = val[4]
             allDF.at[key, 'Genus'] = val[5]
             allDF.at[key, 'Species'] = val[6]
+            allDF.at[key, 'OTU_97'] = val[7]
 
-        # sum all species
+        # sum all otu
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
 
@@ -787,16 +804,16 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
             nzDict[id] = idList
 
-        # create sample and species lists based on meta data selection
-        wanted = ['sampleid', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+        # create sample and otu lists based on meta data selection
+        wanted = ['sampleid', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
         profileDF = savedDF.loc[:, wanted]
-        profileDF.set_index('speciesid', inplace=True)
+        profileDF.set_index('otuid', inplace=True)
 
-        # get PICRUSt data for species
-        speciesList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(speciesid__in=speciesList)
-        picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'], verbose=False)
-        picrustDF.set_index('speciesid__speciesid', inplace=True)
+        # get PICRUSt data for otu
+        otuList = pd.unique(profileDF.index.ravel().tolist())
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
+        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'], verbose=False)
+        picrustDF.set_index('otuid__otuid', inplace=True)
 
         levelList = []
         for key in nzDict:
@@ -804,7 +821,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
         picrustDF.fillna(0.0, inplace=True)
-        picrustDF = sumKEGG(speciesList, picrustDF, nzDict, RID, PID, stops)
+        picrustDF = sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
@@ -836,6 +853,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         wanted = levelList[:]
         wanted.insert(0, 'sampleid')
         allDF = taxaDF[wanted]
+        allDF.insert(1, 'OTU_97', None)
         allDF.insert(1, 'Species', None)
         allDF.insert(1, 'Genus', None)
         allDF.insert(1, 'Family', None)
@@ -874,8 +892,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             allDF.at[key, 'Family'] = val[4]
             allDF.at[key, 'Genus'] = val[5]
             allDF.at[key, 'Species'] = val[6]
+            allDF.at[key, 'OTU_97'] = val[7]
 
-        # sum all species
+        # sum all otu
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
 
@@ -943,11 +962,11 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             return HttpResponse(res, content_type='application/json')
 
 
-def sumKEGG(speciesList, picrustDF, keggDict, RID, PID, stops):
+def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
     db.close_old_connections()
-    for species in speciesList:
+    for otu in otuList:
         try:
-            cell = picrustDF.at[species, 'geneCount']
+            cell = picrustDF.at[otu, 'geneCount']
             d = ast.literal_eval(cell)
 
             for key in keggDict:
@@ -969,7 +988,7 @@ def sumKEGG(speciesList, picrustDF, keggDict, RID, PID, stops):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                picrustDF.at[species, key] = sum
+                picrustDF.at[otu, key] = sum
         except:
             pass
 
@@ -981,41 +1000,46 @@ def getFullTaxonomy(idList):
     for id in idList:
         if Kingdom.objects.all().filter(kingdomid=id).exists():
             qs = Kingdom.objects.all().filter(kingdomid=id).values_list('kingdomName')
-            record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
+            record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
             recordList.append(record)
         else:
             if Phyla.objects.all().filter(phylaid=id).exists():
                 qs = Phyla.objects.all().filter(phylaid=id).values_list('kingdomid_id__kingdomName', 'phylaName')
-                record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
+                record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
                 recordList.append(record)
             else:
                 if Class.objects.all().filter(classid=id).exists():
                     qs = Class.objects.all().filter(classid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
-                    record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A',)
+                    record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
                     recordList.append(record)
                 else:
                     if Order.objects.all().filter(orderid=id).exists():
                         qs = Order.objects.all().filter(orderid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
-                        record = qs[0] + ('N/A', 'N/A', 'N/A',)
+                        record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A',)
                         recordList.append(record)
                     else:
                         if Family.objects.all().filter(familyid=id).exists():
                             qs = Family.objects.all().filter(familyid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
-                            record = qs[0] + ('N/A', 'N/A',)
+                            record = qs[0] + ('N/A', 'N/A', 'N/A',)
                             recordList.append(record)
                         else:
                             if Genus.objects.all().filter(genusid=id).exists():
                                 qs = Genus.objects.all().filter(genusid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
-                                record = qs[0] + ('N/A',)
+                                record = qs[0] + ('N/A', 'N/A',)
                                 recordList.append(record)
                             else:
                                 if Species.objects.all().filter(speciesid=id).exists():
                                     qs = Species.objects.all().filter(speciesid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
-                                    record = qs[0]
+                                    record = qs[0] + ('N/A',)
                                     recordList.append(record)
                                 else:
-                                    record = ('Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found',)
-                                    recordList.append(record)
+                                    if OTU_97.objects.all().filter(otuid=id).exists():
+                                        qs = OTU_97.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
+                                        record = qs[0]
+                                        recordList.append(record)
+                                    else:
+                                        record = ('Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found',)
+                                        recordList.append(record)
 
     return recordList
 
@@ -1077,7 +1101,7 @@ def getFullNZ(idList):
 
 def insertTaxaInfo(treeType, zipped, DF, pos=1):
     if treeType == 1:
-        k, p, c, o, f, g, s = map(None, *zipped)
+        k, p, c, o, f, g, s, o = map(None, *zipped)
         DF.insert(pos, 'Kingdom', k)
         DF.insert(pos+1, 'Phyla', p)
         DF.insert(pos+2, 'Class', c)
@@ -1085,6 +1109,7 @@ def insertTaxaInfo(treeType, zipped, DF, pos=1):
         DF.insert(pos+4, 'Family', f)
         DF.insert(pos+5, 'Genus', g)
         DF.insert(pos+6, 'Species', s)
+        DF.insert(pos+7, 'OTU_97', o)
     elif treeType == 2:
         L1, L2, L3 = map(None, *zipped)
         DF.insert(pos, 'Level_1', L1)
@@ -1115,7 +1140,7 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
     elif DepVar == 4:
         myVar = 'abund_16S'
 
-    myLevel = 'speciesName'
+    myLevel = 'otuName'
     myID = ''
     numTaxa = 0
     if level == 1:
@@ -1146,6 +1171,10 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         myLevel = 'speciesName'
         myID = 'speciesid'
         numTaxa = len(savedDF['speciesid'].unique())
+    elif level == 9:
+        myLevel = 'otuName'
+        myID = 'otuid'
+        numTaxa = len(savedDF['otuid'].unique())
 
     if remUnclass == 'yes':
         # check if selecting based on level first, create else statement for tree usage
