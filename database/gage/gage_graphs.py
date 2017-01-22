@@ -13,7 +13,7 @@ from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, getMetaDF
-from database.models import Phyla, Class, Order, Family, Genus, Species, OTU_97
+from database.models import Phyla, Class, Order, Family, Genus, Species, OTU_99
 import database.queue
 
 
@@ -452,7 +452,7 @@ def getFullTaxonomy(level, id):
     elif level == 7:
         record = Species.objects.all().filter(speciesid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
     elif level == 8:
-        record = OTU_97.objects.all().filter(otuid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'species_id__speciesName', 'otuName')
+        record = OTU_99.objects.all().filter(otuid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'species_id__speciesName', 'otuName')
 
     return record
 

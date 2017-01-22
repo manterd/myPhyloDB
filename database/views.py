@@ -24,7 +24,7 @@ from uuid import uuid4
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm
-from models import Project, Reference, Sample, Air, Microbial, Human_Associated, Soil, Water, UserDefined, Species
+from models import Project, Reference, Sample, Air, Microbial, Human_Associated, Soil, Water, UserDefined, OTU_99
 from models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from models import PICRUSt, UserProfile
@@ -1714,7 +1714,7 @@ def select(request):
         tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
         tempDF.set_index('sampleid', drop=True, inplace=True)
 
-        metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
+        metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
         myList = list(tempDF.index.values)
 
         nameList = []
@@ -1722,14 +1722,14 @@ def select(request):
             nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
         # get list of lists with abundances
-        taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
-        taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
+        taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund']]
+        taxaOnlyDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
         dataList = taxaOnlyDF.values.tolist()
 
         # get list of taxa
-        namesDF = savedDF.loc[:, ['sampleid', 'speciesid']]
-        namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
-        namesDF = namesDF.pivot(index='speciesid', columns='sampleid', values='taxa')
+        namesDF = savedDF.loc[:, ['sampleid', 'otuid']]
+        namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName']].values.tolist()
+        namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
 
         taxaList = []
         for index, row in namesDF.iterrows():
@@ -1774,7 +1774,7 @@ def select(request):
 
 def taxaJSON(request):
     results = {}
-    qs1 = Species.objects.values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesName')
+    qs1 = OTU_99.objects.values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
     results['data'] = list(qs1)
     myJson = simplejson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
@@ -1813,18 +1813,18 @@ def pathTaxaJSON(request):
         elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():
             koList = ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).values_list('ko_orthology', flat=True)
 
-        finalSpeciesList = []
+        finalotuList = []
         if koList:
             qs = PICRUSt.objects.using('picrust')
-            picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'], verbose=False)
-            picrustDF.rename(columns={'speciesid__speciesid': 'speciesid'}, inplace=True)
-            specList = picrustDF['speciesid'].tolist()
-            picrustDF.set_index('speciesid', drop=True, inplace=True)
+            picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'], verbose=False)
+            picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
+            otuList = picrustDF['otuid'].tolist()
+            picrustDF.set_index('otuid', drop=True, inplace=True)
             picrustDF['gene'] = 'No'
 
-            finalSpeciesList = []
-            for species in specList:
-                cell = picrustDF.at[species, 'geneCount']
+            finalotuList = []
+            for otu in otuList:
+                cell = picrustDF.at[otu, 'geneCount']
                 d = ast.literal_eval(cell)
                 present = 'No'
                 for key, value in d.items():
@@ -1832,10 +1832,10 @@ def pathTaxaJSON(request):
                         present = 'Yes'
                         break
                 if present == 'Yes':
-                    finalSpeciesList.append(species)
+                    finalotuList.append(otu)
 
         results = {}
-        qs1 = Species.objects.filter(speciesid__in=finalSpeciesList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesName')
+        qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuName', 'otuid')
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -1877,18 +1877,18 @@ def nzTaxaJSON(request):
         elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).exists():
             koList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).values_list('nz_orthology', flat=True)
 
-        finalSpeciesList = []
+        finalotuList = []
         if koList:
             qs = PICRUSt.objects.using('picrust')
-            picrustDF = read_frame(qs, fieldnames=['speciesid__speciesid', 'geneCount'], verbose=False)
-            picrustDF.rename(columns={'speciesid__speciesid': 'speciesid'}, inplace=True)
-            specList = picrustDF['speciesid'].tolist()
-            picrustDF.set_index('speciesid', drop=True, inplace=True)
+            picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'], verbose=False)
+            picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
+            otuList = picrustDF['otuid'].tolist()
+            picrustDF.set_index('otuid', drop=True, inplace=True)
             picrustDF['gene'] = 'No'
 
-            finalSpeciesList = []
-            for species in specList:
-                cell = picrustDF.at[species, 'geneCount']
+            finalotuList = []
+            for otu in otuList:
+                cell = picrustDF.at[otu, 'geneCount']
                 d = ast.literal_eval(cell)
                 present = 'No'
                 for key, value in d.items():
@@ -1896,10 +1896,10 @@ def nzTaxaJSON(request):
                         present = 'Yes'
                         break
                 if present == 'Yes':
-                    finalSpeciesList.append(species)
+                    finalotuList.append(otu)
 
         results = {}
-        qs1 = Species.objects.filter(speciesid__in=finalSpeciesList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesName')
+        qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
         results['data'] = list(qs1)
         myJson = simplejson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
@@ -2293,7 +2293,7 @@ def uploadNorm(request):
     tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
     tempDF.set_index('sampleid', drop=True, inplace=True)
 
-    metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
+    metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
     myList = list(tempDF.index.values)
 
     nameList = []
@@ -2301,14 +2301,14 @@ def uploadNorm(request):
         nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
     # get list of lists with abundances
-    taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'speciesid', 'abund']]
-    taxaOnlyDF = taxaOnlyDF.pivot(index='speciesid', columns='sampleid', values='abund')
+    taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund']]
+    taxaOnlyDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
     dataList = taxaOnlyDF.values.tolist()
 
     # get list of taxa
-    namesDF = savedDF.loc[:, ['sampleid', 'speciesid']]
-    namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName']].values.tolist()
-    namesDF = namesDF.pivot(index='speciesid', columns='sampleid', values='taxa')
+    namesDF = savedDF.loc[:, ['sampleid', 'otuid']]
+    namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName']].values.tolist()
+    namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
 
     taxaList = []
     for index, row in namesDF.iterrows():

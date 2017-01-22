@@ -6,7 +6,7 @@ from pyper import *
 from scipy import stats
 import simplejson
 
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_97
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4
 from database.utils import getMetaDF, transformDF
@@ -70,7 +70,7 @@ def getSPLS(request, stops, RID, PID):
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
                     elif selectAll == 9:
-                        result += 'Taxa level: OTU_97' + '\n'
+                        result += 'Taxa level: OTU_99' + '\n'
                 elif treeType == 2:
                     if keggAll == 1:
                         result += 'KEGG Pathway level: 1' + '\n'
@@ -383,7 +383,7 @@ def getSPLS(request, stops, RID, PID):
                             namesDF.rename(columns={'speciesName': 'rank_name', 'speciesid': 'rank_id'}, inplace=True)
                             namesDF.set_index('rank_id', inplace=True)
                         elif selectAll == 9:
-                            taxNameList = OTU_97.objects.filter(otuid__in=taxIDList).values('otuid', 'otuName')
+                            taxNameList = OTU_99.objects.filter(otuid__in=taxIDList).values('otuid', 'otuName')
                             namesDF = pd.DataFrame(list(taxNameList))
                             namesDF.rename(columns={'otuName': 'rank_name', 'otuid': 'rank_id'}, inplace=True)
                             namesDF.set_index('rank_id', inplace=True)

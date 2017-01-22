@@ -59,7 +59,7 @@ def getDiffAbund(request, stops, RID, PID):
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
                     elif selectAll == 9:
-                        result += 'Taxa level: OTU_97' + '\n'
+                        result += 'Taxa level: 99' + '\n'
                 elif treeType == 2:
                     if keggAll == 1:
                         result += 'KEGG Pathway level: 1' + '\n'

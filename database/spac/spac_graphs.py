@@ -49,7 +49,7 @@ def getSpAC(request, stops, RID, PID):
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
                     elif selectAll == 9:
-                        result += 'Taxa level: OTU_97' + '\n'
+                        result += 'Taxa level: OTU_99' + '\n'
 
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']

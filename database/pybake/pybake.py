@@ -7,7 +7,7 @@ import gzip
 import re
 from uuid import uuid4
 
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_97
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.models import PICRUSt
@@ -94,7 +94,8 @@ def geneParse(file1, file2, file3):
         subbed = re.sub(r'f__;', 'f__unclassified;', subbed)
         subbed = re.sub(r'g__;', 'g__unclassified;', subbed)
         subbed = re.sub(r's__;', 's__unclassified;', subbed)
-        subbed = re.sub(r'k__|p__|c__|o__|f__|g__|s__', '', subbed)
+        subbed = re.sub(r'otu__;', 's__unclassified;', subbed)
+        subbed = re.sub(r'k__|p__|c__|o__|f__|g__|s__|otu__', '', subbed)
         subbed = subbed[:-1]
         taxon = subbed.split(';')
         if not Kingdom.objects.using('default').filter(kingdomName=taxon[0]).exists():
@@ -132,11 +133,11 @@ def geneParse(file1, file2, file3):
             Species.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
 
         s = Species.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
-        if not OTU_97.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
+        if not OTU_99.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
             oid = uuid4().hex
-            OTU_97.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName=taxon[7])
+            OTU_99.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName=taxon[7])
 
-        o = OTU_97.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).otuid
+        o = OTU_99.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).otuid
 
         rRNACount = row['16S_rRNA_Count']
         row.drop('16S_rRNA_Count', inplace=True)

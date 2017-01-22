@@ -7,7 +7,7 @@ from pyper import *
 import simplejson
 
 from models import Project, Sample, Reference
-from models import Kingdom, Class, Order, Family, Genus, Species, OTU_97, Profile
+from models import Kingdom, Class, Order, Family, Genus, Species, OTU_99, Profile
 from models import Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from models import ko_lvl1, ko_entry
 from models import nz_lvl1, nz_entry
@@ -1154,17 +1154,17 @@ def getTaxaTreeChildren(request):
                 nodes.append(myNode)
 
         elif taxa == 'Species':
-            qs = OTU_97.objects.filter(otuid__in=selected_taxa.values_list('otuid').distinct()).filter(**{'genusid': id}).order_by('otuName')
+            qs = OTU_99.objects.filter(otuid__in=selected_taxa.values_list('otuid').distinct()).filter(**{'genusid': id}).order_by('otuName')
             for item in qs:
                 myNode = {
                     'title': item.otuName,
                     'id': item.otuid,
-                    'tooltip': "OTU_97",
+                    'tooltip': "OTU_99",
                     'isLazy': True
                 }
                 nodes.append(myNode)
 
-        elif taxa == 'OTU_97':
+        elif taxa == 'OTU_99':
             pass
 
         res = simplejson.dumps(nodes, encoding="Latin-1")

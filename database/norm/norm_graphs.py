@@ -12,7 +12,7 @@ from pyper import *
 import simplejson
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
-from database.models import OTU_97, Profile
+from database.models import OTU_99, Profile
 from database.utils import taxaProfileDF
 import database.queue
 
@@ -138,7 +138,7 @@ def getNorm(request, RID, stopList, PID):
             # Select only the taxa of interest if user used the selectAll button
             taxaDict = {}
             qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('otuid', flat='True').distinct()
-            taxaDict['OTU_97'] = qs3
+            taxaDict['OTU_99'] = qs3
 
             database.queue.setBase(RID, 'Step 1 of 6: Querying database...done!')
 
@@ -578,9 +578,9 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         diversityDF[i] = relabundDF[i].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
 
     field = 'otuid'
-    taxaList = taxaDict['OTU_97']
+    taxaList = taxaDict['OTU_99']
 
-    qs = OTU_97.objects.filter(otuid__in=taxaList)
+    qs = OTU_99.objects.filter(otuid__in=taxaList)
     namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesid__speciesName', 'otuName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid__speciesid', 'otuid'])
     namesDF.rename(columns={'kingdomid__kingdomid': 'kingdomid', 'phylaid__phylaid': 'phylaid', 'classid__classid' : 'classid', 'orderid__orderid' : 'orderid', 'familyid__familyid' : 'familyid', 'genusid__genusid' : 'genusid', 'speciesid__speciesid' : 'speciesid'}, inplace=True)
     namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName', 'speciesid__speciesName' : 'speciesName'}, inplace=True)

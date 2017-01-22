@@ -40,7 +40,7 @@ class UploadForm5(forms.Form):
 
 
 class UploadForm6(forms.Form):
-    taxonomy = forms.FileField(label='Select file (e.g., gg_13_5_99.gg.tax):')
+    taxonomy = forms.FileField(label='Select file (e.g., gg_13_5_99.dkm.tax):')
     precalc_16S = forms.FileField(label='Select zip file (e.g., 16S_13_5_precalculated.tab.gz):')
     precalc_KEGG = forms.FileField(label='Select zip file (e.g., ko_13_5_precalculated.tab.gz):')
 

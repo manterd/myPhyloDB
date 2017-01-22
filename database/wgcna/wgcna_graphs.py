@@ -69,7 +69,7 @@ def getWGCNA(request, stops, RID, PID):
                     elif selectAll == 7:
                         result += 'Taxa level: Species' + '\n'
                     elif selectAll == 9:
-                        result += 'Taxa level: OTU_97' + '\n'
+                        result += 'Taxa level: OTU_99' + '\n'
                 elif treeType == 2:
                     if keggAll == 1:
                         result += 'KEGG Pathway level: 1' + '\n'
@@ -463,7 +463,7 @@ def getWGCNA(request, stops, RID, PID):
                     moduleDF.insert(5, 'Family', f)
                     moduleDF.insert(6, 'Genus', g)
                     moduleDF.insert(7, 'Species', s)
-                    moduleDF.insert(7, 'OTU_97', o)
+                    moduleDF.insert(7, 'OTU_99', o)
                 if treeType == 2:
                     # same as taxa
                     L1, L2, L3 = map(None, *zipped)
@@ -631,7 +631,7 @@ def getWGCNA(request, stops, RID, PID):
                         moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order', 'Family', 'Genus', 'Species']].apply(lambda x: ';'.join(x), axis=1)
                         r.assign("annotDF$name", moduleDF['name'])
                     elif selectAll == 9:
-                        moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order', 'Family', 'Genus', 'Species', 'OTU_97']].apply(lambda x: ';'.join(x), axis=1)
+                        moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order', 'Family', 'Genus', 'Species', 'OTU_99']].apply(lambda x: ';'.join(x), axis=1)
                         r.assign("annotDF$name", moduleDF['name'])
                 elif treeType == 2:
                     if keggAll == 1:

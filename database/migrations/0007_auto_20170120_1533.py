@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='OTU_97',
+            name='OTU_99',
             fields=[
                 ('otuid', models.TextField(primary_key=True, serialize=False)),
                 ('otuName', models.CharField(blank=True, max_length=90)),
@@ -51,13 +51,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='picrust',
             name='otuid',
-            field=models.ForeignKey(default='unclassified', on_delete=django.db.models.deletion.CASCADE, to='database.OTU_97'),
+            field=models.ForeignKey(default='unclassified', on_delete=django.db.models.deletion.CASCADE, to='database.OTU_99'),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='profile',
             name='otuid',
-            field=models.ForeignKey(default='unclassified', on_delete=django.db.models.deletion.CASCADE, to='database.OTU_97'),
+            field=models.ForeignKey(default='unclassified', on_delete=django.db.models.deletion.CASCADE, to='database.OTU_99'),
             preserve_default=False,
         ),
     ]

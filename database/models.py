@@ -585,7 +585,7 @@ class Species(models.Model):
     speciesName = models.CharField(max_length=90, blank=True)
 
 
-class OTU_97(models.Model):
+class OTU_99(models.Model):
     kingdomid = models.ForeignKey(Kingdom)
     phylaid = models.ForeignKey(Phyla)
     classid = models.ForeignKey(Class)
@@ -609,7 +609,7 @@ class Profile(models.Model):
     familyid = models.ForeignKey(Family)
     genusid = models.ForeignKey(Genus)
     speciesid = models.ForeignKey(Species)
-    otuid = models.ForeignKey(OTU_97)
+    otuid = models.ForeignKey(OTU_99)
     count = models.IntegerField()
 
 
@@ -679,7 +679,7 @@ class nz_entry(models.Model):
 
 
 class PICRUSt(models.Model):
-    otuid = models.ForeignKey(OTU_97)
+    otuid = models.ForeignKey(OTU_99)
     rRNACount = models.FloatField(blank=True, null=True)
     geneCount = JSONField(default={})
 

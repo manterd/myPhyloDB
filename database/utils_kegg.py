@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import simplejson
 
-from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_97
+from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
@@ -69,11 +69,11 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
                         tempDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Species'
                         taxaDF = taxaDF.append(tempDF)
-                    elif key == 'OTU_97':
+                    elif key == 'OTU_99':
                         tempDF = savedDF.loc[savedDF['otuid'] == taxaList]
                         tempDF = tempDF[['sampleid', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'otuid': 'rank_id', 'otuName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'OTU_97'
+                        tempDF.loc[:, 'rank'] = 'OTU_99'
                         taxaDF = taxaDF.append(tempDF)
                 else:
                     if key == 'Kingdom':
@@ -118,11 +118,11 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
                         tempDF.rename(columns={'speciesid': 'rank_id', 'speciesName': 'rank_name'}, inplace=True)
                         tempDF.loc[:, 'rank'] = 'Species'
                         taxaDF = taxaDF.append(tempDF)
-                    elif key == 'OTU_97':
+                    elif key == 'OTU_99':
                         tempDF = savedDF.loc[savedDF['otuid'].isin(taxaList)]
                         tempDF = tempDF[['sampleid', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
                         tempDF.rename(columns={'otuid': 'rank_id', 'otuName': 'rank_name'}, inplace=True)
-                        tempDF.loc[:, 'rank'] = 'OTU_97'
+                        tempDF.loc[:, 'rank'] = 'OTU_99'
                         taxaDF = taxaDF.append(tempDF)
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -162,7 +162,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         elif selectAll == 9:
             taxaDF = savedDF.loc[:, ['sampleid', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'otuid': 'rank_id', 'otuName': 'rank_name'}, inplace=True)
-            taxaDF.loc[:, 'rank'] = 'OTU_97'
+            taxaDF.loc[:, 'rank'] = 'OTU_99'
         elif selectAll == 8:
             taxaDF = savedDF.loc[:, ['sampleid', 'genusid', 'genusName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
             taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
@@ -364,7 +364,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         wanted = levelList[:]
         wanted.insert(0, 'sampleid')
         allDF = taxaDF[wanted]
-        allDF.insert(1, 'OTU_97', None)
+        allDF.insert(1, 'OTU_99', None)
         allDF.insert(1, 'Species', None)
         allDF.insert(1, 'Genus', None)
         allDF.insert(1, 'Family', None)
@@ -401,7 +401,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             allDF.at[key, 'Family'] = val[4]
             allDF.at[key, 'Genus'] = val[5]
             allDF.at[key, 'Species'] = val[6]
-            allDF.at[key, 'OTU_97'] = val[7]
+            allDF.at[key, 'OTU_99'] = val[7]
 
         # sum all otu
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -853,7 +853,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         wanted = levelList[:]
         wanted.insert(0, 'sampleid')
         allDF = taxaDF[wanted]
-        allDF.insert(1, 'OTU_97', None)
+        allDF.insert(1, 'OTU_99', None)
         allDF.insert(1, 'Species', None)
         allDF.insert(1, 'Genus', None)
         allDF.insert(1, 'Family', None)
@@ -892,7 +892,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             allDF.at[key, 'Family'] = val[4]
             allDF.at[key, 'Genus'] = val[5]
             allDF.at[key, 'Species'] = val[6]
-            allDF.at[key, 'OTU_97'] = val[7]
+            allDF.at[key, 'OTU_99'] = val[7]
 
         # sum all otu
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -1033,8 +1033,8 @@ def getFullTaxonomy(idList):
                                     record = qs[0] + ('N/A',)
                                     recordList.append(record)
                                 else:
-                                    if OTU_97.objects.all().filter(otuid=id).exists():
-                                        qs = OTU_97.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
+                                    if OTU_99.objects.all().filter(otuid=id).exists():
+                                        qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
                                         record = qs[0]
                                         recordList.append(record)
                                     else:
@@ -1109,7 +1109,7 @@ def insertTaxaInfo(treeType, zipped, DF, pos=1):
         DF.insert(pos+4, 'Family', f)
         DF.insert(pos+5, 'Genus', g)
         DF.insert(pos+6, 'Species', s)
-        DF.insert(pos+7, 'OTU_97', o)
+        DF.insert(pos+7, 'OTU_99', o)
     elif treeType == 2:
         L1, L2, L3 = map(None, *zipped)
         DF.insert(pos, 'Level_1', L1)
