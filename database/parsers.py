@@ -541,9 +541,9 @@ def parse_profile(file3, file4, p_uuid, refDict):
             except:
                 s = 'unclassified'
             try:
-                o = taxaList[7]
+                otu = taxaList[7]
             except:
-                o = 'unclassified'
+                otu = 'unclassified'
 
             t_kingdom = Kingdom.objects.get(kingdomName=k)
             t_phyla = Phyla.objects.get(kingdomid=t_kingdom, phylaName=p)
@@ -552,7 +552,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
             t_family = Family.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyName=f)
             t_genus = Genus.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusName=g)
             t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesName=s)
-            t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuName=o)
+            t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuName=otu)
 
             for name in sampleList:
                 count = int(row[name])

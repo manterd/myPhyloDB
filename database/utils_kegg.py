@@ -1101,7 +1101,7 @@ def getFullNZ(idList):
 
 def insertTaxaInfo(treeType, zipped, DF, pos=1):
     if treeType == 1:
-        k, p, c, o, f, g, s, o = map(None, *zipped)
+        k, p, c, o, f, g, s, otu = map(None, *zipped)
         DF.insert(pos, 'Kingdom', k)
         DF.insert(pos+1, 'Phyla', p)
         DF.insert(pos+2, 'Class', c)
@@ -1109,7 +1109,7 @@ def insertTaxaInfo(treeType, zipped, DF, pos=1):
         DF.insert(pos+4, 'Family', f)
         DF.insert(pos+5, 'Genus', g)
         DF.insert(pos+6, 'Species', s)
-        DF.insert(pos+7, 'OTU_99', o)
+        DF.insert(pos+7, 'OTU_99', otu)
     elif treeType == 2:
         L1, L2, L3 = map(None, *zipped)
         DF.insert(pos, 'Level_1', L1)

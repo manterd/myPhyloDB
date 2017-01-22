@@ -54,104 +54,80 @@ def geneParse(file1, file2, file3):
     dFile3 = gzip.GzipFile(fileobj=file3, mode='rb')
     chunksize = 1000.0
     df3 = pd.read_csv(dFile3, header=0, sep='\t', index_col=0, iterator=True, chunksize=chunksize, error_bad_lines=False, low_memory=False)
-    chunks = int(math.ceil(total/chunksize)) + 1
 
     # add to database
     counter = 0
-    sumDF = pd.DataFrame()
-    countDF = pd.DataFrame()
-    colList = []
     for chunk in df3:
-        temp = pd.merge(mergedDF, chunk, left_index=True, right_index=True, how='inner')
-        colList = temp.columns.values.tolist()
-        colList.remove('Taxonomy')
-        colList.remove('metadata_NSTI')
-        grouped = temp.groupby('Taxonomy')[colList]
-        sumDF = pd.concat([sumDF, grouped.agg('sum')])
-        countDF = pd.concat([countDF, grouped.agg('count')])
-        counter += 1
-        stage = 'Step 3 of 4: Merging files...chunk ' + str(counter) + ' out of ' + str(chunks) + ' is complete!'
+        koDF = pd.merge(mergedDF, chunk, left_index=True, right_index=True, how='inner')
 
-    sumDF.reset_index(drop=False, inplace=True)
-    countDF.reset_index(drop=False, inplace=True)
+        for index, row in koDF.iterrows():
+            subbed = re.sub(r'(\(.*?\))', '', row['Taxonomy'])
+            subbed = re.sub(r'k__;', 'k__unclassified;', subbed)
+            subbed = re.sub(r'p__;', 'p__unclassified;', subbed)
+            subbed = re.sub(r'c__;', 'c__unclassified;', subbed)
+            subbed = re.sub(r'o__;', 'o__unclassified;', subbed)
+            subbed = re.sub(r'f__;', 'f__unclassified;', subbed)
+            subbed = re.sub(r'g__;', 'g__unclassified;', subbed)
+            subbed = re.sub(r's__;', 's__unclassified;', subbed)
+            subbed = re.sub(r'otu__;', 'o__unclassified;', subbed)
+            subbed = re.sub(r'k__|p__|c__|o__|f__|g__|s__|otu__', '', subbed)
+            subbed = subbed[:-1]
+            taxon = subbed.split(';')
 
-    sum = sumDF.groupby('Taxonomy')[colList].agg('sum')
-    count = countDF.groupby('Taxonomy')[colList].agg('sum')
+            if not Kingdom.objects.using('default').filter(kingdomName=taxon[0]).exists():
+                kid = uuid4().hex
+                Kingdom.objects.using('default').create(kingdomid=kid, kingdomName=taxon[0])
+            k = Kingdom.objects.using('default').get(kingdomName=taxon[0]).kingdomid
 
-    finalDF_KO = pd.DataFrame(sum/count, columns=colList, index=sum.index)
-    finalDF_KO.dropna(inplace=True)
-    finalDF_KO.reset_index(drop=False, inplace=True)
+            if not Phyla.objects.using('default').filter(kingdomid_id=k, phylaName=taxon[1]).exists():
+                pid = uuid4().hex
+                Phyla.objects.using('default').create(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
 
-    stage = 'Step 4 of 4: Adding PICRUSt data to your database...'
-    total, col = finalDF_KO.shape
-    counter = 0
-    for index, row in finalDF_KO.iterrows():
-        subbed = re.sub(r'(\(.*?\))', '', row['Taxonomy'])
-        subbed = re.sub(r'k__;', 'k__unclassified;', subbed)
-        subbed = re.sub(r'p__;', 'p__unclassified;', subbed)
-        subbed = re.sub(r'c__;', 'c__unclassified;', subbed)
-        subbed = re.sub(r'o__;', 'o__unclassified;', subbed)
-        subbed = re.sub(r'f__;', 'f__unclassified;', subbed)
-        subbed = re.sub(r'g__;', 'g__unclassified;', subbed)
-        subbed = re.sub(r's__;', 's__unclassified;', subbed)
-        subbed = re.sub(r'otu__;', 'o__unclassified;', subbed)
-        subbed = re.sub(r'k__|p__|c__|o__|f__|g__|s__|otu__', '', subbed)
-        subbed = subbed[:-1]
-        taxon = subbed.split(';')
-        if not Kingdom.objects.using('default').filter(kingdomName=taxon[0]).exists():
-            kid = uuid4().hex
-            Kingdom.objects.using('default').create(kingdomid=kid, kingdomName=taxon[0])
+            p = Phyla.objects.using('default').get(kingdomid_id=k, phylaName=taxon[1]).phylaid
+            if not Class.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, className=taxon[2]).exists():
+                cid = uuid4().hex
+                Class.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
 
-        k = Kingdom.objects.using('default').get(kingdomName=taxon[0]).kingdomid
-        if not Phyla.objects.using('default').filter(kingdomid_id=k, phylaName=taxon[1]).exists():
-            pid = uuid4().hex
-            Phyla.objects.using('default').create(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
+            c = Class.objects.using('default').get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
+            if not Order.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).exists():
+                oid = uuid4().hex
+                Order.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
 
-        p = Phyla.objects.using('default').get(kingdomid_id=k, phylaName=taxon[1]).phylaid
-        if not Class.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, className=taxon[2]).exists():
-            cid = uuid4().hex
-            Class.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
+            o = Order.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
+            if not Family.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).exists():
+                fid = uuid4().hex
+                Family.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
 
-        c = Class.objects.using('default').get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
-        if not Order.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).exists():
-            oid = uuid4().hex
-            Order.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
+            f = Family.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
+            if not Genus.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).exists():
+                gid = uuid4().hex
+                Genus.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
 
-        o = Order.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
-        if not Family.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).exists():
-            fid = uuid4().hex
-            Family.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
+            g = Genus.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
+            if not Species.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
+                sid = uuid4().hex
+                Species.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
 
-        f = Family.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
-        if not Genus.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).exists():
-            gid = uuid4().hex
-            Genus.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
+            s = Species.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
+            if not OTU_99.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
+                otuid = uuid4().hex
+                OTU_99.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=otuid, otuName=taxon[7])
 
-        g = Genus.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
-        if not Species.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
-            sid = uuid4().hex
-            Species.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
+            otu = OTU_99.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).otuid
 
-        s = Species.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
-        if not OTU_99.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
-            oid = uuid4().hex
-            OTU_99.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName=taxon[7])
+            rRNACount = row['16S_rRNA_Count']
+            row.drop('16S_rRNA_Count', inplace=True)
+            row.drop('Taxonomy', inplace=True)
+            rowDict = row.to_dict()
+            geneCount = {x:y for x,y in rowDict.items() if y != 0}
+            for key in geneCount:
+                geneCount[key] = round(geneCount[key] / rRNACount, 4)
 
-        o = OTU_99.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).otuid
+            if not PICRUSt.objects.using('picrust').filter(otuid_id=otu).exists():
+                PICRUSt.objects.using('picrust').create(otuid_id=otu, rRNACount=rRNACount, geneCount=geneCount)
 
-        rRNACount = row['16S_rRNA_Count']
-        row.drop('16S_rRNA_Count', inplace=True)
-        row.drop('Taxonomy', inplace=True)
-        rowDict = row.to_dict()
-        geneCount = {x:y for x,y in rowDict.items() if y != 0}
-        for key in geneCount:
-            geneCount[key] = round(geneCount[key] / rRNACount, 4)
-
-        if not PICRUSt.objects.using('picrust').filter(otuid_id=o).exists():
-            PICRUSt.objects.using('picrust').create(otuid_id=o, rRNACount=rRNACount, geneCount=geneCount)
-
-        counter += 1
-        stage = 'Step 4 of 4: Adding PICRUSt data to your database... ' + str(counter) + ' OTUs out of ' + str(total) + ' are complete!'
+            stage = 'Step 3 of 3: Adding PICRUSt data to your database...otu ' + str(counter) + ' out of ' + str(total) + ' is complete!'
+            counter += 1
 
     time2 = datetime.now()
     delta = time2 - time1
