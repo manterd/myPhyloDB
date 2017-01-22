@@ -94,7 +94,7 @@ def geneParse(file1, file2, file3):
         subbed = re.sub(r'f__;', 'f__unclassified;', subbed)
         subbed = re.sub(r'g__;', 'g__unclassified;', subbed)
         subbed = re.sub(r's__;', 's__unclassified;', subbed)
-        subbed = re.sub(r'otu__;', 's__unclassified;', subbed)
+        subbed = re.sub(r'otu__;', 'o__unclassified;', subbed)
         subbed = re.sub(r'k__|p__|c__|o__|f__|g__|s__|otu__', '', subbed)
         subbed = subbed[:-1]
         taxon = subbed.split(';')
