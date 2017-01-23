@@ -1,6 +1,5 @@
 from datetime import datetime
 from django.http import HttpResponse
-import math
 import pandas as pd
 import simplejson
 import gzip
@@ -69,7 +68,7 @@ def geneParse(file1, file2, file3):
             subbed = re.sub(r'f__;', 'f__unclassified;', subbed)
             subbed = re.sub(r'g__;', 'g__unclassified;', subbed)
             subbed = re.sub(r's__;', 's__unclassified;', subbed)
-            subbed = re.sub(r'otu__;', 'o__unclassified;', subbed)
+            subbed = re.sub(r'otu__;', 'otu__unclassified;', subbed)
             subbed = re.sub(r'k__|p__|c__|o__|f__|g__|s__|otu__', '', subbed)
             subbed = subbed[:-1]
             taxon = subbed.split(';')
@@ -126,7 +125,7 @@ def geneParse(file1, file2, file3):
             if not PICRUSt.objects.using('picrust').filter(otuid_id=otu).exists():
                 PICRUSt.objects.using('picrust').create(otuid_id=otu, rRNACount=rRNACount, geneCount=geneCount)
 
-            stage = 'Step 3 of 3: Adding PICRUSt data to your database...otu ' + str(counter) + ' out of ' + str(total) + ' is complete!'
+            stage = 'Step 3 of 3: Adding PICRUSt data to your database...OTU ' + str(counter) + ' out of ' + str(total) + ' is complete!'
             counter += 1
 
     time2 = datetime.now()
@@ -201,7 +200,6 @@ def koParse(file):
     time2 = datetime.now()
     delta = time2 - time1
     print 'Total time to update KEGG database: ', delta
-
     return None
 
 
@@ -285,6 +283,5 @@ def nzParse(file):
     time2 = datetime.now()
     delta = time2 - time1
     print 'Total time to update KEGG database: ', delta
-
     return None
 
