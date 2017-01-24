@@ -658,6 +658,13 @@ def getPCoA(request, stops, RID, PID):
                 else:
                     bigf = bigf.decode('utf-8')
                     result += bigf + '\n'
+
+                    if test == 2:
+                        betaString = str(r('res'))
+                        lines = betaString.split('\n')
+                        for line in lines[1:]:
+                            result += str(line) + '\n'
+
                 result += '===============================================\n\n\n'
 
                 finalDict['text'] = result

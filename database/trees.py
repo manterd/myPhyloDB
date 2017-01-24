@@ -345,9 +345,8 @@ def getSampleCatTreeChildren(request):
                     args_list.append(Q(**{field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -375,9 +374,8 @@ def getSampleCatTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -405,9 +403,8 @@ def getSampleCatTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -435,9 +432,8 @@ def getSampleCatTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -465,9 +461,8 @@ def getSampleCatTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -495,9 +490,8 @@ def getSampleCatTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -525,9 +519,8 @@ def getSampleCatTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -810,9 +803,8 @@ def getSampleQuantTreeChildren(request):
                     args_list.append(Q(**{field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -841,9 +833,8 @@ def getSampleQuantTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -872,9 +863,8 @@ def getSampleQuantTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -903,9 +893,8 @@ def getSampleQuantTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -934,9 +923,8 @@ def getSampleQuantTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -965,9 +953,8 @@ def getSampleQuantTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -996,9 +983,8 @@ def getSampleQuantTreeChildren(request):
                     args_list.append(Q(**{table_field: values[j]}))
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
-                        reads = Profile.objects.filter(sampleid=item.sampleid).aggregate(Sum('count'))
                         myNode2 = {
-                            'title': item.sample_name + ' (ID: ' + item.sampleid + '; Reads: ' + str(reads['count__sum']) + ')',
+                            'title': item.sample_name,
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
