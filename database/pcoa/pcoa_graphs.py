@@ -534,13 +534,19 @@ def getPCoA(request, stops, RID, PID):
                                 for part in tempStuff:
                                     if part != tempStuff[0]:
                                         bigf += part + '\n'
-                                database.queue.setBase(RID, 'Step 5 of 8: Performing BetaDisper...done!')
+
+                                betaString = str(r('res'))
+                                lines = betaString.split('\n')
+                                for line in lines[1:]:
+                                    bigf += str(line) + '\n'
 
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                                 if stops[PID] == RID:
                                     res = ''
                                     return HttpResponse(res, content_type='application/json')
                                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                                database.queue.setBase(RID, 'Step 5 of 8: Performing BetaDisper...done!')
 
                 else:
                     state = "Your selected variable(s) only have one treatment level, please select additional data!"
@@ -658,12 +664,6 @@ def getPCoA(request, stops, RID, PID):
                 else:
                     bigf = bigf.decode('utf-8')
                     result += bigf + '\n'
-
-                    if test == 2:
-                        betaString = str(r('res'))
-                        lines = betaString.split('\n')
-                        for line in lines[1:]:
-                            result += str(line) + '\n'
 
                 result += '===============================================\n\n\n'
 
