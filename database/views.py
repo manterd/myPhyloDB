@@ -2381,10 +2381,7 @@ def updateInfo(request):
 
 
 def addPerms(request):
-    print "Adding permissions"
-
     if request.is_ajax():
-
         allJson = simplejson.loads(request.GET["all"])
         # get selected projects list (files? not samples as subsets though)
         selList = allJson['keys']
@@ -2395,45 +2392,25 @@ def addPerms(request):
         permLevel = allJson['mode']
         # permLevel 0 means view only
         # permLevel 1 means editing as well
-        print "PermLevel: ", permLevel
 
         thisUser = User.objects.get(username=request.user.username)
-        userProfiles = UserProfile.objects.all()
-        myData = UserProfile.objects.get(user=thisUser)
 
-        print "Selected: ", selList
-        print "Names:", nameList
         # loop through nameList, verify each exists
         errorList = []
+        finalNameList = nameList[:]
         for name in nameList:
-            try:
-                User.objects.get(username=name)
-            except:
-                # add failed names to error list, to alert back to user of likely typo
+            if not User.objects.filter(username=name).exists():
                 errorList.append(name)
-                print "Failed to find ", name
+                finalNameList.remove(name)
                 # remove name from nameList
-                # nameList.pop?
-        print "User: ", thisUser
 
         # get project by id from selList  # JUMP
         for pid in selList:
-            print "Id: ", pid
-            print "Proj: ", Project.objects.get(projectid=pid)
             curProj = Project.objects.get(projectid=pid)
-            projectList = Project.objects.none()
-            if request.user.is_superuser:
-                projectList = Project.objects.all().filter(reference__raw=True)
-            elif request.user.is_authenticated():
-                path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-                projectList = Project.objects.all().filter( Q(projectid__in=path_list) ).filter(reference__raw=True)
-            for proj in projectList:
-                if curProj == proj:
-                    print "Found match!"
             # check if thisUser is owner of project (or super, check old edit perms basically)
             if thisUser == curProj.owner:
                 # loop through nameList, check if name is present on permList already
-                for curName in nameList:
+                for curName in finalNameList:
                     viewList = curProj.whitelist_view.split(';')
                     found = False
                     for name in viewList:
@@ -2456,7 +2433,6 @@ def addPerms(request):
             curProj.save()
         # return new profile page (boxes cleared, perhaps success alert message)
 
-        text = ""
         # check if errorList has entries
         if len(errorList) > 0:
             # set return text to be an error reporting failed names
@@ -2470,7 +2446,8 @@ def addPerms(request):
                 iter += 1
         else:
             text = 'Users have been added to selected project(s)'
-        res = simplejson.dumps(text, encoding="Latin-1")
+        retDict = {"error": text}
+        res = simplejson.dumps(retDict, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
 
 

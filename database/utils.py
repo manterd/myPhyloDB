@@ -565,7 +565,6 @@ def getViewProjects(request):  # JUMP
     if request.user.is_superuser:
         projects = Project.objects.all().order_by('project_name')
     elif request.user.is_authenticated():
-        print "View check on ", request.user.username
         # run through list of projects, when valid project is found, append filterIDS with ID
         # projects will be a queryset set to all projects, then filtered by ids in filterIDS
         filterIDS = []
@@ -573,18 +572,14 @@ def getViewProjects(request):  # JUMP
             good = False  # good to add to list
             if proj.owner == request.user:
                 good = True
-                print "Owned!"
             if proj.status == 'public':
                 good = True
-                print "Pub!"
             checkList = proj.whitelist_view.split(';')
             for name in checkList:
                 if name == request.user.username:
                     good = True
-                    print "Whitelist!"
             if good:
                 filterIDS.append(proj.projectid)
-                print "Can view!"
         projects = Project.objects.all().filter(projectid__in=filterIDS)
     if not request.user.is_superuser and not request.user.is_authenticated():
         # impossible to have guest user be on whitelist (hopefully), so public only check
@@ -594,21 +589,11 @@ def getViewProjects(request):  # JUMP
 
 def getEditProjects(request):
 
-    '''projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all()
-    elif request.user.is_authenticated():
-        # replace owner check with owner/whitelist_edit check
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) )
-    return projects'''
-
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all().order_by('project_name')
 
     elif request.user.is_authenticated():
-        print "Edit check on ", request.user.username
         # run through list of projects, when valid project is found, append filterIDS with ID
         # projects will be a queryset set to all projects, then filtered by ids in filterIDS
         filterIDS = []
@@ -616,15 +601,12 @@ def getEditProjects(request):
             good = False  # good to add to list
             if proj.owner == request.user:
                 good = True
-                print "Owned!"
             checkList = proj.whitelist_edit.split(';')
             for name in checkList:
                 if name == request.user.username:
                     good = True
-                    print "Whitelist!"
             if good:
                 filterIDS.append(proj.projectid)
-                print "Can edit!"
         projects = Project.objects.all().filter(projectid__in=filterIDS)
 
     return projects

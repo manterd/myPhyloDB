@@ -106,11 +106,11 @@
     </table>
     <br>
     <h2>Add users to selected project(s):</h2>
-    <div id="addNamesList"></div>
-    <br>
-    <input type="button" id="addMoreNames" onclick="addMoreNamesFunc()" value="+">  <input type="submit" id="addNames" value="Submit permission changes" onclick="submitNames()">
-    <br>
-    <input type="checkbox" id="permLevel" value="false"> Grant editing permission
-    <br>
+    <div id="addNamesList">
+        <input type="button" id="addMoreNames" onclick="addMoreNamesFunc()" value="Add user" title="Add an additional user."><br>
+    </div>
+    <input type="checkbox" id="permLevel" value="false"> <span title="Applies to all users listed">Grant editing permission</span>
+    <br><br><br>
+    <input type="submit" id="addNames" value="Submit changes" onclick="submitNames()">
     <br><br>
 {% endblock my_content %}
