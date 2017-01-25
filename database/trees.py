@@ -21,19 +21,6 @@ def getProjectTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
     projects = getViewProjects(request)
-
-    '''projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all().order_by('project_name')
-    elif request.user.is_authenticated():
-        # replace owner/public check with owner/public/whitelist_view check
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
-    if not request.user.is_superuser and not request.user.is_authenticated():
-        # impossible to have guest user be on whitelist (hopefully), so public only check
-        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
-    '''
-
     for project in projects:
         if Sample.objects.filter(projectid=project.projectid).exists():
             myNode = {
@@ -1135,12 +1122,14 @@ def getTaxaTreeChildren(request):
                     'title': item.speciesName,
                     'id': item.speciesid,
                     'tooltip': "Species",
+                    'isFolder': True,
                     'isLazy': True
                 }
                 nodes.append(myNode)
 
         elif taxa == 'Species':
-            qs = OTU_99.objects.filter(otuid__in=selected_taxa.values_list('otuid').distinct()).filter(**{'genusid': id}).order_by('otuName')
+            print 'ok'
+            qs = OTU_99.objects.filter(otuid__in=selected_taxa.values_list('otuid').distinct()).filter(**{'speciesid': id}).order_by('otuName')
             for item in qs:
                 myNode = {
                     'title': item.otuName,
@@ -1405,16 +1394,6 @@ def makeUpdateTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
     projects = getEditProjects(request)
-
-    '''projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all()
-    elif request.user.is_authenticated():
-        # replace owner check with owner/whitelist_edit check
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) )
-    '''
-
     for project in projects:
         myNode = {
             'title': "Project: " + str(project.project_name),
@@ -1456,17 +1435,6 @@ def makeReproTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
     projects = getEditProjects(request)
-
-    '''
-    projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all().filter(reference__raw=True)
-    elif request.user.is_authenticated():
-        # replace owner check with owner/whitelist_edit check
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) ).filter(reference__raw=True)
-    '''
-
     for project in projects:
         myNode = {
             'title': "Project: " + str(project.project_name),

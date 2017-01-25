@@ -8,7 +8,7 @@ import simplejson
 
 from database.utils import getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
-from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo, filterDF
+from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, filterDF
 import database.queue
 
 
@@ -462,14 +462,14 @@ def getPCA(request, stops, RID, PID):
                 varCoordDF.rename(columns={'index': 'rank_id'}, inplace=True)
 
                 if treeType == 1:
-                    zipped = getFullTaxonomy(list(varCoordDF['rank_id']))
-                    insertTaxaInfo(treeType, zipped, varCoordDF, pos=1)
+                    idList = getFullTaxonomy(list(varCoordDF.rank_id.unique()))
+                    varCoordDF['Taxonomy'] = varCoordDF['rank_id'].map(idList)
                 elif treeType == 2:
-                    zipped = getFullKO(list(varCoordDF['rank_id']))
-                    insertTaxaInfo(treeType, zipped, varCoordDF, pos=1)
+                    idList = getFullKO(list(varCoordDF.rank_id.unique()))
+                    varCoordDF['Taxonomy'] = varCoordDF['rank_id'].map(idList)
                 elif treeType == 3:
-                    zipped = getFullNZ(list(varCoordDF['rank_id']))
-                    insertTaxaInfo(treeType, zipped, varCoordDF, pos=1)
+                    idList = getFullNZ(list(varCoordDF.rank_id.unique()))
+                    varCoordDF['Taxonomy'] = varCoordDF['rank_id'].map(idList)
 
                 varCoordDF.replace(to_replace='N/A', value=np.nan, inplace=True)
                 varCoordDF.dropna(axis=1, how='all', inplace=True)

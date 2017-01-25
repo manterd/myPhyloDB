@@ -524,7 +524,6 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
         step = 0.0
         for index, row in df3.iterrows():
-            step += 1.0
             perc = int(step / total * 100)
             taxon = str(row['Taxonomy'])
             taxon = taxon[:-1]
@@ -571,6 +570,8 @@ def parse_profile(file3, file4, p_uuid, refDict):
                         t.save()
                     else:
                         Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
+
+            step += 1.0
 
     except:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -788,8 +789,11 @@ def reanalyze(request, stopList):
             metaName = 'final_meta.xlsx'
             metaFile = '/'.join([dest, metaName])
 
-            p_uuid, pType, num_samp = projectid(metaFile)
-            parse_project(metaFile, p_uuid)
+            with open(metaFile, 'rb') as f:
+                p_uuid, pType, num_samp = projectid(f)
+
+            curUser = User.objects.get(username=request.user.username)
+            parse_project(metaFile, p_uuid, curUser)
 
             if stopList[PID] == RID:
                 transaction.savepoint_rollback(sid)

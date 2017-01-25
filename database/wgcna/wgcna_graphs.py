@@ -445,38 +445,15 @@ def getWGCNA(request, stops, RID, PID):
                 moduleDF.rename(columns={' Whole Network Connectivity ': 'Whole Network Connectivity'}, inplace=True)
                 moduleDF.insert(0, 'rank_id', index)
 
-                zipped = []  # JUMP  Potentially run an if to check for all select level
                 if treeType == 1:
-                    zipped = getFullTaxonomy(moduleDF['rank_id'])  # had selectAll AND moduleDF
+                    idList = getFullTaxonomy(list(moduleDF.rank_id.unique()))
+                    moduleDF['Taxonomy'] = moduleDF['rank_id'].map(idList)
                 elif treeType == 2:
-                    zipped = getFullKO(moduleDF['rank_id'])
+                    idList = getFullKO(list(moduleDF.rank_id.unique()))
+                    moduleDF['Taxonomy'] = moduleDF['rank_id'].map(idList)
                 elif treeType == 3:
-                    zipped = getFullNZ(moduleDF['rank_id'])
-
-                if treeType == 1:
-                    # removed split based on select level as getFullTaxonomy returns a full set
-                    k, p, c, o, f, g, s, o = map(None, *zipped)
-                    moduleDF.insert(1, 'Kingdom', k)
-                    moduleDF.insert(2, 'Phyla', p)
-                    moduleDF.insert(3, 'Class', c)
-                    moduleDF.insert(4, 'Order', o)
-                    moduleDF.insert(5, 'Family', f)
-                    moduleDF.insert(6, 'Genus', g)
-                    moduleDF.insert(7, 'Species', s)
-                    moduleDF.insert(7, 'OTU_99', o)
-                if treeType == 2:
-                    # same as taxa
-                    L1, L2, L3 = map(None, *zipped)
-                    moduleDF.insert(1, 'Level_1', L1)
-                    moduleDF.insert(2, 'Level_2', L2)
-                    moduleDF.insert(3, 'Level_3', L3)
-                if treeType == 3:
-                    # same as taxa
-                    L1, L2, L3, L4 = map(None, *zipped)
-                    moduleDF.insert(1, 'Level_1', L1)
-                    moduleDF.insert(2, 'Level_2', L2)
-                    moduleDF.insert(3, 'Level_3', L3)
-                    moduleDF.insert(4, 'Level_4', L4)
+                    idList = getFullNZ(list(moduleDF.rank_id.unique()))
+                    moduleDF['Taxonomy'] = moduleDF['rank_id'].map(idList)
 
                 moduleDF.replace(to_replace='N/A', value=np.nan, inplace=True)
                 moduleDF.dropna(axis=1, how='all', inplace=True)

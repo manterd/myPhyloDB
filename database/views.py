@@ -34,7 +34,7 @@ from models import addQueue, getQueue, subQueue
 from database.pybake.pybake import koParse, nzParse
 from database.pybake.pybake import geneParse
 from database.utils import cleanup
-from database.utils_kegg import sumKEGG
+
 
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
@@ -123,7 +123,7 @@ def getProjectFiles(request):
             foundCount += 1
             for root, dirs, files in os.walk(path):
                 for file in files:
-                    if file.endswith('.shared') or file.endswith('.taxonomy') or file.endswith('.fasta') or file.endswith('.names') or file.endswith('.groups') or file.endswith('.log') or file.endswith('.xlsx') or file.endswith('.xls'):
+                    if file.endswith('.shared') or file.endswith('.taxonomy') or file.endswith('.fasta') or file.endswith('.names') or file.endswith('.groups') or file.endswith('.logfile') or file.endswith('.xlsx') or file.endswith('.xls'):
                         zf.write(os.path.join(root, file))
 
     # rename/replace PID dirs with project names
@@ -437,10 +437,6 @@ def uploadFunc(request, stopList):
                     else:
                         handle_uploaded_file(file, mothurdest, file.name)
                     handle_uploaded_file(file, dest, file.name)
-                '''for each in file_list:
-                    file = each
-                    handle_uploaded_file(file, mothurdest, each)
-                    handle_uploaded_file(file, dest, each)'''
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
@@ -617,28 +613,6 @@ def uploadFunc(request, stopList):
                         else:
                             handle_uploaded_file(file, mothurdest, fasta)
                         handle_uploaded_file(file, dest, file.name)
-                '''tempList = []
-                if len(file_list) > 1:
-                    for each in file_list:
-                        file = each
-                        handle_uploaded_file(file, mothurdest, each)
-                        handle_uploaded_file(file, dest, each)
-                        if os.name == 'nt':
-                            myStr = "mothur\\temp\\" + str(file.name)
-                        else:
-                            myStr = "mothur/temp/" + str(file.name)
-                        tempList.append(myStr)
-                    inputList = "-".join(tempList)
-                    if os.name == 'nt':
-                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
-                    else:
-                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
-                else:
-                    for each in file_list:
-                        file = each
-                        fasta = 'temp.fasta'
-                        handle_uploaded_file(file, mothurdest, fasta)
-                        handle_uploaded_file(file, dest, each)'''
 
                 if stopList[PID] == RID:
                     remove_proj(dest)
@@ -2402,16 +2376,6 @@ def updateInfo(request):
         'changeuser.html',
         {"form": UserRegForm,
             "error": error},
-        context_instance=RequestContext(request)
-    )
-
-
-def directgraph(request):
-    state = ''
-    return render_to_response(
-        'directgraph.html',
-        {'form5': UploadForm5,
-         'state': state},
         context_instance=RequestContext(request)
     )
 

@@ -1,6 +1,7 @@
 from collections import defaultdict
 import ctypes
 from django import forms
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 import inspect
@@ -14,11 +15,9 @@ import simplejson
 import threading
 import time
 
-from django.db.models import Q
-
 from models import Project, Reference, Profile
 from config import local_cfg
-from utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
+from utils_kegg import getFullTaxonomy, getFullKO, getFullNZ
 
 
 pd.set_option('display.max_colwidth', -1)
@@ -316,14 +315,14 @@ def getRawData(request):
 
         fRow, fCol = savedDF.shape
         if treeType == 1:
-            zipped = getFullTaxonomy(list(savedDF['rank_id']))
-            insertTaxaInfo(treeType, zipped, savedDF, pos=fCol)
+            idList = getFullTaxonomy(list(savedDF.rank_id.unique()))
+            savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
         elif treeType == 2:
-            zipped = getFullKO(list(savedDF['rank_id']))
-            insertTaxaInfo(treeType, zipped, savedDF, pos=fCol)
+            idList = getFullKO(list(savedDF.rank_id.unique()))
+            savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
         elif treeType == 3:
-            zipped = getFullNZ(list(savedDF['rank_id']))
-            insertTaxaInfo(treeType, zipped, savedDF, pos=fCol)
+            idList = getFullNZ(list(savedDF.rank_id.unique()))
+            savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
 
         savedDF.replace(to_replace='N/A', value=np.nan, inplace=True)
         savedDF.dropna(axis=1, how='all', inplace=True)

@@ -1,9 +1,8 @@
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse
 from Queue import Queue
 import simplejson
 from time import sleep, time
 import threading
-
 
 from anova import anova_graphs
 from diffabund import diffabund_graphs

@@ -8,7 +8,7 @@ import simplejson
 
 from database.utils import getMetaDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
-from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
+from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ
 import database.queue
 
 
@@ -259,14 +259,14 @@ def getDiffAbund(request, stops, RID, PID):
                             nbinom_res = nbinom_res.loc[pd.notnull(nbinom_res[' log2FoldChange '])]
 
                             if treeType == 1:
-                                zipped = getFullTaxonomy(nbinom_res['rank_id'])
-                                insertTaxaInfo(treeType, zipped, nbinom_res, pos=1)
+                                idList = getFullTaxonomy(list(nbinom_res.rank_id.unique()))
+                                nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
                             elif treeType == 2:
-                                zipped = getFullKO(nbinom_res['rank_id'])
-                                insertTaxaInfo(treeType, zipped, nbinom_res, pos=1)
+                                zipped = getFullKO(list(nbinom_res.rank_id.unique()))
+                                nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
                             elif treeType == 3:
-                                zipped = getFullNZ(nbinom_res['rank_id'])
-                                insertTaxaInfo(treeType, zipped, nbinom_res, pos=1)
+                                zipped = getFullNZ(list(nbinom_res.rank_id.unique()))
+                                nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
 
                             nbinom_res.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
 

@@ -996,107 +996,75 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
 
 
 def getFullTaxonomy(idList):
-    recordList = []
+    recordDict = {}
     for id in idList:
         if Kingdom.objects.all().filter(kingdomid=id).exists():
             qs = Kingdom.objects.all().filter(kingdomid=id).values_list('kingdomName')
-            record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
-            recordList.append(record)
         else:
             if Phyla.objects.all().filter(phylaid=id).exists():
                 qs = Phyla.objects.all().filter(phylaid=id).values_list('kingdomid_id__kingdomName', 'phylaName')
-                record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
-                recordList.append(record)
             else:
                 if Class.objects.all().filter(classid=id).exists():
                     qs = Class.objects.all().filter(classid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
-                    record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A', 'N/A',)
-                    recordList.append(record)
                 else:
                     if Order.objects.all().filter(orderid=id).exists():
                         qs = Order.objects.all().filter(orderid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
-                        record = qs[0] + ('N/A', 'N/A', 'N/A', 'N/A',)
-                        recordList.append(record)
                     else:
                         if Family.objects.all().filter(familyid=id).exists():
                             qs = Family.objects.all().filter(familyid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
-                            record = qs[0] + ('N/A', 'N/A', 'N/A',)
-                            recordList.append(record)
                         else:
                             if Genus.objects.all().filter(genusid=id).exists():
                                 qs = Genus.objects.all().filter(genusid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
-                                record = qs[0] + ('N/A', 'N/A',)
-                                recordList.append(record)
                             else:
                                 if Species.objects.all().filter(speciesid=id).exists():
                                     qs = Species.objects.all().filter(speciesid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
-                                    record = qs[0] + ('N/A',)
-                                    recordList.append(record)
                                 else:
                                     if OTU_99.objects.all().filter(otuid=id).exists():
                                         qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
-                                        record = qs[0]
-                                        recordList.append(record)
                                     else:
-                                        record = ('Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found', 'Not found',)
-                                        recordList.append(record)
-
-    return recordList
+                                        qs = ('Not found', )
+        record = ';'.join(qs[0])
+        recordDict[id] = record
+    return recordDict
 
 
 def getFullKO(idList):
-    recordList = []
-
+    recordDict = {}
     for id in idList:
-            if ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id=id).exists():
-                qs = ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id=id).values_list('ko_lvl1_name')
-                record = qs[0] + ('N/A', 'N/A')
-                recordList.append(record)
+        if ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id=id).exists():
+            qs = ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id=id).values_list('ko_lvl1_name')
+        else:
+            if ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id=id).exists():
+                qs = ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_name')
             else:
-                if ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id=id).exists():
-                    qs = ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_name')
-                    record = qs[0] + ('N/A',)
-                    recordList.append(record)
+                if ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).exists():
+                    qs = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
                 else:
-                    if ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).exists():
-                        qs = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
-                        record = qs[0]
-                        recordList.append(record)
-                    else:
-                        record = ('Not found', 'Not found', 'Not found',)
-                        recordList.append(record)
-
-    return recordList
+                    qs = ('Not found', )
+        record = ';'.join(qs[0])
+        recordDict[id] = record
+    return recordDict
 
 
 def getFullNZ(idList):
-    recordList = []
-
+    recordDict = {}
     for id in idList:
-            if nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id=id).exists():
-                qs = nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id=id).values_list('nz_lvl1_name')
-                record = qs[0] + ('N/A', 'N/A', 'N/A',)
-                recordList.append(record)
+        if nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id=id).exists():
+            qs = nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id=id).values_list('nz_lvl1_name')
+        else:
+            if nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id=id).exists():
+                qs = nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_name')
             else:
-                if nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id=id).exists():
-                    qs = nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_name')
-                    record = qs[0] + ('N/A', 'N/A',)
-                    recordList.append(record)
+                if nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=id).exists():
+                    qs = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
                 else:
-                    if nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=id).exists():
-                        qs = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
-                        record = qs[0] + ('N/A',)
-                        recordList.append(record)
+                    if nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=id).exists():
+                        qs = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
                     else:
-                        if nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=id).exists():
-                            qs = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-                            record = qs[0]
-                            recordList.append(record)
-                        else:
-                            record = ('Not found', 'Not found', 'Not found', 'Not found',)
-                            recordList.append(record)
-
-    return recordList
+                        qs = ('Not found', )
+        record = ';'.join(qs[0])
+        recordDict[id] = record
+    return recordDict
 
 
 def insertTaxaInfo(treeType, zipped, DF, pos=1):

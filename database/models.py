@@ -698,15 +698,8 @@ class UserProfile(models.Model):
     purpose = models.CharField(blank=True, max_length=100)
 
     # current select token (create new token upon selecting new data, invalidates current analysis and norm pages
-    dataID = models.CharField(blank=True, max_length=200)
+    dataID = models.CharField(blank=True, max_length=200, default="TEMPID")
 
-'''
-class PLFA(models.Model):
-    content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()
-    taxaKey = GenericForeignKey('content_type', 'object_id')  # contains type and content of taxa data
-    label = models.TextField(blank=True)  # label/flag/id for PLFA (not sure what this looks like)
-'''
 
 
 

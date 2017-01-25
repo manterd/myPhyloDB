@@ -73,46 +73,46 @@ def geneParse(file1, file2, file3):
             subbed = subbed[:-1]
             taxon = subbed.split(';')
 
-            if not Kingdom.objects.using('default').filter(kingdomName=taxon[0]).exists():
+            if not Kingdom.objects.filter(kingdomName=taxon[0]).exists():
                 kid = uuid4().hex
-                Kingdom.objects.using('default').create(kingdomid=kid, kingdomName=taxon[0])
-            k = Kingdom.objects.using('default').get(kingdomName=taxon[0]).kingdomid
+                Kingdom.objects.create(kingdomid=kid, kingdomName=taxon[0])
+            k = Kingdom.objects.get(kingdomName=taxon[0]).kingdomid
 
-            if not Phyla.objects.using('default').filter(kingdomid_id=k, phylaName=taxon[1]).exists():
+            if not Phyla.objects.filter(kingdomid_id=k, phylaName=taxon[1]).exists():
                 pid = uuid4().hex
-                Phyla.objects.using('default').create(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
+                Phyla.objects.create(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])
 
-            p = Phyla.objects.using('default').get(kingdomid_id=k, phylaName=taxon[1]).phylaid
-            if not Class.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, className=taxon[2]).exists():
+            p = Phyla.objects.get(kingdomid_id=k, phylaName=taxon[1]).phylaid
+            if not Class.objects.filter(kingdomid_id=k, phylaid_id=p, className=taxon[2]).exists():
                 cid = uuid4().hex
-                Class.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
+                Class.objects.create(kingdomid_id=k, phylaid_id=p, classid=cid, className=taxon[2])
 
-            c = Class.objects.using('default').get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
-            if not Order.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).exists():
+            c = Class.objects.get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
+            if not Order.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).exists():
                 oid = uuid4().hex
-                Order.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
+                Order.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
 
-            o = Order.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
-            if not Family.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).exists():
+            o = Order.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
+            if not Family.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).exists():
                 fid = uuid4().hex
-                Family.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
+                Family.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
 
-            f = Family.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
-            if not Genus.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).exists():
+            f = Family.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
+            if not Genus.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).exists():
                 gid = uuid4().hex
-                Genus.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
+                Genus.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
 
-            g = Genus.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
-            if not Species.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
+            g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
+            if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
                 sid = uuid4().hex
-                Species.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
+                Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
 
-            s = Species.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
-            if not OTU_99.objects.using('default').filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
+            s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
+            if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
                 otuid = uuid4().hex
-                OTU_99.objects.using('default').create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=otuid, otuName=taxon[7])
+                OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=otuid, otuName=taxon[7])
 
-            otu = OTU_99.objects.using('default').get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).otuid
+            otu = OTU_99.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).otuid
 
             rRNACount = row['16S_rRNA_Count']
             row.drop('16S_rRNA_Count', inplace=True)

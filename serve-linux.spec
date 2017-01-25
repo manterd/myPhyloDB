@@ -83,6 +83,8 @@ def Datafiles(*filenames, **kw):
 
 db1 = Datafiles('db.Microbe')
 db2 = Datafiles('db.PICRUSt')
+db3 = Datafiles('db.Profile')
+db4 = Datafiles('db.Taxa')
 
 def extra_datas(mydir):
     def rec_glob(p, files):
@@ -132,6 +134,8 @@ coll = COLLECT(exe,
                a.datas,
                db1,
                db2,
+               db3,
+               db4,
                strip=None,
                upx=True,
                name='myPhyloDB'

@@ -14,6 +14,8 @@ OutputBaseFilename=myPhyloDB_v.1.2.0_Win_x64_install
 [Files]
 Source: "..\..\dist\myPhyloDB\db.Microbe"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
 Source: "..\..\dist\myPhyloDB\db.PICRUSt"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
+Source: "..\..\dist\myPhyloDB\db.Profile"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
+Source: "..\..\dist\myPhyloDB\db.Taxa"; DestDir: "{app}"; Flags: uninsneveruninstall; Components: Database
 
 Source: "..\..\dist\myPhyloDB\*.pyd"; DestDir: "{app}"; Components: Main
 Source: "..\..\dist\myPhyloDB\*.dll"; DestDir: "{app}"; Components: Main
