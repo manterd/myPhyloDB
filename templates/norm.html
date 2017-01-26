@@ -179,6 +179,7 @@
             });
         }
         function getTab() {
+            $("#TabButton").css("background-color", "yellow").val("Creating File!");
             $.ajax({
                 url: '/myPhyloDB/getTab/',
                 type: 'GET',
@@ -195,6 +196,7 @@
             });
         }
         function getBiom() {
+            $("#TabButton").css("background-color", "yellow").val("Creating File!");
             $.ajax({
                 url: '/myPhyloDB/getBiom/',
                 type: 'GET',

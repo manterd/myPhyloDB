@@ -73,13 +73,8 @@ def getSampleCatTree(request):
         samples = pickle.load(f)
 
     # convert samples list into django queryset based on id's in current list
-    samples = Sample.objects.all().filter(sampleid__in=samples)
-
-    projectList = samples.values_list('projectid').distinct()
-    projectType = Project.objects.all().filter(projectid__in=projectList)
-    typeList = []
-    for p in projectType:
-        typeList.append(p.projectType)
+    projectList = Sample.objects.filter(sampleid__in=samples).values_list('projectid').distinct()
+    typeList = Project.objects.filter(projectid__in=projectList).values_list('projectType', flat=True)
 
     myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'isFolder': True,  'hideCheckbox': True, 'children': []}
@@ -281,15 +276,14 @@ def getSampleCatTreeChildren(request):
     with open(path, 'rb') as f:
         samples = pickle.load(f)
 
-    samples = Sample.objects.all().filter(sampleid__in=samples)  # no children are loading
-    selected = samples.values_list('sampleid')
+    selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
 
     filterList = []
     for sample in selected:
         reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
         if reads['count__sum'] is not None:
-            filterList.append(sample[0])
-    filtered = Sample.objects.all().filter(sampleid__in=filterList).values_list('sampleid')
+            filterList.append(sample)
+    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid', flat=True)
 
     if request.is_ajax():
         field = request.GET["field"]
@@ -529,14 +523,8 @@ def getSampleQuantTree(request):
     with open(path, 'rb') as f:
         samples = pickle.load(f)
 
-    samples = Sample.objects.all().filter(sampleid__in=samples)
-
-    projectList = samples.values_list('projectid').distinct()
-
-    projectType = Project.objects.all().filter(projectid__in=projectList)
-    typeList = []
-    for p in projectType:
-        typeList.append(p.projectType)
+    projectList = Sample.objects.filter(sampleid__in=samples).values_list('projectid').distinct()
+    typeList = Project.objects.filter(projectid__in=projectList).values_list('projectType', flat=True)
 
     myTree = {'title': 'Meta Data: Quantitative', 'id': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'isFolder': True,  'hideCheckbox': True, 'children': []}
@@ -738,15 +726,14 @@ def getSampleQuantTreeChildren(request):
     with open(path, 'rb') as f:
         samples = pickle.load(f)
 
-    samples = Sample.objects.all().filter(sampleid__in=samples)
-    selected = samples.values_list('sampleid')
+    selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
 
     filterList = []
     for sample in selected:
         reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
         if reads['count__sum'] is not None:
-            filterList.append(sample[0])
-    filtered = Sample.objects.all().filter(sampleid__in=filterList).values_list('sampleid')
+            filterList.append(sample)
+    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid', flat=True)
 
     if request.is_ajax():
         field = request.GET["field"]
@@ -993,8 +980,7 @@ def getTaxaTree(request):
     with open(path, 'rb') as f:
         samples = pickle.load(f)
 
-    samples = Sample.objects.all().filter(sampleid__in=samples)
-    selected = samples.values_list('sampleid')
+    selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid')
 
     filterList = []
     for sample in selected:
@@ -1050,8 +1036,7 @@ def getTaxaTreeChildren(request):
     with open(path, 'rb') as f:
         samples = pickle.load(f)
 
-    samples = Sample.objects.all().filter(sampleid__in=samples)
-    selected = samples.values_list('sampleid')
+    selected = Sample.objects.all().filter(sampleid__in=samples).values_list('sampleid')
 
     filterList = []
     for sample in selected:

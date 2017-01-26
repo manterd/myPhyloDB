@@ -124,15 +124,12 @@ def getProjectFiles(request):
             for root, dirs, files in os.walk(path):
                 for file in files:
                     if file.endswith('.shared') or file.endswith('.taxonomy') or file.endswith('.fasta') or file.endswith('.names') or file.endswith('.groups') or file.endswith('.logfile') or file.endswith('.xlsx') or file.endswith('.xls'):
-                        zf.write(os.path.join(root, file))
-
-    # rename/replace PID dirs with project names
-    # move project name dirs up one level
-    # delete empty 'uploads' dir
+                        zf.write(os.path.join(root, file), zipfile.ZIP_DEFLATED)
+    zf.close()
 
     if foundCount != len(paths):
         errorMsg = "Failed to locate project files"
-    zf.close()
+
     results = {'files': zip_file, 'error': errorMsg}
     myJson = simplejson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
@@ -185,6 +182,7 @@ def uploadFunc(request, stopList):
     ### create a savepoint
     sid = transaction.savepoint()
     curUser = User.objects.get(username=request.user.username)
+
     ### start of main upload function
     projects = Reference.objects.none()
     if request.method == 'POST' and 'Upload' in request.POST:

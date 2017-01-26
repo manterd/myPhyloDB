@@ -25,10 +25,8 @@ def getSPLS(request, stops, RID, PID):
                 all = simplejson.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-                path = str(myDir) + 'usr_norm_data.csv'
-
-                with open(path, 'rb') as f:
-                    savedDF = pd.read_csv(f, index_col=0, sep=',')
+                path = str(myDir) + 'usr_norm_data.pkl'
+                savedDF = pd.read_pickle(path)
 
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])

@@ -10,6 +10,7 @@ import pandas as pd
 import pickle
 from pyper import *
 import simplejson
+import zipfile
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from database.models import OTU_99, Profile
@@ -231,11 +232,11 @@ def getNorm(request, RID, stopList, PID):
 
             # save file to users temp/ folder
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-            path = str(myDir) + 'usr_norm_data.csv'
+            path = str(myDir) + 'usr_norm_data.pkl'
 
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
-            finalDF.to_csv(path, sep=',')
+            finalDF.to_pickle(path)
 
             database.queue.setBase(RID, 'Step 4 of 6: Calculating indices...done')
 
@@ -699,9 +700,21 @@ def rarefaction_keep(M, RID, reads=0, iters=0, myLambda=0.1):
 def getTab(request):
     if request.is_ajax():
         myDict = {}
-        myDir = '/myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        fileName = str(myDir) + 'usr_norm_data.csv'  # this file for curNorm
-        myDict['name'] = str(fileName)
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        fileName1 = str(myDir) + 'usr_norm_data.pkl'
+        df = pd.read_pickle(fileName1)
+        fileName2 = str(myDir) + 'usr_norm_data.csv'
+        df.to_csv(fileName2)
+
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        fileName3 = str(myDir) + 'usr_norm_data.gz'
+        zf = zipfile.ZipFile(fileName3, "w", zipfile.ZIP_DEFLATED)
+        zf.write(fileName2, 'usr_norm_data.csv')
+        zf.close()
+
+        myDir = '../../myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        fileName3 = str(myDir) + 'usr_norm_data.gz'
+        myDict['name'] = str(fileName3)
         res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 

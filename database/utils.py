@@ -14,6 +14,7 @@ import shutil
 import simplejson
 import threading
 import time
+import zipfile
 
 from models import Project, Reference, Profile
 from config import local_cfg
@@ -313,7 +314,6 @@ def getRawData(request):
         fileName = str(myDir) + str(RID) + '.pkl'
         savedDF = pd.read_pickle(fileName)
 
-        fRow, fCol = savedDF.shape
         if treeType == 1:
             idList = getFullTaxonomy(list(savedDF.rank_id.unique()))
             savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
@@ -329,15 +329,20 @@ def getRawData(request):
         savedDF.drop('rank_name', axis=1, inplace=True)
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
-        fileName = str(myDir) + str(RID) + '.csv'
+        fileName = str(myDir) + str(request.user.username) + '.' + str(func) + '.csv'
         savedDF.to_csv(fileName)
 
-        myDict = {}
-        myDir = '/myPhyloDB/media/temp/' + str(func) + '/'
-        fileName = str(myDir) + str(RID) + '.csv'
-        myDict['name'] = str(fileName)
-        res = simplejson.dumps(myDict)
+        myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
+        fileName2 = str(myDir) + str(request.user.username) + '.' + str(func) + '.gz'
+        zf = zipfile.ZipFile(fileName2, "w", zipfile.ZIP_DEFLATED)
+        zf.write(fileName, 'usr_data.csv')
+        zf.close()
 
+        myDir = '../../myPhyloDB/media/temp/' + str(func) + '/'
+        fileName2 = str(myDir) + str(request.user.username) + '.' + str(func) + '.gz'
+        myDict = {'name': str(fileName2)}
+
+        res = simplejson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 
 
