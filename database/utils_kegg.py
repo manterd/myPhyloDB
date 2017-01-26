@@ -332,7 +332,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
 
         picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
         picrustDF.fillna(0.0, inplace=True)
-        picrustDF = sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
+        sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
@@ -364,14 +364,6 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         wanted = levelList[:]
         wanted.insert(0, 'sampleid')
         allDF = taxaDF[wanted]
-        allDF.insert(1, 'OTU_99', None)
-        allDF.insert(1, 'Species', None)
-        allDF.insert(1, 'Genus', None)
-        allDF.insert(1, 'Family', None)
-        allDF.insert(1, 'Order', None)
-        allDF.insert(1, 'Class', None)
-        allDF.insert(1, 'Phyla', None)
-        allDF.insert(1, 'Kingdom', None)
 
         for level in levelList:
             name = ''
@@ -388,20 +380,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         # get taxonomy names
         idList = list(set(allDF.index.tolist()))
         nameList = getFullTaxonomy(idList)
-
-        nameDict = {}
-        for idx, val in enumerate(idList):
-            nameDict[val] = nameList[idx]
-
-        for key, val in nameDict.iteritems():
-            allDF.at[key, 'Kingdom'] = val[0]
-            allDF.at[key, 'Phyla'] = val[1]
-            allDF.at[key, 'Class'] = val[2]
-            allDF.at[key, 'Order'] = val[3]
-            allDF.at[key, 'Family'] = val[4]
-            allDF.at[key, 'Genus'] = val[5]
-            allDF.at[key, 'Species'] = val[6]
-            allDF.at[key, 'OTU_99'] = val[7]
+        allDF['Taxonomy'] = allDF.index.map(nameList)
 
         # sum all otu
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -821,7 +800,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
         picrustDF.fillna(0.0, inplace=True)
-        picrustDF = sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
+        sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
@@ -853,14 +832,6 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         wanted = levelList[:]
         wanted.insert(0, 'sampleid')
         allDF = taxaDF[wanted]
-        allDF.insert(1, 'OTU_99', None)
-        allDF.insert(1, 'Species', None)
-        allDF.insert(1, 'Genus', None)
-        allDF.insert(1, 'Family', None)
-        allDF.insert(1, 'Order', None)
-        allDF.insert(1, 'Class', None)
-        allDF.insert(1, 'Phyla', None)
-        allDF.insert(1, 'Kingdom', None)
 
         for level in levelList:
             name = ''
@@ -879,20 +850,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         # get taxonomy names
         idList = list(set(allDF.index.tolist()))
         nameList = getFullTaxonomy(idList)
-
-        nameDict = {}
-        for idx, val in enumerate(idList):
-            nameDict[val] = nameList[idx]
-
-        for key, val in nameDict.iteritems():
-            allDF.at[key, 'Kingdom'] = val[0]
-            allDF.at[key, 'Phyla'] = val[1]
-            allDF.at[key, 'Class'] = val[2]
-            allDF.at[key, 'Order'] = val[3]
-            allDF.at[key, 'Family'] = val[4]
-            allDF.at[key, 'Genus'] = val[5]
-            allDF.at[key, 'Species'] = val[6]
-            allDF.at[key, 'OTU_99'] = val[7]
+        allDF['Taxonomy'] = allDF.index.map(nameList)
 
         # sum all otu
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -991,8 +949,6 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                 picrustDF.at[otu, key] = sum
         except:
             pass
-
-    return picrustDF
 
 
 def getFullTaxonomy(idList):
