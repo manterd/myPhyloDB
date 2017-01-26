@@ -271,21 +271,20 @@ def getSampleCatTree(request):
 
 
 def getSampleCatTreeChildren(request):
-    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-    path = str(myDir) + 'usr_sel_samples.pkl'
-    with open(path, 'rb') as f:
-        samples = pickle.load(f)
-
-    selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
-
-    filterList = []
-    for sample in selected:
-        reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
-        if reads['count__sum'] is not None:
-            filterList.append(sample)
-    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid', flat=True)
-
     if request.is_ajax():
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        path = str(myDir) + 'usr_sel_samples.pkl'
+        with open(path, 'rb') as f:
+            samples = pickle.load(f)
+
+        selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
+
+        filtered = []
+        reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
+        for i in reads:
+            if i['count'] > 0:
+                filtered.append(i['sampleid'])
+
         field = request.GET["field"]
         pType = request.GET["pType"]
 
@@ -721,21 +720,20 @@ def getSampleQuantTree(request):
 
 
 def getSampleQuantTreeChildren(request):
-    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-    path = str(myDir) + 'usr_sel_samples.pkl'
-    with open(path, 'rb') as f:
-        samples = pickle.load(f)
-
-    selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
-
-    filterList = []
-    for sample in selected:
-        reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
-        if reads['count__sum'] is not None:
-            filterList.append(sample)
-    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid', flat=True)
-
     if request.is_ajax():
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        path = str(myDir) + 'usr_sel_samples.pkl'
+        with open(path, 'rb') as f:
+            samples = pickle.load(f)
+
+        selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
+
+        filtered = []
+        reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
+        for i in reads:
+            if i['count'] > 0:
+                filtered.append(i['sampleid'])
+
         field = request.GET["field"]
         pType = request.GET["pType"]
 
@@ -1031,23 +1029,22 @@ def getTaxaTree(request):
 
 
 def getTaxaTreeChildren(request):
-    myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-    path = str(myDir) + 'usr_sel_samples.pkl'
-    with open(path, 'rb') as f:
-        samples = pickle.load(f)
-
-    selected = Sample.objects.all().filter(sampleid__in=samples).values_list('sampleid')
-
-    filterList = []
-    for sample in selected:
-        reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
-        if reads['count__sum'] is not None:
-            filterList.append(sample[0])
-
-    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid')
-    selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
-
     if request.is_ajax():
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        path = str(myDir) + 'usr_sel_samples.pkl'
+        with open(path, 'rb') as f:
+            samples = pickle.load(f)
+
+        selected = Sample.objects.all().filter(sampleid__in=samples).values_list('sampleid')
+
+        filtered = []
+        reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
+        for i in reads:
+            if i['count'] > 0:
+                filtered.append(i['sampleid'])
+
+        selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
+
         taxa = request.GET["tooltip"]
         id = request.GET["id"]
 
