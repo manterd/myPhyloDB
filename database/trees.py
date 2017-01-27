@@ -51,16 +51,16 @@ def getProjectTreeChildren(request):
         samples = Sample.objects.filter(projectid=projectid)
 
         nodes = []
-        for sample in samples:
-            reads = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-            myNode = {
-                'title': 'Name: ' + sample.sample_name + '; Reads: ' + str(reads['count__sum']),
-                'tooltip': 'ID: ' + sample.sampleid,
-                'id': sample.sampleid,
-                'isFolder': False
-            }
-            nodes.append(myNode)
-
+        reads = Profile.objects.filter(sampleid__in=samples).values('sampleid', 'sampleid__sample_name').annotate(count=Sum('count'))
+        for i in reads:
+            if int(i['count'] > 0):
+                myNode = {
+                    'title': 'Name: ' + str(i['sampleid__sample_name']) + '; Reads: ' + str(i['count']),
+                    'tooltip': 'ID: ' + str(i['sampleid']),
+                    'id': str(i['sampleid']),
+                    'isFolder': False
+                }
+                nodes.append(myNode)
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
 
@@ -282,7 +282,7 @@ def getSampleCatTreeChildren(request):
         filtered = []
         reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
         for i in reads:
-            if i['count'] > 0:
+            if int(i['count']) > 0:
                 filtered.append(i['sampleid'])
 
         field = request.GET["field"]
@@ -731,7 +731,7 @@ def getSampleQuantTreeChildren(request):
         filtered = []
         reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
         for i in reads:
-            if i['count'] > 0:
+            if int(i['count']) > 0:
                 filtered.append(i['sampleid'])
 
         field = request.GET["field"]

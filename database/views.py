@@ -16,6 +16,7 @@ import multiprocessing as mp
 import os
 import pandas as pd
 import pickle
+import shutil
 import simplejson
 import tarfile
 import time
@@ -1999,7 +2000,14 @@ def saveSampleList(request):
         allJson = request.GET["all"]
         selList = simplejson.loads(allJson)
 
-        # save file to users temp/ folder
+        # remove old files
+        try:
+            dirpath = 'myPhyloDB/media/usr_temp/' + str(request.user)
+            shutil.rmtree(dirpath, ignore_errors=True)
+        except Exception as e:
+            print e
+
+        # save file
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_sel_samples.pkl'
 
@@ -2009,21 +2017,13 @@ def saveSampleList(request):
         with open(path, 'wb') as f:
             pickle.dump(selList, f)
 
-        # remove normalized file
-        try:
-            os.remove('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
-        except OSError:
-            pass
-
-        try:
-            # store dataID! userProfile attribute, generate UUID at end of selection
-            thisUser = User.objects.get(username=request.user.username)
-            userProfiles = UserProfile.objects.all()
+        thisUser = User.objects.filter(username=request.user.username)
+        if UserProfile.objects.filter(user=thisUser).exists():
             myData = UserProfile.objects.get(user=thisUser)
             myData.dataID = uuid4().hex
             myData.save()
-        except Exception as e:
-            print e
+        else:
+            UserProfile.objects.create(user=request.user, dataID=uuid4().hex)
 
         text = 'Selected sample(s) have been recorded!'
         res = simplejson.dumps(text, encoding="Latin-1")
@@ -2328,9 +2328,8 @@ user_logged_in.connect(login_usr_callback)  # JUMP does this belong in a functio
 
 # Function has been added to context processor in setting file
 def usrFiles(request):
-
     selFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
-    normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.csv')
+    normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.pkl')
 
     try:
         dataID = UserProfile.objects.get(user=request.user).dataID  # UUID from last selection

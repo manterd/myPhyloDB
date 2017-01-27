@@ -379,8 +379,11 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
 
         # get taxonomy names
         idList = list(set(allDF.index.tolist()))
-        nameList = getFullTaxonomy(idList)
-        allDF['Taxonomy'] = allDF.index.map(nameList)
+        nameDict = getFullTaxonomy(idList)
+        allDF.index.name = 'otuid'
+        allDF.reset_index(drop=False, inplace=True)
+        allDF['Taxonomy'] = allDF['otuid'].map(nameDict)
+        allDF.set_index('otuid', inplace=True)
 
         # sum all otu
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
@@ -445,7 +448,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             res = simplejson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
-# JUMP add more status calls?
+
 def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
     try:
         nzDict = {}
@@ -849,8 +852,11 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         # get taxonomy names
         idList = list(set(allDF.index.tolist()))
-        nameList = getFullTaxonomy(idList)
-        allDF['Taxonomy'] = allDF.index.map(nameList)
+        nameDict = getFullTaxonomy(idList)
+        allDF.index.name = 'otuid'
+        allDF.reset_index(drop=False, inplace=True)
+        allDF['Taxonomy'] = allDF['otuid'].map(nameDict)
+        allDF.set_index('otuid', inplace=True)
 
         # sum all otu
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')

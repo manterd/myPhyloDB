@@ -89,14 +89,6 @@ def mothur(dest, source):
             shutil.copy('mothur/temp/final.shared', '% s/final.shared' % dest)
             shutil.rmtree('mothur/temp')
 
-        purge('mothur/reference/align', '.8mer')
-        purge('mothur/reference/taxonomy', 'numNonZero')
-        purge('mothur/reference/taxonomy', '.8mer.prob')
-        purge('mothur/reference/taxonomy', '.tree.sum')
-        purge('mothur/reference/taxonomy', '.tree.train')
-        purge('mothur/reference/template', '.8mer')
-        purge('mothur/reference/template', '.summary')
-
         for afile in glob.glob(r'*.logfile'):
             shutil.move(afile, dest)
 
