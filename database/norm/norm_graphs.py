@@ -46,27 +46,24 @@ def getNorm(request, RID, stopList, PID):
             path = str(myDir) + 'usr_sel_samples.pkl'
             with open(path, 'rb') as f:
                 selected = pickle.load(f)
-            qs1 = Sample.objects.all().filter(sampleid__in=selected)
+            samples = Sample.objects.filter(sampleid__in=selected).values_list('sampleid')
 
             # Generate a list of sequence reads per sample and filter samples if minimum samplesize
             countList = []
             subList = []
             size = 1
+            counts = Profile.objects.filter(sampleid__in=samples).values('sampleid').annotate(count=Sum('count'))
             if size_on == 1:
                 size = int(all["MinVal"])
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] >= size:
-                        countList.append(total['count__sum'])
-                        subList.append(sample.sampleid)
-                qs1 = qs1.filter(sampleid__in=subList)
+                for i in counts:
+                    if int(i['count']) >= size:
+                        countList.append(i['count'])
+                        subList.append(i['sampleid'])
             else:
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if total['count__sum'] is not None:
-                        countList.append(total['count__sum'])
-                        subList.append(sample.sampleid)
-                qs1 = qs1.filter(sampleid__in=subList)
+                for i in counts:
+                    if int(i['count']) is not None:
+                        countList.append(i['count'])
+                        subList.append(i['sampleid'])
 
             if not countList:
                 myDict = {}
@@ -98,18 +95,16 @@ def getNorm(request, RID, stopList, PID):
             result = ''
             result += 'Data Normalization:\n'
             newList = []
+
+            counts = Profile.objects.filter(sampleid__in=subList).values('sampleid').annotate(count=Sum('count'))
             if NormMeth == 2:
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if int(total['count__sum']) >= NormReads:
-                        id = sample.sampleid
-                        newList.append(id)
+                for i in counts:
+                    if int(i['count']) >= NormReads:
+                        newList.append(i['sampleid'])
             else:
-                for sample in qs1:
-                    total = Profile.objects.filter(sampleid=sample.sampleid).aggregate(Sum('count'))
-                    if int(total['count__sum']) > 0:
-                        id = sample.sampleid
-                        newList.append(id)
+                for i in counts:
+                    if int(i['count']) > 0:
+                        newList.append(i['sampleid'])
 
             if not newList:
                 myDict = {}
@@ -434,38 +429,38 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
         if x in usrTableList:
             usrTableList.remove(x)
 
-    metaDF = pd.DataFrame(list(Sample.objects.all().filter(sampleid__in=sampleList).values(*sampleTableList)))
+    metaDF = pd.DataFrame(list(Sample.objects.filter(sampleid__in=sampleList).values(*sampleTableList)))
     metaDF.set_index('sampleid', drop=True, inplace=True)
 
-    tempDF = pd.DataFrame(list(Air.objects.all().filter(sampleid_id__in=sampleList).values(*airTableList)))
+    tempDF = pd.DataFrame(list(Air.objects.filter(sampleid_id__in=sampleList).values(*airTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
 
-    tempDF = pd.DataFrame(list(Human_Associated.objects.all().filter(sampleid_id__in=sampleList).values(*humanAssocTableList)))
+    tempDF = pd.DataFrame(list(Human_Associated.objects.filter(sampleid_id__in=sampleList).values(*humanAssocTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
 
-    tempDF = pd.DataFrame(list(Microbial.objects.all().filter(sampleid_id__in=sampleList).values(*microbialTableList)))
+    tempDF = pd.DataFrame(list(Microbial.objects.filter(sampleid_id__in=sampleList).values(*microbialTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
 
-    tempDF = pd.DataFrame(list(Soil.objects.all().filter(sampleid_id__in=sampleList).values(*soilTableList)))
+    tempDF = pd.DataFrame(list(Soil.objects.filter(sampleid_id__in=sampleList).values(*soilTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
 
-    tempDF = pd.DataFrame(list(Water.objects.all().filter(sampleid_id__in=sampleList).values(*waterTableList)))
+    tempDF = pd.DataFrame(list(Water.objects.filter(sampleid_id__in=sampleList).values(*waterTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
 
-    tempDF = pd.DataFrame(list(UserDefined.objects.all().filter(sampleid_id__in=sampleList).values(*usrTableList)))
+    tempDF = pd.DataFrame(list(UserDefined.objects.filter(sampleid_id__in=sampleList).values(*usrTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True)
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
 
     return metaDF
 

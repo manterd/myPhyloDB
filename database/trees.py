@@ -22,15 +22,14 @@ def getProjectTree(request):
 
     projects = getViewProjects(request)
     for project in projects:
-        if Sample.objects.filter(projectid=project.projectid).exists():
-            myNode = {
-                'title': project.project_name,
-                'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
-                'id': project.projectid,
-                'isFolder': True,
-                'isLazy': True
-            }
-            myTree['children'].append(myNode)
+        myNode = {
+            'title': project.project_name,
+            'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
+            'id': project.projectid,
+            'isFolder': True,
+            'isLazy': True
+        }
+        myTree['children'].append(myNode)
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 

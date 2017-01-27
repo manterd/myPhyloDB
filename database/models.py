@@ -19,7 +19,6 @@ def subQueue():
     global queue
     queue -= 1
 
-# default_user = Users.objects.create_user("UNSPECIFIED")
 
 class Project(models.Model):
     projectid = models.CharField(max_length=50, primary_key=True)

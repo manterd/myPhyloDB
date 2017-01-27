@@ -568,10 +568,12 @@ def getViewProjects(request):  # JUMP
 
     projects = Project.objects.none()
     if request.user.is_superuser:
-        projects = Project.objects.all().order_by('project_name')
+        projects = Project.objects.order_by('project_name')
+
     elif request.user.is_authenticated():
         # run through list of projects, when valid project is found, append filterIDS with ID
         # projects will be a queryset set to all projects, then filtered by ids in filterIDS
+
         filterIDS = []
         for proj in Project.objects.all():
             good = False  # good to add to list
@@ -585,10 +587,12 @@ def getViewProjects(request):  # JUMP
                     good = True
             if good:
                 filterIDS.append(proj.projectid)
-        projects = Project.objects.all().filter(projectid__in=filterIDS)
+        projects = Project.objects.filter(projectid__in=filterIDS).order_by('project_name')
+
     if not request.user.is_superuser and not request.user.is_authenticated():
         # impossible to have guest user be on whitelist (hopefully), so public only check
-        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
+        projects = Project.objects.filter(status='public').order_by('project_name')
+
     return projects
 
 
@@ -596,7 +600,7 @@ def getEditProjects(request):
 
     projects = Project.objects.none()
     if request.user.is_superuser:
-        projects = Project.objects.all().order_by('project_name')
+        projects = Project.objects.order_by('project_name')
 
     elif request.user.is_authenticated():
         # run through list of projects, when valid project is found, append filterIDS with ID
@@ -612,6 +616,6 @@ def getEditProjects(request):
                     good = True
             if good:
                 filterIDS.append(proj.projectid)
-        projects = Project.objects.all().filter(projectid__in=filterIDS)
+        projects = Project.objects.filter(projectid__in=filterIDS).order_by('project_name')
 
     return projects
