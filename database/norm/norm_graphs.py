@@ -30,7 +30,7 @@ def getNorm(request, RID, stopList, PID):
             # Get variables from web page
             allJson = request.body.split('&')[0]
             all = simplejson.loads(allJson)
-            database.queue.setBase(RID, 'Step 1 of 6: Querying database...')
+            database.queue.setBase(RID, 'Step 1 of 7: Querying database...')
 
             NormMeth = int(all["NormMeth"])
 
@@ -136,7 +136,7 @@ def getNorm(request, RID, stopList, PID):
             qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('otuid', flat='True').distinct()
             taxaDict['OTU_99'] = qs3
 
-            database.queue.setBase(RID, 'Step 1 of 6: Querying database...done!')
+            database.queue.setBase(RID, 'Step 1 of 7: Querying database...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -144,15 +144,15 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
+            database.queue.setBase(RID, 'Step 2 of 7: Sub-sampling data...')
 
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
 
-            database.queue.setBase(RID, 'Step 4 of 6: Calculating indices...')
+            database.queue.setBase(RID, 'Step 4 of 7: Calculating indices...')
 
             normDF['rel_abund'] = normDF['rel_abund'].astype(float)
-            normDF['abund'] = normDF['abund'].round(0).astype(int)
-            normDF['rich'] = normDF['rich'].round(0).astype(int)
+            normDF['abund'] = normDF['abund'].astype(int)
+            normDF['rich'] = normDF['rich'].astype(int)
             normDF['diversity'] = normDF['diversity'].astype(float)
 
             if remove == 1:
@@ -221,19 +221,26 @@ def getNorm(request, RID, stopList, PID):
             request.session['savedDF'] = pickle.dumps(path)
             request.session['NormMeth'] = NormMeth
 
+            database.queue.setBase(RID, 'Step 5 of 7: Writing data to disk...')
+
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
             finalDF.to_pickle(path)
 
             # save file to users temp/ folder
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-            path = str(myDir) + 'usr_norm_data.pkl'
+            path = str(myDir) + 'usr_norm_data.h5'
 
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
-            finalDF.to_pickle(path)
 
-            database.queue.setBase(RID, 'Step 4 of 6: Calculating indices...done')
+            # need to fix unicode problems with hdf storage
+            types = finalDF.dtypes
+            for col in types[types == 'object'].index:
+                finalDF[col] = finalDF[col].astype(str)
+            finalDF.to_hdf(path, 'data')
+
+            database.queue.setBase(RID, 'Step 5 of 7: Calculating indices...done')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -241,7 +248,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 5 of 6: Formatting biome data...')
+            database.queue.setBase(RID, 'Step 6 of 7: Formatting biome data...')
 
             biome = {}
 
@@ -285,7 +292,7 @@ def getNorm(request, RID, stopList, PID):
             with open(path, 'w') as outfile:
                 simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
-            database.queue.setBase(RID, 'Step 5 of 6: Formatting biome data...done!')
+            database.queue.setBase(RID, 'Step 6 of 7: Formatting biome data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -293,7 +300,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 6 of 6: Formatting result table...')
+            database.queue.setBase(RID, 'Step 7 of 7: Formatting result table...')
 
             if tabular_on == 1:
                 data = finalDF.values.tolist()
@@ -306,7 +313,7 @@ def getNorm(request, RID, stopList, PID):
                 finalDict['data'] = data
                 finalDict['columns'] = colList
 
-            database.queue.setBase(RID, 'Step 6 of 6: Formatting result table...done!')
+            database.queue.setBase(RID, 'Step 7 of 7: Formatting result table...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -525,7 +532,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
         print r("if (length(new.packages)) biocLite(new.packages)")
 
-        database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
+        database.queue.setBase(RID, 'Step 2 of 7: Sub-sampling data...')
 
         print r("library(DESeq2)")
 
@@ -562,8 +569,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             DESeq_error = 'yes'
             countDF = df2.reset_index(drop=True)
 
-    database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...done!')
-    database.queue.setBase(RID, 'Step 3 of 6: Tabulating data...')
+    database.queue.setBase(RID, 'Step 2 of 7: Sub-sampling data...done!')
+    database.queue.setBase(RID, 'Step 3 of 7: Tabulating data...')
 
     relabundDF = pd.DataFrame(countDF[taxaID])
     binaryDF = pd.DataFrame(countDF[taxaID])
@@ -584,61 +591,28 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     curSamples[RID] = 0
     totSamples[RID] = len(mySet)
 
-    normDF = pd.DataFrame()
-    for item in mySet:
-        rowsList = []
-        groupRelAbund = relabundDF.groupby(field)[item].sum()
-        groupAbund = countDF.groupby(field)[item].sum()
-        groupRich = binaryDF.groupby(field)[item].sum()
-        groupDiversity = diversityDF.groupby(field)[item].sum()
+    ser1 = relabundDF.groupby(field)[mySet].sum()
+    ser2 = ser1.stack()
+    relDF = pd.Series.to_frame(ser2, name='rel_abund')
 
-        if isinstance(taxaList, unicode):
-            myDict = {}
-            myDict['sampleid'] = item
-            myDict['taxa_id'] = taxaList
-            myDict['rel_abund'] = groupRelAbund[taxaList]
-            myDict['abund'] = groupAbund[taxaList]
-            myDict['rich'] = groupRich[taxaList]
-            myDict['diversity'] = groupDiversity[taxaList]
-            rowsList.append(myDict)
-        else:
-            for taxa in taxaList:
-                myDict = {}
-                myDict['sampleid'] = item
-                myDict['taxa_id'] = taxa
-                myDict['rel_abund'] = groupRelAbund[taxa]
-                myDict['abund'] = groupAbund[taxa]
-                myDict['rich'] = groupRich[taxa]
-                myDict['diversity'] = groupDiversity[taxa]
-                rowsList.append(myDict)
+    ser1 = countDF.groupby(field)[mySet].sum()
+    ser2 = ser1.stack()
+    abundDF = pd.Series.to_frame(ser2, name='abund')
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stopList[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+    ser1 = binaryDF.groupby(field)[mySet].sum()
+    ser2 = ser1.stack()
+    richDF = pd.Series.to_frame(ser2, name='rich')
 
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stopList[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+    ser1 = diversityDF.groupby(field)[mySet].sum()
+    ser2 = ser1.stack()
+    divDF = pd.Series.to_frame(ser2, name='diversity')
 
-        DF1 = pd.DataFrame(rowsList, columns=['sampleid', 'taxa_id', 'rel_abund', 'abund', 'rich', 'diversity'])
+    normDF = pd.merge(relDF, abundDF, left_index=True, right_index=True, how='outer')
+    normDF = pd.merge(normDF, richDF, left_index=True, right_index=True, how='outer')
+    normDF = pd.merge(normDF, divDF, left_index=True, right_index=True, how='outer')
+    normDF.reset_index(drop=False, inplace=True)
 
-        DF1.rename(columns={'taxa_id': 'otuid'}, inplace=True)
-        DF1 = DF1.merge(namesDF, on='otuid', how='outer')
-
-        if normDF.empty:
-            normDF = DF1
-        else:
-            normDF = normDF.append(DF1)
-
-        curSamples[RID] += 1
-        database.queue.setBase(RID, 'Step 3 of 6: Tabulating data...\nTabulating is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
-
-    curSamples[RID] = 0
-
+    normDF = pd.merge(normDF, namesDF, left_on='otuid', right_on='otuid', how='outer')
     return normDF, DESeq_error
 
 
@@ -696,8 +670,9 @@ def getTab(request):
     if request.is_ajax():
         myDict = {}
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        fileName1 = str(myDir) + 'usr_norm_data.pkl'
-        df = pd.read_pickle(fileName1)
+        path = str(myDir) + 'usr_norm_data.h5'
+        df = pd.read_hdf(path, 'data')
+
         fileName2 = str(myDir) + 'usr_norm_data.csv'
         df.to_csv(fileName2)
 

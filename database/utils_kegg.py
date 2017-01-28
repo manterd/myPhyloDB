@@ -178,8 +178,8 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        taxaDF.set_index('sampleid', inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
+        metaDF.reset_index(drop=False, inplace=True)
+        finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='outer')
         finalDF.reset_index(drop=False, inplace=True)
 
         wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']

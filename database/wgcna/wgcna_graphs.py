@@ -28,11 +28,12 @@ def getWGCNA(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 6: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 7: Reading normalized data file...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-                path = str(myDir) + 'usr_norm_data.pkl'
-                savedDF = pd.read_pickle(path)
+                path = str(myDir) + 'usr_norm_data.h5'
+                savedDF = pd.read_hdf(path, 'data')
 
+                database.queue.setBase(RID, 'Step 2 of 7: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
                 nzAll = int(all["nzAll"])
@@ -137,7 +138,7 @@ def getWGCNA(request, stops, RID, PID):
                 result += 'maxNGenes: ' + str(maxNGenes) + '\n'
                 result += 'graphLayout: ' + str(graphLayout) + '\n'
 
-                database.queue.setBase(RID, 'Step 1 of 6: Selecting your chosen meta-variables...done!')
+                database.queue.setBase(RID, 'Step 2 of 7: Selecting your chosen meta-variables...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -145,7 +146,7 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 3 of 7: Selecting your chosen taxa or KEGG level...')
 
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
@@ -205,7 +206,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 count_rDF.fillna(0, inplace=True)
 
-                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen taxa...done!')
+                database.queue.setBase(RID, 'Step 3 of 7: Selecting your chosen taxa...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -213,7 +214,7 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 6: WGCNA analysis...')
+                database.queue.setBase(RID, 'Step 4 of 7: WGCNA analysis...')
 
                 finalDict = {}
                 if os.name == 'nt':
@@ -246,7 +247,7 @@ def getWGCNA(request, stops, RID, PID):
                 print r("if (length(new.packages)) library('devtools')")
                 print r("if (length(new.packages)) install_github('guiastrennec/ggplus')")
 
-                database.queue.setBase(RID, 'Step 3 of 6: WGCNA analysis...')
+                database.queue.setBase(RID, 'Step 4 of 7: WGCNA analysis...')
 
                 # Load R libraries
                 print r("library(ggplot2)")
@@ -638,8 +639,8 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 6: WGCNA analysis...done!')
-                database.queue.setBase(RID, 'Step 4 of 6: Creating network graph...')
+                database.queue.setBase(RID, 'Step 4 of 7: WGCNA analysis...done!')
+                database.queue.setBase(RID, 'Step 5 of 7: Creating network graph...')
 
                 ### now apply the kME filter created above
                 r("modProbes <- probes[filter]")
@@ -713,8 +714,8 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 6: Creating network graph...done!')
-                database.queue.setBase(RID, 'Step 5 of 6: Analyzing eigengenes based on chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 5 of 7: Creating network graph...done!')
+                database.queue.setBase(RID, 'Step 6 of 7: Analyzing eigengenes based on chosen meta-variables...')
 
                 #Finding modules that relate to a trait (quantitative variable)
                 if quantFields:
@@ -996,8 +997,8 @@ def getWGCNA(request, stops, RID, PID):
                             return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 5 of 6: Analyzing eigengenes based on chosen meta-variables...done!')
-                database.queue.setBase(RID, 'Step 6 of 6: Pooling pdf files for display...!')
+                database.queue.setBase(RID, 'Step 6 of 7: Analyzing eigengenes based on chosen meta-variables...done!')
+                database.queue.setBase(RID, 'Step 7 of 7: Pooling pdf files for display...!')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/wgcna/Rplots/' + str(RID) + '/wgcna_final.pdf'

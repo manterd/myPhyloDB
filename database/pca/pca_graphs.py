@@ -22,11 +22,12 @@ def getPCA(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 4 Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-                path = str(myDir) + 'usr_norm_data.pkl'
-                savedDF = pd.read_pickle(path)
+                path = str(myDir) + 'usr_norm_data.h5'
+                savedDF = pd.read_hdf(path, 'data')
 
+                database.queue.setBase(RID, 'Step 2 of 5 Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
                 nzAll = int(all["nzAll"])
@@ -96,7 +97,7 @@ def getPCA(request, stops, RID, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 1 of 8: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -104,7 +105,7 @@ def getPCA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...')
 
                 # filter otus based on user settings
                 remUnclass = all['remUnclass']
@@ -163,7 +164,7 @@ def getPCA(request, stops, RID, PID):
 
                 count_rDF.fillna(0, inplace=True)
 
-                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
+                database.queue.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -171,7 +172,7 @@ def getPCA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
+                database.queue.setBase(RID, 'Step 4 of 5: Performing statistical test...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -184,7 +185,7 @@ def getPCA(request, stops, RID, PID):
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
+                database.queue.setBase(RID, 'Step 4 of 5: Performing statistical test...')
 
                 print r('library(fpc)')
                 print r('library(ggplot2)')
@@ -432,7 +433,7 @@ def getPCA(request, stops, RID, PID):
                 r("print(p)")
 
                 r("dev.off()")
-                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...done')
+                database.queue.setBase(RID, 'Step 4 of 5: Performing statistical test...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -440,7 +441,7 @@ def getPCA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data...')
+                database.queue.setBase(RID, 'Step 5 of 5: Formatting graph data...')
 
                 finalDict = {}
                 r("options(width=5000)")

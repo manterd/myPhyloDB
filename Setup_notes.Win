@@ -19,9 +19,10 @@ Install required python packages
 	pip install django-pandas [0.4.1]
 	pip install django-registration-redux [1.3]
 	pip install jsonfield [1.0.3]
-    	pip install pyinstaller [3.1.1]
+    pip install pyinstaller [3.1.1]
 	pip install pyper [1.1.2]
-    	pip install -Iv setuptools==19.2 [19.2]
+    pip install -Iv setuptools==19.2 [19.2]
+    pip install tables
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Install PyCharm

@@ -43,7 +43,7 @@ Install required python packages to virtual environment
 	pip install simplejson
 	pip install xlrd
 	pip install xlutils
-
+    pip install tables
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Install PyCharm
 	www.jetbrains.com/pycharm

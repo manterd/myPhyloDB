@@ -2329,7 +2329,7 @@ user_logged_in.connect(login_usr_callback)  # JUMP does this belong in a functio
 # Function has been added to context processor in setting file
 def usrFiles(request):
     selFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
-    normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.pkl')
+    normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.h5')
 
     try:
         dataID = UserProfile.objects.get(user=request.user).dataID  # UUID from last selection

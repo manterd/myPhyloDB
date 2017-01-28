@@ -23,11 +23,12 @@ def getDiffAbund(request, stops, RID, PID):
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-                path = str(myDir) + 'usr_norm_data.pkl'
-                savedDF = pd.read_pickle(path)
+                path = str(myDir) + 'usr_norm_data.h5'
+                savedDF = pd.read_hdf(path, 'data')
 
+                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
                 # round data to fix normalization type issues
                 savedDF['abund'] = savedDF['abund'].round(0).astype(int)
                 savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
@@ -110,7 +111,7 @@ def getDiffAbund(request, stops, RID, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -118,7 +119,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...')
                 # status for stage 2 could have a loop counter or equivalent, currently the longest stage by far with
                 # no proper indicator of how long it will run
 
@@ -178,7 +179,7 @@ def getDiffAbund(request, stops, RID, PID):
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
-                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done')
+                database.queue.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -186,7 +187,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...')
+                database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...')
 
                 finalDict = {}
                 if os.name == 'nt':
@@ -201,7 +202,7 @@ def getDiffAbund(request, stops, RID, PID):
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
                 print r("if (length(new.packages)) biocLite(new.packages)")
 
-                database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...')
+                database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...')
 
                 print r("library(DESeq2)")
 
@@ -280,7 +281,7 @@ def getDiffAbund(request, stops, RID, PID):
                             nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
                             finalDF = pd.concat([finalDF, nbinom_res])
 
-                            database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...' + str(iterationName) + ' is done!')
+                            database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...' + str(iterationName) + ' is done!')
 
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                             if stops[PID] == RID:
@@ -294,8 +295,8 @@ def getDiffAbund(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 5: Performing statistical test...done!')
-                database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...')
+                database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...done!')
+                database.queue.setBase(RID, 'Step 5 of 6: Formatting graph data for display...')
 
                 seriesList = []
                 xAxisDict = {}
@@ -373,7 +374,7 @@ def getDiffAbund(request, stops, RID, PID):
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
 
-                database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...done!')
+                database.queue.setBase(RID, 'Step 5 of 6: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -381,7 +382,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 5 of 5:  Formatting nbinomTest results for display...')
+                database.queue.setBase(RID, 'Step 6 of 6:  Formatting nbinomTest results for display...')
 
                 finalDF.replace(to_replace='N/A', value=np.nan, inplace=True)
                 finalDF.dropna(axis=1, how='all', inplace=True)
@@ -391,7 +392,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 finalDict['text'] = result
 
-                database.queue.setBase(RID, 'Step 5 of 5: Formatting nbinomTest results for display...done!')
+                database.queue.setBase(RID, 'Step 6 of 6: Formatting nbinomTest results for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

@@ -23,11 +23,12 @@ def getSPLS(request, stops, RID, PID):
         while True:
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-                path = str(myDir) + 'usr_norm_data.pkl'
-                savedDF = pd.read_pickle(path)
+                path = str(myDir) + 'usr_norm_data.h5'
+                savedDF = pd.read_hdf(path, 'data')
 
+                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
                 nzAll = int(all["nzAll"])
@@ -109,7 +110,7 @@ def getSPLS(request, stops, RID, PID):
 
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 1 of 5: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -117,7 +118,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...')
 
                 # filter otus based on user settings
                 remUnclass = all['remUnclass']
@@ -162,7 +163,7 @@ def getSPLS(request, stops, RID, PID):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
 
-                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen taxa or KEGG level...done')
+                database.queue.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -170,7 +171,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 5: Calculating sPLS...')
+                database.queue.setBase(RID, 'Step 4 of 6: Calculating sPLS...')
 
                 if DepVar == 0:
                     result += 'Dependent Variable: Abundance' + '\n'
@@ -210,7 +211,7 @@ def getSPLS(request, stops, RID, PID):
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-                database.queue.setBase(RID, 'Step 3 of 5: Calculating sPLS...')
+                database.queue.setBase(RID, 'Step 4 of 6: Calculating sPLS...')
 
                 print r("library(mixOmics)")
                 print r("library(spls)")
@@ -288,7 +289,7 @@ def getSPLS(request, stops, RID, PID):
                 r("sum <- sum(coef.f != 0)")
                 total = r.get("sum")
 
-                database.queue.setBase(RID, 'Step 3 of 5: Calculating sPLS...done!')
+                database.queue.setBase(RID, 'Step 4 of 6: Calculating sPLS...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -296,7 +297,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...')
+                database.queue.setBase(RID, 'Step 5 of 6: Formatting graph data for display...')
 
                 finalDict = {}
                 if total is not None:
@@ -574,8 +575,8 @@ def getSPLS(request, stops, RID, PID):
 
                 finalDict['text'] = result
 
-                database.queue.setBase(RID, 'Step 4 of 5: Formatting graph data for display...done!')
-                database.queue.setBase(RID, 'Step 5 of 5: Formatting sPLS coefficient table...')
+                database.queue.setBase(RID, 'Step 5 of 6: Formatting graph data for display...done!')
+                database.queue.setBase(RID, 'Step 6 of 6: Formatting sPLS coefficient table...')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

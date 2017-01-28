@@ -22,11 +22,12 @@ def getSpAC(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
+                database.queue.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
                 myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-                path = str(myDir) + 'usr_norm_data.pkl'
-                savedDF = pd.read_pickle(path)
+                path = str(myDir) + 'usr_norm_data.h5'
+                savedDF = pd.read_hdf(path, 'data')
 
+                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
 
                 result = ''
@@ -104,7 +105,7 @@ def getSpAC(request, stops, RID, PID):
                 result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
                 result += '===============================================\n'
 
-                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
+                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -112,7 +113,7 @@ def getSpAC(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
+                database.queue.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...')
 
                 # filter otus based on user settings
                 remUnclass = all['remUnclass']
@@ -162,7 +163,7 @@ def getSpAC(request, stops, RID, PID):
 
                 count_rDF.fillna(0, inplace=True)
 
-                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa...done')
+                database.queue.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -170,7 +171,7 @@ def getSpAC(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 4: Calculating OTU Accumulation Curves...')
+                database.queue.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -183,7 +184,7 @@ def getSpAC(request, stops, RID, PID):
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-                database.queue.setBase(RID, 'Step 3 of 4: Calculating OTU Accumulation Curves...')
+                database.queue.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...')
 
                 print r("library(vegan)")
 
@@ -257,9 +258,9 @@ def getSpAC(request, stops, RID, PID):
                     r("dev.off()")
                     r("pdf_counter <- pdf_counter + 1")
 
-                database.queue.setBase(RID, 'Step 3 of 4: Calculating OTU Accumulation Curves...done!')
+                database.queue.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...done!')
 
-                database.queue.setBase(RID, 'Step 4 of 4: Pooling pdf files for display...')
+                database.queue.setBase(RID, 'Step 5 of 5: Pooling pdf files for display...')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/spac/Rplots/' + str(RID) + '/SpAC_final.pdf'
