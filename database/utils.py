@@ -49,12 +49,11 @@ def handle_uploaded_file(f, path, name):  # move file from memory to disc
             destination.write(chunk)
 
 
-def remove_list(request):
-    paths = request.POST.getlist('chkbx')
-    p_uuid = list(Reference.objects.filter(path__in=paths).values_list('projectid', flat=True))
+def remove_list(refList):
+    p_uuid = list(Reference.objects.filter(path__in=refList).values_list('projectid', flat=True))
 
     # Remove record from reference table
-    for path in paths:
+    for path in refList:
         Reference.objects.filter(path=path).delete()
         if os.path.exists(path):
             shutil.rmtree(path, ignore_errors=True)

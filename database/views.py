@@ -954,9 +954,6 @@ def uploadFunc(request, stopList):
             else:
                 print ('Please check that all necessary files have been selected.')
 
-    elif request.method == 'POST' and 'clickMe' in request.POST:
-        remove_list(request)
-
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
     elif request.user.is_authenticated():
@@ -970,6 +967,18 @@ def uploadFunc(request, stopList):
          'error': ""},
         context_instance=RequestContext(request)
     )
+
+
+def remProjectFiles(request):
+    if request.is_ajax():
+        allJson = request.GET['all']
+        data = simplejson.loads(allJson)
+        refList = data['paths']
+        remove_list(refList)
+
+        results = {'error': 'none'}
+        myJson = simplejson.dumps(results)
+        return HttpResponse(myJson)
 
 
 def projectTableJSON(request):

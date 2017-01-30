@@ -32,7 +32,7 @@
     <script type="text/javascript">
         var RID = makeGUID();
         var source = 'mothur';
-
+        var remNodes = "";
 
         window.onload = function() {
             var mothurStat = localStorage.getItem(name);
@@ -45,6 +45,28 @@
             if (test != "") {
                 alert(test);
             }
+
+            $("#treeRem").dynatree({
+                checkbox: true,
+                selectMode: 2,
+                initAjax: {
+                    url: "/myPhyloDB/makeUpdateTree/",
+                    dataType: "jsonp",
+                    data: {}
+                },
+                onSelect: function (select, node) {
+                    remNodes = node.tree.getSelectedNodes();
+                },
+                onClick: function () {
+                    $("#clickMe").css("background-color", "lightgray").val('Remove selected');
+                }
+            });
+
+            $("#clearMeta").click(function () {
+                $("#treeRem").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
 
             $("#Upload").click(function() {
                 $("#stage").show();
@@ -106,29 +128,35 @@
             })
         }
 
-        function updateStatus() {
+        function progressBar(percent, $element) {
+           var progressBarWidth = percent * $element.width() / 100;
+            $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
+        }
+
+        function remProjectFiles() {
+            $("#clickMe").css("background-color", "yellow").val('Removing Projects!');
+            var paths = [];
+            for (var i = 0; i < remNodes.length; i++) {
+                var string = remNodes[i].data.title;
+                paths.push(string.split(" ")[1]);
+            }
+
+            var myDict = {};
+            myDict['paths'] = paths;
+            var jsonDict = JSON.stringify(myDict);
+
             $.ajax({
-                url: '/myPhyloDB/status/',
+                url: '/myPhyloDB/remProjectFiles/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
-                    all: RID
+                    all: jsonDict
                 },
                 success: function (data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var stage = obj['stage'];
-                    var perc = obj['perc'];
-                    updateStage(stage);
-                    progressBar(perc, $("#progressBar"));
-                    document.getElementById("mothurStat").value = document.getElementById("mothurStat").value + obj['mothurStat'];
-                    //document.getElementById("mothurStat").scrollTop = document.getElementById("mothurStat").scrollHeight;
+                    $("#treeRem").dynatree("getTree").reload();
+                    $("#clickMe").css("background-color", "green").val('Done');
                 }
             });
-        }
-
-        function updateStage(stage) {
-            $("#stage").empty().append(stage);
         }
 
         function stop() {
@@ -148,9 +176,34 @@
             });
         }
 
-        function progressBar(percent, $element) {
-           var progressBarWidth = percent * $element.width() / 100;
-            $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
+        function updateStatus() {
+            $.ajax({
+                url: '/myPhyloDB/status/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    var perc = obj['perc'];
+                    updateStage(stage);
+                    progressBar(perc, $("#progressBar"));
+                    //document.getElementById("mothurStat").value = document.getElementById("mothurStat").value + obj['mothurStat'];
+                    //document.getElementById("mothurStat").scrollTop = document.getElementById("mothurStat").scrollHeight;
+                    var out = document.getElementById("mothurStat");
+                    out.value = out.value + obj['mothurStat'];
+                    var isScrolledToBottom = out.scrollHeight - out.clientHeight <= out.scrollTop + 1;
+                    if(isScrolledToBottom)
+                          out.scrollTop = out.scrollHeight - out.clientHeight;
+                }
+            });
+        }
+
+        function updateStage(stage) {
+            $("#stage").empty().append(stage);
         }
 
         window.onbeforeunload = function() {
@@ -307,22 +360,15 @@
     <textarea id="mothurStat" rows=25 cols=72 style="width: 925px"></textarea>
 
     <h2>List of previous uploads:</h2>
-    <form id="form2" method="post" action="{% url 'datfuncCall' %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        <table>
-            <td>
-                {% if projects %}
-                    {% for project in projects %}
-                        Project: {{ project.projectid.project_name }}<br>
-                        <input name="chkbx" type="checkbox" value="{{ project.path }}"/>
-                        Path: {{ project.path }}<br>
-                        <br>
-                    {% endfor %}
-                {% else %}
-                    <p>No projects uploaded.</p>
-                {% endif %}
+    <table id="meta_files" border="2" cellspacing="0" cellpadding="1">
+            <tr>
+                <th>Select project path to remove:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            </tr>        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="treeRem"></div>
             </td>
-        </table>
-        <p><input name="clickMe" type="submit" value="Remove selected"/></p>
-    </form>
+        </tr>
+    </table>
+    <p><input id="clickMe" type="submit" value="Remove selected" onClick="remProjectFiles()"/></p>
+    <br><br>
 {% endblock my_content %}

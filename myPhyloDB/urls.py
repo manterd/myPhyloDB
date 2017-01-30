@@ -51,6 +51,7 @@ urlpatterns = [
     url(r'^myPhyloDB/userTableJSON/$', views.userTableJSON, name='userTableJSON'),
     url(r'^myPhyloDB/usrFiles/$', views.usrFiles, name='usrFiles'),
     url(r'^myPhyloDB/getProjectFiles/$', views.getProjectFiles, name='getProjectFiles'),
+    url(r'^myPhyloDB/remProjectFiles/$', views.remProjectFiles, name='remProjectFiles'),
     url(r'^myPhyloDB/addPerms/$', views.addPerms, name='addPerms'),
     url(r'^myPhyloDB/remPerms/$', views.remPerms, name='remPerms'),
 
