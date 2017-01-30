@@ -49,13 +49,6 @@ def home(request):
     )
 
 
-def map(request):
-    return render_to_response(
-        'map.html',
-        context_instance=RequestContext(request)
-    )
-
-
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def upload(request):
     projects = Reference.objects.none()
