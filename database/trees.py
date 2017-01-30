@@ -47,10 +47,10 @@ def getProjectTreeChildren(request):
     # get project children (samples) which are visible to current user (check
     if request.is_ajax():
         projectid = request.GET["id"]
-        samples = Sample.objects.filter(projectid=projectid)
+        samples = Sample.objects.filter(projectid=projectid).values_list('sampleid', flat=True)
 
         nodes = []
-        reads = Profile.objects.filter(sampleid__in=samples).values('sampleid', 'sampleid__sample_name').annotate(count=Sum('count'))
+        reads = Profile.objects.filter(sampleid__in=samples).order_by('sampleid__sample_name').values('sampleid', 'sampleid__sample_name').annotate(count=Sum('count'))
         for i in reads:
             if int(i['count'] > 0):
                 myNode = {
@@ -279,7 +279,7 @@ def getSampleCatTreeChildren(request):
         selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
 
         filtered = []
-        reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
+        reads = Profile.objects.filter(sampleid__in=selected).order_by('sampleid__sample_name').values('sampleid').annotate(count=Sum('count'))
         for i in reads:
             if int(i['count']) > 0:
                 filtered.append(i['sampleid'])
@@ -728,7 +728,7 @@ def getSampleQuantTreeChildren(request):
         selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
 
         filtered = []
-        reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
+        reads = Profile.objects.filter(sampleid__in=selected).order_by('sampleid__sample_name').values('sampleid').annotate(count=Sum('count'))
         for i in reads:
             if int(i['count']) > 0:
                 filtered.append(i['sampleid'])

@@ -230,6 +230,7 @@ def getPCoA(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 4 of 9: Calculating distance matrix...')
 
+                r("options(width=5000)")
                 print r("library(vegan)")
                 print r("library(ggplot2)")
                 print r('library(data.table)')
@@ -565,8 +566,8 @@ def getPCoA(request, stops, RID, PID):
                 xAxisDict = {}
                 yAxisDict = {}
 
-                CAP1 = PC1 + len(catFields) + len(quantFields) + 1
-                CAP2 = PC2 + len(catFields) + len(quantFields) + 1
+                CAP1 = PC1 + len(catFields) + len(quantFields) + 2
+                CAP2 = PC2 + len(catFields) + len(quantFields) + 2
 
                 colors = [
                     "#000000", "#FFFF00", "#1CE6FF", "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",

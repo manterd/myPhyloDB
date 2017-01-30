@@ -187,6 +187,7 @@ def getPCA(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 4 of 5: Performing statistical test...')
 
+                r("options(width=5000)")
                 print r('library(fpc)')
                 print r('library(ggplot2)')
                 print r('library(vegan)')
