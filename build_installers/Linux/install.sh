@@ -23,15 +23,11 @@ if [ $response = y ]
     then
         mv $HOME/myPhyloDB/db.Microbe $HOME/myPhyloDB_temp/db.Microbe
         mv $HOME/myPhyloDB/db.PICRUSt $HOME/myPhyloDB_temp/db.PICRUSt
-        mv $HOME/myPhyloDB/db.Profile $HOME/myPhyloDB_temp/db.Profile
-        mv $HOME/myPhyloDB/db.Taxa $HOME/myPhyloDB_temp/db.Taxa
         mv $HOME/myPhyloDB/uploads/* $HOME/myPhyloDB_temp/uploads/
         rm -rf $HOME/myPhyloDB
         tar -zxf myPhyloDB.tar.gz -C $HOME
         mv -f $HOME/myPhyloDB_temp/db.Microbe $HOME/myPhyloDB/db.Microbe
         mv -f $HOME/myPhyloDB_temp/db.PICRUSt $HOME/myPhyloDB/db.PICRUSt
-        mv -f $HOME/myPhyloDB_temp/db.Profile $HOME/myPhyloDB/db.Profile
-        mv -f $HOME/myPhyloDB_temp/db.Taxa $HOME/myPhyloDB/db.Taxa
         rm -rf $HOME/myPhyloDB/uploads
         mkdir $HOME/myPhyloDB/uploads
         mv -f $HOME/myPhyloDB_temp/uploads/* $HOME/myPhyloDB/uploads/
