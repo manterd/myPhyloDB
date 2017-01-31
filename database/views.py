@@ -1635,26 +1635,56 @@ def userTableJSON(request):
 def select(request):
     if request.method == 'POST':
         uploaded = request.FILES["normFile"]
-        savedDF = pd.read_csv(uploaded, index_col=0, sep='\t')
-        selList = list(set(savedDF['sampleid']))
 
-        # save selected samples file to users temp/ folder
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_sel_samples.pkl'
 
         if not os.path.exists(myDir):
             os.makedirs(myDir)
+        else:
+            shutil.rmtree(myDir)
+
+        handle_uploaded_file(uploaded, myDir, uploaded.name)
+
+        try:
+            tar = tarfile.open(os.path.join(myDir, uploaded.name))
+            tar.extractall(myDir)
+            name = tar.getnames()[0]
+            tar.close()
+        except:
+            try:
+                zip = zipfile.ZipFile(os.path.join(myDir, uploaded.name), 'r')
+                zip.extractall(myDir)
+                name = zip.namelist()[0]
+                zip.close()
+            except:
+                name = 'usr_norm_data.csv'
+
+        filename = str(myDir) + str(name)
+        try:
+            savedDF = pd.read_csv(filename, index_col=0, sep=',')
+        except:
+            return render_to_response(
+                'select.html',
+                {'form9': UploadForm9,
+                 'selList': '',
+                 'normpost': 'error',
+                 'method': 'POST'},
+                 context_instance=RequestContext(request)
+            )
+
+        selList = list(set(savedDF['sampleid']))
+
+        # save selected samples file to users temp/ folder
+        path = str(myDir) + 'usr_sel_samples.pkl'
 
         with open(path, 'wb') as f:
             pickle.dump(selList, f)
 
-        # save normalized file to users temp/ folder
+        # save normalized file to hdf format
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_norm_data.csv'
+        path = str(myDir) + 'usr_norm_data.h5'
 
-        if not os.path.exists(myDir):
-            os.makedirs(myDir)
-        savedDF.to_csv(path, sep='\t')
+        savedDF.to_hdf(path, 'data')
 
         projectList = list(set(savedDF['projectid']))
 
