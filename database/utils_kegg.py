@@ -199,7 +199,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         finalDF.reset_index(drop=False, inplace=True)
         return finalDF, missingList
 
-    except:
+    except Exception:
         if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -439,7 +439,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
 
         return finalDF, allDF
 
-    except:
+    except Exception:
         if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -916,7 +916,7 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
 
         return finalDF, allDF
 
-    except:
+    except Exception:
         if not stops[PID] == RID:
             logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -953,7 +953,7 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 picrustDF.at[otu, key] = sum
-        except:
+        except Exception:
             pass
 
 

@@ -290,7 +290,7 @@ def cleanup(path):
 def threads():
     try:
         usr_threads = int(local_cfg.usr_num_threads)
-    except:
+    except Exception:
         usr_threads = 1
 
     if usr_threads <= 0:

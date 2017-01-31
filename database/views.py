@@ -120,7 +120,7 @@ def getProjectFiles(request):
                     try:
                         if f.endswith('.shared') or f.endswith('.taxonomy') or f.endswith('.fasta') or f.endswith('.names') or f.endswith('.groups') or f.endswith('.logfile') or f.endswith('.xlsx') or f.endswith('.xls'):
                             zf.write(os.path.join(root, f))
-                    except:
+                    except Exception:
                         pass
     zf.close()
 
@@ -209,7 +209,7 @@ def uploadFunc(request, stopList):
                         context_instance=RequestContext(request)
                     )
 
-            except:
+            except Exception:
                 logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                 myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                 logging.exception(myDate)
@@ -245,7 +245,7 @@ def uploadFunc(request, stopList):
                     print "Parsed project with no errors"
                 else:
                     print "Encountered error while parsing meta file: "+res
-            except:
+            except Exception:
                 return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
 
             if source == 'mothur':
@@ -271,7 +271,7 @@ def uploadFunc(request, stopList):
 
             try:
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
-            except:
+            except Exception:
                 return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
 
             if stopList[PID] == RID:
@@ -282,7 +282,7 @@ def uploadFunc(request, stopList):
             if source == 'mothur':
                 try:
                     file3 = request.FILES['docfile3']
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -306,7 +306,7 @@ def uploadFunc(request, stopList):
 
                 try:
                     parse_taxonomy(file3)
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -334,7 +334,7 @@ def uploadFunc(request, stopList):
 
                 try:
                     file4 = request.FILES['docfile4']
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -360,7 +360,7 @@ def uploadFunc(request, stopList):
                     parse_profile(file3, file4, p_uuid, refDict)
                     end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -397,19 +397,21 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 file_list = request.FILES.getlist('sff_files')
-                for file in file_list:  # .tar.gz not included in this somehow?
-                    if file.name.endswith(('.gz', '.tgz', '.tar')):
+                for file in file_list:
+                    try:
                         handle_uploaded_file(file, dest, file.name)
                         tar = tarfile.open(os.path.join(dest, file.name))
                         tar.extractall(path=mothurdest)
                         tar.close()
-                    elif file.name.endswith('.zip'):
-                        handle_uploaded_file(file, dest, file.name)
-                        zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                        zip.extractall(mothurdest)
-                        zip.close()
-                    else:
-                        handle_uploaded_file(file, mothurdest, file.name)
+                    except Exception:
+                        try:
+                            handle_uploaded_file(file, dest, file.name)
+                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                            zip.extractall(mothurdest)
+                            zip.close()
+                        except Exception:
+                            handle_uploaded_file(file, mothurdest, file.name)
+
                     handle_uploaded_file(file, dest, file.name)
 
                 if stopList[PID] == RID:
@@ -419,18 +421,20 @@ def uploadFunc(request, stopList):
 
                 file_list = request.FILES.getlist('oligo_files')
                 for file in file_list:
-                    if file.name.endswith(('.gz', '.tgz', '.tar')):
+                    try:
                         handle_uploaded_file(file, dest, file.name)
                         tar = tarfile.open(os.path.join(dest, file.name))
                         tar.extractall(path=mothurdest)
                         tar.close()
-                    elif file.name.endswith('.zip'):
-                        handle_uploaded_file(file, dest, file.name)
-                        zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                        zip.extractall(mothurdest)
-                        zip.close()
-                    else:
-                        handle_uploaded_file(file, mothurdest, file.name)
+                    except Exception:
+                        try:
+                            handle_uploaded_file(file, dest, file.name)
+                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                            zip.extractall(mothurdest)
+                            zip.close()
+                        except Exception:
+                            handle_uploaded_file(file, mothurdest, file.name)
+
                     handle_uploaded_file(file, dest, file.name)
 
                 if stopList[PID] == RID:
@@ -469,7 +473,7 @@ def uploadFunc(request, stopList):
                     time.sleep(5)
                 try:
                     mothur(dest, source)
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -500,7 +504,7 @@ def uploadFunc(request, stopList):
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -533,7 +537,7 @@ def uploadFunc(request, stopList):
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
 
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -569,24 +573,28 @@ def uploadFunc(request, stopList):
                 tempList = []
                 if len(file_list) > 1:
                     for file in file_list:
-                        if file.name.endswith(('.gz', '.tgz', '.tar')):
+                        try:
                             handle_uploaded_file(file, dest, file.name)
                             tar = tarfile.open(os.path.join(dest, file.name))
                             tar.extractall(path=mothurdest)
                             tar.close()
-                        elif file.name.endswith('.zip'):
-                            handle_uploaded_file(file, dest, file.name)
-                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                            zip.extractall(mothurdest)
-                            zip.close()
-                        else:
-                            handle_uploaded_file(file, mothurdest, file.name)
+                        except Exception:
+                            try:
+                                handle_uploaded_file(file, dest, file.name)
+                                zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                                zip.extractall(mothurdest)
+                                zip.close()
+                            except Exception:
+                                handle_uploaded_file(file, mothurdest, file.name)
+
                         handle_uploaded_file(file, dest, file.name)
+
                         if os.name == 'nt':
                             myStr = "mothur\\temp\\" + str(file.name)
                         else:
                             myStr = "mothur/temp/" + str(file.name)
                         tempList.append(myStr)
+
                     inputList = "-".join(tempList)
                     if os.name == 'nt':
                         os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
@@ -594,19 +602,21 @@ def uploadFunc(request, stopList):
                         os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
                 else:
                     for file in file_list:
-                        fasta = 'temp.fasta'  # potentially change file.name for fasta on zip saves
-                        if file.name.endswith(('.gz', '.tgz')):
+                        fasta = 'temp.fasta'
+                        try:
                             handle_uploaded_file(file, dest, file.name)
                             tar = tarfile.open(os.path.join(dest, file.name))
                             tar.extractall(path=mothurdest)
                             tar.close()
-                        elif file.name.endswith('.zip'):
-                            handle_uploaded_file(file, dest, file.name)
-                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                            zip.extractall(mothurdest)
-                            zip.close()
-                        else:
-                            handle_uploaded_file(file, mothurdest, fasta)
+                        except Exception:
+                            try:
+                                handle_uploaded_file(file, dest, file.name)
+                                zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                                zip.extractall(mothurdest)
+                                zip.close()
+                            except Exception:
+                                handle_uploaded_file(file, mothurdest, fasta)
+
                         handle_uploaded_file(file, dest, file.name)
 
                 if stopList[PID] == RID:
@@ -618,24 +628,27 @@ def uploadFunc(request, stopList):
                 tempList = []
                 if len(file_list) > 1:
                     for file in file_list:
-                        if file.name.endswith(('.gz', '.tgz', '.tar')):
+                        try:
                             handle_uploaded_file(file, dest, file.name)
                             tar = tarfile.open(os.path.join(dest, file.name))
                             tar.extractall(path=mothurdest)
                             tar.close()
-                        elif file.name.endswith('.zip'):
-                            handle_uploaded_file(file, dest, file.name)
-                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                            zip.extractall(mothurdest)
-                            zip.close()
-                        else:
-                            handle_uploaded_file(file, mothurdest, file.name)
+                        except Exception:
+                            try:
+                                handle_uploaded_file(file, dest, file.name)
+                                zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                                zip.extractall(mothurdest)
+                                zip.close()
+                            except Exception:
+                                handle_uploaded_file(file, mothurdest, file.name)
+
                         if os.name == 'nt':
                             myStr = "mothur\\temp\\" + str(file.name)
                         else:
                             myStr = "mothur/temp/" + str(file.name)
                         tempList.append(myStr)
                         handle_uploaded_file(file, dest, file.name)
+
                     inputList = "-".join(tempList)
                     if os.name == 'nt':
                         os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
@@ -644,18 +657,20 @@ def uploadFunc(request, stopList):
                 else:
                     for file in file_list:
                         qual = 'temp.qual'
-                        if file.name.endswith(('.gz', '.tgz')):  # change file.name to qual potentially
+                        try:
                             handle_uploaded_file(file, dest, file.name)
                             tar = tarfile.open(os.path.join(dest, file.name))
                             tar.extractall(path=mothurdest)
                             tar.close()
-                        elif file.name.endswith('.zip'):
-                            handle_uploaded_file(file, dest, file.name)
-                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                            zip.extractall(mothurdest)
-                            zip.close()
-                        else:
-                            handle_uploaded_file(file, mothurdest, qual)
+                        except Exception:
+                            try:
+                                handle_uploaded_file(file, dest, file.name)
+                                zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                                zip.extractall(mothurdest)
+                                zip.close()
+                            except Exception:
+                                handle_uploaded_file(file, mothurdest, qual)
+
                         handle_uploaded_file(file, dest, file)
 
                 if stopList[PID] == RID:
@@ -706,7 +721,7 @@ def uploadFunc(request, stopList):
                 try:
                     mothur(dest, source)
 
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -735,7 +750,7 @@ def uploadFunc(request, stopList):
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -767,7 +782,7 @@ def uploadFunc(request, stopList):
                             parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -817,18 +832,20 @@ def uploadFunc(request, stopList):
                 file_list = request.FILES.getlist('fastq_files')
 
                 for file in file_list:
-                    if file.name.endswith(('.gz', '.tgz', '.tar')):
+                    try:
                         handle_uploaded_file(file, dest, file.name)
                         tar = tarfile.open(os.path.join(dest, file.name))
                         tar.extractall(path=mothurdest)
                         tar.close()
-                    elif file.name.endswith('.zip'):
-                        handle_uploaded_file(file, dest, file.name)
-                        zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                        zip.extractall(mothurdest)
-                        zip.close()
-                    else:
-                        handle_uploaded_file(file, mothurdest, file.name)
+                    except Exception:
+                        try:
+                            handle_uploaded_file(file, dest, file.name)
+                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                            zip.extractall(mothurdest)
+                            zip.close()
+                        except Exception:
+                            handle_uploaded_file(file, mothurdest, file.name)
+
                     handle_uploaded_file(file, dest, file.name)
 
                     if stopList[PID] == RID:
@@ -862,7 +879,7 @@ def uploadFunc(request, stopList):
 
                 try:
                     mothur(dest, source)
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -891,7 +908,7 @@ def uploadFunc(request, stopList):
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         parse_taxonomy(file3)
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -922,7 +939,7 @@ def uploadFunc(request, stopList):
                             parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
-                except:
+                except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
@@ -1650,19 +1667,19 @@ def select(request):
             tar.extractall(myDir)
             name = tar.getnames()[0]
             tar.close()
-        except:
+        except Exception:
             try:
                 zip = zipfile.ZipFile(os.path.join(myDir, uploaded.name), 'r')
                 zip.extractall(myDir)
                 name = zip.namelist()[0]
                 zip.close()
-            except:
+            except Exception:
                 name = 'usr_norm_data.csv'
 
         filename = str(myDir) + str(name)
         try:
             savedDF = pd.read_csv(filename, index_col=0, sep=',')
-        except:
+        except Exception:
             return render_to_response(
                 'select.html',
                 {'form9': UploadForm9,
@@ -2071,21 +2088,21 @@ def reprocess(request):
         alignFile = request.FILES['docfile8']
         alignDB = request.FILES['docfile8'].name
         handle_uploaded_file(alignFile, 'mothur/reference/align', alignDB)
-    except:
+    except Exception:
         pass
 
     try:
         templateFile = request.FILES['docfile9']
         templateDB = request.FILES['docfile9'].name
         handle_uploaded_file(templateFile, 'mothur/reference/template', templateDB)
-    except:
+    except Exception:
         pass
 
     try:
         taxonomyFile = request.FILES['docfile10']
         taxonomyDB = request.FILES['docfile10'].name
         handle_uploaded_file(taxonomyFile, 'mothur/reference/taxonomy', taxonomyDB)
-    except:
+    except Exception:
         pass
 
     alignDB = sorted(os.listdir('mothur/reference/align/'))
@@ -2368,7 +2385,7 @@ def usrFiles(request):
 
     try:
         dataID = UserProfile.objects.get(user=request.user).dataID  # UUID from last selection
-    except:
+    except Exception:
         dataID = "nodataidfound"
 
     return {

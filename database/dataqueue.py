@@ -36,7 +36,7 @@ def datstop(request):
                 stop = simplejson.dumps(myDict)
                 stopped += 1
                 return HttpResponse(stop, content_type='application/json')
-    except:
+    except Exception:
         myDict = {'error': 'Analysis not running'}
         stop = simplejson.dumps(myDict)
         return HttpResponse(stop, content_type='application/json')
@@ -109,7 +109,7 @@ def datstat(RID):
     try:
         stopDict[RID] = stopDict[RID]
         return -1024
-    except:
+    except Exception:
         return statDict[RID] - stopped
 
 

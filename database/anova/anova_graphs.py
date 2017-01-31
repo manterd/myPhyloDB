@@ -239,7 +239,7 @@ def getCatUnivData(request, RID, stops, PID):
                     for part in tempStuff:
                         try:
                             pList.append(float(part))
-                        except:
+                        except Exception:
                             pass
 
                     if pList:

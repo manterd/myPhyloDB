@@ -57,7 +57,7 @@ def removeRID(RID):
         TimeDiff.pop(RID, None)
         complete.pop(RID, None)
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -78,7 +78,7 @@ def stop(request):
                 myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
                 stop = simplejson.dumps(myDict)
                 return HttpResponse(stop, content_type='application/json')
-    except:
+    except Exception:
         myDict = {'error': 'Analysis not running'}
         stop = simplejson.dumps(myDict)
         return HttpResponse(stop, content_type='application/json')
@@ -144,7 +144,7 @@ def funcCall(request):
     if reqType == "call":
         try:
             dataID = data['dataID']
-        except:
+        except Exception:
             print "Missing dataID"
             myDict = {}
             myDict['error'] = "Error: Dev done goofed!"
@@ -183,7 +183,7 @@ def funcCall(request):
             time2[RID] = time()
             try:
                 TimeDiff[RID] = time2[RID] - time1[RID]
-            except:
+            except Exception:
                 TimeDiff[RID] = 0
 
             try:
@@ -191,14 +191,14 @@ def funcCall(request):
                     stage[RID] = 'Analysis has been placed in queue, there are ' + str(stat(RID)) + ' others in front of you.'
                 else:
                     stage[RID] = str(base[RID]) + '\n<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-            except:
+            except Exception:
                 if TimeDiff[RID] == 0:
                     try:
                         if not complete[RID]:
                             stage[RID] = 'In queue'
                         else:
                             stage[RID] = 'Analysis complete, preparing results'
-                    except:
+                    except Exception:
                         stage[RID] = 'Analysis complete, preparing results'
                 else:
                     stage[RID] = 'Analysis starting'

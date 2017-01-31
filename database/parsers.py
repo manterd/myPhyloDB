@@ -92,7 +92,7 @@ def mothur(dest, source):
         for afile in glob.glob(r'*.logfile'):
             shutil.move(afile, dest)
 
-    except:
+    except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -159,7 +159,7 @@ def projectid(Document):
 
         return p_uuid, pType, num_samp
 
-    except:
+    except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -230,7 +230,7 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
             project = Project.objects.get(projectid=p_uuid)
             Reference.objects.filter(refid=refid).update(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
 
-    except:
+    except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -456,7 +456,7 @@ def parse_taxonomy(Document):
                     if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
                         sid = uuid4().hex
                         Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
-                except:
+                except Exception:
                     g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                     if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName='unclassified').exists():
                         sid = uuid4().hex
@@ -467,13 +467,13 @@ def parse_taxonomy(Document):
                     if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
                         oid = uuid4().hex
                         OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName=taxon[7])
-                except:
+                except Exception:
                     s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
                     if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName='unclassified').exists():
                         oid = uuid4().hex
                         OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName='unclassified')
 
-    except:
+    except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -529,11 +529,11 @@ def parse_profile(file3, file4, p_uuid, refDict):
             g = taxaList[5]
             try:
                 s = taxaList[6]
-            except:
+            except Exception:
                 s = 'unclassified'
             try:
                 otu = taxaList[7]
-            except:
+            except Exception:
                 otu = 'unclassified'
 
             t_kingdom = Kingdom.objects.get(kingdomName=k)
@@ -565,7 +565,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
             step += 1.0
 
-    except:
+    except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
