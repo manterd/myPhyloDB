@@ -1674,7 +1674,7 @@ def select(request):
                 name = zip.namelist()[0]
                 zip.close()
             except Exception:
-                name = 'usr_norm_data.csv'
+                name = uploaded.name
 
         filename = str(myDir) + str(name)
         try:
