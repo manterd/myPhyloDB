@@ -1,10 +1,8 @@
 from collections import defaultdict
-import cPickle
 import ctypes
 from django import forms
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-import gzip
 import inspect
 import multiprocessing as mp
 import numpy as np

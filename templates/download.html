@@ -79,6 +79,11 @@
 
                 });
 
+                var myList = [];
+                for (var i = 0; i < selKeys.length; i++) {
+                    myList.push(selKeys[i]);
+                }
+
                 var jsonDict = JSON.stringify(selKeys);
                 $.ajax({
                     type: 'GET',

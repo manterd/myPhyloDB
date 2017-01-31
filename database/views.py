@@ -109,16 +109,19 @@ def getProjectFiles(request):
 
     paths = Reference.objects.filter(refid__in=selKeys).values_list('path', flat=True)
     zip_file = os.path.join(os.getcwd(), 'myPhyloDB', 'media', 'usr_temp', request.user.username, 'final_data.zip')
-    zf = zipfile.ZipFile(zip_file, "w")
+    zf = zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED)
     foundCount = 0
     errorMsg = "none"
     for path in paths:
         if os.path.exists(path):
             foundCount += 1
             for root, dirs, files in os.walk(path):
-                for file in files:
-                    if file.endswith('.shared') or file.endswith('.taxonomy') or file.endswith('.fasta') or file.endswith('.names') or file.endswith('.groups') or file.endswith('.logfile') or file.endswith('.xlsx') or file.endswith('.xls'):
-                        zf.write(os.path.join(root, file), zipfile.ZIP_DEFLATED)
+                for f in files:
+                    try:
+                        if f.endswith('.shared') or f.endswith('.taxonomy') or f.endswith('.fasta') or f.endswith('.names') or f.endswith('.groups') or f.endswith('.logfile') or f.endswith('.xlsx') or f.endswith('.xls'):
+                            zf.write(os.path.join(root, f))
+                    except:
+                        pass
     zf.close()
 
     if foundCount != len(paths):
