@@ -106,10 +106,14 @@
                 series: series,
                 tooltip: {
                     formatter: function () {
-                        return this.series.name[0] + ':' + this.series.name[1] + '<br/>' +
-                            'ID: ' + this.series.name[2] + '<br/>' +
-                            'Value: ' + this.y + '<br/>' +
-                            'Total: ' + this.point.stackTotal;
+                        if (this.series.type == 'column') {
+                            return this.series.name[0] + ':' + this.series.name[1] + '<br/>' +
+                                    'ID: ' + this.series.name[2] + '<br/>' +
+                                    'Value: ' + this.y + '<br/>' +
+                                    'Total: ' + this.point.stackTotal;
+                        } else {
+                            return 'standard error bar';
+                        }
                     }
                 },
                 plotOptions: {
@@ -122,6 +126,7 @@
                 catOptions.plotOptions.column.stacking = null;
             }
             chart1 = new Highcharts.Chart(catOptions);
+            errorBars();
         }
         function checkButtons() {
             dataType = document.getElementById("dataType").value;
@@ -843,6 +848,10 @@
             }
             checkButtons();
         }
+        function selectAll() {
+            clearTaxa();
+            checkButtons();
+        }
         function selectTree() {
             checkButtons();
             if (treeType == 1) {
@@ -1081,7 +1090,7 @@
             <tr id="row_taxa">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-taxa" onChange="checkButtons()">
+                    <select id="selectall-taxa" onChange="selectAll()">
                         <option value="0" selected="selected">Off</option>
                         <option value="2">Phyla</option>
                         <option value="3">Classes</option>
@@ -1100,7 +1109,7 @@
             <tr id="row_kegg" style="display:none">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-kegg" onChange="checkButtons()">
+                    <select id="selectall-kegg" onChange="selectAll()">
                         <option value="0" selected="selected">Off</option>
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>
@@ -1114,7 +1123,7 @@
             <tr id="row_nz" style="display:none">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-nz" onChange="checkButtons()">
+                    <select id="selectall-nz" onChange="selectAll()">
                         <option value="0" selected="selected">Off</option>
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>

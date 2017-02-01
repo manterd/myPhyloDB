@@ -9,17 +9,35 @@
             $("#container-1").empty();
             catOptions.plotOptions.column.stacking = "normal";
             chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-            chart1.redraw();
-            return;
+
+        } else {
+            unstackButton = true;
+            document.getElementById("unstackButton").value = "Stack bars";
+
+            $("#container-1").empty();
+            catOptions.plotOptions.column.stacking = null;
+            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
         }
 
-        unstackButton = true;
-        document.getElementById("unstackButton").value = "Stack bars";
-
-        $("#container-1").empty();
-        catOptions.plotOptions.column.stacking = null;
-        chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-        chart1.redraw();
+        errorBars();
     }
 
+    function errorBars() {
+        var seriesLen = chart1.series.length;
+
+        if (!unstackButton) {
+            $(chart1.series).each(function () {
+                if (this.type == 'errorbar') {
+                    this.setVisible(false, false);
+                }
+            });
+        } else {
+            for (var i=0; i < seriesLen; i+=2) {
+                if (chart1.series[i].visible) {
+                    chart1.series[i+1].setVisible(true, false);
+                }
+            }
+        }
+        chart1.redraw();
+    }
 </script>

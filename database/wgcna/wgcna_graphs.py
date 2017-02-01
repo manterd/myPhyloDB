@@ -11,7 +11,7 @@ import sys
 
 from database.utils import getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
-from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ, insertTaxaInfo
+from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ
 import database.queue
 
 
@@ -474,16 +474,15 @@ def getWGCNA(request, stops, RID, PID):
                 index = r.get("names(datExpr)")
                 kmeDF.insert(0, 'rank_id', index)
 
-                zipped = []
                 if treeType == 1:
-                    zipped = getFullTaxonomy(list(kmeDF['rank_id']))
-                    insertTaxaInfo(treeType, zipped, kmeDF, pos=1)
+                    idList = getFullTaxonomy(list(kmeDF.rank_id.unique()))
+                    kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
                 elif treeType == 2:
-                    zipped = getFullKO(list(kmeDF['rank_id']))
-                    insertTaxaInfo(treeType, zipped, kmeDF, pos=1)
+                    idList = getFullKO(list(kmeDF.rank_id.unique()))
+                    kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
                 elif treeType == 3:
-                    zipped = getFullNZ(list(kmeDF['rank_id']))
-                    insertTaxaInfo(treeType, zipped, kmeDF, pos=1)
+                    idList = getFullNZ(list(kmeDF.rank_id.unique()))
+                    kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
 
                 kmeDF.replace(to_replace='N/A', value=np.nan, inplace=True)
                 kmeDF.dropna(axis=1, how='all', inplace=True)

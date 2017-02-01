@@ -339,53 +339,120 @@ def getCatUnivData(request, RID, stops, PID):
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 for name1, group1 in grouped1:
                     dataList = []
+                    errorList = []
                     pValue = pValDict[name1]
 
                     if sig_only == 0:
                         if DepVar == 0:
-                            grouped2 = group1.groupby(catFields)['abund'].mean()
-                            dataList = list(grouped2)
+                            mean = group1.groupby(catFields)['abund'].mean()
+                            se = group1.groupby(catFields)['abund'].std() / np.sqrt(group1.groupby(catFields)['abund'].count())
+                            high = [x + y for x, y in zip(mean, se)]
+                            low = [x - y for x, y in zip(mean, se)]
+                            dataList = list(mean)
+                            errorTuple = zip(low, high)
+                            errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 1:
-                            grouped2 = group1.groupby(catFields)['rel_abund'].mean()
-                            dataList = list(grouped2)
+                            mean = group1.groupby(catFields)['rel_abund'].mean()
+                            se = group1.groupby(catFields)['rel_abund'].std() / np.sqrt(group1.groupby(catFields)['rel_abund'].count())
+                            high = [x + y for x, y in zip(mean, se)]
+                            low = [x - y for x, y in zip(mean, se)]
+                            dataList = list(mean)
+                            errorTuple = zip(low, high)
+                            errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 2:
-                            grouped2 = group1.groupby(catFields)['rich'].mean()
-                            dataList = list(grouped2)
+                            mean = group1.groupby(catFields)['rich'].mean()
+                            se = group1.groupby(catFields)['rich'].std() / np.sqrt(group1.groupby(catFields)['rich'].count())
+                            high = [x + y for x, y in zip(mean, se)]
+                            low = [x - y for x, y in zip(mean, se)]
+                            dataList = list(mean)
+                            errorTuple = zip(low, high)
+                            errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 3:
-                            grouped2 = group1.groupby(catFields)['diversity'].mean()
-                            dataList = list(grouped2)
+                            mean = group1.groupby(catFields)['diversity'].mean()
+                            se = group1.groupby(catFields)['diversity'].std() / np.sqrt(group1.groupby(catFields)['diversity'].count())
+                            high = [x + y for x, y in zip(mean, se)]
+                            low = [x - y for x, y in zip(mean, se)]
+                            dataList = list(mean)
+                            errorTuple = zip(low, high)
+                            errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 4:
-                            grouped2 = group1.groupby(catFields)['abund_16S'].mean()
-                            dataList = list(grouped2)
+                            mean = group1.groupby(catFields)['abund_16S'].mean()
+                            se = group1.groupby(catFields)['abund_16S'].std() / np.sqrt(group1.groupby(catFields)['abund_16S'].count())
+                            high = [x + y for x, y in zip(mean, se)]
+                            low = [x - y for x, y in zip(mean, se)]
+                            dataList = list(mean)
+                            errorTuple = zip(low, high)
+                            errorList = [list(elem) for elem in errorTuple]
 
                         seriesDict = {}
                         seriesDict['name'] = name1
+                        seriesDict['type'] = 'column'
                         seriesDict['color'] = colors[colors_idx]
                         seriesDict['data'] = dataList
+                        seriesList.append(seriesDict)
+
+                        seriesDict = {}
+                        seriesDict['name'] = name1
+                        seriesDict['type'] = 'errorbar'
+                        seriesDict['visible'] = False
+                        seriesDict['data'] = errorList
                         seriesList.append(seriesDict)
 
                     elif sig_only == 1:
                         if pValue < 0.05:
                             if DepVar == 0:
-                                grouped2 = group1.groupby(catFields)['abund'].mean()
-                                dataList = list(grouped2)
+                                mean = group1.groupby(catFields)['abund'].mean()
+                                se = group1.groupby(catFields)['abund'].std() / np.sqrt(group1.groupby(catFields)['abund'].count())
+                                high = [x + y for x, y in zip(mean, se)]
+                                low = [x - y for x, y in zip(mean, se)]
+                                dataList = list(mean)
+                                errorTuple = zip(low, high)
+                                errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 1:
-                                grouped2 = group1.groupby(catFields)['rel_abund'].mean()
-                                dataList = list(grouped2)
+                                mean = group1.groupby(catFields)['rel_abund'].mean()
+                                se = group1.groupby(catFields)['rel_abund'].std() / np.sqrt(group1.groupby(catFields)['rel_abund'].count())
+                                high = [x + y for x, y in zip(mean, se)]
+                                low = [x - y for x, y in zip(mean, se)]
+                                dataList = list(mean)
+                                errorTuple = zip(low, high)
+                                errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 2:
-                                grouped2 = group1.groupby(catFields)['rich'].mean()
-                                dataList = list(grouped2)
+                                mean = group1.groupby(catFields)['rich'].mean()
+                                se = group1.groupby(catFields)['rich'].std() / np.sqrt(group1.groupby(catFields)['rich'].count())
+                                high = [x + y for x, y in zip(mean, se)]
+                                low = [x - y for x, y in zip(mean, se)]
+                                dataList = list(mean)
+                                errorTuple = zip(low, high)
+                                errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 3:
-                                grouped2 = group1.groupby(catFields)['diversity'].mean()
-                                dataList = list(grouped2)
+                                mean = group1.groupby(catFields)['diversity'].mean()
+                                se = group1.groupby(catFields)['diversity'].std() / np.sqrt(group1.groupby(catFields)['diversity'].count())
+                                high = [x + y for x, y in zip(mean, se)]
+                                low = [x - y for x, y in zip(mean, se)]
+                                dataList = list(mean)
+                                errorTuple = zip(low, high)
+                                errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 4:
-                                grouped2 = group1.groupby(catFields)['abund_16S'].mean()
-                                dataList = list(grouped2)
+                                mean = group1.groupby(catFields)['abund_16S'].mean()
+                                se = group1.groupby(catFields)['abund_16S'].std() / np.sqrt(group1.groupby(catFields)['abund_16S'].count())
+                                high = [x + y for x, y in zip(mean, se)]
+                                low = [x - y for x, y in zip(mean, se)]
+                                dataList = list(mean)
+                                errorTuple = zip(low, high)
+                                errorList = [list(elem) for elem in errorTuple]
 
                             seriesDict = {}
                             seriesDict['name'] = name1
+                            seriesDict['type'] = 'column'
                             seriesDict['color'] = colors[colors_idx]
                             seriesDict['data'] = dataList
+                            seriesList.append(seriesDict)
+
+                            seriesDict = {}
+                            seriesDict['name'] = name1
+                            seriesDict['type'] = 'errorbar'
+                            seriesDict['visible'] = False
+                            seriesDict['data'] = errorList
                             seriesList.append(seriesDict)
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

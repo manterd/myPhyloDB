@@ -45,9 +45,10 @@
 
     <!-- high charts -->
     <script src="{% static 'highcharts/highcharts.js' %}" type="text/javascript"></script>
+    <script src="{% static 'highcharts/highcharts-more.js' %}" type="text/javascript"></script>
     <script src="{% static 'highcharts/exporting.js' %}" type="text/javascript"></script>
-    <script src="{% static 'highcharts/grouped-categories.js' %}" type="text/javascript"></script>
     <script src="{% static 'highcharts/heatmap.js' %}" type="text/javascript"></script>
+    <script src="{% static 'highcharts/grouped-categories.js' %}" type="text/javascript"></script>
 
     <script type="text/javascript">
         var selFiles = false;
@@ -67,10 +68,10 @@
         });
 
         Highcharts.setOptions({
-                lang: {
-                    numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
-                }
-            });
+            lang: {
+                numericSymbols: [' × 10³', ' × 10⁶', ' × 10⁹', ' × 10¹²', ' × 10¹⁵', ' × 10¹⁸']
+            }
+        });
 
         $(function () {
             $('[title]').qtip({
