@@ -71,9 +71,6 @@ def getNorm(request, RID, stopList, PID):
                 res = simplejson.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
 
-            tabular_on = int(all['Tabular'])
-            biom_on = int(all['Biome'])
-
             # Calculate min/median/max of sequence reads for rarefaction
             NormReads = 0
             if not NormMeth == 1:
@@ -225,7 +222,6 @@ def getNorm(request, RID, stopList, PID):
 
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
-            finalDF.to_pickle(path)
 
             # save file to users temp/ folder
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
@@ -238,9 +234,15 @@ def getNorm(request, RID, stopList, PID):
             types = finalDF.dtypes
             for col in types[types == 'object'].index:
                 finalDF[col] = finalDF[col].astype(str)
-            finalDF.to_hdf(path, 'data')
 
-            database.queue.setBase(RID, 'Step 5 of 7: Calculating indices...done')
+            if os.path.exists(path):
+                os.remove(path)
+
+            store = pd.HDFStore(path)
+            store.append('data', finalDF, chunksize=1000)
+            store.close()
+
+            database.queue.setBase(RID, 'Step 5 of 7: Writing data to disk...done')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -251,7 +253,6 @@ def getNorm(request, RID, stopList, PID):
             database.queue.setBase(RID, 'Step 6 of 7: Formatting biome data...')
 
             biome = {}
-
             nameList = []
             for i in myList:
                 nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
@@ -283,10 +284,6 @@ def getNorm(request, RID, stopList, PID):
             biome['columns'] = nameList
             biome['data'] = dataList
 
-            if biom_on == 1:
-                biome_json = simplejson.dumps(biome, ensure_ascii=True, indent=4, sort_keys=True)
-                finalDict['biome'] = str(biome_json)
-
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.biom'
             with open(path, 'w') as outfile:
@@ -302,16 +299,6 @@ def getNorm(request, RID, stopList, PID):
 
             database.queue.setBase(RID, 'Step 7 of 7: Formatting result table...')
 
-            if tabular_on == 1:
-                data = finalDF.values.tolist()
-                cols = finalDF.columns.values.tolist()
-                colList = []
-                for item in cols:
-                    colDict = {}
-                    colDict['title'] = item
-                    colList.append(colDict)
-                finalDict['data'] = data
-                finalDict['columns'] = colList
 
             database.queue.setBase(RID, 'Step 7 of 7: Formatting result table...done!')
 

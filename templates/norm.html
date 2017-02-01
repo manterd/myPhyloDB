@@ -34,7 +34,6 @@
 
     <script type="text/javascript">
         var NormMeth = 1;
-        var tabular= 0, biome = 0;
         var remove = 0, minsize = 0;
         var res_table = null;
         var running = false, refresh = 0, RID = 0;
@@ -47,22 +46,6 @@
                     $("#NormVal").val("min");
                 } else {
                     $("#NormVal").val("median");
-                }
-            });
-            $("#Tabular").change(function () {
-                checkButtons();
-                if (document.getElementById('Tabular').checked) {
-                    tabular = 1;
-                } else {
-                    tabular = 0;
-                }
-            });
-            $("#Biom").change(function () {
-                checkButtons();
-                if (document.getElementById('Biom').checked) {
-                    biome = 1;
-                } else {
-                    biome = 0;
                 }
             });
             $("#MinSize").change(function () {
@@ -149,8 +132,6 @@
             RID = makeGUID();
             startTimer(RID);
             var myDict = {};
-            myDict['Tabular'] = tabular;
-            myDict['Biome'] = biome;
             myDict['Remove'] = remove;
             myDict['Cutoff'] = document.getElementById("Cutoff").value;
             myDict['NormVal'] = document.getElementById("NormVal").value;
@@ -223,7 +204,6 @@
             running = true;
             $("#run").css("background-color", "yellow");
             $("#container-1").empty();
-            $("#biome-text").val('');
             $("#res_table").empty();
             chooseData();
         }
@@ -272,44 +252,6 @@
                             $("#run").css("background-color", "red");
                         } else {
                             $("#run").css("background-color", "green");
-                        }
-
-                        if (tabular == 1) {
-                            var rowData = data['data'];
-                            var colData = data['columns'];
-
-                            if (res_table == null) {
-                                res_table = $('#res_table').dataTable({
-                                    dom: 'B<"toolbar">lfrtip',
-                                    deferRender: true,
-                                    scrollX: true,
-                                    bSort: true,
-                                    bPaginate: true,
-                                    sPaginationType: 'full_numbers',
-                                    buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ],
-                                    data: rowData,
-                                    columns: colData
-                                });
-                            } else {
-                                res_table = $('#res_table').DataTable({
-                                    dom: 'B<"toolbar">lfrtip',
-                                    deferRender: true,
-                                    scrollX: true,
-                                    bSort: true,
-                                    bPaginate: true,
-                                    sPaginationType: 'full_numbers',
-                                    buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ],
-                                    data: rowData,
-                                    columns: colData,
-                                    destroy: true
-                                });
-                            }
-                            $("div.toolbar").html('<br><br><br>');
-                        }
-
-                        if (biome == 1) {
-                            var biome_txt = data['biome'];
-                            $("#biome-text").val(biome_txt);
                         }
 
                         clearInterval(refresh);
@@ -393,22 +335,6 @@
             </tr>
             <tr><td bgcolor="white"></td></tr>
             <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Display your output formats (optional):</em></strong></td>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <input type="checkbox" title="Click to turn on/off" id="Tabular"/>
-                    &nbsp<-- Output tabular results to DataTable
-                </td>
-            </tr>
-            <tr>
-                <td bgcolor="white">
-                    <input type="checkbox" title="Click to turn on/off" id="Biom"/>
-                    &nbsp<-- Output biom results to text area
-                </td>
-            </tr>
-            <tr><td bgcolor="white"></td></tr>
-            <tr>
                 <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run normalization:</em></strong></td>
             </tr>
             <tr>
@@ -439,15 +365,6 @@
     <textarea id="container-1" style="width: 950px;" wrap="off" rows="10">Please run a normalization procedure!</textarea>
     <br>
 
-    <div style="width: 950px">
-    <h2>Normalized Data (Tabular):</h2>
-    <table id="res_table" class="display nowrap" cellpadding="0" cellspacing="0" width="100%"></table>
-    </div>
-    <br>
-
-    <h2>Normalized Data (BIOM Format):</h2>
-    <textarea id="biome-text" style="width: 950px;" wrap="off" rows="20"></textarea>
-    <br>
     <br>
     <br>
 {% endblock my_content%}
