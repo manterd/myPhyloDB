@@ -25,7 +25,9 @@
             if (flag && node.childList == undefined) {
                 node.reloadChildren(function () {
                     node.select(false);
-                    node.select(true);
+                    if (node.childList) {
+                        node.select(true);
+                    }
                 });
             }
             nodesQuant = node.tree.getSelectedNodes();

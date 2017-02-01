@@ -23,6 +23,7 @@
         var table1, table2, table3, table4, table5, table6, table7, table8, table9;
         var RID = 0;
         var method = "{{ method }}";
+        var loading = true;
 
         $(function () {
 
@@ -278,9 +279,13 @@
                     data: {}
                 },
                 onLazyRead: function (node) {
+                    loading = true;
                     node.appendAjax({
                         url: '/myPhyloDB/getProjectTreeChildren/',
-                        data: {id: node.data.id}
+                        data: {id: node.data.id},
+                        success: function () {
+                            loading = false;
+                        }
                     });
                 },
                 onSelect: function (flag, node) {
@@ -291,7 +296,7 @@
                         });
                     }
                 },
-                onclick: function () {
+                onClick: function () {
                     $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
                 }
             });
@@ -310,38 +315,7 @@
 
             $("#submit").click(function () {
                 $("#upload").css("background-color", "lightgray").val("Upload!");
-
-                selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
-                    if (node.getLevel() == 3) {
-                        return node.data.id;
-                    }
-                    $("#submit").css("background-color", "yellow").val("Running!");
-                });
-
-                var jsonDict = JSON.stringify(selKeys);
-                $.ajax({
-                    type: 'GET',
-                    url: '/myPhyloDB/saveSampleList/',
-                    dataType: 'json',
-                    data: {all: jsonDict},
-                    success: function (data) {
-                        var result = JSON.stringify(data);
-                        alert(result);
-                        $("#submit").css("background-color", "green").val("Success!");
-                        $("#link0").hide();
-                        $("#link1").hide();
-                        $("#link2").hide();
-                        $("#link3").hide();
-                        $("#link4").hide();
-                        $("#link5").show();
-                        $("#link6").hide();
-                        document.getElementById("drawtable").disabled = false;
-                    },
-                    failure: function () {
-                        $("#submit").css("background-color", "red").val("Failed!");
-                    }
-
-                });
+                checkTree();
             });
 
             $('<input>').attr({
@@ -351,6 +325,43 @@
             }).appendTo('form');
 
         });
+
+        function checkTree() {
+            if (loading) {
+                $("#submit").css("background-color", "yellow").val("Waiting for tree!");
+                setTimeout(checkTree, 500);
+                return;
+            }
+
+            selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+                if (node.getLevel() == 3) {
+                    return node.data.id;
+                }
+                $("#submit").css("background-color", "yellow").val("Running!");
+            });
+
+            var jsonDict = JSON.stringify(selKeys);
+            $.ajax({
+                type: 'GET',
+                url: '/myPhyloDB/saveSampleList/',
+                data: {all: jsonDict},
+                success: function (data) {
+                    $("#submit").css("background-color", "green").val("Success!");
+                    $("#link0").hide();
+                    $("#link1").hide();
+                    $("#link2").hide();
+                    $("#link3").hide();
+                    $("#link4").hide();
+                    $("#link5").show();
+                    $("#link6").hide();
+                    document.getElementById("drawtable").disabled = false;
+                    alert(data);
+                },
+                failure: function () {
+                    $("#submit").css("background-color", "red").val("Failed!");
+                }
+            });
+        }
 
         function makeGUID(){
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

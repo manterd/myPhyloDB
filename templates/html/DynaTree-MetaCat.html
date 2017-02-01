@@ -29,7 +29,9 @@
             if (flag && node.childList == undefined) {
                 node.reloadChildren(function () {
                     node.select(false);
-                    node.select(true);
+                    if (node.childList) {
+                        node.select(true);
+                    }
                 });
             }
             nodesCat = node.tree.getSelectedNodes();
@@ -41,7 +43,6 @@
             }
 
             $("#run").css("background-color", "lightgray");
-
 
             if (document.title == 'CARET') {
                 countCat = 0;

@@ -25,6 +25,7 @@
         var chart2 = {}, quantOptions = {};
         var unstackButton = false;
         var running = false, refresh = 0, RID = 0;
+        var subset = 'none';
 
         $(function () {
             $(window).load(function() {
@@ -848,7 +849,14 @@
             }
             checkButtons();
         }
-        function selectAll() {
+        function selectAll(val) {
+            if (val == 5) {
+                subset = 'gibbs'
+            } else if (val == 6) {
+                subset = 'ncycle'
+            } else {
+                subset = 'none'
+            }
             clearTaxa();
             checkButtons();
         }
@@ -1090,7 +1098,7 @@
             <tr id="row_taxa">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-taxa" onChange="selectAll()">
+                    <select id="selectall-taxa" onChange="selectAll('none')">
                         <option value="0" selected="selected">Off</option>
                         <option value="2">Phyla</option>
                         <option value="3">Classes</option>
@@ -1109,7 +1117,7 @@
             <tr id="row_kegg" style="display:none">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-kegg" onChange="selectAll()">
+                    <select id="selectall-kegg" onChange="selectAll('none')">
                         <option value="0" selected="selected">Off</option>
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>
@@ -1123,7 +1131,7 @@
             <tr id="row_nz" style="display:none">
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <select id="selectall-nz" onChange="selectAll()">
+                    <select id="selectall-nz" onChange="selectAll(this.value)">
                         <option value="0" selected="selected">Off</option>
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>

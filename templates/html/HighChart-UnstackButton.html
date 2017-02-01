@@ -7,16 +7,26 @@
             document.getElementById("unstackButton").value = "Unstack bars";
 
             $("#container-1").empty();
-            catOptions.plotOptions.column.stacking = "normal";
-            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+
+            chart1.update({
+                plotOptions: {
+                    column: { stacking: "normal"},
+                    series: { borderWidth: 0}
+                }
+            });
 
         } else {
             unstackButton = true;
             document.getElementById("unstackButton").value = "Stack bars";
 
             $("#container-1").empty();
-            catOptions.plotOptions.column.stacking = null;
-            chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+
+            chart1.update({
+                plotOptions: {
+                    column: { stacking: null},
+                    series: { borderWidth: 0}
+                }
+            });
         }
 
         errorBars();
@@ -32,9 +42,23 @@
                 }
             });
         } else {
-            for (var i=0; i < seriesLen; i+=2) {
-                if (chart1.series[i].visible) {
-                    chart1.series[i+1].setVisible(true, false);
+            if (treeType != 3) {
+                for (var i = 0; i < seriesLen; i += 2) {
+                    if (chart1.series[i].visible) {
+                        chart1.series[i + 1].setVisible(true, false);
+                    }
+                }
+            } else {
+                if (subset == 'none') {
+                    for (var i = 0; i < seriesLen; i += 2) {
+                        if (chart1.series[i].visible) {
+                            chart1.series[i + 1].setVisible(true, false);
+                        }
+                    }
+                } else if (subset == 'gibbs') {
+                    gibbs();
+                } else if (subset == 'ncycle') {
+                    ncycle();
                 }
             }
         }

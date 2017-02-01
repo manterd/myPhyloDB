@@ -33,18 +33,12 @@ def getProjectTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
 
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
-
 
 def getProjectTreeChildren(request):
-    # get project children (samples) which are visible to current user (check
     if request.is_ajax():
         projectid = request.GET["id"]
         samples = Sample.objects.filter(projectid=projectid).values_list('sampleid', flat=True)
@@ -258,15 +252,9 @@ def getSampleCatTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict = {}
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getSampleCatTreeChildren(request):
@@ -707,15 +695,9 @@ def getSampleQuantTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict = {}
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getSampleQuantTreeChildren(request):
@@ -1016,15 +998,9 @@ def getTaxaTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict = {}
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getTaxaTreeChildren(request):
@@ -1170,15 +1146,9 @@ def getKEGGTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict = {}
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getKEGGTreeChildren(request):
@@ -1266,15 +1236,9 @@ def getKEGGTree2(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict = {}
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getNZTree(request):
@@ -1333,15 +1297,9 @@ def getNZTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict = {}
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getNZTreeChildren(request):
@@ -1365,7 +1323,6 @@ def getNZTreeChildren(request):
 
         elif level == 'Level5':
             pass
-
 
         res = simplejson.dumps(nodes, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
@@ -1401,15 +1358,9 @@ def makeUpdateTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict = {}
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def makeReproTree(request):
@@ -1464,15 +1415,9 @@ def makeReproTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict = {}
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getDownloadTree(request):
@@ -1501,14 +1446,9 @@ def getDownloadTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')
 
 
 def getDownloadTreeChildren(request):
@@ -1564,11 +1504,6 @@ def getPermissionTree(request):
     # Convert result list to a JSON string
     res = simplejson.dumps(myTree, encoding="Latin-1")
 
-    # Support for the JSONP protocol.
-    response_dict = {}
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
-
-    response_dict.update({'children': myTree})
-    return HttpResponse(response_dict, content_type='application/javascript')

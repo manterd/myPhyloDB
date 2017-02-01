@@ -2077,9 +2077,8 @@ def saveSampleList(request):
         else:
             UserProfile.objects.create(user=request.user, dataID=uuid4().hex)
 
-        text = 'Selected sample(s) have been recorded!'
-        res = simplejson.dumps(text, encoding="Latin-1")
-        return HttpResponse(res, content_type='application/json')
+        text = 'Selected sample(s) have been recorded!\nYou may proceed directly to data normalization.'
+        return HttpResponse(text)
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
