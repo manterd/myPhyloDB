@@ -1027,6 +1027,389 @@
                 }
             });
         }
+    function flipStack() {
+        if (unstackButton) {
+            unstackButton = false;
+            document.getElementById("unstackButton").value = "Unstack bars";
+
+            $("#container-1").empty();
+
+            chart1.update({
+                plotOptions: {
+                    column: { stacking: "normal"},
+                    series: { borderWidth: 0}
+                }
+            });
+
+        } else {
+            unstackButton = true;
+            document.getElementById("unstackButton").value = "Stack bars";
+
+            $("#container-1").empty();
+
+            chart1.update({
+                plotOptions: {
+                    column: { stacking: null},
+                    series: { borderWidth: 0}
+                }
+            });
+        }
+
+        errorBars();
+    }
+
+    function errorBars() {
+        var seriesLen = chart1.series.length;
+
+        if (!unstackButton) {
+            $(chart1.series).each(function () {
+                if (this.type == 'errorbar') {
+                    this.setVisible(false, false);
+                }
+            });
+        } else {
+            if (treeType != 3) {
+                for (var i = 0; i < seriesLen; i += 2) {
+                    if (chart1.series[i].visible) {
+                        chart1.series[i + 1].setVisible(true, false);
+                    }
+                }
+            } else {
+                if (subset == 'none') {
+                    for (var i = 0; i < seriesLen; i += 2) {
+                        if (chart1.series[i].visible) {
+                            chart1.series[i + 1].setVisible(true, false);
+                        }
+                    }
+                } else if (subset == 'gibbs') {
+                    gibbs();
+                } else if (subset == 'ncycle') {
+                    ncycle();
+                }
+            }
+        }
+        chart1.redraw();
+    }
+
+    function gibbs() {
+        var cat_gibbs = document.getElementById("GIBBs").value;
+        var series = chart1.series;
+
+
+        for (var i = 0; i < series.length; i++) {
+            if (series[i].visible) {
+                series[i].setVisible(false, false);
+
+                if (cat_gibbs == 0) {
+                    if (series[i].type == 'column') {
+                        series[i].setVisible(true, false)
+                    } else if (series[i].type == 'errorbar') {
+                        if (unstackButton) {
+                            series[i].setVisible(true, false);
+                        }
+                    }
+                } else if (cat_gibbs == 1) {    // decomposition - C
+                    var names = [
+                        '3.2.1.4  cellulase',
+                        '3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)',
+                        '3.2.1.21  beta-glucosidase',
+                        '3.2.1.8  endo-1,4-beta-xylanase',
+                        '3.2.1.37  xylan 1,4-beta-xylosidase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (cat_gibbs == 2) {    // decomposition - N
+                    var names = [
+                        '3.5.1.4  amidase',
+                        '3.5.1.5  urease'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (cat_gibbs == 3) {    // decomposition - P
+                    var names = [
+                        '3.1.3.1  alkaline phosphatase',
+                        '3.1.3.2  acid phosphatase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (cat_gibbs == 4) {    // decomposition - S
+                    var names = [
+                        '3.1.6.1  arylsulfatase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (cat_gibbs == 5) {    // N-fixation
+                    var names = [
+                        '1.18.6.1  nitrogenase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (cat_gibbs == 5) {    // P solubility
+                    var names = [
+                        '1.3.3.11  pyrroloquinoline-quinone synthase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (cat_gibbs == 6) {    // Biocontrol
+                    var names = [
+                        '1.4.99.5  glycine dehydrogenase (cyanide-forming)',
+                        '4.1.1.5  acetolactate decarboxylase',
+                        '1.1.1.76  (S,S)-butanediol dehydrogenase',
+                        '3.2.1.6  endo-1,3(4)-beta-glucanase',
+                        '3.2.1.14  chitinase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (cat_gibbs == 7) {    // Root Growth
+                    var names = [
+                        '4.1.1.74  indolepyruvate decarboxylase',
+                        '3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (cat_gibbs == 8) {    // siderophore
+                    var names = [
+                        '6.3.2.39  aerobactin synthase',
+                        '6.3.2.14  enterobactin synthase',
+                        'mycobactin salicyl-AMP ligase [EC:6.3.2.-]',
+                        'yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        chart1.redraw();
+    }
+
+    function ncycle() {
+        var ncycle = document.getElementById("N_cycle").value;
+        var series = chart1.series;
+
+        for (var i = 0; i < series.length; i++) {
+            if (series[i].visible) {
+                series[i].setVisible(false, false);
+
+                if (cat_gibbs == 0) {
+                    if (series[i].type == 'column') {
+                        series[i].setVisible(true, false)
+                    } else if (series[i].type == 'errorbar') {
+                        if (unstackButton) {
+                            series[i].setVisible(true, false);
+                        }
+                    }
+                } else if (ncycle == 1) {    // N-fixation
+                    var names = [
+                        '1.18.6.1  nitrogenase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            alert('found by contains');
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (ncycle == 2) {    // Ammonification
+                    var names = [
+                        '3.5.1.4  amidase', '3.5.1.5  urease'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            alert('found by contains');
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (ncycle == 3) {    // Nitrification
+                    var names = [
+                        '1.14.99.39  ammonia monooxygenase',
+                        '1.7.2.6  hydroxylamine dehydrogenase',
+                        '1.7.99.4  nitrate reductase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            alert('found by contains');
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (ncycle == 4) {    // DNRA
+                    var names = [
+                        '1.7.5.1  nitrate reductase (quinone)',
+                        '1.7.99.4  nitrate reductase',
+                        '1.7.1.15  nitrite reductase (NADH)',
+                        '1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            alert('found by contains');
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (ncycle == 5) {    // ANRA
+                    var names = [
+                        '1.7.7.1  ferredoxin---nitrite reductase',
+                        '1.7.7.2  ferredoxin---nitrate reductase',
+                        '1.7.99.4  nitrate reductase',
+                        '1.7.1.4  nitrite reductase [NAD(P)H]',
+                        '1.7.1.1  nitrate reductase (NADH)'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            alert('found by contains');
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (ncycle == 6) {    // Denitrification
+                    var names = [
+                        '1.7.99.4  nitrate reductase',
+                        '1.7.2.1  nitrite reductase (NO-forming)',
+                        '1.7.2.5  nitric oxide reductase (cytochrome c)',
+                        '1.7.2.4  nitrous-oxide reductase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            alert('found by contains');
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                } else if (ncycle == 7) {    // Anammox
+                    var names = [
+                        '1.7.2.7  hydrazine synthase',
+                        '1.7.2.8  hydrazine dehydrogenase'
+                    ];
+                    if (series[i].type == 'column') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            alert('found by contains');
+                            series[i].setVisible(true, false);
+                        }
+                    } else if (series[i].type == 'errorbar') {
+                        if (names.indexOf(series[i].name[1] >= 0)) {
+                            if (unstackButton) {
+                                series[i].setVisible(true, false);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        chart1.redraw();
+    }
+
     </script>
 {% endblock javascript %}
 
@@ -1214,8 +1597,38 @@
         </tr>
         <tr>
             <td colspan="8" style="text-align: center"></td>
-            {% include "html/HighChart-UnstackButton.html" %}
-            {% include "html/HighChart-CatSubset.html" %}
+            <td colspan="4" style="text-align: center;"><input type="button" id="unstackButton" value="Unstack bars" onclick="flipStack();"></td>
+            <td id="cat_off" colspan="8" style="text-align: center"></td>
+
+            <td id="cat_gibbs" colspan="8" style="text-align: center; display: none">
+                Category:
+                <select id="GIBBs" onChange="gibbs()">
+                    <option value="0" selected="selected">All</option>
+                    <option value="1">C decomposition</option>
+                    <option value="2">N decomposition</option>
+                    <option value="3">P decomposition</option>
+                    <option value="4">S decomposition</option>
+                    <option value="5">Nitrogen fixation</option>
+                    <option value="6">Phosphate solubility</option>
+                    <option value="7">Biocontrol</option>
+                    <option value="8">Root growth</option>
+                    <option value="9">Siderophore</option>
+                </select>
+            </td>
+
+            <td id="cat_nitrogen" colspan="8" style="text-align: center; display: none">
+                Category:
+                <select id="N_cycle" onChange="ncycle()">
+                    <option value="0" selected="selected">All</option>
+                    <option value="1">Nitrogen fixation</option>
+                    <option value="2">Ammonification</option>
+                    <option value="3">Nitrification</option>
+                    <option value="4">Dissimilatory nitrate reduction (DNR)</option>
+                    <option value="5">Assimilatory nitrate reduction (ANR)</option>
+                    <option value="6">Denitrification</option>
+                    <option value="7">Anammox</option>
+                </select>
+            </td>
         </tr>
         <tr>
             <td colspan="20" style="text-align: left">
