@@ -30,7 +30,7 @@ def getNorm(request, RID, stopList, PID):
             # Get variables from web page
             allJson = request.body.split('&')[0]
             all = simplejson.loads(allJson)
-            database.queue.setBase(RID, 'Step 1 of 7: Querying database...')
+            database.queue.setBase(RID, 'Step 1 of 6: Querying database...')
 
             NormMeth = int(all["NormMeth"])
 
@@ -133,7 +133,7 @@ def getNorm(request, RID, stopList, PID):
             qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('otuid', flat='True').distinct()
             taxaDict['OTU_99'] = qs3
 
-            database.queue.setBase(RID, 'Step 1 of 7: Querying database...done!')
+            database.queue.setBase(RID, 'Step 1 of 6: Querying database...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -141,11 +141,11 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 2 of 7: Sub-sampling data...')
+            database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
 
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
 
-            database.queue.setBase(RID, 'Step 4 of 7: Calculating indices...')
+            database.queue.setBase(RID, 'Step 4 of 6: Calculating indices...')
 
             normDF['rel_abund'] = normDF['rel_abund'].astype(float)
             normDF['abund'] = normDF['abund'].astype(int)
@@ -218,7 +218,7 @@ def getNorm(request, RID, stopList, PID):
             request.session['savedDF'] = pickle.dumps(path)
             request.session['NormMeth'] = NormMeth
 
-            database.queue.setBase(RID, 'Step 5 of 7: Writing data to disk...')
+            database.queue.setBase(RID, 'Step 5 of 6: Writing data to disk...')
 
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
@@ -242,7 +242,7 @@ def getNorm(request, RID, stopList, PID):
             store.append('data', finalDF, chunksize=1000)
             store.close()
 
-            database.queue.setBase(RID, 'Step 5 of 7: Writing data to disk...done')
+            database.queue.setBase(RID, 'Step 5 of 6: Writing data to disk...done')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -250,9 +250,9 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 6 of 7: Formatting biome data...')
+            database.queue.setBase(RID, 'Step 6 of 6: Formatting biome data...')
 
-            biome = {}
+            myBiom = {}
             nameList = []
             for i in myList:
                 nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
@@ -269,38 +269,29 @@ def getNorm(request, RID, stopList, PID):
 
             taxaList = []
             for index, row in namesDF.iterrows():
-                metaDict = {}
-                metaDict['taxonomy'] = row[0]
+                metaDict = {'taxonomy':  row[0]}
                 taxaList.append({"id": index, "metadata": metaDict})
 
-            biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
-            biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
-            biome['type'] = 'OTU table'
-            biome['generated_by'] = 'myPhyloDB'
-            biome['date'] = str(datetime.datetime.now())
-            biome['matrix_type'] = 'dense'
-            biome['matrix_element_type'] = 'float'
-            biome['rows'] = taxaList
-            biome['columns'] = nameList
-            biome['data'] = dataList
+            shape = [len(taxaList), len(nameList)]
+            myBiom['id'] = 'None'
+            myBiom['format'] = 'Biological Observation Matrix 1.0.0'
+            myBiom['format_url'] = 'http://biom-format.org'
+            myBiom['generated_by'] = 'myPhyloDB'
+            myBiom['type'] = 'OTU table'
+            myBiom['date'] = str(datetime.datetime.now())
+            myBiom['matrix_type'] = 'dense'
+            myBiom['matrix_element_type'] = 'int'
+            myBiom["shape"] = shape
+            myBiom['rows'] = taxaList
+            myBiom['columns'] = nameList
+            myBiom['data'] = dataList
 
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.biom'
             with open(path, 'w') as outfile:
-                simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
+                simplejson.dump(myBiom, outfile, ensure_ascii=True, indent=4)
 
-            database.queue.setBase(RID, 'Step 6 of 7: Formatting biome data...done!')
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stopList[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-            database.queue.setBase(RID, 'Step 7 of 7: Formatting result table...')
-
-
-            database.queue.setBase(RID, 'Step 7 of 7: Formatting result table...done!')
+            database.queue.setBase(RID, 'Step 6 of 6: Formatting biome data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -519,7 +510,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
         print r("if (length(new.packages)) biocLite(new.packages)")
 
-        database.queue.setBase(RID, 'Step 2 of 7: Sub-sampling data...')
+        database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
 
         print r("library(DESeq2)")
 
@@ -556,8 +547,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             DESeq_error = 'yes'
             countDF = df2.reset_index(drop=True)
 
-    database.queue.setBase(RID, 'Step 2 of 7: Sub-sampling data...done!')
-    database.queue.setBase(RID, 'Step 3 of 7: Tabulating data...')
+    database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...done!')
+    database.queue.setBase(RID, 'Step 3 of 6: Tabulating data...')
 
     relabundDF = pd.DataFrame(countDF[taxaID])
     binaryDF = pd.DataFrame(countDF[taxaID])
