@@ -24,7 +24,6 @@ SECRET_KEY = '8nj%u+=zh2v1wxebakh3w#_2!0o$h_@typk82%fte4op2d3b3q'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = []
 
 # Application definition
@@ -51,7 +50,6 @@ MIDDLEWARE_CLASSES = [
 ]
 
 AUTH_PROFILE_MODULE = "database.UserProfile"
-
 ROOT_URLCONF = 'myPhyloDB.urls'
 
 TEMPLATES = [
@@ -88,7 +86,6 @@ WSGI_APPLICATION = 'myPhyloDB.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -102,7 +99,6 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     #{ 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
     #{ 'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
@@ -113,15 +109,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'America/Denver'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
