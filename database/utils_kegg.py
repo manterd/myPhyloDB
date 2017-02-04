@@ -4,7 +4,6 @@ from django import db
 from django.http import HttpResponse
 from django_pandas.io import read_frame
 import logging
-import math
 import numpy as np
 import pandas as pd
 import simplejson
@@ -179,7 +178,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         metaDF.reset_index(drop=False, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='outer')
+        finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='inner')
         finalDF.reset_index(drop=False, inplace=True)
 
         wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
@@ -329,9 +328,8 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         levelList = []
         for key in koDict:
             levelList.append(str(key))
+            picrustDF[key] = 0.0
 
-        picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
-        picrustDF.fillna(0.0, inplace=True)
         sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
@@ -346,11 +344,9 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             elif DepVar == 1:
                 taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
             elif DepVar == 2:
-                taxaDF[level] = np.where(taxaDF['abund'] * taxaDF[level] > 0, 1, 0)
+                taxaDF[level] = taxaDF['rich'] * taxaDF[level]
             elif DepVar == 3:
-                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
-                taxaDF[level] = taxaDF[level].div(taxaDF[level].sum(), axis=0)
-                taxaDF[level] = taxaDF[level].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
+                taxaDF[level] = taxaDF['diversity'] * taxaDF[level]
             elif DepVar == 4:
                 taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
@@ -400,19 +396,13 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         elif DepVar == 4:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
 
-        wanted = allFields + ['sampleid']
-        metaDF = savedDF.loc[:, wanted]
-        metaDF.set_index('sampleid', drop=True, inplace=True)
-        grouped = metaDF.groupby(level=0)
-        metaDF = grouped.last()
-
         allDF.set_index('sampleid', drop=True, inplace=True)
-        allDF = pd.merge(metaDF, allDF, left_index=True, right_index=True, how='outer')
+        allDF = pd.merge(metaDF, allDF, left_index=True, right_index=True, how='inner')
         allDF.reset_index(drop=False, inplace=True)
         allDF = allDF.loc[(allDF.sum(axis=1) != 0)]
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
         finalDF.reset_index(drop=False, inplace=True)
 
         finalDF['rank'] = ''
@@ -449,7 +439,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             return HttpResponse(res, content_type='application/json')
 
 
-def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
+def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     try:
         nzDict = {}
         if nzAll == 0:
@@ -800,9 +790,8 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         levelList = []
         for key in nzDict:
             levelList.append(str(key))
+            picrustDF[key] = 0.0
 
-        picrustDF = pd.concat([picrustDF, pd.DataFrame(columns=levelList)])
-        picrustDF.fillna(0.0, inplace=True)
         sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
@@ -817,11 +806,9 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
             elif DepVar == 1:
                 taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
             elif DepVar == 2:
-                taxaDF[level] = np.where(taxaDF['abund'] * taxaDF[level] > 0, 1, 0)
+                taxaDF[level] = taxaDF['rich'] * taxaDF[level]
             elif DepVar == 3:
-                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
-                taxaDF[level] = taxaDF[level].div(taxaDF[level].sum(), axis=0)
-                taxaDF[level] = taxaDF[level].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
+                taxaDF[level] = taxaDF['diversity'] * taxaDF[level]
             elif DepVar == 4:
                 taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
@@ -873,19 +860,13 @@ def getNZDF(nzAll, myDict, savedDF, tempDF, allFields, DepVar, RID, stops, PID):
         elif DepVar == 4:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
 
-        wanted = allFields + ['sampleid']
-        metaDF = savedDF.loc[:, wanted]
-        metaDF.set_index('sampleid', drop=True, inplace=True)
-        grouped = metaDF.groupby(level=0)
-        metaDF = grouped.last()
-
         allDF.set_index('sampleid', drop=True, inplace=True)
-        allDF = pd.merge(metaDF, allDF, left_index=True, right_index=True, how='outer')
+        allDF = pd.merge(metaDF, allDF, left_index=True, right_index=True, how='inner')
         allDF.reset_index(drop=False, inplace=True)
         allDF = allDF.loc[(allDF.sum(axis=1) != 0)]
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
+        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
         finalDF.reset_index(drop=False, inplace=True)
 
         finalDF['rank'] = ''

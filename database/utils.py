@@ -426,134 +426,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     myDir = 'myPhyloDB/media/usr_temp/' + str(username) + '/'
     path = str(myDir) + 'usr_norm_data.biom'
 
-    with open(path) as data_file:
-        data = simplejson.load(data_file)
-        sampleids = [col['id'] for col in data['columns']]
-        taxaids = [col['id'] for col in data['rows']]
-
-        mat = data['data']
-        mat = np.asarray(mat).T.tolist()
-        abundDF = pd.DataFrame(mat, index=sampleids, columns=taxaids)
-        abundDF = abundDF.ix[finalSampleIDs]
-        abundDF.reset_index(drop=False, inplace=True)
-        abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
-        abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
-        abundDF.set_index('sampleid', inplace=True)
-
-        mat = data['rel_abund']
-        mat = np.asarray(mat).T.tolist()
-        rel_abundDF = pd.DataFrame(mat, index=sampleids, columns=taxaids)
-        rel_abundDF = rel_abundDF.ix[finalSampleIDs]
-        rel_abundDF.reset_index(drop=False, inplace=True)
-        rel_abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
-        rel_abundDF = pd.melt(rel_abundDF, id_vars='sampleid', value_vars=taxaids)
-        rel_abundDF.set_index('sampleid', inplace=True)
-
-        mat = data['rich']
-        mat = np.asarray(mat).T.tolist()
-        richDF = pd.DataFrame(mat, index=sampleids, columns=taxaids)
-        richDF = richDF.ix[finalSampleIDs]
-        richDF.reset_index(drop=False, inplace=True)
-        richDF.rename(columns={'index': 'sampleid'}, inplace=True)
-        richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
-        richDF.set_index('sampleid', inplace=True)
-
-        mat = data['diversity']
-        mat = np.asarray(mat).T.tolist()
-        diversityDF = pd.DataFrame(mat, index=sampleids, columns=taxaids)
-        diversityDF = diversityDF.ix[finalSampleIDs]
-        diversityDF.reset_index(drop=False, inplace=True)
-        diversityDF.rename(columns={'index': 'sampleid'}, inplace=True)
-        diversityDF = pd.melt(diversityDF, id_vars='sampleid', value_vars=taxaids)
-        diversityDF.set_index('sampleid', inplace=True)
-
-        mat = data['diversity']
-        mat = np.asarray(mat).T.tolist()
-        abund_16SDF = pd.DataFrame(mat, index=sampleids, columns=taxaids)
-        abund_16SDF = abund_16SDF.ix[finalSampleIDs]
-        abund_16SDF.reset_index(drop=False, inplace=True)
-        abund_16SDF.rename(columns={'index': 'sampleid'}, inplace=True)
-        abund_16SDF = pd.melt(abund_16SDF, id_vars='sampleid', value_vars=taxaids)
-        abund_16SDF.set_index('sampleid', inplace=True)
-
-        countDF = pd.DataFrame({
-            'taxaid': abundDF['variable'],
-            'abund': abundDF['value'],
-            'rel_abund': rel_abundDF['value'],
-            'rich': richDF['value'],
-            'diversity': diversityDF['value'],
-            'abund_16S': abund_16SDF['value']
-        }, index=abundDF.index)
-
-        d = data['columns']
-        metaDict = {}
-        for i in d:
-            metaDict[str(i['id'])] = i['metadata']
-        metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
-        metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
-        metaDF.set_index('sampleid', inplace=True)
-        metaDF = metaDF.ix[finalSampleIDs]
-        metaDF.dropna(axis=1, how='any')
-
-        # Check if there is at least one categorical variable with multiple levels
-        # Remove fields with only 1 level
-
-        remCatFields = []
-        if catFields:
-            tempList = catFields[:]
-            for i in tempList:
-                noLevels = len(list(pd.unique(metaDF[i])))
-                if noLevels < 2:
-                    catFields.remove(i)
-                    remCatFields.append(i)
-
-        allFields = catFields + quantFields
-        wantedList = allFields
-        metaDF = metaDF[wantedList]
-
-        # remove samples that do not have rRNA copy number data available
-        if DepVar == 4:
-            rnaDF = metaDF.loc[metaDF['rRNA_copies'] != np.nan]
-            finalSampleIDs = rnaDF.index.tolist()
-            metaDF = metaDF.ix[finalSampleIDs]
-
-        savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
-        savedDF.reset_index(drop=False, inplace=True)
-
-        d = data['rows']
-        taxaDict = {}
-        for i in d:
-            tempDict = {}
-            taxon = i['metadata']['taxonomy']
-            tempDict['kingdomid'] = taxon[0].split(':')[0]
-            tempDict['kingdomName'] = taxon[0].split(':')[1]
-            tempDict['phylaid'] = taxon[1].split(':')[0]
-            tempDict['phylaName'] = taxon[1].split(':')[1]
-            tempDict['classid'] = taxon[2].split(':')[0]
-            tempDict['className'] = taxon[2].split(':')[1]
-            tempDict['orderid'] = taxon[3].split(':')[0]
-            tempDict['orderName'] = taxon[3].split(':')[1]
-            tempDict['familyid'] = taxon[4].split(':')[0]
-            tempDict['familyName'] = taxon[4].split(':')[1]
-            tempDict['genusid'] = taxon[5].split(':')[0]
-            tempDict['genusName'] = taxon[5].split(':')[1]
-            tempDict['speciesid'] = taxon[6].split(':')[0]
-            tempDict['speciesName'] = taxon[6].split(':')[1]
-            tempDict['otuid'] = taxon[7].split(':')[0]
-            tempDict['otuName'] = taxon[7].split(':')[1]
-            taxaDict[str(i['id'])] = tempDict
-        taxaDF = pd.DataFrame.from_dict(taxaDict, orient='index').reset_index()
-        taxaDF.set_index('index', inplace=True)
-        taxaDF.reset_index(drop=False, inplace=True)
-        taxaDF.rename(columns={'index': 'taxaid'}, inplace=True)
-
-    savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='outer')
-
-    # make sure column types are correct
-    metaDF[catFields] = metaDF[catFields].astype(str)
-    metaDF[quantFields] = metaDF[quantFields].astype(float)
-
-    savedDF.reset_index(drop=False, inplace=True)
+    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields)
 
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
 
@@ -705,3 +578,145 @@ def getEditProjects(request):
         projects = Project.objects.filter(projectid__in=filterIDS).order_by('project_name')
 
     return projects
+
+
+def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
+    # Load file
+    file = open(path)
+    data = simplejson.load(file)
+
+    # Get metadata
+    d = data['columns']
+    metaDict = {}
+    for i in d:
+        metaDict[str(i['id'])] = i['metadata']
+    metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
+    metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    metaDF.set_index('sampleid', inplace=True)
+
+    if finalSampleIDs:
+        metaDF = metaDF.ix[finalSampleIDs]
+
+    metaDF.dropna(axis=1, how='all', inplace=True)
+    metaDF.dropna(axis=0, how='all', inplace=True)
+
+    # Get count data and calculate various dependent variables
+    sampleids = [col['id'] for col in data['columns']]
+    taxaids = [col['id'] for col in data['rows']]
+
+    mat = data['data']
+    mat = np.asarray(mat).T.tolist()
+    df = pd.DataFrame(mat, index=sampleids, columns=taxaids)
+    if finalSampleIDs:
+        df = df.ix[finalSampleIDs]
+        df.dropna(axis=1, how='all', inplace=True)
+        df.dropna(axis=0, how='all', inplace=True)
+    abundDF = df.reset_index(drop=False)
+    abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
+    abundDF.set_index('sampleid', inplace=True)
+
+    rel_abundDF = df.div(df.sum(axis=1).astype(float), axis=0)
+    rel_abundDF.reset_index(drop=False, inplace=True)
+    rel_abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    rel_abundDF = pd.melt(rel_abundDF, id_vars='sampleid', value_vars=taxaids)
+    rel_abundDF.set_index('sampleid', inplace=True)
+
+    richDF = df / df
+    richDF.fillna(0, inplace=True)
+    richDF.reset_index(drop=False, inplace=True)
+    richDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
+    richDF.set_index('sampleid', inplace=True)
+
+    diversityDF = -df.div(df.sum(axis=1).astype(float), axis=0) * np.log(df.div(df.sum(axis=1).astype(float), axis=0))
+    diversityDF.fillna(0.0, inplace=True)
+    diversityDF.reset_index(drop=False, inplace=True)
+    diversityDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    diversityDF = pd.melt(diversityDF, id_vars='sampleid', value_vars=taxaids)
+    diversityDF.set_index('sampleid', inplace=True)
+
+    if 'rRNA_copies' in metaDF.columns:
+        abund_16SDF = df.multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
+        abund_16SDF.fillna(0.0, inplace=True)
+        abund_16SDF.reset_index(drop=False, inplace=True)
+        abund_16SDF.rename(columns={'index': 'sampleid'}, inplace=True)
+        abund_16SDF = pd.melt(abund_16SDF, id_vars='sampleid', value_vars=taxaids)
+        abund_16SDF.set_index('sampleid', inplace=True)
+
+        countDF = pd.DataFrame({
+            'taxaid': abundDF['variable'],
+            'abund': abundDF['value'],
+            'rel_abund': rel_abundDF['value'],
+            'rich': richDF['value'],
+            'diversity': diversityDF['value'],
+            'abund_16S': abund_16SDF['value']
+        }, index=abundDF.index)
+
+    else:
+        rows, cols = abundDF.shape
+        abund_16SDF = np.zeros(rows)
+
+        countDF = pd.DataFrame({
+            'taxaid': abundDF['variable'],
+            'abund': abundDF['value'],
+            'rel_abund': rel_abundDF['value'],
+            'rich': richDF['value'],
+            'diversity': diversityDF['value'],
+            'abund_16S': abund_16SDF
+        }, index=abundDF.index)
+
+    # Check if there is at least one categorical variable with multiple levels
+    # Remove fields with only 1 level
+    remCatFields = []
+    if catFields:
+        tempList = catFields[:]
+        for i in tempList:
+            noLevels = len(list(pd.unique(metaDF[i])))
+            if noLevels < 2:
+                catFields.remove(i)
+                remCatFields.append(i)
+
+    if catFields or quantFields:
+        allFields = catFields + quantFields
+        metaDF = metaDF[allFields]
+
+    savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
+    savedDF.reset_index(drop=False, inplace=True)
+
+    d = data['rows']
+    taxaDict = {}
+    for i in d:
+        tempDict = {}
+        taxon = i['metadata']['taxonomy']
+        tempDict['kingdomid'] = taxon[0].split(':')[0]
+        tempDict['kingdomName'] = taxon[0].split(':')[1]
+        tempDict['phylaid'] = taxon[1].split(':')[0]
+        tempDict['phylaName'] = taxon[1].split(':')[1]
+        tempDict['classid'] = taxon[2].split(':')[0]
+        tempDict['className'] = taxon[2].split(':')[1]
+        tempDict['orderid'] = taxon[3].split(':')[0]
+        tempDict['orderName'] = taxon[3].split(':')[1]
+        tempDict['familyid'] = taxon[4].split(':')[0]
+        tempDict['familyName'] = taxon[4].split(':')[1]
+        tempDict['genusid'] = taxon[5].split(':')[0]
+        tempDict['genusName'] = taxon[5].split(':')[1]
+        tempDict['speciesid'] = taxon[6].split(':')[0]
+        tempDict['speciesName'] = taxon[6].split(':')[1]
+        tempDict['otuid'] = taxon[7].split(':')[0]
+        tempDict['otuName'] = taxon[7].split(':')[1]
+        taxaDict[str(i['id'])] = tempDict
+    taxaDF = pd.DataFrame.from_dict(taxaDict, orient='index').reset_index()
+    taxaDF.set_index('index', inplace=True)
+    taxaDF.reset_index(drop=False, inplace=True)
+    taxaDF.rename(columns={'index': 'taxaid'}, inplace=True)
+
+    savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')
+
+    # make sure column types are correct
+    metaDF[catFields] = metaDF[catFields].astype(str)
+    metaDF[quantFields] = metaDF[quantFields].astype(float)
+
+    savedDF.reset_index(drop=False, inplace=True)
+
+    return savedDF, metaDF, remCatFields

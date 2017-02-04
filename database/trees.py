@@ -59,7 +59,6 @@ def getProjectTreeChildren(request):
 
 
 def getSampleCatTree(request):
-
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
     with open(path, 'rb') as f:

@@ -11,11 +11,10 @@ import pickle
 from pyper import *
 import simplejson
 import zipfile
-import gc
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from database.models import OTU_99, Profile
-from database.utils import taxaProfileDF
+from database.utils import taxaProfileDF, exploding_panda
 import database.queue
 
 
@@ -148,11 +147,6 @@ def getNorm(request, RID, stopList, PID):
 
             database.queue.setBase(RID, 'Step 4 of 6: Calculating indices...')
 
-            normDF['rel_abund'] = normDF['rel_abund'].astype(float)
-            normDF['abund'] = normDF['abund'].astype(int)
-            normDF['rich'] = normDF['rich'].astype(int)
-            normDF['diversity'] = normDF['diversity'].astype(float)
-
             if remove == 1:
                 grouped = normDF.groupby('otuid')
                 goodIDs = []
@@ -189,17 +183,7 @@ def getNorm(request, RID, stopList, PID):
             finalDict['text'] = result
 
             normDF.set_index('sampleid', inplace=True)
-            finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True)
-
-            if 'rRNA_copies' in finalDF.columns:
-                finalDF['abund_16S'] = finalDF['rel_abund'] * finalDF['rRNA_copies'] / 1000
-                finalDF.fillna(0, inplace=True)
-            else:
-                finalDF['abund_16S'] = 0
-
-            finalDF[['rel_abund', 'rich', 'diversity']] = finalDF[['rel_abund', 'rich', 'diversity']].astype(float)
-            finalDF[['abund', 'abund_16S']] = finalDF[['abund', 'abund_16S']].astype(int)
-
+            finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True, how='inner')
             finalDF.reset_index(drop=False, inplace=True)
             finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
@@ -210,7 +194,7 @@ def getNorm(request, RID, stopList, PID):
                 if x in metaDFList:
                     metaDFList.remove(x)
             metaDFList = ['projectid', 'refid', 'sampleid', 'sample_name'] + metaDFList
-            metaDFList = metaDFList + ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+            metaDFList = metaDFList + ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu', 'otuid', 'abund']
             finalDF = finalDF[metaDFList]
 
             # save location info to session and save in temp/norm
@@ -223,27 +207,6 @@ def getNorm(request, RID, stopList, PID):
 
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
-
-            '''
-            # save file to users temp/ folder
-            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-            path = str(myDir) + 'usr_norm_data.h5'
-
-            if not os.path.exists(myDir):
-                os.makedirs(myDir)
-
-            # need to fix unicode problems with hdf storage
-            types = finalDF.dtypes
-            for col in types[types == 'object'].index:
-                finalDF[col] = finalDF[col].astype(str)
-
-            if os.path.exists(path):
-                os.remove(path)
-
-            store = pd.HDFStore(path, mode='w')
-            store.append('data', finalDF, chunksize=1000, iterator=True, mode='w', table=True, data_columns=['sampleid'])
-            store.close()
-            '''
 
             database.queue.setBase(RID, 'Step 5 of 6: Writing data to disk...done')
 
@@ -261,21 +224,9 @@ def getNorm(request, RID, stopList, PID):
                 nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
             # get list of lists with abundances
-            taxaOnlyDF = finalDF.loc[:, ['sampleid', 'kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu', 'otuid', 'abund', 'rel_abund', 'rich', 'diversity', 'abund_16S']]
+            taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]
             abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
             abundList = abundDF.values.tolist()
-
-            rel_abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='rel_abund')
-            rel_abundList = rel_abundDF.values.tolist()
-
-            richDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='rich')
-            richList = richDF.values.tolist()
-
-            diversityDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='diversity')
-            diversityList = diversityDF.values.tolist()
-
-            abund_16SDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund_16S')
-            abund_16SList = abund_16SDF.values.tolist()
 
             # get list of taxa
             namesDF = finalDF.loc[:, ['sampleid', 'otuid']]
@@ -300,10 +251,6 @@ def getNorm(request, RID, stopList, PID):
             myBiom['rows'] = taxaList
             myBiom['columns'] = nameList
             myBiom['data'] = abundList
-            myBiom['rel_abund'] = rel_abundList
-            myBiom['rich'] = richList
-            myBiom['diversity'] = diversityList
-            myBiom['abund_16S'] = abund_16SList
 
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.biom'
@@ -439,32 +386,32 @@ def UnivMetaDF(sampleList, RID, stopList, PID):
     tempDF = pd.DataFrame(list(Air.objects.filter(sampleid_id__in=sampleList).values(*airTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
 
     tempDF = pd.DataFrame(list(Human_Associated.objects.filter(sampleid_id__in=sampleList).values(*humanAssocTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
 
     tempDF = pd.DataFrame(list(Microbial.objects.filter(sampleid_id__in=sampleList).values(*microbialTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
 
     tempDF = pd.DataFrame(list(Soil.objects.filter(sampleid_id__in=sampleList).values(*soilTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
 
     tempDF = pd.DataFrame(list(Water.objects.filter(sampleid_id__in=sampleList).values(*waterTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
 
     tempDF = pd.DataFrame(list(UserDefined.objects.filter(sampleid_id__in=sampleList).values(*usrTableList)))
     if not tempDF.empty:
         tempDF.set_index('sampleid', drop=True, inplace=True)
-        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='outer')
+        metaDF = pd.merge(metaDF, tempDF, left_index=True, right_index=True, how='inner')
 
     return metaDF
 
@@ -478,6 +425,12 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     DESeq_error = 'no'
     if meth == 1 or meth == 4:
         countDF = df2.reset_index(drop=True)
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stopList[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
     elif meth == 2:
         if reads >= 0:
@@ -493,6 +446,12 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
                 countDF[mySet[i]] = finalArr[i]
 
             curSamples[RID] = 0
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stopList[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
@@ -511,6 +470,12 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
                 countDF[mySet[i]] = finalArr[i]
 
             curSamples[RID] = 0
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stopList[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif reads < 0:
             countDF = df2.reset_index(drop=True)
@@ -549,6 +514,12 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         pycds = r.get("sizeFactors(dds)")
         colList = df3.columns.tolist()
 
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stopList[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
         found = False
         if pycds is list:
             for thing in pycds:
@@ -569,17 +540,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...done!')
     database.queue.setBase(RID, 'Step 3 of 6: Tabulating data...')
 
-    relabundDF = pd.DataFrame(countDF[taxaID])
-    binaryDF = pd.DataFrame(countDF[taxaID])
-    diversityDF = pd.DataFrame(countDF[taxaID])
-    for i in mySet:
-        relabundDF[i] = countDF[i].div(countDF[i].sum(), axis=0)
-        binaryDF[i] = countDF[i].apply(lambda x: 1 if x != 0 else 0)
-        diversityDF[i] = relabundDF[i].apply(lambda x: -1 * x * math.log(x) if x > 0 else 0)
-
     field = 'otuid'
     taxaList = taxaDict['OTU_99']
-
     qs = OTU_99.objects.filter(otuid__in=taxaList)
     namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesid__speciesName', 'otuName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid__speciesid', 'otuid'])
     namesDF.rename(columns={'kingdomid__kingdomid': 'kingdomid', 'phylaid__phylaid': 'phylaid', 'classid__classid' : 'classid', 'orderid__orderid' : 'orderid', 'familyid__familyid' : 'familyid', 'genusid__genusid' : 'genusid', 'speciesid__speciesid' : 'speciesid'}, inplace=True)
@@ -601,31 +563,23 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     namesDF['otu'] = namesDF['otuid'].astype(str) + ': ' + namesDF['otuName']
     namesDF.drop(['otuName'], axis=1, inplace=True)
 
+    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+    if stopList[PID] == RID:
+        res = ''
+        return HttpResponse(res, content_type='application/json')
+    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
     curSamples[RID] = 0
     totSamples[RID] = len(mySet)
-
-    ser1 = relabundDF.groupby(field)[mySet].sum()
-    ser2 = ser1.stack()
-    relDF = pd.Series.to_frame(ser2, name='rel_abund')
 
     ser1 = countDF.groupby(field)[mySet].sum()
     ser2 = ser1.stack()
     abundDF = pd.Series.to_frame(ser2, name='abund')
+    abundDF['abund'] = abundDF['abund'].astype(int)
+    abundDF.reset_index(drop=False, inplace=True)
 
-    ser1 = binaryDF.groupby(field)[mySet].sum()
-    ser2 = ser1.stack()
-    richDF = pd.Series.to_frame(ser2, name='rich')
+    normDF = pd.merge(abundDF, namesDF, left_on='otuid', right_on='otuid', how='inner')
 
-    ser1 = diversityDF.groupby(field)[mySet].sum()
-    ser2 = ser1.stack()
-    divDF = pd.Series.to_frame(ser2, name='diversity')
-
-    normDF = pd.merge(relDF, abundDF, left_index=True, right_index=True, how='outer')
-    normDF = pd.merge(normDF, richDF, left_index=True, right_index=True, how='outer')
-    normDF = pd.merge(normDF, divDF, left_index=True, right_index=True, how='outer')
-    normDF.reset_index(drop=False, inplace=True)
-
-    normDF = pd.merge(normDF, namesDF, left_on='otuid', right_on='otuid', how='outer')
     return normDF, DESeq_error
 
 
@@ -683,8 +637,9 @@ def getTab(request):
     if request.is_ajax():
         myDict = {}
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_norm_data.h5'
-        df = pd.read_hdf(path, 'data')
+        path = str(myDir) + 'usr_norm_data.biom'
+
+        df, metaDF, remCatFields = exploding_panda(path)
 
         fileName2 = str(myDir) + 'usr_norm_data.csv'
         df.to_csv(fileName2)
