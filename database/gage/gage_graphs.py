@@ -29,9 +29,6 @@ def getGAGE(request, stops, RID, PID):
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
-                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-                path = str(myDir) + 'usr_norm_data.h5'
-                savedDF = pd.read_hdf(path, 'data')
 
                 # Select samples and meta-variables from savedDF
                 database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
@@ -43,7 +40,7 @@ def getGAGE(request, stops, RID, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(savedDF, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
 
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."

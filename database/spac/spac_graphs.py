@@ -7,7 +7,7 @@ from pyper import *
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import simplejson
 
-from database.utils import multidict
+from database.utils import getMetaDF
 from database.utils_kegg import getTaxaDF, filterDF
 import database.queue
 
@@ -23,9 +23,6 @@ def getSpAC(request, stops, RID, PID):
                 allJson = request.body.split('&')[0]
                 all = simplejson.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
-                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-                path = str(myDir) + 'usr_norm_data.h5'
-                savedDF = pd.read_hdf(path, 'data')
 
                 database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
@@ -53,57 +50,20 @@ def getSpAC(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
+                metaValsQuant = ''
+                metaIDsQuant = ''
 
-                metaDictCat = {}
-                catFields = []
-                catValues = []
-                if metaValsCat:
-                    metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
-                    for key in sorted(metaDictCat):
-                        catFields.append(key)
-                        catValues.extend(metaDictCat[key])
+                treeType = 1
+                DepVar = 0
 
-                catFields_edit = []
-                removed = []
-                for i in metaDictCat:
-                    levels = len(set(metaDictCat[i]))
-                    if levels > 1:
-                        catFields_edit.append(i)
-                    else:
-                        removed.append(i)
+                # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
 
-                catSampleIDs = []
-                if metaIDsCat:
-                    idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-                    for key in sorted(idDictCat):
-                        if idDictCat[key] not in catSampleIDs:
-                            catSampleIDs.extend(idDictCat[key])
-
-                if not catFields_edit:
-                    catSampleIDs = savedDF.sampleid.unique().tolist()
-
-                allSampleIDs = catSampleIDs
-                allFields = catFields_edit
-
-                # Removes samples (rows) that are not in our samplelist
-                metaDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
-                if allSampleIDs:
-                    metaDF = metaDF.loc[metaDF['sampleid'].isin(allSampleIDs)]
-
-                # make sure column types are correct
-                metaDF[catFields_edit] = metaDF[catFields_edit].astype(str)
-
-                if metaDictCat:
-                    for key in metaDictCat:
-                        metaDF = metaDF.loc[metaDF[key].isin(metaDictCat[key])]
-
-                wantedList = allFields + ['sampleid', 'sample_name']
-                metaDF = metaDF[wantedList]
-                metaDF.set_index('sampleid', drop=True, inplace=True)
-
-                result += 'Categorical variables selected by user: ' + ", ".join(catFields) + '\n'
-                result += 'Categorical variables removed from analysis (contains only 1 level): ' + ", ".join(removed) + '\n'
-                result += '===============================================\n'
+                result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
+                result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
+                result += '===============================================\n\n'
 
                 database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...done')
 
@@ -138,7 +98,7 @@ def getSpAC(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 # make sure column types are correct
-                finalDF[catFields_edit] = finalDF[catFields_edit].astype(str)
+                finalDF[catFields] = finalDF[catFields].astype(str)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/spac/'

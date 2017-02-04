@@ -11,6 +11,7 @@ import pickle
 from pyper import *
 import simplejson
 import zipfile
+import gc
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from database.models import OTU_99, Profile
@@ -209,7 +210,7 @@ def getNorm(request, RID, stopList, PID):
                 if x in metaDFList:
                     metaDFList.remove(x)
             metaDFList = ['projectid', 'refid', 'sampleid', 'sample_name'] + metaDFList
-            metaDFList = metaDFList + ['kingdomid', 'kingdomName', 'phylaid', 'phylaName', 'classid', 'className', 'orderid', 'orderName', 'familyid', 'familyName', 'genusid', 'genusName', 'speciesid', 'speciesName', 'otuid', 'otuName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
+            metaDFList = metaDFList + ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
             finalDF = finalDF[metaDFList]
 
             # save location info to session and save in temp/norm
@@ -223,6 +224,7 @@ def getNorm(request, RID, stopList, PID):
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
 
+            '''
             # save file to users temp/ folder
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.h5'
@@ -238,9 +240,10 @@ def getNorm(request, RID, stopList, PID):
             if os.path.exists(path):
                 os.remove(path)
 
-            store = pd.HDFStore(path)
-            store.append('data', finalDF, chunksize=1000)
+            store = pd.HDFStore(path, mode='w')
+            store.append('data', finalDF, chunksize=1000, iterator=True, mode='w', table=True, data_columns=['sampleid'])
             store.close()
+            '''
 
             database.queue.setBase(RID, 'Step 5 of 6: Writing data to disk...done')
 
@@ -250,7 +253,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 6 of 6: Formatting biome data...')
+            database.queue.setBase(RID, 'Step 6 of 6: Formatting biom data...')
 
             myBiom = {}
             nameList = []
@@ -258,13 +261,25 @@ def getNorm(request, RID, stopList, PID):
                 nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
             # get list of lists with abundances
-            taxaOnlyDF = finalDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund']]
-            taxaOnlyDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
-            dataList = taxaOnlyDF.values.tolist()
+            taxaOnlyDF = finalDF.loc[:, ['sampleid', 'kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu', 'otuid', 'abund', 'rel_abund', 'rich', 'diversity', 'abund_16S']]
+            abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
+            abundList = abundDF.values.tolist()
+
+            rel_abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='rel_abund')
+            rel_abundList = rel_abundDF.values.tolist()
+
+            richDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='rich')
+            richList = richDF.values.tolist()
+
+            diversityDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='diversity')
+            diversityList = diversityDF.values.tolist()
+
+            abund_16SDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund_16S')
+            abund_16SList = abund_16SDF.values.tolist()
 
             # get list of taxa
             namesDF = finalDF.loc[:, ['sampleid', 'otuid']]
-            namesDF['taxa'] = finalDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName']].values.tolist()
+            namesDF['taxa'] = finalDF.loc[:, ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].values.tolist()
             namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
 
             taxaList = []
@@ -284,7 +299,11 @@ def getNorm(request, RID, stopList, PID):
             myBiom["shape"] = shape
             myBiom['rows'] = taxaList
             myBiom['columns'] = nameList
-            myBiom['data'] = dataList
+            myBiom['data'] = abundList
+            myBiom['rel_abund'] = rel_abundList
+            myBiom['rich'] = richList
+            myBiom['diversity'] = diversityList
+            myBiom['abund_16S'] = abund_16SList
 
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.biom'
@@ -565,6 +584,22 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     namesDF = read_frame(qs, fieldnames=['kingdomid__kingdomName', 'phylaid__phylaName', 'classid__className', 'orderid__orderName', 'familyid__familyName', 'genusid__genusName', 'speciesid__speciesName', 'otuName', 'kingdomid__kingdomid', 'phylaid__phylaid', 'classid__classid', 'orderid__orderid', 'familyid__familyid', 'genusid__genusid', 'speciesid__speciesid', 'otuid'])
     namesDF.rename(columns={'kingdomid__kingdomid': 'kingdomid', 'phylaid__phylaid': 'phylaid', 'classid__classid' : 'classid', 'orderid__orderid' : 'orderid', 'familyid__familyid' : 'familyid', 'genusid__genusid' : 'genusid', 'speciesid__speciesid' : 'speciesid'}, inplace=True)
     namesDF.rename(columns={'kingdomid__kingdomName': 'kingdomName', 'phylaid__phylaName': 'phylaName', 'classid__className' : 'className', 'orderid__orderName' : 'orderName', 'familyid__familyName' : 'familyName', 'genusid__genusName' : 'genusName', 'speciesid__speciesName' : 'speciesName'}, inplace=True)
+    namesDF['kingdom'] = namesDF['kingdomid'].astype(str) + ': ' + namesDF['kingdomName']
+    namesDF.drop(['kingdomid', 'kingdomName'], axis=1, inplace=True)
+    namesDF['phyla'] = namesDF['phylaid'].astype(str) + ': ' + namesDF['phylaName']
+    namesDF.drop(['phylaid', 'phylaName'], axis=1, inplace=True)
+    namesDF['class'] = namesDF['classid'].astype(str) + ': ' + namesDF['className']
+    namesDF.drop(['classid', 'className'], axis=1, inplace=True)
+    namesDF['order'] = namesDF['orderid'].astype(str) + ': ' + namesDF['orderName']
+    namesDF.drop(['orderid', 'orderName'], axis=1, inplace=True)
+    namesDF['family'] = namesDF['familyid'].astype(str) + ': ' + namesDF['familyName']
+    namesDF.drop(['familyid', 'familyName'], axis=1, inplace=True)
+    namesDF['genus'] = namesDF['genusid'].astype(str) + ': ' + namesDF['genusName']
+    namesDF.drop(['genusid', 'genusName'], axis=1, inplace=True)
+    namesDF['species'] = namesDF['speciesid'].astype(str) + ': ' + namesDF['speciesName']
+    namesDF.drop(['speciesid', 'speciesName'], axis=1, inplace=True)
+    namesDF['otu'] = namesDF['otuid'].astype(str) + ': ' + namesDF['otuName']
+    namesDF.drop(['otuName'], axis=1, inplace=True)
 
     curSamples[RID] = 0
     totSamples[RID] = len(mySet)

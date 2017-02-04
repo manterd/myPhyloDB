@@ -262,9 +262,7 @@ def getSampleCatTreeChildren(request):
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_sel_samples.pkl'
         with open(path, 'rb') as f:
-            samples = pickle.load(f)
-
-        selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
+            selected = pickle.load(f)
 
         filtered = []
         reads = Profile.objects.filter(sampleid__in=selected).order_by('sampleid__sample_name').values('sampleid').annotate(count=Sum('count'))
@@ -705,9 +703,7 @@ def getSampleQuantTreeChildren(request):
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_sel_samples.pkl'
         with open(path, 'rb') as f:
-            samples = pickle.load(f)
-
-        selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid', flat=True)
+            selected = pickle.load(f)
 
         filtered = []
         reads = Profile.objects.filter(sampleid__in=selected).order_by('sampleid__sample_name').values('sampleid').annotate(count=Sum('count'))
@@ -957,17 +953,14 @@ def getTaxaTree(request):
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_sel_samples.pkl'
     with open(path, 'rb') as f:
-        samples = pickle.load(f)
+        selected = pickle.load(f)
 
-    selected = Sample.objects.filter(sampleid__in=samples).values_list('sampleid')
+    filtered = []
+    reads = Profile.objects.filter(sampleid__in=selected).order_by('sampleid__sample_name').values('sampleid').annotate(count=Sum('count'))
+    for i in reads:
+        if int(i['count']) > 0:
+            filtered.append(i['sampleid'])
 
-    filterList = []
-    for sample in selected:
-        reads = Profile.objects.filter(sampleid=sample).aggregate(Sum('count'))
-        if reads['count__sum'] is not None:
-            filterList.append(sample[0])
-
-    filtered = Sample.objects.filter(sampleid__in=filterList).values_list('sampleid')
     selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
 
     myTree = {'title': 'Taxa Name', 'tooltip': 'root', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
@@ -1008,9 +1001,7 @@ def getTaxaTreeChildren(request):
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_sel_samples.pkl'
         with open(path, 'rb') as f:
-            samples = pickle.load(f)
-
-        selected = Sample.objects.all().filter(sampleid__in=samples).values_list('sampleid')
+            selected = pickle.load(f)
 
         filtered = []
         reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
