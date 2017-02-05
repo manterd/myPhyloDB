@@ -426,7 +426,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     myDir = 'myPhyloDB/media/usr_temp/' + str(username) + '/'
     path = str(myDir) + 'usr_norm_data.biom'
 
-    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields)
+    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields)
 
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
 
@@ -679,6 +679,8 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
 
     if catFields or quantFields:
         allFields = catFields + quantFields
+        if 'sample_name' not in allFields:
+            allFields.append('sample_name')
         metaDF = metaDF[allFields]
 
     savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')

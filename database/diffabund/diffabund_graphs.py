@@ -231,7 +231,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 mergeList = metaDF['merge'].tolist()
                 mergeSet = list(set(mergeList))
-                finalDF = pd.DataFrame()
+                nbinom_res = pd.DataFrame()
                 for i, val in enumerate(mergeSet):
                     start = i + 1
                     stop = int(len(mergeSet))
@@ -259,10 +259,10 @@ def getDiffAbund(request, stops, RID, PID):
                                 idList = getFullTaxonomy(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
                             elif treeType == 2:
-                                zipped = getFullKO(list(nbinom_res.rank_id.unique()))
+                                idList = getFullKO(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
                             elif treeType == 3:
-                                zipped = getFullNZ(list(nbinom_res.rank_id.unique()))
+                                idList = getFullNZ(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
 
                             nbinom_res.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
@@ -277,7 +277,6 @@ def getDiffAbund(request, stops, RID, PID):
                             nbinom_res.rename(columns={' stat ': 'Stat'}, inplace=True)
                             nbinom_res.rename(columns={' pval ': 'p-value'}, inplace=True)
                             nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
-                            finalDF = pd.concat([finalDF, nbinom_res])
 
                             database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...' + str(iterationName) + ' is done!')
 
@@ -300,7 +299,7 @@ def getDiffAbund(request, stops, RID, PID):
                 xAxisDict = {}
                 yAxisDict = {}
 
-                grouped = finalDF.groupby('Comparison')
+                grouped = nbinom_res.groupby('Comparison')
 
                 listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
                 shapeIterator = 0
@@ -382,9 +381,9 @@ def getDiffAbund(request, stops, RID, PID):
 
                 database.queue.setBase(RID, 'Step 6 of 6:  Formatting nbinomTest results for display...')
 
-                finalDF.replace(to_replace='N/A', value=np.nan, inplace=True)
-                finalDF.dropna(axis=1, how='all', inplace=True)
-                res_table = finalDF.to_html(classes="table display")
+                nbinom_res.replace(to_replace='N/A', value=np.nan, inplace=True)
+                nbinom_res.dropna(axis=1, how='all', inplace=True)
+                res_table = nbinom_res.to_html(classes="table display")
                 res_table = res_table.replace('border="1"', 'border="0"')
                 finalDict['res_table'] = str(res_table)
 

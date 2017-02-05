@@ -342,6 +342,7 @@ def getCatUnivData(request, RID, stops, PID):
                         if DepVar == 0:
                             mean = group1.groupby(catFields)['abund'].mean()
                             se = group1.groupby(catFields)['abund'].std() / np.sqrt(group1.groupby(catFields)['abund'].count())
+                            se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
                             dataList = list(mean)
@@ -350,6 +351,7 @@ def getCatUnivData(request, RID, stops, PID):
                         elif DepVar == 1:
                             mean = group1.groupby(catFields)['rel_abund'].mean()
                             se = group1.groupby(catFields)['rel_abund'].std() / np.sqrt(group1.groupby(catFields)['rel_abund'].count())
+                            se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
                             dataList = list(mean)
@@ -358,6 +360,7 @@ def getCatUnivData(request, RID, stops, PID):
                         elif DepVar == 2:
                             mean = group1.groupby(catFields)['rich'].mean()
                             se = group1.groupby(catFields)['rich'].std() / np.sqrt(group1.groupby(catFields)['rich'].count())
+                            se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
                             dataList = list(mean)
@@ -366,6 +369,7 @@ def getCatUnivData(request, RID, stops, PID):
                         elif DepVar == 3:
                             mean = group1.groupby(catFields)['diversity'].mean()
                             se = group1.groupby(catFields)['diversity'].std() / np.sqrt(group1.groupby(catFields)['diversity'].count())
+                            se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
                             dataList = list(mean)
@@ -374,6 +378,7 @@ def getCatUnivData(request, RID, stops, PID):
                         elif DepVar == 4:
                             mean = group1.groupby(catFields)['abund_16S'].mean()
                             se = group1.groupby(catFields)['abund_16S'].std() / np.sqrt(group1.groupby(catFields)['abund_16S'].count())
+                            se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
                             dataList = list(mean)
@@ -399,6 +404,7 @@ def getCatUnivData(request, RID, stops, PID):
                             if DepVar == 0:
                                 mean = group1.groupby(catFields)['abund'].mean()
                                 se = group1.groupby(catFields)['abund'].std() / np.sqrt(group1.groupby(catFields)['abund'].count())
+                                se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
                                 dataList = list(mean)
@@ -407,6 +413,7 @@ def getCatUnivData(request, RID, stops, PID):
                             elif DepVar == 1:
                                 mean = group1.groupby(catFields)['rel_abund'].mean()
                                 se = group1.groupby(catFields)['rel_abund'].std() / np.sqrt(group1.groupby(catFields)['rel_abund'].count())
+                                se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
                                 dataList = list(mean)
@@ -415,6 +422,7 @@ def getCatUnivData(request, RID, stops, PID):
                             elif DepVar == 2:
                                 mean = group1.groupby(catFields)['rich'].mean()
                                 se = group1.groupby(catFields)['rich'].std() / np.sqrt(group1.groupby(catFields)['rich'].count())
+                                se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
                                 dataList = list(mean)
@@ -423,6 +431,7 @@ def getCatUnivData(request, RID, stops, PID):
                             elif DepVar == 3:
                                 mean = group1.groupby(catFields)['diversity'].mean()
                                 se = group1.groupby(catFields)['diversity'].std() / np.sqrt(group1.groupby(catFields)['diversity'].count())
+                                se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
                                 dataList = list(mean)
@@ -431,6 +440,7 @@ def getCatUnivData(request, RID, stops, PID):
                             elif DepVar == 4:
                                 mean = group1.groupby(catFields)['abund_16S'].mean()
                                 se = group1.groupby(catFields)['abund_16S'].std() / np.sqrt(group1.groupby(catFields)['abund_16S'].count())
+                                se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
                                 dataList = list(mean)
@@ -529,14 +539,16 @@ def getCatUnivData(request, RID, stops, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
 
-                # datatable of taxa mapped to selected kegg orthologies
-                records = allDF.values.tolist()
-                finalDict['taxData'] = simplejson.dumps(records)
-                columns = allDF.columns.values.tolist()
-                finalDict['taxColumns'] = simplejson.dumps(columns)
+                if not treeType == 1:
+                    # datatable of taxa mapped to selected kegg orthologies
+                    records = allDF.values.tolist()
+                    finalDict['taxData'] = simplejson.dumps(records)
+                    columns = allDF.columns.values.tolist()
+                    finalDict['taxColumns'] = simplejson.dumps(columns)
 
                 finalDict['resType'] = 'res'
                 finalDict['error'] = 'none'
+
                 res = simplejson.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 

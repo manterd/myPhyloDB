@@ -193,7 +193,6 @@ def getPCA(request, stops, RID, PID):
                 r.assign("cols", count_rDF.columns.values.tolist())
                 r("colnames(data) <- cols")
 
-                metaDF.drop('sample_name', axis=1, inplace=True)
                 r.assign("meta", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())
                 r("rownames(meta) <- rows")

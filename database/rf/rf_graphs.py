@@ -83,6 +83,18 @@ def getRF(request, stops, RID, PID):
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
+                if not catFields:
+                    error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
+                if not finalSampleIDs:
+                    error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                    myDict = {'error': error}
+                    res = simplejson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
                 result = ''
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
                 result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
@@ -209,7 +221,11 @@ def getRF(request, stops, RID, PID):
                 myList = list(metaDF.select_dtypes(include=['object']).columns)
                 for i in myList:
                     metaDF[i] = metaDF[i].str.replace(' ', '_')
+                    metaDF[i] = metaDF[i].str.replace('-', '.')
+                    metaDF[i] = metaDF[i].str.replace('(', '.')
+                    metaDF[i] = metaDF[i].str.replace(')', '.')
 
+                metaDF.set_index('sampleid', inplace=True)
                 r.assign("meta_full", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())
 
@@ -232,6 +248,7 @@ def getRF(request, stops, RID, PID):
                 # Subset train data
                 trainIDs = all['trainArray']
                 r.assign("trainIDs", trainIDs)
+
                 r("X <- X_full[row.names(X_full) %in% trainIDs,]")
                 r("meta <- meta_full[row.names(meta_full) %in% trainIDs,]")
                 r("Y <- Y_full[row.names(Y_full) %in% trainIDs,]")

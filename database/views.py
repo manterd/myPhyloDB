@@ -68,7 +68,6 @@ def upload(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def download(request):
-
     projects = Reference.objects.none()
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -86,7 +85,6 @@ def download(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def profile(request):
-
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all().order_by('project_name')

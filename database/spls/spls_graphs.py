@@ -294,7 +294,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 5 of 6: Formatting graph data for display...')
+                database.queue.setBase(RID, 'Step 5 of 6: Formatting sPLS coefficient table...')
 
                 finalDict = {}
                 if total is not None:
@@ -387,7 +387,6 @@ def getSPLS(request, stops, RID, PID):
                     elif treeType == 2:
                         if keggAll == 1:
                             taxNameList = ko_lvl1.objects.using('picrust').filter(ko_lvl1_id__in=taxIDList).values('ko_lvl1_id', 'ko_lvl1_name')
-                            print taxNameList
                             namesDF = pd.DataFrame(list(taxNameList))
                             namesDF.rename(columns={'ko_lvl1_name': 'rank_name', 'ko_lvl1_id': 'rank_id'}, inplace=True)
                             namesDF.set_index('rank_id', inplace=True)
@@ -469,8 +468,12 @@ def getSPLS(request, stops, RID, PID):
                     pred_table = pred_table.replace('border="1"', 'border="0"')
                     finalDict['pred_table'] = str(pred_table)
 
+                    database.queue.setBase(RID, 'Step 5 of 6: Formatting sPLS coefficient table...done')
+                    database.queue.setBase(RID, 'Step 6 of 6: Formatting graph data for display...')
+
                     xAxisDict = {}
                     xAxisDict['categories'] = taxNameList
+
                     labelsDict = {}
                     labelsDict['rotation'] = 270
                     labelsDict['enabled'] = True
@@ -503,13 +506,14 @@ def getSPLS(request, stops, RID, PID):
                                 return HttpResponse(res, content_type='application/json')
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                    seriesDict['data'] = dataList
+
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                    seriesDict['data'] = dataList
                     labelDict = {}
                     labelDict['enabled'] = True
                     labelDict['color'] = 'black',
@@ -572,8 +576,7 @@ def getSPLS(request, stops, RID, PID):
 
                 finalDict['text'] = result
 
-                database.queue.setBase(RID, 'Step 5 of 6: Formatting graph data for display...done!')
-                database.queue.setBase(RID, 'Step 6 of 6: Formatting sPLS coefficient table...')
+                database.queue.setBase(RID, 'Step 6 of 6: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

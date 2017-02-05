@@ -28,7 +28,6 @@ def getsoil_index(request, stops, RID, PID):
                 database.queue.setBase(RID, 'Step 1 of 4: Reading normalized data file...')
 
                 result = ''
-
                 # Select samples and meta-variables from savedDF
                 database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen meta-variables...')
                 metaValsCat = all['metaValsCat']

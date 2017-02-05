@@ -267,6 +267,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 r.assign("datExpr", count_rDF)
                 r.assign("geneID", count_rDF.columns.values.tolist())
+                metaDF.set_index('sampleid', inplace=True)
                 r.assign("sampleID", metaDF.index.values.tolist())
                 r("datExpr[] <- lapply(datExpr, as.numeric)")
                 r("names(datExpr) <- geneID")
@@ -446,10 +447,10 @@ def getWGCNA(request, stops, RID, PID):
                     moduleDF['Taxonomy'] = moduleDF['rank_id'].map(idList)
                 elif treeType == 2:
                     idList = getFullKO(list(moduleDF.rank_id.unique()))
-                    moduleDF['Taxonomy'] = moduleDF['rank_id'].map(idList)
+                    moduleDF['Pathway'] = moduleDF['rank_id'].map(idList)
                 elif treeType == 3:
                     idList = getFullNZ(list(moduleDF.rank_id.unique()))
-                    moduleDF['Taxonomy'] = moduleDF['rank_id'].map(idList)
+                    moduleDF['Enzyme'] = moduleDF['rank_id'].map(idList)
 
                 moduleDF.replace(to_replace='N/A', value=np.nan, inplace=True)
                 moduleDF.dropna(axis=1, how='all', inplace=True)
@@ -584,50 +585,11 @@ def getWGCNA(request, stops, RID, PID):
                 r("annotDF$key <- paste(net$colors, '-', rownames(annotDF), sep='')")
 
                 if treeType == 1:
-                    if selectAll == 2:
-                        moduleDF["name"] = moduleDF[['Kingdom', 'Phyla']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif selectAll == 3:
-                        moduleDF['name'] = moduleDF[['Phyla', 'Class']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif selectAll == 4:
-                        moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif selectAll == 5:
-                        moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order', 'Family']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif selectAll == 6:
-                        moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order', 'Family', 'Genus']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif selectAll == 7:
-                        moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order', 'Family', 'Genus', 'Species']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif selectAll == 9:
-                        moduleDF['name'] = moduleDF[['Phyla', 'Class', 'Order', 'Family', 'Genus', 'Species', 'OTU_99']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
+                    r.assign("annotDF$name", moduleDF['Taxonomy'])
                 elif treeType == 2:
-                    if keggAll == 1:
-                        moduleDF["name"] = moduleDF['Level_1']
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif keggAll == 2:
-                        moduleDF['name'] = moduleDF[['Level_1', 'Level_2']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif keggAll == 3:
-                        moduleDF['name'] = moduleDF[['Level_1', 'Level_2', 'Level_3']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
+                    r.assign("annotDF$name", moduleDF['Pathway'])
                 elif treeType == 3:
-                    if nzAll == 1:
-                        moduleDF["name"] = moduleDF['Level_1']
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif nzAll == 2:
-                        moduleDF['name'] = moduleDF[['Level_1', 'Level_2']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif nzAll == 3:
-                        moduleDF['name'] = moduleDF[['Level_1', 'Level_2', 'Level_3']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
-                    elif nzAll >= 4:
-                        moduleDF['name'] = moduleDF[['Level_1', 'Level_2', 'Level_3', 'Level_4']].apply(lambda x: ';'.join(x), axis=1)
-                        r.assign("annotDF$name", moduleDF['name'])
+                    r.assign("annotDF$name", moduleDF['Enzyme'])
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

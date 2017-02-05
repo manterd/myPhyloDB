@@ -105,7 +105,7 @@ def getGAGE(request, stops, RID, PID):
                     else:
                         nameList.append(value)
 
-                # Enable this to update gage data and pathways
+                # Enable this only if you want to update gage data and pathways
                 '''
                 r("list.of.packages <- c('gageData')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")

@@ -273,7 +273,7 @@ def getPCoA(request, stops, RID, PID):
                 r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
                 mat = r.get("mat")
 
-                rowList = metaDF.sample_name.values.tolist()
+                rowList = metaDF.sampleid.values.tolist()
                 distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
                 database.queue.setBase(RID, 'Step 4 of 9: Calculating distance matrix...done!')
@@ -309,11 +309,10 @@ def getPCoA(request, stops, RID, PID):
 
                     r("res <- summary(ord)")
                     r("id <- rownames(meta)")
-                    r("pcoa <- data.frame(id, meta, res$sites)")
+                    r("pcoa <- data.frame(meta, res$sites)")
                     pcoaDF = r.get("pcoa")
 
-                    pcoaDF.rename(columns={'id': 'Sample ID'}, inplace=True)
-                    pcoaDF.rename(columns={'sample_name': 'Sample Name'}, inplace=True)
+                    pcoaDF.rename(columns={'sampleid': 'Sample ID'}, inplace=True)
 
                     r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
                     r("eig <- data.frame(Stat, res$cont$importance)")
@@ -615,7 +614,7 @@ def getPCoA(request, stops, RID, PID):
                         dataList = []
                         for index, row in group.iterrows():
                             dataDict = {}
-                            dataDict['name'] = row['Sample Name']
+                            dataDict['name'] = row['Sample ID']
                             dataDict['x'] = float(row[CAP1])
                             dataDict['y'] = float(row[CAP2])
                             dataList.append(dataDict)

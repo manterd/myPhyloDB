@@ -174,10 +174,9 @@ def getSpAC(request, stops, RID, PID):
 
                         r("pdf(paste('SpAC_temp', pdf_counter, '.pdf', sep=''))")
                         if method == 'estaccumR':
-                            r("x <- estaccumR(data)")
-                        elif method == 'poolaccum':
-                            r("x <- poolaccum(data)")
-
+                            r("x <- estaccumR(data, permutations=100)")
+                        #elif method == 'poolaccum':
+                        #    r("x <- poolaccum(data, permutations=100, minsize=3)")
                         values = r("summary(x)")
                         values = values.lstrip('try({summary(x)})')
                         result += str(name) + '\n'
