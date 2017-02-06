@@ -800,10 +800,10 @@ def getsoil_index(request, stops, RID, PID):
                         'EC3.2.1.14', \
                         'EC4.1.1.74', \
                         'EC3.5.99.7', \
-                        'EC6.3.2.14', \
+                        'EC6.3.2.39', \
                         'EC6.3.2.14', \
                         'K04787', \
-                        'K04783', \
+                        'K04783' \
                     )")
 
                     r("gibbs <- data[,GIBBsList]")
@@ -890,7 +890,7 @@ def getsoil_index(request, stops, RID, PID):
                         'EC1.7.2.5', \
                         'EC1.7.2.4', \
                         'EC1.7.2.7', \
-                        'EC1.7.2.8', \
+                        'EC1.7.2.8' \
                     )")
 
                     r("ncycle <- data[,NList]")
