@@ -593,7 +593,6 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
     metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
     metaDF.set_index('sampleid', inplace=True)
-
     if finalSampleIDs:
         metaDF = metaDF.ix[finalSampleIDs]
 
@@ -665,6 +664,8 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
             'diversity': diversityDF['value'],
             'abund_16S': abund_16SDF
         }, index=abundDF.index)
+
+    countDF[['abund', 'rich', 'abund_16S']] = countDF[['abund', 'rich', 'abund_16S']].astype(int)
 
     # Check if there is at least one categorical variable with multiple levels
     # Remove fields with only 1 level
