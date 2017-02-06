@@ -64,12 +64,15 @@
                 nArrays++;
             });
 
+            // good to here
+
             var wantedIDs = findCommonElements(arrayIDs);
 
+
             // Add data to HTML table
-            var indexNo = 1;
+            var indexNo = 0;
             $.each(finalDict, function(myKey, myRows) {
-                if (indexNo == 1) {
+                if (indexNo == 0) {
                     var headerData = '';
                     headerData += '<tr id=trainHeader>';
                     headerData += '<th>Selection</th>';
@@ -80,7 +83,7 @@
                     headerData += '</tr>';
                     $("#myTable").append(headerData);
 
-                    var count = 1;
+                    var count = 0;
                     $.each(myRows, function (index, value) {
                         var newRow = '';
                         var rowData = value.split(",");
@@ -235,16 +238,17 @@
         }
         function findCommonElements(arrs) {
             var resArr = [];
-            for (var i = arrs[0].length - 1; i > 0; i--) {
-
-
+            for (var i = arrs[0].length - 1; i >= 0; i--) {  // changed > to >= because 0 is valid
+                // iterate through value list
                 for (var j = arrs.length - 1; j > 0; j--) {
                     if (arrs[j].indexOf(arrs[0][i]) == -1) {
                         break;
+                        // if current value is not in this row, break
                     }
                 }
 
                 if (j === 0) {
+                    // push only values which are found in the full list
                     resArr.push(arrs[0][i]);
                 }
 

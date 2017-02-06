@@ -113,8 +113,8 @@
             ["49", "N cycle", "DNRA", "1.7.5.1", "nitrate reductase (quinone)", "1e10"],
             ["50", "N cycle", "DNRA", "1.7.1.15", "nitrite reductase (NADH)", "1e10"],
             ["51", "N cycle", "DNRA", "1.7.2.2", "nitrite reductase (cytochrome; ammonia-forming)", "1e10"],
-            ["52", "N cycle", "ANRA", "1.7.7.1", "ferredoxin---nitrite reductase", "1e10"],
-            ["53", "N cycle", "ANRA", "1.7.7.2", "ferredoxin---nitrite reductase", "1e10"],
+            ["52", "N cycle", "ANRA", "1.7.7.1", "ferredoxin---nitrite reductase 1", "1e10"],
+            ["53", "N cycle", "ANRA", "1.7.7.2", "ferredoxin---nitrite reductase 2", "1e10"],
             ["54", "N cycle", "ANRA", "1.7.1.4", "nitrite reductase [NAD(P)H]", "1e10"],
             ["55", "N cycle", "ANRA", "1.7.1.1", "nitrate reductase (NADH)", "1e10"],
             ["56", "N cycle", "Denitrification", "1.7.2.1", "nitrite reductase (NO-forming)", "1e10"],
@@ -243,16 +243,14 @@
                     maxVals[names[c]] = colvals[c];
                 }
 
-                ////// List is outdated //////
-                //Check if max value is valid
                 var stop = false;
                 if (maxVals['cellulase'] <= 0) {
                     alert("Max values must be greater than zero (check cellulase)");
                     document.getElementById("maxval1").value = "1e10";
                     stop = true;
                 }
-                if (maxVals['endo-1,4-beta-xylanase'] <= 0) {
-                    alert("Max values must be greater than zero (check endo-1.4-beta xylanase)");
+                if (maxVals['cellulose 1,4-beta-cellobiosidase (non-reducing end)'] <= 0) {
+                    alert("Max values must be greater than zero (check cellulose 1-4-beta-cellobiosidase)");
                     document.getElementById("maxval2").value = "1e10";
                     stop = true;
                 }
@@ -261,79 +259,179 @@
                     document.getElementById("maxval3").value = "1e10";
                     stop = true;
                 }
+                if (maxVals['endo-1,4-beta-xylanase'] <= 0) {
+                    alert("Max values must be greater than zero (check endo-1.4-beta xylanase)");
+                    document.getElementById("maxval4").value = "1e10";
+                    stop = true;
+                }
                 if (maxVals['xylan 1,4-beta-xylosidase'] <= 0) {
                     alert("Max values must be greater than zero (check xylan-1.4-beta-xylosidase)");
-                    document.getElementById("maxval4").value = "1e10";
-                   stop = true;
-                }
-                if (maxVals['cellulose 1,4-beta-cellobiosidase (non-reducing end)'] <= 0) {
-                    alert("Max values must be greater than zero (check cellulose 1-4-beta-cellobiosidase)");
                     document.getElementById("maxval5").value = "1e10";
-                    stop = true;
+                   stop = true;
                 }
                 if (maxVals['amidase'] <= 0) {
                     alert("Max values must be greater than zero (check amidase)");
-                    document.getElementById("maxval6").value = "4.04e10";
+                    document.getElementById("maxval6").value = "1e10";
                     stop = true;
                 }
                 if (maxVals['urease'] <= 0) {
                     alert("Max values must be greater than zero (check urease)");
-                    document.getElementById("maxval7").value = "1.56e10";
+                    document.getElementById("maxval7").value = "1e10";
                     stop = true;
                 }
                 if (maxVals['alkaline phosphatase'] <= 0) {
                     alert("Max values must be greater than zero (check alkaline phosphatase)");
-                    document.getElementById("maxval8").value = "1.99e10";
+                    document.getElementById("maxval8").value = "1e10";
                     stop = true;
                 }
                 if (maxVals['acid phosphatase'] <= 0) {
                     alert("Max values must be greater than zero (check acid phosphatase)");
-                    document.getElementById("maxval9").value = "2.33e10";
+                    document.getElementById("maxval9").value = "1e10";
                     stop = true;
                 }
                 if (maxVals['arylsulfatase'] <= 0) {
                     alert("Max values must be greater than zero (check arylsulfatase)");
-                    document.getElementById("maxval10").value = "1.82e10";
+                    document.getElementById("maxval10").value = "1e10";
                     stop = true;
                 }
                 if (maxVals['nitrogenase'] <= 0) {
                     alert("Max values must be greater than zero (check nitrogenase)");
-                    document.getElementById("maxval11").value = "9.65e9";
+                    document.getElementById("maxval11").value = "1e10";
                     stop = true;
                 }
                 if (maxVals['pyrroloquinoline-quinone synthase'] <= 0) {
                     alert("Max values must be greater than zero (check pyrroloquinoline-quinone synthase)");
-                    document.getElementById("maxval12").value = "8.05e9";
-                    stop = true;
-                }
-                if (maxVals['aerobactin synthase'] <= 0) {
-                    alert("Max values must be greater than zero (check aerobactin synthase)");
-                    document.getElementById("maxval13").value = "5.17e8";
-                    stop = true;
-                }
-                if (maxVals['1-aminocyclopropane-1-carboxylate deaminase'] <= 0) {
-                    alert("Max values must be greater than zero (check 1-aminocyclopropane-1-carboxylate deaminase)");
-                    document.getElementById("maxval14").value = "3.77e9";
-                    stop = true;
-                }
-                if (maxVals['indolepyruvate decarboxylase'] <= 0) {
-                    alert("Max values must be greater than zero (check indolepyruvate decarboxylase)");
-                    document.getElementById("maxval15").value = "1.80e9";
-                    stop = true;
-                }
-                if (maxVals['(S,S)-butanediol dehydrogenase'] <= 0) {
-                    alert("Max values must be greater than zero (check (S,S)-butanediol dehydrogenase)");
-                    document.getElementById("maxval16").value = "2.77e9";
+                    document.getElementById("maxval12").value = "1e10";
                     stop = true;
                 }
                 if (maxVals['glycine dehydrogenase (cyanide-forming)'] <= 0) {
                     alert("Max values must be greater than zero (check glycine dehydrogenase (cyanide-forming))");
-                    document.getElementById("maxval17").value = "5.94e7";
+                    document.getElementById("maxval13").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['acetolactate decarboxylase'] <= 0) {
+                    alert("Max values must be greater than zero (acetolactate decarboxylase))");
+                    document.getElementById("maxval14").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['(S,S)-butanediol dehydrogenase'] <= 0) {
+                    alert("Max values must be greater than zero (check (S,S)-butanediol dehydrogenase)");
+                    document.getElementById("maxval15").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['endo-1,3(4)-beta-glucanase'] <= 0) {
+                    alert("Max values must be greater than zero (check endo-1,3(4)-beta-glucanase");
+                    document.getElementById("maxval16").value = "1e10";
                     stop = true;
                 }
                 if (maxVals['chitinase'] <= 0) {
                     alert("Max values must be greater than zero (check chitinase)");
-                    document.getElementById("maxval18").value = "1.26e10";
+                    document.getElementById("maxval17").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['indolepyruvate decarboxylase'] <= 0) {
+                    alert("Max values must be greater than zero (check indolepyruvate decarboxylase)");
+                    document.getElementById("maxval18").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['1-aminocyclopropane-1-carboxylate deaminase'] <= 0) {
+                    alert("Max values must be greater than zero (check 1-aminocyclopropane-1-carboxylate deaminase)");
+                    document.getElementById("maxval19").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['aerobactin synthase'] <= 0) {
+                    alert("Max values must be greater than zero (check aerobactin synthase)");
+                    document.getElementById("maxval20").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['enterobactin synthase'] <= 0) {
+                    alert("Max values must be greater than zero (check enterobactin synthase)");
+                    document.getElementById("maxval21").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['amycobactin salicyl-AMP ligase'] <= 0) {
+                    alert("Max values must be greater than zero (check amycobactin salicyl-AMP ligase)");
+                    document.getElementById("maxval22").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['yersiniabactin salicyl-AMP ligase'] <= 0) {
+                    alert("Max values must be greater than zero (check yersiniabactin salicyl-AMP ligase)");
+                    document.getElementById("maxval23").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['ammonia monooxygenase'] <= 0) {
+                    alert("Max values must be greater than zero (check ammonia monooxygenase)");
+                    document.getElementById("maxval46").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['hydroxylamine dehydrogenase'] <= 0) {
+                    alert("Max values must be greater than zero (check hydroxylamine dehydrogenase)");
+                    document.getElementById("maxval47").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitrate reductase'] <= 0) {
+                    alert("Max values must be greater than zero (check nitrate reductase)");
+                    document.getElementById("maxval48").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitrate reductase (quinone)'] <= 0) {
+                    alert("Max values must be greater than zero (check nitrate reductase (quinone))");
+                    document.getElementById("maxval49").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitrite reductase (NADH)'] <= 0) {
+                    alert("Max values must be greater than zero (check nitrite reductase (NADH))");
+                    document.getElementById("maxval50").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitrite reductase (cytochrome; ammonia-forming)'] <= 0) {
+                    alert("Max values must be greater than zero (check cytochrome; ammonia-forming)");
+                    document.getElementById("maxval51").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['ferredoxin---nitrite reductase 1'] <= 0) {
+                    alert("Max values must be greater than zero (check ferredoxin---nitrite reductase 1))");
+                    document.getElementById("maxval52").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['ferredoxin---nitrite reductase 2'] <= 0) {
+                    alert("Max values must be greater than zero (check ferredoxin---nitrite reductase 2)");
+                    document.getElementById("maxval53").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitrite reductase [NAD(P)H]'] <= 0) {
+                    alert("Max values must be greater than zero (check nitrite reductase [NAD(P)H])");
+                    document.getElementById("maxval54").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitrate reductase (NADH)'] <= 0) {
+                    alert("Max values must be greater than zero (check nitrate reductase (NADH))");
+                    document.getElementById("maxval55").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitrite reductase (NO-forming)'] <= 0) {
+                    alert("Max values must be greater than zero (check nitrite reductase (NO-forming))");
+                    document.getElementById("maxval56").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitric oxide reductase (cytochrome c)'] <= 0) {
+                    alert("Max values must be greater than zero (check nitric oxide reductase (cytochrome c))");
+                    document.getElementById("maxval57").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['nitrous-oxide reductase'] <= 0) {
+                    alert("Max values must be greater than zero (check nitrous-oxide reductase)");
+                    document.getElementById("maxval58").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['hydrazine synthase subunit'] <= 0) {
+                    alert("Max values must be greater than zero (check hydrazine synthase subunit)");
+                    document.getElementById("maxval59").value = "1e10";
+                    stop = true;
+                }
+                if (maxVals['hydrazine dehydrogenase'] <= 0) {
+                    alert("Max values must be greater than zero (check hydrazine dehydrogenase)");
+                    document.getElementById("maxval60").value = "1e10";
                     stop = true;
                 }
             }
