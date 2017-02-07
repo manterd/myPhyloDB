@@ -6,7 +6,7 @@ from django_pandas.io import read_frame
 import logging
 import numpy as np
 import pandas as pd
-import simplejson
+import ujson
 
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99
 from database.models import PICRUSt
@@ -204,7 +204,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
-            res = simplejson.dumps(myDict)
+            res = ujson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -435,7 +435,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
-            res = simplejson.dumps(myDict)
+            res = ujson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -1122,7 +1122,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
             myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
             logging.exception(myDate)
             myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
-            res = simplejson.dumps(myDict)
+            res = ujson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 

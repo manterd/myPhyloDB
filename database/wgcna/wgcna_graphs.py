@@ -6,7 +6,7 @@ from natsort import natsorted
 import pandas as pd
 from pyper import *
 from PyPDF2 import PdfFileReader, PdfFileMerger
-import simplejson
+import ujson
 import sys
 
 from database.utils import getMetaDF, transformDF
@@ -27,7 +27,7 @@ def getWGCNA(request, stops, RID, PID):
         while True:
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
-                all = simplejson.loads(allJson)
+                all = ujson.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 7: Reading normalized data file...')
 
                 database.queue.setBase(RID, 'Step 2 of 7: Selecting your chosen meta-variables...')
@@ -296,7 +296,7 @@ def getWGCNA(request, stops, RID, PID):
                 if not gsg:
                     finalDict['text'] = error
                     finalDict['error'] = "Network construction failed!\nPlease check the 'Test Results' section for more information."
-                    res = simplejson.dumps(finalDict)
+                    res = ujson.dumps(finalDict)
                     return HttpResponse(res, content_type='application/json')
 
                 r(" if (!gsg$allOK) { \
@@ -377,7 +377,7 @@ def getWGCNA(request, stops, RID, PID):
                 if not net:
                     finalDict['text'] = error
                     finalDict['error'] = "Network construction failed!\nPlease check the 'Test Results' section for more information."
-                    res = simplejson.dumps(finalDict)
+                    res = ujson.dumps(finalDict)
                     return HttpResponse(res, content_type='application/json')
 
                 ### create our own custom color vector
@@ -621,7 +621,7 @@ def getWGCNA(request, stops, RID, PID):
                 if not nGenes > 0:
                     finalDict['text'] = error
                     finalDict['error'] = "All genes were removed from your network graph!\nPlease check your Network Graph settings."
-                    res = simplejson.dumps(finalDict)
+                    res = ujson.dumps(finalDict)
                     return HttpResponse(res, content_type='application/json')
 
                 ### get node data
@@ -978,7 +978,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
-                res = simplejson.dumps(finalDict)
+                res = ujson.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -988,5 +988,5 @@ def getWGCNA(request, stops, RID, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = simplejson.dumps(myDict)
+            res = ujson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')

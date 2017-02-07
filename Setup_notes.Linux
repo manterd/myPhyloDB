@@ -40,10 +40,10 @@ Install required python packages to virtual environment
 	pip install pyper
 	pip install pypdf2
 	pip install scipy
-	pip install simplejson
+	pip install ujson
 	pip install xlrd
 	pip install xlutils
-    pip install tables
+
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Install PyCharm
 	www.jetbrains.com/pycharm

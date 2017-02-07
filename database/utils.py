@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import re
 import shutil
-import simplejson
+import ujson
 import threading
 import time
 import zipfile
@@ -340,7 +340,7 @@ def getRawData(request):
         fileName2 = str(myDir) + str(request.user.username) + '.' + str(func) + '.gz'
         myDict = {'name': str(fileName2)}
 
-        res = simplejson.dumps(myDict)
+        res = ujson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -388,14 +388,14 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     catFields = []
     catValues = []
     if metaValsCat:
-        metaDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
+        metaDictCat = ujson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsCat)
         for key in sorted(metaDictCat):
             catFields.append(key)
             catValues.extend(metaDictCat[key])
 
     catSampleLists = []
     if metaIDsCat:
-        idDictCat = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
+        idDictCat = ujson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
         for key in sorted(idDictCat):
             catSampleLists.append(idDictCat[key])
 
@@ -406,14 +406,14 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     quantFields = []
     quantValues = []
     if metaValsQuant:
-        metaDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
+        metaDictQuant = ujson.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
         for key in sorted(metaDictQuant):
             quantFields.append(key)
             quantValues.extend(metaDictQuant[key])
 
     quantSampleLists = []
     if metaIDsQuant:
-        idDictQuant = simplejson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
+        idDictQuant = ujson.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
         for key in sorted(idDictQuant):
             quantSampleLists.append(idDictQuant[key])
 
@@ -583,7 +583,7 @@ def getEditProjects(request):
 def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     # Load file
     file = open(path)
-    data = simplejson.load(file)
+    data = ujson.load(file)
 
     # Get metadata
     d = data['columns']

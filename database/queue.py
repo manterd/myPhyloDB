@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from Queue import Queue
-import simplejson
+import ujson
 from time import sleep, time
 import threading
 
@@ -76,11 +76,11 @@ def stop(request):
                 thread.terminate()
                 stopList[pid] = RID
                 myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
-                stop = simplejson.dumps(myDict)
+                stop = ujson.dumps(myDict)
                 return HttpResponse(stop, content_type='application/json')
     except Exception:
         myDict = {'error': 'Analysis not running'}
-        stop = simplejson.dumps(myDict)
+        stop = ujson.dumps(myDict)
         return HttpResponse(stop, content_type='application/json')
 
 
@@ -137,7 +137,7 @@ def funcCall(request):
     # new hybrid call
     global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff
     allJson = request.body.split('&')[0]
-    data = simplejson.loads(allJson)
+    data = ujson.loads(allJson)
     reqType = data['reqType']
     RID = data['RID']
     funcName = data['funcName']
@@ -148,7 +148,7 @@ def funcCall(request):
             print "Missing dataID"
             myDict = {}
             myDict['error'] = "Error: Dev done goofed!"
-            json_data = simplejson.dumps(myDict, encoding="Latin-1")
+            json_data = ujson.dumps(myDict, encoding="Latin-1")
             return HttpResponse(json_data,  content_type='application/json')
 
         if dataID == UserProfile.objects.get(user=request.user).dataID:
@@ -162,12 +162,12 @@ def funcCall(request):
             myDict = {}
             myDict['resType'] = "status"
             myDict['error'] = "none"
-            json_data = simplejson.dumps(myDict, encoding="Latin-1")
+            json_data = ujson.dumps(myDict, encoding="Latin-1")
             return HttpResponse(json_data, content_type='application/json')
         else:
             myDict = {}
             myDict['error'] = "Error: Selected data has changed, please refresh the page"
-            json_data = simplejson.dumps(myDict)
+            json_data = ujson.dumps(myDict)
             return HttpResponse(json_data, content_type='application/json')
 
     if reqType == "status":
@@ -204,7 +204,7 @@ def funcCall(request):
                     stage[RID] = 'Analysis starting'
 
             myDict = {'stage': stage[RID], 'resType': 'status'}
-            json_data = simplejson.dumps(myDict, encoding="Latin-1")
+            json_data = ujson.dumps(myDict, encoding="Latin-1")
             return HttpResponse(json_data, content_type='application/json')
         except Exception as e:
             print "Error: ", e

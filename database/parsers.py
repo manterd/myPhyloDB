@@ -16,13 +16,13 @@ import psutil
 import pandas as pd
 import re
 import shutil
-import simplejson
+import ujson
 import subprocess
 from uuid import uuid4
 
 from models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile
-from utils import purge, handle_uploaded_file, excel_to_dict
+from utils import handle_uploaded_file, excel_to_dict
 import database.dataqueue
 
 
@@ -138,7 +138,7 @@ def status(request):
             dict['project'] = rep_project
             dict['mothurStat'] = ''
         mothurStat = ""
-        json_data = simplejson.dumps(dict, encoding="Latin-1")
+        json_data = ujson.dumps(dict, encoding="Latin-1")
         return HttpResponse(json_data, content_type='application/json')
 
 
@@ -564,7 +564,6 @@ def parse_profile(file3, file4, p_uuid, refDict):
                     else:
                         Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
-
             step += 1.0
 
         for ID in sampleList:
@@ -777,7 +776,7 @@ def reanalyze(request, stopList):
                 transaction.savepoint_rollback(sid)
                 print("Error with mothur: " + str(e))
                 return HttpResponse(
-                    simplejson.dumps({"error": "yes"}),
+                    ujson.dumps({"error": "yes"}),
                     content_type="application/json"
                 )
 

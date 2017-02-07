@@ -4,10 +4,10 @@ import operator
 import pandas as pd
 import pickle
 from pyper import *
-import simplejson
+import ujson
 
 from models import Project, Sample, Reference
-from models import Kingdom, Class, Order, Family, Genus, Species, OTU_99, Profile
+from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile
 from models import Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from models import ko_lvl1, ko_entry
 from models import nz_lvl1, nz_entry
@@ -31,7 +31,7 @@ def getProjectTree(request):
         }
         myTree['children'].append(myNode)
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -54,7 +54,7 @@ def getProjectTreeChildren(request):
                     'isFolder': False
                 }
                 nodes.append(myNode)
-        res = simplejson.dumps(nodes, encoding="Latin-1")
+        res = ujson.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -249,7 +249,7 @@ def getSampleCatTree(request):
     myTree['children'].append(user)
 
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -301,7 +301,6 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -310,7 +309,7 @@ def getSampleCatTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -330,7 +329,6 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -339,7 +337,7 @@ def getSampleCatTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -359,7 +357,6 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -368,7 +365,7 @@ def getSampleCatTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -388,7 +385,6 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -397,7 +393,7 @@ def getSampleCatTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -417,7 +413,6 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -426,7 +421,7 @@ def getSampleCatTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -446,7 +441,6 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -455,7 +449,7 @@ def getSampleCatTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -475,7 +469,6 @@ def getSampleCatTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'children': []
                     }
@@ -484,7 +477,7 @@ def getSampleCatTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -496,7 +489,7 @@ def getSampleCatTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        res = simplejson.dumps(myNode, encoding="Latin-1")
+        res = ujson.dumps(myNode)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -690,7 +683,7 @@ def getSampleQuantTree(request):
     myTree['children'].append(user)
 
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -742,7 +735,6 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -752,7 +744,7 @@ def getSampleQuantTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -772,7 +764,6 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -782,7 +773,7 @@ def getSampleQuantTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -802,7 +793,6 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -812,7 +802,7 @@ def getSampleQuantTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -832,7 +822,6 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -842,7 +831,7 @@ def getSampleQuantTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -862,7 +851,6 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -872,7 +860,7 @@ def getSampleQuantTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -892,7 +880,6 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -902,7 +889,7 @@ def getSampleQuantTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -922,7 +909,6 @@ def getSampleQuantTreeChildren(request):
                     myNode1 = {
                         'title': values[j],
                         'id': field,
-                        #'tooltip': 'Value',
                         'isFolder': True,
                         'hideCheckbox': False,
                         'children': []
@@ -932,7 +918,7 @@ def getSampleQuantTreeChildren(request):
                     items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
                     for item in items:
                         myNode2 = {
-                            'title': item.sample_name,
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
                             'id': item.sampleid,
                             'field': field,
                             'value': values[j],
@@ -944,7 +930,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        res = simplejson.dumps(myNode, encoding="Latin-1")
+        res = ujson.dumps(myNode)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -960,12 +946,10 @@ def getTaxaTree(request):
         if int(i['reads']) > 0:
             filtered.append(i['sampleid'])
 
-    selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
+    selected_taxa = Profile.objects.filter(sampleid__in=filtered)
 
     myTree = {'title': 'Taxa Name', 'tooltip': 'root', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
-
-    kingdoms = Kingdom.objects.all().filter(kingdomid__in=selected_taxa.values_list('kingdomid').distinct()).order_by('kingdomName')
-
+    kingdoms = Kingdom.objects.filter(kingdomid__in=selected_taxa.values_list('kingdomid', flat=True)).order_by('kingdomName')
     for kingdom in kingdoms:
         myNode = {
             'title': kingdom.kingdomName,
@@ -973,22 +957,13 @@ def getTaxaTree(request):
             'tooltip': "Kingdom",
             'isFolder': True,
             'expand': False,
+            'isLazy': True,
             'children': []
         }
-        phylas = kingdom.phyla_set.filter(phylaid__in=selected_taxa.values_list('phylaid').distinct()).order_by('phylaName')
-        for phyla in phylas:
-            myNode1 = {
-                'title': phyla.phylaName,
-                'id': phyla.phylaid,
-                'tooltip': "Phyla",
-                'isFolder': True,
-                'isLazy': True
-            }
-            myNode['children'].append(myNode1)
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1008,14 +983,26 @@ def getTaxaTreeChildren(request):
             if i['reads'] > 0:
                 filtered.append(i['sampleid'])
 
-        selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
+        selected_taxa = Profile.objects.filter(sampleid__in=filtered)
 
         taxa = request.GET["tooltip"]
         id = request.GET["id"]
 
         nodes = []
+        if taxa == 'Kingdom':
+            qs = Phyla.objects.filter(phylaid__in=selected_taxa.values_list('phylaid')).filter(**{'kingdomid': id}).order_by('phylaName')
+            for item in qs:
+                myNode = {
+                    'title': item.phylaName,
+                    'id': item.phylaid,
+                    'tooltip': "Phyla",
+                    'isFolder': True,
+                    'isLazy': True
+                }
+                nodes.append(myNode)
+
         if taxa == 'Phyla':
-            qs = Class.objects.filter(classid__in=selected_taxa.values_list('classid').distinct()).filter(**{'phylaid': id}).order_by('className')
+            qs = Class.objects.filter(classid__in=selected_taxa.values_list('classid')).filter(**{'phylaid': id}).order_by('className')
             for item in qs:
                 myNode = {
                     'title': item.className,
@@ -1027,7 +1014,7 @@ def getTaxaTreeChildren(request):
                 nodes.append(myNode)
 
         elif taxa == 'Class':
-            qs = Order.objects.filter(orderid__in=selected_taxa.values_list('orderid').distinct()).filter(**{'classid': id}).order_by('orderName')
+            qs = Order.objects.filter(orderid__in=selected_taxa.values_list('orderid')).filter(**{'classid': id}).order_by('orderName')
             for item in qs:
                 myNode = {
                     'title': item.orderName,
@@ -1039,7 +1026,7 @@ def getTaxaTreeChildren(request):
                 nodes.append(myNode)
 
         elif taxa == 'Order':
-            qs = Family.objects.filter(familyid__in=selected_taxa.values_list('familyid').distinct()).filter(**{'orderid': id}).order_by('familyName')
+            qs = Family.objects.filter(familyid__in=selected_taxa.values_list('familyid')).filter(**{'orderid': id}).order_by('familyName')
             for item in qs:
                 myNode = {
                     'title': item.familyName,
@@ -1051,7 +1038,7 @@ def getTaxaTreeChildren(request):
                 nodes.append(myNode)
 
         elif taxa == 'Family':
-            qs = Genus.objects.filter(genusid__in=selected_taxa.values_list('genusid').distinct()).filter(**{'familyid': id}).order_by('genusName')
+            qs = Genus.objects.filter(genusid__in=selected_taxa.values_list('genusid')).filter(**{'familyid': id}).order_by('genusName')
             for item in qs:
                 myNode = {
                     'title': item.genusName,
@@ -1063,7 +1050,7 @@ def getTaxaTreeChildren(request):
                 nodes.append(myNode)
 
         elif taxa == 'Genus':
-            qs = Species.objects.filter(speciesid__in=selected_taxa.values_list('speciesid').distinct()).filter(**{'genusid': id}).order_by('speciesName')
+            qs = Species.objects.filter(speciesid__in=selected_taxa.values_list('speciesid')).filter(**{'genusid': id}).order_by('speciesName')
             for item in qs:
                 myNode = {
                     'title': item.speciesName,
@@ -1075,21 +1062,20 @@ def getTaxaTreeChildren(request):
                 nodes.append(myNode)
 
         elif taxa == 'Species':
-            print 'ok'
-            qs = OTU_99.objects.filter(otuid__in=selected_taxa.values_list('otuid').distinct()).filter(**{'speciesid': id}).order_by('otuName')
+            qs = OTU_99.objects.filter(otuid__in=selected_taxa.values_list('otuid')).filter(**{'speciesid': id}).order_by('otuName')
             for item in qs:
                 myNode = {
                     'title': item.otuName,
                     'id': item.otuid,
                     'tooltip': "OTU_99",
-                    'isLazy': True
+                    'isLazy': False
                 }
                 nodes.append(myNode)
 
         elif taxa == 'OTU_99':
             pass
 
-        res = simplejson.dumps(nodes, encoding="Latin-1")
+        res = ujson.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -1134,7 +1120,7 @@ def getKEGGTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1163,7 +1149,7 @@ def getKEGGTreeChildren(request):
         elif level == 'Level4':
             pass
 
-        res = simplejson.dumps(nodes, encoding="Latin-1")
+        res = ujson.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -1224,7 +1210,7 @@ def getKEGGTree2(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1285,7 +1271,7 @@ def getNZTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1314,7 +1300,7 @@ def getNZTreeChildren(request):
         elif level == 'Level5':
             pass
 
-        res = simplejson.dumps(nodes, encoding="Latin-1")
+        res = ujson.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -1346,7 +1332,7 @@ def makeUpdateTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1403,7 +1389,7 @@ def makeReproTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1434,7 +1420,7 @@ def getDownloadTree(request):
             }
             myTree['children'].append(myNode)
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1456,7 +1442,7 @@ def getDownloadTreeChildren(request):
             }
             nodes.append(myNode)
 
-        res = simplejson.dumps(nodes, encoding="Latin-1")
+        res = ujson.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -1492,7 +1478,7 @@ def getPermissionTree(request):
     myTree['children'].append(publicTree)
     myTree['children'].append(privateTree)
     # Convert result list to a JSON string
-    res = simplejson.dumps(myTree, encoding="Latin-1")
+    res = ujson.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"

@@ -5,7 +5,7 @@ from natsort import natsorted
 import pandas as pd
 from pyper import *
 from PyPDF2 import PdfFileReader, PdfFileMerger
-import simplejson
+import ujson
 
 from database.utils import getMetaDF
 from database.utils_kegg import getTaxaDF, filterDF
@@ -21,7 +21,7 @@ def getSpAC(request, stops, RID, PID):
         while True:
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
-                all = simplejson.loads(allJson)
+                all = ujson.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
 
                 database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...')
@@ -243,7 +243,7 @@ def getSpAC(request, stops, RID, PID):
                 finalDict['text'] = result
 
                 finalDict['error'] = 'none'
-                res = simplejson.dumps(finalDict)
+                res = ujson.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -253,5 +253,5 @@ def getSpAC(request, stops, RID, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = simplejson.dumps(myDict)
+            res = ujson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')

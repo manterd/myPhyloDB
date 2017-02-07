@@ -1,6 +1,5 @@
 import datetime
 from django.http import HttpResponse
-from django.db.models import Sum
 from django_pandas.io import read_frame
 import logging
 from numpy import *
@@ -9,7 +8,7 @@ from numpy.random.mtrand import RandomState
 import pandas as pd
 import pickle
 from pyper import *
-import simplejson
+import ujson
 import zipfile
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
@@ -29,7 +28,7 @@ def getNorm(request, RID, stopList, PID):
         if request.is_ajax():
             # Get variables from web page
             allJson = request.body.split('&')[0]
-            all = simplejson.loads(allJson)
+            all = ujson.loads(allJson)
             database.queue.setBase(RID, 'Step 1 of 6: Querying database...')
 
             NormMeth = int(all["NormMeth"])
@@ -52,23 +51,23 @@ def getNorm(request, RID, stopList, PID):
             countList = []
             subList = []
             size = 1
-            counts = Profile.objects.filter(sampleid__in=samples).values('sampleid').annotate(count=Sum('count'))
+            counts = Sample.objects.filter(sampleid__in=samples)
             if size_on == 1:
                 size = int(all["MinVal"])
                 for i in counts:
-                    if int(i['count']) >= size:
-                        countList.append(i['count'])
-                        subList.append(i['sampleid'])
+                    if int(i.reads) >= size:
+                        countList.append(i.reads)
+                        subList.append(i.sampleid)
             else:
                 for i in counts:
-                    if int(i['count']) is not None:
-                        countList.append(i['count'])
-                        subList.append(i['sampleid'])
+                    if int(i.reads) is not None:
+                        countList.append(i.reads)
+                        subList.append(i.sampleid)
 
             if not countList:
                 myDict = {}
                 myDict['error'] = "Error with Normalization!\nYour minimum sample has caused all samples to be removed!"
-                res = simplejson.dumps(myDict)
+                res = ujson.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
 
             # Calculate min/median/max of sequence reads for rarefaction
@@ -92,21 +91,19 @@ def getNorm(request, RID, stopList, PID):
             result = ''
             result += 'Data Normalization:\n'
             newList = []
-
-            counts = Profile.objects.filter(sampleid__in=subList).values('sampleid').annotate(count=Sum('count'))
             if NormMeth == 2:
                 for i in counts:
-                    if int(i['count']) >= NormReads:
-                        newList.append(i['sampleid'])
+                    if int(i.reads) >= NormReads:
+                        newList.append(i.sampleid)
             else:
                 for i in counts:
-                    if int(i['count']) > 0:
-                        newList.append(i['sampleid'])
+                    if int(i.reads) > 0:
+                        newList.append(i.sampleid)
 
             if not newList:
                 myDict = {}
                 myDict['error'] = "Error with Normalization!\nYour sub-sample size has caused all samples to be removed!"
-                res = simplejson.dumps(myDict)
+                res = ujson.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
 
             metaDF = UnivMetaDF(newList, RID, stopList, PID)
@@ -130,7 +127,7 @@ def getNorm(request, RID, stopList, PID):
 
             # Select only the taxa of interest if user used the selectAll button
             taxaDict = {}
-            qs3 = Profile.objects.all().filter(sampleid__in=myList).values_list('otuid', flat='True').distinct()
+            qs3 = Profile.objects.filter(sampleid__in=myList).values_list('otuid', flat='True').distinct()
             taxaDict['OTU_99'] = qs3
 
             database.queue.setBase(RID, 'Step 1 of 6: Querying database...done!')
@@ -255,7 +252,7 @@ def getNorm(request, RID, stopList, PID):
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.biom'
             with open(path, 'w') as outfile:
-                simplejson.dump(myBiom, outfile, ensure_ascii=True, indent=4)
+                ujson.dump(myBiom, outfile, ensure_ascii=True, indent=4)
 
             database.queue.setBase(RID, 'Step 6 of 6: Formatting biome data...done!')
 
@@ -266,7 +263,7 @@ def getNorm(request, RID, stopList, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             finalDict['error'] = 'none'
-            res = simplejson.dumps(finalDict)
+            res = ujson.dumps(finalDict)
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -276,7 +273,7 @@ def getNorm(request, RID, stopList, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your normalization:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = simplejson.dumps(myDict)
+            res = ujson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -653,7 +650,7 @@ def getTab(request):
         myDir = '../../myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         fileName3 = str(myDir) + 'usr_norm_data.gz'
         myDict['name'] = str(fileName3)
-        res = simplejson.dumps(myDict)
+        res = ujson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -663,6 +660,6 @@ def getBiom(request):
         myDir = '/myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         fileName = str(myDir) + 'usr_norm_data.biom'
         myDict['name'] = str(fileName)
-        res = simplejson.dumps(myDict)
+        res = ujson.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 

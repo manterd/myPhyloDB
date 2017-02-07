@@ -4,7 +4,7 @@ import logging
 import numpy as np
 import pandas as pd
 from pyper import *
-import simplejson
+import ujson
 
 from database.utils import getMetaDF, transformDF, wOdum
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
@@ -20,7 +20,7 @@ def getPCoA(request, stops, RID, PID):
         while True:
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
-                all = simplejson.loads(allJson)
+                all = ujson.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 9: Reading normalized data file...')
 
                 database.queue.setBase(RID, 'Step 2 of 9: Selecting your chosen meta-variables...')
@@ -51,13 +51,13 @@ def getPCoA(request, stops, RID, PID):
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = simplejson.dumps(myDict)
+                    res = ujson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = simplejson.dumps(myDict)
+                    res = ujson.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
@@ -548,7 +548,8 @@ def getPCoA(request, stops, RID, PID):
                     state = "Your selected variable(s) only have one treatment level, please select additional data!"
                     myDict = {}
                     myDict['error'] = state
-                    res = simplejson.dumps(myDict)
+                    res = ujson.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -704,7 +705,7 @@ def getPCoA(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict['error'] = 'none'
-                res = simplejson.dumps(finalDict)
+                res = ujson.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -714,5 +715,5 @@ def getPCoA(request, stops, RID, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = simplejson.dumps(myDict)
+            res = ujson.dumps(myDict)
             return HttpResponse(res, content_type='application/json')

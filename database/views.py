@@ -17,7 +17,7 @@ import os
 import pandas as pd
 import pickle
 import shutil
-import simplejson
+import ujson
 import tarfile
 import time
 import zipfile
@@ -103,7 +103,7 @@ def profile(request):
 
 def getProjectFiles(request):
     all = request.GET['all']
-    selKeys = simplejson.loads(all)
+    selKeys = ujson.loads(all)
 
     paths = Reference.objects.filter(refid__in=selKeys).values_list('path', flat=True)
     zip_file = os.path.join(os.getcwd(), 'myPhyloDB', 'media', 'usr_temp', request.user.username, 'final_data.zip')
@@ -126,7 +126,7 @@ def getProjectFiles(request):
         errorMsg = "Failed to locate project files"
 
     results = {'files': zip_file, 'error': errorMsg}
-    myJson = simplejson.dumps(results, ensure_ascii=False)
+    myJson = ujson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
 
 
@@ -983,19 +983,19 @@ def uploadFunc(request, stopList):
 def remProjectFiles(request):
     if request.is_ajax():
         allJson = request.GET['all']
-        data = simplejson.loads(allJson)
+        data = ujson.loads(allJson)
         refList = data['paths']
         remove_list(refList)
 
         results = {'error': 'none'}
-        myJson = simplejson.dumps(results)
+        myJson = ujson.dumps(results)
         return HttpResponse(myJson)
 
 
 def projectTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1026,14 +1026,14 @@ def projectTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
 def sampleTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1078,14 +1078,14 @@ def sampleTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
 def referenceTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1116,14 +1116,14 @@ def referenceTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
 def airTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1178,14 +1178,14 @@ def airTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
 def associatedTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1255,14 +1255,14 @@ def associatedTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
 def microbialTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1354,14 +1354,14 @@ def microbialTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
 def soilTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1487,14 +1487,14 @@ def soilTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
 def waterTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1602,14 +1602,14 @@ def waterTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
 def userTableJSON(request):
     if request.is_ajax():
         jsonSamples = request.GET['key']
-        selSamples = simplejson.loads(jsonSamples)
+        selSamples = ujson.loads(jsonSamples)
 
         if selSamples:
             if request.user.is_superuser:
@@ -1642,7 +1642,7 @@ def userTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1774,7 +1774,7 @@ def select(request):
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_norm_data.biom'
         with open(path, 'w') as outfile:
-            simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
+            ujson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
         return render_to_response(
             'select.html',
@@ -1799,7 +1799,7 @@ def taxaJSON(request):
     results = {}
     qs1 = OTU_99.objects.values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
     results['data'] = list(qs1)
-    myJson = simplejson.dumps(results, ensure_ascii=False)
+    myJson = ujson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
 
 
@@ -1814,7 +1814,7 @@ def pathJSON(request):
     results = {}
     qs1 = ko_entry.objects.using('picrust').values_list('ko_lvl1_id', 'ko_lvl1_id__ko_lvl1_name', 'ko_lvl2_id', 'ko_lvl2_id__ko_lvl2_name', 'ko_lvl3_id', 'ko_lvl3_id__ko_lvl3_name', 'ko_lvl4_id', 'ko_orthology', 'ko_name', 'ko_desc')
     results['data'] = list(qs1)
-    myJson = simplejson.dumps(results, ensure_ascii=False)
+    myJson = ujson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
 
 
@@ -1860,7 +1860,7 @@ def pathTaxaJSON(request):
         results = {}
         qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuName', 'otuid')
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1875,7 +1875,7 @@ def nzJSON(request):
     qs1 = nz_entry.objects.using('picrust').values_list('nz_lvl1_id','nz_lvl1_id__nz_lvl1_name', 'nz_lvl2_id', 'nz_lvl2_id__nz_lvl2_name', 'nz_lvl3_id', 'nz_lvl3_id__nz_lvl3_name', 'nz_lvl4_id', 'nz_lvl4_id__nz_lvl4_name', 'nz_lvl5_id', 'nz_orthology', 'nz_name', 'nz_desc')
     results = {}
     results['data'] = list(qs1)
-    myJson = simplejson.dumps(results, ensure_ascii=False)
+    myJson = ujson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
 
 
@@ -1924,7 +1924,7 @@ def nzTaxaJSON(request):
         results = {}
         qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
         results['data'] = list(qs1)
-        myJson = simplejson.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -2048,7 +2048,7 @@ def WGCNA(request):
 def saveSampleList(request):
     if request.is_ajax():
         allJson = request.GET["all"]
-        selList = simplejson.loads(allJson)
+        selList = ujson.loads(allJson)
 
         # remove old files
         try:
@@ -2351,7 +2351,7 @@ def uploadNorm(request):
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_norm_data.biom'
     with open(path, 'w') as outfile:
-        simplejson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
+        ujson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
     return render_to_response(
         'select.html',
@@ -2428,7 +2428,7 @@ def updateInfo(request):
 
 def addPerms(request):
     if request.is_ajax():
-        allJson = simplejson.loads(request.GET["all"])
+        allJson = ujson.loads(request.GET["all"])
         # get selected projects list (files? not samples as subsets though)
         selList = allJson['keys']
         # get list of names to add
@@ -2493,7 +2493,7 @@ def addPerms(request):
         else:
             text = 'Users have been added to selected project(s)'
         retDict = {"error": text}
-        res = simplejson.dumps(retDict, encoding="Latin-1")
+        res = ujson.dumps(retDict, encoding="Latin-1")
         return HttpResponse(res, content_type='application/json')
 
 
