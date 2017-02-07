@@ -8,7 +8,7 @@ from numpy.random.mtrand import RandomState
 import pandas as pd
 import pickle
 from pyper import *
-import ujson
+import json
 import zipfile
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
@@ -28,7 +28,7 @@ def getNorm(request, RID, stopList, PID):
         if request.is_ajax():
             # Get variables from web page
             allJson = request.body.split('&')[0]
-            all = ujson.loads(allJson)
+            all = json.loads(allJson)
             database.queue.setBase(RID, 'Step 1 of 6: Querying database...')
 
             NormMeth = int(all["NormMeth"])
@@ -67,7 +67,7 @@ def getNorm(request, RID, stopList, PID):
             if not countList:
                 myDict = {}
                 myDict['error'] = "Error with Normalization!\nYour minimum sample has caused all samples to be removed!"
-                res = ujson.dumps(myDict)
+                res = json.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
 
             # Calculate min/median/max of sequence reads for rarefaction
@@ -103,7 +103,7 @@ def getNorm(request, RID, stopList, PID):
             if not newList:
                 myDict = {}
                 myDict['error'] = "Error with Normalization!\nYour sub-sample size has caused all samples to be removed!"
-                res = ujson.dumps(myDict)
+                res = json.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
 
             metaDF = UnivMetaDF(newList, RID, stopList, PID)
@@ -252,7 +252,7 @@ def getNorm(request, RID, stopList, PID):
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'usr_norm_data.biom'
             with open(path, 'w') as outfile:
-                ujson.dump(myBiom, outfile, ensure_ascii=True, indent=4)
+                json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
 
             database.queue.setBase(RID, 'Step 6 of 6: Formatting biome data...done!')
 
@@ -263,7 +263,7 @@ def getNorm(request, RID, stopList, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             finalDict['error'] = 'none'
-            res = ujson.dumps(finalDict)
+            res = json.dumps(finalDict)
             return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -273,7 +273,7 @@ def getNorm(request, RID, stopList, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your normalization:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -650,7 +650,7 @@ def getTab(request):
         myDir = '../../myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         fileName3 = str(myDir) + 'usr_norm_data.gz'
         myDict['name'] = str(fileName3)
-        res = ujson.dumps(myDict)
+        res = json.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -660,6 +660,6 @@ def getBiom(request):
         myDir = '/myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         fileName = str(myDir) + 'usr_norm_data.biom'
         myDict['name'] = str(fileName)
-        res = ujson.dumps(myDict)
+        res = json.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 

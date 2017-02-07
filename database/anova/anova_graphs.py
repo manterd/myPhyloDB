@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from pyper import *
 from scipy import stats
-import ujson
+import json
 
 from database.models import Sample
 from database.utils import multidict, getMetaDF, transformDF
@@ -23,7 +23,7 @@ def getCatUnivData(request, RID, stops, PID):
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
-                all = ujson.loads(allJson)
+                all = json.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
 
                 selectAll = int(all["selectAll"])
@@ -46,13 +46,13 @@ def getCatUnivData(request, RID, stops, PID):
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
@@ -84,7 +84,7 @@ def getCatUnivData(request, RID, stops, PID):
                 if treeType == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
-                        taxaDict = ujson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+                        taxaDict = json.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
                         filteredDF = savedDF.copy()
                     else:
                         taxaDict = ''
@@ -99,14 +99,14 @@ def getCatUnivData(request, RID, stops, PID):
                     keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
-                        keggDict = ujson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                        keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                     finalDF, allDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if treeType == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
-                        keggDict = ujson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                        keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                     finalDF, allDF = getNZDF(nzAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
@@ -542,14 +542,14 @@ def getCatUnivData(request, RID, stops, PID):
                 if not treeType == 1:
                     # datatable of taxa mapped to selected kegg orthologies
                     records = allDF.values.tolist()
-                    finalDict['taxData'] = ujson.dumps(records)
+                    finalDict['taxData'] = json.dumps(records)
                     columns = allDF.columns.values.tolist()
-                    finalDict['taxColumns'] = ujson.dumps(columns)
+                    finalDict['taxColumns'] = json.dumps(columns)
 
                 finalDict['resType'] = 'res'
                 finalDict['error'] = 'none'
 
-                res = ujson.dumps(finalDict)
+                res = json.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -559,7 +559,7 @@ def getCatUnivData(request, RID, stops, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -620,7 +620,7 @@ def getQuantUnivData(request, RID, stops, PID):
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
-                all = ujson.loads(allJson)
+                all = json.loads(allJson)
 
                 database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
@@ -644,7 +644,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
@@ -675,7 +675,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 if treeType == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
-                        taxaDict = ujson.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+                        taxaDict = json.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
                         filteredDF = savedDF.copy()
                     else:
                         taxaDict = ''
@@ -691,14 +691,14 @@ def getQuantUnivData(request, RID, stops, PID):
                     keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
-                        keggDict = ujson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                        keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                     finalDF, allDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 if treeType == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
-                        keggDict = ujson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                        keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                     finalDF, allDF = getNZDF(nzAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
@@ -1333,7 +1333,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 finalDict['resType'] = 'res'
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
-                res = ujson.dumps(finalDict)
+                res = json.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -1343,7 +1343,7 @@ def getQuantUnivData(request, RID, stops, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 

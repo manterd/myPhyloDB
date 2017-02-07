@@ -7,7 +7,7 @@ from natsort import natsorted
 import pandas as pd
 from PyPDF2 import PdfFileReader, PdfFileMerger
 from pyper import *
-import ujson
+import json
 
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
@@ -27,7 +27,7 @@ def getGAGE(request, stops, RID, PID):
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
-                all = ujson.loads(allJson)
+                all = json.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
 
                 # Select samples and meta-variables from savedDF
@@ -45,13 +45,13 @@ def getGAGE(request, stops, RID, PID):
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
@@ -97,7 +97,7 @@ def getGAGE(request, stops, RID, PID):
                 print r("library(grid)")
 
                 keggString = all["kegg"]
-                keggDict = ujson.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
                 nameList = []
                 for value in keggDict.itervalues():
                     if isinstance(value, list):
@@ -242,7 +242,7 @@ def getGAGE(request, stops, RID, PID):
 
                         if nbinom_res is None:
                             myDict = {'error': "DESeq failed!\nPlease try a different data combination."}
-                            res = ujson.dumps(myDict)
+                            res = json.dumps(myDict)
                             return HttpResponse(res, content_type='application/json')
 
                         comparison = str(trt1) + ' vs. ' + str(trt2)
@@ -332,7 +332,7 @@ def getGAGE(request, stops, RID, PID):
 
                 finalDict['text'] = result
                 finalDict['error'] = 'none'
-                res = ujson.dumps(finalDict)
+                res = json.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -342,7 +342,7 @@ def getGAGE(request, stops, RID, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -428,7 +428,7 @@ def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
             logging.exception(myDate)
             error = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
             myDict = {"error": error}
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 

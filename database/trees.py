@@ -4,7 +4,7 @@ import operator
 import pandas as pd
 import pickle
 from pyper import *
-import ujson
+import json
 
 from models import Project, Sample, Reference
 from models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile
@@ -31,7 +31,7 @@ def getProjectTree(request):
         }
         myTree['children'].append(myNode)
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -54,7 +54,7 @@ def getProjectTreeChildren(request):
                     'isFolder': False
                 }
                 nodes.append(myNode)
-        res = ujson.dumps(nodes)
+        res = json.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -249,7 +249,7 @@ def getSampleCatTree(request):
     myTree['children'].append(user)
 
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -489,7 +489,7 @@ def getSampleCatTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        res = ujson.dumps(myNode)
+        res = json.dumps(myNode)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -683,7 +683,7 @@ def getSampleQuantTree(request):
     myTree['children'].append(user)
 
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -930,7 +930,7 @@ def getSampleQuantTreeChildren(request):
                         myNode1['children'].append(myNode2)
                     myNode.append(myNode1)
 
-        res = ujson.dumps(myNode)
+        res = json.dumps(myNode)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -963,7 +963,7 @@ def getTaxaTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1075,7 +1075,7 @@ def getTaxaTreeChildren(request):
         elif taxa == 'OTU_99':
             pass
 
-        res = ujson.dumps(nodes)
+        res = json.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -1120,7 +1120,7 @@ def getKEGGTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1149,7 +1149,7 @@ def getKEGGTreeChildren(request):
         elif level == 'Level4':
             pass
 
-        res = ujson.dumps(nodes)
+        res = json.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -1210,7 +1210,7 @@ def getKEGGTree2(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1271,7 +1271,7 @@ def getNZTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1300,7 +1300,7 @@ def getNZTreeChildren(request):
         elif level == 'Level5':
             pass
 
-        res = ujson.dumps(nodes)
+        res = json.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -1332,7 +1332,7 @@ def makeUpdateTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1389,7 +1389,7 @@ def makeReproTree(request):
         myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1420,7 +1420,7 @@ def getDownloadTree(request):
             }
             myTree['children'].append(myNode)
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
@@ -1442,7 +1442,7 @@ def getDownloadTreeChildren(request):
             }
             nodes.append(myNode)
 
-        res = ujson.dumps(nodes)
+        res = json.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
 
@@ -1478,7 +1478,7 @@ def getPermissionTree(request):
     myTree['children'].append(publicTree)
     myTree['children'].append(privateTree)
     # Convert result list to a JSON string
-    res = ujson.dumps(myTree)
+    res = json.dumps(myTree)
 
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"

@@ -16,7 +16,7 @@ import psutil
 import pandas as pd
 import re
 import shutil
-import ujson
+import json
 import subprocess
 from uuid import uuid4
 
@@ -138,7 +138,7 @@ def status(request):
             dict['project'] = rep_project
             dict['mothurStat'] = ''
         mothurStat = ""
-        json_data = ujson.dumps(dict, encoding="Latin-1")
+        json_data = json.dumps(dict)
         return HttpResponse(json_data, content_type='application/json')
 
 
@@ -776,7 +776,7 @@ def reanalyze(request, stopList):
                 transaction.savepoint_rollback(sid)
                 print("Error with mothur: " + str(e))
                 return HttpResponse(
-                    ujson.dumps({"error": "yes"}),
+                    json.dumps({"error": "yes"}),
                     content_type="application/json"
                 )
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from django.http import HttpResponse
 import pandas as pd
-import ujson
+import json
 import gzip
 import re
 from uuid import uuid4
@@ -22,7 +22,7 @@ def statusPyBake(request):
     global base, perc
     if request.is_ajax():
         myDict = {'stage': stage}
-        json_data = ujson.dumps(myDict, encoding="Latin-1")
+        json_data = json.dumps(myDict)
         return HttpResponse(json_data, content_type='application/json')
 
 

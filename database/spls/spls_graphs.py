@@ -4,7 +4,7 @@ import logging
 import pandas as pd
 from pyper import *
 from scipy import stats
-import ujson
+import json
 
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
@@ -22,7 +22,7 @@ def getSPLS(request, stops, RID, PID):
     try:
         while True:
                 allJson = request.body.split('&')[0]
-                all = ujson.loads(allJson)
+                all = json.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
 
                 database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
@@ -46,7 +46,7 @@ def getSPLS(request, stops, RID, PID):
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
@@ -235,7 +235,7 @@ def getSPLS(request, stops, RID, PID):
                 columns = r.get("ncol(X)")
                 if columns == 0:
                     myDict = {'error': "All predictor variables have zero variance.\nsPLS-Regr was aborted!"}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 if x_scale == 'yes':
@@ -266,7 +266,7 @@ def getSPLS(request, stops, RID, PID):
                         result += str(i) + '\n'
                 else:
                     myDict = {'error': "Analysis did not converge.\nsPLS-Regr was aborted!"}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 r("set.seed(1)")
@@ -585,7 +585,7 @@ def getSPLS(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict['error'] = 'none'
-                res = ujson.dumps(finalDict)
+                res = json.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -595,5 +595,5 @@ def getSPLS(request, stops, RID, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')

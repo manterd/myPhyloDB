@@ -1,7 +1,7 @@
 from Queue import Queue
 from time import sleep
 import threading
-import ujson
+import json
 
 from views import *
 from parsers import *
@@ -34,12 +34,12 @@ def datstop(request):
                 thread.terminate()
                 stopList[pid] = RID
                 myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
-                stop = ujson.dumps(myDict)
+                stop = json.dumps(myDict)
                 stopped += 1
                 return HttpResponse(stop, content_type='application/json')
     except Exception:
         myDict = {'error': 'Analysis not running'}
-        stop = ujson.dumps(myDict)
+        stop = json.dumps(myDict)
         return HttpResponse(stop, content_type='application/json')
 
 

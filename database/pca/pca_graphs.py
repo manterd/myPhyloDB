@@ -4,7 +4,7 @@ import logging
 import numpy as np
 import pandas as pd
 from pyper import *
-import ujson
+import json
 
 from database.utils import getMetaDF, transformDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF
@@ -21,7 +21,7 @@ def getPCA(request, stops, RID, PID):
         while True:
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
-                all = ujson.loads(allJson)
+                all = json.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
 
                 database.queue.setBase(RID, 'Step 2 of 5 Selecting your chosen meta-variables...')
@@ -505,7 +505,7 @@ def getPCA(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict['error'] = 'none'
-                res = ujson.dumps(finalDict)
+                res = json.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -515,6 +515,6 @@ def getPCA(request, stops, RID, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 

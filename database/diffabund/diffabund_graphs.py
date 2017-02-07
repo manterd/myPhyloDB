@@ -4,7 +4,7 @@ import logging
 import numpy as np
 import pandas as pd
 from pyper import *
-import ujson
+import json
 
 from database.utils import getMetaDF
 from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
@@ -22,7 +22,7 @@ def getDiffAbund(request, stops, RID, PID):
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
-                all = ujson.loads(allJson)
+                all = json.loads(allJson)
                 database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
 
                 database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
@@ -94,13 +94,13 @@ def getDiffAbund(request, stops, RID, PID):
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
@@ -249,7 +249,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                             if nbinom_res is None:
                                 myDict = {'error': "DESeq failed!\nPlease try a different data combination."}
-                                res = ujson.dumps(myDict)
+                                res = json.dumps(myDict)
                                 return HttpResponse(res, content_type='application/json')
 
                             # remove taxa that failed (i.e., both trts are zero or log2FoldChange is NaN)
@@ -398,7 +398,7 @@ def getDiffAbund(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict['error'] = 'none'
-                res = ujson.dumps(finalDict)
+                res = json.dumps(finalDict)
 
                 return HttpResponse(res, content_type='application/json')
 
@@ -409,7 +409,7 @@ def getDiffAbund(request, stops, RID, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 

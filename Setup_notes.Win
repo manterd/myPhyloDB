@@ -22,7 +22,7 @@ Install required python packages
     pip install pyinstaller [3.1.1]
 	pip install pyper [1.1.2]
     pip install -Iv setuptools==19.2 [19.2]
-    pip install ujson
+    pip install json
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Install PyCharm
