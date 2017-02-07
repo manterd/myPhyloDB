@@ -2,6 +2,7 @@ import csv
 import datetime
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import Sum
 from django.http import HttpResponse
 import glob
 from io import BytesIO
@@ -563,7 +564,14 @@ def parse_profile(file3, file4, p_uuid, refDict):
                     else:
                         Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
+
             step += 1.0
+
+        for ID in sampleList:
+            sample = Sample.objects.get(sampleid=ID)
+            reads = Profile.objects.filter(sampleid=ID).aggregate(count=Sum('count'))
+            sample.reads = reads['count']
+            sample.save()
 
     except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)

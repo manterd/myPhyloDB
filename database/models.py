@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q, Sum
 from django.contrib.auth.models import User as Users
 from jsonfield import JSONField
 
@@ -95,6 +96,8 @@ class Sample(models.Model):
     longitude = models.FloatField(blank=True, null=True)
     annual_season_precpt = models.FloatField(blank=True, null=True)
     annual_season_temp = models.FloatField(blank=True, null=True)
+
+    reads = models.IntegerField(default=0, null=True, editable=False)
 
     def natural_key(self):
         return self.sampleid

@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.db.models import Q, Sum
+from django.db.models import Q
 import operator
 import pandas as pd
 import pickle
@@ -44,11 +44,11 @@ def getProjectTreeChildren(request):
         samples = Sample.objects.filter(projectid=projectid).values_list('sampleid', flat=True)
 
         nodes = []
-        reads = Profile.objects.filter(sampleid__in=samples).order_by('sampleid__sample_name').values('sampleid', 'sampleid__sample_name').annotate(count=Sum('count'))
+        reads = Sample.objects.filter(sampleid__in=samples).order_by('sample_name').values('sampleid', 'sample_name', 'reads')
         for i in reads:
-            if int(i['count'] > 0):
+            if int(i['reads'] > 0):
                 myNode = {
-                    'title': 'Name: ' + str(i['sampleid__sample_name']) + '; Reads: ' + str(i['count']),
+                    'title': 'Name: ' + str(i['sample_name']) + '; Reads: ' + str(i['reads']),
                     'tooltip': 'ID: ' + str(i['sampleid']),
                     'id': str(i['sampleid']),
                     'isFolder': False
@@ -264,9 +264,9 @@ def getSampleCatTreeChildren(request):
             selected = pickle.load(f)
 
         filtered = []
-        reads = Profile.objects.filter(sampleid__in=selected).order_by('sampleid__sample_name').values('sampleid').annotate(count=Sum('count'))
+        reads = Sample.objects.filter(sampleid__in=selected).order_by('sample_name').values('sampleid', 'sample_name', 'reads')
         for i in reads:
-            if int(i['count']) > 0:
+            if int(i['reads']) > 0:
                 filtered.append(i['sampleid'])
 
         field = request.GET["field"]
@@ -705,9 +705,9 @@ def getSampleQuantTreeChildren(request):
             selected = pickle.load(f)
 
         filtered = []
-        reads = Profile.objects.filter(sampleid__in=selected).order_by('sampleid__sample_name').values('sampleid').annotate(count=Sum('count'))
+        reads = Sample.objects.filter(sampleid__in=selected).order_by('sample_name').values('sampleid', 'sample_name', 'reads')
         for i in reads:
-            if int(i['count']) > 0:
+            if int(i['reads']) > 0:
                 filtered.append(i['sampleid'])
 
         field = request.GET["field"]
@@ -955,9 +955,9 @@ def getTaxaTree(request):
         selected = pickle.load(f)
 
     filtered = []
-    reads = Profile.objects.filter(sampleid__in=selected).order_by('sampleid__sample_name').values('sampleid').annotate(count=Sum('count'))
+    reads = Sample.objects.filter(sampleid__in=selected).values('sampleid', 'sample_name', 'reads')
     for i in reads:
-        if int(i['count']) > 0:
+        if int(i['reads']) > 0:
             filtered.append(i['sampleid'])
 
     selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
@@ -1003,9 +1003,9 @@ def getTaxaTreeChildren(request):
             selected = pickle.load(f)
 
         filtered = []
-        reads = Profile.objects.filter(sampleid__in=selected).values('sampleid').annotate(count=Sum('count'))
+        reads = Sample.objects.filter(sampleid__in=selected).values('sampleid', 'sample_name', 'reads')
         for i in reads:
-            if i['count'] > 0:
+            if i['reads'] > 0:
                 filtered.append(i['sampleid'])
 
         selected_taxa = Profile.objects.filter(sampleid_id__in=filtered)
