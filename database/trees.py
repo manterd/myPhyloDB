@@ -946,10 +946,10 @@ def getTaxaTree(request):
         if int(i['reads']) > 0:
             filtered.append(i['sampleid'])
 
-    selected_taxa = Profile.objects.filter(sampleid__in=filtered)
+    selected_taxa = Profile.objects.filter(sampleid__in=filtered).values_list('kingdomid', flat=True)
 
     myTree = {'title': 'Taxa Name', 'tooltip': 'root', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
-    kingdoms = Kingdom.objects.filter(kingdomid__in=selected_taxa.values_list('kingdomid', flat=True)).order_by('kingdomName')
+    kingdoms = Kingdom.objects.filter(kingdomid__in=selected_taxa).order_by('kingdomName')
     for kingdom in kingdoms:
         myNode = {
             'title': kingdom.kingdomName,

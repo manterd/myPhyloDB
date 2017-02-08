@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import re
 import shutil
-import json, json
+import json
 import threading
 import time
 import zipfile
@@ -532,7 +532,6 @@ def getViewProjects(request):  # JUMP
     elif request.user.is_authenticated():
         # run through list of projects, when valid project is found, append filterIDS with ID
         # projects will be a queryset set to all projects, then filtered by ids in filterIDS
-
         filterIDS = []
         for proj in Project.objects.all():
             good = False  # good to add to list
@@ -584,6 +583,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     # Load file
     file = open(path)
     data = json.load(file)
+    file.close()
 
     # Get metadata
     d = data['columns']

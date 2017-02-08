@@ -7,7 +7,9 @@
         if (dataType == 1) {
             var legIndex = prompt("Please enter the series index (position in legend) you wish to change:", 0);
             var color = prompt("Please enter your desired color:", "#008800");
-            if (legIndex != 0) {
+            if (legIndex == 0) {
+                var index = 0;
+            } else {
                 index = 2*legIndex;
             }
             var series = chart1.series[index];
@@ -31,17 +33,16 @@
                     }
                 });
             });
-        }
-        if (dataType == 2) {
-            var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
-            var color = prompt("Please enter your desired color:", "#008800");
+        } else if (dataType == 2) {
+            index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
+            color = prompt("Please enter your desired color:", "#008800");
             var line = 0;
-            if (index%2==0) {
+            if (index%2 == 0) {
                 var marker = prompt("Please enter your desired symbol:", "square");
             } else {
                 line = 1;
             }
-            var series = chart2.series[index];
+            series = chart2.series[index];
             if (color != '') {
                 series.options.color = color;
                 series.options.states.hover.color = color;
@@ -53,7 +54,7 @@
                 series.update(series.options);
                 chart2.redraw();
             }
-            var item = series.legendItem;
+            item = series.legendItem;
             item.on('mouseover', function (e) {
                 if (line==0) {
                    $(this).qtip({
