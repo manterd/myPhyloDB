@@ -252,7 +252,7 @@ def getRF(request, stops, RID, PID):
                 r("X <- X_full[row.names(X_full) %in% trainIDs,]")
                 r("meta <- meta_full[row.names(meta_full) %in% trainIDs,]")
                 r("Y <- Y_full[row.names(Y_full) %in% trainIDs,]")
-                r("Y <- Y[,allFields]")
+                r("Y <- Y[,paste(allFields)]")
                 r("myData <- data.frame(Y, X)")
 
                 # Subset test data
@@ -262,7 +262,7 @@ def getRF(request, stops, RID, PID):
                     r("X_test <- X_full[row.names(X_full) %in% testIDs,]")
                     r("meta_test <- meta_full[row.names(meta_full) %in% testIDs,]")
                     r("Y_test <- Y_full[row.names(Y_full) %in% testIDs,]")
-                    r("Y_test <- Y_test[,allFields]")
+                    r("Y_test <- Y_test[,paste(allFields)]")
                     r("myData_test <- data.frame(Y_test, X_test)")
                     r("nameVec <- c('Y_test', names(X_test))")
                     r("nameVec <- make.names(nameVec)")

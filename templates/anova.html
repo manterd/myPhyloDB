@@ -26,6 +26,7 @@
         var unstackButton = false;
         var running = false, refresh = 0, RID = 0;
         var subset = 'none';
+        var HCDefaults = $.extend(true, {}, Highcharts.getOptions(), {});
 
         $(function () {
             $(window).load(function() {

@@ -18,36 +18,39 @@
 
 
 <script type="text/javascript">
-    function themeChange(selTheme) {
-        if (selTheme == 1) {
-            $.getScript("{% static 'highcharts/themes/default.js' %}", function () {
-                if (dataType == 1) {
-                    $("#container-1").empty();
-                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
-                    chart1.redraw();
-                }
-                else if (dataType == 2) {
-                    $("#container-2").empty();
-                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
-                    chart2.redraw();
-                }
-            });
+    function ResetOptions() {
+        var defaultOptions = Highcharts.getOptions();
+        for (var prop in defaultOptions) {
+            if (typeof defaultOptions[prop] !== 'function') {
+                delete defaultOptions[prop];
+            }
         }
-        else if (selTheme == 2) {
+        Highcharts.setOptions(HCDefaults);
+    }
+
+    function themeChange(selTheme) {
+        ResetOptions();
+        if (selTheme == 1) {
+            if (dataType == 1) {
+                chart1 = new Highcharts.Chart(catOptions);
+                chart1.redraw();
+            } else if (dataType == 2) {
+                chart1 = new Highcharts.Chart(catOptions);
+                chart1.redraw();
+            }
+        } else if (selTheme == 2) {
             $.getScript("{% static 'highcharts/themes/dark-blue.js' %}", function () {
                 if (dataType == 1) {
                     $("#container-1").empty();
                     chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
                     chart1.redraw();
-                }
-                else if (dataType == 2) {
+                } else if (dataType == 2) {
                     $("#container-2").empty();
                     chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
                     chart2.redraw();
                 }
             });
-        }
-        else if (selTheme == 3) {
+        } else if (selTheme == 3) {
             $.getScript("{% static 'highcharts/themes/dark-green.js' %}", function () {
                 if (dataType == 1) {
                     $("#container-1").empty();
@@ -60,8 +63,7 @@
                     chart2.redraw();
                 }
             });
-        }
-        else if (selTheme == 4) {
+        } else if (selTheme == 4) {
             $.getScript("{% static 'highcharts/themes/dark-unica.js' %}", function () {
                 if (dataType == 1) {
                     $("#container-1").empty();
@@ -74,8 +76,7 @@
                     chart2.redraw();
                 }
             });
-        }
-        else if (selTheme == 5) {
+        } else if (selTheme == 5) {
             $.getScript("{% static 'highcharts/themes/gray.js' %}", function () {
                 if (dataType == 1) {
                     $("#container-1").empty();
@@ -88,8 +89,7 @@
                     chart2.redraw();
                 }
             });
-        }
-        else if (selTheme == 6) {
+        } else if (selTheme == 6) {
             $.getScript("{% static 'highcharts/themes/grid.js' %}", function () {
                 if (dataType == 1) {
                     $("#container-1").empty();
@@ -102,8 +102,7 @@
                     chart2.redraw();
                 }
             });
-        }
-        else if (selTheme == 7) {
+        } else if (selTheme == 7) {
             $.getScript("{% static 'highcharts/themes/grid-light.js' %}", function () {
                 if (dataType == 1) {
                     $("#container-1").empty();
@@ -116,8 +115,7 @@
                     chart2.redraw();
                 }
             });
-        }
-        else if (selTheme == 8) {
+        } else if (selTheme == 8) {
             $.getScript("{% static 'highcharts/themes/sand-signika.js' %}", function () {
                 if (dataType == 1) {
                     $("#container-1").empty();
@@ -130,8 +128,7 @@
                     chart2.redraw();
                 }
             });
-        }
-        else if (selTheme == 9) {
+        } else if (selTheme == 9) {
             $.getScript("{% static 'highcharts/themes/skies.js' %}", function () {
                 if (dataType == 1) {
                     $("#container-1").empty();
