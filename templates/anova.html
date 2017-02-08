@@ -85,6 +85,7 @@
                 },
                 title: { text: null },
                 legend: {
+                    itemMarginTop: 2,
                     itemStyle: {
                         fontSize: '10px',
                         font: '10pt Trebuchet MS, Verdana, sans-serif',
@@ -120,13 +121,23 @@
                 },
                 plotOptions: {
                     column: { stacking: "normal"},
-                    series: { borderWidth: 0}
+                    series: {
+                        events: {
+                            legendItemClick: function(e) {
+                                e.preventDefault();
+                                if (this.visible == true) {
+                                    this.setVisible(false, true);
+                                } else {
+                                    this.setVisible(true, true);
+                                }
+                                errorBars();
+                            }
+                        },
+                        borderWidth: 0
+                    }
                 },
                 credits: { enabled: false }
             };
-            if (unstackButton) {
-                catOptions.plotOptions.column.stacking = null;
-            }
             chart1 = new Highcharts.Chart(catOptions);
             errorBars();
         }
@@ -376,21 +387,20 @@
         }
         function errorBars() {
             var seriesLen = chart1.series.length;
-
-            if (!unstackButton) {
+            var stack = chart1.options.plotOptions.column.stacking;
+            if (stack == 'normal') {
                 $(chart1.series).each(function () {
                     if (this.type == 'errorbar') {
-                        this.setVisible(false, false);
+                        this.setVisible(false, true);
                     }
                 });
             } else {
                 for (var i = 0; i < seriesLen; i += 2) {
                     if (chart1.series[i].visible) {
-                        chart1.series[i + 1].setVisible(true, false);
+                        chart1.series[i + 1].setVisible(true, true);
                     }
                 }
             }
-            chart1.redraw();
         }
         function flipStack() {
         if (unstackButton) {
@@ -401,8 +411,20 @@
             var options = chart1.options;
             options.plotOptions = {
                 column: { stacking: "normal"},
-                series: { borderWidth: 0}
-
+                series: {
+                    events: {
+                        legendItemClick: function(e) {
+                            e.preventDefault();
+                            if (this.visible == true) {
+                                this.setVisible(false, true);
+                            } else {
+                                this.setVisible(true, true);
+                            }
+                            errorBars();
+                        }
+                    },
+                    borderWidth: 0
+                }
             };
             chart1 = new Highcharts.Chart(options);
             chart1.redraw();
@@ -415,8 +437,20 @@
             var options = chart1.options;
             options.plotOptions = {
                 column: { stacking: null},
-                series: { borderWidth: 0}
-
+                series: {
+                    events: {
+                        legendItemClick: function(e) {
+                            e.preventDefault();
+                            if (this.visible == true) {
+                                this.setVisible(false, true);
+                            } else {
+                                this.setVisible(true, true);
+                            }
+                            errorBars();
+                        }
+                    },
+                    borderWidth: 0
+                }
             };
             chart1 = new Highcharts.Chart(options);
             chart1.redraw();
@@ -1027,6 +1061,7 @@
                 },
                 title: { text: null },
                 legend: {
+                    itemMarginTop: 2,
                     itemStyle: {
                         fontSize: '10px',
                         font: '10pt Trebuchet MS, Verdana, sans-serif',

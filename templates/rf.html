@@ -64,10 +64,7 @@
                 nArrays++;
             });
 
-            // good to here
-
             var wantedIDs = findCommonElements(arrayIDs);
-
 
             // Add data to HTML table
             var indexNo = 0;
@@ -240,7 +237,7 @@
             var resArr = [];
             for (var i = arrs[0].length - 1; i >= 0; i--) {  // changed > to >= because 0 is valid
                 // iterate through value list
-                for (var j = arrs.length - 1; j > 0; j--) {
+                for (var j = arrs.length - 1; j > 0; j--) {  // j is in functional scope
                     if (arrs[j].indexOf(arrs[0][i]) == -1) {
                         break;
                         // if current value is not in this row, break

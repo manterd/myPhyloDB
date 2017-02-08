@@ -197,9 +197,9 @@ def funcCall(request):
                         if not complete[RID]:
                             stage[RID] = 'In queue'
                         else:
-                            stage[RID] = 'Analysis complete, preparing results'
+                            stage[RID] = 'Analysis complete, preparing results'  # stuck on one of these occasionally
                     except Exception:
-                        stage[RID] = 'Analysis complete, preparing results'
+                        stage[RID] = 'Problem!'  # maybe?
                 else:
                     stage[RID] = 'Analysis starting'
 
