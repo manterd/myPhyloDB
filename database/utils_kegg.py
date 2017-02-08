@@ -181,7 +181,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='inner')
         finalDF.reset_index(drop=False, inplace=True)
 
-        wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
+        wantedList = allFields + ['sample_name', 'sampleid', 'rank', 'rank_name', 'rank_id']
         if DepVar == 0:
             finalDF = finalDF.groupby(wantedList)[['abund']].sum()
         elif DepVar == 1:
