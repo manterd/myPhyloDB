@@ -58,10 +58,9 @@
                     type: 'column',
                     events: {
                         load: function () {
-                            var chart = this,
-                                    legend = chart.legend;
-                            for (var i = 0, len=legend.allItems.length; i< len; i++) {
-                                (function(i) {
+                            var chart = this, legend = chart.legend;
+                            for (var i = 0, len = legend.allItems.length; i < len; i++) {
+                                (function (i) {
                                     var item = legend.allItems[i].legendItem;
                                     var color = chart.series[i].color;
                                     item.on('mouseover', function (e) {
@@ -79,6 +78,7 @@
                                     });
                                 })(i);
                             }
+
                         }
                     }
                 },
@@ -397,26 +397,28 @@
             document.getElementById("unstackButton").value = "Unstack bars";
 
             $("#container-1").empty();
+            var options = chart1.options;
+            options.plotOptions = {
+                column: { stacking: "normal"},
+                series: { borderWidth: 0}
 
-            chart1.update({
-                plotOptions: {
-                    column: { stacking: "normal"},
-                    series: { borderWidth: 0}
-                }
-            });
+            };
+            chart1 = new Highcharts.Chart(options);
+            chart1.redraw();
 
         } else {
             unstackButton = true;
             document.getElementById("unstackButton").value = "Stack bars";
 
             $("#container-1").empty();
+            var options = chart1.options;
+            options.plotOptions = {
+                column: { stacking: null},
+                series: { borderWidth: 0}
 
-            chart1.update({
-                plotOptions: {
-                    column: { stacking: null},
-                    series: { borderWidth: 0}
-                }
-            });
+            };
+            chart1 = new Highcharts.Chart(options);
+            chart1.redraw();
         }
 
         errorBars();

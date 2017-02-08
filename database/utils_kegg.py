@@ -25,7 +25,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         if selectAll == 0:
             for key in taxaDict:
                 taxaList = taxaDict[key]
-                if isinstance(taxaList, str):
+                if isinstance(taxaList, unicode):
                     if key == 'Kingdom':
                         tempDF = savedDF.loc[savedDF['kingdomid'] == taxaList]
                         tempDF = tempDF[['sampleid', 'kingdomid', 'kingdomName', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']]
@@ -214,7 +214,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         if keggAll == 0:
             for key in keggDict:
                 keggList = keggDict[key]
-                if isinstance(keggList, str):
+                if isinstance(keggList, unicode):
                     if key == 'Level1':
                         koList = ko_entry.objects.using('picrust').filter(ko_lvl1_id_id=keggList).values_list('ko_orthology', flat=True)
                         if koList:
@@ -445,7 +445,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
         if nzAll == 0:
             for key in myDict:
                 keggList = myDict[key]
-                if isinstance(keggList, str):
+                if isinstance(keggList, unicode):
                     if key == 'Level1':
                         nzList = nz_entry.objects.using('picrust').filter(nz_lvl1_id_id=keggList).values_list('nz_orthology', flat=True)
                         if nzList:

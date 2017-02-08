@@ -20,16 +20,18 @@
 <script type="text/javascript">
     function themeChange(selTheme) {
         if (selTheme == 1) {
-            if (dataType == 1) {
-                $("#container-1").empty();
-                chart1 = new Highcharts.Chart(catOptions);
-                chart1.redraw();
-            }
-            else if (dataType == 2) {
-                $("#container-2").empty();
-                chart2 = new Highcharts.Chart(quantOptions);
-                chart2.redraw();
-            }
+            $.getScript("{% static 'highcharts/themes/default.js' %}", function () {
+                if (dataType == 1) {
+                    $("#container-1").empty();
+                    chart1 = new Highcharts.Chart(Highcharts.merge(catOptions, theme));
+                    chart1.redraw();
+                }
+                else if (dataType == 2) {
+                    $("#container-2").empty();
+                    chart2 = new Highcharts.Chart(Highcharts.merge(quantOptions, theme));
+                    chart2.redraw();
+                }
+            });
         }
         else if (selTheme == 2) {
             $.getScript("{% static 'highcharts/themes/dark-blue.js' %}", function () {

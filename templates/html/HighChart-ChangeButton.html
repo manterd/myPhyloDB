@@ -5,8 +5,11 @@
 <script type="text/javascript">
     function seriesChange() {
         if (dataType == 1) {
-            var index = prompt("Please enter the series index (position in legend) you wish to change:", 0);
+            var legIndex = prompt("Please enter the series index (position in legend) you wish to change:", 0);
             var color = prompt("Please enter your desired color:", "#008800");
+            if (legIndex != 0) {
+                index = 2*legIndex;
+            }
             var series = chart1.series[index];
             if (color != '') {
                 series.options.color = color;
@@ -52,8 +55,7 @@
             }
             var item = series.legendItem;
             item.on('mouseover', function (e) {
-                if (line==0)
-                {
+                if (line==0) {
                    $(this).qtip({
                     content: {
                         text: 'Index: ' + index + '<br>' + 'Color: ' + color + '<br>' + 'Symbol: ' + marker
@@ -65,9 +67,7 @@
                         ready: true
                     }
                     });
-                }
-                else
-                {
+                } else {
                     $(this).qtip({
                     content: {
                         text: 'Index: ' + index + '<br>' + 'Color: ' + color
