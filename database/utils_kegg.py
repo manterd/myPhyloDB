@@ -12,6 +12,7 @@ from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3, ko_entry
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
+import database.queue
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -330,7 +331,10 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             levelList.append(str(key))
             picrustDF[key] = 0.0
 
+        curStep = database.queue.getBase(RID)
         sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
+        database.queue.setBase(RID, curStep)
+
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
@@ -1011,7 +1015,10 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
             levelList.append(str(key))
             picrustDF[key] = 0.0
 
+        curStep = database.queue.getBase(RID)
         sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
+        database.queue.setBase(RID, curStep)
+
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
@@ -1128,6 +1135,8 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
 
 def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
     db.close_old_connections()
+    total = len(otuList)
+    counter = 1
     for otu in otuList:
         try:
             cell = picrustDF.at[otu, 'geneCount']
@@ -1146,6 +1155,9 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                 for k in myList:
                     if k in d:
                         sum += d[k]
+                        if sum > 0:
+                            break
+
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
                         res = ''
@@ -1153,6 +1165,8 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 picrustDF.at[otu, key] = sum
+            database.queue.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
+            counter += 1
         except Exception:
             pass
 

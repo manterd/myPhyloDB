@@ -1,7 +1,5 @@
-import ast
 import datetime
 from django.http import HttpResponse
-from django_pandas.io import read_frame
 import logging
 from natsort import natsorted
 import pandas as pd
@@ -9,10 +7,10 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 from pyper import *
 import json
 
-from database.models import PICRUSt
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 from database.utils import multidict, getMetaDF
+from database.utils_kegg import getKeggDF
 from database.models import Phyla, Class, Order, Family, Genus, Species, OTU_99
 import database.queue
 
@@ -41,6 +39,14 @@ def getGAGE(request, stops, RID, PID):
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                allFields = catFields + quantFields
+
+                # round data to fix normalization type issues
+                savedDF['abund'] = savedDF['abund'].round(0).astype(int)
+                savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
+                savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)
+                savedDF['rich'] = savedDF['rich'].round(0).astype(int)
+                savedDF['diversity'] = savedDF['diversity'].round(0).astype(int)
 
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
@@ -141,7 +147,8 @@ def getGAGE(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                finalDF = getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID)
+                keggAll = 4
+                finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -342,92 +349,6 @@ def getGAGE(request, stops, RID, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = json.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
-
-
-def getKeggDF(savedDF, metaDF, DepVar, RID, stops, PID):
-    try:
-        # create sample and otu lists based on meta data selection
-        wanted = ['sampleid', 'otuid', 'abund', 'rel_abund', 'abund_16S']
-        profileDF = savedDF.loc[:, wanted]
-        profileDF.set_index('otuid', inplace=True)
-
-        # get PICRUSt data for species
-        otuList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
-        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
-        picrustDF.set_index('otuid__otuid', inplace=True)
-        picrustotuList = pd.unique(picrustDF.index.ravel().tolist())
-
-        finalKeys = []
-        total = len(otuList)
-        counter = 0
-        for otu in otuList:
-            if otu in picrustotuList:
-                cell = picrustDF.at[otu, 'geneCount']
-                d = ast.literal_eval(cell)
-                for key in d:
-                    picrustDF.at[otu, key] = d[key]
-                    if key not in finalKeys:
-                        finalKeys.append(str(key))
-
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID] == RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            else:
-                pass
-
-            counter += 1
-            database.queue.setBase(RID, 'Step 3 of 6: Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is done!')
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        picrustDF.drop('geneCount', axis=1, inplace=True)
-        picrustDF.fillna(0.0, inplace=True)
-        picrustDF[picrustDF > 0.0] = 1.0
-
-        # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='outer')
-
-        for key in finalKeys:
-            if DepVar == 0:
-                taxaDF[key] = taxaDF['abund'] * taxaDF[key]
-            elif DepVar == 4:
-                taxaDF[key] = taxaDF['abund_16S'] * taxaDF[key]
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        taxaDF = taxaDF.groupby('sampleid')[finalKeys].agg('sum')
-        taxaDF.reset_index(drop=False, inplace=True)
-
-        if DepVar == 0:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
-        elif DepVar == 4:
-            taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
-
-        taxaDF.set_index('sampleid', drop=True, inplace=True)
-        finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='outer')
-        finalDF.reset_index(drop=False, inplace=True)
-        return finalDF
-
-    except Exception as e:
-        if not stops[PID] == RID:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-            error = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            myDict = {"error": error}
             res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
