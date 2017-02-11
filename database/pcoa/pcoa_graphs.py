@@ -289,8 +289,6 @@ def getPCoA(request, stops, RID, PID):
                 trtLength = len(set(catValues))
                 trtString = " + ".join(catFields)
 
-                pcoaDF = pd.DataFrame()
-                eigDF = pd.DataFrame()
                 bigf = ''
                 r.assign("PC1", PC1)
                 r.assign("PC2", PC2)

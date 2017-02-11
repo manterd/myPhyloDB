@@ -318,18 +318,21 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         # create sample and otu lists based on meta data selection
         wanted = ['sampleid', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
         profileDF = savedDF.loc[:, wanted]
-        profileDF.set_index('otuid', inplace=True)
+        profileDF.set_index('otuid', drop=True, inplace=True)
 
         # get PICRUSt data for otu
         otuList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList).values('otuid__otuid', 'geneCount')
         picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
-        picrustDF.set_index('otuid__otuid', inplace=True)
 
-        levelList = []
-        for key in koDict:
-            levelList.append(str(key))
-            picrustDF[key] = 0.0
+        rows, cols = picrustDF.shape
+        levelList = koDict.keys()
+        emptyArr = np.zeros((rows, len(levelList)))
+        emptyDF = pd.DataFrame(emptyArr, columns=levelList)
+
+        picrustDF = pd.merge(picrustDF, emptyDF, left_index=True, right_index=True, how='outer')
+        picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
+        picrustDF.set_index('otuid', drop=True, inplace=True)
 
         curStep = database.queue.getBase(RID)
         sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
@@ -339,7 +342,12 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         picrustDF[picrustDF > 0.0] = 1.0
 
         # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
+        grouped = np.array_split(profileDF, 1000)
+        taxaDF = pd.DataFrame()
+        for group in grouped:
+            tempDF = pd.merge(group, picrustDF, left_index=True, right_index=True, how='outer')
+            taxaDF = taxaDF.append(tempDF)
+
         taxaDF.dropna(axis=0, how='any', inplace=True)
 
         for level in levelList:
@@ -1002,18 +1010,21 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
         # create sample and otu lists based on meta data selection
         wanted = ['sampleid', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
         profileDF = savedDF.loc[:, wanted]
-        profileDF.set_index('otuid', inplace=True)
+        profileDF.set_index('otuid', drop=True, inplace=True)
 
         # get PICRUSt data for otu
         otuList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
-        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'], verbose=False)
-        picrustDF.set_index('otuid__otuid', inplace=True)
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList).values('otuid__otuid', 'geneCount')
+        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
 
-        levelList = []
-        for key in nzDict:
-            levelList.append(str(key))
-            picrustDF[key] = 0.0
+        rows, cols = picrustDF.shape
+        levelList = nzDict.keys()
+        emptyArr = np.zeros((rows, len(levelList)))
+        emptyDF = pd.DataFrame(emptyArr, columns=levelList)
+
+        picrustDF = pd.merge(picrustDF, emptyDF, left_index=True, right_index=True, how='outer')
+        picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
+        picrustDF.set_index('otuid', drop=True, inplace=True)
 
         curStep = database.queue.getBase(RID)
         sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
@@ -1022,9 +1033,13 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
+        # TODO: speed up from here...
         # merge to get final gene counts for all selected samples
-        taxaDF = pd.merge(profileDF, picrustDF, left_index=True, right_index=True, how='inner')
-        taxaDF.dropna(axis=0, how='any', inplace=True)
+        grouped = np.array_split(profileDF, 1000)
+        taxaDF = pd.DataFrame()
+        for group in grouped:
+            tempDF = pd.merge(group, picrustDF, left_index=True, right_index=True, how='outer')
+            taxaDF = taxaDF.append(tempDF)
 
         for level in levelList:
             if DepVar == 0:
@@ -1138,25 +1153,14 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
     total = len(otuList)
     counter = 1
     for otu in otuList:
-        try:
-            cell = picrustDF.at[otu, 'geneCount']
-            d = ast.literal_eval(cell)
+        if counter < 4:
+            try:
+                cell = picrustDF.at[otu, 'geneCount']
+                d = ast.literal_eval(cell)
 
-            for key in keggDict:
-                sum = 0.0
-                myList = keggDict[key]
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                for k in myList:
-                    if k in d:
-                        sum += d[k]
-                        if sum > 0:
-                            break
+                for key in keggDict:
+                    sum = 0.0
+                    myList = keggDict[key]
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
@@ -1164,11 +1168,23 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                picrustDF.at[otu, key] = sum
-            database.queue.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
-            counter += 1
-        except Exception:
-            pass
+                    for k in myList:
+                        if k in d:
+                            sum += d[k]
+                            if sum > 0:
+                                break
+
+                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                        if stops[PID] == RID:
+                            res = ''
+                            return HttpResponse(res, content_type='application/json')
+                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                    picrustDF.at[otu, key] = sum
+                database.queue.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
+                counter += 1
+            except Exception:
+                pass
 
 
 def getFullTaxonomy(idList):

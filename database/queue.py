@@ -199,7 +199,7 @@ def funcCall(request):
                         else:
                             stage[RID] = 'Analysis complete, preparing results'  # stuck on one of these occasionally
                     except Exception:
-                        stage[RID] = 'Problem!'  # maybe?
+                        stage[RID] = 'Downloading results'  # maybe?
                 else:
                     stage[RID] = 'Analysis starting'
 

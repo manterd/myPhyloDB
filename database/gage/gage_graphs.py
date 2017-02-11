@@ -151,6 +151,8 @@ def getGAGE(request, stops, RID, PID):
                 finalDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 # make sure column types are correct
+                print 'finalDF\n', finalDF
+                print 'finalDF', finalDF.columns.values
                 finalDF[catFields] = finalDF[catFields].astype(str)
 
                 database.queue.setBase(RID, 'Step 4 of 6: Performing GAGE analysis...')
