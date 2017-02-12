@@ -7,6 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 import json
+import gc
 
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99
 from database.models import PICRUSt
@@ -168,6 +169,9 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             taxaDF.rename(columns={'genusid': 'rank_id', 'genusName': 'rank_name'}, inplace=True)
             pgprList = ['Actinomyces', 'Arthrobacter', 'Azospirillum', 'Bacillus', 'Burkholderia', 'Enterobacter', 'Mitsuaria', 'Pasteuria', 'Pseudomonas', 'Rhizobium']
             taxaDF = taxaDF.loc[taxaDF['rank_name'].isin(pgprList)]
+            if taxaDF.empty:
+                return pd.DataFrame(), pgprList
+
             taxaDF.loc[:, 'rank'] = 'Genus'
             foundList = list(taxaDF['rank_name'])
             missingList = list(set(pgprList) - set(foundList))
@@ -209,7 +213,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return HttpResponse(res, content_type='application/json')
 
 
-def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
+def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID):
     try:
         koDict = {}
         if keggAll == 0:
@@ -322,7 +326,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
 
         # get PICRUSt data for otu
         otuList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList).values('otuid__otuid', 'geneCount')
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
         picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
 
         rows, cols = picrustDF.shape
@@ -330,7 +334,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         emptyArr = np.zeros((rows, len(levelList)))
         emptyDF = pd.DataFrame(emptyArr, columns=levelList)
 
-        picrustDF = pd.merge(picrustDF, emptyDF, left_index=True, right_index=True, how='outer')
+        picrustDF = pd.merge(picrustDF, emptyDF, left_index=True, right_index=True, how='inner')
         picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
         picrustDF.set_index('otuid', drop=True, inplace=True)
 
@@ -341,26 +345,27 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
-        # merge to get final gene counts for all selected samples
-        grouped = np.array_split(profileDF, 1000)
+        # convert profile to index (sampleid) and columns (keggid) and values (depvar)
+        profileDF.reset_index(drop=False, inplace=True)
+        if DepVar == 0:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='abund')
+        elif DepVar == 1:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='rel_abund')
+        elif DepVar == 2:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='rich')
+        elif DepVar == 3:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='diversity')
+        elif DepVar == 4:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='16S_abund')
+
+        sampleList = profileDF.columns.values.tolist()
         taxaDF = pd.DataFrame()
-        for group in grouped:
-            tempDF = pd.merge(group, picrustDF, left_index=True, right_index=True, how='outer')
+        for i in sampleList:
+            tempDF = pd.DataFrame(index=profileDF.index)
+            for j in levelList:
+                tempDF[j] = profileDF[i] * picrustDF[j]
+                tempDF['sampleid'] = i
             taxaDF = taxaDF.append(tempDF)
-
-        taxaDF.dropna(axis=0, how='any', inplace=True)
-
-        for level in levelList:
-            if DepVar == 0:
-                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
-            elif DepVar == 1:
-                taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
-            elif DepVar == 2:
-                taxaDF[level] = taxaDF['rich'] * taxaDF[level]
-            elif DepVar == 3:
-                taxaDF[level] = taxaDF['diversity'] * taxaDF[level]
-            elif DepVar == 4:
-                taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
@@ -368,40 +373,50 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        # create dataframe with data by otu
-        wanted = levelList[:]
-        wanted.insert(0, 'sampleid')
-        allDF = taxaDF[wanted]
-
+        # rename columns with KEGG name
+        namesDict = {}
         for level in levelList:
             name = ''
-            if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=level).exists():
-                name = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=level).ko_lvl1_name
-            elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=level).exists():
-                name = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=level).ko_lvl2_name
-            elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=level).exists():
-                name = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=level).ko_lvl3_name
-            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=level).exists():
-                name = ko_entry.objects.using('picrust').get(ko_lvl4_id=level).ko_desc
-            allDF.rename(columns={level: name}, inplace=True)
+            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=level).exists():
+                name = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=level).nz_lvl1_name
+            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=level).exists():
+                name = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=level).nz_lvl2_name
+            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=level).exists():
+                name = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=level).nz_lvl3_name
+            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=level).exists():
+                name = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=level).nz_lvl4_name
+            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=level).exists():
+                name = nz_entry.objects.using('picrust').get(nz_lvl5_id=level).nz_desc
+            else:
+                print str(level) + ' not found in database'
+            namesDict[level] = name
 
-        # get taxonomy names
-        idList = list(set(allDF.index.tolist()))
-        nameDict = getFullTaxonomy(idList)
-        allDF.index.name = 'otuid'
-        allDF.reset_index(drop=False, inplace=True)
-        allDF['Taxonomy'] = allDF['otuid'].map(nameDict)
-        allDF.set_index('otuid', inplace=True)
+        # df of mapped taxa to selected kegg orthologies
+        if mapTaxa == 'yes':
+            taxaDF.index.name = 'otuid'
+            allDF = taxaDF.reset_index(drop=False, inplace=False)
+            allDF.drop_duplicates(cols='otuid', take_last=True, inplace=True)
+            allDF.dropna(axis=1, how='any', inplace=False)
+            allDF = allDF[(allDF.sum(axis=1) != 0)]
+            allDF.drop('sampleid', axis=1, inplace=True)
+            for i in levelList:
+                allDF[i] = allDF[i] / allDF[i]
+            allDF.fillna(value=0, inplace=True)
+            recordDict = {}
+            for id in allDF.otuid.tolist():
+                qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
+                record = ';'.join(qs[0])
+                recordDict[id] = record
+            allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
+            order = ['otuid', 'Taxonomy'] + levelList
+            allDF = allDF[order]
+            allDF.rename(columns=namesDict, inplace=True)
+        else:
+            allDF = ''
 
-        allDF.set_index('sampleid', drop=True, inplace=True)
-        allDF = pd.merge(metaDF, allDF, left_index=True, right_index=True, how='inner')
-        allDF.reset_index(drop=False, inplace=True)
-        allDF = allDF.loc[(allDF.sum(axis=1) != 0)]
-
-        # sum all otu
+        # sum all OTUs
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
-
         if DepVar == 0:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 1:
@@ -451,7 +466,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, allFields, DepVar, RID, stops,
             return HttpResponse(res, content_type='application/json')
 
 
-def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
+def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
     try:
         nzDict = {}
         if nzAll == 0:
@@ -1014,7 +1029,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
 
         # get PICRUSt data for otu
         otuList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList).values('otuid__otuid', 'geneCount')
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
         picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
 
         rows, cols = picrustDF.shape
@@ -1022,7 +1037,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
         emptyArr = np.zeros((rows, len(levelList)))
         emptyDF = pd.DataFrame(emptyArr, columns=levelList)
 
-        picrustDF = pd.merge(picrustDF, emptyDF, left_index=True, right_index=True, how='outer')
+        picrustDF = pd.merge(picrustDF, emptyDF, left_index=True, right_index=True, how='inner')
         picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
         picrustDF.set_index('otuid', drop=True, inplace=True)
 
@@ -1033,25 +1048,27 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
 
-        # TODO: speed up from here...
-        # merge to get final gene counts for all selected samples
-        grouped = np.array_split(profileDF, 1000)
-        taxaDF = pd.DataFrame()
-        for group in grouped:
-            tempDF = pd.merge(group, picrustDF, left_index=True, right_index=True, how='outer')
-            taxaDF = taxaDF.append(tempDF)
+        # convert profile to index (sampleid) and columns (keggid) and values (depvar)
+        profileDF.reset_index(drop=False, inplace=True)
+        if DepVar == 0:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='abund')
+        elif DepVar == 1:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='rel_abund')
+        elif DepVar == 2:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='rich')
+        elif DepVar == 3:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='diversity')
+        elif DepVar == 4:
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='16S_abund')
 
-        for level in levelList:
-            if DepVar == 0:
-                taxaDF[level] = taxaDF['abund'] * taxaDF[level]
-            elif DepVar == 1:
-                taxaDF[level] = taxaDF['rel_abund'] * taxaDF[level]
-            elif DepVar == 2:
-                taxaDF[level] = taxaDF['rich'] * taxaDF[level]
-            elif DepVar == 3:
-                taxaDF[level] = taxaDF['diversity'] * taxaDF[level]
-            elif DepVar == 4:
-                taxaDF[level] = taxaDF['abund_16S'] * taxaDF[level]
+        sampleList = profileDF.columns.values.tolist()
+        taxaDF = pd.DataFrame()
+        for i in sampleList:
+            tempDF = pd.DataFrame(index=profileDF.index)
+            for j in levelList:
+                tempDF[j] = profileDF[i] * picrustDF[j]
+                tempDF['sampleid'] = i
+            taxaDF = taxaDF.append(tempDF)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
@@ -1059,11 +1076,8 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        # create dataframe with data by species
-        wanted = list(levelList)
-        wanted.insert(0, 'sampleid')
-        allDF = taxaDF[wanted]
-
+        # rename columns with KEGG name
+        namesDict = {}
         for level in levelList:
             name = ''
             if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=level).exists():
@@ -1076,25 +1090,36 @@ def getNZDF(nzAll, myDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
                 name = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=level).nz_lvl4_name
             elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=level).exists():
                 name = nz_entry.objects.using('picrust').get(nz_lvl5_id=level).nz_desc
-            allDF.rename(columns={level: name}, inplace=True)
+            else:
+                print str(level) + ' not found in database'
+            namesDict[level] = name
 
-        # get taxonomy names
-        idList = list(set(allDF.index.tolist()))
-        nameDict = getFullTaxonomy(idList)
-        allDF.index.name = 'otuid'
-        allDF.reset_index(drop=False, inplace=True)
-        allDF['Taxonomy'] = allDF['otuid'].map(nameDict)
-        allDF.set_index('otuid', inplace=True)
+        # df of mapped taxa to selected kegg orthologies
+        if mapTaxa == 'yes':
+            taxaDF.index.name = 'otuid'
+            allDF = taxaDF.reset_index(drop=False, inplace=False)
+            allDF.drop_duplicates(cols='otuid', take_last=True, inplace=True)
+            allDF.dropna(axis=1, how='any', inplace=False)
+            allDF = allDF[(allDF.sum(axis=1) != 0)]
+            allDF.drop('sampleid', axis=1, inplace=True)
+            for i in levelList:
+                allDF[i] = allDF[i] / allDF[i]
+            allDF.fillna(value=0, inplace=True)
+            recordDict = {}
+            for id in allDF.otuid.tolist():
+                qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
+                record = ';'.join(qs[0])
+                recordDict[id] = record
+            allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
+            order = ['otuid', 'Taxonomy'] + levelList
+            allDF = allDF[order]
+            allDF.rename(columns=namesDict, inplace=True)
+        else:
+            allDF = ''
 
-        allDF.set_index('sampleid', drop=True, inplace=True)
-        allDF = pd.merge(metaDF, allDF, left_index=True, right_index=True, how='inner')
-        allDF.reset_index(drop=False, inplace=True)
-        allDF = allDF.loc[(allDF.sum(axis=1) != 0)]
-
-        # sum all otu
+        # sum all OTUs
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
-
         if DepVar == 0:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 1:
@@ -1153,14 +1178,25 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
     total = len(otuList)
     counter = 1
     for otu in otuList:
-        if counter < 4:
-            try:
-                cell = picrustDF.at[otu, 'geneCount']
-                d = ast.literal_eval(cell)
+        try:
+            cell = picrustDF.at[otu, 'geneCount']
+            d = ast.literal_eval(cell)
 
-                for key in keggDict:
-                    sum = 0.0
-                    myList = keggDict[key]
+            for key in keggDict:
+                sum = 0.0
+                myList = keggDict[key]
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                for k in myList:
+                    if k in d:
+                        sum += d[k]
+                        if sum > 0:
+                            break
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
@@ -1168,23 +1204,11 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                    for k in myList:
-                        if k in d:
-                            sum += d[k]
-                            if sum > 0:
-                                break
-
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID] == RID:
-                            res = ''
-                            return HttpResponse(res, content_type='application/json')
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                    picrustDF.at[otu, key] = sum
-                database.queue.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
-                counter += 1
-            except Exception:
-                pass
+                picrustDF.at[otu, key] = sum
+            database.queue.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
+            counter += 1
+        except Exception:
+            pass
 
 
 def getFullTaxonomy(idList):

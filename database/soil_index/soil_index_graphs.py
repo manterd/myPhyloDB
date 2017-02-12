@@ -64,8 +64,9 @@ def getsoil_index(request, stops, RID, PID):
 
                 nzAll = 10
                 DepVar = 4
+                mapTaxa = 'no'
                 metaDF.set_index('sampleid', drop=True, inplace=True)  # getTaxaDF resets index of metaDF
-                keggDF, mtDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                keggDF, mtDF = getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

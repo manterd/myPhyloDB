@@ -11,17 +11,18 @@ from django_pandas.io import read_frame
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 import fileinput
+import json
 import logging
 import multiprocessing as mp
 import os
 import pandas as pd
 import pickle
 import shutil
-import json
 import tarfile
 import time
-import zipfile
+import ujson
 from uuid import uuid4
+import zipfile
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm
@@ -1026,7 +1027,7 @@ def projectTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1078,7 +1079,7 @@ def sampleTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1116,7 +1117,7 @@ def referenceTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1178,7 +1179,7 @@ def airTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1255,7 +1256,7 @@ def associatedTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1354,7 +1355,7 @@ def microbialTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1487,7 +1488,7 @@ def soilTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1602,7 +1603,7 @@ def waterTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1642,7 +1643,7 @@ def userTableJSON(request):
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1799,7 +1800,7 @@ def taxaJSON(request):
     results = {}
     qs1 = OTU_99.objects.values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
     results['data'] = list(qs1)
-    myJson = json.dumps(results, ensure_ascii=False)
+    myJson = ujson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
 
 
@@ -1814,7 +1815,7 @@ def pathJSON(request):
     results = {}
     qs1 = ko_entry.objects.using('picrust').values_list('ko_lvl1_id', 'ko_lvl1_id__ko_lvl1_name', 'ko_lvl2_id', 'ko_lvl2_id__ko_lvl2_name', 'ko_lvl3_id', 'ko_lvl3_id__ko_lvl3_name', 'ko_lvl4_id', 'ko_orthology', 'ko_name', 'ko_desc')
     results['data'] = list(qs1)
-    myJson = json.dumps(results, ensure_ascii=False)
+    myJson = ujson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
 
 
@@ -1860,7 +1861,7 @@ def pathTaxaJSON(request):
         results = {}
         qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuName', 'otuid')
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -1875,7 +1876,7 @@ def nzJSON(request):
     qs1 = nz_entry.objects.using('picrust').values_list('nz_lvl1_id','nz_lvl1_id__nz_lvl1_name', 'nz_lvl2_id', 'nz_lvl2_id__nz_lvl2_name', 'nz_lvl3_id', 'nz_lvl3_id__nz_lvl3_name', 'nz_lvl4_id', 'nz_lvl4_id__nz_lvl4_name', 'nz_lvl5_id', 'nz_orthology', 'nz_name', 'nz_desc')
     results = {}
     results['data'] = list(qs1)
-    myJson = json.dumps(results, ensure_ascii=False)
+    myJson = ujson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
 
 
@@ -1924,7 +1925,7 @@ def nzTaxaJSON(request):
         results = {}
         qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
         results['data'] = list(qs1)
-        myJson = json.dumps(results, ensure_ascii=False)
+        myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
 
 
@@ -2492,6 +2493,7 @@ def addPerms(request):
                 iter += 1
         else:
             text = 'Users have been added to selected project(s)'
+
         retDict = {"error": text}
         res = json.dumps(retDict)
         return HttpResponse(res, content_type='application/json')

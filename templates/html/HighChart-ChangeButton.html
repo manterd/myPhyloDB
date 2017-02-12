@@ -4,12 +4,11 @@
 
 <script type="text/javascript">
     function seriesChange() {
+        var index = 0;
         if (dataType == 1) {
             var legIndex = prompt("Please enter the series index (position in legend) you wish to change:", 0);
             var color = prompt("Please enter your desired color:", "#008800");
-            if (legIndex == 0) {
-                var index = 0;
-            } else {
+            if (legIndex != 0) {
                 index = 2*legIndex;
             }
             var series = chart1.series[index];

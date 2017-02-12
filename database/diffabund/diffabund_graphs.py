@@ -128,6 +128,7 @@ def getDiffAbund(request, stops, RID, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
+                mapTaxa = 'no'
 
                 finalDF = pd.DataFrame()
                 if treeType == 1:
@@ -143,10 +144,16 @@ def getDiffAbund(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if treeType == 2:
-                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
-                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+
+                if finalDF.empty:
+                    error = "Selected taxa were not found in your selected samples."
+                    myDict = {'error': error}
+                    res = json.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -353,17 +360,17 @@ def getDiffAbund(request, stops, RID, PID):
 
                 xTitle = {}
                 xTitle['text'] = "baseMean"
-                xTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
+                xTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
                 xAxisDict['title'] = xTitle
                 xAxisDict['type'] = 'logarithmic'
 
                 yTitle = {}
                 yTitle['text'] = "log2FoldChange"
-                yTitle['style'] = {'color': 'black', 'fontSize': '18px', 'fontWeight': 'bold'}
+                yTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
                 yAxisDict['title'] = yTitle
                 yAxisDict['type'] = 'linear'
 
-                styleDict = {'style': {'color': 'black', 'fontSize': '14px'}}
+                styleDict = {'style': {'fontSize': '14px'}}
                 xAxisDict['labels'] = styleDict
                 yAxisDict['labels'] = styleDict
 

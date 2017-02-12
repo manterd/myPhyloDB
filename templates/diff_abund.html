@@ -23,7 +23,9 @@
         var  dataType = 1, treeType = 1;
         var nodesCat = "", nodesTaxa = "", taxaAll = 7, nzAll = 1, keggAll = 1;
         var chart1 = {}, catOptions = {};
+        var unstackButton = false;
         var running = false, refresh = 0, RID = 0;
+        var HCDefaults = $.extend(true, {}, Highcharts.getOptions(), {});
 
         $(function () {
             $(window).load(function() {

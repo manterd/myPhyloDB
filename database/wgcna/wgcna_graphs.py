@@ -152,6 +152,7 @@ def getWGCNA(request, stops, RID, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
+                mapTaxa = 'no'
 
                 finalDF = pd.DataFrame()
                 if treeType == 1:
@@ -167,10 +168,16 @@ def getWGCNA(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if treeType == 2:
-                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
-                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+
+                if finalDF.empty:
+                    error = "Selected taxa were not found in your selected samples."
+                    myDict = {'error': error}
+                    res = json.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

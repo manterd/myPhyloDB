@@ -124,6 +124,7 @@ def getSPLS(request, stops, RID, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
+                mapTaxa = 'no'
 
                 finalDF = pd.DataFrame()
                 if treeType == 1:
@@ -139,10 +140,16 @@ def getSPLS(request, stops, RID, PID):
                         result += '===============================================\n'
 
                 if treeType == 2:
-                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
-                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+
+                if finalDF.empty:
+                    error = "Selected taxa were not found in your selected samples."
+                    myDict = {'error': error}
+                    res = json.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
                 # make sure column types are correct
                 finalDF[quantFields] = finalDF[quantFields].astype(float)
@@ -477,14 +484,14 @@ def getSPLS(request, stops, RID, PID):
                     labelsDict = {}
                     labelsDict['rotation'] = 270
                     labelsDict['enabled'] = True
-                    labelsDict['style'] = {'color': 'black', 'fontSize': '14px'}
+                    labelsDict['style'] = {'fontSize': '14px'}
                     xAxisDict['labels'] = labelsDict
                     xAxisDict['title'] = {'text': None}
                     xAxisDict['tickLength'] = 0
 
                     yAxisDict = {}
                     yAxisDict['categories'] = quantFields
-                    yAxisDict['labels'] = {'style': {'color': 'black', 'fontSize': '14px'}}
+                    yAxisDict['labels'] = {'style': {'fontSize': '14px'}}
                     yAxisDict['title'] = {'text': None}
 
                     seriesList = []

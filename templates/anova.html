@@ -63,7 +63,7 @@
                             for (var i = 0, len = legend.allItems.length; i < len; i++) {
                                 (function (i) {
                                     var item = legend.allItems[i].legendItem;
-                                    var color = chart.series[i].color;
+                                    var color = chart.series[2*i].color;
                                     item.on('mouseover', function (e) {
                                         $(this).qtip({
                                             content: {
@@ -165,6 +165,8 @@
 
                 $("#taxDiv").hide();
                 $("#taxTableH2").hide();
+                $(".map").hide();
+                document.getElementById("map_taxa").checked = false;
 
                 if (dataType == "1") {
                     $("#container-1").empty().show().append('Settings have been changed by the user!');
@@ -190,6 +192,7 @@
 
                 $("#taxDiv").show();
                 $("#taxTableH2").show();
+                $(".map").show();
 
                 if (dataType == "1") {
                     $("#container-1").empty().show().append('Settings have been changed by the user!');
@@ -209,6 +212,8 @@
                 $("#tree_taxa").hide();
                 $("#tree_kegg").hide();
                 $("#tree_nz").show();
+                    $("#taxTableH2").show();
+                    $(".map").show();
 
                 if (dataType == "1") {
                     $("#container-1").empty().show().append('Settings have been changed by the user!');
@@ -217,7 +222,6 @@
                     $("#text-2").empty().hide();
 
                     $("#taxDiv").show();
-                    $("#taxTableH2").show();
 
                     if (nzAll == 5) {
                         $("#cat_off").hide();
@@ -613,6 +617,12 @@
                     myDict['filterData'] = 'no'
                 }
 
+                if ($("#map_taxa").is(':checked')) {
+                    myDict['map_taxa'] = 'yes'
+                } else {
+                    myDict['map_taxa'] = 'no'
+                }
+
                 myDict['perZeroes'] = document.getElementById("perZeroes").value;
                 myDict['filterPer'] = document.getElementById("filterPer").value;
                 myDict['filterMeth'] = document.getElementById("filterMeth").value;
@@ -791,6 +801,12 @@
                     myDict['filterData'] = 'yes'
                 } else {
                     myDict['filterData'] = 'no'
+                }
+
+                if ($("#map_taxa").is(':checked')) {
+                    myDict['map_taxa'] = 'yes'
+                } else {
+                    myDict['map_taxa'] = 'no'
                 }
 
                 myDict['perZeroes'] = document.getElementById("perZeroes").value;
@@ -1608,7 +1624,21 @@
 
             <tr><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-Filtering.html" %}
-            <tr><td colspan="3" bgcolor="white"></td></tr>
+
+            <tr class="map" style="display:none"><td colspan="3" bgcolor="white"></td></tr>
+            <tr class="map" style="display:none">
+                <td bgcolor="white" width="5px"></td>
+                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Map Taxa to KEGG Pathway/Enzyme:</em></strong></td>
+            </tr>
+            <tr class="map" style="display:none">
+                <td bgcolor="white" width="5px"></td>
+                <td id="sig_text" bgcolor="white">
+                    <input type="checkbox" id="map_taxa" onChange="checkButtons()">
+                    &nbsp; <-- Display mapped taxa
+                </td>
+                <td bgcolor="white"></td>
+            </tr>
+            <tr class="map" style="display:none"><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-RunButton.html" %}
             <tr><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-Export.html" %}
@@ -1689,8 +1719,8 @@
     </div>
     <br><br>
 
-    <h2 id="taxTableH2">Mapped Taxa:</h2>
-    <div id="taxDiv" style="width: 950px; overflow-x: auto;"></div>
+    <h2 class="map" id="taxTableH2" style="display: none">Mapped Taxa:</h2>
+    <div class="map" id="taxDiv" style="display: none; width: 950px; overflow-x: auto;"></div>
     <br><br><br><br>
 
 {% endblock my_content%}

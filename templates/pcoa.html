@@ -20,10 +20,12 @@
     </style>
 
     <script type="text/javascript">
-        var dataType = 0, treeType = 1;
+        var dataType = 1, treeType = 1;
         var nodesCat = "", nodesQuant = "";
         var chart1 = {}, catOptions = {};
+        var unstackButton = false;
         var running = false, refresh = 0, RID = 0;
+        var HCDefaults = $.extend(true, {}, Highcharts.getOptions(), {});
 
         $(function () {
             $(window).load(function() {
