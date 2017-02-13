@@ -2352,7 +2352,7 @@ def uploadNorm(request):
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_norm_data.biom'
     with open(path, 'w') as outfile:
-        json.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
+        ujson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
     return render_to_response(
         'select.html',

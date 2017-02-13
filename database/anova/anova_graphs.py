@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from pyper import *
 from scipy import stats
-import ujson
 
 from database.models import Sample
 from database.utils import multidict, getMetaDF, transformDF
@@ -47,13 +46,13 @@ def getCatUnivData(request, RID, stops, PID):
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
@@ -114,7 +113,7 @@ def getCatUnivData(request, RID, stops, PID):
                 if finalDF.empty:
                     error = "Selected taxa were not found in your selected samples."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 # make sure column types are correct
@@ -478,7 +477,7 @@ def getCatUnivData(request, RID, stops, PID):
                     tname = {
                         '1': "Ln", '2': "Log10", '3': "Sqrt", '4': "Logit", '5': "Arcsin"
                     }
-                    yTitle['text'] = tname[str(transform)] + "(" + yTitle['text'] + ")"
+                    yTitle['text'] = tname[str(transform)] + "(" + str(yTitle['text']) + ")"
 
                 yAxisDict['title'] = yTitle
 
@@ -508,14 +507,14 @@ def getCatUnivData(request, RID, stops, PID):
                 # datatable of taxa mapped to selected kegg orthologies
                 if not treeType == 1 and mapTaxa == 'yes':
                     records = allDF.values.tolist()
-                    finalDict['taxData'] = ujson.dumps(records)
+                    finalDict['taxData'] = json.dumps(records)
                     columns = allDF.columns.values.tolist()
-                    finalDict['taxColumns'] = ujson.dumps(columns)
+                    finalDict['taxColumns'] = json.dumps(columns)
 
                 finalDict['resType'] = 'res'
                 finalDict['error'] = 'none'
 
-                res = ujson.dumps(finalDict)
+                res = json.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -525,7 +524,7 @@ def getCatUnivData(request, RID, stops, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 
@@ -610,7 +609,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
-                    res = ujson.dumps(myDict)
+                    res = json.dumps(myDict)
                     return HttpResponse(res, content_type='application/json')
 
                 result = ''
@@ -1226,7 +1225,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     tname = {
                         '1': "Ln", '2': "Log10", '3': "Sqrt", '4': "Logit", '5': "Arcsin"
                     }
-                    yTitle['text'] = tname[str(transform)] + "(" + yTitle['text'] + ")"
+                    yTitle['text'] = tname[str(transform)] + "(" + str(yTitle['text']) + ")"
 
                 yTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
                 yAxisDict['title'] = yTitle
@@ -1255,15 +1254,15 @@ def getQuantUnivData(request, RID, stops, PID):
                 # datatable of taxa mapped to selected kegg orthologies
                 if not treeType == 1 and mapTaxa == 'yes':
                     records = allDF.values.tolist()
-                    finalDict['taxData'] = ujson.dumps(records)
+                    finalDict['taxData'] = json.dumps(records)
                     columns = allDF.columns.values.tolist()
-                    finalDict['taxColumns'] = ujson.dumps(columns)
+                    finalDict['taxColumns'] = json.dumps(columns)
 
                 finalDict['resType'] = 'res'
                 finalDict['text'] = result
 
                 finalDict['error'] = 'none'
-                res = ujson.dumps(finalDict)
+                res = json.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
 
     except Exception as e:
@@ -1273,7 +1272,7 @@ def getQuantUnivData(request, RID, stops, PID):
             logging.exception(myDate)
             myDict = {}
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
-            res = ujson.dumps(myDict)
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
 

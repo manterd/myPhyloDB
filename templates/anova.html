@@ -190,8 +190,6 @@
                 $("#cat_gibbs").hide();
                 $("#cat_nitrogen").hide();
 
-                $("#taxDiv").show();
-                $("#taxTableH2").show();
                 $(".map").show();
 
                 if (dataType == "1") {
@@ -212,16 +210,14 @@
                 $("#tree_taxa").hide();
                 $("#tree_kegg").hide();
                 $("#tree_nz").show();
-                    $("#taxTableH2").show();
-                    $(".map").show();
+
+                $(".map").show();
 
                 if (dataType == "1") {
                     $("#container-1").empty().show().append('Settings have been changed by the user!');
                     $("#container-2").empty().hide();
                     $("#text-1").empty().show();
                     $("#text-2").empty().hide();
-
-                    $("#taxDiv").show();
 
                     if (nzAll == 5) {
                         $("#cat_off").hide();
@@ -1418,7 +1414,7 @@
 
                         var text = data['text'];
 
-                        if (treeType != "1") {
+                        if ((treeType != "1") && (document.getElementById("map_taxa").checked)) {
                             var taxData = eval(data['taxData']);
                             var taxColumns = JSON.parse(data['taxColumns']);
                             var tableHeaders = '';
@@ -1441,7 +1437,6 @@
                         }
 
                         if (document.getElementById("dataType").value == 1) {
-
                             if (empty == 0) {
                                 $("#container-1").empty().append('No significant tests!');
                             } else {

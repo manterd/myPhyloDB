@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 import json
-import gc
+from memory_profiler import profile
 
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99
 from database.models import PICRUSt
@@ -20,6 +20,7 @@ LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
+@profile
 def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     try:
         missingList = []
@@ -213,6 +214,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return HttpResponse(res, content_type='application/json')
 
 
+@profile
 def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID):
     try:
         koDict = {}
@@ -365,6 +367,13 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             for j in levelList:
                 tempDF[j] = profileDF[i] * picrustDF[j]
                 tempDF['sampleid'] = i
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
             taxaDF = taxaDF.append(tempDF)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -377,19 +386,23 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         namesDict = {}
         for level in levelList:
             name = ''
-            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=level).exists():
-                name = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=level).nz_lvl1_name
-            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=level).exists():
-                name = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=level).nz_lvl2_name
-            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=level).exists():
-                name = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=level).nz_lvl3_name
-            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=level).exists():
-                name = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=level).nz_lvl4_name
-            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=level).exists():
-                name = nz_entry.objects.using('picrust').get(nz_lvl5_id=level).nz_desc
+            if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=level).exists():
+                name = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=level).ko_lvl1_name
+            elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=level).exists():
+                name = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=level).ko_lvl2_name
+            elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=level).exists():
+                name = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=level).ko_lvl3_name
+            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=level).exists():
+                name = ko_entry.objects.using('picrust').get(ko_lvl4_id=level).ko_desc
             else:
                 print str(level) + ' not found in database'
             namesDict[level] = name
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
@@ -414,6 +427,12 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         else:
             allDF = ''
 
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
         # sum all OTUs
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
@@ -431,6 +450,12 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         taxaDF.set_index('sampleid', drop=True, inplace=True)
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
         finalDF.reset_index(drop=False, inplace=True)
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         finalDF['rank'] = ''
         finalDF['rank_name'] = ''
@@ -466,6 +491,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             return HttpResponse(res, content_type='application/json')
 
 
+@profile
 def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
     try:
         nzDict = {}
@@ -1068,6 +1094,13 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             for j in levelList:
                 tempDF[j] = profileDF[i] * picrustDF[j]
                 tempDF['sampleid'] = i
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
             taxaDF = taxaDF.append(tempDF)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1094,6 +1127,12 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
                 print str(level) + ' not found in database'
             namesDict[level] = name
 
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
             taxaDF.index.name = 'otuid'
@@ -1117,6 +1156,12 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         else:
             allDF = ''
 
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
         # sum all OTUs
         taxaDF = taxaDF.groupby('sampleid')[levelList].agg('sum')
         taxaDF.reset_index(drop=False, inplace=True)
@@ -1135,9 +1180,14 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
         finalDF.reset_index(drop=False, inplace=True)
 
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
         finalDF['rank'] = ''
         finalDF['rank_name'] = ''
-
         for index, row in finalDF.iterrows():
             if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=row['rank_id']).exists():
                 finalDF.loc[index, 'rank'] = 'Lvl1'
@@ -1207,6 +1257,13 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                 picrustDF.at[otu, key] = sum
             database.queue.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
             counter += 1
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
         except Exception:
             pass
 
@@ -1310,7 +1367,6 @@ def insertTaxaInfo(treeType, zipped, DF, pos=1):
 
 
 def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth):
-
     numSamples = len(savedDF['sampleid'].unique())
     myVar = ''
     if DepVar == 0:

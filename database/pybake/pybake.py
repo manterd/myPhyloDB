@@ -118,7 +118,7 @@ def geneParse(file1, file2, file3):
             row.drop('16S_rRNA_Count', inplace=True)
             row.drop('Taxonomy', inplace=True)
             rowDict = row.to_dict()
-            geneCount = {x:y for x,y in rowDict.items() if y != 0}
+            geneCount = {x: y for x, y in rowDict.items() if y != 0}
             for key in geneCount:
                 geneCount[key] = round(geneCount[key] / rRNACount, 4)
 
