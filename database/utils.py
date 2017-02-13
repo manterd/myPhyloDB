@@ -14,7 +14,6 @@ import json
 import threading
 import time
 import zipfile
-from memory_profiler import profile
 
 from models import Project, Reference, Profile
 from config import local_cfg
@@ -580,7 +579,6 @@ def getEditProjects(request):
     return projects
 
 
-@profile
 def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     # Load file
     file = open(path)

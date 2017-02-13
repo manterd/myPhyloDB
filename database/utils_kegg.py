@@ -7,7 +7,6 @@ import logging
 import numpy as np
 import pandas as pd
 import json
-from memory_profiler import profile
 
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99
 from database.models import PICRUSt
@@ -20,7 +19,6 @@ LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-@profile
 def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
     try:
         missingList = []
@@ -214,7 +212,6 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return HttpResponse(res, content_type='application/json')
 
 
-@profile
 def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID):
     try:
         koDict = {}
@@ -491,7 +488,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             return HttpResponse(res, content_type='application/json')
 
 
-@profile
+
 def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
     try:
         nzDict = {}
