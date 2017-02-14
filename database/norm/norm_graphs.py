@@ -13,7 +13,7 @@ import zipfile
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined
 from database.models import OTU_99, Profile
-from database.utils import taxaProfileDF, exploding_panda
+import database.utils
 import database.queue
 
 
@@ -123,7 +123,7 @@ def getNorm(request, RID, stopList, PID):
             myList = metaDF.index.values.tolist()
 
             # Create dataframe with all taxa/count data by sample
-            taxaDF = taxaProfileDF(myList)
+            taxaDF = database.utils.taxaProfileDF(myList)
 
             # Select only the taxa of interest if user used the selectAll button
             taxaDict = {}
@@ -636,7 +636,7 @@ def getTab(request):
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_norm_data.biom'
 
-        df, metaDF, remCatFields = exploding_panda(path)
+        df, metaDF, remCatFields = database.utils.exploding_panda(path)
 
         fileName2 = str(myDir) + 'usr_norm_data.csv'
         df.to_csv(fileName2)

@@ -10,8 +10,8 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import json
 
 from database.models import PICRUSt
-from database.utils import getMetaDF
-from database.utils_kegg import getTaxaDF, getNZDF
+import database.utils
+import database.utils_kegg
 import database.queue
 
 
@@ -40,7 +40,7 @@ def getsoil_index(request, stops, RID, PID):
                 locMax = all['locMax']
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, '')
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, '')
                 allFields = catFields + quantFields
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
@@ -60,13 +60,13 @@ def getsoil_index(request, stops, RID, PID):
 
                 selectAll = 9
                 DepVar = 10
-                finalDF, missingList = getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                finalDF, missingList = database.utils_kegg.getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 nzAll = 10
                 DepVar = 4
                 mapTaxa = 'no'
                 metaDF.set_index('sampleid', drop=True, inplace=True)  # getTaxaDF resets index of metaDF
-                keggDF, mtDF = getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                keggDF, mtDF = database.utils_kegg.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

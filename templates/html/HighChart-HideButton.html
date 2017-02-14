@@ -5,39 +5,43 @@
 
 <script type="text/javascript">
     function hideChange() {
-
+        var hide = $('#hide');
         if (dataType == 1) {
-            if ($('#hide').html() == 'Hide all series') {
+            if (hide.html() == 'Hide all series') {
                 $(chart1.series).each(function(){
                     this.setVisible(false, false);
                 });
-                chart1.redraw();
-                $('#hide').html('Show all series');
+                hide.html('Show all series');
             } else {
                 $(chart1.series).each(function(){
-                    this.setVisible(true, false);
+                    if (this.type == 'errorbar') {
+                        if (unstackButton) {
+                            this.setVisible(true, false);
+                        } else {
+                            this.setVisible(false, false);
+                        }
+                    } else {
+                        this.setVisible(true, false);
+                    }
                 });
-                chart1.redraw();
-                $('#hide').html('Hide all series');
+                hide.html('Hide all series');
             }
+            chart1.redraw();
         }
 
         if (dataType == 2) {
-            if ($('#hide').html() == 'Hide all series') {
+            if (hide.html() == 'Hide all series') {
                 $(chart2.series).each(function(){
                     this.setVisible(false, false);
                 });
-                chart2.redraw();
-                $('#hide').html('Show all series');
+                hide.html('Show all series');
             } else {
                 $(chart2.series).each(function(){
                     this.setVisible(true, false);
                 });
-                chart2.redraw();
-                $('#hide').html('Hide all series');
+                hide.html('Hide all series');
             }
+            chart2.redraw();
         }
-
-        errorBars();
     }
 </script>

@@ -488,7 +488,6 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             return HttpResponse(res, content_type='application/json')
 
 
-
 def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
     try:
         nzDict = {}

@@ -26,7 +26,7 @@
         Highcharts.theme = {
             "colors": [
                 "#f1c40f", "#2ecc71", "#9b59b6", "#e74c3c", "#34495e",
-                "#3498db", "#1abc9c", "#f39c12", "#d35400"
+                "#3498db", "#1abc9c", "#f39c12", "#d35400", "red"
             ],
             "chart": {
                 "backgroundColor": "#ECF0F1"

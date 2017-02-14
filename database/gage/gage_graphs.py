@@ -9,9 +9,9 @@ import json
 
 from database.models import ko_lvl1, ko_lvl2, ko_lvl3
 from database.models import nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
-from database.utils import multidict, getMetaDF
-from database.utils_kegg import getKeggDF
 from database.models import Phyla, Class, Order, Family, Genus, Species, OTU_99
+import database.utils
+import database.utils_kegg
 import database.queue
 
 
@@ -38,7 +38,7 @@ def getGAGE(request, stops, RID, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 # round data to fix normalization type issues
@@ -103,7 +103,7 @@ def getGAGE(request, stops, RID, PID):
                 print r("library(grid)")
 
                 keggString = all["kegg"]
-                keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
+                keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
                 nameList = []
                 for value in keggDict.itervalues():
                     if isinstance(value, list):
@@ -149,7 +149,7 @@ def getGAGE(request, stops, RID, PID):
 
                 keggAll = 4
                 mapTaxa = 'no'
-                finalDF, junk = getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                finalDF, junk = database.utils_kegg.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)

@@ -6,9 +6,8 @@ import pandas as pd
 from pyper import *
 import json
 
-from database.utils import getMetaDF
-from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
-from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ
+import database.utils
+import database.utils_kegg
 import database.queue
 
 
@@ -81,7 +80,7 @@ def getDiffAbund(request, stops, RID, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 # round data to fix normalization type issues
@@ -133,21 +132,21 @@ def getDiffAbund(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = database.utils_kegg.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 
-                    finalDF, missingList = getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = database.utils_kegg.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if treeType == 2:
-                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = database.utils_kegg.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
-                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = database.utils_kegg.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if finalDF.empty:
                     error = "Selected taxa were not found in your selected samples."
@@ -263,13 +262,13 @@ def getDiffAbund(request, stops, RID, PID):
                             nbinom_res = nbinom_res.loc[pd.notnull(nbinom_res[' log2FoldChange '])]
 
                             if treeType == 1:
-                                idList = getFullTaxonomy(list(nbinom_res.rank_id.unique()))
+                                idList = database.utils_kegg.getFullTaxonomy(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
                             elif treeType == 2:
-                                idList = getFullKO(list(nbinom_res.rank_id.unique()))
+                                idList = database.utils_kegg.getFullKO(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
                             elif treeType == 3:
-                                idList = getFullNZ(list(nbinom_res.rank_id.unique()))
+                                idList = database.utils_kegg.getFullNZ(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
 
                             nbinom_res.rename(columns={'rank_id': 'Rank ID'}, inplace=True)

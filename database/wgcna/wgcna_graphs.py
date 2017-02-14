@@ -9,9 +9,8 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import json
 import sys
 
-from database.utils import getMetaDF, transformDF
-from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
-from database.utils_kegg import getFullTaxonomy, getFullKO, getFullNZ
+import database.utils
+import database.utils_kegg
 import database.queue
 
 
@@ -45,7 +44,7 @@ def getWGCNA(request, stops, RID, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 result = ''
@@ -157,21 +156,21 @@ def getWGCNA(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = database.utils_kegg.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 
-                    finalDF, missingList = getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = database.utils_kegg.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if treeType == 2:
-                    finalDF, allDF = getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = database.utils_kegg.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
-                    finalDF, allDF = getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = database.utils_kegg.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if finalDF.empty:
                     error = "Selected taxa were not found in your selected samples."
@@ -185,7 +184,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 # transform Y, if requested
                 transform = int(all["transform"])
-                finalDF = transformDF(transform, DepVar, finalDF)
+                finalDF = database.utils.transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/wgcna/'
@@ -450,13 +449,13 @@ def getWGCNA(request, stops, RID, PID):
                 moduleDF.insert(0, 'rank_id', index)
 
                 if treeType == 1:
-                    idList = getFullTaxonomy(list(moduleDF.rank_id.unique()))
+                    idList = database.utils_kegg.getFullTaxonomy(list(moduleDF.rank_id.unique()))
                     moduleDF['Taxonomy'] = moduleDF['rank_id'].map(idList)
                 elif treeType == 2:
-                    idList = getFullKO(list(moduleDF.rank_id.unique()))
+                    idList = database.utils_kegg.getFullKO(list(moduleDF.rank_id.unique()))
                     moduleDF['Pathway'] = moduleDF['rank_id'].map(idList)
                 elif treeType == 3:
-                    idList = getFullNZ(list(moduleDF.rank_id.unique()))
+                    idList = database.utils_kegg.getFullNZ(list(moduleDF.rank_id.unique()))
                     moduleDF['Enzyme'] = moduleDF['rank_id'].map(idList)
 
                 moduleDF.replace(to_replace='N/A', value=np.nan, inplace=True)
@@ -480,13 +479,13 @@ def getWGCNA(request, stops, RID, PID):
                 kmeDF.insert(0, 'rank_id', index)
 
                 if treeType == 1:
-                    idList = getFullTaxonomy(list(kmeDF.rank_id.unique()))
+                    idList = database.utils_kegg.getFullTaxonomy(list(kmeDF.rank_id.unique()))
                     kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
                 elif treeType == 2:
-                    idList = getFullKO(list(kmeDF.rank_id.unique()))
+                    idList = database.utils_kegg.getFullKO(list(kmeDF.rank_id.unique()))
                     kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
                 elif treeType == 3:
-                    idList = getFullNZ(list(kmeDF.rank_id.unique()))
+                    idList = database.utils_kegg.getFullNZ(list(kmeDF.rank_id.unique()))
                     kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
 
                 kmeDF.replace(to_replace='N/A', value=np.nan, inplace=True)

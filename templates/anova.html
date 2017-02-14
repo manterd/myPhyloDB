@@ -126,9 +126,9 @@
                             legendItemClick: function(e) {
                                 e.preventDefault();
                                 if (this.visible == true) {
-                                    this.setVisible(false, true);
+                                    this.setVisible(false, false);
                                 } else {
-                                    this.setVisible(true, true);
+                                    this.setVisible(true, false);
                                 }
                                 errorBars();
                             }
@@ -139,7 +139,6 @@
                 credits: { enabled: false }
             };
             chart1 = new Highcharts.Chart(catOptions);
-            errorBars();
         }
         function checkButtons() {
             dataType = document.getElementById("dataType").value;
@@ -391,73 +390,66 @@
             if (stack == 'normal') {
                 $(chart1.series).each(function () {
                     if (this.type == 'errorbar') {
-                        this.setVisible(false, true);
+                        this.setVisible(false, false);
                     }
                 });
             } else {
                 for (var i = 0; i < seriesLen; i += 2) {
                     if (chart1.series[i].visible) {
-                        chart1.series[i + 1].setVisible(true, true);
+                        chart1.series[i + 1].setVisible(true, false);
                     }
                 }
             }
+            chart1.redraw();
         }
         function flipStack() {
-        if (unstackButton) {
-            unstackButton = false;
-            document.getElementById("unstackButton").value = "Unstack bars";
-
-            $("#container-1").empty();
             var options = chart1.options;
-            options.plotOptions = {
-                column: { stacking: "normal"},
-                series: {
-                    events: {
-                        legendItemClick: function(e) {
-                            e.preventDefault();
-                            if (this.visible == true) {
-                                this.setVisible(false, true);
-                            } else {
-                                this.setVisible(true, true);
+            if (unstackButton) {
+                unstackButton = false;
+                document.getElementById("unstackButton").value = "Unstack bars";
+                options.plotOptions = {
+                    column: {stacking: "normal"},
+                    series: {
+                        events: {
+                            legendItemClick: function(e) {
+                                e.preventDefault();
+                                if (this.visible == true) {
+                                    this.setVisible(false, false);
+                                } else {
+                                    this.setVisible(true, false);
+                                }
+                                errorBars();
                             }
-                            errorBars();
-                        }
-                    },
-                    borderWidth: 0
-                }
-            };
-            chart1 = new Highcharts.Chart(options);
-            chart1.redraw();
-
-        } else {
-            unstackButton = true;
-            document.getElementById("unstackButton").value = "Stack bars";
-
-            $("#container-1").empty();
-            var options = chart1.options;
-            options.plotOptions = {
-                column: { stacking: null},
-                series: {
-                    events: {
-                        legendItemClick: function(e) {
-                            e.preventDefault();
-                            if (this.visible == true) {
-                                this.setVisible(false, true);
-                            } else {
-                                this.setVisible(true, true);
+                        },
+                        borderWidth: 0
+                    }
+                };
+                chart1 = new Highcharts.Chart(options);
+            } else {
+                unstackButton = true;
+                document.getElementById("unstackButton").value = "Stack bars";
+                options.plotOptions = {
+                    column: {stacking: null},
+                    series: {
+                        events: {
+                            legendItemClick: function(e) {
+                                e.preventDefault();
+                                if (this.visible == true) {
+                                    this.setVisible(false, false);
+                                } else {
+                                    this.setVisible(true, false);
+                                }
+                                errorBars();
                             }
-                            errorBars();
-                        }
-                    },
-                    borderWidth: 0
-                }
-            };
-            chart1 = new Highcharts.Chart(options);
-            chart1.redraw();
+                        },
+                        borderWidth: 0
+                    }
+                };
+                chart1 = new Highcharts.Chart(options);
+            }
+            errorBars();
         }
 
-        errorBars();
-    }
         function getCatGraphData() {
             RID = makeGUID();
             startTimer(RID);
@@ -1265,6 +1257,8 @@
             $("#container-2").empty();
             $("#text-1").val('');
             $("#text-2").val('');
+            $("#taxDiv").empty();
+
             running = true;
             checkButtons();
             chooseData();

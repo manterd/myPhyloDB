@@ -8,9 +8,8 @@ from pyper import *
 from scipy import stats
 
 from database.models import Sample
-from database.utils import multidict, getMetaDF, transformDF
-from database.utils_kegg import getTaxaDF, getKeggDF, getNZDF, filterDF
-import database.queue
+import database.utils
+import database.utils_kegg
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -40,7 +39,7 @@ def getCatUnivData(request, RID, stops, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 if not catFields:
@@ -85,12 +84,12 @@ def getCatUnivData(request, RID, stops, PID):
                 if treeType == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
-                        taxaDict = json.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+                        taxaDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(taxaString)
                         filteredDF = savedDF.copy()
                     else:
                         taxaDict = ''
-                        filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF, missingList = getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                        filteredDF = database.utils_kegg.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF, missingList = database.utils_kegg.getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
@@ -100,15 +99,15 @@ def getCatUnivData(request, RID, stops, PID):
                     keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
-                        keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF, allDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                        keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
+                    finalDF, allDF = database.utils_kegg.getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
-                        keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF, allDF = getNZDF(nzAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                        keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
+                    finalDF, allDF = database.utils_kegg.getNZDF(nzAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if finalDF.empty:
                     error = "Selected taxa were not found in your selected samples."
@@ -122,7 +121,7 @@ def getCatUnivData(request, RID, stops, PID):
 
                 # transform Y, if requested
                 transform = int(all["transform"])
-                finalDF = transformDF(transform, DepVar, finalDF)
+                finalDF = database.utils.transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'
@@ -603,7 +602,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 if not finalSampleIDs:
@@ -642,13 +641,13 @@ def getQuantUnivData(request, RID, stops, PID):
                 if treeType == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
-                        taxaDict = json.JSONDecoder(object_pairs_hook=multidict).decode(taxaString)
+                        taxaDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(taxaString)
                         filteredDF = savedDF.copy()
                     else:
                         taxaDict = ''
-                        filteredDF = filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = database.utils_kegg.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
-                    finalDF, missingList = getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = database.utils_kegg.getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
@@ -658,15 +657,15 @@ def getQuantUnivData(request, RID, stops, PID):
                     keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
-                        keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF, allDF = getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                        keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
+                    finalDF, allDF = database.utils_kegg.getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
-                        keggDict = json.JSONDecoder(object_pairs_hook=multidict).decode(keggString)
-                    finalDF, allDF = getNZDF(nzAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                        keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
+                    finalDF, allDF = database.utils_kegg.getNZDF(nzAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -674,7 +673,7 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 # transform Y, if requested
                 transform = int(all["transform"])
-                finalDF = transformDF(transform, DepVar, finalDF)
+                finalDF = database.utils.transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'

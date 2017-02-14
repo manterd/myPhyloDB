@@ -4,24 +4,24 @@ import json
 from time import sleep, time
 import threading
 
-from anova import anova_graphs
-from diffabund import diffabund_graphs
-from norm import norm_graphs
-from pcoa import pcoa_graphs
-from pca import pca_graphs
-from rf import rf_graphs
-from gage import gage_graphs
-from spls import spls_graphs
-from wgcna import wgcna_graphs
-from spac import spac_graphs
-from soil_index import soil_index_graphs
-from database.utils import threads
+import anova.anova_graphs
+import diffabund.diffabund_graphs
+import norm.norm_graphs
+import pcoa.pcoa_graphs
+import pca.pca_graphs
+import rf.rf_graphs
+import gage.gage_graphs
+import spls.spls_graphs
+import wgcna.wgcna_graphs
+import spac.spac_graphs
+import soil_index.soil_index_graphs
+import utils
 from models import UserProfile
 
 
 q = Queue(maxsize=0)
-activeList = [0] * threads()
-stopList = [0] * threads()
+activeList = [0] * utils.threads()
+stopList = [0] * utils.threads()
 recent = {}
 qList = []
 threadDict = {}
@@ -105,29 +105,29 @@ def process(pid):
             threadDict[RID] = thread.name
             if activeList[pid] == RID:
                 if funcName == "getNorm":
-                    recent[RID] = norm_graphs.getNorm(request, RID, stopList, pid)
+                    recent[RID] = norm.norm_graphs.getNorm(request, RID, stopList, pid)
                 if funcName == "getCatUnivData":
-                    recent[RID] = anova_graphs.getCatUnivData(request, RID, stopList, pid)
+                    recent[RID] = anova.anova_graphs.getCatUnivData(request, RID, stopList, pid)
                 if funcName == "getQuantUnivData":
-                    recent[RID] = anova_graphs.getQuantUnivData(request, RID, stopList, pid)
+                    recent[RID] = anova.anova_graphs.getQuantUnivData(request, RID, stopList, pid)
                 if funcName == "getPCA":
-                    recent[RID] = pca_graphs.getPCA(request, stopList, RID, pid)
+                    recent[RID] = pca.pca_graphs.getPCA(request, stopList, RID, pid)
                 if funcName == "getPCoA":
-                    recent[RID] = pcoa_graphs.getPCoA(request, stopList, RID, pid)
+                    recent[RID] = pcoa.pcoa_graphs.getPCoA(request, stopList, RID, pid)
                 if funcName == "getRF":
-                    recent[RID] = rf_graphs.getRF(request, stopList, RID, pid)
+                    recent[RID] = rf.rf_graphs.getRF(request, stopList, RID, pid)
                 if funcName == "getDiffAbund":
-                    recent[RID] = diffabund_graphs.getDiffAbund(request, stopList, RID, pid)
+                    recent[RID] = diffabund.diffabund_graphs.getDiffAbund(request, stopList, RID, pid)
                 if funcName == "getGAGE":
-                    recent[RID] = gage_graphs.getGAGE(request, stopList, RID, pid)
+                    recent[RID] = gage.gage_graphs.getGAGE(request, stopList, RID, pid)
                 if funcName == "getSPLS":
-                    recent[RID] = spls_graphs.getSPLS(request, stopList, RID, pid)
+                    recent[RID] = spls.spls_graphs.getSPLS(request, stopList, RID, pid)
                 if funcName == "getWGCNA":
-                    recent[RID] = wgcna_graphs.getWGCNA(request, stopList, RID, pid)
+                    recent[RID] = wgcna.wgcna_graphs.getWGCNA(request, stopList, RID, pid)
                 if funcName == "getSpAC":
-                    recent[RID] = spac_graphs.getSpAC(request, stopList, RID, pid)
+                    recent[RID] = spac.spac_graphs.getSpAC(request, stopList, RID, pid)
                 if funcName == "getsoil_index":
-                    recent[RID] = soil_index_graphs.getsoil_index(request, stopList, RID, pid)
+                    recent[RID] = soil_index.soil_index_graphs.getsoil_index(request, stopList, RID, pid)
             activeList[pid] = ''
             threadDict.pop(RID, 0)
         sleep(1)

@@ -16,8 +16,8 @@ import time
 import zipfile
 
 from models import Project, Reference, Profile
-from config import local_cfg
-from utils_kegg import getFullTaxonomy, getFullKO, getFullNZ
+import config.local_cfg
+import utils_kegg
 
 
 pd.set_option('display.max_colwidth', -1)
@@ -289,7 +289,7 @@ def cleanup(path):
 
 def threads():
     try:
-        usr_threads = int(local_cfg.usr_num_threads)
+        usr_threads = int(config.local_cfg.usr_num_threads)
     except Exception:
         usr_threads = 1
 
@@ -313,13 +313,13 @@ def getRawData(request):
         savedDF = pd.read_pickle(fileName)
 
         if treeType == 1:
-            idList = getFullTaxonomy(list(savedDF.rank_id.unique()))
+            idList = utils_kegg.getFullTaxonomy(list(savedDF.rank_id.unique()))
             savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
         elif treeType == 2:
-            idList = getFullKO(list(savedDF.rank_id.unique()))
+            idList = utils_kegg.getFullKO(list(savedDF.rank_id.unique()))
             savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
         elif treeType == 3:
-            idList = getFullNZ(list(savedDF.rank_id.unique()))
+            idList = utils_kegg.getFullNZ(list(savedDF.rank_id.unique()))
             savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
 
         savedDF.replace(to_replace='N/A', value=np.nan, inplace=True)

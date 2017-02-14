@@ -1,7 +1,6 @@
 from Queue import Queue
 from time import sleep
 import threading
-import json
 
 from views import *
 from parsers import *
