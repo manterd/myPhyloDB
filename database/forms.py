@@ -1,8 +1,9 @@
 from django import forms
-from utils import MultiFileField
-from registration.forms import RegistrationForm
-from localflavor.us.us_states import STATE_CHOICES
 from django_countries import countries
+from localflavor.us.us_states import STATE_CHOICES
+from registration.forms import RegistrationForm
+
+from database.utils import MultiFileField
 
 
 class UploadForm1(forms.Form):

@@ -1,6 +1,5 @@
-from django.db import models
-from django.db.models import Q, Sum
 from django.contrib.auth.models import User as Users
+from django.db import models
 from jsonfield import JSONField
 
 
