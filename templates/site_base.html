@@ -166,7 +166,7 @@
 
             {% if user.is_active %}
                 <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
-                <a class="Offmouse" href="/myPhyloDB/accounts/profile/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Manage your account">my Account</li></a>
+                <a class="Offmouse" href="{% url "profile" %}"  onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Manage your account">my Account</li></a>
                     {% if user.is_superuser %}
                         <a class="Offmouse" href="/myPhyloDB/admin/" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add/remove users">Manage Users</li></a>
                     {% endif %}

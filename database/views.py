@@ -2369,14 +2369,6 @@ def usrFiles(request):
     }
 
 
-@login_required()
-def member_index(request):
-    t = loader.get_template('')
-    c = {}
-    return HttpResponse(t.render(c, request), context_type='text/html')
-
-
-'''
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def profile(request):
     projects = Project.objects.none()
@@ -2395,6 +2387,7 @@ def profile(request):
     )
 
 
+'''
 def changeuser(request):
     return render_to_response(
         'changeuser.html',

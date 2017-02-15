@@ -40,7 +40,7 @@ urlpatterns = [
     url(r'^myPhyloDB/addPerms/$', views.addPerms, name='addPerms'),
     url(r'^myPhyloDB/remPerms/$', views.remPerms, name='remPerms'),
 
-    #url(r'^accounts/profile/$', views.profile, name='profile'),
+    url(r'^myPhyloDB/accounts/profile/$', views.profile, name='profile'),
     #url(r'^accounts/changeuser/$', views.changeuser, name='changeuser')
     #url(r'^myPhyloDB/updateInfo/$', views.updateInfo, name='updateInfo'),
 ]

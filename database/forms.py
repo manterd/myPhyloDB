@@ -81,8 +81,8 @@ myStates.insert(0, ('No data', '(not selected)'))
 myCountries = list(countries)
 myCountries.insert(0, ('No data', '(not selected)'))
 
-'''
-class UserRegForm(RegistrationForm):
+
+class UserRegForm(forms.Form):
     firstName = forms.CharField(label='First Name', required=False)
     lastName = forms.CharField(label='Last Name', required=False)
     affiliation = forms.CharField(label='Affiliation', required=False)
@@ -93,4 +93,16 @@ class UserRegForm(RegistrationForm):
     phone = forms.CharField(label='Phone', required=False)
     reference = forms.ChoiceField(widget=forms.Select, choices=reference_choices)
     purpose = forms.ChoiceField(widget=forms.Select, choices=purpose_choices)
-'''
+
+    def signup(self, request, user):
+        user.firstName = self.cleaned_data['firstName']
+        user.lastName = self.cleaned_data['lastName']
+        user.affiliation = self.cleaned_data['affiliation']
+        user.city = self.cleaned_data['city']
+        user.state = self.cleaned_data['state']
+        user.country = self.cleaned_data['country']
+        user.zip = self.cleaned_data['zip']
+        user.phone = self.cleaned_data['phone']
+        user.reference = self.cleaned_data['reference']
+        user.purpose = self.cleaned_data['purpose']
+        user.save()

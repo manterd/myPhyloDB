@@ -85,3 +85,4 @@ ACCOUNT_USERNAME_REQUIRED = True
 
 LOGIN_REDIRECT_URL = '/myPhyloDB/select/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/myPhyloDB/home/'
+ACCOUNT_SIGNUP_FORM_CLASS = 'database.forms.UserRegForm'
