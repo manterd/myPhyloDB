@@ -24,6 +24,4 @@ urlpatterns = [
     url(r'^reprocess/$', views.reprocess, name='reprocess'),
     url(r'^update/$', views.update, name='update'),
     url(r'^pybake/$', views.pybake, name='pybake'),
-    url(r'^accounts/profile/$', views.profile, name='profile'),
-    url(r'^accounts/changeuser/$', views.changeuser, name='changeuser')
 ]

@@ -16,6 +16,3 @@ def update():
     settings.LANGUAGE_CODE = 'en-us'
     settings.USE_TZ = True
     settings.TIME_ZONE = 'America/Denver'
-
-    ### Settings for django-registration-redux
-    settings.REGISTRATION_OPEN = True

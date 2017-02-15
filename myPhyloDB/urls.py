@@ -1,21 +1,18 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-from registration.backends.simple.views import RegistrationView
 
 from database import views
-from database.forms import UserRegForm
-import database.regbackend
+#import database.regbackend
 
 
-admin.site.site_url = '/myPhyloDB/home/'
+admin.site.site_url = '/myPhyloDB/'
 admin.autodiscover()
 
 
 urlpatterns = [
-    ### administration, registration, and main myPhyloDB pages
+    url(r'^myPhyloDB/accounts/', include('allauth.urls')),
     url(r'^myPhyloDB/admin/', admin.site.urls),
-    url(r'^myPhyloDB/accounts/register/$', RegistrationView.as_view(form_class=UserRegForm, success_url='/myPhyloDB/select/'), name='registration_register'),
-    url(r'^myPhyloDB/accounts/', include('registration.backends.default.urls')),
+
     url(r'^myPhyloDB/', include('database.urls')),
     url(r'^myPhyloDB/', include('functions.analysis.urls')),
     url(r'^myPhyloDB/', include('functions.queues.urls')),
@@ -42,5 +39,8 @@ urlpatterns = [
     url(r'^myPhyloDB/remProjectFiles/$', views.remProjectFiles, name='remProjectFiles'),
     url(r'^myPhyloDB/addPerms/$', views.addPerms, name='addPerms'),
     url(r'^myPhyloDB/remPerms/$', views.remPerms, name='remPerms'),
-    url(r'^myPhyloDB/updateInfo/$', views.updateInfo, name='updateInfo'),
+
+    #url(r'^accounts/profile/$', views.profile, name='profile'),
+    #url(r'^accounts/changeuser/$', views.changeuser, name='changeuser')
+    #url(r'^myPhyloDB/updateInfo/$', views.updateInfo, name='updateInfo'),
 ]

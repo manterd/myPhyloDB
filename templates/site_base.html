@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 {% load static %}
 
@@ -236,7 +235,14 @@
     </div>
 
     <div id="Content" style="margin-left: 10px;">
-        {% block my_content %}{% endblock my_content%}
+        {% block my_content %} {% endblock my_content %}
+
+        {% block body %}
+            {% block content %}{% endblock content %}
+        {% endblock body %}
+
+        {% block extra_body %}{% endblock %}
+
     </div>
 
 </body>

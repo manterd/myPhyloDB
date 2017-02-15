@@ -1,7 +1,7 @@
 from django import forms
 from django_countries import countries
 from localflavor.us.us_states import STATE_CHOICES
-from registration.forms import RegistrationForm
+#from registration.forms import RegistrationForm
 
 from functions.utils.utils_df import MultiFileField
 
@@ -81,7 +81,7 @@ myStates.insert(0, ('No data', '(not selected)'))
 myCountries = list(countries)
 myCountries.insert(0, ('No data', '(not selected)'))
 
-
+'''
 class UserRegForm(RegistrationForm):
     firstName = forms.CharField(label='First Name', required=False)
     lastName = forms.CharField(label='Last Name', required=False)
@@ -93,3 +93,4 @@ class UserRegForm(RegistrationForm):
     phone = forms.CharField(label='Phone', required=False)
     reference = forms.ChoiceField(widget=forms.Select, choices=reference_choices)
     purpose = forms.ChoiceField(widget=forms.Select, choices=purpose_choices)
+'''

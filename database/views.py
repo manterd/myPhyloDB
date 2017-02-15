@@ -8,8 +8,8 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import *
 from django_pandas.io import read_frame
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render_to_response, render
+from django.template import RequestContext, loader
 import fileinput
 import json
 import logging
@@ -25,7 +25,7 @@ from uuid import uuid4
 import zipfile
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
-    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9
 
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, PICRUSt, UserProfile, \
@@ -78,24 +78,6 @@ def download(request):
         {'projects': projects,
          'type': "GET",
          'paths': ''},
-        context_instance=RequestContext(request)
-    )
-
-
-@login_required(login_url='/myPhyloDB/accounts/login/')
-def profile(request):
-    projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all().order_by('project_name')
-    elif request.user.is_authenticated():
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
-    if not request.user.is_superuser and not request.user.is_authenticated():
-        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
-
-    return render_to_response(
-        'profile.html',
-        {'projects': projects},
         context_instance=RequestContext(request)
     )
 
@@ -2387,6 +2369,32 @@ def usrFiles(request):
     }
 
 
+@login_required()
+def member_index(request):
+    t = loader.get_template('')
+    c = {}
+    return HttpResponse(t.render(c, request), context_type='text/html')
+
+
+'''
+@login_required(login_url='/myPhyloDB/accounts/login/')
+def profile(request):
+    projects = Project.objects.none()
+    if request.user.is_superuser:
+        projects = Project.objects.all().order_by('project_name')
+    elif request.user.is_authenticated():
+        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
+        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
+    if not request.user.is_superuser and not request.user.is_authenticated():
+        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
+
+    return render_to_response(
+        'profile.html',
+        {'projects': projects},
+        context_instance=RequestContext(request)
+    )
+
+
 def changeuser(request):
     return render_to_response(
         'changeuser.html',
@@ -2415,6 +2423,7 @@ def updateInfo(request):
             "error": error},
         context_instance=RequestContext(request)
     )
+'''
 
 
 def addPerms(request):
