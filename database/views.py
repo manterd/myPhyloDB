@@ -33,8 +33,7 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
     nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry, \
     addQueue, getQueue, subQueue
 
-import database.analysis
-import database.utils
+import functions
 
 
 rep_project = ''
@@ -152,7 +151,7 @@ def upErr(msg, request, dest, sid):
     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
     logging.exception(myDate)
-    database.utils.remove_proj(dest)
+    functions.remove_proj(dest)
     transaction.savepoint_rollback(sid)
 
     if request.user.is_superuser:
@@ -195,7 +194,7 @@ def uploadFunc(request, stopList):
         if form1.is_valid():
             file1 = request.FILES['docfile1']
             try:
-                p_uuid, pType, num_samp = database.utils.projectid(file1)
+                p_uuid, pType, num_samp = functions.projectid(file1)
                 if not num_samp:
                     return render_to_response(
                         'upload.html',
@@ -237,8 +236,8 @@ def uploadFunc(request, stopList):
             metaFile = '/'.join([dest, metaName])
 
             try:
-                database.utils.handle_uploaded_file(file1, dest, metaName)
-                res = database.utils.parse_project(metaFile, p_uuid, curUser)
+                functions.handle_uploaded_file(file1, dest, metaName)
+                res = functions.parse_project(metaFile, p_uuid, curUser)
                 if res == "none":
                     print "Parsed project with no errors"
                 else:
@@ -263,17 +262,17 @@ def uploadFunc(request, stopList):
                 batch = ''
 
             if stopList[PID] == RID:
-                database.utils.remove_proj(dest)
+                functions.remove_proj(dest)
                 transaction.savepoint_rollback(sid)
                 return upStop(request)
 
             try:
-                refDict = database.utils.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
+                refDict = functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
             except Exception:
                 return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
 
             if stopList[PID] == RID:
-                database.utils.remove_proj(dest)
+                functions.remove_proj(dest)
                 transaction.savepoint_rollback(sid)
                 return upStop(request)
 
@@ -284,7 +283,7 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -300,15 +299,15 @@ def uploadFunc(request, stopList):
                          },
                         context_instance=RequestContext(request)
                     )
-                database.utils.handle_uploaded_file(file3, dest, file3.name)
+                functions.handle_uploaded_file(file3, dest, file3.name)
 
                 try:
-                    database.utils.parse_taxonomy(file3)
+                    functions.parse_taxonomy(file3)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -326,7 +325,7 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -336,7 +335,7 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -352,17 +351,17 @@ def uploadFunc(request, stopList):
                          },
                         context_instance=RequestContext(request)
                     )
-                database.utils.handle_uploaded_file(file4, dest, file4.name)
+                functions.handle_uploaded_file(file4, dest, file4.name)
 
                 try:
-                    database.utils.parse_profile(file3, file4, p_uuid, refDict)
+                    functions.parse_profile(file3, file4, p_uuid, refDict)
                     end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -380,7 +379,7 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -390,59 +389,59 @@ def uploadFunc(request, stopList):
                     os.makedirs(mothurdest)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file_list = request.FILES.getlist('sff_files')
                 for file in file_list:
                     try:
-                        database.utils.handle_uploaded_file(file, dest, file.name)
+                        functions.handle_uploaded_file(file, dest, file.name)
                         tar = tarfile.open(os.path.join(dest, file.name))
                         tar.extractall(path=mothurdest)
                         tar.close()
                     except Exception:
                         try:
-                            database.utils.handle_uploaded_file(file, dest, file.name)
+                            functions.handle_uploaded_file(file, dest, file.name)
                             zip = zipfile.ZipFile(os.path.join(dest, file.name))
                             zip.extractall(mothurdest)
                             zip.close()
                         except Exception:
-                            database.utils.handle_uploaded_file(file, mothurdest, file.name)
+                            functions.handle_uploaded_file(file, mothurdest, file.name)
 
-                    database.utils.handle_uploaded_file(file, dest, file.name)
+                    functions.handle_uploaded_file(file, dest, file.name)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file_list = request.FILES.getlist('oligo_files')
                 for file in file_list:
                     try:
-                        database.utils.handle_uploaded_file(file, dest, file.name)
+                        functions.handle_uploaded_file(file, dest, file.name)
                         tar = tarfile.open(os.path.join(dest, file.name))
                         tar.extractall(path=mothurdest)
                         tar.close()
                     except Exception:
                         try:
-                            database.utils.handle_uploaded_file(file, dest, file.name)
+                            functions.handle_uploaded_file(file, dest, file.name)
                             zip = zipfile.ZipFile(os.path.join(dest, file.name))
                             zip.extractall(mothurdest)
                             zip.close()
                         except Exception:
-                            database.utils.handle_uploaded_file(file, mothurdest, file.name)
+                            functions.handle_uploaded_file(file, mothurdest, file.name)
 
-                    database.utils.handle_uploaded_file(file, dest, file.name)
+                    functions.handle_uploaded_file(file, dest, file.name)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 file5 = request.FILES['docfile5']
-                database.utils.handle_uploaded_file(file5, mothurdest, 'temp.txt')
-                database.utils.handle_uploaded_file(file5, dest, 'temp.txt')
+                functions.handle_uploaded_file(file5, mothurdest, 'temp.txt')
+                functions.handle_uploaded_file(file5, dest, 'temp.txt')
 
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
@@ -451,15 +450,15 @@ def uploadFunc(request, stopList):
                 use_proc = min(avail_proc, processors)
                 actual_proc = 'processors=' + str(use_proc)
 
-                database.utils.handle_uploaded_file(file7, mothurdest, batch)
+                functions.handle_uploaded_file(file7, mothurdest, batch)
 
                 for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
                     print line.replace("processors=X", actual_proc),
 
-                database.utils.handle_uploaded_file(file7, dest, batch)
+                functions.handle_uploaded_file(file7, dest, batch)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -470,12 +469,12 @@ def uploadFunc(request, stopList):
                 while getQueue() > 1:
                     time.sleep(5)
                 try:
-                    database.utils.mothur(dest, source)
+                    functions.mothur(dest, source)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -493,7 +492,7 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -501,12 +500,12 @@ def uploadFunc(request, stopList):
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                        database.utils.parse_taxonomy(file3)
+                        functions.parse_taxonomy(file3)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -524,14 +523,14 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         with open('% s/final.shared' % dest, 'rb') as file4:
-                            database.utils.parse_profile(file3, file4, p_uuid, refDict)
+                            functions.parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
 
@@ -539,7 +538,7 @@ def uploadFunc(request, stopList):
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -557,7 +556,7 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -572,20 +571,20 @@ def uploadFunc(request, stopList):
                 if len(file_list) > 1:
                     for file in file_list:
                         try:
-                            database.utils.handle_uploaded_file(file, dest, file.name)
+                            functions.handle_uploaded_file(file, dest, file.name)
                             tar = tarfile.open(os.path.join(dest, file.name))
                             tar.extractall(path=mothurdest)
                             tar.close()
                         except Exception:
                             try:
-                                database.utils.handle_uploaded_file(file, dest, file.name)
+                                functions.handle_uploaded_file(file, dest, file.name)
                                 zip = zipfile.ZipFile(os.path.join(dest, file.name))
                                 zip.extractall(mothurdest)
                                 zip.close()
                             except Exception:
-                                database.utils.handle_uploaded_file(file, mothurdest, file.name)
+                                functions.handle_uploaded_file(file, mothurdest, file.name)
 
-                        database.utils.handle_uploaded_file(file, dest, file.name)
+                        functions.handle_uploaded_file(file, dest, file.name)
 
                         if os.name == 'nt':
                             myStr = "mothur\\temp\\" + str(file.name)
@@ -602,23 +601,23 @@ def uploadFunc(request, stopList):
                     for file in file_list:
                         fasta = 'temp.fasta'
                         try:
-                            database.utils.handle_uploaded_file(file, dest, file.name)
+                            functions.handle_uploaded_file(file, dest, file.name)
                             tar = tarfile.open(os.path.join(dest, file.name))
                             tar.extractall(path=mothurdest)
                             tar.close()
                         except Exception:
                             try:
-                                database.utils.handle_uploaded_file(file, dest, file.name)
+                                functions.handle_uploaded_file(file, dest, file.name)
                                 zip = zipfile.ZipFile(os.path.join(dest, file.name))
                                 zip.extractall(mothurdest)
                                 zip.close()
                             except Exception:
-                                database.utils.handle_uploaded_file(file, mothurdest, fasta)
+                                functions.handle_uploaded_file(file, mothurdest, fasta)
 
-                        database.utils.handle_uploaded_file(file, dest, file.name)
+                        functions.handle_uploaded_file(file, dest, file.name)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -627,25 +626,25 @@ def uploadFunc(request, stopList):
                 if len(file_list) > 1:
                     for file in file_list:
                         try:
-                            database.utils.handle_uploaded_file(file, dest, file.name)
+                            functions.handle_uploaded_file(file, dest, file.name)
                             tar = tarfile.open(os.path.join(dest, file.name))
                             tar.extractall(path=mothurdest)
                             tar.close()
                         except Exception:
                             try:
-                                database.utils.handle_uploaded_file(file, dest, file.name)
+                                functions.handle_uploaded_file(file, dest, file.name)
                                 zip = zipfile.ZipFile(os.path.join(dest, file.name))
                                 zip.extractall(mothurdest)
                                 zip.close()
                             except Exception:
-                                database.utils.handle_uploaded_file(file, mothurdest, file.name)
+                                functions.handle_uploaded_file(file, mothurdest, file.name)
 
                         if os.name == 'nt':
                             myStr = "mothur\\temp\\" + str(file.name)
                         else:
                             myStr = "mothur/temp/" + str(file.name)
                         tempList.append(myStr)
-                        database.utils.handle_uploaded_file(file, dest, file.name)
+                        functions.handle_uploaded_file(file, dest, file.name)
 
                     inputList = "-".join(tempList)
                     if os.name == 'nt':
@@ -656,39 +655,39 @@ def uploadFunc(request, stopList):
                     for file in file_list:
                         qual = 'temp.qual'
                         try:
-                            database.utils.handle_uploaded_file(file, dest, file.name)
+                            functions.handle_uploaded_file(file, dest, file.name)
                             tar = tarfile.open(os.path.join(dest, file.name))
                             tar.extractall(path=mothurdest)
                             tar.close()
                         except Exception:
                             try:
-                                database.utils.handle_uploaded_file(file, dest, file.name)
+                                functions.handle_uploaded_file(file, dest, file.name)
                                 zip = zipfile.ZipFile(os.path.join(dest, file.name))
                                 zip.extractall(mothurdest)
                                 zip.close()
                             except Exception:
-                                database.utils.handle_uploaded_file(file, mothurdest, qual)
+                                functions.handle_uploaded_file(file, mothurdest, qual)
 
-                        database.utils.handle_uploaded_file(file, dest, file)
+                        functions.handle_uploaded_file(file, dest, file)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 oligo = 'temp.oligos'
                 file6 = request.FILES['docfile6']
-                database.utils.handle_uploaded_file(file6, mothurdest, oligo)
+                functions.handle_uploaded_file(file6, mothurdest, oligo)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                database.utils.handle_uploaded_file(file6, dest, file6.name)
+                functions.handle_uploaded_file(file6, dest, file6.name)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -699,31 +698,31 @@ def uploadFunc(request, stopList):
                 use_proc = min(avail_proc, processors)
                 actual_proc = 'processors=' + str(use_proc)
 
-                database.utils.handle_uploaded_file(file7, mothurdest, batch)
+                functions.handle_uploaded_file(file7, mothurdest, batch)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
                     print line.replace("processors=X", actual_proc),
 
-                database.utils.handle_uploaded_file(file7, dest, batch)
+                functions.handle_uploaded_file(file7, dest, batch)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
-                    database.utils.mothur(dest, source)
+                    functions.mothur(dest, source)
 
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -741,18 +740,18 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                        database.utils.parse_taxonomy(file3)
+                        functions.parse_taxonomy(file3)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -770,21 +769,21 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         with open('% s/final.shared' % dest, 'rb') as file4:
-                            database.utils.parse_profile(file3, file4, p_uuid, refDict)
+                            functions.parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -802,7 +801,7 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -813,17 +812,17 @@ def uploadFunc(request, stopList):
 
                 fastq = 'temp.files'
                 file13 = request.FILES['docfile13']
-                database.utils.handle_uploaded_file(file13, mothurdest, fastq)
+                functions.handle_uploaded_file(file13, mothurdest, fastq)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                database.utils.handle_uploaded_file(file13, dest, fastq)
+                functions.handle_uploaded_file(file13, dest, fastq)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -831,23 +830,23 @@ def uploadFunc(request, stopList):
 
                 for file in file_list:
                     try:
-                        database.utils.handle_uploaded_file(file, dest, file.name)
+                        functions.handle_uploaded_file(file, dest, file.name)
                         tar = tarfile.open(os.path.join(dest, file.name))
                         tar.extractall(path=mothurdest)
                         tar.close()
                     except Exception:
                         try:
-                            database.utils.handle_uploaded_file(file, dest, file.name)
+                            functions.handle_uploaded_file(file, dest, file.name)
                             zip = zipfile.ZipFile(os.path.join(dest, file.name))
                             zip.extractall(mothurdest)
                             zip.close()
                         except Exception:
-                            database.utils.handle_uploaded_file(file, mothurdest, file.name)
+                            functions.handle_uploaded_file(file, mothurdest, file.name)
 
-                    database.utils.handle_uploaded_file(file, dest, file.name)
+                    functions.handle_uploaded_file(file, dest, file.name)
 
                     if stopList[PID] == RID:
-                        database.utils.remove_proj(dest)
+                        functions.remove_proj(dest)
                         transaction.savepoint_rollback(sid)
                         return upStop(request)
 
@@ -858,30 +857,30 @@ def uploadFunc(request, stopList):
                 use_proc = min(avail_proc, processors)
                 actual_proc = 'processors=' + str(use_proc)
 
-                database.utils.handle_uploaded_file(file15, mothurdest, batch)
+                functions.handle_uploaded_file(file15, mothurdest, batch)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
                     print line.replace("processors=X", actual_proc),
 
-                database.utils.handle_uploaded_file(file15, dest, batch)
+                functions.handle_uploaded_file(file15, dest, batch)
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
-                    database.utils.mothur(dest, source)
+                    functions.mothur(dest, source)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -899,18 +898,18 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                        database.utils.parse_taxonomy(file3)
+                        functions.parse_taxonomy(file3)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -927,21 +926,21 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
                 try:
                     with open('% s/final.taxonomy' % dest, 'rb') as file3:
                         with open('% s/final.shared' % dest, 'rb') as file4:
-                            database.utils.parse_profile(file3, file4, p_uuid, refDict)
+                            functions.parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
                     logging.exception(myDate)
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
 
                     if request.user.is_superuser:
@@ -958,7 +957,7 @@ def uploadFunc(request, stopList):
                     )
 
                 if stopList[PID] == RID:
-                    database.utils.remove_proj(dest)
+                    functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
@@ -985,7 +984,7 @@ def remProjectFiles(request):
         allJson = request.GET['all']
         data = json.loads(allJson)
         refList = data['paths']
-        database.utils.remove_list(refList)
+        functions.remove_list(refList)
 
         results = {'error': 'none'}
         myJson = json.dumps(results)
@@ -1658,7 +1657,7 @@ def select(request):
         else:
             shutil.rmtree(myDir)
 
-        database.utils.handle_uploaded_file(uploaded, myDir, uploaded.name)
+        functions.handle_uploaded_file(uploaded, myDir, uploaded.name)
 
         try:
             tar = tarfile.open(os.path.join(myDir, uploaded.name))
@@ -1937,7 +1936,7 @@ def kegg_enzyme(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def norm(request):
-    database.utils.cleanup('myPhyloDB/media/temp/norm')
+    functions.cleanup('myPhyloDB/media/temp/norm')
 
     return render_to_response(
         'norm.html',
@@ -1947,7 +1946,7 @@ def norm(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def ANOVA(request):
-    database.utils.cleanup('myPhyloDB/media/temp/anova')
+    functions.cleanup('myPhyloDB/media/temp/anova')
 
     return render_to_response(
         'anova.html',
@@ -1957,7 +1956,7 @@ def ANOVA(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def rich(request):
-    database.utils.cleanup('myPhyloDB/media/temp/spac')
+    functions.cleanup('myPhyloDB/media/temp/spac')
 
     return render_to_response(
         'SpAC.html',
@@ -1967,7 +1966,7 @@ def rich(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def soil_index(request):
-    database.utils.cleanup('myPhyloDB/media/temp/soil_index')
+    functions.cleanup('myPhyloDB/media/temp/soil_index')
 
     return render_to_response(
         'soil_index.html',
@@ -1977,7 +1976,7 @@ def soil_index(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def DiffAbund(request):
-    database.utils.cleanup('myPhyloDB/media/temp/diffabund')
+    functions.cleanup('myPhyloDB/media/temp/diffabund')
 
     return render_to_response(
         'diff_abund.html',
@@ -1987,7 +1986,7 @@ def DiffAbund(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def GAGE(request):
-    database.utils.cleanup('myPhyloDB/media/temp/gage')
+    functions.cleanup('myPhyloDB/media/temp/gage')
 
     return render_to_response(
         'gage.html',
@@ -1997,7 +1996,7 @@ def GAGE(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def PCA(request):
-    database.utils.cleanup('myPhyloDB/media/temp/pca')
+    functions.cleanup('myPhyloDB/media/temp/pca')
 
     return render_to_response(
         'pca.html',
@@ -2007,7 +2006,7 @@ def PCA(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def PCoA(request):
-    database.utils.cleanup('myPhyloDB/media/temp/pcoa')
+    functions.cleanup('myPhyloDB/media/temp/pcoa')
 
     return render_to_response(
         'pcoa.html',
@@ -2017,7 +2016,7 @@ def PCoA(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def RF(request):
-    database.utils.cleanup('myPhyloDB/media/temp/rf')
+    functions.cleanup('myPhyloDB/media/temp/rf')
 
     return render_to_response(
         'rf.html',
@@ -2027,7 +2026,7 @@ def RF(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def SPLS(request):
-    database.utils.cleanup('myPhyloDB/media/temp/spls')
+    functions.cleanup('myPhyloDB/media/temp/spls')
 
     return render_to_response(
         'spls.html',
@@ -2037,7 +2036,7 @@ def SPLS(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def WGCNA(request):
-    database.utils.cleanup('myPhyloDB/media/temp/wgcna')
+    functions.cleanup('myPhyloDB/media/temp/wgcna')
 
     return render_to_response(
         'wgcna.html',
@@ -2067,13 +2066,9 @@ def saveSampleList(request):
         with open(path, 'wb') as f:
             pickle.dump(selList, f)
 
-        thisUser = User.objects.filter(username=request.user.username)
-        if UserProfile.objects.filter(user=thisUser).exists():
-            myData = UserProfile.objects.get(user=thisUser)
-            myData.dataID = uuid4().hex
-            myData.save()
-        else:
-            UserProfile.objects.create(user=request.user, dataID=uuid4().hex)
+        thisUser = request.user.profile
+        thisUser.dataID = uuid4().hex
+        thisUser.save()
 
         text = 'Selected sample(s) have been recorded!\nYou may proceed directly to data normalization.'
         return HttpResponse(text)
@@ -2084,21 +2079,21 @@ def reprocess(request):
     try:
         alignFile = request.FILES['docfile8']
         alignDB = request.FILES['docfile8'].name
-        database.utils.handle_uploaded_file(alignFile, 'mothur/reference/align', alignDB)
+        functions.handle_uploaded_file(alignFile, 'mothur/reference/align', alignDB)
     except Exception:
         pass
 
     try:
         templateFile = request.FILES['docfile9']
         templateDB = request.FILES['docfile9'].name
-        database.utils.handle_uploaded_file(templateFile, 'mothur/reference/template', templateDB)
+        functions.handle_uploaded_file(templateFile, 'mothur/reference/template', templateDB)
     except Exception:
         pass
 
     try:
         taxonomyFile = request.FILES['docfile10']
         taxonomyDB = request.FILES['docfile10'].name
-        database.utils.handle_uploaded_file(taxonomyFile, 'mothur/reference/taxonomy', taxonomyDB)
+        functions.handle_uploaded_file(taxonomyFile, 'mothur/reference/taxonomy', taxonomyDB)
     except Exception:
         pass
 
@@ -2157,7 +2152,7 @@ def updateFunc(request, stopList):
 
         ref = Reference.objects.get(refid=refid)
         dest = ref.path
-        p_uuid, pType, num_samp = database.utils.projectid(file1)
+        p_uuid, pType, num_samp = functions.projectid(file1)
         if not num_samp:
             return render_to_response(
                 'update.html',
@@ -2172,8 +2167,8 @@ def updateFunc(request, stopList):
 
         try:
             metaFile = '/'.join([dest, file1.name])
-            database.utils.handle_uploaded_file(file1, dest, file1.name)
-            database.utils.parse_project(metaFile, p_uuid, curUser)
+            functions.handle_uploaded_file(file1, dest, file1.name)
+            functions.parse_project(metaFile, p_uuid, curUser)
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
             return render_to_response(
@@ -2196,10 +2191,10 @@ def updateFunc(request, stopList):
 
             if os.path.exists(batPath):
                 with open(batPath, 'rb') as batFile:
-                    database.utils.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+                    functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
             else:
                 batFile = 'you do not really need me'
-                database.utils.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+                functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
 
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
@@ -2238,15 +2233,15 @@ def pybake(request):
         file1 = request.FILES['taxonomy']
         file2 = request.FILES['precalc_16S']
         file3 = request.FILES['precalc_KEGG']
-        database.analysis.geneParse(file1, file2, file3)
+        functions.geneParse(file1, file2, file3)
 
     if form7.is_valid():
         file4 = request.FILES['ko_htext']
-        database.analysis.koParse(file4)
+        functions.koParse(file4)
 
     if form8.is_valid():
         file5 = request.FILES['nz_htext']
-        database.analysis.nzParse(file5)
+        functions.nzParse(file5)
 
     return render_to_response(
         'pybake.html',
@@ -2370,7 +2365,7 @@ def login_usr_callback(sender, user, request, **kwargs):
     user = request.user
     if not os.path.exists('myPhyloDB/media/usr_temp/'+str(user)):
         os.makedirs('myPhyloDB/media/usr_temp/'+str(user))
-    database.utils.cleanup('myPhyloDB/media/usr_temp/'+str(user))
+    functions.cleanup('myPhyloDB/media/usr_temp/'+str(user))
 
 user_logged_in.connect(login_usr_callback)  # JUMP does this belong in a function?
 
@@ -2381,7 +2376,7 @@ def usrFiles(request):
     normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.biom')
 
     try:
-        dataID = UserProfile.objects.get(user=request.user).dataID  # UUID from last selection
+        dataID = UserProfile.objects.get(user=request.user).dataID
     except Exception:
         dataID = "nodataidfound"
 
@@ -2407,13 +2402,10 @@ def updateInfo(request):
     error = "none"
     verified = check_password(pword, request.user.password)
     if verified:
-        thisUser = User.objects.get(username=request.user.username)
-        myData = UserProfile.objects.get(user=thisUser)
+        thisUser = request.user.profile
         for key in stuff:
             thisUser.__setattr__(key, stuff[key])
-            myData.__setattr__(key, stuff[key])
         thisUser.save()
-        myData.save()
     else:
         error = "Incorrect password"
 

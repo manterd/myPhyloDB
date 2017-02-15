@@ -8,8 +8,7 @@ import threading
 import webbrowser
 from myPhyloDB.wsgi import application
 
-import database.queue
-import database.utils
+import functions
 
 
 cherrypy.tree.graft(application)
@@ -86,7 +85,7 @@ def signal_handler(signal, frame):
 
 
 signal.signal(signal.SIGINT, signal_handler)
-num_threads = database.utils.threads()
+num_threads = functions.threads()
 
 
 if __name__ == '__main__':
@@ -96,11 +95,11 @@ if __name__ == '__main__':
     mp.freeze_support()
 
     for pid in xrange(num_threads):
-        thread = threading.Thread(target=database.queue.process, args=(pid, ))
+        thread = threading.Thread(target=functions.process, args=(pid, ))
         thread.setDaemon(True)
         thread.start()
 
-    dataThread = threading.Thread(target=database.queue.dataprocess, args=(0, ))
+    dataThread = threading.Thread(target=functions.dataprocess, args=(0, ))
     dataThread.setDaemon(True)
     dataThread.start()
 

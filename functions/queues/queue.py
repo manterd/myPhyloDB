@@ -8,7 +8,7 @@ import threading
 import config.local_cfg
 from database.models import UserProfile
 
-import database.analysis
+import functions
 
 
 def analysisThreads():
@@ -112,29 +112,29 @@ def process(pid):
             threadDict[RID] = thread.name
             if activeList[pid] == RID:
                 if funcName == "getNorm":
-                    recent[RID] = database.analysis.getNorm(request, RID, stopList, pid)
+                    recent[RID] = functions.getNorm(request, RID, stopList, pid)
                 if funcName == "getCatUnivData":
-                    recent[RID] = database.analysis.getCatUnivData(request, RID, stopList, pid)
+                    recent[RID] = functions.getCatUnivData(request, RID, stopList, pid)
                 if funcName == "getQuantUnivData":
-                    recent[RID] = database.analysis.getQuantUnivData(request, RID, stopList, pid)
+                    recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
                 if funcName == "getPCA":
-                    recent[RID] = database.analysis.getPCA(request, stopList, RID, pid)
+                    recent[RID] = functions.getPCA(request, stopList, RID, pid)
                 if funcName == "getPCoA":
-                    recent[RID] = database.analysis.pcoa_graphs.getPCoA(request, stopList, RID, pid)
+                    recent[RID] = functions.pcoa_graphs.getPCoA(request, stopList, RID, pid)
                 if funcName == "getRF":
-                    recent[RID] = database.analysis.getRF(request, stopList, RID, pid)
+                    recent[RID] = functions.getRF(request, stopList, RID, pid)
                 if funcName == "getDiffAbund":
-                    recent[RID] = database.analysis.getDiffAbund(request, stopList, RID, pid)
+                    recent[RID] = functions.getDiffAbund(request, stopList, RID, pid)
                 if funcName == "getGAGE":
-                    recent[RID] = database.analysis.getGAGE(request, stopList, RID, pid)
+                    recent[RID] = functions.getGAGE(request, stopList, RID, pid)
                 if funcName == "getSPLS":
-                    recent[RID] = database.analysis.getSPLS(request, stopList, RID, pid)
+                    recent[RID] = functions.getSPLS(request, stopList, RID, pid)
                 if funcName == "getWGCNA":
-                    recent[RID] = database.analysis.getWGCNA(request, stopList, RID, pid)
+                    recent[RID] = functions.getWGCNA(request, stopList, RID, pid)
                 if funcName == "getSpAC":
-                    recent[RID] = database.analysis.getSpAC(request, stopList, RID, pid)
+                    recent[RID] = functions.getSpAC(request, stopList, RID, pid)
                 if funcName == "getsoil_index":
-                    recent[RID] = database.analysis.getsoil_index(request, stopList, RID, pid)
+                    recent[RID] = functions.getsoil_index(request, stopList, RID, pid)
             activeList[pid] = ''
             threadDict.pop(RID, 0)
         sleep(1)

@@ -1,5 +1,5 @@
-from django.contrib.auth.models import User as Users
 from django.db import models
+from django.contrib.auth.models import User as Users
 from jsonfield import JSONField
 
 
@@ -686,7 +686,7 @@ class PICRUSt(models.Model):
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(Users, on_delete=models.CASCADE)
+    user = models.OneToOneField(Users, related_name='profile')
     firstName = models.CharField(blank=True, max_length=200)
     lastName = models.CharField(blank=True, max_length=200)
     affiliation = models.CharField(blank=True, max_length=200)

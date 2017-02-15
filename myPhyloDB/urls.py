@@ -17,9 +17,9 @@ urlpatterns = [
     url(r'^myPhyloDB/accounts/register/$', RegistrationView.as_view(form_class=UserRegForm, success_url='/myPhyloDB/select/'), name='registration_register'),
     url(r'^myPhyloDB/accounts/', include('registration.backends.default.urls')),
     url(r'^myPhyloDB/', include('database.urls')),
-    url(r'^myPhyloDB/', include('database.analysis.urls')),
-    url(r'^myPhyloDB/', include('database.queue.urls')),
-    url(r'^myPhyloDB/', include('database.utils.urls')),
+    url(r'^myPhyloDB/', include('functions.analysis.urls')),
+    url(r'^myPhyloDB/', include('functions.queues.urls')),
+    url(r'^myPhyloDB/', include('functions.utils.urls')),
 
     ### urls from views page
     url(r'^myPhyloDB/saveSampleList/$', views.saveSampleList, name='saveSampleList'),

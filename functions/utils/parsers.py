@@ -23,8 +23,7 @@ from uuid import uuid4
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile
 
-from utils_df import handle_uploaded_file, excel_to_dict
-import database.queue
+import functions
 
 
 stage = ''
@@ -117,7 +116,7 @@ def status(request):
     global last, mothurStat
     if request.is_ajax():
         RID = request.GET['all']
-        queuePos = database.queue.dataqueue.datstat(RID)
+        queuePos = functions.dataqueue.datstat(RID)
         dict = {}
         if queuePos == 0:
             # check for duplicate output
@@ -173,7 +172,7 @@ def parse_project(Document, p_uuid, curUser):
         global stage, perc
         perc = 50
         wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
-        myDict = excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
+        myDict = functions.excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
         rowDict = myDict[0]
         rowDict.pop('num_samp')
 
@@ -248,28 +247,28 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
         perc = 25
 
-        dict1 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='MIMARKs')
+        dict1 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='MIMARKs')
         perc = 50
 
         if pType == 'air':
-            dict2 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Air')
+            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Air')
 
         elif pType == 'human associated' or pType == 'human gut':
-            dict2 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Human Associated')
+            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Human Associated')
 
         elif pType == 'microbial':
-            dict2 = excel_to_dict(wb,headerRow=6, nRows=num_samp, sheet='Microbial')
+            dict2 = functions.excel_to_dict(wb,headerRow=6, nRows=num_samp, sheet='Microbial')
 
         elif pType == 'soil':
-            dict2 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Soil')
+            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Soil')
 
         elif pType == 'water':
-            dict2 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Water')
+            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Water')
 
         else:
             dict2 = list()
 
-        dict3 = excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='User')
+        dict3 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='User')
         perc = 75
 
         idList = []
@@ -647,8 +646,8 @@ def reanalyze(request, stopList):
                         if stopList[PID] == RID:
                             return repStop(request)
                         file = each
-                        handle_uploaded_file(file, mothurdest, each)
-                        handle_uploaded_file(file, dest, each)
+                        functions.handle_uploaded_file(file, mothurdest, each)
+                        functions.handle_uploaded_file(file, dest, each)
                         if os.name == 'nt':
                             myStr = "mothur\\temp\\" + str(file.name)
                         else:
@@ -671,8 +670,8 @@ def reanalyze(request, stopList):
 
                         file = each
                         fasta = 'temp.fasta'
-                        handle_uploaded_file(file, mothurdest, fasta)
-                        handle_uploaded_file(file, dest, each)
+                        functions.handle_uploaded_file(file, mothurdest, fasta)
+                        functions.handle_uploaded_file(file, dest, each)
 
                 file_list = []
                 for afile in glob.glob(r'% s/*.qual' % dest):
@@ -682,8 +681,8 @@ def reanalyze(request, stopList):
                 if file_list.__len__() > 1:
                     for each in file_list:
                         file = each
-                        handle_uploaded_file(file, mothurdest, each)
-                        handle_uploaded_file(file, dest, each)
+                        functions.handle_uploaded_file(file, mothurdest, each)
+                        functions.handle_uploaded_file(file, dest, each)
                         if os.name == 'nt':
                             myStr = "mothur\\temp\\" + str(file.name)
                         else:
@@ -698,8 +697,8 @@ def reanalyze(request, stopList):
                     for each in file_list:
                         file = each
                         qual = 'temp.qual'
-                        handle_uploaded_file(file, mothurdest, qual)
-                        handle_uploaded_file(file, dest, each)
+                        functions.handle_uploaded_file(file, mothurdest, qual)
+                        functions.handle_uploaded_file(file, dest, each)
 
                 for afile in glob.glob(r'% s/*.oligos' % dest):
                     srcStr = str(dest) + '/' + str(afile)

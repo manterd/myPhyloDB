@@ -6,8 +6,7 @@ import pandas as pd
 from pyper import *
 import json
 
-import database.utils
-import database.queue
+import functions
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -21,9 +20,9 @@ def getDiffAbund(request, stops, RID, PID):
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
+                functions.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
 
-                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
+                functions.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
 
                 treeType = int(all['treeType'])
                 selectAll = int(all["selectAll"])
@@ -79,7 +78,7 @@ def getDiffAbund(request, stops, RID, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 # round data to fix normalization type issues
@@ -107,7 +106,7 @@ def getDiffAbund(request, stops, RID, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...done')
+                functions.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -115,7 +114,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...')
+                functions.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...')
                 # status for stage 2 could have a loop counter or equivalent, currently the longest stage by far with
                 # no proper indicator of how long it will run
 
@@ -131,21 +130,21 @@ def getDiffAbund(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = database.utils.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 
-                    finalDF, missingList = database.utils.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = functions.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if treeType == 2:
-                    finalDF, allDF = database.utils.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = functions.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
-                    finalDF, allDF = database.utils.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = functions.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if finalDF.empty:
                     error = "Selected taxa were not found in your selected samples."
@@ -182,7 +181,7 @@ def getDiffAbund(request, stops, RID, PID):
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
-                database.queue.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...done')
+                functions.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -190,7 +189,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...')
+                functions.setBase(RID, 'Step 4 of 6: Performing statistical test...')
 
                 finalDict = {}
                 if os.name == 'nt':
@@ -198,14 +197,14 @@ def getDiffAbund(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+                functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 r("list.of.packages <- c('DESeq2')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
                 print r("if (length(new.packages)) biocLite(new.packages)")
 
-                database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...')
+                functions.setBase(RID, 'Step 4 of 6: Performing statistical test...')
 
                 print r("library(DESeq2)")
 
@@ -261,13 +260,13 @@ def getDiffAbund(request, stops, RID, PID):
                             nbinom_res = nbinom_res.loc[pd.notnull(nbinom_res[' log2FoldChange '])]
 
                             if treeType == 1:
-                                idList = database.utils.getFullTaxonomy(list(nbinom_res.rank_id.unique()))
+                                idList = functions.getFullTaxonomy(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
                             elif treeType == 2:
-                                idList = database.utils.getFullKO(list(nbinom_res.rank_id.unique()))
+                                idList = functions.getFullKO(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
                             elif treeType == 3:
-                                idList = database.utils.getFullNZ(list(nbinom_res.rank_id.unique()))
+                                idList = functions.getFullNZ(list(nbinom_res.rank_id.unique()))
                                 nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
 
                             nbinom_res.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
@@ -283,7 +282,7 @@ def getDiffAbund(request, stops, RID, PID):
                             nbinom_res.rename(columns={' pval ': 'p-value'}, inplace=True)
                             nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
 
-                            database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...' + str(iterationName) + ' is done!')
+                            functions.setBase(RID, 'Step 4 of 6: Performing statistical test...' + str(iterationName) + ' is done!')
 
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                             if stops[PID] == RID:
@@ -297,8 +296,8 @@ def getDiffAbund(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 6: Performing statistical test...done!')
-                database.queue.setBase(RID, 'Step 5 of 6: Formatting graph data for display...')
+                functions.setBase(RID, 'Step 4 of 6: Performing statistical test...done!')
+                functions.setBase(RID, 'Step 5 of 6: Formatting graph data for display...')
 
                 seriesList = []
                 xAxisDict = {}
@@ -376,7 +375,7 @@ def getDiffAbund(request, stops, RID, PID):
                 finalDict['xAxis'] = xAxisDict
                 finalDict['yAxis'] = yAxisDict
 
-                database.queue.setBase(RID, 'Step 5 of 6: Formatting graph data for display...done!')
+                functions.setBase(RID, 'Step 5 of 6: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -384,7 +383,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 6 of 6:  Formatting nbinomTest results for display...')
+                functions.setBase(RID, 'Step 6 of 6:  Formatting nbinomTest results for display...')
 
                 nbinom_res.replace(to_replace='N/A', value=np.nan, inplace=True)
                 nbinom_res.dropna(axis=1, how='all', inplace=True)
@@ -394,7 +393,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 finalDict['text'] = result
 
-                database.queue.setBase(RID, 'Step 6 of 6: Formatting nbinomTest results for display...done!')
+                functions.setBase(RID, 'Step 6 of 6: Formatting nbinomTest results for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

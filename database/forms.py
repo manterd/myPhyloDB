@@ -3,7 +3,7 @@ from django_countries import countries
 from localflavor.us.us_states import STATE_CHOICES
 from registration.forms import RegistrationForm
 
-from database.utils import MultiFileField
+from functions.utils.utils_df import MultiFileField
 
 
 class UploadForm1(forms.Form):

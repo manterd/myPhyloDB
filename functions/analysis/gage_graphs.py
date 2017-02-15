@@ -11,8 +11,7 @@ from database.models import ko_lvl1, ko_lvl2, ko_lvl3, \
     nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry, \
     Phyla, Class, Order, Family, Genus, Species, OTU_99
 
-import database.utils
-import database.queue
+import functions
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -26,10 +25,10 @@ def getGAGE(request, stops, RID, PID):
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
+                functions.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
 
                 # Select samples and meta-variables from savedDF
-                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
+                functions.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
                 metaValsQuant = []
@@ -38,7 +37,7 @@ def getGAGE(request, stops, RID, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 # round data to fix normalization type issues
@@ -66,7 +65,7 @@ def getGAGE(request, stops, RID, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
                 
-                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...done')
+                functions.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -74,14 +73,14 @@ def getGAGE(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 6: Mapping phylotypes to KEGG pathways...')
+                functions.setBase(RID, 'Step 3 of 6: Mapping phylotypes to KEGG pathways...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+                functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 # R packages from biocLite
                 r("list.of.packages <- c('gage', 'DESeq2', 'pathview')")
@@ -94,7 +93,7 @@ def getGAGE(request, stops, RID, PID):
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-                database.queue.setBase(RID, 'Step 3 of 6: Mapping phylotypes to KEGG pathways...')
+                functions.setBase(RID, 'Step 3 of 6: Mapping phylotypes to KEGG pathways...')
 
                 print r("library(gage)")
                 print r("library(DESeq2)")
@@ -103,7 +102,7 @@ def getGAGE(request, stops, RID, PID):
                 print r("library(grid)")
 
                 keggString = all["kegg"]
-                keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
+                keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
                 nameList = []
                 for value in keggDict.itervalues():
                     if isinstance(value, list):
@@ -149,12 +148,12 @@ def getGAGE(request, stops, RID, PID):
 
                 keggAll = 4
                 mapTaxa = 'no'
-                finalDF, junk = database.utils.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                finalDF, junk = functions.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
 
-                database.queue.setBase(RID, 'Step 4 of 6: Performing GAGE analysis...')
+                functions.setBase(RID, 'Step 4 of 6: Performing GAGE analysis...')
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/gage/'
@@ -294,7 +293,7 @@ def getGAGE(request, stops, RID, PID):
                             r("dev.off()")
                             r("pdf_counter <- pdf_counter + 1")
 
-                        database.queue.setBase(RID, 'Step 4 of 6: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(trt2) + ' is done!')
+                        functions.setBase(RID, 'Step 4 of 6: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(trt2) + ' is done!')
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                         if stops[PID] == RID:
@@ -308,7 +307,7 @@ def getGAGE(request, stops, RID, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 5 of 6: Pooling pdf files for display...')
+                functions.setBase(RID, 'Step 5 of 6: Pooling pdf files for display...')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/gage/Rplots/' + str(RID) + '/gage_final.pdf'
@@ -328,7 +327,7 @@ def getGAGE(request, stops, RID, PID):
 
                     merger.write(finalFile)
 
-                database.queue.setBase(RID, 'Step 6 of 6: Formatting result tables...this may take several minutes')
+                functions.setBase(RID, 'Step 6 of 6: Formatting result tables...this may take several minutes')
                 #Export tables to html
                 gage_table = gageDF.to_html(classes="table display")
                 gage_table = gage_table.replace('border="1"', 'border="0"')

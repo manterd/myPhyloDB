@@ -7,8 +7,7 @@ from pyper import *
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import json
 
-import database.utils
-import database.queue
+import functions
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -21,9 +20,9 @@ def getSpAC(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
+                functions.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
 
-                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...')
+                functions.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
 
                 result = ''
@@ -56,7 +55,7 @@ def getSpAC(request, stops, RID, PID):
                 DepVar = 0
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
@@ -64,7 +63,7 @@ def getSpAC(request, stops, RID, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...done')
+                functions.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -72,7 +71,7 @@ def getSpAC(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...')
+                functions.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...')
 
                 # filter otus based on user settings
                 remUnclass = all['remUnclass']
@@ -86,11 +85,11 @@ def getSpAC(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = database.utils.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 
-                    finalDF, missingList = database.utils.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = functions.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
@@ -122,7 +121,7 @@ def getSpAC(request, stops, RID, PID):
 
                 count_rDF.fillna(0, inplace=True)
 
-                database.queue.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa...done')
+                functions.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -130,20 +129,20 @@ def getSpAC(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...')
+                functions.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...')
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+                functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 r("list.of.packages <- c('vegan')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-                database.queue.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...')
+                functions.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...')
 
                 print r("library(vegan)")
 
@@ -216,9 +215,9 @@ def getSpAC(request, stops, RID, PID):
                     r("dev.off()")
                     r("pdf_counter <- pdf_counter + 1")
 
-                database.queue.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...done!')
+                functions.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...done!')
 
-                database.queue.setBase(RID, 'Step 5 of 5: Pooling pdf files for display...')
+                functions.setBase(RID, 'Step 5 of 5: Pooling pdf files for display...')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/spac/Rplots/' + str(RID) + '/SpAC_final.pdf'

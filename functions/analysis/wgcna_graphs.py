@@ -9,8 +9,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 import json
 import sys
 
-import database.utils
-import database.queue
+import functions
 
 
 reload(sys)
@@ -26,9 +25,9 @@ def getWGCNA(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 7: Reading normalized data file...')
+                functions.setBase(RID, 'Step 1 of 7: Reading normalized data file...')
 
-                database.queue.setBase(RID, 'Step 2 of 7: Selecting your chosen meta-variables...')
+                functions.setBase(RID, 'Step 2 of 7: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
                 nzAll = int(all["nzAll"])
@@ -43,7 +42,7 @@ def getWGCNA(request, stops, RID, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 result = ''
@@ -133,7 +132,7 @@ def getWGCNA(request, stops, RID, PID):
                 result += 'maxNGenes: ' + str(maxNGenes) + '\n'
                 result += 'graphLayout: ' + str(graphLayout) + '\n'
 
-                database.queue.setBase(RID, 'Step 2 of 7: Selecting your chosen meta-variables...done!')
+                functions.setBase(RID, 'Step 2 of 7: Selecting your chosen meta-variables...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -141,7 +140,7 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 7: Selecting your chosen taxa or KEGG level...')
+                functions.setBase(RID, 'Step 3 of 7: Selecting your chosen taxa or KEGG level...')
 
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
@@ -155,21 +154,21 @@ def getWGCNA(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = database.utils.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 
-                    finalDF, missingList = database.utils.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = functions.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if treeType == 2:
-                    finalDF, allDF = database.utils.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = functions.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
-                    finalDF, allDF = database.utils.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = functions.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if finalDF.empty:
                     error = "Selected taxa were not found in your selected samples."
@@ -183,7 +182,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 # transform Y, if requested
                 transform = int(all["transform"])
-                finalDF = database.utils.transformDF(transform, DepVar, finalDF)
+                finalDF = functions.transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/wgcna/'
@@ -208,7 +207,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 count_rDF.fillna(0, inplace=True)
 
-                database.queue.setBase(RID, 'Step 3 of 7: Selecting your chosen taxa...done!')
+                functions.setBase(RID, 'Step 3 of 7: Selecting your chosen taxa...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -216,7 +215,7 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 7: WGCNA analysis...')
+                functions.setBase(RID, 'Step 4 of 7: WGCNA analysis...')
 
                 finalDict = {}
                 if os.name == 'nt':
@@ -224,7 +223,7 @@ def getWGCNA(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+                functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 # R packages from biocLite
                 r("list.of.packages <- c('XML')")
@@ -249,7 +248,7 @@ def getWGCNA(request, stops, RID, PID):
                 print r("if (length(new.packages)) library('devtools')")
                 print r("if (length(new.packages)) install_github('guiastrennec/ggplus')")
 
-                database.queue.setBase(RID, 'Step 4 of 7: WGCNA analysis...')
+                functions.setBase(RID, 'Step 4 of 7: WGCNA analysis...')
 
                 # Load R libraries
                 print r("library(ggplot2)")
@@ -448,13 +447,13 @@ def getWGCNA(request, stops, RID, PID):
                 moduleDF.insert(0, 'rank_id', index)
 
                 if treeType == 1:
-                    idList = database.utils.getFullTaxonomy(list(moduleDF.rank_id.unique()))
+                    idList = functions.getFullTaxonomy(list(moduleDF.rank_id.unique()))
                     moduleDF['Taxonomy'] = moduleDF['rank_id'].map(idList)
                 elif treeType == 2:
-                    idList = database.utils.getFullKO(list(moduleDF.rank_id.unique()))
+                    idList = functions.getFullKO(list(moduleDF.rank_id.unique()))
                     moduleDF['Pathway'] = moduleDF['rank_id'].map(idList)
                 elif treeType == 3:
-                    idList = database.utils.getFullNZ(list(moduleDF.rank_id.unique()))
+                    idList = functions.getFullNZ(list(moduleDF.rank_id.unique()))
                     moduleDF['Enzyme'] = moduleDF['rank_id'].map(idList)
 
                 moduleDF.replace(to_replace='N/A', value=np.nan, inplace=True)
@@ -478,13 +477,13 @@ def getWGCNA(request, stops, RID, PID):
                 kmeDF.insert(0, 'rank_id', index)
 
                 if treeType == 1:
-                    idList = database.utils.getFullTaxonomy(list(kmeDF.rank_id.unique()))
+                    idList = functions.getFullTaxonomy(list(kmeDF.rank_id.unique()))
                     kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
                 elif treeType == 2:
-                    idList = database.utils.getFullKO(list(kmeDF.rank_id.unique()))
+                    idList = functions.getFullKO(list(kmeDF.rank_id.unique()))
                     kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
                 elif treeType == 3:
-                    idList = database.utils.getFullNZ(list(kmeDF.rank_id.unique()))
+                    idList = functions.getFullNZ(list(kmeDF.rank_id.unique()))
                     kmeDF['Taxonomy'] = kmeDF['rank_id'].map(idList)
 
                 kmeDF.replace(to_replace='N/A', value=np.nan, inplace=True)
@@ -602,8 +601,8 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 7: WGCNA analysis...done!')
-                database.queue.setBase(RID, 'Step 5 of 7: Creating network graph...')
+                functions.setBase(RID, 'Step 4 of 7: WGCNA analysis...done!')
+                functions.setBase(RID, 'Step 5 of 7: Creating network graph...')
 
                 ### now apply the kME filter created above
                 r("modProbes <- probes[filter]")
@@ -677,8 +676,8 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 5 of 7: Creating network graph...done!')
-                database.queue.setBase(RID, 'Step 6 of 7: Analyzing eigengenes based on chosen meta-variables...')
+                functions.setBase(RID, 'Step 5 of 7: Creating network graph...done!')
+                functions.setBase(RID, 'Step 6 of 7: Analyzing eigengenes based on chosen meta-variables...')
 
                 #Finding modules that relate to a trait (quantitative variable)
                 if quantFields:
@@ -960,8 +959,8 @@ def getWGCNA(request, stops, RID, PID):
                             return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 6 of 7: Analyzing eigengenes based on chosen meta-variables...done!')
-                database.queue.setBase(RID, 'Step 7 of 7: Pooling pdf files for display...!')
+                functions.setBase(RID, 'Step 6 of 7: Analyzing eigengenes based on chosen meta-variables...done!')
+                functions.setBase(RID, 'Step 7 of 7: Pooling pdf files for display...!')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/wgcna/Rplots/' + str(RID) + '/wgcna_final.pdf'

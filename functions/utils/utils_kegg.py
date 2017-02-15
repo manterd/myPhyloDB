@@ -13,7 +13,7 @@ from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
     ko_lvl1, ko_lvl2, ko_lvl3, ko_entry, \
     nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 
-import database.queue
+import functions
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -338,9 +338,9 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
         picrustDF.set_index('otuid', drop=True, inplace=True)
 
-        curStep = database.queue.getBase(RID)
+        curStep = functions.getBase(RID)
         sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
-        database.queue.setBase(RID, curStep)
+        functions.setBase(RID, curStep)
 
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
@@ -1064,9 +1064,9 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
         picrustDF.set_index('otuid', drop=True, inplace=True)
 
-        curStep = database.queue.getBase(RID)
+        curStep = functions.getBase(RID)
         sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
-        database.queue.setBase(RID, curStep)
+        functions.setBase(RID, curStep)
 
         picrustDF.drop('geneCount', axis=1, inplace=True)
         picrustDF[picrustDF > 0.0] = 1.0
@@ -1252,7 +1252,7 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 picrustDF.at[otu, key] = sum
-            database.queue.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
+            functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
             counter += 1
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

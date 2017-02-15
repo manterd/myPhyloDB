@@ -19,7 +19,7 @@ fi
 mkdir $HOME/myPhyloDB_temp
 mkdir $HOME/myPhyloDB_temp/uploads
 
-if [ $response = y ]
+if [ ${response} = y ]
     then
         mv $HOME/myPhyloDB/db.Microbe $HOME/myPhyloDB_temp/db.Microbe
         mv $HOME/myPhyloDB/db.PICRUSt $HOME/myPhyloDB_temp/db.PICRUSt

@@ -9,8 +9,7 @@ from scipy import stats
 
 from database.models import Sample
 
-import database.utils
-import database.queue
+import functions
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -24,7 +23,7 @@ def getCatUnivData(request, RID, stops, PID):
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
+                functions.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
 
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
@@ -40,7 +39,7 @@ def getCatUnivData(request, RID, stops, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 if not catFields:
@@ -61,7 +60,7 @@ def getCatUnivData(request, RID, stops, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
+                functions.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -69,7 +68,7 @@ def getCatUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
+                functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
                 # filter otus based on user settings
                 remUnclass = all['remUnclass']
@@ -85,12 +84,12 @@ def getCatUnivData(request, RID, stops, PID):
                 if treeType == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
-                        taxaDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(taxaString)
+                        taxaDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(taxaString)
                         filteredDF = savedDF.copy()
                     else:
                         taxaDict = ''
-                        filteredDF = database.utils.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
-                    finalDF, missingList = database.utils.getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                    finalDF, missingList = functions.getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
@@ -100,15 +99,15 @@ def getCatUnivData(request, RID, stops, PID):
                     keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
-                        keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
-                    finalDF, allDF = database.utils.getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                        keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
+                    finalDF, allDF = functions.getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
-                        keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
-                    finalDF, allDF = database.utils.getNZDF(nzAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                        keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
+                    finalDF, allDF = functions.getNZDF(nzAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if finalDF.empty:
                     error = "Selected taxa were not found in your selected samples."
@@ -122,7 +121,7 @@ def getCatUnivData(request, RID, stops, PID):
 
                 # transform Y, if requested
                 transform = int(all["transform"])
-                finalDF = database.utils.transformDF(transform, DepVar, finalDF)
+                finalDF = functions.transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'
@@ -133,7 +132,7 @@ def getCatUnivData(request, RID, stops, PID):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
 
-                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
+                functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -141,7 +140,7 @@ def getCatUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
+                functions.setBase(RID, 'Step 3 of 4: Performing statistical test...')
                 finalDict = {}
                 seriesList = []
                 xAxisDict = {}
@@ -152,14 +151,14 @@ def getCatUnivData(request, RID, stops, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+                functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 # R packages from cran
                 r("list.of.packages <- c('lsmeans')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...')
+                functions.setBase(RID, 'Step 3 of 4: Performing statistical test...')
 
                 print r("library(lsmeans)")
 
@@ -290,7 +289,7 @@ def getCatUnivData(request, RID, stops, PID):
                     result += '\n\n\n\n'
 
                     taxa_no = len(grouped1)
-                    database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
+                    functions.setBase(RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
                     counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -299,8 +298,8 @@ def getCatUnivData(request, RID, stops, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
-                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
+                functions.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
+                functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
                 grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
                 for name1, group1 in grouped1:
@@ -496,7 +495,7 @@ def getCatUnivData(request, RID, stops, PID):
                 else:
                     finalDict['empty'] = 1
 
-                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...done!')
+                functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -587,7 +586,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
 
-                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
+                functions.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
                 nzAll = int(all["nzAll"])
@@ -603,7 +602,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 if not finalSampleIDs:
@@ -618,7 +617,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
+                functions.setBase(RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[PID] == RID:
@@ -626,7 +625,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or kegg level...')
+                functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or kegg level...')
 
                 # filter otus based on user settings
                 remUnclass = all['remUnclass']
@@ -642,13 +641,13 @@ def getQuantUnivData(request, RID, stops, PID):
                 if treeType == 1:
                     if selectAll == 0 or selectAll == 8:
                         taxaString = all["taxa"]
-                        taxaDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(taxaString)
+                        taxaDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(taxaString)
                         filteredDF = savedDF.copy()
                     else:
                         taxaDict = ''
-                        filteredDF = database.utils.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
 
-                    finalDF, missingList = database.utils.getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = functions.getTaxaDF(selectAll, taxaDict, filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
@@ -658,15 +657,15 @@ def getQuantUnivData(request, RID, stops, PID):
                     keggDict = ''
                     if keggAll == 0:
                         keggString = all["kegg"]
-                        keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
-                    finalDF, allDF = database.utils.getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                        keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
+                    finalDF, allDF = functions.getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
                     keggDict = ''
                     if nzAll == 0:
                         keggString = all["nz"]
-                        keggDict = json.JSONDecoder(object_pairs_hook=database.utils.multidict).decode(keggString)
-                    finalDF, allDF = database.utils.getNZDF(nzAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                        keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
+                    finalDF, allDF = functions.getNZDF(nzAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -674,7 +673,7 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 # transform Y, if requested
                 transform = int(all["transform"])
-                finalDF = database.utils.transformDF(transform, DepVar, finalDF)
+                finalDF = functions.transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'
@@ -685,7 +684,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
 
-                database.queue.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
+                functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[PID] == RID:
@@ -693,7 +692,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...!')
+                functions.setBase(RID, 'Step 3 of 4: Performing statistical test...!')
                 finalDict = {}
                 # group DataFrame by each taxa level selected
                 shapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
@@ -781,7 +780,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     result += '\n\n\n\n'
 
                     taxa_no = len(grouped1)
-                    database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
+                    functions.setBase(RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
                     counter += 1
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
@@ -790,14 +789,14 @@ def getQuantUnivData(request, RID, stops, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-                database.queue.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
+                functions.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
                 if stops[PID] == RID:
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
+                functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
                 finalDF['sample_name'] = ''
                 for index, row in finalDF.iterrows():
@@ -1243,7 +1242,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 else:
                     finalDict['empty'] = 1
 
-                database.queue.setBase(RID, 'Step 4 of 4: Formatting graph data for display...done!')
+                functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

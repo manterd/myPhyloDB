@@ -4,7 +4,7 @@ from Queue import Queue
 from time import sleep
 import threading
 
-import database.utils
+import functions
 import database.views
 
 
@@ -28,7 +28,7 @@ def datstop(request):
         stopList[pid] = RID
         activeList[pid] = 0
         threadName = threadDict[RID]
-        database.utils.termP()
+        functions.termP()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == threadName:
@@ -67,7 +67,7 @@ def dataprocess(pid):
                 if funcName == "uploadFunc":
                     recent[RID] = database.views.uploadFunc(request, stopList)
                 if funcName == "reanalyze":
-                    resp = database.utils.reanalyze(request, stopList)
+                    resp = functions.reanalyze(request, stopList)
                     if resp is None:
                         resp = database.views.reprocess(request)
                     if resp == "Stopped":

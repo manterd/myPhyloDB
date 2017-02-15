@@ -29,14 +29,15 @@ ALLOWED_HOSTS = []
 # Application definition
 INSTALLED_APPS = [
     'database',
-    'registration',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'registration',
 ]
+
 
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
@@ -49,6 +50,7 @@ MIDDLEWARE_CLASSES = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTH_USER_MODEL = 'auth.User'
 AUTH_PROFILE_MODULE = "database.UserProfile"
 ROOT_URLCONF = 'myPhyloDB.urls'
 

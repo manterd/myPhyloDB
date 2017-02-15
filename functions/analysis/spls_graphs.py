@@ -10,8 +10,7 @@ from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
     ko_lvl1, ko_lvl2, ko_lvl3, \
     nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4
 
-import database.utils
-import database.queue
+import functions
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -23,9 +22,9 @@ def getSPLS(request, stops, RID, PID):
         while True:
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
+                functions.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
 
-                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
+                functions.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
                 keggAll = int(all["keggAll"])
                 nzAll = int(all["nzAll"])
@@ -40,7 +39,7 @@ def getSPLS(request, stops, RID, PID):
                 DepVar = int(all["DepVar"])
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
                 if not finalSampleIDs:
@@ -107,7 +106,7 @@ def getSPLS(request, stops, RID, PID):
 
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...done')
+                functions.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -115,7 +114,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...')
+                functions.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...')
 
                 # filter otus based on user settings
                 remUnclass = all['remUnclass']
@@ -129,21 +128,21 @@ def getSPLS(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = database.utils.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 
-                    finalDF, missingList = database.utils.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
+                    finalDF, missingList = functions.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                     if selectAll == 8:
                         result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                         result += '===============================================\n'
 
                 if treeType == 2:
-                    finalDF, allDF = database.utils.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = functions.getKeggDF(keggAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if treeType == 3:
-                    finalDF, allDF = database.utils.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                    finalDF, allDF = functions.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 if finalDF.empty:
                     error = "Selected taxa were not found in your selected samples."
@@ -156,7 +155,7 @@ def getSPLS(request, stops, RID, PID):
 
                 # transform Y, if requested
                 transform = int(all["transform"])
-                finalDF = database.utils.transformDF(transform, DepVar, finalDF)
+                finalDF = functions.transformDF(transform, DepVar, finalDF)
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/spls/'
@@ -167,7 +166,7 @@ def getSPLS(request, stops, RID, PID):
                     os.makedirs(myDir)
                 finalDF.to_pickle(path)
 
-                database.queue.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...done')
+                functions.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -175,7 +174,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 6: Calculating sPLS...')
+                functions.setBase(RID, 'Step 4 of 6: Calculating sPLS...')
 
                 if DepVar == 0:
                     result += 'Dependent Variable: Abundance' + '\n'
@@ -208,14 +207,14 @@ def getSPLS(request, stops, RID, PID):
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-                database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+                functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 # R packages from cran
                 r("list.of.packages <- c('mixOmics', 'spls', 'pheatmap', 'RColorBrewer')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-                database.queue.setBase(RID, 'Step 4 of 6: Calculating sPLS...')
+                functions.setBase(RID, 'Step 4 of 6: Calculating sPLS...')
 
                 print r("library(mixOmics)")
                 print r("library(spls)")
@@ -293,7 +292,7 @@ def getSPLS(request, stops, RID, PID):
                 r("sum <- sum(coef.f != 0)")
                 total = r.get("sum")
 
-                database.queue.setBase(RID, 'Step 4 of 6: Calculating sPLS...done!')
+                functions.setBase(RID, 'Step 4 of 6: Calculating sPLS...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -301,7 +300,7 @@ def getSPLS(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 5 of 6: Formatting sPLS coefficient table...')
+                functions.setBase(RID, 'Step 5 of 6: Formatting sPLS coefficient table...')
 
                 finalDict = {}
                 if total is not None:
@@ -475,8 +474,8 @@ def getSPLS(request, stops, RID, PID):
                     pred_table = pred_table.replace('border="1"', 'border="0"')
                     finalDict['pred_table'] = str(pred_table)
 
-                    database.queue.setBase(RID, 'Step 5 of 6: Formatting sPLS coefficient table...done')
-                    database.queue.setBase(RID, 'Step 6 of 6: Formatting graph data for display...')
+                    functions.setBase(RID, 'Step 5 of 6: Formatting sPLS coefficient table...done')
+                    functions.setBase(RID, 'Step 6 of 6: Formatting graph data for display...')
 
                     xAxisDict = {}
                     xAxisDict['categories'] = taxNameList
@@ -583,7 +582,7 @@ def getSPLS(request, stops, RID, PID):
 
                 finalDict['text'] = result
 
-                database.queue.setBase(RID, 'Step 6 of 6: Formatting graph data for display...done!')
+                functions.setBase(RID, 'Step 6 of 6: Formatting graph data for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

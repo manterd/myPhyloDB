@@ -11,7 +11,7 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
     ko_lvl1, ko_entry, \
     nz_lvl1, nz_entry \
 
-from utils_df import getEditProjects, getViewProjects
+import functions
 
 
 pd.set_option('display.max_colwidth', -1)
@@ -20,7 +20,7 @@ pd.set_option('display.max_colwidth', -1)
 def getProjectTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = getViewProjects(request)
+    projects = functions.getViewProjects(request)
     for project in projects:
         myNode = {
             'title': project.project_name,
@@ -1307,7 +1307,7 @@ def getNZTreeChildren(request):
 def makeUpdateTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = getEditProjects(request)
+    projects = functions.getEditProjects(request)
     for project in projects:
         myNode = {
             'title': "Project: " + str(project.project_name),
@@ -1342,7 +1342,7 @@ def makeUpdateTree(request):
 def makeReproTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = getEditProjects(request)
+    projects = functions.getEditProjects(request)
     for project in projects:
         myNode = {
             'title': "Project: " + str(project.project_name),

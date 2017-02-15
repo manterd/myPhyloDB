@@ -11,8 +11,7 @@ import json
 
 from database.models import PICRUSt
 
-import database.utils
-import database.queue
+import functions
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -25,11 +24,11 @@ def getsoil_index(request, stops, RID, PID):
             if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
-                database.queue.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
+                functions.setBase(RID, 'Step 1 of 5: Reading normalized data file...')
 
                 result = ''
                 # Select samples and meta-variables from savedDF
-                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...')
+                functions.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...')
                 metaValsCat = all['metaValsCat']
                 metaIDsCat = all['metaIDsCat']
                 metaValsQuant = []
@@ -40,7 +39,7 @@ def getsoil_index(request, stops, RID, PID):
                 locMax = all['locMax']
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = database.utils.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, '')
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, '')
                 allFields = catFields + quantFields
 
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
@@ -48,7 +47,7 @@ def getsoil_index(request, stops, RID, PID):
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
                 result += '===============================================\n\n'
 
-                database.queue.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...done')
+                functions.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -56,17 +55,17 @@ def getsoil_index(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...\n')
+                functions.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...\n')
 
                 selectAll = 9
                 DepVar = 10
-                finalDF, missingList = database.utils.getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                finalDF, missingList = functions.getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 nzAll = 10
                 DepVar = 4
                 mapTaxa = 'no'
                 metaDF.set_index('sampleid', drop=True, inplace=True)  # getTaxaDF resets index of metaDF
-                keggDF, mtDF = database.utils.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                keggDF, mtDF = functions.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
 
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
@@ -975,7 +974,7 @@ def getsoil_index(request, stops, RID, PID):
                     r('dev.off()')
                     r("pdf_counter <- pdf_counter + 1")
 
-                database.queue.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa...done')
+                functions.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -983,7 +982,7 @@ def getsoil_index(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                database.queue.setBase(RID, 'Step 4 of 5: Pooling pdf files for display...')
+                functions.setBase(RID, 'Step 4 of 5: Pooling pdf files for display...')
 
                 # Combining Pdf files
                 finalFile = 'myPhyloDB/media/temp/soil_index/Rplots/' + str(RID) + '/soil_index_final.pdf'
@@ -1002,7 +1001,7 @@ def getsoil_index(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 merger.write(finalFile)
-                database.queue.setBase(RID, 'Step 4 of 5: Creating tables for display...')
+                functions.setBase(RID, 'Step 4 of 5: Creating tables for display...')
 
                 finalDict = {}
 

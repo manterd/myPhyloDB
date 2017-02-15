@@ -1,7 +1,7 @@
 # Do not change order of imports...
 import os
 from django.core.wsgi import get_wsgi_application
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myPhyloDB.settings")
+os.environ["DJANGO_SETTINGS_MODULE"] = "myPhyloDB.settings"
 application = get_wsgi_application()
 
 # Do not change order of imports...

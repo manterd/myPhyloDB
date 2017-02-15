@@ -18,7 +18,7 @@ import zipfile
 from database.models import Project, Reference, Profile
 
 import config.local_cfg
-from utils_kegg import getFullTaxonomy, getFullKO, getFullNZ
+import functions
 
 
 pd.set_option('display.max_colwidth', -1)
@@ -314,13 +314,13 @@ def getRawData(request):
         savedDF = pd.read_pickle(fileName)
 
         if treeType == 1:
-            idList = getFullTaxonomy(list(savedDF.rank_id.unique()))
+            idList = functions.getFullTaxonomy(list(savedDF.rank_id.unique()))
             savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
         elif treeType == 2:
-            idList = getFullKO(list(savedDF.rank_id.unique()))
+            idList = functions.getFullKO(list(savedDF.rank_id.unique()))
             savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
         elif treeType == 3:
-            idList = getFullNZ(list(savedDF.rank_id.unique()))
+            idList = functions.getFullNZ(list(savedDF.rank_id.unique()))
             savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
 
         savedDF.replace(to_replace='N/A', value=np.nan, inplace=True)
@@ -525,7 +525,6 @@ def transformDF(transform, DepVar, finalDF):
 
 
 def getViewProjects(request):
-    print 'ok'
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.order_by('project_name')

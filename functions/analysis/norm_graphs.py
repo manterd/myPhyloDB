@@ -14,8 +14,7 @@ import zipfile
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, Profile
 
-import database.utils
-import database.queue
+import functions
 
 
 curSamples = {}
@@ -30,7 +29,7 @@ def getNorm(request, RID, stopList, PID):
             # Get variables from web page
             allJson = request.body.split('&')[0]
             all = json.loads(allJson)
-            database.queue.setBase(RID, 'Step 1 of 6: Querying database...')
+            functions.setBase(RID, 'Step 1 of 6: Querying database...')
 
             NormMeth = int(all["NormMeth"])
 
@@ -124,14 +123,14 @@ def getNorm(request, RID, stopList, PID):
             myList = metaDF.index.values.tolist()
 
             # Create dataframe with all taxa/count data by sample
-            taxaDF = database.utils.taxaProfileDF(myList)
+            taxaDF = functions.taxaProfileDF(myList)
 
             # Select only the taxa of interest if user used the selectAll button
             taxaDict = {}
             qs3 = Profile.objects.filter(sampleid__in=myList).values_list('otuid', flat='True').distinct()
             taxaDict['OTU_99'] = qs3
 
-            database.queue.setBase(RID, 'Step 1 of 6: Querying database...done!')
+            functions.setBase(RID, 'Step 1 of 6: Querying database...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -139,11 +138,11 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
+            functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
 
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
 
-            database.queue.setBase(RID, 'Step 4 of 6: Calculating indices...')
+            functions.setBase(RID, 'Step 4 of 6: Calculating indices...')
 
             if remove == 1:
                 grouped = normDF.groupby('otuid')
@@ -201,12 +200,12 @@ def getNorm(request, RID, stopList, PID):
             request.session['savedDF'] = pickle.dumps(path)
             request.session['NormMeth'] = NormMeth
 
-            database.queue.setBase(RID, 'Step 5 of 6: Writing data to disk...')
+            functions.setBase(RID, 'Step 5 of 6: Writing data to disk...')
 
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
 
-            database.queue.setBase(RID, 'Step 5 of 6: Writing data to disk...done')
+            functions.setBase(RID, 'Step 5 of 6: Writing data to disk...done')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -214,7 +213,7 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            database.queue.setBase(RID, 'Step 6 of 6: Formatting biom data...')
+            functions.setBase(RID, 'Step 6 of 6: Formatting biom data...')
 
             myBiom = {}
             nameList = []
@@ -255,7 +254,7 @@ def getNorm(request, RID, stopList, PID):
             with open(path, 'w') as outfile:
                 json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
 
-            database.queue.setBase(RID, 'Step 6 of 6: Formatting biome data...done!')
+            functions.setBase(RID, 'Step 6 of 6: Formatting biome data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -485,14 +484,14 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         else:
             r = R(RCMD="R/R-Linux/bin/R")
 
-        database.queue.setBase(RID, 'Verifying R packages...missing packages are being installed')
+        functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
         r("list.of.packages <- c('DESeq2')")
         r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
         print r("if (length(new.packages)) biocLite(new.packages)")
 
-        database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
+        functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
 
         print r("library(DESeq2)")
 
@@ -535,8 +534,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             DESeq_error = 'yes'
             countDF = df2.reset_index(drop=True)
 
-    database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...done!')
-    database.queue.setBase(RID, 'Step 3 of 6: Tabulating data...')
+    functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...done!')
+    functions.setBase(RID, 'Step 3 of 6: Tabulating data...')
 
     field = 'otuid'
     taxaList = taxaDict['OTU_99']
@@ -602,7 +601,7 @@ def rarefaction_remove(M, RID, reads=0, iters=0):
                 myArr = np.vstack((myArr, binArr))
         Mrarefied[i] = np.mean(myArr, axis=0)
         curSamples[RID] += 1
-        database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
+        functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
 
 
@@ -625,9 +624,11 @@ def rarefaction_keep(M, RID, reads=0, iters=0, myLambda=0.1):
             else:
                 myArr = np.vstack((myArr, binArr))
 
-        Mrarefied[i] = np.mean(myArr, axis=0)
+        arr = np.mean(myArr, axis=0)
+        arr[arr < iters * 0.5] = 0
+        Mrarefied[i] = arr
         curSamples[RID] += 1
-        database.queue.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
+        functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
 
 
@@ -637,7 +638,7 @@ def getTab(request):
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_norm_data.biom'
 
-        df, metaDF, remCatFields = database.utils.exploding_panda(path)
+        df, metaDF, remCatFields = functions.exploding_panda(path)
 
         fileName2 = str(myDir) + 'usr_norm_data.csv'
         df.to_csv(fileName2)
