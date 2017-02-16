@@ -1,18 +1,17 @@
 import os
-import sys
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'myPhyloDB.settings'
 
 import django
 django.setup()
 
+from myPhyloDB.wsgi import application
+
 import cherrypy
 import multiprocessing as mp
 import signal
 import threading
 import webbrowser
-
-from myPhyloDB.wsgi import application
 
 
 class Server(object):
@@ -82,22 +81,20 @@ def signal_handler(signal, frame):
 
 
 if __name__ == '__main__':
-    from django.core.management import execute_from_command_line
-    execute_from_command_line(sys.argv)
+    #from django.core.management import execute_from_command_line
+    #execute_from_command_line(sys.argv)
 
-    from functions.utils.utils_df import analysisThreads
-    from functions.queues.queue import process
-    from functions.queues.dataqueue import dataprocess
+    import functions
 
     signal.signal(signal.SIGINT, signal_handler)
-    num_threads = analysisThreads()
+    num_threads = functions.analysisThreads()
 
     for pid in xrange(num_threads):
-        thread = threading.Thread(target=process, args=(pid, ))
+        thread = threading.Thread(target=functions.process, args=(pid, ))
         thread.setDaemon(True)
         thread.start()
 
-    dataThread = threading.Thread(target=dataprocess, args=(0, ))
+    dataThread = threading.Thread(target=functions.dataprocess, args=(0, ))
     dataThread.setDaemon(True)
     dataThread.start()
 

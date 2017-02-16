@@ -13,7 +13,6 @@ urlpatterns = [
     url(r'^myPhyloDB/accounts/', include('allauth.urls')),
 
     # Admin Urls
-    url(r'^myPhyloDB/admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^myPhyloDB/admin/', admin.site.urls),
 
     url(r'^myPhyloDB/', include('database.urls')),

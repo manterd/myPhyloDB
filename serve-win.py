@@ -1,17 +1,17 @@
-import cherrypy
-from cherrypy.process import plugins
-import multiprocessing as mp
-import os.path
-import signal
-import sys
-import threading
-import webbrowser
+import os
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'myPhyloDB.settings'
+
+import django
+django.setup()
+
 from myPhyloDB.wsgi import application
 
-import functions
-
-
-cherrypy.tree.graft(application)
+import cherrypy
+import multiprocessing as mp
+import signal
+import threading
+import webbrowser
 
 
 class Server(object):
@@ -48,15 +48,12 @@ class Server(object):
         engine.block()
 
 
-class DjangoAppPlugin(plugins.SimplePlugin):
+class DjangoAppPlugin(cherrypy.process.plugins.SimplePlugin):
     def __init__(self, bus, base_dir):
-        plugins.SimplePlugin.__init__(self, bus)
+        cherrypy.process.plugins.SimplePlugin.__init__(self, bus)
         self.base_dir = base_dir
 
     def start(self):
-        import django
-        django.setup()
-
         staticpath = os.path.abspath(self.base_dir)
         staticpath = os.path.split(staticpath)[0]
         staticpath = os.path.join(staticpath, 'myPhyloDB/media')
@@ -75,21 +72,22 @@ class DjangoAppPlugin(plugins.SimplePlugin):
         static_handler = cherrypy.tools.staticdir.handler(section="/", dir=staticpath, root='')
         cherrypy.tree.mount(static_handler, '/instructions')
 
+        cherrypy.tree.graft(application)
+
 
 def signal_handler(signal, frame):
     print 'Exiting...'
     cherrypy.engine.exit()
 
 
-signal.signal(signal.SIGINT, signal_handler)
-num_threads = functions.threads()
-
-
 if __name__ == '__main__':
-    from django.core.management import execute_from_command_line
-    execute_from_command_line(sys.argv)
+    #from django.core.management import execute_from_command_line
+    #execute_from_command_line(sys.argv)
 
-    mp.freeze_support()
+    import functions
+
+    signal.signal(signal.SIGINT, signal_handler)
+    num_threads = functions.analysisThreads()
 
     for pid in xrange(num_threads):
         thread = threading.Thread(target=functions.process, args=(pid, ))
@@ -100,5 +98,5 @@ if __name__ == '__main__':
     dataThread.setDaemon(True)
     dataThread.start()
 
+    mp.freeze_support()
     Server().run()
-

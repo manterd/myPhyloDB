@@ -25,18 +25,17 @@ DEBUG = True
 # Application definition
 INSTALLED_APPS = [
     'database',
+    'django.contrib.sites',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'django.contrib.admin',
-    'django.contrib.admindocs',
+    #'allauth.socialaccount.providers.google',
 ]
 
 
@@ -53,9 +52,6 @@ MIDDLEWARE_CLASSES = [
 
 
 SITE_ID = 1
-
-
-AUTH_PROFILE_MODULE = "database.UserProfile"
 
 
 ROOT_URLCONF = 'myPhyloDB.urls'

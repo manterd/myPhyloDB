@@ -8,7 +8,7 @@ usr_num_threads = 3
 
 
 ### Django settings
-DEBUG = True
+DEBUG = False
 
 # Whether the framework should propagate raw exceptions rather than catching
 # them. This is useful under some testing situations and should never be used

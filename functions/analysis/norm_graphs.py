@@ -624,9 +624,7 @@ def rarefaction_keep(M, RID, reads=0, iters=0, myLambda=0.1):
             else:
                 myArr = np.vstack((myArr, binArr))
 
-        arr = np.mean(myArr, axis=0)
-        arr[arr < iters * 0.5] = 0
-        Mrarefied[i] = arr
+        Mrarefied[i] = np.mean(myArr, axis=0)
         curSamples[RID] += 1
         functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
