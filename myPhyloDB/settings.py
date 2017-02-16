@@ -100,7 +100,7 @@ TEMPLATES = [
                 'database.views.usrFiles',
             ],
             'libraries': {
-                'staticfiles': 'django.templatetags.static',
+                'static': 'django.templatetags.static',
                 'i18n': 'django.templatetags.i18n',
                 'admin_list': 'django.contrib.admin.templatetags.admin_list',
                 'admin_modify': 'django.contrib.admin.templatetags.admin_modify',
