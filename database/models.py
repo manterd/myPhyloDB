@@ -102,6 +102,9 @@ class Sample(models.Model):
     def natural_key(self):
         return self.sampleid
 
+    def __unicode__(self):
+        return self.sample_name
+
 
 class Human_Associated(models.Model):
     sampleid = models.ForeignKey(Sample)
@@ -294,6 +297,9 @@ class Soil(models.Model):
     ghg_N2O = models.FloatField(blank=True, null=True)
     ghg_CO2 = models.FloatField(blank=True, null=True)
     ghg_NH4 = models.FloatField(blank=True, null=True)
+
+    def __unicode__(self):
+        return self.sampleid.sample_name
 
 
 class Air(models.Model):
@@ -529,6 +535,9 @@ class UserDefined(models.Model):
 
     def natural_key(self):
         return self.sampleid
+
+    def __unicode__(self):
+        return self.sampleid.sample_name
 
 
 class Kingdom(models.Model):
