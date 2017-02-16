@@ -9,8 +9,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import *
 from django_pandas.io import read_frame
-from django.shortcuts import render_to_response, render
-from django.template import RequestContext, loader
+from django.shortcuts import render
 import fileinput
 import json
 import logging
@@ -43,9 +42,9 @@ LOG_FILENAME = 'error_log.txt'
 
 
 def home(request):
-    return render_to_response(
-        'home.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'home.html'
     )
 
 
@@ -57,13 +56,13 @@ def upload(request):
     elif request.user.is_authenticated():
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
 
-    return render_to_response(
+    return render(
+        request,
         'upload.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'error': ""},
-        context_instance=RequestContext(request)
+         'error': ""}
     )
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
@@ -74,12 +73,12 @@ def download(request):
     elif request.user.is_authenticated():
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
 
-    return render_to_response(
+    return render(
+        request,
         'download.html',
         {'projects': projects,
          'type': "GET",
-         'paths': ''},
-        context_instance=RequestContext(request)
+         'paths': ''}
     )
 
 
@@ -119,14 +118,14 @@ def upStop(request):
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
     elif request.user.is_authenticated():
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-    return render_to_response(
-            'upload.html',
-            {'projects': projects,
-             'form1': UploadForm1,
-             'form2': UploadForm2,
-             'error': "Upload stopped"
-             },
-            context_instance=RequestContext(request)
+    return render(
+        request,
+        'upload.html',
+        {'projects': projects,
+         'form1': UploadForm1,
+         'form2': UploadForm2,
+         'error': "Upload stopped"
+         }
     )
 
 
@@ -143,14 +142,14 @@ def upErr(msg, request, dest, sid):
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
     else:
         projects = None
-    return render_to_response(
+    return render(
+        request,
         'upload.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
          'error': msg
-         },
-        context_instance=RequestContext(request)
+         }
     )
 
 
@@ -179,14 +178,14 @@ def uploadFunc(request, stopList):
             try:
                 p_uuid, pType, num_samp = functions.projectid(file1)
                 if not num_samp:
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "Error: Please open and save your meta file in Excel/OpenOffice in order to perform the necessary calculations..."
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
             except Exception:
@@ -198,14 +197,14 @@ def uploadFunc(request, stopList):
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                 elif request.user.is_authenticated():
                     projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                return render_to_response(
+                return render(
+                    request,
                     'upload.html',
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
                      'error': "There was an error parsing your meta file:" + str(file1.name)
-                     },
-                    context_instance=RequestContext(request)
+                     }
                 )
 
             date = datetime.date.today().isoformat()
@@ -273,14 +272,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "Cannot open taxonomy file"
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
                 functions.handle_uploaded_file(file3, dest, file3.name)
 
@@ -297,14 +296,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error parsing your taxonomy file:" + str(file3.name)
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -325,14 +324,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "Cannot open shared file"
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
                 functions.handle_uploaded_file(file4, dest, file4.name)
 
@@ -351,14 +350,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error parsing your shared file:" + str(file4.name)
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -464,14 +463,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error with your mothur batch file:" + str(file7.name)
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -495,14 +494,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error parsing your taxonomy file: final.taxonomy"
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -528,14 +527,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error parsing your shared file: final.shared"
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -712,14 +711,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error with your mothur batch file: " + str(file7.name)
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -741,14 +740,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error parsing your taxonomy file: final.taxonomy"
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -773,14 +772,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error parsing your shared file: final.shared"
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -870,14 +869,14 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
                          'error': "There was an error with your mothur batch file: " + str(file15.name)
-                         },
-                        context_instance=RequestContext(request)
+                         }
                     )
 
                 if stopList[PID] == RID:
@@ -899,13 +898,13 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing taxonomy file: final.taxonomy"},
-                        context_instance=RequestContext(request)
+                         'error': "There was an error parsing taxonomy file: final.taxonomy"}
                     )
 
                 if stopList[PID] == RID:
@@ -930,13 +929,13 @@ def uploadFunc(request, stopList):
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
                     elif request.user.is_authenticated():
                         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render_to_response(
+                    return render(
+                        request,
                         'upload.html',
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.shared"},
-                        context_instance=RequestContext(request)
+                         'error': "There was an error parsing your shared file: final.shared"}
                     )
 
                 if stopList[PID] == RID:
@@ -952,13 +951,13 @@ def uploadFunc(request, stopList):
     elif request.user.is_authenticated():
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
 
-    return render_to_response(
+    return render(
+        request,
         'upload.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'error': ""},
-        context_instance=RequestContext(request)
+         'error': ""}
     )
 
 
@@ -1660,13 +1659,13 @@ def select(request):
         try:
             savedDF = pd.read_csv(filename, index_col=0, sep=',')
         except Exception:
-            return render_to_response(
+            return render(
+                request,
                 'select.html',
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                 'method': 'POST'},
-                 context_instance=RequestContext(request)
+                 'method': 'POST'}
             )
 
         selList = list(set(savedDF['sampleid']))
@@ -1686,33 +1685,33 @@ def select(request):
         projectList = list(set(savedDF['projectid']))
 
         if not Project.objects.filter(projectid__in=projectList).exists():
-            return render_to_response(
+            return render(
+                request,
                 'select.html',
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                 'method': 'POST'},
-                 context_instance=RequestContext(request)
+                 'method': 'POST'}
             )
 
         if not Reference.objects.filter(projectid__in=projectList).exists():
-            return render_to_response(
+            return render(
+                request,
                 'select.html',
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                 'method': 'POST'},
-                context_instance=RequestContext(request)
+                 'method': 'POST'}
             )
 
         if not Sample.objects.filter(sampleid__in=selList).exists():
-            return render_to_response(
+            return render(
+                request,
                 'select.html',
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                 'method': 'POST'},
-                context_instance=RequestContext(request)
+                 'method': 'POST'}
             )
 
         biome = {}
@@ -1758,23 +1757,24 @@ def select(request):
         with open(path, 'w') as outfile:
             json.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
-        return render_to_response(
+        return render(
+            request,
             'select.html',
             {'form9': UploadForm9,
              'selList': selList,
              'normpost': 'Success',
-             'method': 'POST'},
-            context_instance=RequestContext(request)
+             'method': 'POST'}
         )
 
     else:
-        return render_to_response(
+        return render(
+            request,
             'select.html',
             {'form9': UploadForm9,
              'selList': '',
              'normpost': '',
-             'method': 'GET'},
-            context_instance=RequestContext(request))
+             'method': 'GET'}
+        )
 
 
 def taxaJSON(request):
@@ -1786,9 +1786,9 @@ def taxaJSON(request):
 
 
 def taxa(request):
-    return render_to_response(
-        'taxa.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'taxa.html'
     )
 
 
@@ -1847,9 +1847,9 @@ def pathTaxaJSON(request):
 
 
 def kegg_path(request):
-    return render_to_response(
-        'kegg_path.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'kegg_path.html'
     )
 
 
@@ -1911,9 +1911,9 @@ def nzTaxaJSON(request):
 
 
 def kegg_enzyme(request):
-    return render_to_response(
-        'kegg_enzyme.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'kegg_enzyme.html'
     )
 
 
@@ -1921,9 +1921,9 @@ def kegg_enzyme(request):
 def norm(request):
     functions.cleanup('myPhyloDB/media/temp/norm')
 
-    return render_to_response(
-        'norm.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'norm.html'
     )
 
 
@@ -1931,9 +1931,9 @@ def norm(request):
 def ANOVA(request):
     functions.cleanup('myPhyloDB/media/temp/anova')
 
-    return render_to_response(
-        'anova.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'anova.html'
     )
 
 
@@ -1941,9 +1941,9 @@ def ANOVA(request):
 def rich(request):
     functions.cleanup('myPhyloDB/media/temp/spac')
 
-    return render_to_response(
-        'SpAC.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'SpAC.html'
     )
 
 
@@ -1951,9 +1951,9 @@ def rich(request):
 def soil_index(request):
     functions.cleanup('myPhyloDB/media/temp/soil_index')
 
-    return render_to_response(
-        'soil_index.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'soil_index.html'
     )
 
 
@@ -1961,9 +1961,9 @@ def soil_index(request):
 def DiffAbund(request):
     functions.cleanup('myPhyloDB/media/temp/diffabund')
 
-    return render_to_response(
-        'diff_abund.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'diff_abund.html'
     )
 
 
@@ -1971,9 +1971,9 @@ def DiffAbund(request):
 def GAGE(request):
     functions.cleanup('myPhyloDB/media/temp/gage')
 
-    return render_to_response(
-        'gage.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'gage.html'
     )
 
 
@@ -1981,9 +1981,9 @@ def GAGE(request):
 def PCA(request):
     functions.cleanup('myPhyloDB/media/temp/pca')
 
-    return render_to_response(
-        'pca.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'pca.html'
     )
 
 
@@ -1991,9 +1991,9 @@ def PCA(request):
 def PCoA(request):
     functions.cleanup('myPhyloDB/media/temp/pcoa')
 
-    return render_to_response(
-        'pcoa.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'pcoa.html'
     )
 
 
@@ -2001,9 +2001,9 @@ def PCoA(request):
 def RF(request):
     functions.cleanup('myPhyloDB/media/temp/rf')
 
-    return render_to_response(
-        'rf.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'rf.html'
     )
 
 
@@ -2011,9 +2011,9 @@ def RF(request):
 def SPLS(request):
     functions.cleanup('myPhyloDB/media/temp/spls')
 
-    return render_to_response(
-        'spls.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'spls.html'
     )
 
 
@@ -2021,9 +2021,9 @@ def SPLS(request):
 def WGCNA(request):
     functions.cleanup('myPhyloDB/media/temp/wgcna')
 
-    return render_to_response(
-        'wgcna.html',
-        context_instance=RequestContext(request)
+    return render(
+        request,
+        'wgcna.html'
     )
 
 
@@ -2084,34 +2084,34 @@ def reprocess(request):
     templateDB = sorted(os.listdir('mothur/reference/template/'))
     taxonomyDB = sorted(os.listdir('mothur/reference/taxonomy/'))
 
-    return render_to_response(
+    return render(
+        request,
         'reprocess.html',
         {'form4': UploadForm4,
          'alignDB': alignDB,
          'templateDB': templateDB,
          'taxonomyDB': taxonomyDB},
-        context_instance=RequestContext(request)
     )
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def update(request):
     state = ''
-    return render_to_response(
+    return render(
+        request,
         'update.html',
         {'form5': UploadForm5,
-         'state': state},
-        context_instance=RequestContext(request)
+         'state': state}
     )
 
 
 def updaStop(request):
     state = "Update stopped"
-    return render_to_response(
+    return render(
+        request,
         'update.html',
         {'form5': UploadForm5,
-         'state': state},
-        context_instance=RequestContext(request)
+         'state': state}
     )
 
 
@@ -2137,12 +2137,12 @@ def updateFunc(request, stopList):
         dest = ref.path
         p_uuid, pType, num_samp = functions.projectid(file1)
         if not num_samp:
-            return render_to_response(
+            return render(
+                request,
                 'update.html',
                 {'form5': UploadForm5,
                  'state': "Error: Please open and save your meta file in Excel/OpenOffice in order to perform the necessary calculations..."
-                 },
-                context_instance=RequestContext(request)
+                 }
             )
 
         if stopList[PID] == RID:
@@ -2154,11 +2154,11 @@ def updateFunc(request, stopList):
             functions.parse_project(metaFile, p_uuid, curUser)
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
-            return render_to_response(
+            return render(
+                request,
                 'update.html',
                 {'form5': UploadForm5,
-                 'state': state},
-                context_instance=RequestContext(request)
+                 'state': state}
             )
 
         if stopList[PID] == RID:
@@ -2181,11 +2181,11 @@ def updateFunc(request, stopList):
 
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
-            return render_to_response(
+            return render(
+                request,
                 'update.html',
                 {'form5': UploadForm5,
-                 'state': state},
-                context_instance=RequestContext(request)
+                 'state': state}
             )
 
         if stopList[PID] == RID:
@@ -2196,11 +2196,11 @@ def updateFunc(request, stopList):
     if stopList[PID] == RID:
         return updaStop(request)
 
-    return render_to_response(
+    return render(
+        request,
         'update.html',
         {'form5': UploadForm5,
-         'state': state},
-        context_instance=RequestContext(request)
+         'state': state}
     )
 
 
@@ -2226,12 +2226,12 @@ def pybake(request):
         file5 = request.FILES['nz_htext']
         functions.nzParse(file5)
 
-    return render_to_response(
+    return render(
+        request,
         'pybake.html',
         {'form6': UploadForm6,
          'form7': UploadForm7,
-         'form8': UploadForm8},
-        context_instance=RequestContext(request)
+         'form8': UploadForm8}
     )
 
 
@@ -2264,28 +2264,28 @@ def uploadNorm(request):
         projects = Project.objects.filter(projectid__in=projectList)
 
     else:
-        return render_to_response(
+        return render(
+            request,
             'select.html',
-            {'normpost': 'One or more projects were not found in your database!'},
-            context_instance=RequestContext(request)
+            {'normpost': 'One or more projects were not found in your database!'}
         )
 
     if Reference.objects.filter(projectid__in=projectList).exists():
         refs = Reference.objects.filter(projectid__in=projectList)
     else:
-        return render_to_response(
+        return render(
+            request,
             'select.html',
-            {'normpost': 'One or more projects were not found in your database!'},
-            context_instance=RequestContext(request)
+            {'normpost': 'One or more projects were not found in your database!'}
         )
 
     if Sample.objects.filter(sampleid__in=selList).exists():
         samples = Sample.objects.filter(sampleid__in=selList)
     else:
-        return render_to_response(
+        return render(
+            request,
             'select.html',
-            {'normpost': 'One or more samples were not found in your database!'},
-            context_instance=RequestContext(request)
+            {'normpost': 'One or more samples were not found in your database!'}
         )
 
     biome = {}
@@ -2331,7 +2331,8 @@ def uploadNorm(request):
     with open(path, 'w') as outfile:
         ujson.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
 
-    return render_to_response(
+    return render(
+        request,
         'select.html',
         {'form9': UploadForm9,
          'projects': projects,
@@ -2339,7 +2340,6 @@ def uploadNorm(request):
          'samples': samples,
          'selList': selList,
          'normpost': 'Success'},
-        context_instance=RequestContext(request)
     )
 
 
@@ -2381,19 +2381,19 @@ def profile(request):
     if not request.user.is_superuser and not request.user.is_authenticated():
         projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
 
-    return render_to_response(
+    return render(
+        request,
         'profile.html',
-        {'projects': projects},
-        context_instance=RequestContext(request)
+        {'projects': projects}
     )
 
 
 def changeuser(request):
-    return render_to_response(
+    return render(
+        request,
         'changeuser.html',
         {"form": UserRegForm,
-            "error": "none"},
-        context_instance=RequestContext(request)
+            "error": "none"}
     )
 
 
@@ -2430,10 +2430,10 @@ def updateInfo(request):
     except Exception:
         messages.error(request, 'Something went wrong. Please check your entered values')
 
-    return render_to_response(
+    return render(
+        request,
         'changeuser.html',
-        {"form": UserRegForm, "error": error},
-        context_instance=RequestContext(request)
+        {"form": UserRegForm, "error": error}
     )
 
 
