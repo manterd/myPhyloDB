@@ -1,4 +1,4 @@
-{% extends "account/base.html" %}
+{% extends "allauth/account/base.html" %}
 
 {% load i18n %}
 
@@ -10,8 +10,103 @@
 <p>{% blocktrans %}Already have an account? Then please <a href="{{ login_url }}">sign in</a>.{% endblocktrans %}</p>
 
 <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
-  {% csrf_token %}
-  {{ form.as_p }}
+    {% csrf_token %}
+
+    <table style="background-color: white">
+        <tr>
+            Required fields marked with *
+            <br>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.firstName.label }}*:&nbsp;</td>
+            <td>{{ form.firstName }}</td>
+            <td><font color="red">{{ form.errors.firstName }}</font></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.lastName.label }}*:&nbsp;</td>
+            <td>{{ form.lastName }}</td>
+            <td><font color="red">{{ form.errors.lastName }}</font></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.email.label }}*:&nbsp;</td>
+            <td>{{ form.email }}</td>
+            <td><font color="red">{{ form.errors.email }}</font></td>
+        </tr>
+        <tr><td colspan="4"><br></td></tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.username.label }}*:&nbsp;</td>
+            <td>{{ form.username }}</td>
+            <td><font color="red">{{ form.errors.username }}</font></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.password1.label }}*:&nbsp;</td>
+            <td>{{ form.password1 }}</td>
+            <td><font color="red">{{ form.errors.password1 }}</font></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.password2.label }}*:&nbsp;</td>
+            <td>{{ form.password2 }}</td>
+            <td><font color="red">{{ form.errors.password2 }}</font></td>
+        </tr>
+        <tr><td colspan="4"><br></td></tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.affiliation.label }}:&nbsp;</td>
+            <td>{{ form.affiliation }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.city.label }}:&nbsp;</td>
+            <td>{{ form.city }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.state.label }}:&nbsp;</td>
+            <td>{{ form.state }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.country.label }}:&nbsp;</td>
+            <td>{{ form.country }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.zip.label }}:&nbsp;</td>
+            <td>{{ form.zip }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.phone.label }}:&nbsp;</td>
+            <td>{{ form.phone }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.reference.label }}:&nbsp;</td>
+            <td>{{ form.reference }}</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.purpose.label }}:&nbsp;</td>
+            <td>{{ form.purpose }}</td>
+            <td></td>
+        </tr>
+        <tr class="blank_row">
+            <td colspan="4"></td>
+        </tr>
+    </table>
   {% if redirect_field_value %}
   <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
   {% endif %}

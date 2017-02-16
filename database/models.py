@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User as Users
 from jsonfield import JSONField
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 queue = 0
 
@@ -697,11 +698,15 @@ class UserProfile(models.Model):
     phone = models.CharField(blank=True, max_length=100)
     reference = models.CharField(blank=True, max_length=100)
     purpose = models.CharField(blank=True, max_length=100)
-
-    # current select token (create new token upon selecting new data, invalidates current analysis and norm pages
     dataID = models.CharField(blank=True, max_length=200, default="TEMPID")
 
+    @receiver(post_save, sender=Users)
+    def create_user_profile(sender, instance, created, **kwargs):
+        if created:
+            UserProfile.objects.create(user=instance)
 
-
+    @receiver(post_save, sender=Users)
+    def save_user_profile(sender, instance, **kwargs):
+        instance.profile.save()
 
 

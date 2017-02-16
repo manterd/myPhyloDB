@@ -18,7 +18,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username'
 # ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 
 # The user is required to hand over an e-mail address when signing up.
-ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_EMAIL_REQUIRED = True
 
 # Determines the e-mail verification method during signup. When set to
 # "mandatory" the user is blocked from logging in until the email
@@ -63,7 +63,7 @@ ACCOUNT_USERNAME_REQUIRED = True
 # ACCOUNT_PASSWORD_INPUT_RENDER_VALUE = False
 
 # An integer specifying the minimum password length.
-# ACCOUNT_PASSWORD_MIN_LENGTH = 6
+ACCOUNT_PASSWORD_MIN_LENGTH = 1
 
 # Request e-mail address from 3rd party account provider? E.g. using OpenID
 # AX, or the Facebook 'email' permission.

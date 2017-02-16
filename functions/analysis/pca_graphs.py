@@ -382,7 +382,7 @@ def getPCA(request, stops, RID, PID):
 
                     # scale and remove non-significant objects
                     r.assign("contribVal1", contribVal1)
-                    r('efDF.adj <- efDF[efDF$p.adj <= paste(contribVal1),]')
+                    r('efDF.adj <- efDF[efDF$p <= paste(contribVal1),]')
                     r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                     r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
                     efDF_adj = r.get("efDF.adj")
@@ -398,7 +398,7 @@ def getPCA(request, stops, RID, PID):
                         r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='blue')")
 
                 if quantFields and addContrib2 == 'yes':
-                    r('efDF <- as.data.frame(ef2$vectors$arrows*sqrt(ef2$vectors$r))')
+                    r('efDF <- data.frame(ef2$vectors$arrows*sqrt(ef2$vectors$r))')
                     r('efDF$p <- ef2$vectors$pvals')
                     r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
                     r('efDF$p.adj <- pvals.adj')
@@ -406,10 +406,10 @@ def getPCA(request, stops, RID, PID):
 
                     # scale and remove non-significant objects
                     r.assign("contribVal2", contribVal2)
-                    r('efDF.adj <- efDF[efDF$p.adj <= paste(contribVal2),]')
+                    r('efDF.adj <- efDF[efDF$p < paste(contribVal2),]')
                     r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
                     r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
-                    efDF_adj = r.get("efDF.adj")
+                    efDF_adj = r.get('efDF.adj')
 
                     # send data to result string
                     envfit = r("efDF")

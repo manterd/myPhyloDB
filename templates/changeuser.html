@@ -1,4 +1,4 @@
-{% extends "registration/registration_base.html" %}
+{% extends "site_base.html" %}
 {% load i18n %}
 
 {% block title %}{% trans "Update account details" %}{% endblock %}
@@ -13,7 +13,6 @@
     <script type="text/javascript">
         function myFunction() {
             $("#submit").css("background-color", "yellow").attr("value", "updating...");
-
         }
     </script>
 {% endblock javascript %}
@@ -23,43 +22,35 @@
 <form method="post" action="{% url 'updateInfo' %}">
     {% csrf_token %}
 
-    <table style="background-color: white">
-        {% if error != "none" %}
-        <tr>
-            <td style="width: 40px"></td>
-            <td class="error_message">
-                    <ul>
-                        <li><span style="color: red">Error: </span>{{ error }}</li>
-                    </ul>
-            </td>
-            <td></td>
-        </tr>
-        <tr class="blank_row">
-            <td colspan="4"></td>
-        </tr>
-        {% endif %}
-    </table>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 
     <h2>Change your profile info:</h2>
     <table style="background-color: white">
         <tr>
             <td style="width: 10px"></td>
-            <td style="text-align: right">{{ form.email.label }}:&nbsp;</td>
-            <td>{{ form.email }}</td>
-            <td></td>
-        </tr>
-        <tr>
-            <td style="width: 10px"></td>
-            <td style="text-align: right">{{ form.firstName.label }}:&nbsp;</td>
+            <td style="text-align: right">{{ form.firstName.label }}*:&nbsp;</td>
             <td>{{ form.firstName }}</td>
             <td></td>
         </tr>
         <tr>
             <td style="width: 10px"></td>
-            <td style="text-align: right">{{ form.lastName.label }}:&nbsp;</td>
+            <td style="text-align: right">{{ form.lastName.label }}*:&nbsp;</td>
             <td>{{ form.lastName }}</td>
             <td></td>
         </tr>
+        <tr>
+            <td style="width: 10px"></td>
+            <td style="text-align: right">{{ form.email.label }}*:&nbsp;</td>
+            <td>{{ form.email }}</td>
+            <td></td>
+        </tr>
+        <tr><td colspan="4"><br></td></tr>
         <tr>
             <td style="width: 10px"></td>
             <td style="text-align: right">{{ form.affiliation.label }}:&nbsp;</td>
@@ -119,8 +110,8 @@
         </tr>
         <tr>
             <td style="width: 10px"></td>
-            <td style="text-align: right">{{ form.password1.label }}:&nbsp;</td>
-            <td>{{ form.password1 }}</td>
+            <td style="text-align: right">Password:&nbsp;</td>
+            <td>{{ form.pword }}</td>
             <td></td>
         </tr>
         <tr>
@@ -137,16 +128,16 @@
 
 <script type="text/javascript">
     document.getElementById("id_email").value = "{{ user.email }}";
-    document.getElementById("id_firstName").value = "{{ user.userprofile.firstName }}";
-    document.getElementById("id_lastName").value = "{{ user.userprofile.lastName }}";
-    document.getElementById("id_affiliation").value = "{{ user.userprofile.affiliation }}";
-    document.getElementById("id_city").value = "{{ user.userprofile.city }}";
-    document.getElementById("id_state").value = "{{ user.userprofile.state }}";
-    document.getElementById("id_country").value = "{{ user.userprofile.country }}";
-    document.getElementById("id_zip").value = "{{ user.userprofile.zip }}";
-    document.getElementById("id_phone").value = "{{ user.userprofile.phone }}";
-    document.getElementById("id_reference").value = "{{ user.userprofile.reference }}";
-    document.getElementById("id_purpose").value = "{{ user.userprofile.purpose }}";
+    document.getElementById("id_firstName").value = "{{ user.first_name }}";
+    document.getElementById("id_lastName").value = "{{ user.last_name }}";
+    document.getElementById("id_affiliation").value = "{{ user.profile.affiliation }}";
+    document.getElementById("id_city").value = "{{ user.profile.city }}";
+    document.getElementById("id_state").value = "{{ user.profile.state }}";
+    document.getElementById("id_country").value = "{{ user.profile.country }}";
+    document.getElementById("id_zip").value = "{{ user.profile.zip }}";
+    document.getElementById("id_phone").value = "{{ user.profile.phone }}";
+    document.getElementById("id_reference").value = "{{ user.profile.reference }}";
+    document.getElementById("id_purpose").value = "{{ user.profile.purpose }}";
 </script>
 
 

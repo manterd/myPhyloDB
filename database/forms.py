@@ -1,8 +1,7 @@
 from django import forms
 from django_countries import countries
 from localflavor.us.us_states import STATE_CHOICES
-#from registration.forms import RegistrationForm
-
+from uuid import uuid4
 from functions.utils.utils_df import MultiFileField
 
 
@@ -83,8 +82,9 @@ myCountries.insert(0, ('No data', '(not selected)'))
 
 
 class UserRegForm(forms.Form):
-    firstName = forms.CharField(label='First Name', required=False)
-    lastName = forms.CharField(label='Last Name', required=False)
+    firstName = forms.CharField(label='First Name', required=True)
+    lastName = forms.CharField(label='Last Name', required=True)
+    email = forms.EmailField(label='Email', required=True)
     affiliation = forms.CharField(label='Affiliation', required=False)
     city = forms.CharField(label='City', required=False)
     state = forms.ChoiceField(widget=forms.Select, choices=myStates)
@@ -93,16 +93,26 @@ class UserRegForm(forms.Form):
     phone = forms.CharField(label='Phone', required=False)
     reference = forms.ChoiceField(widget=forms.Select, choices=reference_choices)
     purpose = forms.ChoiceField(widget=forms.Select, choices=purpose_choices)
+    pword = forms.CharField(label="Password", widget=forms.PasswordInput)
 
     def signup(self, request, user):
-        user.firstName = self.cleaned_data['firstName']
-        user.lastName = self.cleaned_data['lastName']
-        user.affiliation = self.cleaned_data['affiliation']
-        user.city = self.cleaned_data['city']
-        user.state = self.cleaned_data['state']
-        user.country = self.cleaned_data['country']
-        user.zip = self.cleaned_data['zip']
-        user.phone = self.cleaned_data['phone']
-        user.reference = self.cleaned_data['reference']
-        user.purpose = self.cleaned_data['purpose']
-        user.save()
+        form = UserRegForm(request.POST or None, request.FILES or None)
+        if form.is_valid():
+            user.first_name = self.cleaned_data['firstName']
+            user.last_name = self.cleaned_data['lastName']
+            user.email = self.cleaned_data['email']
+            user.save()
+
+            up = user.profile
+            up.firstName = self.cleaned_data['firstName']
+            up.lastName = self.cleaned_data['lastName']
+            up.affiliation = self.cleaned_data['affiliation']
+            up.city = self.cleaned_data['city']
+            up.state = self.cleaned_data['state']
+            up.country = self.cleaned_data['country']
+            up.zip = self.cleaned_data['zip']
+            up.phone = self.cleaned_data['phone']
+            up.reference = self.cleaned_data['reference']
+            up.purpose = self.cleaned_data['purpose']
+            up.dataID = uuid4().hex
+            up.save()

@@ -13,7 +13,6 @@
 
 {% block menu_item %}{% endblock menu_item %}
 
-{% comment %}
 {% block javascript %}
     <script type="text/javascript">
         var num = 0;
@@ -86,10 +85,11 @@
     </script>
 {% endblock javascript %}
 
+
 {% block my_content %}
     <h2>Account Management:</h2>
     <ul>
-        <a class="Offmouse" href="{% url 'auth_password_change' %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 0px">Click here to change your password</li></a>
+        <a class="Offmouse" href="{% url 'account_change_password' %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 0px">Click here to change your password</li></a>
         <br>
         <a class="Offmouse" href="{% url 'changeuser' %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 0px">Click here to change/update your user profile</li></a>
     </ul>
@@ -115,4 +115,3 @@
     <input type="submit" id="addNames" value="Submit changes" onclick="submitNames()">
     <br><br>
 {% endblock my_content %}
-{% endcomment %}

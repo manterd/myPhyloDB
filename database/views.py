@@ -1,5 +1,6 @@
 import ast
 import datetime
+from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -25,7 +26,7 @@ from uuid import uuid4
 import zipfile
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
-    UploadForm6, UploadForm7, UploadForm8, UploadForm9
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm
 
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, PICRUSt, UserProfile, \
@@ -2387,7 +2388,6 @@ def profile(request):
     )
 
 
-'''
 def changeuser(request):
     return render_to_response(
         'changeuser.html',
@@ -2399,24 +2399,42 @@ def changeuser(request):
 
 def updateInfo(request):
     stuff = request.POST
-    pword = stuff['password1']
+    user = request.user
+    pword = stuff['pword']
     error = "none"
-    verified = check_password(pword, request.user.password)
-    if verified:
-        thisUser = request.user.profile
-        for key in stuff:
-            thisUser.__setattr__(key, stuff[key])
-        thisUser.save()
-    else:
-        error = "Incorrect password"
+    try:
+        verified = check_password(pword, user.password)
+
+        if verified:
+            user.first_name = stuff['firstName']
+            user.last_name = stuff['lastName']
+            user.email = stuff['email']
+
+            up = request.user.profile
+            up.firstName = stuff['firstName']
+            up.lastName = stuff['lastName']
+            up.affiliation = stuff['affiliation']
+            up.city = stuff['city']
+            up.state = stuff['state']
+            up.country = stuff['country']
+            up.zip = stuff['zip']
+            up.phone = stuff['phone']
+            up.reference = stuff['reference']
+            up.purpose = stuff['purpose']
+            up.dataID = uuid4().hex
+            user.save()
+            up.save()
+            messages.success(request, 'Your profile was updated.')
+        else:
+            messages.error(request, 'Password did not match')
+    except Exception:
+        messages.error(request, 'Something went wrong. Please check your entered values')
 
     return render_to_response(
         'changeuser.html',
-        {"form": UserRegForm,
-            "error": error},
+        {"form": UserRegForm, "error": error},
         context_instance=RequestContext(request)
     )
-'''
 
 
 def addPerms(request):

@@ -2,7 +2,6 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 from database import views
-#import database.regbackend
 
 
 admin.site.site_url = '/myPhyloDB/'
@@ -41,6 +40,6 @@ urlpatterns = [
     url(r'^myPhyloDB/remPerms/$', views.remPerms, name='remPerms'),
 
     url(r'^myPhyloDB/accounts/profile/$', views.profile, name='profile'),
-    #url(r'^accounts/changeuser/$', views.changeuser, name='changeuser')
-    #url(r'^myPhyloDB/updateInfo/$', views.updateInfo, name='updateInfo'),
+    url(r'^myPhyloDB/accounts/changeuser/$', views.changeuser, name='changeuser'),
+    url(r'^myPhyloDB/accounts/updateInfo/$', views.updateInfo, name='updateInfo'),
 ]
