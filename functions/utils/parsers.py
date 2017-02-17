@@ -20,7 +20,8 @@ import json
 import subprocess
 from uuid import uuid4
 
-from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
+from database.models import Project, Reference, \
+    Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile
 
 import functions
@@ -116,7 +117,7 @@ def status(request):
     global last, mothurStat
     if request.is_ajax():
         RID = request.GET['all']
-        queuePos = functions.dataqueue.datstat(RID)
+        queuePos = functions.datstat(RID)
         dict = {}
         if queuePos == 0:
             # check for duplicate output
@@ -226,10 +227,14 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
 
         if not Reference.objects.filter(refid=refid).exists():
             project = Project.objects.get(projectid=p_uuid)
-            Reference.objects.create(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
+            Reference.objects.create(
+                refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref,
+                templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
         else:
             project = Project.objects.get(projectid=p_uuid)
-            Reference.objects.filter(refid=refid).update(refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref, templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
+            Reference.objects.filter(refid=refid).update(
+                refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref,
+                templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
 
     except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)

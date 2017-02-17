@@ -15,7 +15,7 @@ from analysis.wgcna_graphs import getWGCNA
 
 ### queues folder
 from queues.queue import funcCall, getBase, process, removeRID, setBase, stop
-from queues.dataqueue import dataprocess, datfuncCall, datstop
+from queues.dataqueue import dataprocess, datfuncCall, datstop, datstat
 
 
 ### utils folder
@@ -32,6 +32,6 @@ from utils.trees import getProjectTree, getProjectTreeChildren, \
     getPermissionTree, makeReproTree, makeUpdateTree
 from utils.utils_df import cleanup, handle_uploaded_file, multidict, remove_proj, remove_list, analysisThreads, \
     getViewProjects, getEditProjects, getMetaDF, transformDF, taxaProfileDF, exploding_panda, \
-    wOdum, getRawData, removeFiles
+    wOdum, getRawData, removeFiles, excel_to_dict
 from utils.utils_kegg import getFullKO, getFullNZ, getFullTaxonomy, \
     getTaxaDF, getKeggDF, getNZDF, filterDF
