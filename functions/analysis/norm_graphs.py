@@ -1,6 +1,7 @@
 import datetime
 from django.http import HttpResponse
 from django_pandas.io import read_frame
+import json
 import logging
 from numpy import *
 import numpy as np
@@ -8,7 +9,6 @@ from numpy.random.mtrand import RandomState
 import pandas as pd
 import pickle
 from pyper import *
-import json
 import zipfile
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
@@ -428,7 +428,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     countDF = pd.DataFrame()
     DESeq_error = 'no'
     if meth == 1 or meth == 4:
-        countDF = df2.reset_index(drop=True)
+        countDF = df2.copy()
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stopList[PID] == RID:
@@ -443,7 +443,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             curSamples[RID] = 0
             totSamples[RID] = len(mySet)
 
-            myArr = df2[mySet].as_matrix()
+            myArr = df2.loc[:, mySet].as_matrix()
             probArr = myArr.T
             finalArr = rarefaction_remove(probArr, RID, reads=reads, iters=iters)
             for i in xrange(len(mySet)):
@@ -467,7 +467,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             curSamples[RID] = 0
             totSamples[RID] = len(mySet)
 
-            myArr = df2[mySet].as_matrix()
+            myArr = df2.loc[:, mySet].as_matrix()
             probArr = myArr.T
             finalArr = rarefaction_keep(probArr, RID, reads=reads, iters=iters, myLambda=Lambda)
             for i in xrange(len(mySet)):
@@ -606,7 +606,11 @@ def rarefaction_remove(M, RID, reads=0, iters=0):
                 myArr = binArr
             else:
                 myArr = np.vstack((myArr, binArr))
-        Mrarefied[i] = np.mean(myArr, axis=0)
+
+        if iters > 1:
+            Mrarefied[i] = np.mean(myArr, axis=0)
+        else:
+            Mrarefied[i] = myArr
         curSamples[RID] += 1
         functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
@@ -631,7 +635,10 @@ def rarefaction_keep(M, RID, reads=0, iters=0, myLambda=0.1):
             else:
                 myArr = np.vstack((myArr, binArr))
 
-        Mrarefied[i] = np.mean(myArr, axis=0)
+        if iters > 1:
+            Mrarefied[i] = np.mean(myArr, axis=0)
+        else:
+            Mrarefied[i] = myArr
         curSamples[RID] += 1
         functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
@@ -669,4 +676,3 @@ def getBiom(request):
         myDict['name'] = str(fileName)
         res = json.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
-

@@ -30,9 +30,8 @@ Install required python packages to virtual environment
 	workon myphylodb	#to enter virtual environment
 	pip install cherrypy
 	pip install django
-	pip install django-extensions
 	pip install django-pandas
-	pip install django-registration-redux
+	pip install django-allauth
 	pip install jsonfield
 	pip install natsort
 	pip install pandas==0.16.0

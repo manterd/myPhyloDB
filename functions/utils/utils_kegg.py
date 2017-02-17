@@ -356,7 +356,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         elif DepVar == 3:
             profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='diversity')
         elif DepVar == 4:
-            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='16S_abund')
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='abund_16S')
 
         sampleList = profileDF.columns.values.tolist()
         taxaDF = pd.DataFrame()
@@ -1082,7 +1082,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         elif DepVar == 3:
             profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='diversity')
         elif DepVar == 4:
-            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='16S_abund')
+            profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='abund_16S')
 
         sampleList = profileDF.columns.values.tolist()
         taxaDF = pd.DataFrame()

@@ -215,13 +215,14 @@ def getRF(request, stops, RID, PID):
                 # Wrangle data into R
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
                 rankNameDF.sort(columns='rank_id', inplace=True)
-                rankNameDF['name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
+                rankNameDF.loc[:, 'name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
                 r.assign('rankNames', rankNameDF.name_id.values)
 
                 r.assign("treeType", treeType)
                 r.assign("data", count_rDF)
                 r("names(data) <- rankNames")
 
+                # TODO: fix pandas deprecation warning...
                 myList = list(metaDF.select_dtypes(include=['object']).columns)
                 for i in myList:
                     metaDF[i] = metaDF[i].str.replace(' ', '_')
@@ -677,7 +678,7 @@ def getRF(request, stops, RID, PID):
 
                 merger = PdfFileMerger()
                 for filename in pdf_files:
-                    merger.append(PdfFileReader(os.path.join(path, filename), 'rb'))
+                    merger.append(PdfFileReader(file(os.path.join(path, filename), 'rb')))
 
                 merger.write(finalFile)
 

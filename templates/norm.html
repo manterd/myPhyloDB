@@ -160,44 +160,43 @@
             });
         }
         function getTab() {
-            $("#TabButton").css("background-color", "yellow").val("Creating File!");
+            $("#TabButton").css("background-color", "yellow").val("Creating file...");
             var ul = document.getElementById("message");
             var li = document.createElement("li");
-            li.style.fontcolor('red');
             li.appendChild(document.createTextNode("This may take several minutes..."));
             ul.appendChild(li);
             $.ajax({
                 url: '/myPhyloDB/getTab/',
                 type: 'GET',
                 dataType: 'json',
-                data: {
-                    all: RID
-                },
                 success: function(data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     window.location.href = obj['name'];
-                    $("#TabButton").css("background-color", "green").val("Done!");
-                    ul.empty();
+                    $("#TabButton").css("background-color", "green").val("Tabular");
+                    ul.removeChild(li);
                 }
             });
         }
         function getBiom() {
-            $("#BiomButton").css("background-color", "yellow").val("Creating File!");
-            $.ajax({
-                url: '/myPhyloDB/getBiom/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
-                success: function(data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    window.open(obj['name'], 'Download');
-                    $("#BiomButton").css("background-color", "green").val("Done!");
-                }
-            });
+            $("#BiomButton").css("background-color", "yellow").val("Creating file...");
+            var request = function() {
+                $.ajax({
+                    url: '/myPhyloDB/getBiom/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        var result = JSON.stringify(data);
+                        var obj = $.parseJSON(result);
+                        var filename = obj['name'];
+                        $("a#download").attr({
+                            href: filename
+                        }).get(0).click();
+                        $("#BiomButton").css("background-color", "green").val("BIOM");
+                    }
+                });
+            };
+            request('/echo/json/', 'request.txt');
         }
         function runAnalysis() {
             if(running == true) {
@@ -363,7 +362,8 @@
         <div id="message" style="margin-left: 15px;">
             <ul></ul>
         </div>
-        <iframe id="invisible" style="display:none;"></iframe>
+
+        <a id="download" download href="" style="display:none">download</a>
 
     </div>
     <br><br>

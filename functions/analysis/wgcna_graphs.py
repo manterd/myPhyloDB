@@ -970,7 +970,7 @@ def getWGCNA(request, stops, RID, PID):
 
                 merger = PdfFileMerger()
                 for filename in pdf_files:
-                    merger.append(PdfFileReader(os.path.join(path, filename), 'rb'))
+                    merger.append(PdfFileReader(file(os.path.join(path, filename), 'rb')))
 
                 merger.write(finalFile)
 

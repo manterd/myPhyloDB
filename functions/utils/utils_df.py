@@ -629,6 +629,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     richDF.set_index('sampleid', inplace=True)
 
     diversityDF = -df.div(df.sum(axis=1).astype(float), axis=0) * np.log(df.div(df.sum(axis=1).astype(float), axis=0))
+    diversityDF[np.isinf(diversityDF)] = np.nan
     diversityDF.fillna(0.0, inplace=True)
     diversityDF.reset_index(drop=False, inplace=True)
     diversityDF.rename(columns={'index': 'sampleid'}, inplace=True)
