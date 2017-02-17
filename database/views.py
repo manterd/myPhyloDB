@@ -25,7 +25,7 @@ from uuid import uuid4
 import zipfile
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
-    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm, UserUpdateForm
 
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, PICRUSt, UserProfile, \
@@ -2392,7 +2392,7 @@ def changeuser(request):
     return render(
         request,
         'changeuser.html',
-        {"form": UserRegForm,
+        {"form": UserUpdateForm,
             "error": "none"}
     )
 

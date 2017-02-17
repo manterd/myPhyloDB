@@ -371,7 +371,7 @@ def getFullTaxonomy(level, id):
     elif level == 9:
         record = OTU_99.objects.all().filter(otuid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'species_id__speciesName', 'otuName')
 
-    return record
+    return record  # memory issue?
 
 
 def getFullKO(level, id):

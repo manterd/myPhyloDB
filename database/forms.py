@@ -93,9 +93,47 @@ class UserRegForm(forms.Form):
     phone = forms.CharField(label='Phone', required=False)
     reference = forms.ChoiceField(widget=forms.Select, choices=reference_choices)
     purpose = forms.ChoiceField(widget=forms.Select, choices=purpose_choices)
-    pword = forms.CharField(label="Password", widget=forms.PasswordInput)
 
     def signup(self, request, user):
+        print("HEY WAIT A SECOND")
+        form = UserRegForm(request.POST or None, request.FILES or None)
+        if form.is_valid():
+            user.first_name = self.cleaned_data['firstName']
+            user.last_name = self.cleaned_data['lastName']
+            user.email = self.cleaned_data['email']
+            user.save()
+
+            up = user.profile
+            up.firstName = self.cleaned_data['firstName']
+            up.lastName = self.cleaned_data['lastName']
+            up.affiliation = self.cleaned_data['affiliation']
+            up.city = self.cleaned_data['city']
+            up.state = self.cleaned_data['state']
+            up.country = self.cleaned_data['country']
+            up.zip = self.cleaned_data['zip']
+            up.phone = self.cleaned_data['phone']
+            up.reference = self.cleaned_data['reference']
+            up.purpose = self.cleaned_data['purpose']
+            up.dataID = uuid4().hex
+            up.save()
+
+
+class UserUpdateForm(forms.Form):
+    firstName = forms.CharField(label='First Name', required=True)
+    lastName = forms.CharField(label='Last Name', required=True)
+    email = forms.EmailField(label='Email', required=True)
+    affiliation = forms.CharField(label='Affiliation', required=False)
+    city = forms.CharField(label='City', required=False)
+    state = forms.ChoiceField(widget=forms.Select, choices=myStates)
+    country = forms.ChoiceField(widget=forms.Select, choices=myCountries)
+    zip = forms.CharField(label='Zip', required=False)
+    phone = forms.CharField(label='Phone', required=False)
+    reference = forms.ChoiceField(widget=forms.Select, choices=reference_choices)
+    purpose = forms.ChoiceField(widget=forms.Select, choices=purpose_choices)
+    pword = forms.CharField(label="Password", widget=forms.PasswordInput)
+
+    def update(self, request, user):
+        print("HEY WAIT TWO SECONDS")
         form = UserRegForm(request.POST or None, request.FILES or None)
         if form.is_valid():
             user.first_name = self.cleaned_data['firstName']
