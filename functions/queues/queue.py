@@ -120,7 +120,7 @@ def process(pid):
                 if funcName == "getPCA":
                     recent[RID] = functions.getPCA(request, stopList, RID, pid)
                 if funcName == "getPCoA":
-                    recent[RID] = functions.pcoa_graphs.getPCoA(request, stopList, RID, pid)
+                    recent[RID] = functions.getPCoA(request, stopList, RID, pid)
                 if funcName == "getRF":
                     recent[RID] = functions.getRF(request, stopList, RID, pid)
                 if funcName == "getDiffAbund":

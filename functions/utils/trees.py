@@ -60,7 +60,7 @@ def getProjectTreeChildren(request):
 
 def getSampleCatTree(request):
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-    path = str(myDir) + 'usr_sel_samples.pkl'
+    path = str(myDir) + 'usr_norm_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
 
@@ -259,7 +259,7 @@ def getSampleCatTree(request):
 def getSampleCatTreeChildren(request):
     if request.is_ajax():
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_sel_samples.pkl'
+        path = str(myDir) + 'usr_norm_samples.pkl'
         with open(path, 'rb') as f:
             selected = pickle.load(f)
 
@@ -495,7 +495,7 @@ def getSampleCatTreeChildren(request):
 
 def getSampleQuantTree(request):
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-    path = str(myDir) + 'usr_sel_samples.pkl'
+    path = str(myDir) + 'usr_norm_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
 
@@ -693,7 +693,7 @@ def getSampleQuantTree(request):
 def getSampleQuantTreeChildren(request):
     if request.is_ajax():
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_sel_samples.pkl'
+        path = str(myDir) + 'usr_norm_samples.pkl'
         with open(path, 'rb') as f:
             selected = pickle.load(f)
 
@@ -936,7 +936,7 @@ def getSampleQuantTreeChildren(request):
 
 def getTaxaTree(request):
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-    path = str(myDir) + 'usr_sel_samples.pkl'
+    path = str(myDir) + 'usr_norm_samples.pkl'
     with open(path, 'rb') as f:
         selected = pickle.load(f)
 
@@ -973,7 +973,7 @@ def getTaxaTree(request):
 def getTaxaTreeChildren(request):
     if request.is_ajax():
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_sel_samples.pkl'
+        path = str(myDir) + 'usr_norm_samples.pkl'
         with open(path, 'rb') as f:
             selected = pickle.load(f)
 

@@ -91,6 +91,7 @@ def getNorm(request, RID, stopList, PID):
             result = ''
             result += 'Data Normalization:\n'
             newList = []
+            counts = counts.filter(sampleid__in=subList)
             if NormMeth == 2:
                 for i in counts:
                     if int(i.reads) >= NormReads:
@@ -105,6 +106,12 @@ def getNorm(request, RID, stopList, PID):
                 myDict['error'] = "Error with Normalization!\nYour sub-sample size has caused all samples to be removed!"
                 res = json.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
+            else:
+                myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+                path = str(myDir) + 'usr_norm_samples.pkl'
+
+                with open(path, 'wb') as f:
+                    pickle.dump(newList, f)
 
             metaDF = UnivMetaDF(newList, RID, stopList, PID)
 

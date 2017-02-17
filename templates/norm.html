@@ -161,6 +161,11 @@
         }
         function getTab() {
             $("#TabButton").css("background-color", "yellow").val("Creating File!");
+            var ul = document.getElementById("message");
+            var li = document.createElement("li");
+            li.style.fontcolor('red');
+            li.appendChild(document.createTextNode("This may take several minutes..."));
+            ul.appendChild(li);
             $.ajax({
                 url: '/myPhyloDB/getTab/',
                 type: 'GET',
@@ -173,11 +178,12 @@
                     var obj = $.parseJSON(result);
                     window.location.href = obj['name'];
                     $("#TabButton").css("background-color", "green").val("Done!");
+                    ul.empty();
                 }
             });
         }
         function getBiom() {
-            $("#TabButton").css("background-color", "yellow").val("Creating File!");
+            $("#BiomButton").css("background-color", "yellow").val("Creating File!");
             $.ajax({
                 url: '/myPhyloDB/getBiom/',
                 type: 'GET',
@@ -188,10 +194,7 @@
                 success: function(data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    window.open(
-                        obj['name'],
-                        'Download'
-                    );
+                    window.open(obj['name'], 'Download');
                     $("#BiomButton").css("background-color", "green").val("Done!");
                 }
             });
@@ -357,6 +360,11 @@
                 </td>
             </tr>
         </table>
+        <div id="message" style="margin-left: 15px;">
+            <ul></ul>
+        </div>
+        <iframe id="invisible" style="display:none;"></iframe>
+
     </div>
     <br><br>
 
