@@ -4,6 +4,7 @@ import json
 import multiprocessing as mp
 from time import sleep, time
 import threading
+import gc
 
 import config.local_cfg
 from database.models import UserProfile
@@ -184,6 +185,7 @@ def funcCall(request):
             statDict.pop(RID, 0)
             stopDict.pop(RID, 0)
             removeRID(RID)
+            gc.collect()  # attempting to cleanup memory leaks since processes technically are still there
             # results on anova quant not working occasionally, depends on categorical selection
             return results
         except KeyError:

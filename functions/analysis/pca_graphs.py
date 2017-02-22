@@ -402,7 +402,7 @@ def getPCA(request, stops, RID, PID):
                     r('efDF$p <- ef2$vectors$pvals')
                     r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
                     r('efDF$p.adj <- pvals.adj')
-                    r('efDF$label <- quantFields')
+                    r('efDF$label <- unlist(quantFields)')
 
                     # scale and remove non-significant objects
                     r.assign("contribVal2", contribVal2)

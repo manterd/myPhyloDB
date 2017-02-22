@@ -1,3 +1,4 @@
+import sys
 import ast
 import datetime
 from django import db
@@ -201,6 +202,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         elif DepVar == 10:
             finalDF = finalDF.groupby(wantedList)[['abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']].sum()
         finalDF.reset_index(drop=False, inplace=True)
+
         return finalDF, missingList
 
     except Exception:
@@ -343,6 +345,8 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         functions.setBase(RID, curStep)
 
         picrustDF.drop('geneCount', axis=1, inplace=True)
+        picrustDF = picrustDF[picrustDF.columns[picrustDF.sum() > 0]]
+        levelList = picrustDF.columns.values.tolist()
         picrustDF[picrustDF > 0.0] = 1.0
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
@@ -381,30 +385,31 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        # rename columns with KEGG name
-        namesDict = {}
-        for level in levelList:
-            name = ''
-            if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=level).exists():
-                name = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=level).ko_lvl1_name
-            elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=level).exists():
-                name = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=level).ko_lvl2_name
-            elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=level).exists():
-                name = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=level).ko_lvl3_name
-            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=level).exists():
-                name = ko_entry.objects.using('picrust').get(ko_lvl4_id=level).ko_desc
-            else:
-                print str(level) + ' not found in database'
-            namesDict[level] = name
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        taxaDF.reset_index(drop=False, inplace=True)
 
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
+            namesDict = {}
+            for level in levelList:
+                name = ''
+                if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=level).exists():
+                    name = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=level).ko_lvl1_name
+                elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=level).exists():
+                    name = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=level).ko_lvl2_name
+                elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=level).exists():
+                    name = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=level).ko_lvl3_name
+                elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=level).exists():
+                    name = ko_entry.objects.using('picrust').get(ko_lvl4_id=level).ko_desc
+                else:
+                    print str(level) + ' not found in database'
+                namesDict[level] = name
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
             taxaDF.index.name = 'otuid'
             allDF = taxaDF.reset_index(drop=False, inplace=False)
             allDF.drop_duplicates(cols='otuid', take_last=True, inplace=True)
@@ -416,9 +421,12 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             allDF.fillna(value=0, inplace=True)
             recordDict = {}
             for id in allDF.otuid.tolist():
-                qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
-                record = ';'.join(qs[0])
-                recordDict[id] = record
+                try:
+                    qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
+                    record = ';'.join(qs[0])
+                    recordDict[id] = record
+                except:
+                    recordDict[id] = 'No data'
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
             order = ['otuid', 'Taxonomy'] + levelList
             allDF = allDF[order]
@@ -454,27 +462,8 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        finalDF['rank'] = ''
-        finalDF['rank_name'] = ''
-        for index, row in finalDF.iterrows():
-            if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl1'
-                finalDF.loc[index, 'rank_name'] = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=row['rank_id']).ko_lvl1_name
-            elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl2'
-                finalDF.loc[index, 'rank_name'] = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=row['rank_id']).ko_lvl2_name
-            elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl3'
-                finalDF.loc[index, 'rank_name'] = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=row['rank_id']).ko_lvl3_name
-            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl4'
-                finalDF.loc[index, 'rank_name'] = ko_entry.objects.using('picrust').get(ko_lvl4_id=row['rank_id']).ko_name
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        idList = functions.getFullKO(list(finalDF.rank_id.unique()))
+        finalDF['rank_name'] = finalDF['rank_id'].map(idList)
 
         return finalDF, allDF
 
@@ -1068,6 +1057,8 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         functions.setBase(RID, curStep)
 
         picrustDF.drop('geneCount', axis=1, inplace=True)
+        picrustDF = picrustDF[picrustDF.columns[picrustDF.sum() > 0]]
+        levelList = picrustDF.columns.values.tolist()
         picrustDF[picrustDF > 0.0] = 1.0
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
@@ -1105,32 +1096,34 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        # rename columns with KEGG name
-        namesDict = {}
-        for level in levelList:
-            name = ''
-            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=level).exists():
-                name = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=level).nz_lvl1_name
-            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=level).exists():
-                name = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=level).nz_lvl2_name
-            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=level).exists():
-                name = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=level).nz_lvl3_name
-            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=level).exists():
-                name = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=level).nz_lvl4_name
-            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=level).exists():
-                name = nz_entry.objects.using('picrust').get(nz_lvl5_id=level).nz_desc
-            else:
-                print str(level) + ' not found in database'
-            namesDict[level] = name
+        taxaDF.reset_index(drop=False, inplace=True)
 
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
+        # TODO: this does not work -- outid is now missing
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
+            namesDict = {}
+            for level in levelList:
+                name = ''
+                if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=level).exists():
+                    name = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=level).nz_lvl1_name
+                elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=level).exists():
+                    name = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=level).nz_lvl2_name
+                elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=level).exists():
+                    name = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=level).nz_lvl3_name
+                elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=level).exists():
+                    name = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=level).nz_lvl4_name
+                elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=level).exists():
+                    name = nz_entry.objects.using('picrust').get(nz_lvl5_id=level).nz_desc
+                else:
+                    print str(level) + ' not found in database'
+                namesDict[level] = name
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
             taxaDF.index.name = 'otuid'
             allDF = taxaDF.reset_index(drop=False, inplace=False)
             allDF.drop_duplicates(cols='otuid', take_last=True, inplace=True)
@@ -1142,9 +1135,12 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             allDF.fillna(value=0, inplace=True)
             recordDict = {}
             for id in allDF.otuid.tolist():
-                qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
-                record = ';'.join(qs[0])
-                recordDict[id] = record
+                try:
+                    qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
+                    record = ';'.join(qs[0])
+                    recordDict[id] = record
+                except:
+                    recordDict[id] = 'No data'
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
             order = ['otuid', 'Taxonomy'] + levelList
             allDF = allDF[order]
@@ -1180,30 +1176,8 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        finalDF['rank'] = ''
-        finalDF['rank_name'] = ''
-        for index, row in finalDF.iterrows():
-            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl1'
-                finalDF.loc[index, 'rank_name'] = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=row['rank_id']).nz_lvl1_name
-            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl2'
-                finalDF.loc[index, 'rank_name'] = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=row['rank_id']).nz_lvl2_name
-            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl3'
-                finalDF.loc[index, 'rank_name'] = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=row['rank_id']).nz_lvl3_name
-            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl4'
-                finalDF.loc[index, 'rank_name'] = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=row['rank_id']).nz_lvl4_name
-            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=row['rank_id']).exists():
-                finalDF.loc[index, 'rank'] = 'Lvl5'
-                finalDF.loc[index, 'rank_name'] = nz_entry.objects.using('picrust').get(nz_lvl5_id=row['rank_id']).nz_desc
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        idList = functions.getFullNZ(list(finalDF.rank_id.unique()))
+        finalDF['rank_name'] = finalDF['rank_id'].map(idList)
 
         return finalDF, allDF
 
@@ -1290,6 +1264,7 @@ def getFullTaxonomy(idList):
                                         qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
                                     else:
                                         qs = ('Not found', )
+
         record = ';'.join(qs[0])
         recordDict[id] = record
     return recordDict
@@ -1307,7 +1282,11 @@ def getFullKO(idList):
                 if ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).exists():
                     qs = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
                 else:
-                    qs = ('Not found', )
+                    if ko_entry.objects.using('picrust').all().filter(ko_lvl4_id=id).exists():
+                        qs = ko_entry.objects.using('picrust').all().filter(nz_lvl4_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_id_id__ko_lvl3_name', 'ko_desc')
+                    else:
+                        qs = ('Not found', )
+
         record = ';'.join(qs[0])
         recordDict[id] = record
     return recordDict
@@ -1328,7 +1307,11 @@ def getFullNZ(idList):
                     if nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=id).exists():
                         qs = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
                     else:
-                        qs = ('Not found', )
+                        if nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=id).exists():
+                            qs = nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_id_id__nz_lvl4_name', 'nz_desc')
+                        else:
+                            qs = ('Not found', )
+
         record = ';'.join(qs[0])
         recordDict[id] = record
     return recordDict

@@ -163,7 +163,7 @@ def getCatUnivData(request, RID, stops, PID):
                 print r("library(lsmeans)")
 
                 # group DataFrame by each taxa level selected
-                grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
+                grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
                 pValDict = {}
                 counter = 1
                 for name1, group1 in grouped1:
@@ -268,9 +268,8 @@ def getCatUnivData(request, RID, stops, PID):
 
                     pValDict[name1] = p_val
 
-                    result += 'Level: ' + str(name1[0]) + '\n'
-                    result += 'Name: ' + str(name1[1]) + '\n'
-                    result += 'ID: ' + str(name1[2]) + '\n'
+                    result += 'Name: ' + str(name1[0]) + '\n'
+                    result += 'ID: ' + str(name1[1]) + '\n'
                     if DepVar == 0:
                         result += 'Dependent Variable: Abundance' + '\n'
                     elif DepVar == 1:
@@ -301,7 +300,7 @@ def getCatUnivData(request, RID, stops, PID):
                 functions.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
                 functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
-                grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
+                grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
                 for name1, group1 in grouped1:
                     dataList = []
                     errorList = []
@@ -359,6 +358,7 @@ def getCatUnivData(request, RID, stops, PID):
                         seriesDict['type'] = 'column'
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
+                        print name1
 
                         seriesDict = {}
                         seriesDict['name'] = name1
@@ -704,7 +704,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 pValDict = {}
                 counter = 1
                 catLevels = len(set(catValues))
-                grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
+                grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
                 for name1, group1 in grouped1:
                     D = ''
                     r.assign("df", group1)
@@ -759,9 +759,8 @@ def getQuantUnivData(request, RID, stops, PID):
                     else:
                         pValDict[name1] = np.nan
 
-                    result += 'Level: ' + str(name1[0]) + '\n'
-                    result += 'Name: ' + str(name1[1]) + '\n'
-                    result += 'ID: ' + str(name1[2]) + '\n'
+                    result += 'Name: ' + str(name1[0]) + '\n'
+                    result += 'ID: ' + str(name1[1]) + '\n'
                     if DepVar == 0:
                         result += 'Dependent Variable: Abundance' + '\n'
                     elif DepVar == 1:
@@ -805,7 +804,7 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 shapes_idx = 0
                 seriesList = []
-                grouped1 = finalDF.groupby(['rank', 'rank_name', 'rank_id'])
+                grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
                 for name1, group1 in grouped1:
                     pValue = pValDict[name1]
 
@@ -871,7 +870,7 @@ def getQuantUnivData(request, RID, stops, PID):
                                 seriesDict = {}
                                 seriesDict['turboThreshold'] = 0
                                 seriesDict['type'] = 'scatter'
-                                seriesDict['name'] = str(name1[1]) + ": " + str(name2)
+                                seriesDict['name'] = str(name1[0]) + ": " + str(name2)
                                 seriesDict['data'] = dataList
 
                                 markerDict = {}
@@ -968,7 +967,7 @@ def getQuantUnivData(request, RID, stops, PID):
                             seriesDict = {}
                             seriesDict['turboThreshold'] = 0
                             seriesDict['type'] = 'scatter'
-                            seriesDict['name'] = str(name1[1])
+                            seriesDict['name'] = str(name1[0])
                             seriesDict['data'] = dataList
 
                             markerDict = {}
@@ -1065,7 +1064,7 @@ def getQuantUnivData(request, RID, stops, PID):
                                     seriesDict = {}
                                     seriesDict['turboThreshold'] = 0
                                     seriesDict['type'] = 'scatter'
-                                    seriesDict['name'] = str(name1[1]) + ": " + str(name2)
+                                    seriesDict['name'] = str(name1[0]) + ": " + str(name2)
                                     seriesDict['data'] = dataList
 
                                     markerDict = {}
@@ -1161,7 +1160,7 @@ def getQuantUnivData(request, RID, stops, PID):
                                 seriesDict = {}
                                 seriesDict['turboThreshold'] = 0
                                 seriesDict['type'] = 'scatter'
-                                seriesDict['name'] = str(name1[1])
+                                seriesDict['name'] = str(name1[0])
                                 seriesDict['data'] = dataList
 
                                 markerDict = {}
