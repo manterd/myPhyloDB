@@ -397,7 +397,7 @@ class Microbial(models.Model):
     phaeopigments_concentration = models.FloatField(blank=True, null=True)
     phosphate = models.FloatField(blank=True, null=True)
     phosplipid_fatt_acid_name = models.CharField(max_length=90, blank=True)
-    phosplipid_fatt_acid_concentration = models.FloatField(blank=True, null=True)
+    phosplipid_fatt_acid_conc = models.FloatField(blank=True, null=True)
     potassium = models.FloatField(blank=True, null=True)
     pressure = models.FloatField(blank=True, null=True)
     redox_potential = models.FloatField(blank=True, null=True)

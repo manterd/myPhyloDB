@@ -1,6 +1,4 @@
-import ast
 import datetime
-from django import db
 from django.db.models import Q
 from django.http import HttpResponse
 import logging
@@ -1188,51 +1186,6 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
-
-
-def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
-    db.close_old_connections()
-    total = len(otuList)
-    counter = 1
-    for otu in otuList:
-        try:
-            cell = picrustDF.at[otu, 'geneCount']
-            d = ast.literal_eval(cell)
-
-            for key in keggDict:
-                sum = 0.0
-                myList = keggDict[key]
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                for k in myList:
-                    if k in d:
-                        sum += d[k]
-                        if sum > 0:
-                            break
-
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID] == RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                picrustDF.at[otu, key] = sum
-            functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
-            counter += 1
-
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        except Exception:
-            pass
 
 
 def getFullTaxonomy(idList):
