@@ -1,9 +1,11 @@
+import sys
+import ast
 import datetime
-from django.db.models import Q
+from django import db
 from django.http import HttpResponse
+from django_pandas.io import read_frame
 import logging
 import numpy as np
-import operator
 import pandas as pd
 import json
 
@@ -325,26 +327,27 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         profileDF.set_index('otuid', drop=True, inplace=True)
 
         # get PICRUSt data for otu
-        counter = 1
-        curStep = functions.getBase(RID)
         otuList = pd.unique(profileDF.index.ravel().tolist())
-        picrustDF = pd.DataFrame(index=otuList)
-        for k, v in koDict.iteritems():
-            query = reduce(operator.or_, (Q(geneCount__contains=item) for item in v))
-            qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList).filter(query).values_list('otuid', flat=True)
-            if qs:
-                df = pd.DataFrame(index=list(qs))
-                df[k] = 1.0
-                picrustDF = pd.merge(picrustDF, df, left_index=True, right_index=True, how='outer')
-            else:
-                picrustDF[k] = 0.0
-            functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...pathway ' + str(counter) + ' out of ' +
-                              str(len(koDict.keys())) + ' is finished!')
-            counter += 1
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
+        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
 
+        rows, cols = picrustDF.shape
+        levelList = koDict.keys()
+        emptyArr = np.zeros((rows, len(levelList)))
+        emptyDF = pd.DataFrame(emptyArr, columns=levelList)
+
+        picrustDF = pd.merge(picrustDF, emptyDF, left_index=True, right_index=True, how='inner')
+        picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
+        picrustDF.set_index('otuid', drop=True, inplace=True)
+
+        curStep = functions.getBase(RID)
+        sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
         functions.setBase(RID, curStep)
-        picrustDF.fillna(value=0, inplace=True)
+
+        picrustDF.drop('geneCount', axis=1, inplace=True)
+        picrustDF = picrustDF[picrustDF.columns[picrustDF.sum() > 0]]
         levelList = picrustDF.columns.values.tolist()
+        picrustDF[picrustDF > 0.0] = 1.0
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
         profileDF.reset_index(drop=False, inplace=True)
@@ -382,8 +385,6 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        taxaDF.reset_index(drop=False, inplace=True)
-
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
             namesDict = {}
@@ -411,24 +412,22 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             allDF.rename(columns={'index': 'otuid'}, inplace=True)
             allDF.dropna(axis=1, how='any', inplace=False)
             allDF = allDF[(allDF.sum(axis=1) != 0)]
+
             for i in levelList:
                 allDF[i] = allDF[i] / allDF[i]
             allDF.fillna(value=0, inplace=True)
-
             recordDict = {}
             for id in allDF.otuid.tolist():
                 try:
                     qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
-                    record = ';'.join(qs[0])
+                    record = '|'.join(qs[0])
                     recordDict[id] = record
                 except:
                     recordDict[id] = 'No data'
-
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
             order = ['otuid', 'Taxonomy'] + levelList
             allDF = allDF[order]
             allDF.rename(columns=namesDict, inplace=True)
-
         else:
             allDF = ''
 
@@ -460,7 +459,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        idList = functions.getFullKO(levelList)
+        idList = functions.getFullKO(list(finalDF.rank_id.unique()))
         finalDF['rank_name'] = finalDF['rank_id'].map(idList)
 
         return finalDF, allDF
@@ -485,45 +484,45 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
                     if key == 'Level1':
                         nzList = nz_entry.objects.using('picrust').filter(nz_lvl1_id_id=keggList).values_list('nz_orthology', flat=True)
                         if nzList:
-                            nzDict[keggList] = list(nzList)
+                            nzDict[keggList] = nzList
                     elif key == 'Level2':
                         nzList = nz_entry.objects.using('picrust').filter(nz_lvl2_id_id=keggList).values_list('nz_orthology', flat=True)
                         if nzList:
-                            nzDict[keggList] = list(nzList)
+                            nzDict[keggList] = nzList
                     elif key == 'Level3':
                         nzList = nz_entry.objects.using('picrust').filter(nz_lvl3_id_id=keggList).values_list('nz_orthology', flat=True)
                         if nzList:
-                            nzDict[keggList] = list(nzList)
+                            nzDict[keggList] = nzList
                     elif key == 'Level4':
                         nzList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=keggList).values_list('nz_orthology', flat=True)
                         if nzList:
-                            nzDict[keggList] = list(nzList)
+                            nzDict[keggList] = nzList
                     elif key == 'Level5':
                         nzList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=keggList).values_list('nz_orthology', flat=True)
                         if nzList:
-                            nzDict[keggList] = list(nzList)
+                            nzDict[keggList] = nzList
                 else:
                     for i in keggList:
                         if key == 'Level1':
                             nzList = nz_entry.objects.using('picrust').filter(nz_lvl1_id_id=i).values_list('nz_orthology', flat=True)
                             if nzList:
-                                nzDict[i] = list(nzList)
+                                nzDict[i] = nzList
                         elif key == 'Level2':
                             nzList = nz_entry.objects.using('picrust').filter(nz_lvl2_id_id=i).values_list('nz_orthology', flat=True)
                             if nzList:
-                                nzDict[i] = list(nzList)
+                                nzDict[i] = nzList
                         elif key == 'Level3':
                             nzList = nz_entry.objects.using('picrust').filter(nz_lvl3_id_id=i).values_list('nz_orthology', flat=True)
                             if nzList:
-                                nzDict[i] = list(nzList)
+                                nzDict[i] = nzList
                         elif key == 'Level4':
                             nzList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=i).values_list('nz_orthology', flat=True)
                             if nzList:
-                                nzDict[i] = list(nzList)
+                                nzDict[i] = nzList
                         elif key == 'Level5':
                             nzList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=i).values_list('nz_orthology', flat=True)
                             if nzList:
-                                nzDict[i] = list(nzList)
+                                nzDict[i] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -536,7 +535,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             for key in keys:
                 nzList = nz_entry.objects.using('picrust').filter(nz_lvl1_id_id=key).values_list('nz_orthology', flat=True)
                 if nzList:
-                    nzDict[key] = list(nzList)
+                    nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -549,7 +548,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             for key in keys:
                 nzList = nz_entry.objects.using('picrust').filter(nz_lvl2_id_id=key).values_list('nz_orthology', flat=True)
                 if nzList:
-                    nzDict[key] = list(nzList)
+                    nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -562,7 +561,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             for key in keys:
                 nzList = nz_entry.objects.using('picrust').filter(nz_lvl3_id_id=key).values_list('nz_orthology', flat=True)
                 if nzList:
-                    nzDict[key] = list(nzList)
+                    nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -575,7 +574,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             for key in keys:
                 nzList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=key).values_list('nz_orthology', flat=True)
                 if nzList:
-                    nzDict[key] = list(nzList)
+                    nzDict[key] = nzList
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -588,200 +587,200 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             # 1.18.6.1  nitrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### PO4 Solubility
             # 1.3.3.11  pyrroloquinoline-quinone synthase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.3.3.11  pyrroloquinoline-quinone synthase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Biocontrol
             # 1.4.99.5  glycine dehydrogenase (cyanide-forming)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.99.5  glycine dehydrogenase (cyanide-forming)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 4.1.1.5  acetolactate decarboxylase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.5  acetolactate decarboxylase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.1.1.76  (S,S)-butanediol dehydrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.1.1.76  (S,S)-butanediol dehydrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.6  endo-1,3(4)-beta-glucanase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.6  endo-1,3(4)-beta-glucanase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.14  chitinase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.14  chitinase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Root growth (drought/salt stress)
             # 4.1.1.74  indolepyruvate decarboxylase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.74  indolepyruvate decarboxylase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Siderophores
             # 6.3.2.39  aerobactin synthase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.39  aerobactin synthase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 6.3.2.14  enterobactin synthase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.14  enterobactin synthase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # K04787 mycobactin salicyl-AMP ligase [EC:6.3.2.-]
             id = nz_entry.objects.using('picrust').get(nz_orthology='K04787').nz_lvl5_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # K04783 yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]
             id = nz_entry.objects.using('picrust').get(nz_orthology='K04783').nz_lvl5_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### C decomposition
             # 3.2.1.4  cellulase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.4  cellulase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.21  beta-glucosidase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.21  beta-glucosidase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.8  endo-1,4-beta-xylanase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.8  endo-1,4-beta-xylanase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.37  xylan 1,4-beta-xylosidase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.37  xylan 1,4-beta-xylosidase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### N decomposition
             # 3.5.1.4  amidase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.5.1.5  urease
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.5  urease').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### P decomposition
             # 3.1.3.1  alkaline phosphatase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.1  alkaline phosphatase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.1.3.2  acid phosphatase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.2  acid phosphatase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### S decomposition
             # 3.1.6.1  arylsulfatase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
         elif nzAll == 6:
             ### N-fixation
             # 1.18.6.1  nitrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Ammonification
             # 3.5.1.4  amidase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.5.1.5  urease
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.1.5  urease').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Nitrification
             # 1.14.99.39  ammonia monooxygenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.6  hydroxylamine dehydrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.99.4  nitrate reductase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Dissimilatory nitrate reduction
             # 1.7.5.1  nitrate reductase (quinone)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.5.1  nitrate reductase (quinone)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.99.4  nitrate reductase
 
             # 1.7.1.15  nitrite reductase (NADH)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.15  nitrite reductase (NADH)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Assimilatory nitrate reduction
             # 1.7.7.1  ferredoxin---nitrite reductase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.1  ferredoxin---nitrite reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.7.2  ferredoxin---nitrate reductase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.2  ferredoxin---nitrate reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.99.4  nitrate reductase
 
             # 1.7.1.4  nitrite reductase [NAD(P)H]
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.4  nitrite reductase [NAD(P)H]').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.1.1  nitrate reductase (NADH)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.1  nitrate reductase (NADH)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Denitrification
             # 1.7.99.4  nitrate reductase
@@ -789,153 +788,153 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             # 1.7.2.1  nitrite reductase (NO-forming)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.5  nitric oxide reductase (cytochrome c)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.4  nitrous-oxide reductase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Anammox
             # 1.7.2.7  hydrazine synthase subunit
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.7  hydrazine synthase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.8  hydrazine dehydrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.8  hydrazine dehydrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
         elif nzAll == 10:
             ### N-fixation
             # 1.18.6.1  nitrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### PO4 Solubility
             # 1.3.3.11  pyrroloquinoline-quinone synthase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.3.3.11  pyrroloquinoline-quinone synthase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Biocontrol
             # 1.4.99.5  glycine dehydrogenase (cyanide-forming)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.99.5  glycine dehydrogenase (cyanide-forming)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 4.1.1.5  acetolactate decarboxylase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.5  acetolactate decarboxylase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.1.1.76  (S,S)-butanediol dehydrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.1.1.76  (S,S)-butanediol dehydrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.6  endo-1,3(4)-beta-glucanase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.6  endo-1,3(4)-beta-glucanase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.14  chitinase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.14  chitinase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Root growth (drought/salt stress)
             # 4.1.1.74  indolepyruvate decarboxylase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.74  indolepyruvate decarboxylase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Siderophores
             # 6.3.2.39  aerobactin synthase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.39  aerobactin synthase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 6.3.2.14  enterobactin synthase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.14  enterobactin synthase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # K04787 mycobactin salicyl-AMP ligase [EC:6.3.2.-]
             id = nz_entry.objects.using('picrust').get(nz_orthology='K04787').nz_lvl5_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # K04783 yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]
             id = nz_entry.objects.using('picrust').get(nz_orthology='K04783').nz_lvl5_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### C decomposition
             # 3.2.1.4  cellulase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.4  cellulase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.21  beta-glucosidase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.21  beta-glucosidase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.8  endo-1,4-beta-xylanase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.8  endo-1,4-beta-xylanase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.2.1.37  xylan 1,4-beta-xylosidase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.37  xylan 1,4-beta-xylosidase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### N decomposition
             # 3.5.1.4  amidase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.5.1.5  urease
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.5  urease').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### P decomposition
             # 3.1.3.1  alkaline phosphatase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.1  alkaline phosphatase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 3.1.3.2  acid phosphatase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.2  acid phosphatase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### S decomposition
             # 3.1.6.1  arylsulfatase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### N-fixation
             # 1.18.6.1  nitrogenase
@@ -949,58 +948,58 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             # 1.14.99.39  ammonia monooxygenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.6  hydroxylamine dehydrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.99.4  nitrate reductase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Dissimilatory nitrate reduction
             # 1.7.5.1  nitrate reductase (quinone)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.5.1  nitrate reductase (quinone)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.99.4  nitrate reductase
 
             # 1.7.1.15  nitrite reductase (NADH)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.15  nitrite reductase (NADH)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Assimilatory nitrate reduction
             # 1.7.7.1  ferredoxin---nitrite reductase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.1  ferredoxin---nitrite reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.7.2  ferredoxin---nitrate reductase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.2  ferredoxin---nitrate reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.99.4  nitrate reductase
 
             # 1.7.1.4  nitrite reductase [NAD(P)H]
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.4  nitrite reductase [NAD(P)H]').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.1.1  nitrate reductase (NADH)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.1  nitrate reductase (NADH)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Denitrification
             # 1.7.99.4  nitrate reductase
@@ -1008,28 +1007,28 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             # 1.7.2.1  nitrite reductase (NO-forming)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.5  nitric oxide reductase (cytochrome c)
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.4  nitrous-oxide reductase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             ### Anammox
             # 1.7.2.7  hydrazine synthase subunit
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.7  hydrazine synthase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
             # 1.7.2.8  hydrazine dehydrogenase
             id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.8  hydrazine dehydrogenase').nz_lvl4_id
             idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            nzDict[id] = list(idList)
+            nzDict[id] = idList
 
         # create sample and otu lists based on meta data selection
         wanted = ['sampleid', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
@@ -1037,26 +1036,27 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         profileDF.set_index('otuid', drop=True, inplace=True)
 
         # get PICRUSt data for otu
-        counter = 1
-        curStep = functions.getBase(RID)
         otuList = pd.unique(profileDF.index.ravel().tolist())
-        picrustDF = pd.DataFrame(index=otuList)
-        for k, v in nzDict.iteritems():
-            query = reduce(operator.or_, (Q(geneCount__contains=item) for item in v))
-            qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList).filter(query).values_list('otuid', flat=True)
-            if qs:
-                df = pd.DataFrame(index=list(qs))
-                df[k] = 1.0
-                picrustDF = pd.merge(picrustDF, df, left_index=True, right_index=True, how='outer')
-            else:
-                picrustDF[k] = 0.0
-            functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...pathway ' + str(counter) + ' out of ' +
-                              str(len(nzDict.keys())) + ' is finished!')
-            counter += 1
+        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
+        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
 
+        rows, cols = picrustDF.shape
+        levelList = nzDict.keys()
+        emptyArr = np.zeros((rows, len(levelList)))
+        emptyDF = pd.DataFrame(emptyArr, columns=levelList)
+
+        picrustDF = pd.merge(picrustDF, emptyDF, left_index=True, right_index=True, how='inner')
+        picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
+        picrustDF.set_index('otuid', drop=True, inplace=True)
+
+        curStep = functions.getBase(RID)
+        sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
         functions.setBase(RID, curStep)
-        picrustDF.fillna(value=0, inplace=True)
+
+        picrustDF.drop('geneCount', axis=1, inplace=True)
+        picrustDF = picrustDF[picrustDF.columns[picrustDF.sum() > 0]]
         levelList = picrustDF.columns.values.tolist()
+        picrustDF[picrustDF > 0.0] = 1.0
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
         profileDF.reset_index(drop=False, inplace=True)
@@ -1087,13 +1087,12 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
             tempDF = tempDF.groupby('sampleid')[levelList].sum()
             taxaDF = taxaDF.append(tempDF)
+
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        taxaDF.reset_index(drop=False, inplace=True)
 
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
@@ -1124,24 +1123,22 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             allDF.rename(columns={'index': 'otuid'}, inplace=True)
             allDF.dropna(axis=1, how='any', inplace=False)
             allDF = allDF[(allDF.sum(axis=1) != 0)]
+
             for i in levelList:
                 allDF[i] = allDF[i] / allDF[i]
             allDF.fillna(value=0, inplace=True)
-
             recordDict = {}
             for id in allDF.otuid.tolist():
                 try:
                     qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
-                    record = ';'.join(qs[0])
+                    record = '|'.join(qs[0])
                     recordDict[id] = record
                 except:
                     recordDict[id] = 'No data'
-
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
             order = ['otuid', 'Taxonomy'] + levelList
             allDF = allDF[order]
             allDF.rename(columns=namesDict, inplace=True)
-
         else:
             allDF = ''
 
@@ -1173,7 +1170,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        idList = functions.getFullNZ(levelList)
+        idList = functions.getFullNZ(list(finalDF.rank_id.unique()))
         finalDF['rank_name'] = finalDF['rank_id'].map(idList)
 
         return finalDF, allDF
@@ -1186,6 +1183,51 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
+
+
+def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
+    db.close_old_connections()
+    total = len(otuList)
+    counter = 1
+    for otu in otuList:
+        try:
+            cell = picrustDF.at[otu, 'geneCount']
+            d = ast.literal_eval(cell)
+
+            for key in keggDict:
+                sum = 0.0
+                myList = keggDict[key]
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                for k in myList:
+                    if k in d:
+                        sum += d[k]
+                        if sum > 0:
+                            break
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if stops[PID] == RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                picrustDF.at[otu, key] = sum
+            functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
+            counter += 1
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        except Exception:
+            pass
 
 
 def getFullTaxonomy(idList):
@@ -1217,7 +1259,7 @@ def getFullTaxonomy(idList):
                                     else:
                                         qs = ('Not found', )
 
-        record = ';'.join(qs[0])
+        record = '|'.join(qs[0])
         recordDict[id] = record
     return recordDict
 
@@ -1239,7 +1281,7 @@ def getFullKO(idList):
                     else:
                         qs = ('Not found', )
 
-        record = ';'.join(qs[0])
+        record = '|'.join(qs[0])
         recordDict[id] = record
     return recordDict
 
@@ -1264,7 +1306,7 @@ def getFullNZ(idList):
                         else:
                             qs = ('Not found', )
 
-        record = ';'.join(qs[0])
+        record = '|'.join(qs[0])
         recordDict[id] = record
     return recordDict
 

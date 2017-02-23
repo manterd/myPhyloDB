@@ -340,7 +340,10 @@ def getsoil_index(request, stops, RID, PID):
                     u'1.7.2.8  hydrazine dehydrogenase'
                 ]
 
+                # shorten rank names
+                keggDF['rank_name'] = keggDF['rank_name'].str.split("|").str[-1]
                 starDF = keggDF.pivot(index='sampleid', columns='rank_name', values='abund_16S')
+
                 dataDF = pd.merge(dataDF, starDF, left_index=True, right_index=True, how='inner')
                 dataDF.reset_index(drop=False, inplace=True)
 

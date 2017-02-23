@@ -255,6 +255,13 @@ def getPCA(request, stops, RID, PID):
                     r.assign("cmd", pca_string)
                     r("eval(parse(text=cmd))")
 
+                res = r.get('res.pca')
+                if res is None:
+                    error = "Your analysis failed due to infinite or missing values.\nPlease try tranforming your data and/or selecting different samples."
+                    myDict = {'error': error}
+                    res = json.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
+
                 result += str(r('print(res.pca)')) + '\n'
                 result += '===============================================\n'
 

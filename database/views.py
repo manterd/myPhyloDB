@@ -1309,7 +1309,7 @@ def microbialTableJSON(request):
             "phaeopigments_concentration",
             "phosphate",
             "phosplipid_fatt_acid_name",
-            "phosplipid_fatt_acid_concentration",
+            "phosplipid_fatt_acid_conc",
             "potassium",
             "pressure",
             "redox_potential",
