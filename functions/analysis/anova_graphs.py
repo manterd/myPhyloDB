@@ -358,7 +358,6 @@ def getCatUnivData(request, RID, stops, PID):
                         seriesDict['type'] = 'column'
                         seriesDict['data'] = dataList
                         seriesList.append(seriesDict)
-                        print name1
 
                         seriesDict = {}
                         seriesDict['name'] = name1

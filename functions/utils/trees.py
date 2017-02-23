@@ -1090,6 +1090,7 @@ def getKEGGTree(request):
             'tooltip': "Level1",
             'kegg': 'Level1',
             'isFolder': True,
+            'hideCheckbox': True,
             'expand': False,
             'children': []
         }
@@ -1101,6 +1102,7 @@ def getKEGGTree(request):
                 'tooltip': "Level2",
                 'kegg': 'Level2',
                 'isFolder': True,
+                'hideCheckbox': True,
                 'expand': False,
                 'children': []
             }
@@ -1229,6 +1231,7 @@ def getNZTree(request):
             'tooltip': "Level1",
             'kegg': 'Level1',
             'isFolder': True,
+            'hideCheckbox': True,
             'expand': False,
             'children': []
         }
@@ -1240,6 +1243,7 @@ def getNZTree(request):
                 'tooltip': "Level2",
                 'kegg': 'Level2',
                 'isFolder': True,
+                'hideCheckbox': True,
                 'expand': False,
                 'children': []
             }
