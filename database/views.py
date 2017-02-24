@@ -65,6 +65,7 @@ def upload(request):
          'error': ""}
     )
 
+
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def download(request):
     projects = Reference.objects.none()
@@ -97,7 +98,7 @@ def getProjectFiles(request):
             for root, dirs, files in os.walk(path):
                 for f in files:
                     try:
-                        if f.endswith('.shared') or f.endswith('.taxonomy') or f.endswith('.fasta') or f.endswith('.names') or f.endswith('.groups') or f.endswith('.logfile') or f.endswith('.xlsx') or f.endswith('.xls'):
+                        if f.endswith('.shared') or f.endswith('.taxonomy') or f.endswith('.fasta') or f.endswith('.names') or f.endswith('.groups') or f.endswith('.logfile') or f.endswith('.xlsx') or f.endswith('.xls') or f.endswith('.batch'):
                             zf.write(os.path.join(root, f))
                     except Exception:
                         pass

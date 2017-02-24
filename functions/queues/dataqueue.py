@@ -8,35 +8,35 @@ import functions
 import database.views
 
 
-q = Queue(maxsize=0)
-activeList = [0]
-stopList = [0]
-recent = {}
-qList = []
-threadDict = {}
-statDict = {}
-stopDict = {}
-stopped = 0
+datQ = Queue(maxsize=0)
+datActiveList = [0]
+datStopList = [0]
+datRecent = {}
+datQList = []
+datThreadDict = {}
+datStatDict = {}
+datStopDict = {}
+datStopped = 0
 
 
 def datstop(request):
-    global activeList, stopList, threadDict, stopDict, stopped
+    global datActiveList, datStopList, datThreadDict, datStopDict, datStopped
     RID = str(request.GET['all'])
-    stopDict[RID] = True
+    datStopDict[RID] = True
     try:
-        pid = activeList.index(RID)
-        stopList[pid] = RID
-        activeList[pid] = 0
-        threadName = threadDict[RID]
+        pid = datActiveList.index(RID)
+        datStopList[pid] = RID
+        datActiveList[pid] = 0
+        threadName = datThreadDict[RID]
         functions.termP()
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == threadName:
                 thread.terminate()
-                stopList[pid] = RID
+                datStopList[pid] = RID
                 myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
                 stop = json.dumps(myDict)
-                stopped += 1
+                datStopped += 1
                 return HttpResponse(stop, content_type='application/json')
     except Exception:
         myDict = {'error': 'Analysis not running'}
@@ -45,63 +45,63 @@ def datstop(request):
 
 
 def decremQ():
-    for thing in statDict:
-        statDict[thing] -= 1
+    for thing in datStatDict:
+        datStatDict[thing] -= 1
 
 
 def dataprocess(pid):
-    global activeList, threadDict, stopped, recent
+    global datActiveList, datThreadDict, datStopped, datRecent
     while True:
-        data = q.get(block=True, timeout=None)
+        data = datQ.get(block=True, timeout=None)
         decremQ()
         RID = data['RID']
-        if RID in stopDict:
-            stopDict.pop(RID, 0)
+        if RID in datStopDict:
+            datStopDict.pop(RID, 0)
         else:
             funcName = data['funcName']
             request = data['request']
-            activeList[pid] = RID
+            datActiveList[pid] = RID
             thread = threading.current_thread()
-            threadDict[RID] = thread.name
-            if activeList[pid] == RID:
+            datThreadDict[RID] = thread.name
+            if datActiveList[pid] == RID:
                 if funcName == "uploadFunc":
-                    recent[RID] = database.views.uploadFunc(request, stopList)
+                    datRecent[RID] = database.views.uploadFunc(request, datStopList)
                 if funcName == "reanalyze":
-                    resp = functions.reanalyze(request, stopList)
+                    resp = functions.reanalyze(request, datStopList)
                     if resp is None:
                         resp = database.views.reprocess(request)
                     if resp == "Stopped":
                         resp = database.views.reprocess(request)
                         resp['error'] = "Reprocessing stopped"
-                    recent[RID] = resp
+                    datRecent[RID] = resp
                 if funcName == "updateFunc":
-                    recent[RID] = database.views.updateFunc(request, stopList)
+                    datRecent[RID] = database.views.updateFunc(request, datStopList)
                 if funcName == "pybake":
-                    recent[RID] = database.views.pybake(request)
-            activeList[pid] = ''
-            threadDict.pop(RID, 0)
+                    datRecent[RID] = database.views.pybake(request)
+            datActiveList[pid] = ''
+            datThreadDict.pop(RID, 0)
         sleep(1)
 
 
 def datfuncCall(request):
-    global activeList, stopList, stopDict, statDict, qList
+    global datActiveList, datStopList, datStopDict, datStatDict, datQList
     RID = request.POST['RID']
-    request.POST['stopList'] = stopList
+    request.POST['stopList'] = datStopList
     funcName = request.POST['funcName']
     qDict = {'RID': RID, 'funcName': funcName, 'request': request}
-    qList.append(qDict)
-    q.put(qDict, True)
-    statDict[RID] = int(q.qsize())
+    datQList.append(qDict)
+    datQ.put(qDict, True)
+    datStatDict[RID] = int(datQ.qsize())
     while True:
         try:
-            results = recent[RID]
-            recent.pop(RID, 0)
-            statDict.pop(RID, 0)
-            stopDict.pop(RID, 0)
+            results = datRecent[RID]
+            datRecent.pop(RID, 0)
+            datStatDict.pop(RID, 0)
+            datStopDict.pop(RID, 0)
             return results
         except KeyError:
-            if RID in stopList:
-                statDict.pop(RID, 0)
+            if RID in datStopList:
+                datStatDict.pop(RID, 0)
         except Exception as e:
             print "Unexpected exception: "+str(e)
         sleep(1)
@@ -109,12 +109,12 @@ def datfuncCall(request):
 
 def datstat(RID):
     try:
-        stopDict[RID] = stopDict[RID]
+        datStopDict[RID] = datStopDict[RID]
         return -1024
     except Exception:
-        return statDict[RID] - stopped
+        return datStatDict[RID] - datStopped
 
 
 def getStops():
-    return stopList
+    return datStopList
 

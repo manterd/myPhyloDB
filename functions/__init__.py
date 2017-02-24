@@ -15,7 +15,7 @@ from analysis.wgcna_graphs import getWGCNA
 
 ### queues folder
 from queues.queue import funcCall, getBase, process, removeRID, setBase, stop
-from queues.dataqueue import dataprocess, datfuncCall, datstop, datstat
+from queues.dataqueue import datstop, dataprocess, datfuncCall, datstat
 
 
 ### utils folder
