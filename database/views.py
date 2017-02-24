@@ -154,7 +154,7 @@ def upErr(msg, request, dest, sid):
     )
 
 
-@transaction.atomic
+#@transaction.atomic
 def uploadFunc(request, stopList):
     ### create a savepoint
     sid = transaction.savepoint()
@@ -2345,13 +2345,13 @@ def uploadNorm(request):
 
 
 # Function to create a user folder at login
-def login_usr_callback(sender, user, request, **kwargs):
+def login_usr_callback(sender, user, request, **kwargs):  # JUMP
     user = request.user
     if not os.path.exists('myPhyloDB/media/usr_temp/'+str(user)):
         os.makedirs('myPhyloDB/media/usr_temp/'+str(user))
     functions.cleanup('myPhyloDB/media/usr_temp/'+str(user))
 
-user_logged_in.connect(login_usr_callback)  # JUMP does this belong in a function?
+user_logged_in.connect(login_usr_callback)  # does this belong in a function?
 
 
 # Function has been added to context processor in setting file
@@ -2462,7 +2462,7 @@ def addPerms(request):
                 finalNameList.remove(name)
                 # remove name from nameList
 
-        # get project by id from selList  # JUMP
+        # get project by id from selList
         for pid in selList:
             curProj = Project.objects.get(projectid=pid)
             # check if thisUser is owner of project (or super, check old edit perms basically)

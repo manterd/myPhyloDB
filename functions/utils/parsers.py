@@ -573,7 +573,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
         for ID in sampleList:
             sample = Sample.objects.get(sampleid=ID)
-            reads = Profile.objects.filter(sampleid=ID).aggregate(count=Sum('count'))
+            reads = Profile.objects.filter(sampleid=sample).aggregate(count=Sum('count'))
             sample.reads = reads['count']
             sample.save()
 
