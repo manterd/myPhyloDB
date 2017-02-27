@@ -195,11 +195,11 @@ def getPCA(request, stops, RID, PID):
 
                 r.assign("data", count_rDF)
                 r.assign("cols", count_rDF.columns.values.tolist())
-                r("colnames(data) <- cols")
+                r("colnames(data) <- unlist(cols)")
 
                 r.assign("meta", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())
-                r("rownames(meta) <- rows")
+                r("rownames(meta) <- unlist(rows)")
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -340,6 +340,7 @@ def getPCA(request, stops, RID, PID):
                 # get taxa rank names
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
                 rankNameDF.set_index('rank_id', inplace=True)
+                rankNameDF['rank_name'] = rankNameDF['rank_name'].str.split('|').str[-1]
                 r.assign('rankNameDF', rankNameDF['rank_name'])
                 r('varDF <- merge(varDF, rankNameDF, by="row.names", all.x=TRUE)')
 

@@ -520,6 +520,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
         sampleList = df3.columns.values.tolist()
         sampleList.remove('Taxonomy')
 
+        idList = []
         step = 0.0
         for index, row in df3.iterrows():
             perc = int(step / total * 100)
@@ -557,6 +558,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
                     project = Project.objects.get(projectid=p_uuid)
                     sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
                     sampid = sample.sampleid
+                    idList.append(sampid)
                     refid = refDict[sampid]
                     reference = Reference.objects.get(refid=refid)
 
@@ -571,7 +573,8 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
             step += 1.0
 
-        for ID in sampleList:
+        idUnique = list(set(idList))
+        for ID in idUnique:
             sample = Sample.objects.get(sampleid=ID)
             reads = Profile.objects.filter(sampleid=sample).aggregate(count=Sum('count'))
             sample.reads = reads['count']
@@ -588,7 +591,8 @@ def repStop(request):
     print "Stopping!"
     return "Stopped"
 
-@transaction.atomic
+
+#@transaction.atomic
 def reanalyze(request, stopList):
     ### create savepoint
     sid = transaction.savepoint()
