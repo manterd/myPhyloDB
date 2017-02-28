@@ -221,6 +221,9 @@ def getSPLS(request, stops, RID, PID):
                 print r("library(pheatmap)")
                 print r("library(RColorBrewer)")
 
+                count_rDF.sort_index(axis=0, inplace=True)
+                metaDF.sort('sampleid', inplace=True)
+
                 r.assign("X", count_rDF)
                 r.assign("Y", metaDF[quantFields])
                 r.assign("names", count_rDF.columns.values)

@@ -269,6 +269,8 @@ def getWGCNA(request, stops, RID, PID):
                 r.assign("path", path)
                 r.assign("RID", RID)
 
+                count_rDF.sort_index(axis=0, inplace=True)
+                metaDF.sort('sampleid', inplace=True)
                 r.assign("datExpr", count_rDF)
                 r.assign("geneID", count_rDF.columns.values.tolist())
                 metaDF.set_index('sampleid', inplace=True)

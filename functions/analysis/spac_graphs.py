@@ -166,7 +166,7 @@ def getSpAC(request, stops, RID, PID):
                         if isinstance(name, tuple):
                             name = "; ".join(name)
                         r.assign('name', name)
-                        IDs = group.index.values.tolist()
+                        IDs = group['sampleid'].tolist()
                         data = count_rDF.ix[IDs]
                         r.assign("data", data)
 

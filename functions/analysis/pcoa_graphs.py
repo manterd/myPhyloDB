@@ -237,6 +237,7 @@ def getPCoA(request, stops, RID, PID):
                 print r("library(ggplot2)")
                 print r('library(data.table)')
 
+                count_rDF.sort_index(axis=0, inplace=True)
                 r.assign("data", count_rDF)
                 r.assign("cols", count_rDF.columns.values.tolist())
                 r("colnames(data) <- cols")
@@ -278,6 +279,7 @@ def getPCoA(request, stops, RID, PID):
                 r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
                 mat = r.get("mat")
 
+                metaDF.sort('sampleid', inplace=True)
                 rowList = metaDF.sampleid.values.tolist()
                 distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 

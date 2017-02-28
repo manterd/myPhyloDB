@@ -208,6 +208,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 print r("library(DESeq2)")
 
+                metaDF.sort(columns='sampleid', inplace=True)
                 r.assign("metaDF", metaDF)
                 r("trt <- factor(metaDF$merge)")
 

@@ -175,11 +175,13 @@ def getGAGE(request, stops, RID, PID):
                 count_rDF.fillna(0, inplace=True)
 
                 # Create combined metadata column - GAGE only
+                metaDF.sort('sampleid', inplace=True)
                 if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
                         metaDF.loc[index, 'merge'] = "; ".join(row[catFields])
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
+
 
                 wantedList = ['merge', 'sample_name']
                 metaDF = metaDF.loc[:, wantedList]

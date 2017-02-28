@@ -218,11 +218,11 @@ def getRF(request, stops, RID, PID):
                 rankNameDF.loc[:, 'name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
                 r.assign('rankNames', rankNameDF.name_id.values)
 
+                count_rDF.sort_index(axis=0, inplace=True)
                 r.assign("treeType", treeType)
                 r.assign("data", count_rDF)
                 r("names(data) <- rankNames")
 
-                # TODO: fix pandas deprecation warning...
                 myList = list(metaDF.select_dtypes(include=['object']).columns)
                 for i in myList:
                     metaDF[i] = metaDF[i].str.replace(' ', '_')
@@ -230,6 +230,7 @@ def getRF(request, stops, RID, PID):
                     metaDF[i] = metaDF[i].str.replace('(', '.')
                     metaDF[i] = metaDF[i].str.replace(')', '.')
 
+                metaDF.sort('sampleid', inplace=True)
                 metaDF.set_index('sampleid', inplace=True)
                 r.assign("meta_full", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())

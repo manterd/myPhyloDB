@@ -97,6 +97,9 @@ def getsoil_index(request, stops, RID, PID):
                 # Add coverage to datagrames -- samples may be missing in cDF (use outer merge)
                 count_rDF = pd.merge(count_rDF, cDF, left_index=True, right_index=True, how='outer')
 
+                count_rDF.sort_index(axis=0, inplace=True)
+                metaDF.sort('sampleid', inplace=True)
+
                 want = catFields + ['sampleid']
                 metaDF.reset_index(drop=False, inplace=True)
                 bioDF = metaDF[want].copy()

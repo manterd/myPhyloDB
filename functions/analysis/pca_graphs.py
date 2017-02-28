@@ -193,10 +193,12 @@ def getPCA(request, stops, RID, PID):
                 print r('library(ggplot2)')
                 print r('library(vegan)')
 
+                count_rDF.sort_index(axis=0, inplace=True)
                 r.assign("data", count_rDF)
                 r.assign("cols", count_rDF.columns.values.tolist())
                 r("colnames(data) <- unlist(cols)")
 
+                metaDF.sort('sampleid', inplace=True)
                 r.assign("meta", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())
                 r("rownames(meta) <- unlist(rows)")
