@@ -1283,7 +1283,7 @@ def getFullKO(idList):
                     qs = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
                 else:
                     if ko_entry.objects.using('picrust').all().filter(ko_lvl4_id=id).exists():
-                        qs = ko_entry.objects.using('picrust').all().filter(nz_lvl4_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_id_id__ko_lvl3_name', 'ko_desc')
+                        qs = ko_entry.objects.using('picrust').all().filter(ko_lvl4_id=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_id_id__ko_lvl3_name', 'ko_desc')
                     else:
                         qs = ('Not found', )
 

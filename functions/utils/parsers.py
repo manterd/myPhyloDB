@@ -573,6 +573,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
             step += 1.0
 
+        # TODO: this is really slow
         idUnique = list(set(idList))
         for ID in idUnique:
             sample = Sample.objects.get(sampleid=ID)
