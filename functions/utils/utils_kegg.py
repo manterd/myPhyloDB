@@ -462,6 +462,9 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         idList = functions.getFullKO(list(finalDF.rank_id.unique()))
         finalDF['rank_name'] = finalDF['rank_id'].map(idList)
 
+        # required to match getTaxaDF output
+        metaDF.reset_index(drop=False, inplace=True)
+
         return finalDF, allDF
 
     except Exception:
@@ -1172,6 +1175,9 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
         idList = functions.getFullNZ(list(finalDF.rank_id.unique()))
         finalDF['rank_name'] = finalDF['rank_id'].map(idList)
+
+        # required to match getTaxaDF output
+        metaDF.reset_index(drop=False, inplace=True)
 
         return finalDF, allDF
 

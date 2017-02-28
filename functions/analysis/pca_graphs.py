@@ -297,6 +297,7 @@ def getPCA(request, stops, RID, PID):
                     r("pamk.best <- pamk(sites)")
                     r("km <- kmeans(sites, centers=pamk.best$nc)")
                     r("ellipseTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
+                r("if (!exists('ellipseTrt')) {ellipseTrt <- c('All')}")
 
                 colorVal = all['colorVal']
                 if colorVal == 'None':
@@ -311,6 +312,7 @@ def getPCA(request, stops, RID, PID):
                     r("pamk.best <- pamk(sites)")
                     r("km <- kmeans(sites, centers=pamk.best$nc)")
                     r("colorTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
+                r("if (!exists('colorTrt')) {colorTrt <- c('All')}")
 
                 shapeVal = all['shapeVal']
                 if shapeVal == 'None':
@@ -325,6 +327,7 @@ def getPCA(request, stops, RID, PID):
                     r("pamk.best <- pamk(sites)")
                     r("km <- kmeans(sites, centers=pamk.best$nc)")
                     r("shapeTrt <- as.factor(paste('k-cluster: ', km$cluster, sep=''))")
+                r("if (!exists('shapeTrt')) {shapeTrt <- c('All')}")
 
                 r("indDF <- data.frame( \
                     x=sites[,PC1], \

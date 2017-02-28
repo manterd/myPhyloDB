@@ -356,6 +356,7 @@ def getPCoA(request, stops, RID, PID):
                     if colorVal != 'None' and colorVal != 'interaction':
                         r.assign("colorVal", colorVal)
                         r("colorTrt <- as.factor(meta[,paste(colorVal)])")
+                    r("if (!exists('colorTrt')) {colorTrt <- c('All')}")
 
                     shapeVal = all['shapeVal']
                     if shapeVal == 'None':
@@ -366,6 +367,7 @@ def getPCoA(request, stops, RID, PID):
                     if shapeVal != 'None' and shapeVal != 'interaction':
                         r.assign("shapeVal", shapeVal)
                         r("shapeTrt <- as.factor(meta[,paste(shapeVal)])")
+                    r("if (!exists('shapeTrt')) {shapeTrt <- c('All')}")
 
                     ellipseVal = all['ellipseVal']
                     if ellipseVal == 'None':
@@ -376,6 +378,7 @@ def getPCoA(request, stops, RID, PID):
                     if ellipseVal == 'interaction':
                         r.assign("catFields", catFields)
                         r("ellipseTrt <- interaction(meta[,paste(catFields)])")
+                    r("if (!exists('ellipseTrt')) {ellipseTrt <- c('All')}")
 
                     surfVal = all['surfVal']
                     if surfVal != 'None':
