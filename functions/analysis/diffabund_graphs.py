@@ -250,40 +250,45 @@ def getDiffAbund(request, stops, RID, PID):
                             r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
                             r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
                             r("df <- data.frame(rank_id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
-                            nbinom_res = r.get("df")
+                            df = r.get("df")
 
-                            if nbinom_res is None:
+                            if df is None:
                                 myDict = {'error': "DESeq failed!\nPlease try a different data combination."}
                                 res = json.dumps(myDict)
                                 return HttpResponse(res, content_type='application/json')
 
                             # remove taxa that failed (i.e., both trts are zero or log2FoldChange is NaN)
-                            nbinom_res = nbinom_res.loc[pd.notnull(nbinom_res[' log2FoldChange '])]
+                            df = df.loc[pd.notnull(df[' log2FoldChange '])]
 
                             if treeType == 1:
-                                idList = functions.getFullTaxonomy(list(nbinom_res.rank_id.unique()))
-                                nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
+                                idList = functions.getFullTaxonomy(list(df.rank_id.unique()))
+                                df['Taxonomy'] = df['rank_id'].map(idList)
                             elif treeType == 2:
-                                idList = functions.getFullKO(list(nbinom_res.rank_id.unique()))
-                                nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
+                                idList = functions.getFullKO(list(df.rank_id.unique()))
+                                df['Taxonomy'] = df['rank_id'].map(idList)
                             elif treeType == 3:
-                                idList = functions.getFullNZ(list(nbinom_res.rank_id.unique()))
-                                nbinom_res['Taxonomy'] = nbinom_res['rank_id'].map(idList)
+                                idList = functions.getFullNZ(list(df.rank_id.unique()))
+                                df['Taxonomy'] = df['rank_id'].map(idList)
 
-                            nbinom_res.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
+                            df.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
 
                             iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
-                            nbinom_res.insert(1, 'Comparison', iterationName)
-                            nbinom_res.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
-                            nbinom_res.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
-                            nbinom_res.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
-                            nbinom_res.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
-                            nbinom_res.rename(columns={' stderr ': 'StdErr'}, inplace=True)
-                            nbinom_res.rename(columns={' stat ': 'Stat'}, inplace=True)
-                            nbinom_res.rename(columns={' pval ': 'p-value'}, inplace=True)
-                            nbinom_res.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
+                            df.insert(1, 'Comparison', iterationName)
+                            df.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
+                            df.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
+                            df.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
+                            df.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
+                            df.rename(columns={' stderr ': 'StdErr'}, inplace=True)
+                            df.rename(columns={' stat ': 'Stat'}, inplace=True)
+                            df.rename(columns={' pval ': 'p-value'}, inplace=True)
+                            df.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
 
                             functions.setBase(RID, 'Step 4 of 6: Performing statistical test...' + str(iterationName) + ' is done!')
+
+                            if nbinom_res.empty:
+                                nbinom_res = df.copy()
+                            else:
+                                nbinom_res = nbinom_res.append(df)
 
                             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                             if stops[PID] == RID:
@@ -306,7 +311,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 grouped = nbinom_res.groupby('Comparison')
 
-                listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond',]
+                listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
                 shapeIterator = 0
 
                 FdrVal = float(all['FdrVal'])
