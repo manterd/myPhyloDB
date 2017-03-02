@@ -231,8 +231,8 @@ def getsoil_index(request, stops, RID, PID):
                 binDF.reset_index(drop=False, inplace=True)
 
                 sumDF1 = binDF.groupby('sampleid')[myBins].sum()
-                sumDF1['stability'] = (sumDF1['bin1'] * 1) + (sumDF1['bin2'] * 2) + (sumDF1['bin3'] * 3) + \
-                    (sumDF1['bin4'] * 4) + (sumDF1['bin5'] * 5) + (sumDF1['bin6'] * 6) + (sumDF1['bin7'] * 7)
+                sumDF1['stability'] = (sumDF1['bin1'] * 7) + (sumDF1['bin2'] * 6) + (sumDF1['bin3'] * 5) + \
+                    (sumDF1['bin4'] * 4) + (sumDF1['bin5'] * 3) + (sumDF1['bin6'] * 2) + (sumDF1['bin7'] * 1)
 
                 sumDF2 = finalDF.groupby('sampleid')['abund_16S', 'rich', 'diversity'].sum()
 
@@ -320,20 +320,14 @@ def getsoil_index(request, stops, RID, PID):
                     u'1.7.99.4  nitrate reductase',
                     #
                     # DNRA
-                    # nitrate reductase -- already in list
-                    u'1.7.5.1  nitrate reductase (quinone)',
                     u'1.7.1.15  nitrite reductase (NADH)',
                     u'1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)',
                     #
                     # ANRA
                     u'1.7.7.1  ferredoxin---nitrite reductase',
-                    u'1.7.7.2  ferredoxin---nitrite reductase',
-                    # nitrate reductase -- already in list
                     u'1.7.1.4  nitrite reductase [NAD(P)H]',
-                    u'1.7.1.1  nitrate reductase (NADH)',
                     #
                     # Denitrification
-                    # nitrate reductase -- already in list
                     u'1.7.2.1  nitrite reductase (NO-forming)',
                     u'1.7.2.5  nitric oxide reductase (cytochrome c)',
                     u'1.7.2.4  nitrous-oxide reductase',
@@ -413,20 +407,14 @@ def getsoil_index(request, stops, RID, PID):
                     u'1.7.99.4  nitrate reductase': 'nitrate reductase',
                     #
                     # DNRA
-                    # nitrate reductase -- already in list
-                    u'1.7.5.1  nitrate reductase (quinone)': 'nitrate reductase (quinone)',
                     u'1.7.1.15  nitrite reductase (NADH)': 'nitrite reductase (NADH)',
                     u'1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)': 'nitrite reductase (cytochrome; ammonia-forming)',
                     #
                     # ANRA
-                    u'1.7.7.1  ferredoxin---nitrite reductase': 'ferredoxin---nitrite reductase 1',
-                    u'1.7.7.2  ferredoxin---nitrite reductase': 'ferredoxin---nitrite reductase 2',
-                    # nitrate reductase -- already in list
+                    u'1.7.7.1  ferredoxin---nitrite reductase': 'ferredoxin---nitrite reductase',
                     u'1.7.1.4  nitrite reductase [NAD(P)H]': 'nitrite reductase [NAD(P)H]',
-                    u'1.7.1.1  nitrate reductase (NADH)': 'nitrate reductase (NADH)',
                     #
                     # Denitrification
-                    # nitrate reductase -- already in list
                     u'1.7.2.1  nitrite reductase (NO-forming)': 'nitrite reductase (NO-forming)',
                     u'1.7.2.5  nitric oxide reductase (cytochrome c)': 'nitric oxide reductase (cytochrome c)',
                     u'1.7.2.4  nitrous-oxide reductase': 'nitrous-oxide reductase',
@@ -513,20 +501,14 @@ def getsoil_index(request, stops, RID, PID):
                     u'nitrate reductase',
                     #
                     # DNRA
-                    # nitrate reductase -- already in list
-                    u'nitrate reductase (quinone)',
                     u'nitrite reductase (NADH)',
                     u'nitrite reductase (cytochrome; ammonia-forming)',
                     #
                     # ANRA
-                    u'ferredoxin---nitrite reductase 1',
-                    u'ferredoxin---nitrite reductase 2',
-                    # nitrate reductase -- already in list
+                    u'ferredoxin---nitrite reductase',
                     u'nitrite reductase [NAD(P)H]',
-                    u'nitrate reductase (NADH)',
                     #
                     # Denitrification
-                    # nitrate reductase -- already in list
                     u'nitrite reductase (NO-forming)',
                     u'nitric oxide reductase (cytochrome c)',
                     u'nitrous-oxide reductase',
@@ -596,20 +578,14 @@ def getsoil_index(request, stops, RID, PID):
                     u'nitrate reductase': 1e9,
                     #
                     # DNRA
-                    # nitrate reductase -- already in list
-                    u'nitrate reductase (quinone)': 1e9,
                     u'nitrite reductase (NADH)': 1e9,
                     u'nitrite reductase (cytochrome; ammonia-forming)': 1e9,
                     #
                     # ANRA
-                    u'ferredoxin---nitrite reductase 1': 1e9,
-                    u'ferredoxin---nitrite reductase 2': 1e9,
-                    # nitrate reductase -- already in list
+                    u'ferredoxin---nitrite reductase': 1e9,
                     u'nitrite reductase [NAD(P)H]': 1e9,
-                    u'nitrate reductase (NADH)': 1e9,
                     #
                     # Denitrification
-                    # nitrate reductase -- already in list
                     u'nitrite reductase (NO-forming)': 1e9,
                     u'nitric oxide reductase (cytochrome c)': 1e9,
                     u'nitrous-oxide reductase': 1e9,
@@ -858,16 +834,10 @@ def getsoil_index(request, stops, RID, PID):
                         'ammonia.monooxygenase', \
                         'hydroxylamine.dehydrogenase', \
                         'nitrate.reductase', \
-                        'nitrate.reductase', \
-                        'nitrate.reductase..quinone.', \
                         'nitrite.reductase..NADH.', \
                         'nitrite.reductase..cytochrome..ammonia.forming.', \
-                        'ferredoxin...nitrite.reductase.1', \
-                        'ferredoxin...nitrite.reductase.2', \
-                        'nitrate.reductase', \
+                        'ferredoxin...nitrite.reductase', \
                         'nitrite.reductase..NAD.P.H.', \
-                        'nitrate.reductase..NADH.', \
-                        'nitrate.reductase', \
                         'nitrite.reductase..NO.forming.', \
                         'nitric.oxide.reductase..cytochrome.c.', \
                         'nitrous.oxide.reductase', \
@@ -882,16 +852,10 @@ def getsoil_index(request, stops, RID, PID):
                         'EC1.14.99.39', \
                         'EC1.7.2.6', \
                         'EC1.7.99.4', \
-                        'EC1.7.99.4', \
-                        'EC1.7.5.1', \
                         'EC1.7.1.15', \
                         'EC1.7.2.2', \
                         'EC1.7.7.1', \
-                        'EC1.7.7.2', \
-                        'EC1.7.99.4', \
                         'EC1.7.1.4', \
-                        'EC1.7.1.1', \
-                        'EC1.7.99.4', \
                         'EC1.7.2.1', \
                         'EC1.7.2.5', \
                         'EC1.7.2.4', \
@@ -901,34 +865,36 @@ def getsoil_index(request, stops, RID, PID):
 
                     r("ncycle <- data[,NList]")
 
-                    r('stars(matrix(1, ncol=21, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 21), \
+                    r('stars(matrix(1, ncol=15, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.7, mar=c(1,1,2,1), add=F, lty=2, \
                         key.vpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
 
                     r("colN <- c('blue', 'green', 'green', \
-                        'red', 'red', 'red', 'turquoise', 'turquoise', \
-                        'turquoise', 'turquoise', 'magenta', 'magenta', 'magenta', 'magenta', 'magenta', \
-                        'yellow', 'yellow', 'yellow', 'yellow', 'salmon', 'salmon')")
+                        'red', 'red', 'red', \
+                        'turquoise', 'turquoise', \
+                        'magenta', 'magenta', \
+                        'yellow', 'yellow', 'yellow', \
+                        'salmon', 'salmon')")
 
                     r('stars(ncycle[off,], \
                         draw.segments=T, col.segments=colN, \
                         ncol=1, scale=F, full=T, labels=NULL, \
                         cex=0.5, add=T, lty=1, key.xpd=F)')
 
-                    r('stars(matrix(0.75, ncol=21, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 21), \
+                    r('stars(matrix(0.75, ncol=15, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.vpd=F)')
 
-                    r('stars(matrix(0.5, ncol=21, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 21), \
+                    r('stars(matrix(0.5, ncol=15, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.vpd=F)')
 
-                    r('stars(matrix(0.25, ncol=21, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 21), \
+                    r('stars(matrix(0.25, ncol=15, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.vpd=F)')
 
@@ -1045,13 +1011,10 @@ def getsoil_index(request, stops, RID, PID):
                     ' ammonia.monooxygenase ': '1.14.99.39  ammonia monooxygenase',
                     ' hydroxylamine.dehydrogenase ': '1.7.2.6  hydroxylamine dehydrogenase',
                     ' nitrate.reductase ': '1.7.99.4  nitrate reductase',
-                    ' nitrate.reductase..quinone. ': '1.7.5.1  nitrate reductase (quinone)',
                     ' nitrite.reductase..NADH. ': '1.7.1.15  nitrite reductase (NADH)',
                     ' nitrite.reductase..cytochrome..ammonia.forming. ': '1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)',
-                    ' ferredoxin...nitrite.reductase.1 ': '1.7.7.1  ferredoxin---nitrite reductase',
-                    ' ferredoxin...nitrite.reductase.2 ': '1.7.7.2  ferredoxin---nitrite reductase',
+                    ' ferredoxin...nitrite.reductase ': '1.7.7.1  ferredoxin---nitrite reductase',
                     ' nitrite.reductase..NAD.P.H. ': '1.7.1.4  nitrite reductase [NAD(P)H]',
-                    ' nitrate.reductase..NADH. ': '1.7.1.1  nitrate reductase (NADH)',
                     ' nitrite.reductase..NO.forming. ': '1.7.2.1  nitrite reductase (NO-forming)',
                     ' nitric.oxide.reductase..cytochrome.c. ': '1.7.2.5  nitric oxide reductase (cytochrome c)',
                     ' nitrous.oxide.reductase ': '1.7.2.4  nitrous-oxide reductase',

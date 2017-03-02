@@ -422,7 +422,12 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     if quantSampleLists:
         quantSampleIDs = list(set.intersection(*map(set, quantSampleLists)))
 
-    finalSampleIDs = list(set(catSampleIDs) | set(quantSampleIDs))
+    if catSampleIDs and not quantSampleIDs:
+        finalSampleIDs = list(set(catSampleIDs))
+    elif quantSampleIDs and not catSampleIDs:
+        finalSampleIDs = list(set(quantSampleIDs))
+    else:
+        finalSampleIDs = list(set(catSampleIDs) & set(quantSampleIDs))
 
     myDir = 'myPhyloDB/media/usr_temp/' + str(username) + '/'
     path = str(myDir) + 'usr_norm_data.biom'

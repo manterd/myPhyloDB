@@ -1182,8 +1182,6 @@
                     }
                 } else if (ncycle == '4') {    // DNRA
                     myNames = [
-                        '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.5  With a quinone or similar compound as acceptor|1.7.5.1  nitrate reductase (quinone)',
-                        '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.99  With unknown physiological acceptors|1.7.99.4  nitrate reductase',
                         '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.1  With NAD+ or NADP+ as acceptor|1.7.1.15  nitrite reductase (NADH)',
                         '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.2  With a cytochrome as acceptor|1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)'
                     ];
@@ -1203,10 +1201,7 @@
                 } else if (ncycle == '5') {    // ANRA
                     myNames = [
                         '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.7  With an iron-sulfur protein as acceptor|1.7.7.1  ferredoxin---nitrite reductase',
-                        '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.7  With an iron-sulfur protein as acceptor|1.7.7.2  ferredoxin---nitrate reductase',
-                        '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.99  With unknown physiological acceptors|1.7.99.4  nitrate reductase',
                         '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.1  With NAD+ or NADP+ as acceptor|1.7.1.4  nitrite reductase [NAD(P)H]',
-                        '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.1  With NAD+ or NADP+ as acceptor|1.7.1.1  nitrate reductase (NADH)'
                     ];
                     if (myNames.indexOf(series[i].name[0]) !== -1) {
                         if (series[i].type == 'column') {
@@ -1223,7 +1218,6 @@
                     }
                 } else if (ncycle == '6') {    // Denitrification
                     myNames = [
-                        '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.99  With unknown physiological acceptors|1.7.99.4  nitrate reductase',
                         '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.2  With a cytochrome as acceptor|1.7.2.1  nitrite reductase (NO-forming)',
                         '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.2  With a cytochrome as acceptor|1.7.2.5  nitric oxide reductase (cytochrome c)',
                         '1. Oxidoreductases|1.7  Acting on other nitrogenous compounds as donors|1.7.2  With a cytochrome as acceptor|1.7.2.4  nitrous-oxide reductase'
