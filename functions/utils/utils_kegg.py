@@ -187,7 +187,11 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='inner')
         finalDF.reset_index(drop=False, inplace=True)
 
-        wantedList = allFields + ['sample_name', 'sampleid', 'rank', 'rank_name', 'rank_id']
+        if 'sample_name' not in allFields:
+            wantedList = allFields + ['sample_name', 'sampleid', 'rank', 'rank_name', 'rank_id']
+        else:
+            wantedList = allFields + ['sampleid', 'rank', 'rank_name', 'rank_id']
+
         if DepVar == 0:
             finalDF = finalDF.groupby(wantedList)[['abund']].sum()
         elif DepVar == 1:
@@ -201,6 +205,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             finalDF = finalDF.groupby(wantedList)[['diversity']].sum()
         elif DepVar == 10:
             finalDF = finalDF.groupby(wantedList)[['abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']].sum()
+
         finalDF.reset_index(drop=False, inplace=True)
 
         return finalDF, missingList

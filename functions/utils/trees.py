@@ -315,7 +315,7 @@ def getSampleCatTreeChildren(request):
                             'value': values[j],
                             'table': 'mimark',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -343,7 +343,7 @@ def getSampleCatTreeChildren(request):
                             'value': values[j],
                             'table': 'air',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -371,7 +371,7 @@ def getSampleCatTreeChildren(request):
                             'value': values[j],
                             'table': 'human_associated',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -399,7 +399,7 @@ def getSampleCatTreeChildren(request):
                             'value': values[j],
                             'table': 'microbial',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -427,7 +427,7 @@ def getSampleCatTreeChildren(request):
                             'value': values[j],
                             'table': 'soil',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -455,7 +455,7 @@ def getSampleCatTreeChildren(request):
                             'value': values[j],
                             'table': 'water',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -483,7 +483,7 @@ def getSampleCatTreeChildren(request):
                             'value': values[j],
                             'table': 'user',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -750,7 +750,7 @@ def getSampleQuantTreeChildren(request):
                             'value': values[j],
                             'table': 'mimark',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -779,7 +779,7 @@ def getSampleQuantTreeChildren(request):
                             'value': values[j],
                             'table': 'air',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -808,7 +808,7 @@ def getSampleQuantTreeChildren(request):
                             'value': values[j],
                             'table': 'human_associated',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -837,7 +837,7 @@ def getSampleQuantTreeChildren(request):
                             'value': values[j],
                             'table': 'microbial',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -866,7 +866,7 @@ def getSampleQuantTreeChildren(request):
                             'value': values[j],
                             'table': 'soil',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -895,7 +895,7 @@ def getSampleQuantTreeChildren(request):
                             'value': values[j],
                             'table': 'water',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
@@ -924,7 +924,7 @@ def getSampleQuantTreeChildren(request):
                             'value': values[j],
                             'table': 'user',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
-                            'hideCheckbox': True,
+                            'hideCheckbox': False,
                             'isFolder': False
                         }
                         myNode1['children'].append(myNode2)
