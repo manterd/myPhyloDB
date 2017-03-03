@@ -592,477 +592,339 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
         elif nzAll == 5:
             ### N-fixation
-            # 1.18.6.1  nitrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K00531', 'K02586', 'K02588', 'K02591']
+            id = 'nifH: nitrogenase Fe protein'
+            idList = ['K02588']
+            nzDict[id] = idList
+
+            id = 'nifDK: nitrogenase Mo-Fe protein'
+            idList = ['K02591', 'K02586']
             nzDict[id] = idList
 
             ### PO4 Solubility
-            # 1.3.3.11  pyrroloquinoline-quinone synthase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.3.3.11  pyrroloquinoline-quinone synthase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'pqqC: pyrroloquinoline-quinone synthase'
             idList = ['K06137']
             nzDict[id] = idList
 
             ### Biocontrol
-            # 1.4.99.5  glycine dehydrogenase (cyanide-forming)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.99.5  glycine dehydrogenase (cyanide-forming)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'hcnABC: glycine dehydrogenase (cyanide-forming)'
             idList = ['K10814', 'K10815', 'K10816']
             nzDict[id] = idList
 
-            # 4.1.1.5  acetolactate decarboxylase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.5  acetolactate decarboxylase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'budA: acetolactate decarboxylase'
             idList = ['K01575']
             nzDict[id] = idList
 
-            # 1.1.1.76  (S,S)-butanediol dehydrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.1.1.76  (S,S)-butanediol dehydrogenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01575']
+            id = 'budC: (S,S)-butanediol dehydrogenase'
+            idList = ['K18009']
             nzDict[id] = idList
 
-            # 3.2.1.6  endo-1,3(4)-beta-glucanase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.6  endo-1,3(4)-beta-glucanase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'E3.2.1.6: endo-1,3(4)-beta-gulcanase'
             idList = ['K01180']
             nzDict[id] = idList
 
-            # 3.2.1.14  chitinase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.14  chitinase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01183', 'K13381']
+            id = 'E3.2.1.14: chitinase'
+            idList = ['K01183']
             nzDict[id] = idList
 
             ### Root growth (drought/salt stress)
-            # 4.1.1.74  indolepyruvate decarboxylase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.74  indolepyruvate decarboxylase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'ipdC: indolepyruvate decarboxylase'
             idList = ['K04103']
             nzDict[id] = idList
 
-            # 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'acdS: 1-aminocyclopropane-1-carboxylate deaminase'
             idList = ['K01505']
             nzDict[id] = idList
 
             ### Siderophores
-            # 6.3.2.39  aerobactin synthase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.39  aerobactin synthase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'iucC: aerobactin synthase'
             idList = ['K03895']
             nzDict[id] = idList
 
-            # 6.3.2.14  enterobactin synthase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.14  enterobactin synthase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'entDF: enterobactin synthase'
             idList = ['K02362', 'K02364']
             nzDict[id] = idList
 
-            # K04787 mycobactin salicyl-AMP ligase [EC:6.3.2.-]
-            id = nz_entry.objects.using('picrust').get(nz_orthology='K04787').nz_lvl5_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id).values_list('nz_orthology', flat=True)
+            id = 'mbtA: mycobactin salicyl-AMP ligase'
+            idList = ['K04787']
             nzDict[id] = idList
 
-            # K04783 yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]
-            id = nz_entry.objects.using('picrust').get(nz_orthology='K04783').nz_lvl5_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id).values_list('nz_orthology', flat=True)
+            id = 'ybtE: yersiniabactin salicyl-AMP ligase'
+            idList = ['K04783']
             nzDict[id] = idList
 
             ### C decomposition
-            # 3.2.1.4  cellulase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.4  cellulase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K19356', 'K19357']
+            id = 'bglX: beta-glucosidase'
+            idList = ['K05349']
             nzDict[id] = idList
 
-            # 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01225', 'K19668']
+            id = 'bglB: beta-glucosidase'
+            idList = ['K05350']
             nzDict[id] = idList
 
-            # 3.2.1.21  beta-glucosidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.21  beta-glucosidase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K05349', 'K05350']
-            nzDict[id] = idList
-
-            # 3.2.1.8  endo-1,4-beta-xylanase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.8  endo-1,4-beta-xylanase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01181']
-            nzDict[id] = idList
-
-            # 3.2.1.37  xylan 1,4-beta-xylosidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.37  xylan 1,4-beta-xylosidase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01198']
+            id = 'E3.2.1.21: beta-glucosidase'
+            idList = ['K01188']
             nzDict[id] = idList
 
             ### N decomposition
-            # 3.5.1.4  amidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'amiE: amidase'
             idList = ['K01426']
             nzDict[id] = idList
 
-            # 3.5.1.5  urease
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.5  urease').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01430', 'K01429', 'K01428', 'K14048', 'K01427']
+            id = 'ureC: urease alpha subunit'
+            idList = ['K01428']
             nzDict[id] = idList
 
             ### P decomposition
-            # 3.1.3.1  alkaline phosphatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.1  alkaline phosphatase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01077', 'K01113']
+            id = 'phoA: alkaline phosphatase'
+            idList = ['K01077']
             nzDict[id] = idList
 
-            # 3.1.3.2  acid phosphatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.2  acid phosphatase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01078', 'K01093', 'K03788', 'K09474']
+            id = 'phoD: alkaline phosphatase'
+            idList = ['K01113']
+            nzDict[id] = idList
+
+            id = 'E3.1.3.2: acid phosphatase'
+            idList = ['K01078']
+            nzDict[id] = idList
+
+            id = 'appA: acid phosphatase'
+            idList = ['K01093']
+            nzDict[id] = idList
+
+            id = 'phoN: acid phosphatase'
+            idList = ['K09474']
             nzDict[id] = idList
 
             ### S decomposition
-            # 3.1.6.1  arylsulfatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'aslA: arylsulfatase'
             idList = ['K01130']
             nzDict[id] = idList
 
         elif nzAll == 6:
             ### N-fixation
-            # 1.18.6.1  nitrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K00531', 'K02586', 'K02588', 'K02591']
+            id = 'nifH: nitrogenase Fe protein'
+            idList = ['K02588']
+            nzDict[id] = idList
+
+            id = 'nifDK: nitrogenase Mo-Fe protein'
+            idList = ['K02591', 'K02586']
             nzDict[id] = idList
 
             ### Ammonification
-            # 3.5.1.4  amidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'amiE: amidase'
             idList = ['K01426']
             nzDict[id] = idList
 
-            # 3.5.1.5  urease
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.1.5  urease').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01430', 'K01429', 'K01428', 'K14048', 'K01427']
+            id = 'ureC: urease alpha subunit'
+            idList = ['K01428']
             nzDict[id] = idList
 
             ### Nitrification
-            # 1.14.99.39  ammonia monooxygenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'pmoA-amoA: methane/ammonia monooxygenase'
             idList = ['K10944']
             nzDict[id] = idList
 
-            # 1.7.2.6  hydroxylamine dehydrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'hao: hydroxylamine dehydrogenase'
             idList = ['K10535']
             nzDict[id] = idList
 
-            # 1.7.99.4  nitrate reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'narGH: nitrate reductase'
             idList = ['K00370', 'K00371']
             nzDict[id] = idList
 
             ### Dissimilatory nitrate reduction
-            # 1.7.1.15  nitrite reductase (NADH)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.15  nitrite reductase (NADH)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'nirBD: nitrite reductase (NADH)'
             idList = ['K00362', 'K00363']
             nzDict[id] = idList
 
-            # 1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'nrfA: nitrite reductase (cytochrome c-552)'
             idList = ['K03385']
             nzDict[id] = idList
 
             ### Assimilatory nitrate reduction
-            # 1.7.7.1  ferredoxin---nitrite reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.1  ferredoxin---nitrite reductase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'nirA: ferrodoxin-nitrite reductase'
             idList = ['K00366']
             nzDict[id] = idList
 
-            # 1.7.1.4  nitrite reductase [NAD(P)H]
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.4  nitrite reductase [NAD(P)H]').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'NIT-6: nitrite reductase (NAD(P)H)'
             idList = ['K17877']
             nzDict[id] = idList
 
             ### Denitrification
-            # 1.7.2.1  nitrite reductase (NO-forming)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K00368', 'K15864']
+            id = 'nirK: nitrite reductase (NO forming)'
+            idList = ['K00368']
             nzDict[id] = idList
 
-            # 1.7.2.5  nitric oxide reductase (cytochrome c)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K04561']
+            id = 'nirS:  nitrite reductase (NO forming)'
+            idList = ['K15864']
             nzDict[id] = idList
 
-            # 1.7.2.4  nitrous-oxide reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'norBC: nitric oxide reductase'
+            idList = ['K04561', 'K02305']
+            nzDict[id] = idList
+
+            id = 'nosZ: nitrous-oxide reductase'
             idList = ['K00376']
             nzDict[id] = idList
 
-            ### Anammox
-            # 1.7.2.7  hydrazine synthase subunit
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.7  hydrazine synthase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K20932', 'K20933', 'K20934']
-            nzDict[id] = idList
-
-            # 1.7.2.8  hydrazine dehydrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.8  hydrazine dehydrogenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K20935']
-            nzDict[id] = idList
-
         elif nzAll == 10:
-            ### N-fixation
-            # 1.18.6.1  nitrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.18.6.1  nitrogenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K00531', 'K02586', 'K02588', 'K02591']
-            nzDict[id] = idList
-
             ### PO4 Solubility
-            # 1.3.3.11  pyrroloquinoline-quinone synthase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.3.3.11  pyrroloquinoline-quinone synthase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'pqqC: pyrroloquinoline-quinone synthase'
             idList = ['K06137']
             nzDict[id] = idList
 
             ### Biocontrol
-            # 1.4.99.5  glycine dehydrogenase (cyanide-forming)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.4.99.5  glycine dehydrogenase (cyanide-forming)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'hcnABC: glycine dehydrogenase (cyanide-forming)'
             idList = ['K10814', 'K10815', 'K10816']
             nzDict[id] = idList
 
-            # 4.1.1.5  acetolactate decarboxylase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.5  acetolactate decarboxylase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'budA: acetolactate decarboxylase'
             idList = ['K01575']
             nzDict[id] = idList
 
-            # 1.1.1.76  (S,S)-butanediol dehydrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.1.1.76  (S,S)-butanediol dehydrogenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01575']
+            id ='budC: (S,S)-butanediol dehydrogenase'
+            idList = ['K18009']
             nzDict[id] = idList
 
-            # 3.2.1.6  endo-1,3(4)-beta-glucanase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.6  endo-1,3(4)-beta-glucanase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'E3.2.1.6: endo-1,3(4)-beta-gulcanase'
             idList = ['K01180']
             nzDict[id] = idList
 
-            # 3.2.1.14  chitinase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.2.1.14  chitinase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01183', 'K13381']
+            id = 'E3.2.1.14: chitinase'
+            idList = ['K01183']
             nzDict[id] = idList
 
             ### Root growth (drought/salt stress)
-            # 4.1.1.74  indolepyruvate decarboxylase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='4.1.1.74  indolepyruvate decarboxylase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'ipdC: indolepyruvate decarboxylase'
             idList = ['K04103']
             nzDict[id] = idList
 
-            # 3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'acdS: 1-aminocyclopropane-1-carboxylate deaminase'
             idList = ['K01505']
             nzDict[id] = idList
 
             ### Siderophores
-            # 6.3.2.39  aerobactin synthase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.39  aerobactin synthase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'iucC: aerobactin synthase'
             idList = ['K03895']
             nzDict[id] = idList
 
-            # 6.3.2.14  enterobactin synthase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='6.3.2.14  enterobactin synthase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'entDF: enterobactin synthase'
             idList = ['K02362', 'K02364']
             nzDict[id] = idList
 
-            # K04787 mycobactin salicyl-AMP ligase [EC:6.3.2.-]
-            id = nz_entry.objects.using('picrust').get(nz_orthology='K04787').nz_lvl5_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id).values_list('nz_orthology', flat=True)
+            id = 'mbtA: mycobactin salicyl-AMP ligase'
+            idList = ['K04787']
             nzDict[id] = idList
 
-            # K04783 yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]
-            id = nz_entry.objects.using('picrust').get(nz_orthology='K04783').nz_lvl5_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=id).values_list('nz_orthology', flat=True)
+            id = 'ybtE: yersiniabactin salicyl-AMP ligase'
+            idList = ['K04783']
             nzDict[id] = idList
 
             ### C decomposition
-            # 3.2.1.4  cellulase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.4  cellulase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K19356', 'K19357']
+            id = 'bglX: beta-glucosidase'
+            idList = ['K05349']
             nzDict[id] = idList
 
-            # 3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01225', 'K19668']
+            id = 'bglB: beta-glucosidase'
+            idList = ['K05350']
             nzDict[id] = idList
 
-            # 3.2.1.21  beta-glucosidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.21  beta-glucosidase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K05349', 'K05350']
-            nzDict[id] = idList
-
-            # 3.2.1.8  endo-1,4-beta-xylanase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.8  endo-1,4-beta-xylanase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01181']
-            nzDict[id] = idList
-
-            # 3.2.1.37  xylan 1,4-beta-xylosidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.2.1.37  xylan 1,4-beta-xylosidase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            #idList = ['K01198']
-            nzDict[id] = idList
-
-            ### N decomposition
-            # 3.5.1.4  amidase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.5.1.4  amidase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01426']
-            nzDict[id] = idList
-
-            # 3.5.1.5  urease
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='3.5.1.5  urease').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01430', 'K01429', 'K01428', 'K14048', 'K01427']
+            id = 'E3.2.1.21: beta-glucosidase'
+            idList = ['K01188']
             nzDict[id] = idList
 
             ### P decomposition
-            # 3.1.3.1  alkaline phosphatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.1  alkaline phosphatase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01077', 'K01113']
+            id = 'phoA: alkaline phosphatase'
+            idList = ['K01077']
             nzDict[id] = idList
 
-            # 3.1.3.2  acid phosphatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.3.2  acid phosphatase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K01078', 'K01093', 'K03788', 'K09474']
+            id = 'phoD: alkaline phosphatase'
+            idList = ['K01113']
+            nzDict[id] = idList
+
+            id = 'E3.1.3.2: acid phosphatase'
+            idList = ['K01078']
+            nzDict[id] = idList
+
+            id = 'appA: acid phosphatase'
+            idList = ['K01093']
+            nzDict[id] = idList
+
+            id = 'phoN: acid phosphatase'
+            idList = ['K09474']
             nzDict[id] = idList
 
             ### S decomposition
-            # 3.1.6.1  arylsulfatase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name__startswith='3.1.6.1  arylsulfatase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'aslA: arylsulfatase'
             idList = ['K01130']
             nzDict[id] = idList
 
             ### N-fixation
-            # 1.18.6.1  nitrogenase
+            id = 'nifH: nitrogenase Fe protein'
+            idList = ['K02588']
+            nzDict[id] = idList
+
+            id = 'nifDK: nitrogenase Mo-Fe protein'
+            idList = ['K02591', 'K02586']
+            nzDict[id] = idList
 
             ### Ammonification
-            # 3.5.1.4  amidase
+            id = 'amiE: amidase'
+            idList = ['K01426']
+            nzDict[id] = idList
 
-            # 3.5.1.5  urease
+            id = 'ureC: urease alpha subunit'
+            idList = ['K01428']
+            nzDict[id] = idList
 
             ### Nitrification
-            # 1.14.99.39  ammonia monooxygenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.14.99.39  ammonia monooxygenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'pmoA-amoA: methane/ammonia monooxygenase'
             idList = ['K10944']
             nzDict[id] = idList
 
-            # 1.7.2.6  hydroxylamine dehydrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.6  hydroxylamine dehydrogenase').nz_lvl4_id
-            idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'hao: hydroxylamine dehydrogenase'
             idList = ['K10535']
             nzDict[id] = idList
 
-            # 1.7.99.4  nitrate reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.99.4  nitrate reductase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'narGH: nitrate reductase'
             idList = ['K00370', 'K00371']
             nzDict[id] = idList
 
             ### Dissimilatory nitrate reduction
-            # 1.7.1.15  nitrite reductase (NADH)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.15  nitrite reductase (NADH)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'nirBD: nitrite reductase (NADH)'
             idList = ['K00362', 'K00363']
             nzDict[id] = idList
 
-            # 1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'nrfA: nitrite reductase (cytochrome c-552)'
             idList = ['K03385']
             nzDict[id] = idList
 
             ### Assimilatory nitrate reduction
-            # 1.7.7.1  ferredoxin---nitrite reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.7.1  ferredoxin---nitrite reductase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'nirA: ferrodoxin-nitrite reductase'
             idList = ['K00366']
             nzDict[id] = idList
 
-            # 1.7.1.4  nitrite reductase [NAD(P)H]
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.1.4  nitrite reductase [NAD(P)H]').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'NIT-6: nitrite reductase (NAD(P)H)'
             idList = ['K17877']
             nzDict[id] = idList
 
             ### Denitrification
-            # 1.7.2.1  nitrite reductase (NO-forming)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.1  nitrite reductase (NO-forming)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K00368', 'K15864']
+            id = 'nirK: nitrite reductase (NO forming)'
+            idList = ['K00368']
+            nzDict[id] = idList
+
+            id = 'nirS:  nitrite reductase (NO forming)'
+            idList = ['K15864']
             nzDict[id] = idList
 
             # 1.7.2.5  nitric oxide reductase (cytochrome c)
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.5  nitric oxide reductase (cytochrome c)').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K04561']
+            id = 'norBC: nitric oxide reductase'
+            idList = ['K04561', 'K02305']
             nzDict[id] = idList
 
             # 1.7.2.4  nitrous-oxide reductase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.4  nitrous-oxide reductase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
+            id = 'nosZ: nitrous-oxide reductase'
             idList = ['K00376']
-            nzDict[id] = idList
-
-            ### Anammox
-            # 1.7.2.7  hydrazine synthase subunit
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.7  hydrazine synthase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K20932', 'K20933', 'K20934']
-            nzDict[id] = idList
-
-            # 1.7.2.8  hydrazine dehydrogenase
-            id = nz_lvl4.objects.using('picrust').get(nz_lvl4_name='1.7.2.8  hydrazine dehydrogenase').nz_lvl4_id
-            #idList = nz_entry.objects.using('picrust').filter(nz_lvl4_id_id=id).values_list('nz_orthology', flat=True)
-            idList = ['K20935']
             nzDict[id] = idList
 
         # create sample and otu lists based on meta data selection
@@ -1205,8 +1067,11 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        idList = functions.getFullNZ(list(finalDF.rank_id.unique()))
-        finalDF['rank_name'] = finalDF['rank_id'].map(idList)
+        if nzAll < 5:
+            idList = functions.getFullNZ(list(finalDF.rank_id.unique()))
+            finalDF['rank_name'] = finalDF['rank_id'].map(idList)
+        else:
+            finalDF['rank_name'] = finalDF['rank_id']
 
         # required to match getTaxaDF output
         metaDF.reset_index(drop=False, inplace=True)
@@ -1244,9 +1109,7 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
 
                 for k in myList:
                     if k in d:
-                        sum += d[k]
-                        if sum > 0:
-                            break
+                        sum += 1.0
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:
@@ -1254,7 +1117,10 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                picrustDF.at[otu, key] = sum
+                if sum == len(myList):
+                    picrustDF.at[otu, key] = 1.0
+                else:
+                    picrustDF.at[otu, key] = 0.0
             functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
             counter += 1
 

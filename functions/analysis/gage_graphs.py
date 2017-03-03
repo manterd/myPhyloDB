@@ -266,6 +266,7 @@ def getGAGE(request, stops, RID, PID):
                             p.val=gage.res$greater[, 3], q.val=gage.res$greater[, 4], \
                             set.size=gage.res$greater[, 5])")
 
+                        # TODO: check this block
                         compDF = r.get("df")
                         compDF.insert(0, 'comparison', comparison)
                         compDF.dropna(axis=0, how='any', inplace=True)
