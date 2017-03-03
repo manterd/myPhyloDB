@@ -1438,8 +1438,17 @@ def getDownloadTreeChildren(request):
             myNode = {
                 'title': sample.path,
                 'id': sample.refid,
-                'isFolder': False
+                'isFolder': False,
+                'children': []
             }
+            for root, dirs, files in os.walk(sample.path):
+                for file in files:
+                    myNode2 = {
+                        'title': file,
+                        'id': file,
+                        'isFolder': False
+                    }
+                    myNode['children'].append(myNode2)
             nodes.append(myNode)
 
         res = json.dumps(nodes)

@@ -71,8 +71,8 @@
                 $("#upload").css("background-color", "lightgray").val("Upload!");
 
                 var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
-                    if (node.getLevel() == 3) {
-                        return node.data.id;
+                    if (node.getLevel() == 4) {
+                        return node.parent.data.title + "/" + node.data.id;
                 }
 
                 $("#submit").css("background-color", "yellow").val("Running!");
@@ -85,6 +85,7 @@
                 }
 
                 var jsonDict = JSON.stringify(selKeys);
+                //create list of names and send to ajax
                 $.ajax({
                     type: 'GET',
                     url: '/myPhyloDB/getProjectFiles/',

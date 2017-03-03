@@ -87,24 +87,21 @@ def getProjectFiles(request):
     all = request.GET['all']
     selKeys = json.loads(all)
 
-    paths = Reference.objects.filter(refid__in=selKeys).values_list('path', flat=True)
     zip_file = os.path.join(os.getcwd(), 'myPhyloDB', 'media', 'usr_temp', request.user.username, 'final_data.zip')
     zf = zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED)
+
     foundCount = 0
     errorMsg = "none"
-    for path in paths:
+    for path in selKeys:
         if os.path.exists(path):
             foundCount += 1
-            for root, dirs, files in os.walk(path):
-                for f in files:
-                    try:
-                        if f.endswith('.shared') or f.endswith('.taxonomy') or f.endswith('.fasta') or f.endswith('.names') or f.endswith('.groups') or f.endswith('.logfile') or f.endswith('.xlsx') or f.endswith('.xls') or f.endswith('.batch'):
-                            zf.write(os.path.join(root, f))
-                    except Exception:
-                        pass
+            try:
+                zf.write(path)
+            except Exception:
+                pass
     zf.close()
 
-    if foundCount != len(paths):
+    if foundCount != len(selKeys):
         errorMsg = "Failed to locate project files"
 
     results = {'files': zip_file, 'error': errorMsg}
