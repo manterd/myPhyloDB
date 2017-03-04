@@ -267,11 +267,9 @@ def getsoil_index(request, stops, RID, PID):
                 myList = [
                     # GIBBs
                     # C decomposition
-                    u'3.2.1.4  cellulase',
-                    u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)',
-                    u'3.2.1.21  beta-glucosidase',
-                    u'3.2.1.8  endo-1,4-beta-xylanase',
-                    u'3.2.1.37  xylan 1,4-beta-xylosidase',
+                    u'bglX: beta-glucosidase',
+                    u'bglB: beta-glucosidase',
+                    u'E3.2.1.21: beta-glucosidase',
                     #
                     # N decomposition
                     u'3.5.1.4  amidase',
@@ -354,11 +352,9 @@ def getsoil_index(request, stops, RID, PID):
                 df2.rename(columns={
                     # GIBBs
                     # C decomposition
-                    u'3.2.1.4  cellulase': 'cellulase',
-                    u'3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': 'cellulose 1,4-beta-cellobiosidase (non-reducing end)',
-                    u'3.2.1.21  beta-glucosidase': 'beta-glucosidase',
-                    u'3.2.1.8  endo-1,4-beta-xylanase': 'endo-1,4-beta-xylanase',
-                    u'3.2.1.37  xylan 1,4-beta-xylosidase': 'xylan 1,4-beta-xylosidase',
+                    u'bglX: beta-glucosidase': 'bglX',
+                    u'bglB: beta-glucosidase': 'bglB',
+                    u'E3.2.1.21: beta-glucosidase': 'E3.2.1.21',
                     #
                     # N decomposition
                     u'3.5.1.4  amidase': 'amidase',

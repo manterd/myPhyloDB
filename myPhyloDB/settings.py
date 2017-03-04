@@ -58,6 +58,7 @@ ROOT_URLCONF = 'myPhyloDB.urls'
 
 
 AUTHENTICATION_BACKENDS = (
+    'django.core.mail.backends.smtp',
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
     # `allauth` specific authentication methods, such as login by e-mail

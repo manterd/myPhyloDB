@@ -12,6 +12,7 @@
 # sh make.sh
 
 cd $HOME/PycharmProjects/myPhyloDB
+export DJANGO_SETTINGS_MODULE=myPhyloDB.settings
 pyinstaller -D $HOME/PycharmProjects/myPhyloDB/serve-linux.spec
 deactivate
 cd $HOME/PycharmProjects/myPhyloDB/dist/

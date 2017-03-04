@@ -9,6 +9,7 @@ rem cd C:\Users\daniel.manter\Documents\GitHub\myPhyloDB\build_installers\Window
 rem make.bat
 
 cd C:\Users\daniel.manter.\Documents\GitHub\myPhyloDB
+set DJANGO_SETTINGS_MODULE=myPhyloDB.settings
 pyinstaller -D serve-win.spec
 
 copy "C:\Users\daniel.manter\AppData\Local\Continuum\Miniconda2\Library\bin\mkl_avx2.dll" "C:\Users\daniel.manter\Documents\GitHub\myPhyloDB\dist\myPhyloDB\mkl_avx2.dll"
