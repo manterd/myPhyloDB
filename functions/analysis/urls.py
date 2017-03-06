@@ -11,6 +11,7 @@ urlpatterns = [
     ### urls from analysis pages
     url(r'^getCatUnivData/$', functions.getCatUnivData, name='getCatUnivData'),
     url(r'^getQuantUnivData/$', functions.getQuantUnivData, name='getQuantUnivData'),
+    url(r'^getCorr/$', functions.getCorr, name='getCorr'),
     url(r'^getDiffAbund/$', functions.getDiffAbund, name='getDiffAbund'),
     url(r'^getGAGE/$', functions.getGAGE, name='getGAGE'),
     url(r'^getPCA/$', functions.getPCA, name='getPCA'),

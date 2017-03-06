@@ -434,7 +434,6 @@ def getWGCNA(request, stops, RID, PID):
 
                 # Fundamental network concepts
                 r("ADJ1 <- abs(cor(datExpr, use='p'))^6")
-                r("ADJ1")
                 r("netStats <- fundamentalNetworkConcepts(ADJ1)")
                 r("connectDF <- as.data.frame(t(rbind(netStats$Connectivity, \
                     netStats$ScaledConnectivity, netStats$ClusterCoef, netStats$MAR)))")

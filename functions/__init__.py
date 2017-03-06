@@ -1,5 +1,6 @@
 ### analysis folder
 from analysis.anova_graphs import getCatUnivData, getQuantUnivData
+from analysis.corr_graphs import getCorr
 from analysis.diffabund_graphs import getDiffAbund
 from analysis.gage_graphs import getGAGE
 from analysis.norm_graphs import getNorm, getTab, getBiom

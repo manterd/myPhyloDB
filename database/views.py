@@ -1936,6 +1936,16 @@ def ANOVA(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
+def CORR(request):
+    functions.cleanup('myPhyloDB/media/temp/corr')
+
+    return render(
+        request,
+        'corr.html'
+    )
+
+
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def rich(request):
     functions.cleanup('myPhyloDB/media/temp/spac')
 

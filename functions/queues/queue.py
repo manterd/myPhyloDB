@@ -118,6 +118,8 @@ def process(pid):
                     recent[RID] = functions.getCatUnivData(request, RID, stopList, pid)
                 if funcName == "getQuantUnivData":
                     recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
+                if funcName == "getCorr":
+                    recent[RID] = functions.getCorr(request, stopList, RID, pid)
                 if funcName == "getPCA":
                     recent[RID] = functions.getPCA(request, stopList, RID, pid)
                 if funcName == "getPCoA":
