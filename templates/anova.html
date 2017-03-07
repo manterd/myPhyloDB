@@ -27,6 +27,7 @@
         var running = false, refresh = 0, RID = 0;
         var subset = 'none';
         var HCDefaults = $.extend(true, {}, Highcharts.getOptions(), {});
+        var countCat = 0;
 
         $(function () {
             $(window).load(function() {
@@ -52,22 +53,24 @@
             array[indexB] = tmp;
         }
         function reOrder() {
-            var pos1 = prompt("Please enter the bar position you wish to move from:", 1);
-            var pos2 = prompt("Please enter the bar position you wish to move from:", 0);
+            $("#reorder").css("background-color", "yellow");
+            var pos1 = prompt("Please enter the x-axis position you wish to move from:", 0);
+            var pos2 = prompt("Please enter the x-axis position you wish to move to:", 1);
             var cat = chart1.xAxis[0].categories;
+            console.log(cat);
             swapElement(cat, pos1, pos2);
             chart1.xAxis[0].setCategories(cat);
 
-            //not working here.
             var seriez = chart1.series;
-            for (var i = 0, len = seriez.length; i < len; i++) {
-                if (chart1.series[i].type == 'column') {
-                    var list = chart1.series[i].options.data;
-                    var arr = list.split(',');
-                    swapElement(arr, pos1, pos2);
-                    chart1.series[i].setData(arr);
-                }
+            for (var i=0; i < seriez.length; i++) {
+                var dat = chart1.series[i];
+                var arr = dat.options.data;
+                swapElement(arr, pos1, pos2);
+                chart1.series[i].update({
+                    data: arr
+                });
             }
+            $("#reorder").css("background-color", "green");
         }
 
         function barChart(xAxis, yAxis, series) {
@@ -176,8 +179,14 @@
 
             if (dataType == "1") {
                 $("#unstackButton").show();
+                if (countCat < 2) {
+                    $("#reorder").show();
+                } else {
+                    $("#reorder").hide();
+                }
             } else {
                 $("#unstackButton").hide();
+                $("#reorder").hide();
             }
 
             if (treeType == "1") {
@@ -1278,6 +1287,7 @@
             $("#text-1").val('');
             $("#text-2").val('');
             $("#taxDiv").empty();
+            $("#reorder").css("background-color", "lightgray");
 
             running = true;
             checkButtons();
@@ -1673,7 +1683,7 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td colspan="8" style="text-align: center;"><input type="button" id="reorder" value="Reorder" onclick="reOrder();"></td>
+            <td colspan="8" style="text-align: center;"><input type="button" id="reorder" value="Reorder bars" onclick="reOrder();"></td>
             <td colspan="4" style="text-align: center;"><input type="button" id="unstackButton" value="Unstack bars" onclick="flipStack();"></td>
             <td id="cat_off" colspan="8" style="text-align: center"></td>
 

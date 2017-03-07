@@ -64,6 +64,15 @@
                     return false;
                 }
             }
+
+            if (document.title == 'ANcOVA') {
+                countCat = 0;
+                $.each(nodesCat, function (key, value) {
+                    if (value.data.pType != undefined) {
+                        countCat = countCat + 1;
+                    }
+                });
+            }
         }
 
     });
