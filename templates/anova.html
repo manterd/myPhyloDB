@@ -46,6 +46,30 @@
         });
 
         {% include "js/commonFunctions.js" %}
+        function swapElement(array, indexA, indexB) {
+            var tmp = array[indexA];
+            array[indexA] = array[indexB];
+            array[indexB] = tmp;
+        }
+        function reOrder() {
+            var pos1 = prompt("Please enter the bar position you wish to move from:", 1);
+            var pos2 = prompt("Please enter the bar position you wish to move from:", 0);
+            var cat = chart1.xAxis[0].categories;
+            swapElement(cat, pos1, pos2);
+            chart1.xAxis[0].setCategories(cat);
+
+            //not working here.
+            var seriez = chart1.series;
+            for (var i = 0, len = seriez.length; i < len; i++) {
+                if (chart1.series[i].type == 'column') {
+                    var list = chart1.series[i].options.data;
+                    var arr = list.split(',');
+                    swapElement(arr, pos1, pos2);
+                    chart1.series[i].setData(arr);
+                }
+            }
+        }
+
         function barChart(xAxis, yAxis, series) {
             var categories = series[0].data.length;
             var width = categories*100+600;
@@ -123,7 +147,7 @@
                     }
                 },
                 plotOptions: {
-                    column: { stacking: "normal"},
+                    column: {stacking: "normal"},
                     series: {
                         events: {
                             legendItemClick: function(e) {
@@ -1649,7 +1673,7 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td colspan="8" style="text-align: center"></td>
+            <td colspan="8" style="text-align: center;"><input type="button" id="reorder" value="Reorder" onclick="reOrder();"></td>
             <td colspan="4" style="text-align: center;"><input type="button" id="unstackButton" value="Unstack bars" onclick="flipStack();"></td>
             <td id="cat_off" colspan="8" style="text-align: center"></td>
 
