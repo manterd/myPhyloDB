@@ -450,8 +450,7 @@ def getCatUnivData(request, RID, stops, PID):
                         g2indexvals = grouped2.index.values
                         level = g2indexvals[0].__len__()
                         labelTree = recLabels(g2indexvals, level)
-                        labelTree.pop('name')
-                        xAxisDict['categories'] = [labelTree]
+                        xAxisDict['categories'] = labelTree['categories']
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if stops[PID] == RID:

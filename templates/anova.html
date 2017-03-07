@@ -57,7 +57,6 @@
             var pos1 = prompt("Please enter the x-axis position you wish to move from:", 0);
             var pos2 = prompt("Please enter the x-axis position you wish to move to:", 1);
             var cat = chart1.xAxis[0].categories;
-            console.log(cat);
             swapElement(cat, pos1, pos2);
             chart1.xAxis[0].setCategories(cat);
 
