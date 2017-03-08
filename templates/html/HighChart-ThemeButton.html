@@ -3,21 +3,24 @@
 <td colspan="8" style="text-align: center">
     Select chart theme:
     <select id="theme" onChange="themeChange(this.value)">
-        <option value="1" selected="selected">default</option>
-        <option value="2">dark-blue</option>
-        <option value="3">dark-green</option>
-        <option value="4">dark-unica</option>
-        <option value="5">flat</option>
-        <option value="6">google</option>
-        <option value="7">gray</option>
-        <option value="8">grid</option>
-        <option value="9">grid-light</option>
-        <option value="10">sand-signika</option>
-        <option value="11">skies</option>
+        <option value="1" selected="selected">theme: default</option>
+        <option value="2">theme: dark-blue</option>
+        <option value="3">theme: dark-green</option>
+        <option value="4">theme: dark-unica</option>
+        <option value="5">theme: flat</option>
+        <option value="6">theme: google</option>
+        <option value="7">theme: gray</option>
+        <option value="8">theme: grid</option>
+        <option value="9">theme: grid-light</option>
+        <option value="10">theme: sand-signika</option>
+        <option value="11">theme: skies</option>
+        <option value="12">colors: grayscale</option>
+        <option value="13">colors: rainbow</option>
     </select>
     &nbsp; &nbsp;
 </td>
 
+<script src="{% static 'highcharts/rainbowVis.js' %}" type="text/javascript"></script>
 
 <script type="text/javascript">
     function createChart(theme) {
@@ -85,7 +88,7 @@
             $.getScript("{{ baseUrl }}/highcharts/themes/grid-light.js", function() {
                 createChart(theme);
             });
-        }  else if (selTheme == 10) {
+        } else if (selTheme == 10) {
             $.getScript("{{ baseUrl }}/highcharts/themes/sand-signika.js", function() {
                 createChart(theme);
             });
@@ -93,6 +96,74 @@
             $.getScript("{{ baseUrl }}/highcharts/themes/skies.js", function() {
                 createChart(theme);
             });
+        } else if (selTheme == 12) {   // gray-colors
+            if (dataType == "1") {
+                var rainbow_width = chart1.series.length;
+            } else {
+                rainbow_width = chart2.series.length;
+            }
+            var rainbow = new Rainbow();
+            rainbow.setSpectrum('black', '#d3d3d3');
+            rainbow.setNumberRange(1, rainbow_width);
+
+            var colorArr = [];
+            for (var i=1; i <= rainbow_width; i++) {
+                colorArr.push('#'+rainbow.colourAt(i));
+            }
+
+            if (dataType == "1") {
+                for (i=0; i < rainbow_width; i++) {
+                    var dat = chart1.series[i];
+                    if (dat.type == 'column') {
+                        dat.update({
+                            color: colorArr[i]
+                        });
+                    }
+                }
+            } else {
+                for (i=0; i < rainbow_width; i++) {
+                    dat = chart2.series[i];
+                    if (dat.type == 'scatter') {
+                        dat.update({
+                            color: colorArr[i]
+                        });
+                    }
+                }
+            }
+        } else if (selTheme == 13) {   // rainbow-colors
+            if (dataType == "1") {
+                var rainbow_width = chart1.series.length;
+            } else {
+                rainbow_width = chart2.series.length;
+            }
+            var rainbow = new Rainbow();
+            rainbow.setSpectrum('red', 'orange', 'yellow', 'green', 'blue');
+            rainbow.setNumberRange(1, rainbow_width);
+
+            var colorArr = [];
+            for (var i=1; i <= rainbow_width; i++) {
+                colorArr.push('#'+rainbow.colourAt(i));
+            }
+
+            if (dataType == "1") {
+                for (i=0; i < rainbow_width; i++) {
+                    var dat = chart1.series[i];
+                    if (dat.type == 'column') {
+                        dat.update({
+                            color: colorArr[i]
+                        });
+                    }
+                }
+            } else {
+                for (i=0; i < rainbow_width; i++) {
+                    dat = chart2.series[i];
+                    if (dat.type == 'scatter') {
+                        dat.update({
+                            color: colorArr[i]
+                        });
+                    }
+                }
+            }
         }
     }
 </script>
