@@ -114,7 +114,13 @@
             if (dataType == "1") {
                 for (i=0; i < rainbow_width; i++) {
                     var dat = chart1.series[i];
-                    if (dat.type == 'column') {
+                    if (document.title == 'ANcOVA') {
+                        if (dat.type == 'column') {
+                            dat.update({
+                                color: colorArr[i]
+                            });
+                        }
+                    } else {
                         dat.update({
                             color: colorArr[i]
                         });
@@ -123,7 +129,13 @@
             } else {
                 for (i=0; i < rainbow_width; i++) {
                     dat = chart2.series[i];
-                    if (dat.type == 'scatter') {
+                    if (document.title == 'ANcOVA') {
+                        if (dat.type == 'scatter') {
+                            dat.update({
+                                color: colorArr[i]
+                            });
+                        }
+                    } else {
                         dat.update({
                             color: colorArr[i]
                         });
@@ -148,7 +160,13 @@
             if (dataType == "1") {
                 for (i=0; i < rainbow_width; i++) {
                     var dat = chart1.series[i];
-                    if (dat.type == 'column') {
+                    if (document.title == 'ANcOVA') {
+                        if (dat.type == 'column') {
+                            dat.update({
+                                color: colorArr[i]
+                            });
+                        }
+                    } else {
                         dat.update({
                             color: colorArr[i]
                         });
@@ -157,7 +175,13 @@
             } else {
                 for (i=0; i < rainbow_width; i++) {
                     dat = chart2.series[i];
-                    if (dat.type == 'scatter') {
+                    if (document.title == 'ANcOVA') {
+                        if (dat.type == 'scatter') {
+                            dat.update({
+                                color: colorArr[i]
+                            });
+                        }
+                    } else {
                         dat.update({
                             color: colorArr[i]
                         });
