@@ -571,8 +571,8 @@ def getPCoA(request, stops, RID, PID):
                 xAxisDict = {}
                 yAxisDict = {}
 
-                CAP1 = PC1 + len(catFields) + len(quantFields) + 2
-                CAP2 = PC2 + len(catFields) + len(quantFields) + 2
+                CAP1 = PC1 + len(catFields) + len(quantFields) + 1
+                CAP2 = PC2 + len(catFields) + len(quantFields) + 1
 
                 if catFields:
                     grouped = pcoaDF.groupby(catFields)
@@ -583,6 +583,7 @@ def getPCoA(request, stops, RID, PID):
                             trt = name
 
                         dataList = []
+                        print group
                         for index, row in group.iterrows():
                             dataDict = {}
                             dataDict['name'] = row['Sample ID']
