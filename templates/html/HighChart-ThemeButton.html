@@ -16,6 +16,7 @@
         <option value="11">theme: skies</option>
         <option value="12">colors: grayscale</option>
         <option value="13">colors: rainbow</option>
+        <option value="14">colors: random</option>
     </select>
     &nbsp; &nbsp;
 </td>
@@ -144,22 +145,66 @@
             }
         } else if (selTheme == 13) {   // rainbow-colors
             if (dataType == "1") {
-                var rainbow_width = chart1.series.length;
+                rainbow_width = chart1.series.length;
             } else {
                 rainbow_width = chart2.series.length;
             }
-            var rainbow = new Rainbow();
-            rainbow.setSpectrum('red', 'orange', 'yellow', 'green', 'blue');
+            rainbow = new Rainbow();
+            rainbow.setSpectrum('red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet');
             rainbow.setNumberRange(1, rainbow_width);
 
-            var colorArr = [];
-            for (var i=1; i <= rainbow_width; i++) {
+            colorArr = [];
+            for (i=1; i <= rainbow_width; i++) {
                 colorArr.push('#'+rainbow.colourAt(i));
             }
 
             if (dataType == "1") {
                 for (i=0; i < rainbow_width; i++) {
-                    var dat = chart1.series[i];
+                    dat = chart1.series[i];
+                    if (document.title == 'ANcOVA') {
+                        if (dat.type == 'column') {
+                            dat.update({
+                                color: colorArr[i]
+                            });
+                        }
+                    } else {
+                        dat.update({
+                            color: colorArr[i]
+                        });
+                    }
+                }
+            } else {
+                for (i=0; i < rainbow_width; i++) {
+                    dat = chart2.series[i];
+                    if (document.title == 'ANcOVA') {
+                        if (dat.type == 'scatter') {
+                            dat.update({
+                                color: colorArr[i]
+                            });
+                        }
+                    } else {
+                        dat.update({
+                            color: colorArr[i]
+                        });
+                    }
+                }
+            }
+        } else if (selTheme == 14) {   // random-colors
+            if (dataType == "1") {
+                rainbow_width = chart1.series.length;
+            } else {
+                rainbow_width = chart2.series.length;
+            }
+
+            colorArr = [];
+            for (i=1; i <= rainbow_width; i++) {
+                var randomColor = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
+                colorArr.push(randomColor);
+            }
+
+            if (dataType == "1") {
+                for (i=0; i < rainbow_width; i++) {
+                    dat = chart1.series[i];
                     if (document.title == 'ANcOVA') {
                         if (dat.type == 'column') {
                             dat.update({

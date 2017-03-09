@@ -80,7 +80,7 @@ def getRF(request, stops, RID, PID):
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
-                if not catFields:
+                if not catFields and not quantFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
                     res = json.dumps(myDict)
@@ -143,7 +143,8 @@ def getRF(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
 
                 # make sure column types are correct
-                finalDF[catFields] = finalDF[catFields].astype(str)
+                if catFields:
+                    finalDF[catFields] = finalDF[catFields].astype(str)
 
                 # transform Y, if requested
                 transform = int(all["transform"])

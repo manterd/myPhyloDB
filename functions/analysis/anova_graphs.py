@@ -433,6 +433,12 @@ def getCatUnivData(request, RID, stops, PID):
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                    catFieldsList = []
+                    for i in catFields:
+                        catFieldsList.append(len(group1.groupby(i)))
+
+                    catFields = [x for (y, x) in sorted(zip(catFieldsList, catFields))]
+
                     if DepVar == 0:
                         grouped2 = group1.groupby(catFields)['abund'].mean()
                     elif DepVar == 1:
@@ -443,6 +449,8 @@ def getCatUnivData(request, RID, stops, PID):
                         grouped2 = group1.groupby(catFields)['rich'].mean()
                     elif DepVar == 3:
                         grouped2 = group1.groupby(catFields)['diversity'].mean()
+                    else:
+                        raise Exception("Something went horribly wrong")
 
                     if catFields.__len__() == 1:
                         xAxisDict['categories'] = grouped2.index.values.tolist()

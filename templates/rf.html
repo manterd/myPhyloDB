@@ -187,7 +187,7 @@
             var proportion = document.getElementById("proportion").value;
             if ((proportion < 0) || (proportion > 1)) {
                 $("#run").css("background-color", "red");
-                alert('proportion of samples to include in each training set must be betwee 0 and 1');
+                alert('proportion of samples to include in each training set must be between 0 and 1');
                 running = false;
                 return;
             }
@@ -695,7 +695,7 @@
                     }
                 }
                  if (node.getLevel() == 4) {
-                    if (node.data.pType == 'human_associated') {
+                    if (node.data.pType == 'human associated') {
                         if (node.bSelected || node.hasSubSel) {
                             var allRows = [];
                             var child1 = node.getChildren();

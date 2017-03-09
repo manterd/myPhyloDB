@@ -583,7 +583,6 @@ def getPCoA(request, stops, RID, PID):
                             trt = name
 
                         dataList = []
-                        print group
                         for index, row in group.iterrows():
                             dataDict = {}
                             dataDict['name'] = row['Sample ID']

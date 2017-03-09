@@ -38,7 +38,6 @@ def getGAGE(request, stops, RID, PID):
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
-                allFields = catFields + quantFields
 
                 # round data to fix normalization type issues
                 savedDF['abund'] = savedDF['abund'].round(0).astype(int)
@@ -182,7 +181,6 @@ def getGAGE(request, stops, RID, PID):
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
-
                 wantedList = ['merge', 'sample_name']
                 metaDF = metaDF.loc[:, wantedList]
 
@@ -257,8 +255,6 @@ def getGAGE(request, stops, RID, PID):
                         comparison = str(trt1) + ' vs. ' + str(trt2)
                         nbinom_res.insert(0, 'comparison', comparison)
                         diffDF = diffDF.append(nbinom_res, ignore_index=True)
-                        all_columns = nbinom_res.columns
-                        diffDF = diffDF.ix[:, all_columns]
 
                         ### GAGE analysis on all pathways...
                         r("gage.res <- gage(change, gsets=kegg.sets.ko, species='ko', same.dir=FALSE)")
@@ -266,10 +262,8 @@ def getGAGE(request, stops, RID, PID):
                             p.val=gage.res$greater[, 3], q.val=gage.res$greater[, 4], \
                             set.size=gage.res$greater[, 5])")
 
-                        # TODO: check this block
                         compDF = r.get("df")
                         compDF.insert(0, 'comparison', comparison)
-                        compDF.dropna(axis=0, how='any', inplace=True)
                         gageDF = gageDF.append(compDF, ignore_index=True)
 
                         ### Get data way for pathview
