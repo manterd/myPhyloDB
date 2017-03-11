@@ -191,7 +191,7 @@ def getRF(request, stops, RID, PID):
                 functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 # R packages from cran
-                r("list.of.packages <- c('caret', 'randomForest', 'NeuralNetTools', 'e1071', 'stargazer', 'stringr')")
+                r("list.of.packages <- c('caret', 'randomForest', 'NeuralNetTools', 'e1071', 'stargazer', 'stringr', 'ROCR')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
@@ -200,6 +200,7 @@ def getRF(request, stops, RID, PID):
                 print r('library(caret)')
                 print r('library(reshape2)')
                 print r('library(RColorBrewer)')
+                print r('library(ROCR)')
                 print r("library(plyr)")
                 print r('library(stargazer)')
                 print r('library(stringr)')
@@ -449,7 +450,7 @@ def getRF(request, stops, RID, PID):
                     r("n_wrap <- ceiling(nlevels(graphDF$obs)/3)")
                     r("ggsave(filename=file, plot=p, units='in', height=2+(1.25*n_wrap), width=2+6)")
 
-                    # graph probabilites for each test sample
+                    # graph probabilities for each test sample
                     if testIDs:
                         r("probY_test <- predict(fit, myData_test, type='prob')")
                         r("myFactors <- levels(Y_test)")
@@ -482,7 +483,7 @@ def getRF(request, stops, RID, PID):
                         r("n_wrap <- ceiling(nlevels(obs)/3)")
                         r("ggsave(filename=file, plot=p, units='in', height=2+(1.25*n_wrap), width=2+6)")
 
-                    # graph probabilites by taxa
+                    # graph probabilities by taxa
                     r("probY <- predict(fit, type='prob')")
                     r("newX <- X[,myFilter]")
                     r("tempDF <- cbind(newX, Y, probY)")
@@ -629,6 +630,25 @@ def getRF(request, stops, RID, PID):
                         res = ''
                         return HttpResponse(res, content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                # TODO: Add ROC curve - this does not currently work
+                # ROC Curve
+                if testIDs:
+                    r("pdf_counter <- pdf_counter + 1")
+                    print r("probY_test <- predict(fit, myData_test, type='prob')")
+                    print r("predY_test <- prediction(probY_test, myData_test$Y)")
+                    print r("perf <- performance(predY_test, measure='tpr', x.measure='fpr')")
+                    print r('auc <- performance(predY_test, measure = "auc")')
+                    print r('auc <- auc@y.values[[1]]')
+                    print r('roc.data <- data.frame(fpr=unlist(perf@x.values), \
+                       tpr=unlist(perf@y.values), \
+                       model="GLM")')
+                    print r('ggplot(roc.data, aes(x=fpr, ymin=0, ymax=tpr)) + \
+                        geom_ribbon(alpha=0.2) + \
+                        geom_line(aes(y=tpr)) + \
+                        ggtitle(paste0("ROC Curve w/ AUC=", auc))')
+                    r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                    r("ggsave(filename=file, plot=p, units='in', height=4, width=4)")
 
                 r("myTable <- stargazer(varDF, type='text', summary=F, rownames=T)")
                 result += 'Variable Importance\n'

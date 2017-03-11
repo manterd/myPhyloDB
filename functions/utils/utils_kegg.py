@@ -1,5 +1,3 @@
-import sys
-import ast
 import datetime
 from django import db
 from django.http import HttpResponse
@@ -334,7 +332,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         # get PICRUSt data for otu
         otuList = pd.unique(profileDF.index.ravel().tolist())
         qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
-        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
+        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneList'])
 
         rows, cols = picrustDF.shape
         levelList = koDict.keys()
@@ -346,13 +344,12 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         picrustDF.set_index('otuid', drop=True, inplace=True)
 
         curStep = functions.getBase(RID)
-        sumKEGG(otuList, picrustDF, koDict, RID, PID, stops)
+        sumKEGG(picrustDF, koDict, RID, PID, stops)
         functions.setBase(RID, curStep)
 
-        picrustDF.drop('geneCount', axis=1, inplace=True)
+        picrustDF.drop('geneList', axis=1, inplace=True)
         picrustDF = picrustDF[picrustDF.columns[picrustDF.sum() > 0]]
         levelList = picrustDF.columns.values.tolist()
-        picrustDF[picrustDF > 0.0] = 1.0
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
         profileDF.reset_index(drop=False, inplace=True)
@@ -935,7 +932,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         # get PICRUSt data for otu
         otuList = pd.unique(profileDF.index.ravel().tolist())
         qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
-        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'])
+        picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneList'])
 
         rows, cols = picrustDF.shape
         levelList = nzDict.keys()
@@ -947,13 +944,12 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         picrustDF.set_index('otuid', drop=True, inplace=True)
 
         curStep = functions.getBase(RID)
-        sumKEGG(otuList, picrustDF, nzDict, RID, PID, stops)
+        sumKEGG(picrustDF, nzDict, RID, PID, stops)
         functions.setBase(RID, curStep)
 
-        picrustDF.drop('geneCount', axis=1, inplace=True)
+        picrustDF.drop('geneList', axis=1, inplace=True)
         picrustDF = picrustDF[picrustDF.columns[picrustDF.sum() > 0]]
         levelList = picrustDF.columns.values.tolist()
-        picrustDF[picrustDF > 0.0] = 1.0
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
         profileDF.reset_index(drop=False, inplace=True)
@@ -1088,18 +1084,23 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             return HttpResponse(res, content_type='application/json')
 
 
-def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
+def sumKEGG(picrustDF, keggDict, RID, PID, stops):
     db.close_old_connections()
-    total = len(otuList)
+    total = len(keggDict)
     counter = 1
-    for otu in otuList:
-        try:
-            cell = picrustDF.at[otu, 'geneCount']
-            d = ast.literal_eval(cell)
 
-            for key in keggDict:
+    try:
+        for key in keggDict:
+            myList = keggDict[key]
+            for index, row in picrustDF.iterrows():
                 sum = 0.0
-                myList = keggDict[key]
+                rowList = row['geneList']
+                for i in myList:
+                    if i in rowList:
+                        sum += 1.0
+                        if sum == len(myList):
+                            picrustDF.at[index, key] = 1.0
+                            break
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -1107,31 +1108,11 @@ def sumKEGG(otuList, picrustDF, keggDict, RID, PID, stops):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                for k in myList:
-                    if k in d:
-                        sum += 1.0
-
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID] == RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                if sum == len(myList):
-                    picrustDF.at[otu, key] = 1.0
-                else:
-                    picrustDF.at[otu, key] = 0.0
-            functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...phylotype ' + str(counter) + ' out of ' + str(total) + ' is finished!')
+            functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...pathway/enzyme ' + str(counter) + ' out of ' + str(total) + ' is finished!')
             counter += 1
 
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-            if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
-            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        except Exception:
-            pass
+    except Exception:
+        pass
 
 
 def getFullTaxonomy(idList):

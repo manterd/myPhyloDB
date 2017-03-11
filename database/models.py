@@ -1,8 +1,9 @@
+import ast
 from django.db import models
 from django.contrib.auth.models import User as Users
-from jsonfield import JSONField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 
 queue = 0
 
@@ -692,8 +693,11 @@ class nz_entry(models.Model):
 class PICRUSt(models.Model):
     otuid = models.ForeignKey(OTU_99)
     rRNACount = models.FloatField(blank=True, null=True)
-    geneCount = JSONField(default={})
+    geneList = models.TextField(blank=True)
 
+    def get_list(self):
+        list = ast.literal_eval(self.geneList)
+        return list
 
 class UserProfile(models.Model):
     user = models.OneToOneField(Users, related_name='profile')

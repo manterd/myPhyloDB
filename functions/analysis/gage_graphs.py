@@ -240,6 +240,7 @@ def getGAGE(request, stops, RID, PID):
                         r("res <- results(dds, contrast=c('trt', trt1, trt2))")
                         r("change <- -res$log2FoldChange")
                         r("names(change) <- row.names(res)")
+                        print r('change')
 
                         # output DiffAbund to DataTable
                         r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
@@ -257,7 +258,9 @@ def getGAGE(request, stops, RID, PID):
                         diffDF = diffDF.append(nbinom_res, ignore_index=True)
 
                         ### GAGE analysis on all pathways...
-                        r("gage.res <- gage(change, gsets=kegg.sets.ko, species='ko', same.dir=FALSE)")
+                        print r("gage.res <- gage(change, gsets=kegg.sets.ko, species='ko', same.dir=FALSE)")
+                        print r('gage.res')
+                        print r('gage.res$greater')
                         r("df <- data.frame(pathway=rownames(gage.res$greater), p.geomean=gage.res$greater[, 1], stat.mean=gage.res$greater[, 2], \
                             p.val=gage.res$greater[, 3], q.val=gage.res$greater[, 4], \
                             set.size=gage.res$greater[, 5])")

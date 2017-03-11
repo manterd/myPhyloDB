@@ -119,11 +119,10 @@ def geneParse(file1, file2, file3):
             row.drop('Taxonomy', inplace=True)
             rowDict = row.to_dict()
             geneCount = {x: y for x, y in rowDict.items() if y != 0}
-            for key in geneCount:
-                geneCount[key] = round(geneCount[key] / rRNACount, 4)
+            geneList = str(geneCount.keys())
 
             if not PICRUSt.objects.using('picrust').filter(otuid_id=otu).exists():
-                PICRUSt.objects.using('picrust').create(otuid_id=otu, rRNACount=rRNACount, geneCount=geneCount)
+                PICRUSt.objects.using('picrust').create(otuid_id=otu, rRNACount=rRNACount, geneList=geneList)
 
             stage = 'Step 3 of 3: Adding PICRUSt data to your database...OTU ' + str(counter) + ' out of ' + str(total) + ' is complete!'
             counter += 1
