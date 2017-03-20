@@ -231,7 +231,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 r("sizeFactor <- rep(1, length(trt))")
                 r("dds$sizeFactor <- sizeFactor")
-                r("dds <- estimateDispersions(dds)")
+                r("dds <- estimateDispersions(dds, fitType='local')")
                 r("dds <- nbinomWaldTest(dds)")
 
                 mergeList = metaDF['merge'].tolist()
@@ -249,7 +249,9 @@ def getDiffAbund(request, stops, RID, PID):
                             r("res <- results(dds, contrast=c('trt', trt1, trt2))")
                             r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
                             r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
-                            r("df <- data.frame(rank_id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                            r("df <- data.frame(rank_id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, \
+                                baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, \
+                                 stat=res$stat, pval=res$pvalue, padj=res$padj)")
                             df = r.get("df")
 
                             if df is None:
@@ -309,6 +311,7 @@ def getDiffAbund(request, stops, RID, PID):
                 xAxisDict = {}
                 yAxisDict = {}
 
+                nbinom_res.fillna(value=1.0, inplace=True)
                 grouped = nbinom_res.groupby('Comparison')
 
                 listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']

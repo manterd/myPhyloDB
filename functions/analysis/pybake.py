@@ -76,8 +76,8 @@ def geneParse(file1, file2, file3):
             if not Kingdom.objects.filter(kingdomName=taxon[0]).exists():
                 kid = uuid4().hex
                 Kingdom.objects.create(kingdomid=kid, kingdomName=taxon[0])
-            k = Kingdom.objects.get(kingdomName=taxon[0]).kingdomid
 
+            k = Kingdom.objects.get(kingdomName=taxon[0]).kingdomid
             if not Phyla.objects.filter(kingdomid_id=k, phylaName=taxon[1]).exists():
                 pid = uuid4().hex
                 Phyla.objects.create(kingdomid_id=k, phylaid=pid, phylaName=taxon[1])

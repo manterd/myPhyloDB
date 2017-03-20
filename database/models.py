@@ -699,6 +699,7 @@ class PICRUSt(models.Model):
         list = ast.literal_eval(self.geneList)
         return list
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(Users, related_name='profile')
     firstName = models.CharField(blank=True, max_length=200)

@@ -7,9 +7,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger
 from pyper import *
 import json
 
-from database.models import ko_lvl1, ko_lvl2, ko_lvl3, \
-    nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry, \
-    Phyla, Class, Order, Family, Genus, Species, OTU_99
+from database.models import ko_entry
 
 import functions
 
@@ -171,17 +169,27 @@ def getGAGE(request, stops, RID, PID):
                     finalDF['abund_16S'] = finalDF['abund_16S'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
-                count_rDF.fillna(0, inplace=True)
+                # need to change rank_id to kegg orthologies for gage analysis
+                count_rDF.reset_index(drop=False, inplace=True)
+                count_rDF.rename(columns={'index': 'rank_id'}, inplace=True)
+                idList = count_rDF.rank_id.tolist()
+                idDict = {}
+                for id in idList:
+                    entry = ko_entry.objects.using('picrust').get(ko_lvl4_id=id).ko_orthology
+                    idDict[id] = entry
+                count_rDF['ko'] = count_rDF['rank_id'].map(idDict)
+                count_rDF.drop('rank_id', axis=1, inplace=True)
+                count_rDF.drop_duplicates(take_last=True, inplace=True)  # remove dups - KOs mapped to multiple pathways
+                count_rDF.set_index('ko', drop=True, inplace=True)
 
-                # Create combined metadata column - GAGE only
-                metaDF.sort('sampleid', inplace=True)
+                # Create combined metadata column
                 if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
                         metaDF.loc[index, 'merge'] = "; ".join(row[catFields])
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
-                wantedList = ['merge', 'sample_name']
+                wantedList = ['merge', 'sampleid', 'sample_name']
                 metaDF = metaDF.loc[:, wantedList]
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -191,6 +199,7 @@ def getGAGE(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict = {}
+                metaDF.sort(columns='sampleid', inplace=True)
                 r.assign("metaDF", metaDF)
                 r("trt <- factor(metaDF$merge)")
 
@@ -203,7 +212,7 @@ def getGAGE(request, stops, RID, PID):
 
                 r("sizeFactor <- rep(1, length(trt))")
                 r("dds$sizeFactor <- sizeFactor")
-                r("dds <- estimateDispersions(dds)")
+                r("dds <- estimateDispersions(dds, fitType='local')")
                 r("dds <- nbinomWaldTest(dds)")
 
                 if DepVar == 0:
@@ -240,13 +249,17 @@ def getGAGE(request, stops, RID, PID):
                         r("res <- results(dds, contrast=c('trt', trt1, trt2))")
                         r("change <- -res$log2FoldChange")
                         r("names(change) <- row.names(res)")
-                        print r('change')
 
                         # output DiffAbund to DataTable
                         r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
                         r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
-                        r("df <- data.frame(kegg=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                        r("df <- data.frame(kegg=row.names(res), baseMean=res$baseMean, baseMeanA=baseMeanA, \
+                            baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, \
+                            pval=res$pvalue, padj=res$padj) \
+                        ")
+
                         nbinom_res = r.get("df")
+                        nbinom_res.fillna(value=1.0, inplace=True)
 
                         if nbinom_res is None:
                             myDict = {'error': "DESeq failed!\nPlease try a different data combination."}
@@ -260,12 +273,11 @@ def getGAGE(request, stops, RID, PID):
                         ### GAGE analysis on all pathways...
                         print r("gage.res <- gage(change, gsets=kegg.sets.ko, species='ko', same.dir=FALSE)")
                         print r('gage.res')
-                        print r('gage.res$greater')
-                        r("df <- data.frame(pathway=rownames(gage.res$greater), p.geomean=gage.res$greater[, 1], stat.mean=gage.res$greater[, 2], \
+                        r("df2 <- data.frame(pathway=row.names(gage.res$greater), p.geomean=gage.res$greater[, 1], stat.mean=gage.res$greater[, 2], \
                             p.val=gage.res$greater[, 3], q.val=gage.res$greater[, 4], \
                             set.size=gage.res$greater[, 5])")
 
-                        compDF = r.get("df")
+                        compDF = r.get("df2")
                         compDF.insert(0, 'comparison', comparison)
                         gageDF = gageDF.append(compDF, ignore_index=True)
 
@@ -351,65 +363,3 @@ def getGAGE(request, stops, RID, PID):
             myDict['error'] = "There was an error during your analysis:\nError: " + str(e.message) + "\nTimestamp: " + str(datetime.datetime.now())
             res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
-
-
-def getFullTaxonomy(level, id):
-    record = []
-
-    if level == 2:
-        record = Phyla.objects.all().filter(phylaid__in=id).values_list('kingdomid_id__kingdomName', 'phylaName')
-    elif level == 3:
-        record = Class.objects.all().filter(classid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'className')
-    elif level == 4:
-        record = Order.objects.all().filter(orderid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderName')
-    elif level == 5:
-        record = Family.objects.all().filter(familyid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyName')
-    elif level == 6:
-        record = Genus.objects.all().filter(genusid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusName')
-    elif level == 7:
-        record = Species.objects.all().filter(speciesid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesName')
-    elif level == 9:
-        record = OTU_99.objects.all().filter(otuid__in=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'species_id__speciesName', 'otuName')
-
-    return record
-
-
-def getFullKO(level, id):
-    record = []
-
-    if level == 1:
-        record = ko_lvl1.objects.using('picrust').all().filter(ko_lvl1_id__in=id).values_list('ko_lvl1_name')
-    elif level == 2:
-        record = ko_lvl2.objects.using('picrust').all().filter(ko_lvl2_id__in=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_name')
-    elif level == 3:
-        record = ko_lvl3.objects.using('picrust').all().filter(ko_lvl3_id__in=id).values_list('ko_lvl1_id_id__ko_lvl1_name', 'ko_lvl2_id_id__ko_lvl2_name', 'ko_lvl3_name')
-
-    return record
-
-
-def getFullNZ(level, id):
-    record = []
-
-    if level == 1:
-        record = nz_lvl1.objects.using('picrust').all().filter(nz_lvl1_id__in=id).values_list('nz_lvl1_name')
-    elif level == 2:
-        record = nz_lvl2.objects.using('picrust').all().filter(nz_lvl2_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_name')
-    elif level == 3:
-        record = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
-    elif level == 4:
-        record = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-    elif level == 5:
-        for item in id:
-            if nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=item).exists():
-                qs = nz_lvl3.objects.using('picrust').all().filter(nz_lvl3_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_name')
-                record.extend(qs)
-            elif nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=item).exists():
-                qs = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-                record.extend(qs)
-            elif nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=item).exists():
-                qs = nz_entry.objects.using('picrust').all().filter(nz_lvl5_id=item).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_id_id__nz_lvl4_name')
-                record.extend(qs)
-    elif level == 6:
-        record = nz_lvl4.objects.using('picrust').all().filter(nz_lvl4_id__in=id).values_list('nz_lvl1_id_id__nz_lvl1_name', 'nz_lvl2_id_id__nz_lvl2_name', 'nz_lvl3_id_id__nz_lvl3_name', 'nz_lvl4_name')
-
-    return record
