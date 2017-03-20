@@ -341,6 +341,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         functions.setBase(RID, curStep)
 
         picrustDF.drop('geneList', axis=1, inplace=True)
+        picrustDF.fillna(value=0, inplace=True)
         levelList = picrustDF.columns.values.tolist()
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
@@ -364,7 +365,6 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             tempDF = pd.DataFrame(index=profileDF.index)
             for j in levelList:
                 tempDF[j] = profileDF[i] * picrustDF[j]
-                tempDF['sampleid'] = i
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -372,7 +372,8 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            tempDF = tempDF.groupby('sampleid')[levelList].sum()
+            tempDF = tempDF[levelList].sum()
+            tempDF['sampleid'] = i
             taxaDF = taxaDF.append(tempDF)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -438,7 +439,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        taxaDF.reset_index(drop=False, inplace=True)
+        #taxaDF.reset_index(drop=False, inplace=True)
         if DepVar == 0:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 1:
@@ -942,6 +943,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         functions.setBase(RID, curStep)
 
         picrustDF.drop('geneList', axis=1, inplace=True)
+        picrustDF.fillna(value=0, inplace=True)
         levelList = picrustDF.columns.values.tolist()
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
@@ -965,7 +967,6 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             tempDF = pd.DataFrame(index=profileDF.index)
             for j in levelList:
                 tempDF[j] = profileDF[i] * picrustDF[j]
-                tempDF['sampleid'] = i
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -973,8 +974,9 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            tempDF = tempDF.groupby('sampleid')[levelList].sum()
-            taxaDF = taxaDF.append(tempDF)
+            tempDF = tempDF[levelList].sum()
+            tempDF['sampleid'] = i
+            taxaDF = taxaDF.append(tempDF, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
@@ -1042,7 +1044,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        taxaDF.reset_index(drop=False, inplace=True)
+        #taxaDF.reset_index(drop=False, inplace=True)
         if DepVar == 0:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 1:
