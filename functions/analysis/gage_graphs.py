@@ -271,8 +271,7 @@ def getGAGE(request, stops, RID, PID):
                         diffDF = diffDF.append(nbinom_res, ignore_index=True)
 
                         ### GAGE analysis on all pathways...
-                        print r("gage.res <- gage(change, gsets=kegg.sets.ko, species='ko', same.dir=FALSE)")
-                        print r('gage.res')
+                        r("gage.res <- gage(change, gsets=kegg.sets.ko, species='ko', same.dir=FALSE)")
                         r("df2 <- data.frame(pathway=row.names(gage.res$greater), p.geomean=gage.res$greater[, 1], stat.mean=gage.res$greater[, 2], \
                             p.val=gage.res$greater[, 3], q.val=gage.res$greater[, 4], \
                             set.size=gage.res$greater[, 5])")
