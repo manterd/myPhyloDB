@@ -695,10 +695,6 @@ class PICRUSt(models.Model):
     rRNACount = models.FloatField(blank=True, null=True)
     geneList = models.TextField(blank=True)
 
-    def get_list(self):
-        list = ast.literal_eval(self.geneList)
-        return list
-
 
 class UserProfile(models.Model):
     user = models.OneToOneField(Users, related_name='profile')

@@ -374,7 +374,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
             tempDF = tempDF[levelList].sum()
             tempDF['sampleid'] = i
-            taxaDF = taxaDF.append(tempDF)
+            taxaDF = taxaDF.append(tempDF, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
@@ -989,7 +989,6 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
         functions.setBase(RID, curStep)
 
-
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
             namesDict = {}
@@ -1097,9 +1096,6 @@ def sumKEGG(picrustDF, keggDict, RID, PID, stops):
         functions.setBase(RID, 'Mapping phylotypes to KEGG pathways...pathway/enzyme ' +
                           str(counter) + ' out of ' + str(total) + ' is finished!')
 
-        # TODO: find other instances of iterrows in code and switch to zip
-        # looping through zipped pandas columns is MUCH faster than pandas iterrows!!!
-        # gage reduced from 15 hr to 45 min (on laptop) after switching to zip
         for row in zip(picrustDF.index.values, picrustDF['geneList']):
             if any(i in row[1] for i in pathList):
                 picrustDF.at[row[0], key] = 1.0
