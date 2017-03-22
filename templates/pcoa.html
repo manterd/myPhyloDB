@@ -145,6 +145,34 @@
                 $("#ellipseVal").append('<option value=interaction>interaction</option>');
             }
         }
+        function gridBox() {
+            $("#gridVal").empty().prepend('<option selected="selected" value="None">None</option>');
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#gridVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#gridVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
+            if (titleArray.length > 1) {
+                $("#gridVal").append('<option value=interaction>interaction</option>');
+            }
+        }
         function chooseDisplay() {
             var graphType = document.getElementById("graphDisplay").value;
             if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
@@ -322,6 +350,7 @@
             myDict['alpha'] = document.getElementById("alphaVal").value;
             myDict['perms'] = document.getElementById("perms").value;
             myDict['colorVal'] = document.getElementById("colorVal").value;
+            myDict['gridVal'] = document.getElementById("gridVal").value;
             myDict['palette'] = document.getElementById("palette").value;
             myDict['shapeVal'] = document.getElementById("shapeVal").value;
             myDict['ellipseVal'] = document.getElementById("ellipseVal").value;
@@ -837,6 +866,19 @@
                         <option value="Accent">Accent</option>
                     </select>
                     &nbsp; <-- Color palette for symbol colors
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="gridVal" onChange="checkButtons()">
+                        <option value="None">None</option>
+                    </select>
+                    &nbsp; <-- Grouping variable for graph panels
                 </div>
             </td>
             <td bgcolor="white"></td>

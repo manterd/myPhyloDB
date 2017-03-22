@@ -192,6 +192,7 @@ def getPCA(request, stops, RID, PID):
                 print r('library(fpc)')
                 print r('library(ggplot2)')
                 print r('library(vegan)')
+                print r('source("R/myFunctions/myFunctions.R")')
 
                 count_rDF.sort_index(axis=0, inplace=True)
                 r.assign("data", count_rDF)
@@ -208,17 +209,6 @@ def getPCA(request, stops, RID, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                path = "myPhyloDB/media/temp/pca/Rplots/" + str(RID) + ".pca.pdf"
-                if os.path.exists(path):
-                    os.remove(path)
-
-                if not os.path.exists('myPhyloDB/media/temp/pca/Rplots'):
-                    os.makedirs('myPhyloDB/media/temp/pca/Rplots')
-
-                file = "pdf('myPhyloDB/media/temp/pca/Rplots/" + str(RID) + ".pca.pdf')"
-                r.assign("cmd", file)
-                r("eval(parse(text=cmd))")
 
                 r.assign("PC1", PC1)
                 r.assign("PC2", PC2)
@@ -337,10 +327,10 @@ def getPCA(request, stops, RID, PID):
                     Fill=ellipseTrt) \
                 ")
 
-                r("varDF <- data.frame( \
-                    x=species[,PC1], \
-                    y=species[,PC2]) \
-                ")
+                gridVal = all['gridVal']
+                if gridVal != 'None':
+                    r.assign("gridVal", gridVal)
+                    r("indDF$myGrid <- meta[,paste(gridVal)]")
 
                 # get taxa rank names
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
@@ -354,6 +344,15 @@ def getPCA(request, stops, RID, PID):
 
                 # Create biplot using ggplot
                 r("p <- ggplot(indDF, aes(x,y))")
+
+                if gridVal != 'None':
+                    r("p <- p + facet_grid(. ~ myGrid)")
+                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+
+                r("varDF <- data.frame( \
+                    x=species[,PC1], \
+                    y=species[,PC2]) \
+                ")
 
                 myPalette = all['palette']
                 r.assign("myPalette", myPalette)
@@ -444,9 +443,17 @@ def getPCA(request, stops, RID, PID):
                 r("p <- p + xlab(paste(names(perExp)[PC1], ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
                 r("p <- p + ylab(paste(names(perExp)[PC2], ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
 
-                r("print(p)")
+                path = "myPhyloDB/media/temp/pca/Rplots"
+                if not os.path.exists(path):
+                    os.makedirs(path)
 
-                r("dev.off()")
+                r.assign("path", path)
+                r.assign("RID", RID)
+                r("file <- paste(path, '/', RID, '.pca.pdf', sep='')")
+                r("nlev <- nlevels(as.factor(indDF$myGrid))")
+                r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
+                r("ggsave(filename=file, plot=p, units='in', height=5, width=4*nlev+3)")
+
                 functions.setBase(RID, 'Step 4 of 5: Performing statistical test...done')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

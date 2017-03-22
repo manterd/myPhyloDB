@@ -236,6 +236,7 @@ def getPCoA(request, stops, RID, PID):
                 print r("library(vegan)")
                 print r("library(ggplot2)")
                 print r('library(data.table)')
+                print r('source("R/myFunctions/myFunctions.R")')
 
                 count_rDF.sort_index(axis=0, inplace=True)
                 r.assign("data", count_rDF)
@@ -294,7 +295,7 @@ def getPCoA(request, stops, RID, PID):
                 functions.setBase(RID, 'Step 5 of 9: Principal coordinates analysis...')
 
                 trtLength = len(set(catValues))
-                trtString = " + ".join(catFields)
+                trtString = " * ".join(catFields)
 
                 bigf = ''
                 r.assign("PC1", PC1)
@@ -339,13 +340,6 @@ def getPCoA(request, stops, RID, PID):
                         result += 'EnvFit for selected quantitative variables\n'
                         result += str(envfit) + '\n'
                         result += '===============================================\n'
-
-                    path = "myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf"
-                    if os.path.exists(path):
-                        os.remove(path)
-
-                    if not os.path.exists('myPhyloDB/media/temp/pcoa/Rplots'):
-                        os.makedirs('myPhyloDB/media/temp/pcoa/Rplots')
 
                     colorVal = all['colorVal']
                     if colorVal == 'None':
@@ -399,12 +393,17 @@ def getPCoA(request, stops, RID, PID):
                         Fill=ellipseTrt) \
                     ")
 
-                    # set up plot
-                    file = "pdf('myPhyloDB/media/temp/pcoa/Rplots/" + str(RID) + ".pcoa.pdf')"
-                    r.assign("cmd", file)
-                    r("eval(parse(text=cmd))")
+                    gridVal = all['gridVal']
+                    if gridVal != 'None':
+                        r.assign("gridVal", gridVal)
+                        r("indDF$myGrid <- meta[,paste(gridVal)]")
 
+                    # set up plot
                     r("p <- ggplot(indDF, aes(x, y))")
+
+                    if gridVal != 'None':
+                        r("p <- p + facet_grid(. ~ myGrid)")
+                        r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
 
                     myPalette = all['palette']
                     r.assign("myPalette", myPalette)
@@ -465,9 +464,16 @@ def getPCoA(request, stops, RID, PID):
                     r("p <- p + xlab(paste(names(perExp)[PC1], ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
                     r("p <- p + ylab(paste(names(perExp)[PC2], ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
 
-                    r("print(p)")
+                    path = "myPhyloDB/media/temp/pcoa/Rplots"
+                    if not os.path.exists(path):
+                        os.makedirs(path)
 
-                    r("dev.off()")
+                    r.assign("path", path)
+                    r.assign("RID", RID)
+                    r("file <- paste(path, '/', RID, '.pcoa.pdf', sep='')")
+                    r("nlev <- nlevels(as.factor(indDF$myGrid))")
+                    r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
+                    r("ggsave(filename=file, plot=p, units='in', height=5, width=4*nlev+3)")
 
                     functions.setBase(RID, 'Step 5 of 9: Principal coordinates analysis...done!')
 
