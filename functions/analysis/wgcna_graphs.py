@@ -469,11 +469,20 @@ def getWGCNA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                # Intramodular connectivity
+                r('intraConnect <- intramodularConnectivity(ADJ1, mergedColors)')
+                r("drops <- c('kOut', 'kDiff')")
+                r('intraConnect <- intraConnect[, !(names(intraConnect) %in% drops)]')
+
                 # kME
                 r("datKME <- signedKME(datExpr, datME, outputColumnName='MM')")
                 r("rownames(datKME) <- names(datExpr)")
-                kmeDF = r.get("datKME")
+                r("kme <- cbind(datKME)")
+                r("kme$Module <- mergedColors")
+                r("kme <- cbind(kme, intraConnect)")
+                kmeDF = r.get("kme")
                 kmeDF = pd.DataFrame(kmeDF)
+                kmeDF.rename(columns={' Module ': 'Assigned Module', ' kTotal ': 'Whole Network Connectivity (kTotal)', ' kWithin ': 'Within Module Connectivity (kWithin)'}, inplace=True)
                 index = r.get("names(datExpr)")
                 kmeDF.insert(0, 'rank_id', index)
 
