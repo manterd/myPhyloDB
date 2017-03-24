@@ -473,7 +473,12 @@ def getPCoA(request, stops, RID, PID):
                     r("file <- paste(path, '/', RID, '.pcoa.pdf', sep='')")
                     r("nlev <- nlevels(as.factor(indDF$myGrid))")
                     r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
-                    r("ggsave(filename=file, plot=p, units='in', height=5, width=4*nlev+3)")
+                    r('if (nlev == 0) { \
+                            myWidth <- 7 \
+                        } else { \
+                            myWidth <= 4*nlev+3 \
+                    }')
+                    r("ggsave(filename=file, plot=p, units='in', height=5, width=myWidth)")
 
                     functions.setBase(RID, 'Step 5 of 9: Principal coordinates analysis...done!')
 
