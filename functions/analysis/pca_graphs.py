@@ -332,6 +332,11 @@ def getPCA(request, stops, RID, PID):
                     r.assign("gridVal", gridVal)
                     r("indDF$myGrid <- meta[,paste(gridVal)]")
 
+                r("varDF <- data.frame( \
+                    x=species[,PC1], \
+                    y=species[,PC2]) \
+                ")
+
                 # get taxa rank names
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
                 rankNameDF.set_index('rank_id', inplace=True)
@@ -348,11 +353,6 @@ def getPCA(request, stops, RID, PID):
                 if gridVal != 'None':
                     r("p <- p + facet_grid(. ~ myGrid)")
                     r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
-
-                r("varDF <- data.frame( \
-                    x=species[,PC1], \
-                    y=species[,PC2]) \
-                ")
 
                 myPalette = all['palette']
                 r.assign("myPalette", myPalette)
