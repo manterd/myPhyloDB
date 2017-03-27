@@ -326,7 +326,7 @@ def getPCoA(request, stops, RID, PID):
 
                     if quantFields:
                         r.assign("quantFields", quantFields)
-                        r("ef <- envfit(ord, meta[,paste(quantFields)])")
+                        r("ef <- envfit(ord, meta[,paste(quantFields)], add=False)")
 
                         # create dataframe from envfit for export and adding to biplot
                         r('efDF <- as.data.frame(ef$vectors$arrows*ef$vectors$r)')
@@ -393,17 +393,29 @@ def getPCoA(request, stops, RID, PID):
                         Fill=ellipseTrt) \
                     ")
 
-                    gridVal = all['gridVal']
-                    if gridVal != 'None':
-                        r.assign("gridVal", gridVal)
-                        r("indDF$myGrid <- meta[,paste(gridVal)]")
+                    gridVal_X = all['gridVal_X']
+                    if gridVal_X != 'None':
+                        r.assign("gridVal_X", gridVal_X)
+                        r("indDF$myGrid_X <- meta[,paste(gridVal_X)]")
+
+                    gridVal_Y = all['gridVal_Y']
+                    if gridVal_Y != 'None':
+                        r.assign("gridVal_Y", gridVal_Y)
+                        r("indDF$myGrid_Y <- meta[,paste(gridVal_Y)]")
 
                     # set up plot
                     r("p <- ggplot(indDF, aes(x, y))")
 
-                    if gridVal != 'None':
-                        r("p <- p + facet_grid(. ~ myGrid)")
+                    if gridVal_X != 'None' and gridVal_Y == 'None':
+                        r("p <- p + facet_grid(. ~ myGrid_X)")
                         r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                    elif gridVal_X == 'None' and gridVal_Y != 'None':
+                        r("p <- p + facet_grid(myGrid_Y ~ .)")
+                        r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+                    elif gridVal_X != 'None' and gridVal_Y != 'None':
+                        r("p <- p + facet_grid(myGrid_Y ~ myGrid_X)")
+                        r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                        r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
 
                     myPalette = all['palette']
                     r.assign("myPalette", myPalette)
@@ -471,14 +483,20 @@ def getPCoA(request, stops, RID, PID):
                     r.assign("path", path)
                     r.assign("RID", RID)
                     r("file <- paste(path, '/', RID, '.pcoa.pdf', sep='')")
-                    r("nlev <- nlevels(as.factor(indDF$myGrid))")
                     r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
+                    r("nlev <- nlevels(as.factor(indDF$myGrid_X))")
                     r('if (nlev == 0) { \
                             myWidth <- 7 \
                         } else { \
-                            myWidth <= 4*nlev+3 \
+                            myWidth <- 4*nlev+3 \
                     }')
-                    r("ggsave(filename=file, plot=p, units='in', height=5, width=myWidth)")
+                    r("nlev <- nlevels(as.factor(indDF$myGrid_Y))")
+                    r('if (nlev == 0) { \
+                            myHeight <- 7 \
+                        } else { \
+                            myHeight <- 4*nlev+3 \
+                    }')
+                    r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
 
                     functions.setBase(RID, 'Step 5 of 9: Principal coordinates analysis...done!')
 

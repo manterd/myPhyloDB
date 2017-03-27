@@ -643,7 +643,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     diversityDF.set_index('sampleid', inplace=True)
 
     if 'rRNA_copies' in metaDF.columns:
-        abund_16SDF = df.multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
+        abund_16SDF = df.div(df.sum(axis=1).astype(float), axis=0).multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
         abund_16SDF.fillna(0.0, inplace=True)
         abund_16SDF.reset_index(drop=False, inplace=True)
         abund_16SDF.rename(columns={'index': 'sampleid'}, inplace=True)
