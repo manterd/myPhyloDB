@@ -304,289 +304,301 @@ def getPCoA(request, stops, RID, PID):
                 addContrib2 = all['addContrib2']
                 contribVal2 = float(all['contribVal2'])
 
-                if trtLength > 0:
-                    r.assign("meta", metaDF)
-                    pcoa_string = "ord <- capscale(dist ~ " + str(trtString) + ", meta)"
-                    r.assign("cmd", pcoa_string)
-                    r("eval(parse(text=cmd))")
+                r.assign("meta", metaDF)
+                method = all['Method']
+                if method == 'capscale':
+                    if trtLength > 0:
+                        pcoa_string = "ord <- capscale(dist ~ " + str(trtString) + ", meta)"
+                        r.assign("cmd", pcoa_string)
+                        r("eval(parse(text=cmd))")
+                    else:
+                        state = "Your selected variable(s) only have one treatment level, please select additional data!"
+                        myDict = {}
+                        myDict['error'] = state
+                        res = json.dumps(myDict)
+                        return HttpResponse(res, content_type='application/json')
+                elif method == 'metaMDS':
+                    r('ord <- metaMDS(dist, autotransform=FALSE, trace=FALSE)')
+                elif method == 'wcmdscale':
+                    print r('ord <- wcmdscale(dist, eig=TRUE)')
 
-                    result += str(r('print(ord)')) + '\n'
-                    result += '===============================================\n'
+                result += str(r('print(ord)')) + '\n'
+                result += '===============================================\n'
 
-                    r("res <- summary(ord)")
-                    r("id <- rownames(meta)")
-                    r("pcoa <- data.frame(meta, res$sites)")
-                    pcoaDF = r.get("pcoa")
+                r('sites <- scores(ord, display="sites")')
+                r("pcoa <- data.frame(meta, sites)")
+                pcoaDF = r.get("pcoa")
 
-                    pcoaDF.rename(columns={'sampleid': 'Sample ID'}, inplace=True)
+                pcoaDF.rename(columns={'sampleid': 'Sample ID'}, inplace=True)
 
+                eigDF = pd.DataFrame()
+                if method != 'metaMDS':
                     r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
+                    r("res <- summary(ord)")
                     r("eig <- data.frame(Stat, res$cont$importance)")
                     eigDF = r.get("eig")
 
-                    if quantFields:
-                        r.assign("quantFields", quantFields)
-                        r("ef <- envfit(ord, meta[,paste(quantFields)], add=False)")
+                if quantFields:
+                    r.assign("quantFields", quantFields)
+                    r("ef <- envfit(ord, meta[,paste(quantFields)], add=False)")
 
-                        # create dataframe from envfit for export and adding to biplot
-                        r('efDF <- as.data.frame(ef$vectors$arrows*ef$vectors$r)')
-                        r('efDF$r2 <- ef$vectors$r')
-                        r('efDF$p <- ef$vectors$pvals')
-                        r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
-                        r('efDF$p.adj <- pvals.adj')
+                    # create dataframe from envfit for export and adding to biplot
+                    r('efDF <- as.data.frame(ef$vectors$arrows*ef$vectors$r)')
+                    r('efDF$r2 <- ef$vectors$r')
+                    r('efDF$p <- ef$vectors$pvals')
+                    r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
+                    r('efDF$p.adj <- pvals.adj')
 
-                        # send data to result string
-                        envfit = r("efDF")
-                        result += 'EnvFit for selected quantitative variables\n'
-                        result += str(envfit) + '\n'
-                        result += '===============================================\n'
+                    # send data to result string
+                    envfit = r("efDF")
+                    result += 'EnvFit for selected quantitative variables\n'
+                    result += str(envfit) + '\n'
+                    result += '===============================================\n'
 
-                    colorVal = all['colorVal']
-                    if colorVal == 'None':
-                        r("colorTrt <- c('All')")
-                    if colorVal == 'interaction':
-                        r.assign("catFields", catFields)
-                        r("colorTrt <- interaction(meta[,paste(catFields)])")
-                    if colorVal != 'None' and colorVal != 'interaction':
-                        r.assign("colorVal", colorVal)
-                        r("colorTrt <- as.factor(meta[,paste(colorVal)])")
-                    r("if (!exists('colorTrt')) {colorTrt <- c('All')}")
+                colorVal = all['colorVal']
+                if colorVal == 'None':
+                    r("colorTrt <- c('All')")
+                if colorVal == 'interaction':
+                    r.assign("catFields", catFields)
+                    r("colorTrt <- interaction(meta[,paste(catFields)])")
+                if colorVal != 'None' and colorVal != 'interaction':
+                    r.assign("colorVal", colorVal)
+                    r("colorTrt <- as.factor(meta[,paste(colorVal)])")
+                r("if (!exists('colorTrt')) {colorTrt <- c('All')}")
 
-                    shapeVal = all['shapeVal']
-                    if shapeVal == 'None':
-                        r("shapeTrt <- c('All')")
-                    if shapeVal == 'interaction':
-                        r.assign("catFields", catFields)
-                        r("shapeTrt <- interaction(meta[,paste(catFields)])")
-                    if shapeVal != 'None' and shapeVal != 'interaction':
-                        r.assign("shapeVal", shapeVal)
-                        r("shapeTrt <- as.factor(meta[,paste(shapeVal)])")
-                    r("if (!exists('shapeTrt')) {shapeTrt <- c('All')}")
+                shapeVal = all['shapeVal']
+                if shapeVal == 'None':
+                    r("shapeTrt <- c('All')")
+                if shapeVal == 'interaction':
+                    r.assign("catFields", catFields)
+                    r("shapeTrt <- interaction(meta[,paste(catFields)])")
+                if shapeVal != 'None' and shapeVal != 'interaction':
+                    r.assign("shapeVal", shapeVal)
+                    r("shapeTrt <- as.factor(meta[,paste(shapeVal)])")
+                r("if (!exists('shapeTrt')) {shapeTrt <- c('All')}")
 
-                    ellipseVal = all['ellipseVal']
-                    if ellipseVal == 'None':
-                        r("ellipseTrt <- c('All')")
-                    if ellipseVal != 'None' and ellipseVal != 'interaction':
-                        r.assign("ellipseVal", ellipseVal)
-                        r("ellipseTrt <- as.factor(meta[,paste(ellipseVal)])")
-                    if ellipseVal == 'interaction':
-                        r.assign("catFields", catFields)
-                        r("ellipseTrt <- interaction(meta[,paste(catFields)])")
-                    r("if (!exists('ellipseTrt')) {ellipseTrt <- c('All')}")
+                ellipseVal = all['ellipseVal']
+                if ellipseVal == 'None':
+                    r("ellipseTrt <- c('All')")
+                if ellipseVal != 'None' and ellipseVal != 'interaction':
+                    r.assign("ellipseVal", ellipseVal)
+                    r("ellipseTrt <- as.factor(meta[,paste(ellipseVal)])")
+                if ellipseVal == 'interaction':
+                    r.assign("catFields", catFields)
+                    r("ellipseTrt <- interaction(meta[,paste(catFields)])")
+                r("if (!exists('ellipseTrt')) {ellipseTrt <- c('All')}")
 
-                    surfVal = all['surfVal']
-                    if surfVal != 'None':
-                        r.assign("surfVal", surfVal)
-                        r("quant <- meta[,paste(surfVal)]")
-                        r("ordi <- ordisurf(ord ~ quant, add=FALSE)")
-                        r("ordi.grid <- ordi$grid")
-                        r("ordi.mat <- expand.grid(x=ordi.grid$x, y=ordi.grid$y)")
-                        r("ordi.mat$z <- as.vector(ordi.grid$z)")
-                        r("ordi.mat <- data.frame(na.omit(ordi.mat))")
+                surfVal = all['surfVal']
+                if surfVal != 'None':
+                    r.assign("surfVal", surfVal)
+                    r("quant <- meta[,paste(surfVal)]")
+                    r("ordi <- ordisurf(ord ~ quant, add=FALSE)")
+                    r("ordi.grid <- ordi$grid")
+                    r("ordi.mat <- expand.grid(x=ordi.grid$x, y=ordi.grid$y)")
+                    r("ordi.mat$z <- as.vector(ordi.grid$z)")
+                    r("ordi.mat <- data.frame(na.omit(ordi.mat))")
 
-                    # extract data and create dataframe for plotting
-                    r("indDF <- data.frame( \
-                        x=as.vector(scores(ord, choices=c(PC1), display=c('sites'))), \
-                        y=as.vector(scores(ord, choices=c(PC2), display=c('sites'))), \
-                        Color=colorTrt, \
-                        Shape=shapeTrt, \
-                        Fill=ellipseTrt) \
-                    ")
+                # extract data and create dataframe for plotting
+                r("indDF <- data.frame( \
+                    x=as.vector(scores(ord, choices=c(PC1), display=c('sites'))), \
+                    y=as.vector(scores(ord, choices=c(PC2), display=c('sites'))), \
+                    Color=colorTrt, \
+                    Shape=shapeTrt, \
+                    Fill=ellipseTrt) \
+                ")
 
-                    gridVal_X = all['gridVal_X']
-                    if gridVal_X != 'None':
-                        r.assign("gridVal_X", gridVal_X)
-                        r("indDF$myGrid_X <- meta[,paste(gridVal_X)]")
+                gridVal_X = all['gridVal_X']
+                if gridVal_X != 'None':
+                    r.assign("gridVal_X", gridVal_X)
+                    r("indDF$myGrid_X <- meta[,paste(gridVal_X)]")
 
-                    gridVal_Y = all['gridVal_Y']
-                    if gridVal_Y != 'None':
-                        r.assign("gridVal_Y", gridVal_Y)
-                        r("indDF$myGrid_Y <- meta[,paste(gridVal_Y)]")
+                gridVal_Y = all['gridVal_Y']
+                if gridVal_Y != 'None':
+                    r.assign("gridVal_Y", gridVal_Y)
+                    r("indDF$myGrid_Y <- meta[,paste(gridVal_Y)]")
 
-                    # set up plot
-                    r("p <- ggplot(indDF, aes(x, y))")
+                # set up plot
+                r("p <- ggplot(indDF, aes(x, y))")
 
-                    if gridVal_X != 'None' and gridVal_Y == 'None':
-                        r("p <- p + facet_grid(. ~ myGrid_X)")
-                        r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
-                    elif gridVal_X == 'None' and gridVal_Y != 'None':
-                        r("p <- p + facet_grid(myGrid_Y ~ .)")
-                        r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
-                    elif gridVal_X != 'None' and gridVal_Y != 'None':
-                        r("p <- p + facet_grid(myGrid_Y ~ myGrid_X)")
-                        r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
-                        r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+                if gridVal_X != 'None' and gridVal_Y == 'None':
+                    r("p <- p + facet_grid(. ~ myGrid_X)")
+                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                elif gridVal_X == 'None' and gridVal_Y != 'None':
+                    r("p <- p + facet_grid(myGrid_Y ~ .)")
+                    r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+                elif gridVal_X != 'None' and gridVal_Y != 'None':
+                    r("p <- p + facet_grid(myGrid_Y ~ myGrid_X)")
+                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                    r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
 
-                    myPalette = all['palette']
-                    r.assign("myPalette", myPalette)
+                myPalette = all['palette']
+                r.assign("myPalette", myPalette)
 
-                    r('number <- nlevels(indDF$Shape)')
-                    r('shapes <- rep(c(21, 22, 23, 24, 25), length.out = number) ')
+                r('number <- nlevels(indDF$Shape)')
+                r('shapes <- rep(c(21, 22, 23, 24, 25), length.out = number) ')
 
-                    if not colorVal == 'None':
-                        if not shapeVal == 'None':
-                            r("p <- p + geom_point(aes(fill=factor(Color), shape=factor(Shape)), size=4)")
-                            r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
-                            r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
-                        else:
-                            r("p <- p + geom_point(aes(fill=factor(Color)), shape=21, size=4)")
-                            r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
+                if not colorVal == 'None':
+                    if not shapeVal == 'None':
+                        r("p <- p + geom_point(aes(fill=factor(Color), shape=factor(Shape)), size=4)")
+                        r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
+                        r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
                     else:
-                        if not shapeVal == 'None':
-                            r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
-                            r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
-                        else:
-                            r("p <- p + geom_point(color='gray', size=4)")
+                        r("p <- p + geom_point(aes(fill=factor(Color)), shape=21, size=4)")
+                        r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
+                else:
+                    if not shapeVal == 'None':
+                        r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
+                        r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
+                    else:
+                        r("p <- p + geom_point(color='gray', size=4)")
 
-                    if not ellipseVal == 'None':
-                        myCI = float(all["CI"])
-                        r.assign("myCI", myCI)
-                        r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=myCI, alpha=0)")
-                        r("p <- p + scale_color_brewer(palette=myPalette)")
-                        r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
+                if not ellipseVal == 'None':
+                    myCI = float(all["CI"])
+                    r.assign("myCI", myCI)
+                    r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=myCI, alpha=0)")
+                    r("p <- p + scale_color_brewer(palette=myPalette)")
+                    r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
 
-                    if not surfVal == 'None':
-                        r("p <- p + stat_contour(data=ordi.mat, aes(x, y, z=z, label=..level..), color='red')")
-                        # get the last element in p (i.e., the one with the contour lines)
-                        r("p.data <- tail(ggplot_build(p)$data, n=1)")
-                        r("DT <- as.data.table(p.data[[1]], n=1)")
-                        r("tmp <- unique(DT, by='level', fromLast=TRUE)")
-                        r("p <- p + geom_text(aes(label=level, z=NULL), data=tmp)")
+                if not surfVal == 'None':
+                    r("p <- p + stat_contour(data=ordi.mat, aes(x, y, z=z, label=..level..), color='red')")
+                    # get the last element in p (i.e., the one with the contour lines)
+                    r("p.data <- tail(ggplot_build(p)$data, n=1)")
+                    r("DT <- as.data.table(p.data[[1]], n=1)")
+                    r("tmp <- unique(DT, by='level', fromLast=TRUE)")
+                    r("p <- p + geom_text(aes(label=level, z=NULL), data=tmp)")
 
-                    if quantFields and addContrib2 == 'yes':
-                        # scale and remove non-significant objects from efDF
-                        r('names(efDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
-                        r('efDF$label <- row.names(efDF)')
-                        r.assign("contribVal2", contribVal2)
-                        r('efDF.adj <- efDF[efDF$p.adj <= contribVal2,]')
-                        r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
-                        r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
-                        r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
-                        sigVar = r.get("nrow(efDF.adj)")
-                        if sigVar >= 1:
-                            r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
-                            r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
+                if quantFields and addContrib2 == 'yes':
+                    # scale and remove non-significant objects from efDF
+                    r('names(efDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
+                    r('efDF$label <- row.names(efDF)')
+                    r.assign("contribVal2", contribVal2)
+                    r('efDF.adj <- efDF[efDF$p.adj <= contribVal2,]')
+                    r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
+                    r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
+                    r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
+                    sigVar = r.get("nrow(efDF.adj)")
+                    if sigVar >= 1:
+                        r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
+                        r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
 
-                    r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
-                    r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
+                r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
+                r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
 
-                    r("p <- p + ggtitle('Principal Coordinates Analysis')")
+                r("p <- p + ggtitle('Principal Coordinates Analysis')")
+
+                if method != 'metaMDS':
                     r("eig <- eigenvals(ord)")
                     r("perExp <- eig / sum(eig) * 100")
-                    r("p <- p + xlab(paste(names(perExp)[PC1], ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
-                    r("p <- p + ylab(paste(names(perExp)[PC2], ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
+                    r("p <- p + xlab(paste('Axis', PC1, ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
+                    r("p <- p + ylab(paste('Axis', PC2, ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
+                else:
+                    r("p <- p + xlab(paste('Axis', PC1, sep=''))")
+                    r("p <- p + ylab(paste('Axis', PC2, sep=''))")
 
-                    path = "myPhyloDB/media/temp/pcoa/Rplots"
-                    if not os.path.exists(path):
-                        os.makedirs(path)
+                path = "myPhyloDB/media/temp/pcoa/Rplots"
+                if not os.path.exists(path):
+                    os.makedirs(path)
 
-                    r.assign("path", path)
-                    r.assign("RID", RID)
-                    r("file <- paste(path, '/', RID, '.pcoa.pdf', sep='')")
-                    r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
-                    r("nlev <- nlevels(as.factor(indDF$myGrid_X))")
-                    r('if (nlev == 0) { \
-                            myWidth <- 7 \
-                        } else { \
-                            myWidth <- 4*nlev+3 \
-                    }')
-                    r("nlev <- nlevels(as.factor(indDF$myGrid_Y))")
-                    r('if (nlev == 0) { \
-                            myHeight <- 7 \
-                        } else { \
-                            myHeight <- 4*nlev+3 \
-                    }')
-                    r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
+                r.assign("path", path)
+                r.assign("RID", RID)
+                r("file <- paste(path, '/', RID, '.pcoa.pdf', sep='')")
+                r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
+                r("nlev <- nlevels(as.factor(indDF$myGrid_X))")
+                r('if (nlev == 0) { \
+                        myWidth <- 8 \
+                    } else { \
+                        myWidth <- 4*nlev+4 \
+                }')
+                r("nlev <- nlevels(as.factor(indDF$myGrid_Y))")
+                r('if (nlev == 0) { \
+                        myHeight <- 8 \
+                    } else { \
+                        myHeight <- 4*nlev+4 \
+                }')
+                r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
 
-                    functions.setBase(RID, 'Step 5 of 9: Principal coordinates analysis...done!')
+                functions.setBase(RID, 'Step 5 of 9: Principal coordinates analysis...done!')
 
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID] == RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if stops[PID] == RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                    functions.setBase(RID, 'Step 6 of 9: Performing perMANOVA...')
+                functions.setBase(RID, 'Step 6 of 9: Performing perMANOVA...')
 
-                    if perms < 10:
-                        bigf = 'A minimum of 10 permutations is required...'
-                    elif len(catFields) == 0:
-                        bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
-                    elif perms >= 10 and len(catFields) > 0:
-                        if test == 1:
-                            for i in catFields:
-                                factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
-                                r.assign("cmd", factor_string)
-                                r("eval(parse(text=cmd))")
-
-                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                                if stops[PID] == RID:
-                                    res = ''
-                                    return HttpResponse(res, content_type='application/json')
-                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                            r.assign("perms", perms)
-                            trtString = " * ".join(catFields)
-                            amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
-                            r.assign("cmd", amova_string)
+                if perms < 10:
+                    bigf = 'A minimum of 10 permutations is required...'
+                elif len(catFields) == 0:
+                    bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
+                elif perms >= 10 and len(catFields) > 0:
+                    if test == 1:
+                        for i in catFields:
+                            factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                            r.assign("cmd", factor_string)
                             r("eval(parse(text=cmd))")
 
-                            res_aov = r("res$aov.tab")
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                            if stops[PID] == RID:
+                                res = ''
+                                return HttpResponse(res, content_type='application/json')
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                            tempStuff = res_aov.split('\n')
+                        r.assign("perms", perms)
+                        trtString = " * ".join(catFields)
+                        amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
+                        r.assign("cmd", amova_string)
+                        r("eval(parse(text=cmd))")
+
+                        res_aov = r("res$aov.tab")
+
+                        tempStuff = res_aov.split('\n')
+                        for part in tempStuff:
+                            if part != tempStuff[0]:
+                                bigf += part + '\n'
+                        functions.setBase(RID, 'Step 6 of 9: Performing perMANOVA...done!')
+
+                    elif test == 2:
+                        functions.setBase(RID, 'Step 5 of 9: Principal coordinates analysis...done!')
+                        functions.setBase(RID, 'Step 6 of 9: Performing BetaDisper...')
+
+                        for i in catFields:
+                            factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                            r.assign("cmd", factor_string)
+                            r("eval(parse(text=cmd))")
+
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                            if stops[PID] == RID:
+                                res = ''
+                                return HttpResponse(res, content_type='application/json')
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                        r.assign("perms", perms)
+                        for i in catFields:
+                            beta_string = "res <- betadisper(dist, " + str(i) + ")"
+                            r.assign("cmd", beta_string)
+                            r("eval(parse(text=cmd))")
+
+                            r("something <- anova(res)")
+                            beta = r("something")
+                            tempStuff = beta.split('\n')
+                            bigf += 'group: ' + str(i) + '\n'
                             for part in tempStuff:
                                 if part != tempStuff[0]:
                                     bigf += part + '\n'
-                            functions.setBase(RID, 'Step 6 of 9: Performing perMANOVA...done!')
 
-                        elif test == 2:
-                            functions.setBase(RID, 'Step 5 of 9: Principal coordinates analysis...done!')
-                            functions.setBase(RID, 'Step 6 of 9: Performing BetaDisper...')
+                            betaString = str(r('res'))
+                            lines = betaString.split('\n')
+                            for line in lines[1:]:
+                                bigf += str(line) + '\n'
 
-                            for i in catFields:
-                                factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
-                                r.assign("cmd", factor_string)
-                                r("eval(parse(text=cmd))")
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                            if stops[PID] == RID:
+                                res = ''
+                                return HttpResponse(res, content_type='application/json')
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                                if stops[PID] == RID:
-                                    res = ''
-                                    return HttpResponse(res, content_type='application/json')
-                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                            r.assign("perms", perms)
-                            for i in catFields:
-                                beta_string = "res <- betadisper(dist, " + str(i) + ")"
-                                r.assign("cmd", beta_string)
-                                r("eval(parse(text=cmd))")
-
-                                r("something <- anova(res)")
-                                beta = r("something")
-                                tempStuff = beta.split('\n')
-                                bigf += 'group: ' + str(i) + '\n'
-                                for part in tempStuff:
-                                    if part != tempStuff[0]:
-                                        bigf += part + '\n'
-
-                                betaString = str(r('res'))
-                                lines = betaString.split('\n')
-                                for line in lines[1:]:
-                                    bigf += str(line) + '\n'
-
-                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                                if stops[PID] == RID:
-                                    res = ''
-                                    return HttpResponse(res, content_type='application/json')
-                                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                                functions.setBase(RID, 'Step 6 of 9: Performing BetaDisper...done!')
-
-                else:
-                    state = "Your selected variable(s) only have one treatment level, please select additional data!"
-                    myDict = {}
-                    myDict['error'] = state
-                    res = json.dumps(myDict)
-                    return HttpResponse(res, content_type='application/json')
+                            functions.setBase(RID, 'Step 6 of 9: Performing BetaDisper...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
@@ -631,12 +643,18 @@ def getPCoA(request, stops, RID, PID):
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 xTitle = {}
-                xTitle['text'] = str(eigDF.columns.values.tolist()[PC1]) + " (" + str(eigDF.iloc[1][PC1] * 100) + "%)"
+                if method == 'capscale':
+                    xTitle['text'] = 'Axis' + str(PC1) + " (" + str(round(eigDF.iloc[1][PC1] * 100, 1)) + "%)"
+                else:
+                    xTitle['text'] = "Axis" + str(PC1)
                 xTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
                 xAxisDict['title'] = xTitle
 
                 yTitle = {}
-                yTitle['text'] = str(eigDF.columns.values.tolist()[PC2]) + " (" + str(eigDF.iloc[1][PC2] * 100) + "%)"
+                if method == 'capscale':
+                    yTitle['text'] = 'Axis' + str(PC2) + " (" + str(round(eigDF.iloc[1][PC2] * 100, 1)) + "%)"
+                else:
+                    yTitle['text'] = "Axis" + str(PC2)
                 yTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
                 yAxisDict['title'] = yTitle
 

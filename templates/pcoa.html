@@ -347,6 +347,7 @@
             myDict['nzAll'] = document.getElementById("selectall-nz").value;
             myDict['DepVar'] = document.getElementById("DepVar").value;
             myDict['contribVal2'] = document.getElementById("contribVal2").value;
+            myDict['Method'] = document.getElementById("Method").value;
             myDict['PC1'] = document.getElementById("PC1").value;
             myDict['PC2'] = document.getElementById("PC2").value;
             myDict['test'] = document.getElementById("test").value;
@@ -769,6 +770,19 @@
         <tr>
             <td bgcolor="white"></td>
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Ordination Settings:</strong></em></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <select id="Method" onChange="checkButtons()">
+                    <option value="capscale" selected="selected">Constrained Analysis of Principal Coordinates (CAP)</option>
+                    <option value="metaMDS">Nonmetric Multidimensional Scaling (NMDS)</option>
+                    <option value="wcmdscale">Weighted Classical (Metric) Multidimensional Scaling</option>
+                </select>
+                &nbsp; <-- Ordination Method
+            </td>
+            <td bgcolor="white"></td>
         </tr>
 
         <tr>

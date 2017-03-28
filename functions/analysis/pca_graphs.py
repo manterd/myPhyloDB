@@ -455,8 +455,8 @@ def getPCA(request, stops, RID, PID):
                 else:
                     r("eig <- res.pca$evals")
                 r("perExp <- eig / sum(eig) * 100")
-                r("p <- p + xlab(paste(names(perExp)[PC1], ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
-                r("p <- p + ylab(paste(names(perExp)[PC2], ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
+                r("p <- p + xlab(paste('Axis', PC1, ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
+                r("p <- p + ylab(paste('Axis', PC2, ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
 
                 path = "myPhyloDB/media/temp/pca/Rplots"
                 if not os.path.exists(path):
@@ -468,15 +468,15 @@ def getPCA(request, stops, RID, PID):
                 r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
                 r("nlev <- nlevels(as.factor(indDF$myGrid_X))")
                 r('if (nlev == 0) { \
-                        myWidth <- 7 \
+                        myWidth <- 8 \
                     } else { \
-                        myWidth <- 4*nlev+3 \
+                        myWidth <- 4*nlev+4 \
                 }')
                 r("nlev <- nlevels(as.factor(indDF$myGrid_Y))")
                 r('if (nlev == 0) { \
-                        myHeight <- 7 \
+                        myHeight <- 8 \
                     } else { \
-                        myHeight <- 4*nlev+3 \
+                        myHeight <- 4*nlev+4 \
                 }')
                 r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
 
