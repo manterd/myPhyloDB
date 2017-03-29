@@ -470,7 +470,7 @@ def getPCoA(request, stops, RID, PID):
                 if quantFields and addContrib2 == 'yes':
                     # scale and remove non-significant objects from efDF
                     r('names(efDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
-                    r('efDF$label <- row.names(efDF)')
+                    r('efDF$label <- unlist(quantFields)')
                     r.assign("contribVal2", contribVal2)
                     r('efDF.adj <- efDF[efDF$p.adj <= contribVal2,]')
                     r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
@@ -502,7 +502,7 @@ def getPCoA(request, stops, RID, PID):
                 r.assign("path", path)
                 r.assign("RID", RID)
                 r("file <- paste(path, '/', RID, '.pcoa.pdf', sep='')")
-                r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
+                r("p <- set_panel_size(p, height=unit(3, 'in'), width=unit(3, 'in'))")
                 r("nlev <- nlevels(as.factor(indDF$myGrid_X))")
                 r('if (nlev == 0) { \
                         myWidth <- 8 \

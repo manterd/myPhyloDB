@@ -465,7 +465,7 @@ def getPCA(request, stops, RID, PID):
                 r.assign("path", path)
                 r.assign("RID", RID)
                 r("file <- paste(path, '/', RID, '.pca.pdf', sep='')")
-                r("p <- set_panel_size(p, height=unit(4, 'in'), width=unit(4, 'in'))")
+                r("p <- set_panel_size(p, height=unit(3, 'in'), width=unit(3, 'in'))")
                 r("nlev <- nlevels(as.factor(indDF$myGrid_X))")
                 r('if (nlev == 0) { \
                         myWidth <- 8 \
