@@ -194,7 +194,6 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             finalDF = finalDF.groupby(wantedList)[['rel_abund']].sum()
         elif DepVar == 4:
             finalDF = finalDF.groupby(wantedList)[['abund_16S']].sum()
-            finalDF['abund_16S'] = finalDF['abund_16S'].astype(int)
         elif DepVar == 2:
             finalDF = finalDF.groupby(wantedList)[['rich']].sum()
         elif DepVar == 3:

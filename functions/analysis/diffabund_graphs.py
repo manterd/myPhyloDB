@@ -81,7 +81,7 @@ def getDiffAbund(request, stops, RID, PID):
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
-                # round data to fix normalization type issues
+                # round data for DESeq compatibility
                 savedDF['abund'] = savedDF['abund'].round(0).astype(int)
                 savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
                 savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)
@@ -166,10 +166,8 @@ def getDiffAbund(request, stops, RID, PID):
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 0:
-                    finalDF['abund'] = finalDF['abund'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
                 elif DepVar == 4:
-                    finalDF['abund_16S'] = finalDF['abund_16S'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
                 count_rDF.fillna(0, inplace=True)

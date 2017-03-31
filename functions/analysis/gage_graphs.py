@@ -37,7 +37,7 @@ def getGAGE(request, stops, RID, PID):
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
 
-                # round data to fix normalization type issues
+                # round data for DESeq compatibility
                 savedDF['abund'] = savedDF['abund'].round(0).astype(int)
                 savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
                 savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)

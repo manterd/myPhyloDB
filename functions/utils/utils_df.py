@@ -672,8 +672,6 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
             'abund_16S': abund_16SDF
         }, index=abundDF.index)
 
-    countDF[['abund', 'rich', 'abund_16S']] = countDF[['abund', 'rich', 'abund_16S']].astype(int)
-
     # Check if there is at least one categorical variable with multiple levels
     # Remove fields with only 1 level
     remCatFields = []

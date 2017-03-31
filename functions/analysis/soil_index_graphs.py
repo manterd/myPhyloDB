@@ -42,6 +42,13 @@ def getsoil_index(request, stops, RID, PID):
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, '')
                 allFields = catFields + quantFields
 
+                # round data for DESeq compatibility
+                savedDF['abund'] = savedDF['abund'].round(0).astype(int)
+                savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
+                savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)
+                savedDF['rich'] = savedDF['rich'].round(0).astype(int)
+                savedDF['diversity'] = savedDF['diversity'].round(0).astype(int)
+
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
                 result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
