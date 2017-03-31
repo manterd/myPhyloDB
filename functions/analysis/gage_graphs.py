@@ -37,13 +37,6 @@ def getGAGE(request, stops, RID, PID):
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
 
-                # round data for DESeq compatibility
-                savedDF['abund'] = savedDF['abund'].round(0).astype(int)
-                savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
-                savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)
-                savedDF['rich'] = savedDF['rich'].round(0).astype(int)
-                savedDF['diversity'] = savedDF['diversity'].round(0).astype(int)
-
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
@@ -80,7 +73,7 @@ def getGAGE(request, stops, RID, PID):
                 functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 # R packages from biocLite
-                r("list.of.packages <- c('gage', 'DESeq2', 'pathview')")
+                r("list.of.packages <- c('gage', 'edgeR', 'pathview')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
                 print r("if (length(new.packages)) biocLite(new.packages)")
@@ -93,7 +86,7 @@ def getGAGE(request, stops, RID, PID):
                 functions.setBase(RID, 'Step 3 of 6: Mapping phylotypes to KEGG pathways...')
 
                 print r("library(gage)")
-                print r("library(DESeq2)")
+                print r("library(edgeR)")
                 print r("library(pathview)")
                 print r("library(png)")
                 print r("library(grid)")
@@ -163,10 +156,8 @@ def getGAGE(request, stops, RID, PID):
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 0:
-                    finalDF['abund'] = finalDF['abund'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
                 elif DepVar == 4:
-                    finalDF['abund_16S'] = finalDF['abund_16S'].round(0).astype(int)
                     count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
                 # need to change rank_id to kegg orthologies for gage analysis
@@ -185,7 +176,7 @@ def getGAGE(request, stops, RID, PID):
                 # Create combined metadata column
                 if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
-                        metaDF.loc[index, 'merge'] = "; ".join(row[catFields])
+                        metaDF.loc[index, 'merge'] = ".".join(row[catFields])
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
@@ -207,13 +198,16 @@ def getGAGE(request, stops, RID, PID):
                 r.assign("sampleIDs", count_rDF.columns.values.tolist())
                 r("names(count) <- sampleIDs")
 
-                r("colData <- data.frame(row.names=colnames(count), trt=trt)")
-                r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design = ~ trt)")
+                r('e <- DGEList(counts=count)')
 
-                r("sizeFactor <- rep(1, length(trt))")
-                r("dds$sizeFactor <- sizeFactor")
-                r("dds <- estimateDispersions(dds, fitType='local')")
-                r("dds <- nbinomWaldTest(dds)")
+                r('design <- model.matrix(~0+trt)')
+                r('trtLevels <- levels(trt)')
+                r('colnames(design) <- trtLevels')
+
+                r('e <- estimateGLMCommonDisp(e, design)')
+                r('e <- estimateGLMTrendedDisp(e, design)')
+                r('e <- estimateGLMTagwiseDisp(e, design)')
+                r('fit <- glmFit(e, design)')
 
                 if DepVar == 0:
                     result += 'Dependent Variable: Abundance' + '\n'
@@ -238,6 +232,8 @@ def getGAGE(request, stops, RID, PID):
                 gageDF = pd.DataFrame(columns=['comparison', 'pathway', ' p.geomean ', ' stat.mean ', ' p.val ', ' q.val ', ' set.size '])
                 diffDF = pd.DataFrame(columns=['comparison', 'kegg', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' log2FoldChange ', ' stderr ', ' pval ', ' padj '])
 
+                mergeList = metaDF['merge'].tolist()
+                mergeSet = list(set(mergeList))
                 for i in xrange(len(levels)-1):
                     for j in xrange(i+1, len(levels)):
                         trt1 = levels[i]
@@ -245,24 +241,46 @@ def getGAGE(request, stops, RID, PID):
                         r.assign("trt1", trt1)
                         r.assign("trt2", trt2)
 
-                        # get sign based on log2FoldChange
-                        r("res <- results(dds, contrast=c('trt', trt1, trt2))")
+                        r('contVec <- sprintf("%s-%s", trt1, trt2)')
+                        r('cont.matrix= makeContrasts(contVec, levels=design)')
+                        r('lrt <- glmLRT(fit, contrast=cont.matrix)')
+                        r("res <- as.data.frame(topTags(lrt, n=nrow(lrt$table)))")
+                        r('res <- res[ order(row.names(res)), ]')
+                        taxaIDs = r.get("row.names(res)")
+
                         r("change <- -res$log2FoldChange")
                         r("names(change) <- row.names(res)")
 
+                        baseMean = count_rDF.mean(axis=1)
+                        baseMean = baseMean.loc[baseMean.index.isin(taxaIDs)]
+
+                        listA = metaDF[metaDF['merge'] == mergeSet[i]].sampleid.tolist()
+                        baseMeanA = count_rDF[listA].mean(axis=1)
+                        baseMeanA = baseMeanA.loc[baseMeanA.index.isin(taxaIDs)]
+
+                        listB = metaDF[metaDF['merge'] == mergeSet[j]].sampleid.tolist()
+                        baseMeanB = count_rDF[listB].mean(axis=1)
+                        baseMeanB = baseMeanB.loc[baseMeanB.index.isin(taxaIDs)]
+
+                        r.assign("baseMean", baseMean)
+                        r.assign("baseMeanA", baseMeanA)
+                        r.assign("baseMeanB", baseMeanB)
+
+                        r('baseMean <- baseMean[ order(as.numeric(row.names(baseMean))), ]')
+                        r('baseMeanA <- baseMeanA[ order(as.numeric(row.names(baseMeanA))), ]')
+                        r('baseMeanB <- baseMeanB[ order(as.numeric(row.names(baseMeanB))), ]')
+
                         # output DiffAbund to DataTable
-                        r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
-                        r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
-                        r("df <- data.frame(kegg=row.names(res), baseMean=res$baseMean, baseMeanA=baseMeanA, \
-                            baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, stat=res$stat, \
-                            pval=res$pvalue, padj=res$padj) \
+                        r("df <- data.frame(kegg=row.names(res), baseMean=baseMean, baseMeanA=baseMeanA, \
+                            baseMeanB=baseMeanB, log2FoldChange=-res$logFC, \
+                            LR=res$LR, pval=res$PValue, FDR=res$FDR) \
                         ")
 
                         nbinom_res = r.get("df")
                         nbinom_res.fillna(value=1.0, inplace=True)
 
                         if nbinom_res is None:
-                            myDict = {'error': "DESeq failed!\nPlease try a different data combination."}
+                            myDict = {'error': "edgeR failed!\nPlease try a different data combination."}
                             res = json.dumps(myDict)
                             return HttpResponse(res, content_type='application/json')
 
@@ -283,7 +301,7 @@ def getGAGE(request, stops, RID, PID):
                         ### Get data way for pathview
                         # merge sign and sig to get vector (1=sig. positive, 0=not sig., -1=sig. negative)
                         r("binary <- change / abs(change)")
-                        r("sig <- as.vector((res$pvalue <= 0.05))")
+                        r("sig <- as.vector((res$PValue <= 0.05))")
                         r("sig <- sig * 1")
 
                         r("sig <- sig * binary")

@@ -579,7 +579,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     ser1 = countDF.groupby(field)[mySet].sum()
     ser2 = ser1.stack()
     abundDF = pd.Series.to_frame(ser2, name='abund')
-    #abundDF['abund'] = abundDF['abund'].astype(int)    #JUMP
     abundDF.reset_index(drop=False, inplace=True)
 
     normDF = pd.merge(abundDF, namesDF, left_on='otuid', right_on='otuid', how='inner')

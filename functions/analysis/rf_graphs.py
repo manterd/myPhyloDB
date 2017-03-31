@@ -632,6 +632,7 @@ def getRF(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 # TODO: Add ROC curve - this does not currently work
+                '''
                 # ROC Curve
                 if testIDs:
                     r("pdf_counter <- pdf_counter + 1")
@@ -649,6 +650,7 @@ def getRF(request, stops, RID, PID):
                         ggtitle(paste0("ROC Curve w/ AUC=", auc))')
                     r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
                     r("ggsave(filename=file, plot=p, units='in', height=4, width=4)")
+                '''
 
                 r("myTable <- stargazer(varDF, type='text', summary=F, rownames=T)")
                 result += 'Variable Importance\n'

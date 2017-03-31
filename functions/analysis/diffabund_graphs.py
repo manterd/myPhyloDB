@@ -81,13 +81,6 @@ def getDiffAbund(request, stops, RID, PID):
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
-                # round data for DESeq compatibility
-                savedDF['abund'] = savedDF['abund'].round(0).astype(int)
-                savedDF['rel_abund'] = savedDF['rel_abund'].round(0).astype(int)
-                savedDF['abund_16S'] = savedDF['abund_16S'].round(0).astype(int)
-                savedDF['rich'] = savedDF['rich'].round(0).astype(int)
-                savedDF['diversity'] = savedDF['diversity'].round(0).astype(int)
-
                 if not catFields:
                     error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
                     myDict = {'error': error}
@@ -175,7 +168,7 @@ def getDiffAbund(request, stops, RID, PID):
                 # Create combined metadata column - DiffAbund only
                 if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
-                       metaDF.loc[index, 'merge'] = "; ".join(row[catFields])
+                       metaDF.loc[index, 'merge'] = ".".join(row[catFields])
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
@@ -197,26 +190,14 @@ def getDiffAbund(request, stops, RID, PID):
 
                 functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
-                r("list.of.packages <- c('DESeq2')")
+                r("list.of.packages <- c('edgeR')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
                 print r("if (length(new.packages)) biocLite(new.packages)")
 
                 functions.setBase(RID, 'Step 4 of 6: Performing statistical test...')
 
-                print r("library(DESeq2)")
-
-                metaDF.sort(columns='sampleid', inplace=True)
-                r.assign("metaDF", metaDF)
-                r("trt <- factor(metaDF$merge)")
-
-                r.assign("count", count_rDF)
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                print r("library(edgeR)")
 
                 if DepVar == 0:
                     result += 'Dependent Variable: Abundance' + '\n'
@@ -224,13 +205,31 @@ def getDiffAbund(request, stops, RID, PID):
                     result += 'Dependent Variable: Total Abundance' + '\n'
                 result += '\n===============================================\n\n\n'
 
-                r("colData <- data.frame(row.names=colnames(count), trt=trt)")
-                r("dds <- DESeqDataSetFromMatrix(countData=count, colData=colData, design = ~ trt)")
+                myList = list(metaDF.select_dtypes(include=['object']).columns)
+                for i in myList:
+                    metaDF[i] = metaDF[i].str.replace(' ', '_')
+                    metaDF[i] = metaDF[i].str.replace('-', '.')
+                    metaDF[i] = metaDF[i].str.replace('(', '.')
+                    metaDF[i] = metaDF[i].str.replace(')', '.')
 
-                r("sizeFactor <- rep(1, length(trt))")
-                r("dds$sizeFactor <- sizeFactor")
-                r("dds <- estimateDispersions(dds, fitType='local')")
-                r("dds <- nbinomWaldTest(dds)")
+                metaDF.sort(columns='sampleid', inplace=True)
+                r.assign("metaDF", metaDF)
+                r("trt <- factor(metaDF$merge)")
+
+                r.assign("count", count_rDF)
+                r('e <- DGEList(counts=count)')
+
+                r('design <- model.matrix(~0+trt)')
+                r('trtLevels <- levels(trt)')
+                r('colnames(design) <- trtLevels')
+
+                r('e <- estimateGLMCommonDisp(e, design)')
+                r('e <- estimateGLMTrendedDisp(e, design)')
+                r('e <- estimateGLMTagwiseDisp(e, design)')
+                r('fit <- glmFit(e, design)')
+
+                nTopTags = int(all['nTopTags'])
+                r.assign('nTopTags', nTopTags)
 
                 mergeList = metaDF['merge'].tolist()
                 mergeSet = list(set(mergeList))
@@ -243,22 +242,44 @@ def getDiffAbund(request, stops, RID, PID):
                             r.assign("trt1", mergeSet[i])
                             r.assign("trt2", mergeSet[j])
 
-                            # round values, convert to int
-                            r("res <- results(dds, contrast=c('trt', trt1, trt2))")
-                            r("baseMeanA <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt1, drop=FALSE])")
-                            r("baseMeanB <- rowMeans(counts(dds, normalized=TRUE)[,dds$trt==trt2, drop=FALSE])")
-                            r("df <- data.frame(rank_id=rownames(res), baseMean=res$baseMean, baseMeanA=baseMeanA, \
-                                baseMeanB=baseMeanB, log2FoldChange=-res$log2FoldChange, stderr=res$lfcSE, \
-                                 stat=res$stat, pval=res$pvalue, padj=res$padj)")
+                            r('contVec <- sprintf("%s-%s", trt1, trt2)')
+                            r('cont.matrix= makeContrasts(contVec, levels=design)')
+                            r('lrt <- glmLRT(fit, contrast=cont.matrix)')
+                            r("res <- as.data.frame(topTags(lrt, sort.by='PValue', n=min(nTopTags, nrow(fit$table))))")
+                            r('res <- res[ order(row.names(res)), ]')
+                            taxaIDs = r.get("row.names(res)")
+
+                            baseMean = count_rDF.mean(axis=1)
+                            baseMean = baseMean.loc[baseMean.index.isin(taxaIDs)]
+
+                            listA = metaDF[metaDF['merge'] == mergeSet[i]].sampleid.tolist()
+                            baseMeanA = count_rDF[listA].mean(axis=1)
+                            baseMeanA = baseMeanA.loc[baseMeanA.index.isin(taxaIDs)]
+
+                            listB = metaDF[metaDF['merge'] == mergeSet[j]].sampleid.tolist()
+                            baseMeanB = count_rDF[listB].mean(axis=1)
+                            baseMeanB = baseMeanB.loc[baseMeanB.index.isin(taxaIDs)]
+
+                            r.assign("baseMean", baseMean)
+                            r.assign("baseMeanA", baseMeanA)
+                            r.assign("baseMeanB", baseMeanB)
+
+                            r('baseMean <- baseMean[ order(as.numeric(row.names(baseMean))), ]')
+                            r('baseMeanA <- baseMeanA[ order(as.numeric(row.names(baseMeanA))), ]')
+                            r('baseMeanB <- baseMeanB[ order(as.numeric(row.names(baseMeanB))), ]')
+
+                            r("df <- data.frame(rank_id=rownames(res), baseMean=baseMean, baseMeanA=baseMeanA, \
+                                 baseMeanB=baseMeanB, logFoldChange=-res$logFC, \
+                                 LR=res$LR, pval=res$PValue, FDR=res$FDR)")
                             df = r.get("df")
 
                             if df is None:
-                                myDict = {'error': "DESeq failed!\nPlease try a different data combination."}
+                                myDict = {'error': "edgeR failed!\nPlease try a different data combination."}
                                 res = json.dumps(myDict)
                                 return HttpResponse(res, content_type='application/json')
 
                             # remove taxa that failed (i.e., both trts are zero or log2FoldChange is NaN)
-                            df = df.loc[pd.notnull(df[' log2FoldChange '])]
+                            df = df.loc[pd.notnull(df[' logFoldChange '])]
 
                             if treeType == 1:
                                 idList = functions.getFullTaxonomy(list(df.rank_id.unique()))
@@ -277,11 +298,12 @@ def getDiffAbund(request, stops, RID, PID):
                             df.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
                             df.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
                             df.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
-                            df.rename(columns={' log2FoldChange ': 'log2FoldChange'}, inplace=True)
-                            df.rename(columns={' stderr ': 'StdErr'}, inplace=True)
-                            df.rename(columns={' stat ': 'Stat'}, inplace=True)
+                            df.rename(columns={' logFoldChange ': 'log2FoldChange'}, inplace=True)
+                            df['log2FoldChange'] = df['log2FoldChange'].round(3).astype(float)
+                            df.rename(columns={' LR ': 'Likelihood Ratio'}, inplace=True)
+                            df['Likelihood Ratio'] = df['Likelihood Ratio'].round(3).astype(float)
                             df.rename(columns={' pval ': 'p-value'}, inplace=True)
-                            df.rename(columns={' padj ': 'p-adjusted'}, inplace=True)
+                            df.rename(columns={' FDR ': 'FDR'}, inplace=True)
 
                             functions.setBase(RID, 'Step 4 of 6: Performing statistical test...' + str(iterationName) + ' is done!')
 
@@ -310,6 +332,7 @@ def getDiffAbund(request, stops, RID, PID):
                 yAxisDict = {}
 
                 nbinom_res.fillna(value=1.0, inplace=True)
+                nbinom_res.reset_index(drop=True, inplace=True)
                 grouped = nbinom_res.groupby('Comparison')
 
                 listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
@@ -317,7 +340,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 FdrVal = float(all['FdrVal'])
                 for name, group in grouped:
-                    nosigDF = group[group["p-adjusted"] > FdrVal]
+                    nosigDF = group[group["FDR"] > FdrVal]
                     nosigData = []
                     for index, row in nosigDF.iterrows():
                         dataDict = {}
@@ -330,12 +353,13 @@ def getDiffAbund(request, stops, RID, PID):
                     seriesDict = {}
                     seriesDict['name'] = "NotSig: " + str(name)
                     seriesDict['data'] = nosigData
+
                     markerDict = {}
                     markerDict['symbol'] = listOfShapes[shapeIterator]
                     seriesDict['marker'] = markerDict
                     seriesList.append(seriesDict)
 
-                    sigDF = group[group["p-adjusted"] <= FdrVal]
+                    sigDF = group[group["FDR"] <= FdrVal]
                     sigData = []
                     for index, row in sigDF.iterrows():
                         dataDict = {}
@@ -347,6 +371,7 @@ def getDiffAbund(request, stops, RID, PID):
                     seriesDict = {}
                     seriesDict['name'] = "Sig: " + str(name)
                     seriesDict['data'] = sigData
+
                     markerDict = {}
                     markerDict['symbol'] = listOfShapes[shapeIterator]
                     seriesDict['marker'] = markerDict
