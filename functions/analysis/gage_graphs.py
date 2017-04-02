@@ -200,7 +200,7 @@ def getGAGE(request, stops, RID, PID):
 
                 r('e <- DGEList(counts=count)')
 
-                r('design <- model.matrix(~0+trt)')
+                r('design <- model.matrix(~ 0 + trt)')
                 r('trtLevels <- levels(trt)')
                 r('colnames(design) <- trtLevels')
 
@@ -208,6 +208,13 @@ def getGAGE(request, stops, RID, PID):
                 r('e <- estimateGLMTrendedDisp(e, design)')
                 r('e <- estimateGLMTagwiseDisp(e, design)')
                 r('fit <- glmFit(e, design)')
+                fit = r.get('fit')
+
+                if not fit:
+                    error = "edgeR failed!\nUsually this is caused by one or more taxa having a negative disperion.\nTry filtering your data to remove problematic taxa (e.g. remove phylotypes with 50% or more zeros)."
+                    myDict = {'error': error}
+                    res = json.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
                 if DepVar == 0:
                     result += 'Dependent Variable: Abundance' + '\n'
@@ -230,7 +237,7 @@ def getGAGE(request, stops, RID, PID):
                 r.assign("RID", RID)
 
                 gageDF = pd.DataFrame(columns=['comparison', 'pathway', ' p.geomean ', ' stat.mean ', ' p.val ', ' q.val ', ' set.size '])
-                diffDF = pd.DataFrame(columns=['comparison', 'kegg', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' log2FoldChange ', ' stderr ', ' pval ', ' padj '])
+                diffDF = pd.DataFrame(columns=['comparison', 'kegg', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' logFC ', ' logCPM ', ' stderr ', ' pval ', ' padj '])
 
                 mergeList = metaDF['merge'].tolist()
                 mergeSet = list(set(mergeList))
@@ -248,7 +255,7 @@ def getGAGE(request, stops, RID, PID):
                         r('res <- res[ order(row.names(res)), ]')
                         taxaIDs = r.get("row.names(res)")
 
-                        r("change <- -res$log2FoldChange")
+                        r("change <- -res$logFC")
                         r("names(change) <- row.names(res)")
 
                         baseMean = count_rDF.mean(axis=1)
@@ -272,7 +279,7 @@ def getGAGE(request, stops, RID, PID):
 
                         # output DiffAbund to DataTable
                         r("df <- data.frame(kegg=row.names(res), baseMean=baseMean, baseMeanA=baseMeanA, \
-                            baseMeanB=baseMeanB, log2FoldChange=-res$logFC, \
+                            baseMeanB=baseMeanB, logFC=-res$logFC, logCPM=res$logCPM, \
                             LR=res$LR, pval=res$PValue, FDR=res$FDR) \
                         ")
 

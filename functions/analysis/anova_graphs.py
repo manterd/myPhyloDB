@@ -309,7 +309,7 @@ def getCatUnivData(request, RID, stops, PID):
                     if sig_only == 0:
                         if DepVar == 0:
                             mean = group1.groupby(catFields)['abund'].mean()
-                            se = group1.groupby(catFields)['abund'].std() / np.sqrt(group1.groupby(catFields)['abund'].count())
+                            se = group1.groupby(catFields)['abund'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -318,7 +318,7 @@ def getCatUnivData(request, RID, stops, PID):
                             errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 1:
                             mean = group1.groupby(catFields)['rel_abund'].mean()
-                            se = group1.groupby(catFields)['rel_abund'].std() / np.sqrt(group1.groupby(catFields)['rel_abund'].count())
+                            se = group1.groupby(catFields)['rel_abund'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -327,7 +327,7 @@ def getCatUnivData(request, RID, stops, PID):
                             errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 2:
                             mean = group1.groupby(catFields)['rich'].mean()
-                            se = group1.groupby(catFields)['rich'].std() / np.sqrt(group1.groupby(catFields)['rich'].count())
+                            se = group1.groupby(catFields)['rich'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -336,7 +336,7 @@ def getCatUnivData(request, RID, stops, PID):
                             errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 3:
                             mean = group1.groupby(catFields)['diversity'].mean()
-                            se = group1.groupby(catFields)['diversity'].std() / np.sqrt(group1.groupby(catFields)['diversity'].count())
+                            se = group1.groupby(catFields)['diversity'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -345,7 +345,7 @@ def getCatUnivData(request, RID, stops, PID):
                             errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 4:
                             mean = group1.groupby(catFields)['abund_16S'].mean()
-                            se = group1.groupby(catFields)['abund_16S'].std() / np.sqrt(group1.groupby(catFields)['abund_16S'].count())
+                            se = group1.groupby(catFields)['abund_16S'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -370,7 +370,7 @@ def getCatUnivData(request, RID, stops, PID):
                         if pValue < 0.05:
                             if DepVar == 0:
                                 mean = group1.groupby(catFields)['abund'].mean()
-                                se = group1.groupby(catFields)['abund'].std() / np.sqrt(group1.groupby(catFields)['abund'].count())
+                                se = group1.groupby(catFields)['abund'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -379,7 +379,7 @@ def getCatUnivData(request, RID, stops, PID):
                                 errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 1:
                                 mean = group1.groupby(catFields)['rel_abund'].mean()
-                                se = group1.groupby(catFields)['rel_abund'].std() / np.sqrt(group1.groupby(catFields)['rel_abund'].count())
+                                se = group1.groupby(catFields)['rel_abund'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -388,7 +388,7 @@ def getCatUnivData(request, RID, stops, PID):
                                 errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 2:
                                 mean = group1.groupby(catFields)['rich'].mean()
-                                se = group1.groupby(catFields)['rich'].std() / np.sqrt(group1.groupby(catFields)['rich'].count())
+                                se = group1.groupby(catFields)['rich'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -397,7 +397,7 @@ def getCatUnivData(request, RID, stops, PID):
                                 errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 3:
                                 mean = group1.groupby(catFields)['diversity'].mean()
-                                se = group1.groupby(catFields)['diversity'].std() / np.sqrt(group1.groupby(catFields)['diversity'].count())
+                                se = group1.groupby(catFields)['diversity'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -406,7 +406,7 @@ def getCatUnivData(request, RID, stops, PID):
                                 errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 4:
                                 mean = group1.groupby(catFields)['abund_16S'].mean()
-                                se = group1.groupby(catFields)['abund_16S'].std() / np.sqrt(group1.groupby(catFields)['abund_16S'].count())
+                                se = group1.groupby(catFields)['abund_16S'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]

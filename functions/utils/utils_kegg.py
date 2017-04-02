@@ -336,7 +336,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         picrustDF.set_index('otuid', drop=True, inplace=True)
 
         curStep = functions.getBase(RID)
-        sumKEGG(picrustDF, koDict, RID, PID, stops)
+        sumKEGG(picrustDF, koDict, 0, RID, PID, stops)
         functions.setBase(RID, curStep)
 
         picrustDF.drop('geneList', axis=1, inplace=True)
@@ -938,7 +938,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         picrustDF.set_index('otuid', drop=True, inplace=True)
 
         curStep = functions.getBase(RID)
-        sumKEGG(picrustDF, nzDict, RID, PID, stops)
+        sumKEGG(picrustDF, nzDict, nzAll, RID, PID, stops)
         functions.setBase(RID, curStep)
 
         picrustDF.drop('geneList', axis=1, inplace=True)
@@ -1085,7 +1085,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             return HttpResponse(res, content_type='application/json')
 
 
-def sumKEGG(picrustDF, keggDict, RID, PID, stops):
+def sumKEGG(picrustDF, keggDict, nzAll, RID, PID, stops):
     total = len(keggDict)
     counter = 0
 
@@ -1096,8 +1096,12 @@ def sumKEGG(picrustDF, keggDict, RID, PID, stops):
                           str(counter) + ' out of ' + str(total) + ' is finished!')
 
         for row in zip(picrustDF.index.values, picrustDF['geneList']):
-            if any(i in row[1] for i in pathList):
-                picrustDF.at[row[0], key] = 1.0
+            if nzAll >= 5:
+                if all(i in row[1] for i in pathList):
+                    picrustDF.at[row[0], key] = 1.0
+            else:
+                if any(i in row[1] for i in pathList):
+                    picrustDF.at[row[0], key] = 1.0
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:

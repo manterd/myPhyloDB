@@ -219,7 +219,7 @@ def getDiffAbund(request, stops, RID, PID):
                 r.assign("count", count_rDF)
                 r('e <- DGEList(counts=count)')
 
-                r('design <- model.matrix(~0+trt)')
+                r('design <- model.matrix(~ 0 + trt)')
                 r('trtLevels <- levels(trt)')
                 r('colnames(design) <- trtLevels')
 
@@ -227,6 +227,13 @@ def getDiffAbund(request, stops, RID, PID):
                 r('e <- estimateGLMTrendedDisp(e, design)')
                 r('e <- estimateGLMTagwiseDisp(e, design)')
                 r('fit <- glmFit(e, design)')
+                fit = r.get('fit')
+
+                if not fit:
+                    error = "edgeR failed!\nUsually this is caused by one or more taxa having a negative disperion.\nTry filtering your data to remove problematic taxa (e.g. remove phylotypes with 50% or more zeros)."
+                    myDict = {'error': error}
+                    res = json.dumps(myDict)
+                    return HttpResponse(res, content_type='application/json')
 
                 nTopTags = int(all['nTopTags'])
                 r.assign('nTopTags', nTopTags)
@@ -269,7 +276,7 @@ def getDiffAbund(request, stops, RID, PID):
                             r('baseMeanB <- baseMeanB[ order(as.numeric(row.names(baseMeanB))), ]')
 
                             r("df <- data.frame(rank_id=rownames(res), baseMean=baseMean, baseMeanA=baseMeanA, \
-                                 baseMeanB=baseMeanB, logFoldChange=-res$logFC, \
+                                 baseMeanB=baseMeanB, logFC=-res$logFC, logCPM=res$logCPM, \
                                  LR=res$LR, pval=res$PValue, FDR=res$FDR)")
                             df = r.get("df")
 
@@ -279,7 +286,7 @@ def getDiffAbund(request, stops, RID, PID):
                                 return HttpResponse(res, content_type='application/json')
 
                             # remove taxa that failed (i.e., both trts are zero or log2FoldChange is NaN)
-                            df = df.loc[pd.notnull(df[' logFoldChange '])]
+                            df = df.loc[pd.notnull(df[' logFC '])]
 
                             if treeType == 1:
                                 idList = functions.getFullTaxonomy(list(df.rank_id.unique()))
@@ -298,12 +305,13 @@ def getDiffAbund(request, stops, RID, PID):
                             df.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
                             df.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
                             df.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
-                            df.rename(columns={' logFoldChange ': 'log2FoldChange'}, inplace=True)
-                            df['log2FoldChange'] = df['log2FoldChange'].round(3).astype(float)
+                            df.rename(columns={' logFC ': 'logFC'}, inplace=True)
+                            df['logFC'] = df['logFC'].round(3).astype(float)
+                            df.rename(columns={' logCPM ': 'logCPM'}, inplace=True)
                             df.rename(columns={' LR ': 'Likelihood Ratio'}, inplace=True)
                             df['Likelihood Ratio'] = df['Likelihood Ratio'].round(3).astype(float)
                             df.rename(columns={' pval ': 'p-value'}, inplace=True)
-                            df.rename(columns={' FDR ': 'FDR'}, inplace=True)
+                            df.rename(columns={' FDR ': 'False Discovery Rate'}, inplace=True)
 
                             functions.setBase(RID, 'Step 4 of 6: Performing statistical test...' + str(iterationName) + ' is done!')
 
@@ -340,14 +348,13 @@ def getDiffAbund(request, stops, RID, PID):
 
                 FdrVal = float(all['FdrVal'])
                 for name, group in grouped:
-                    nosigDF = group[group["FDR"] > FdrVal]
+                    nosigDF = group[group["False Discovery Rate"] > FdrVal]
                     nosigData = []
                     for index, row in nosigDF.iterrows():
                         dataDict = {}
                         dataDict['name'] = 'ID: ' + row['Rank ID']
-                        dataDict['x'] = float(row['baseMean'])
-                        dataDict['y'] = float(row['log2FoldChange'])
-
+                        dataDict['x'] = float(row['logCPM'])
+                        dataDict['y'] = float(row['logFC'])
                         nosigData.append(dataDict)
 
                     seriesDict = {}
@@ -359,13 +366,13 @@ def getDiffAbund(request, stops, RID, PID):
                     seriesDict['marker'] = markerDict
                     seriesList.append(seriesDict)
 
-                    sigDF = group[group["FDR"] <= FdrVal]
+                    sigDF = group[group["False Discovery Rate"] <= FdrVal]
                     sigData = []
                     for index, row in sigDF.iterrows():
                         dataDict = {}
                         dataDict['name'] = row['Rank ID']
-                        dataDict['x'] = float(row['baseMean'])
-                        dataDict['y'] = float(row['log2FoldChange'])
+                        dataDict['x'] = float(row['logCPM'])
+                        dataDict['y'] = float(row['logFC'])
                         sigData.append(dataDict)
 
                     seriesDict = {}
@@ -388,13 +395,13 @@ def getDiffAbund(request, stops, RID, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 xTitle = {}
-                xTitle['text'] = "baseMean"
+                xTitle['text'] = "logCPM"
                 xTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
                 xAxisDict['title'] = xTitle
-                xAxisDict['type'] = 'logarithmic'
+                xAxisDict['type'] = 'linear'
 
                 yTitle = {}
-                yTitle['text'] = "log2FoldChange"
+                yTitle['text'] = "logFC"
                 yTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
                 yAxisDict['title'] = yTitle
                 yAxisDict['type'] = 'linear'
@@ -415,7 +422,7 @@ def getDiffAbund(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                functions.setBase(RID, 'Step 6 of 6:  Formatting nbinomTest results for display...')
+                functions.setBase(RID, 'Step 6 of 6:  Formatting results for display...')
 
                 nbinom_res.replace(to_replace='N/A', value=np.nan, inplace=True)
                 nbinom_res.dropna(axis=1, how='all', inplace=True)
@@ -425,7 +432,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 finalDict['text'] = result
 
-                functions.setBase(RID, 'Step 6 of 6: Formatting nbinomTest results for display...done!')
+                functions.setBase(RID, 'Step 6 of 6: Formatting results for display...done!')
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:

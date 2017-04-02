@@ -196,7 +196,21 @@
             chooseData();
         }
         function scatter(xAxis, yAxis, series) {
-           catOptions = {
+            yAxis['plotLines'] = [
+                {
+                    color: 'blue',
+                    dashStyle: 'longdashdot',
+                    value: 1,
+                    width: 2
+                },
+                {
+                    color: 'blue',
+                    dashStyle: 'longdashdot',
+                    value: -1,
+                    width: 2
+                }
+            ];
+            catOptions = {
                 chart: {
                     renderTo: 'container-1',
                     height: 400,
@@ -474,8 +488,8 @@
             <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td bgcolor="white">
-                    <input type="text" id="nTopTags" value="50" style="background-color: white; width: 50px" onChange="checkButtons()"/>
-                    &nbsp; <-- Number of taxa to display for each comparison (sorted by p-value)
+                    <input type="text" id="nTopTags" value="1000" style="background-color: white; width: 50px" onChange="checkButtons()"/>
+                    &nbsp; <-- Maximum number of taxa to display for each comparison (sorted by p-value)
                 </td>
                 <td bgcolor="white"></td>
             </tr>
