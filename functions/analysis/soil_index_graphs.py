@@ -374,7 +374,7 @@ def getsoil_index(request, stops, RID, PID):
                     u'1.3.3.11  pyrroloquinoline-quinone synthase': 'pyrroloquinoline-quinone synthase',
                     #
                     # Biocontrol
-                    u'1.4.99.  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)',
+                    u'1.4.99.5  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)',
                     u'4.1.1.5  acetolactate decarboxylase': 'acetolactate decarboxylase',
                     u'1.1.1.76  (S,S)-butanediol dehydrogenase': '(S,S)-butanediol dehydrogenase',
                     u'3.2.1.6  endo-1,3(4)-beta-glucanase': 'endo-1,3(4)-beta-glucanase',
