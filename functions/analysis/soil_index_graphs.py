@@ -272,38 +272,42 @@ def getsoil_index(request, stops, RID, PID):
                     u'E3.2.1.21: beta-glucosidase',
                     #
                     # N decomposition
-                    u'3.5.1.4  amidase',
-                    u'3.5.1.5  urease',
+                    u'amiE: amidase',
+                    u'ureC: urease alpha subunit',
                     #
                     # P decomposition
-                    u'3.1.3.1  alkaline phosphatase',
-                    u'3.1.3.2  acid phosphatase',
+                    u'phoA: alkaline phosphatase',
+                    u'phoD: alkaline phosphatase',
+                    u'E3.1.3.2: acid phosphatase',
+                    u'appA: acid phosphatase',
+                    u'phoN: acid phosphatase',
                     #
                     # S decomposition
-                    u'3.1.6.1  arylsulfatase',
+                    u'aslA: arylsulfatase',
                     #
                     # N-fixation
-                    u'1.18.6.1  nitrogenase',
+                    u'nifH: nitrogenase Fe protein',
+                    u'nifDK: nitrogenase Mo-Fe protein',
                     #
                     # P solubility
-                    u'1.3.3.11  pyrroloquinoline-quinone synthase',
+                    u'pqqC: pyrroloquinoline-quinone synthase',
                     #
                     # Biocontrol
-                    u'1.4.99.5  glycine dehydrogenase (cyanide-forming)',
-                    u'4.1.1.5  acetolactate decarboxylase',
-                    u'1.1.1.76  (S,S)-butanediol dehydrogenase',
-                    u'3.2.1.6  endo-1,3(4)-beta-glucanase',
-                    u'3.2.1.14  chitinase',
+                    u'hcnABC: glycine dehydrogenase (cyanide-forming)',
+                    u'budA: acetolactate decarboxylase',
+                    u'budC: (S,S)-butanediol dehydrogenase',
+                    u'E3.2.1.6: endo-1,3(4)-beta-gulcanase',
+                    u'E3.2.1.14: chitinase',
                     #
                     # Root growth
-                    u'4.1.1.74  indolepyruvate decarboxylase',
-                    u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase',
+                    u'ipdC: indolepyruvate decarboxylase',
+                    u'acdS: 1-aminocyclopropane-1-carboxylate deaminase',
                     #
                     # Siderophore
-                    u'6.3.2.39  aerobactin synthase',
-                    u'6.3.2.14  enterobactin synthase',
-                    u'mycobactin salicyl-AMP ligase [EC:6.3.2.-]',
-                    u'yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]',
+                    u'iucC: aerobactin synthase',
+                    u'entDF: enterobactin synthase',
+                    u'mbtA: mycobactin salicyl-AMP ligase',
+                    u'ybtE: yersiniabactin salicyl-AMP ligase',
                     #
                     # N-fixation
                     # nitrogenase -- already in list
@@ -313,26 +317,23 @@ def getsoil_index(request, stops, RID, PID):
                     # urease -- already in list
                     #
                     # Nitrificiation
-                    u'1.14.99.39  ammonia monooxygenase',
-                    u'1.7.2.6  hydroxylamine dehydrogenase',
-                    u'1.7.99.4  nitrate reductase',
+                    u'pmoA-amoA: methane/ammonia monooxygenase',
+                    u'hao: hydroxylamine dehydrogenase',
+                    u'narGH: nitrate reductase',
                     #
                     # DNRA
-                    u'1.7.1.15  nitrite reductase (NADH)',
-                    u'1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)',
+                    u'nirBD: nitrite reductase (NADH)',
+                    u'nrfA: nitrite reductase (cytochrome c-552)',
                     #
                     # ANRA
-                    u'1.7.7.1  ferredoxin---nitrite reductase',
-                    u'1.7.1.4  nitrite reductase [NAD(P)H]',
+                    u'nirA: ferrodoxin-nitrite reductase',
+                    u'NIT-6: nitrite reductase (NAD(P)H)',
                     #
                     # Denitrification
-                    u'1.7.2.1  nitrite reductase (NO-forming)',
-                    u'1.7.2.5  nitric oxide reductase (cytochrome c)',
-                    u'1.7.2.4  nitrous-oxide reductase',
-                    #
-                    # Anammox
-                    u'1.7.2.7  hydrazine synthase subunit',
-                    u'1.7.2.8  hydrazine dehydrogenase'
+                    u'nirK: nitrite reductase (NO forming)',
+                    u'nirS:  nitrite reductase (NO forming)',
+                    u'norBC: nitric oxide reductase',
+                    u'nosZ: nitrous-oxide reductase'
                 ]
 
                 # shorten rank names
@@ -357,38 +358,42 @@ def getsoil_index(request, stops, RID, PID):
                     u'E3.2.1.21: beta-glucosidase': 'E3.2.1.21',
                     #
                     # N decomposition
-                    u'3.5.1.4  amidase': 'amidase',
-                    u'3.5.1.5  urease': 'urease',
+                    u'amiE: amidase': 'amiE',
+                    u'ureC: urease alpha subunit': 'ureC',
                     #
                     # P decomposition
-                    u'3.1.3.1  alkaline phosphatase': 'alkaline phosphatase',
-                    u'3.1.3.2  acid phosphatase': 'acid phosphatase',
+                    u'phoA: alkaline phosphatase': 'phoA',
+                    u'phoD: alkaline phosphatase': 'phoD',
+                    u'E3.1.3.2: acid phosphatase': 'E3.1.3.2',
+                    u'appA: acid phosphatase': 'appA',
+                    u'phoN: acid phosphatase': 'phoN',
                     #
                     # S decomposition
-                    u'3.1.6.1  arylsulfatase': 'arylsulfatase',
+                    u'aslA: arylsulfatase': 'aslA',
                     #
                     # N-fixation
-                    u'1.18.6.1  nitrogenase': 'nitrogenase',
+                    u'nifH: nitrogenase Fe protein': 'nifH',
+                    u'nifDK: nitrogenase Mo-Fe protein': 'nifDK',
                     #
                     # P solubility
-                    u'1.3.3.11  pyrroloquinoline-quinone synthase': 'pyrroloquinoline-quinone synthase',
+                    u'pqqC: pyrroloquinoline-quinone synthase': 'pqqC',
                     #
                     # Biocontrol
-                    u'1.4.99.5  glycine dehydrogenase (cyanide-forming)': 'glycine dehydrogenase (cyanide-forming)',
-                    u'4.1.1.5  acetolactate decarboxylase': 'acetolactate decarboxylase',
-                    u'1.1.1.76  (S,S)-butanediol dehydrogenase': '(S,S)-butanediol dehydrogenase',
-                    u'3.2.1.6  endo-1,3(4)-beta-glucanase': 'endo-1,3(4)-beta-glucanase',
-                    u'3.2.1.14  chitinase': 'chitinase',
+                    u'hcnABC: glycine dehydrogenase (cyanide-forming)': 'hcnABC',
+                    u'budA: acetolactate decarboxylase': 'budA',
+                    u'budC: (S,S)-butanediol dehydrogenase': 'budC',
+                    u'E3.2.1.6: endo-1,3(4)-beta-gulcanase': 'E3.2.1.6',
+                    u'E3.2.1.14: chitinase': 'E3.2.1.14',
                     #
                     # Root growth
-                    u'4.1.1.74  indolepyruvate decarboxylase': 'indolepyruvate decarboxylase',
-                    u'3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase': '1-aminocyclopropane-1-carboxylate deaminase',
+                    u'ipdC: indolepyruvate decarboxylase': 'ipdC',
+                    u'acdS: 1-aminocyclopropane-1-carboxylate deaminase': 'acdS',
                     #
                     # Siderophore
-                    u'6.3.2.39  aerobactin synthase': 'aerobactin synthase',
-                    u'6.3.2.14  enterobactin synthase': 'enterobactin synthase',
-                    u'mycobactin salicyl-AMP ligase [EC:6.3.2.-]': 'mycobactin salicyl-AMP ligase',
-                    u'yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]': 'yersiniabactin salicyl-AMP ligase',
+                    u'iucC: aerobactin synthase': 'iucC',
+                    u'entDF: enterobactin synthase': 'entDF',
+                    u'mbtA: mycobactin salicyl-AMP ligase': 'mbtA',
+                    u'ybtE: yersiniabactin salicyl-AMP ligase': 'ybtE',
                     #
                     # N-fixation
                     # nitrogenase -- already in list
@@ -398,26 +403,23 @@ def getsoil_index(request, stops, RID, PID):
                     # urease -- already in list
                     #
                     # Nitrificiation
-                    u'1.14.99.39  ammonia monooxygenase': 'ammonia monooxygenase',
-                    u'1.7.2.6  hydroxylamine dehydrogenase': 'hydroxylamine dehydrogenase',
-                    u'1.7.99.4  nitrate reductase': 'nitrate reductase',
+                    u'pmoA-amoA: methane/ammonia monooxygenase': 'pmoA-amoA',
+                    u'hao: hydroxylamine dehydrogenase': 'hao',
+                    u'narGH: nitrate reductase': 'narGH',
                     #
                     # DNRA
-                    u'1.7.1.15  nitrite reductase (NADH)': 'nitrite reductase (NADH)',
-                    u'1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)': 'nitrite reductase (cytochrome; ammonia-forming)',
+                    u'nirBD: nitrite reductase (NADH)': 'nirBD',
+                    u'nrfA: nitrite reductase (cytochrome c-552)': 'nrfA',
                     #
                     # ANRA
-                    u'1.7.7.1  ferredoxin---nitrite reductase': 'ferredoxin---nitrite reductase',
-                    u'1.7.1.4  nitrite reductase [NAD(P)H]': 'nitrite reductase [NAD(P)H]',
+                    u'nirA: ferrodoxin-nitrite reductase': 'nirA',
+                    u'NIT-6: nitrite reductase (NAD(P)H)': 'NIT-6',
                     #
                     # Denitrification
-                    u'1.7.2.1  nitrite reductase (NO-forming)': 'nitrite reductase (NO-forming)',
-                    u'1.7.2.5  nitric oxide reductase (cytochrome c)': 'nitric oxide reductase (cytochrome c)',
-                    u'1.7.2.4  nitrous-oxide reductase': 'nitrous-oxide reductase',
-                    #
-                    # Anammox
-                    u'1.7.2.7  hydrazine synthase subunit': 'hydrazine synthase subunit',
-                    u'1.7.2.8  hydrazine dehydrogenase': 'hydrazine dehydrogenase'
+                    u'nirK: nitrite reductase (NO forming)': 'nirK',
+                    u'nirS:  nitrite reductase (NO forming)': 'nirS',
+                    u'norBC: nitric oxide reductase': 'norBC',
+                    u'nosZ: nitrous-oxide reductase': 'nosZ'
                 }, inplace=True)
 
                 if os.name == 'nt':
@@ -444,45 +446,47 @@ def getsoil_index(request, stops, RID, PID):
                 newList = [
                     # GIBBs
                     # C decomposition
-                    u'cellulase',
-                    u'cellulose 1,4-beta-cellobiosidase (non-reducing end)',
-                    u'beta-glucosidase',
-                    u'endo-1,4-beta-xylanase',
-                    u'xylan 1,4-beta-xylosidase',
+                    u'bglX',
+                    u'bglB',
+                    u'E3.2.1.21',
                     #
                     # N decomposition
-                    u'amidase',
-                    u'urease',
+                    u'amiE',
+                    u'ureC',
                     #
                     # P decomposition
-                    u'alkaline phosphatase',
-                    u'acid phosphatase',
+                    u'phoA',
+                    u'phoD',
+                    u'E3.1.3.2',
+                    u'appA',
+                    u'phoN',
                     #
                     # S decomposition
-                    u'arylsulfatase',
+                    u'aslA',
                     #
                     # N-fixation
-                    u'nitrogenase',
+                    u'nifH',
+                    u'nifDK',
                     #
                     # P solubility
-                    u'pyrroloquinoline-quinone synthase',
+                    u'pqqC',
                     #
                     # Biocontrol
-                    u'glycine dehydrogenase (cyanide-forming)',
-                    u'acetolactate decarboxylase',
-                    u'(S,S)-butanediol dehydrogenase',
-                    u'endo-1,3(4)-beta-glucanase',
-                    u'chitinase',
+                    u'hcnABC',
+                    u'budA',
+                    u'budC',
+                    u'E3.2.1.6',
+                    u'E3.2.1.14',
                     #
                     # Root growth
-                    u'indolepyruvate decarboxylase',
-                    u'1-aminocyclopropane-1-carboxylate deaminase',
+                    u'ipdC',
+                    u'acdS',
                     #
                     # Siderophore
-                    u'aerobactin synthase',
-                    u'enterobactin synthase',
-                    u'mycobactin salicyl-AMP ligase',
-                    u'yersiniabactin salicyl-AMP ligase',
+                    u'iucC',
+                    u'entDF',
+                    u'mbtA',
+                    u'ybtE',
                     #
                     # N-fixation
                     # nitrogenase -- already in list
@@ -492,26 +496,23 @@ def getsoil_index(request, stops, RID, PID):
                     # urease -- already in list
                     #
                     # Nitrificiation
-                    u'ammonia monooxygenase',
-                    u'hydroxylamine dehydrogenase',
-                    u'nitrate reductase',
+                    u'pmoA-amoA',
+                    u'hao',
+                    u'narGH',
                     #
                     # DNRA
-                    u'nitrite reductase (NADH)',
-                    u'nitrite reductase (cytochrome; ammonia-forming)',
+                    u'nirBD',
+                    u'nrfA',
                     #
                     # ANRA
-                    u'ferredoxin---nitrite reductase',
-                    u'nitrite reductase [NAD(P)H]',
+                    u'nirA',
+                    u'NIT-6',
                     #
                     # Denitrification
-                    u'nitrite reductase (NO-forming)',
-                    u'nitric oxide reductase (cytochrome c)',
-                    u'nitrous-oxide reductase',
-                    #
-                    # Anammox
-                    u'hydrazine synthase subunit',
-                    u'hydrazine dehydrogenase'
+                    u'nirK',
+                    u'nirS',
+                    u'norBC',
+                    u'nosZ'
                 ]
 
                 df2.set_index('Treatment', inplace=True)
@@ -520,45 +521,47 @@ def getsoil_index(request, stops, RID, PID):
                 maxDict = {
                     #GIBBs
                     # C decomposition
-                    u'cellulase': 1e9,
-                    u'cellulose 1,4-beta-cellobiosidase (non-reducing end)': 1e9,
-                    u'beta-glucosidase': 1e9,
-                    u'endo-1,4-beta-xylanase': 1e9,
-                    u'xylan 1,4-beta-xylosidase': 1e9,
+                    u'bglX': 1e9,
+                    u'bglB': 1e9,
+                    u'E3.2.1.21': 1e9,
                     #
                     # N decomposition
-                    u'amidase': 1e9,
-                    u'urease': 1e9,
+                    u'amiE': 1e9,
+                    u'ureC': 1e9,
                     #
                     # P decomposition
-                    u'alkaline phosphatase': 1e9,
-                    u'acid phosphatase': 1e9,
+                    u'phoA': 1e9,
+                    u'phoD': 1e9,
+                    u'E3.1.3.2': 1e9,
+                    u'appA': 1e9,
+                    u'phoN': 1e9,
                     #
                     # S decomposition
-                    u'arylsulfatase': 1e9,
+                    u'aslA': 1e9,
                     #
                     # N-fixation
-                    u'nitrogenase': 1e9,
+                    u'nifH': 1e9,
+                    u'nifDK': 1e9,
                     #
                     # P solubility
-                    u'pyrroloquinoline-quinone synthase': 1e9,
+                    u'pqqC': 1e9,
                     #
                     # Biocontrol
-                    u'glycine dehydrogenase (cyanide-forming)': 1e9,
-                    u'acetolactate decarboxylase': 1e9,
-                    u'(S,S)-butanediol dehydrogenase': 1e9,
-                    u'endo-1,3(4)-beta-glucanase': 1e9,
-                    u'chitinase': 1e9,
+                    u'hcnABC': 1e9,
+                    u'budA': 1e9,
+                    u'budC': 1e9,
+                    u'E3.2.1.6': 1e9,
+                    u'E3.2.1.14': 1e9,
                     #
                     # Root growth
-                    u'indolepyruvate decarboxylase': 1e9,
-                    u'1-aminocyclopropane-1-carboxylate deaminase': 1e9,
+                    u'ipdC': 1e9,
+                    u'acdS': 1e9,
                     #
                     # Siderophore
-                    u'aerobactin synthase': 1e9,
-                    u'enterobactin synthase': 1e9,
-                    u'mycobactin salicyl-AMP ligase': 1e9,
-                    u'yersiniabactin salicyl-AMP ligase': 1e9,
+                    u'iucC': 1e9,
+                    u'entDF': 1e9,
+                    u'mbtA': 1e9,
+                    u'ybtE': 1e9,
                     #
                     # N cycle
                     # N-fixation
@@ -569,26 +572,23 @@ def getsoil_index(request, stops, RID, PID):
                     # urease -- already in list
                     #
                     # Nitrificiation
-                    u'ammonia monooxygenase': 1e9,
-                    u'hydroxylamine dehydrogenase': 1e9,
-                    u'nitrate reductase': 1e9,
+                    u'pmoA-amoA': 1e9,
+                    u'hao': 1e9,
+                    u'narGH': 1e9,
                     #
                     # DNRA
-                    u'nitrite reductase (NADH)': 1e9,
-                    u'nitrite reductase (cytochrome; ammonia-forming)': 1e9,
+                    u'nirBD': 1e9,
+                    u'nrfA': 1e9,
                     #
                     # ANRA
-                    u'ferredoxin---nitrite reductase': 1e9,
-                    u'nitrite reductase [NAD(P)H]': 1e9,
+                    u'nirA': 1e9,
+                    u'NIT-6': 1e9,
                     #
                     # Denitrification
-                    u'nitrite reductase (NO-forming)': 1e9,
-                    u'nitric oxide reductase (cytochrome c)': 1e9,
-                    u'nitrous-oxide reductase': 1e9,
-                    #
-                    # Anammox
-                    u'hydrazine synthase subunit': 1e9,
-                    u'hydrazine dehydrogenase': 1e9
+                    u'nirK': 1e9,
+                    u'nirS': 1e9,
+                    u'norBC': 1e9,
+                    u'nosZ': 1e9
                 }
 
                 scaleDF = df2.copy()
@@ -734,145 +734,144 @@ def getsoil_index(request, stops, RID, PID):
 
                     # GIBBs
                     r("GIBBsList <- c( \
-                        'cellulase', \
-                        'cellulose.1.4.beta.cellobiosidase..non.reducing.end.', \
-                        'beta.glucosidase', \
-                        'endo.1.4.beta.xylanase', \
-                        'xylan.1.4.beta.xylosidase', \
-                        'amidase', \
-                        'urease', \
-                        'alkaline.phosphatase', \
-                        'acid.phosphatase', \
-                        'arylsulfatase', \
-                        'nitrogenase', \
-                        'pyrroloquinoline.quinone.synthase', \
-                        'glycine.dehydrogenase..cyanide.forming.', \
-                        'acetolactate.decarboxylase', \
-                        'X.S.S..butanediol.dehydrogenase', \
-                        'endo.1.3.4..beta.glucanase', \
-                        'chitinase', \
-                        'indolepyruvate.decarboxylase', \
-                        'X1.aminocyclopropane.1.carboxylate.deaminase', \
-                        'aerobactin.synthase', \
-                        'enterobactin.synthase', \
-                        'mycobactin.salicyl.AMP.ligase', \
-                        'yersiniabactin.salicyl.AMP.ligase' \
-                    )")
+                        'bglX', \
+                        'bglB', \
+                        'E3.2.1.21', \
+                        'phoA', \
+                        'phoD', \
+                        'E3.1.3.2', \
+                        'appA', \
+                        'phoN', \
+                        'aslA', \
+                        'pqqC', \
+                        'hcnABC', \
+                        'budA', \
+                        'budC', \
+                        'E3.2.1.6', \
+                        'E3.2.1.14', \
+                        'ipdC', \
+                        'acdS', \
+                        'iucC', \
+                        'entDF', \
+                        'mbtA', \
+                        'ybtE' \
+                     )")
 
                     r("legList <- c( \
-                        'EC3.2.1.4', \
-                        'EC3.2.1.91', \
-                        'EC3.2.1.21', \
-                        'EC3.2.1.8', \
-                        'EC3.2.1.37', \
-                        'EC3.5.1.4', \
-                        'EC3.5.1.5', \
-                        'EC3.1.3.1', \
-                        'EC3.1.3.2', \
-                        'EC1.18.6.1', \
-                        'EC1.3.3.11', \
-                        'EC1.4.99.5', \
-                        'EC4.1.1.5', \
-                        'EC1.1.1.76', \
-                        'EC3.2.1.6', \
-                        'EC3.2.1.14', \
-                        'EC4.1.1.74', \
-                        'EC3.5.99.7', \
-                        'EC6.3.2.39', \
-                        'EC6.3.2.14', \
-                        'K04787', \
-                        'K04783' \
+                        'bglX', \
+                        'bglB', \
+                        'E3.2.1.21', \
+                        'phoA', \
+                        'phoD', \
+                        'E3.1.3.2', \
+                        'appA', \
+                        'phoN', \
+                        'aslA', \
+                        'pqqC', \
+                        'hcnABC', \
+                        'budA', \
+                        'budC', \
+                        'E3.2.1.6', \
+                        'E3.2.1.14', \
+                        'ipdC', \
+                        'acdS', \
+                        'iucC', \
+                        'entDF', \
+                        'mbtA', \
+                        'ybtE' \
                     )")
 
                     r("gibbs <- data[,GIBBsList]")
 
-                    r('stars(matrix(1, ncol=23, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=1), 23), \
+                    r('stars(matrix(1, ncol=21, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=1), 21), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.7, mar=c(1,1,2,1), add=F, lty=2, \
-                        key.vpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
+                        key.xpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
 
                     r('mtext("GIBBs", side=3, line=0, at=0.25, cex=1, outer=T, font=2)')
                     r('mtext("N cycle", side=3, line=0, at=0.75, cex=1, outer=T, font=2)')
                     r('mtext(curName, side=2, cex=1.2, outer=T, font=2)')
 
-                    r("colGIBBs <- c('blue', 'blue', 'blue', 'blue', 'blue', \
-                        'green', 'green', 'red', 'red', 'turquoise', \
-                        'magenta', 'yellow', 'salmon', 'salmon', 'salmon', \
-                        'salmon', 'salmon', 'darkgray', 'darkgray', \
-                        'brown', 'brown', 'brown', 'brown')")
+                    r("colGIBBs <- c('blue', 'blue', 'blue', \
+                        'green', 'green', 'green', 'green', 'green', \
+                        'red', \
+                        'turquoise', \
+                        'magenta', 'magenta', 'magenta', 'magenta', 'magenta', \
+                        'yellow', 'yellow', \
+                        'salmon', 'salmon', 'salmon', 'salmon' \
+                    )")
 
                     r('stars(gibbs[off,], \
                         draw.segments=T, col.segments=colGIBBs, \
                         ncol=1, scale=F, full=T, labels=NULL, \
                         cex=0.5, add=T, lty=1, key.xpd=F)')
 
-                    r('stars(matrix(0.75, ncol=23, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 23), \
+                    r('stars(matrix(0.75, ncol=21, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 21), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, add=T, lty=2, key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.xpd=F)')
 
-                    r('stars(matrix(0.5, ncol=23, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 23), \
+                    r('stars(matrix(0.5, ncol=21, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 21), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, add=T, lty=2, key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.xpd=F)')
 
-                    r('stars(matrix(0.25, ncol=23, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 23), \
+                    r('stars(matrix(0.25, ncol=21, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 21), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, add=T, lty=2, key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.xpd=F)')
 
                     # N cycle
                     r("NList <- c( \
-                        'nitrogenase', \
-                        'amidase', \
-                        'urease', \
-                        'ammonia.monooxygenase', \
-                        'hydroxylamine.dehydrogenase', \
-                        'nitrate.reductase', \
-                        'nitrite.reductase..NADH.', \
-                        'nitrite.reductase..cytochrome..ammonia.forming.', \
-                        'ferredoxin...nitrite.reductase', \
-                        'nitrite.reductase..NAD.P.H.', \
-                        'nitrite.reductase..NO.forming.', \
-                        'nitric.oxide.reductase..cytochrome.c.', \
-                        'nitrous.oxide.reductase', \
-                        'hydrazine.synthase.subunit', \
-                        'hydrazine.dehydrogenase' \
+                        'nifH', \
+                        'nifDK', \
+                        'amiE', \
+                        'ureC', \
+                        'pmoA.amoA', \
+                        'hao', \
+                        'narGH', \
+                        'nirBD', \
+                        'nrfA', \
+                        'nirA', \
+                        'NIT.6', \
+                        'nirK', \
+                        'nirS', \
+                        'norBC', \
+                        'nosZ' \
                      )")
 
                     r("legList <- c( \
-                        'EC1.18.6.1', \
-                        'EC3.5.1.4', \
-                        'EC3.5.1.5', \
-                        'EC1.14.99.39', \
-                        'EC1.7.2.6', \
-                        'EC1.7.99.4', \
-                        'EC1.7.1.15', \
-                        'EC1.7.2.2', \
-                        'EC1.7.7.1', \
-                        'EC1.7.1.4', \
-                        'EC1.7.2.1', \
-                        'EC1.7.2.5', \
-                        'EC1.7.2.4', \
-                        'EC1.7.2.7', \
-                        'EC1.7.2.8' \
+                        'nifH', \
+                        'nifDK', \
+                        'amiE', \
+                        'ureC', \
+                        'pmoA.amoA', \
+                        'hao', \
+                        'narGH', \
+                        'nirBD', \
+                        'nrfA', \
+                        'nirA', \
+                        'NIT.6', \
+                        'nirK', \
+                        'nirS', \
+                        'norBC', \
+                        'nosZ' \
                     )")
-
-                    r("ncycle <- data[,NList]")
 
                     r('stars(matrix(1, ncol=15, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.7, mar=c(1,1,2,1), add=F, lty=2, \
-                        key.vpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
+                        key.xpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
 
-                    r("colN <- c('blue', 'green', 'green', \
+                    r("colN <- c('blue', 'blue', \
+                        'green', 'green', \
                         'red', 'red', 'red', \
                         'turquoise', 'turquoise', \
                         'magenta', 'magenta', \
-                        'yellow', 'yellow', 'yellow', \
-                        'salmon', 'salmon')")
+                        'yellow', 'yellow', 'yellow', 'yellow' \
+                    )")
 
                     r('stars(ncycle[off,], \
                         draw.segments=T, col.segments=colN, \
@@ -882,17 +881,17 @@ def getsoil_index(request, stops, RID, PID):
                     r('stars(matrix(0.75, ncol=15, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, add=T, lty=2, key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.xpd=F)')
 
                     r('stars(matrix(0.5, ncol=15, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, add=T, lty=2, key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.xpd=F)')
 
                     r('stars(matrix(0.25, ncol=15, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
-                        cex=0.5, add=T, lty=2, key.vpd=F)')
+                        cex=0.5, add=T, lty=2, key.xpd=F)')
 
                     # Biological
                     r('vals <- as.numeric(odat[off, c("microbial_respiration", "soil_active_c", "soil_ACE_protein", "coverage", "diversity", "rich", "abund_16S")])')

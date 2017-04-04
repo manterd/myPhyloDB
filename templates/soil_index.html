@@ -54,74 +54,72 @@
         // Forest values
         var dataSet =  [
             //GIBBS
-            ["1", "GIBBS", "C decomposition", "3.2.1.4", "cellulase", "1e10"],
-            ["2", "GIBBS", "C decomposition", "3.2.1.91", "cellulose 1,4-beta-cellobiosidase (non-reducing end)", "1e10"],
-            ["3", "GIBBS", "C decomposition", "3.2.1.21", "beta-glucosidase", "1e10"],
-            ["4", "GIBBS", "C decomposition", "3.2.1.8", "endo-1,4-beta-xylanase", "1e10"],
-            ["5", "GIBBS", "C decomposition", "3.2.1.37", "xylan 1,4-beta-xylosidase", "1e10"],
-            ["6", "GIBBS", "N decomposition", "3.5.1.4", "amidase", "1e10"],
-            ["7", "GIBBS", "N decomposition", "3.5.1.5", "urease", "1e10"],
-            ["8", "GIBBS", "P decomposition", "3.1.3.1", "alkaline phosphatase", "1e10"],
-            ["9", "GIBBS", "P decomposition", "3.1.3.2", "acid phosphatase", "1e10"],
-            ["10", "GIBBS", "S decomposition", "3.1.6.1", "arylsulfatase", "1e10"],
-            ["11", "GIBBS", "N-fixation", "1.18.6.1", "nitrogenase", "1e10"],
-            ["12", "GIBBS", "P-solubility", "1.3.3.11", "pyrroloquinoline-quinone synthase", "1e10"],
-            ["13", "GIBBS", "Biocontrol", "1.4.99.5", "glycine dehydrogenase (cyanide-forming)", "1e10"],
-            ["14", "GIBBs", "Biocontrol", "4.1.1.5", "acetolactate decarboxylase", "1e10"],
-            ["15", "GIBBs", "Biocontrol", "1.1.1.76", "(S,S)-butanediol dehydrogenase", "1e10"],
-            ["16", "GIBBs", "Biocontrol", "3.2.1.6", "endo-1,3(4)-beta-glucanase", "1e10"],
-            ["17", "GIBBS", "Biocontrol", "3.2.1.14", "chitinase", "1e10"],
-            ["18", "GIBBS", "Root-growth", "4.1.1.74", "indolepyruvate decarboxylase", "1e10"],
-            ["19", "GIBBS", "Root-growth", "3.5.99.7", "1-aminocyclopropane-1-carboxylate deaminase", "1e10"],
-            ["20", "GIBBS", "Siderophore", "6.3.2.39", "aerobactin synthase", "1e10"],
-            ["21", "GIBBS", "Siderophore", "6.3.2.14", "enterobactin synthase", "1e10"],
-            ["22", "GIBBS", "Siderophore", "6.3.2.-", "amycobactin salicyl-AMP ligase", "1e10"],
-            ["23", "GIBBS", "Siderophore", "6.3.2.-", "yersiniabactin salicyl-AMP ligase", "1e10"],
+            ["1", "GIBBS", "C decomposition", "bglX", "beta-glucosidase", "1e9"],
+            ["2", "GIBBS", "C decomposition", "bglB", "beta-glucosidase", "1e9"],
+            ["3", "GIBBS", "C decomposition", "3.2.1.21", "beta-glucosidase", "1e9"],
+            ["4", "GIBBS", "P decomposition", "phoA", "alkaline phosphatase", "1e9"],
+            ["5", "GIBBS", "P decomposition", "phoD", "alkaline phosphatase", "1e9"],
+            ["6", "GIBBS", "P decomposition", "E3.1.3.2", "acid phosphatase", "1e9"],
+            ["7", "GIBBS", "P decomposition", "appA", "acid phosphatase", "1e9"],
+            ["8", "GIBBS", "P decomposition", "phoN", "acid phosphatase", "1e9"],
+            ["9", "GIBBS", "S decomposition", "aslA", "arylsulfatase", "1e9"],
+            ["10", "GIBBS", "P-solubility", "pqqC", "pyrroloquinoline-quinone synthase", "1e9"],
+            ["11", "GIBBS", "Biocontrol", "hcnABC", "glycine dehydrogenase (cyanide-forming)", "1e9"],
+            ["12", "GIBBs", "Biocontrol", "budA", "acetolactate decarboxylase", "1e9"],
+            ["13", "GIBBs", "Biocontrol", "budC", "(S,S)-butanediol dehydrogenase", "1e9"],
+            ["14", "GIBBs", "Biocontrol", "E3.2.1.6", "endo-1,3(4)-beta-glucanase", "1e9"],
+            ["15", "GIBBS", "Biocontrol", "E3.2.1.14", "chitinase", "1e9"],
+            ["16", "GIBBS", "Root-growth", "ipdC", "indolepyruvate decarboxylase", "1e9"],
+            ["17", "GIBBS", "Root-growth", "acdS", "1-aminocyclopropane-1-carboxylate deaminase", "1e9"],
+            ["18", "GIBBS", "Siderophore", "iucC", "aerobactin synthase", "1e9"],
+            ["19", "GIBBS", "Siderophore", "entDF", "enterobactin synthase", "1e9"],
+            ["20", "GIBBS", "Siderophore", "mbtA", "amycobactin salicyl-AMP ligase", "1e9"],
+            ["21", "GIBBS", "Siderophore", "ybtE", "yersiniabactin salicyl-AMP ligase", "1e9"],
 
             //Biological
-            ["24", "Biological", "", "", "Abundance", "1e9"],
-            ["25", "Biological", "", "", "Richness", "10000"],
-            ["26", "Biological", "", "", "Diversity", "6"],
-            ["27", "Biological", "", "", "ACE Soil Protein Index", "10"],
-            ["28", "Biological", "", "", "Active Carbon", "500"],
-            ["29", "Biological", "", "", "Respiration", "10"],
+            ["22", "Biological", "", "", "Abundance", "1e9"],
+            ["23", "Biological", "", "", "Richness", "10000"],
+            ["24", "Biological", "", "", "Diversity", "6"],
+            ["25", "Biological", "", "", "ACE Soil Protein Index", "10"],
+            ["26", "Biological", "", "", "Active Carbon", "500"],
+            ["27", "Biological", "", "", "Respiration", "10"],
 
             //Chemical
-            ["30", "Chemical", "", "", "Organic Matter", "40"],
-            ["31", "Chemical", "", "", "Carbon", "20"],
-            ["32", "Chemical", "", "", "pH", "14"],
-            ["33", "Chemical", "", "", "Phosphorus", "10"],
-            ["34", "Chemical", "", "", "Potassium", "100"],
-            ["35", "Chemical", "", "", "Nitrogen", "100"],
+            ["28", "Chemical", "", "", "Organic Matter", "40"],
+            ["29", "Chemical", "", "", "Carbon", "20"],
+            ["30", "Chemical", "", "", "pH", "14"],
+            ["31", "Chemical", "", "", "Phosphorus", "10"],
+            ["32", "Chemical", "", "", "Potassium", "100"],
+            ["33", "Chemical", "", "", "Nitrogen", "100"],
 
             //Physical
-            ["36", "Physical", "", "", "Porosity", "1"],
-            ["37", "Physical", "", "", "Bulk Density", "2.65"],
-            ["38", "Physical", "", "", "Water Content", "100"],
-            ["39", "Physical", "", "", "Electric Conductivity", "10"],
-            ["40", "Physical", "", "", "Microbial Biomass C", "100"],
-            ["41", "Physical", "", "", "Microbial Biomass N", "100"],
-            ["42", "Physical", "", "", "Available Water Capacity", "1.0"],
-            ["43", "Physical", "", "", "Surface Hardness", "500"],
-            ["44", "Physical", "", "", "Subsurface Hardness", "500"],
-            ["45", "Physical", "", "", "Aggregate Stability", "100"],
+            ["34", "Physical", "", "", "Porosity", "1"],
+            ["35", "Physical", "", "", "Bulk Density", "2.65"],
+            ["36", "Physical", "", "", "Water Content", "100"],
+            ["37", "Physical", "", "", "Electric Conductivity", "10"],
+            ["38", "Physical", "", "", "Microbial Biomass C", "100"],
+            ["39", "Physical", "", "", "Microbial Biomass N", "100"],
+            ["40", "Physical", "", "", "Available Water Capacity", "1.0"],
+            ["41", "Physical", "", "", "Surface Hardness", "500"],
+            ["42", "Physical", "", "", "Subsurface Hardness", "500"],
+            ["43", "Physical", "", "", "Aggregate Stability", "100"],
 
             //N cycle
-            ["46", "N cycle", "Nitrification", "1.14.99.39", "ammonia monooxygenase", "1e10"],
-            ["47", "N cycle", "Nitrification", "1.7.2.6", "hydroxylamine dehydrogenase", "1e10"],
-            ["48", "N cycle", "Nitrification", "1.7.99.4", "nitrate reductase", "1e10"],
-            ["49", "N cycle", "DNRA", "1.7.5.1", "nitrate reductase (quinone)", "1e10"],
-            ["50", "N cycle", "DNRA", "1.7.1.15", "nitrite reductase (NADH)", "1e10"],
-            ["51", "N cycle", "DNRA", "1.7.2.2", "nitrite reductase (cytochrome; ammonia-forming)", "1e10"],
-            ["52", "N cycle", "ANRA", "1.7.7.1", "ferredoxin---nitrite reductase 1", "1e10"],
-            ["53", "N cycle", "ANRA", "1.7.7.2", "ferredoxin---nitrite reductase 2", "1e10"],
-            ["54", "N cycle", "ANRA", "1.7.1.4", "nitrite reductase [NAD(P)H]", "1e10"],
-            ["55", "N cycle", "ANRA", "1.7.1.1", "nitrate reductase (NADH)", "1e10"],
-            ["56", "N cycle", "Denitrification", "1.7.2.1", "nitrite reductase (NO-forming)", "1e10"],
-            ["57", "N cycle", "Denitrification", "1.7.2.5", "nitric oxide reductase (cytochrome c)", "1e10"],
-            ["58", "N cycle", "Denitrification", "1.7.2.4", "nitrous-oxide reductase", "1e10"],
-            ["59", "N cycle", "Anammox", "1.7.2.7", "hydrazine synthase subunit", "1e10"],
-            ["60", "N cycle", "Anammox", "1.7.2.8", "hydrazine dehydrogenase", "1e10"]
+            ["44", "N cycle", "N-fixation", "nifH", "nitrogenase Fe protein", "1e9"],
+            ["45", "N cycle", "N-fixation", "nifDK", "nitrogenase Mo-Fe protein", "1e9"],
+            ["46", "GIBBS", "Ammonification", "amiE", "amidase", "1e9"],
+            ["47", "GIBBS", "Ammonification", "ureC", "urease", "1e9"],
+            ["48", "N cycle", "Nitrification", "pmoA-amoA", "methane/ammonia monooxygenase", "1e9"],
+            ["49", "N cycle", "Nitrification", "hao", "hydroxylamine dehydrogenase", "1e9"],
+            ["50", "N cycle", "Nitrification", "narGH", "nitrate reductase", "1e9"],
+            ["51", "N cycle", "DNRA", "nirBD", "nitrite reductase (NADH)", "1e9"],
+            ["52", "N cycle", "DNRA", "nrfA", "nitrite reductase (cytochrome c-552)", "1e9"],
+            ["53", "N cycle", "ANRA", "nirA", "ferrodoxin-nitrite reductase", "1e9"],
+            ["54", "N cycle", "ANRA", "NIT-6", "nitrite reductase (NAD(P)H)", "1e9"],
+            ["55", "N cycle", "Denitrification", "nirK", "nitrite reductase (NO forming)", "1e9"],
+            ["56", "N cycle", "Denitrification", "nirS", "nitrite reductase (NO forming)", "1e9"],
+            ["57", "N cycle", "Denitrification", "norBC", "nitric oxide reductase", "1e9"],
+            ["58", "N cycle", "Denitrification", "nosZ", "nitrous-oxide reductase", "1e9"]
         ];
 
         $(function () {
@@ -244,196 +242,198 @@
                 }
 
                 var stop = false;
+                /*
                 if (maxVals['cellulase'] <= 0) {
                     alert("Max values must be greater than zero (check cellulase)");
-                    document.getElementById("maxval1").value = "1e10";
+                    document.getElementById("maxval1").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['cellulose 1,4-beta-cellobiosidase (non-reducing end)'] <= 0) {
                     alert("Max values must be greater than zero (check cellulose 1-4-beta-cellobiosidase)");
-                    document.getElementById("maxval2").value = "1e10";
+                    document.getElementById("maxval2").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['beta-glucosidase'] <= 0) {
                     alert("Max values must be greater than zero (check beta-glucosidase)");
-                    document.getElementById("maxval3").value = "1e10";
+                    document.getElementById("maxval3").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['endo-1,4-beta-xylanase'] <= 0) {
                     alert("Max values must be greater than zero (check endo-1.4-beta xylanase)");
-                    document.getElementById("maxval4").value = "1e10";
+                    document.getElementById("maxval4").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['xylan 1,4-beta-xylosidase'] <= 0) {
                     alert("Max values must be greater than zero (check xylan-1.4-beta-xylosidase)");
-                    document.getElementById("maxval5").value = "1e10";
+                    document.getElementById("maxval5").value = "1e9";
                    stop = true;
                 }
                 if (maxVals['amidase'] <= 0) {
                     alert("Max values must be greater than zero (check amidase)");
-                    document.getElementById("maxval6").value = "1e10";
+                    document.getElementById("maxval6").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['urease'] <= 0) {
                     alert("Max values must be greater than zero (check urease)");
-                    document.getElementById("maxval7").value = "1e10";
+                    document.getElementById("maxval7").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['alkaline phosphatase'] <= 0) {
                     alert("Max values must be greater than zero (check alkaline phosphatase)");
-                    document.getElementById("maxval8").value = "1e10";
+                    document.getElementById("maxval8").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['acid phosphatase'] <= 0) {
                     alert("Max values must be greater than zero (check acid phosphatase)");
-                    document.getElementById("maxval9").value = "1e10";
+                    document.getElementById("maxval9").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['arylsulfatase'] <= 0) {
                     alert("Max values must be greater than zero (check arylsulfatase)");
-                    document.getElementById("maxval10").value = "1e10";
+                    document.getElementById("maxval10").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrogenase'] <= 0) {
                     alert("Max values must be greater than zero (check nitrogenase)");
-                    document.getElementById("maxval11").value = "1e10";
+                    document.getElementById("maxval11").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['pyrroloquinoline-quinone synthase'] <= 0) {
                     alert("Max values must be greater than zero (check pyrroloquinoline-quinone synthase)");
-                    document.getElementById("maxval12").value = "1e10";
+                    document.getElementById("maxval12").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['glycine dehydrogenase (cyanide-forming)'] <= 0) {
                     alert("Max values must be greater than zero (check glycine dehydrogenase (cyanide-forming))");
-                    document.getElementById("maxval13").value = "1e10";
+                    document.getElementById("maxval13").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['acetolactate decarboxylase'] <= 0) {
                     alert("Max values must be greater than zero (acetolactate decarboxylase))");
-                    document.getElementById("maxval14").value = "1e10";
+                    document.getElementById("maxval14").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['(S,S)-butanediol dehydrogenase'] <= 0) {
                     alert("Max values must be greater than zero (check (S,S)-butanediol dehydrogenase)");
-                    document.getElementById("maxval15").value = "1e10";
+                    document.getElementById("maxval15").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['endo-1,3(4)-beta-glucanase'] <= 0) {
                     alert("Max values must be greater than zero (check endo-1,3(4)-beta-glucanase");
-                    document.getElementById("maxval16").value = "1e10";
+                    document.getElementById("maxval16").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['chitinase'] <= 0) {
                     alert("Max values must be greater than zero (check chitinase)");
-                    document.getElementById("maxval17").value = "1e10";
+                    document.getElementById("maxval17").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['indolepyruvate decarboxylase'] <= 0) {
                     alert("Max values must be greater than zero (check indolepyruvate decarboxylase)");
-                    document.getElementById("maxval18").value = "1e10";
+                    document.getElementById("maxval18").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['1-aminocyclopropane-1-carboxylate deaminase'] <= 0) {
                     alert("Max values must be greater than zero (check 1-aminocyclopropane-1-carboxylate deaminase)");
-                    document.getElementById("maxval19").value = "1e10";
+                    document.getElementById("maxval19").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['aerobactin synthase'] <= 0) {
                     alert("Max values must be greater than zero (check aerobactin synthase)");
-                    document.getElementById("maxval20").value = "1e10";
+                    document.getElementById("maxval20").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['enterobactin synthase'] <= 0) {
                     alert("Max values must be greater than zero (check enterobactin synthase)");
-                    document.getElementById("maxval21").value = "1e10";
+                    document.getElementById("maxval21").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['amycobactin salicyl-AMP ligase'] <= 0) {
                     alert("Max values must be greater than zero (check amycobactin salicyl-AMP ligase)");
-                    document.getElementById("maxval22").value = "1e10";
+                    document.getElementById("maxval22").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['yersiniabactin salicyl-AMP ligase'] <= 0) {
                     alert("Max values must be greater than zero (check yersiniabactin salicyl-AMP ligase)");
-                    document.getElementById("maxval23").value = "1e10";
+                    document.getElementById("maxval23").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['ammonia monooxygenase'] <= 0) {
                     alert("Max values must be greater than zero (check ammonia monooxygenase)");
-                    document.getElementById("maxval46").value = "1e10";
+                    document.getElementById("maxval46").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['hydroxylamine dehydrogenase'] <= 0) {
                     alert("Max values must be greater than zero (check hydroxylamine dehydrogenase)");
-                    document.getElementById("maxval47").value = "1e10";
+                    document.getElementById("maxval47").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrate reductase'] <= 0) {
                     alert("Max values must be greater than zero (check nitrate reductase)");
-                    document.getElementById("maxval48").value = "1e10";
+                    document.getElementById("maxval48").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrate reductase (quinone)'] <= 0) {
                     alert("Max values must be greater than zero (check nitrate reductase (quinone))");
-                    document.getElementById("maxval49").value = "1e10";
+                    document.getElementById("maxval49").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrite reductase (NADH)'] <= 0) {
                     alert("Max values must be greater than zero (check nitrite reductase (NADH))");
-                    document.getElementById("maxval50").value = "1e10";
+                    document.getElementById("maxval50").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrite reductase (cytochrome; ammonia-forming)'] <= 0) {
                     alert("Max values must be greater than zero (check cytochrome; ammonia-forming)");
-                    document.getElementById("maxval51").value = "1e10";
+                    document.getElementById("maxval51").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['ferredoxin---nitrite reductase 1'] <= 0) {
                     alert("Max values must be greater than zero (check ferredoxin---nitrite reductase 1))");
-                    document.getElementById("maxval52").value = "1e10";
+                    document.getElementById("maxval52").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['ferredoxin---nitrite reductase 2'] <= 0) {
                     alert("Max values must be greater than zero (check ferredoxin---nitrite reductase 2)");
-                    document.getElementById("maxval53").value = "1e10";
+                    document.getElementById("maxval53").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrite reductase [NAD(P)H]'] <= 0) {
                     alert("Max values must be greater than zero (check nitrite reductase [NAD(P)H])");
-                    document.getElementById("maxval54").value = "1e10";
+                    document.getElementById("maxval54").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrate reductase (NADH)'] <= 0) {
                     alert("Max values must be greater than zero (check nitrate reductase (NADH))");
-                    document.getElementById("maxval55").value = "1e10";
+                    document.getElementById("maxval55").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrite reductase (NO-forming)'] <= 0) {
                     alert("Max values must be greater than zero (check nitrite reductase (NO-forming))");
-                    document.getElementById("maxval56").value = "1e10";
+                    document.getElementById("maxval56").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitric oxide reductase (cytochrome c)'] <= 0) {
                     alert("Max values must be greater than zero (check nitric oxide reductase (cytochrome c))");
-                    document.getElementById("maxval57").value = "1e10";
+                    document.getElementById("maxval57").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['nitrous-oxide reductase'] <= 0) {
                     alert("Max values must be greater than zero (check nitrous-oxide reductase)");
-                    document.getElementById("maxval58").value = "1e10";
+                    document.getElementById("maxval58").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['hydrazine synthase subunit'] <= 0) {
                     alert("Max values must be greater than zero (check hydrazine synthase subunit)");
-                    document.getElementById("maxval59").value = "1e10";
+                    document.getElementById("maxval59").value = "1e9";
                     stop = true;
                 }
                 if (maxVals['hydrazine dehydrogenase'] <= 0) {
                     alert("Max values must be greater than zero (check hydrazine dehydrogenase)");
-                    document.getElementById("maxval60").value = "1e10";
+                    document.getElementById("maxval60").value = "1e9";
                     stop = true;
                 }
+                */
             }
 
             if (stop) {
@@ -478,49 +478,79 @@
                 locMax = false;
                 //initialize maxValDict with agriculture pairs
                 maxValDict = {
-                    // GIBBS
-                    '3.2.1.4  cellulase': "1e9",
-                    '3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': "1e9",
-                    '3.2.1.21  beta-glucosidase': "1e9",
-                    '3.2.1.8  endo-1,4-beta-xylanase': "1e9",
-                    '3.2.1.37  xylan 1,4-beta-xylosidase': "1e9",
+                    //GIBBs
+                    // C decomposition
+                    'bglX': 1e9,
+                    'bglB': 1e9,
+                    'E3.2.1.21': 1e9,
 
                     // N decomposition
-                    '3.5.1.4  amidase': "1e9",
-                    '3.5.1.5  urease': "1e9",
+                    'amiE': 1e9,
+                    'ureC': 1e9,
 
                     // P decomposition
-                    '3.1.3.1  alkaline phosphatase': "1e9",
-                    '3.1.3.2  acid phosphatase': "1e9",
+                    'phoA': 1e9,
+                    'phoD': 1e9,
+                    'E3.1.3.2': 1e9,
+                    'appA': 1e9,
+                    'phoN': 1e9,
 
                     // S decomposition
-                    '3.1.6.1  arylsulfatase': "1e9",
+                    'aslA': 1e9,
 
                     // N-fixation
-                    '1.18.6.1  nitrogenase': "1e9",
+                    'nifH': 1e9,
+                    'nifDK': 1e9,
 
                     // P solubility
-                    '1.3.3.11  pyrroloquinoline-quinone synthase': "1e9",
+                    'pqqC': 1e9,
 
                     // Biocontrol
-                    '1.4.99.5  glycine dehydrogenase (cyanide-forming)': "1e9",
-                    '4.1.1.5  acetolactate decarboxylase': "1e9",
-                    '1.1.1.76  (S,S)-butanediol dehydrogenase': "1e9",
-                    '3.2.1.6  endo-1,3(4)-beta-glucanase': "1e9",
-                    '3.2.1.14  chitinase': "1e9",
+                    'hcnABC': 1e9,
+                    'budA': 1e9,
+                    'budC': 1e9,
+                    'E3.2.1.6': 1e9,
+                    'E3.2.1.14': 1e9,
 
                     // Root growth
-                    '4.1.1.74  indolepyruvate decarboxylase': "1e9",
-                    '3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase': "1e9",
+                    'ipdC': 1e9,
+                    'acdS': 1e9,
 
                     // Siderophore
-                    '6.3.2.39  aerobactin synthase': "1e9",
-                    '6.3.2.14  enterobactin synthase': "1e9",
-                    'mycobactin salicyl-AMP ligase [EC:6.3.2.-]': "1e9",
-                    'yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]': "1e9",
+                    'iucC': 1e9,
+                    'entDF': 1e9,
+                    'mbtA': 1e9,
+                    'ybtE': 1e9,
+
+                    // N cycle
+                    // N-fixation
+                    // nitrogenase -- already in list
+
+                    // Ammonification
+                    // amidase -- already in list
+                    // urease -- already in list
+
+                    // Nitrificiation
+                    'pmoA-amoA': 1e9,
+                    'hao': 1e9,
+                    'narGH': 1e9,
+
+                    // DNRA
+                    'nirBD': 1e9,
+                    'nrfA': 1e9,
+
+                    // ANRA
+                    'nirA': 1e9,
+                    'NIT-6': 1e9,
+
+                    // Denitrification
+                    'nirK': 1e9,
+                    'nirS': 1e9,
+                    'norBC': 1e9,
+                    'nosZ': 1e9,
 
                     //Biological
-                    'Abundance': "1e10",
+                    'Abundance': "1e9",
                     'Richness': "10000",
                     'Diversity': "6",
                     'ACE Soil Protein Index': "10",
@@ -542,43 +572,7 @@
                     'Available Water Capacity': "1",
                     'Aggregate Stability': "100",
                     'Surface Hardness': "500",
-                    'Subsurface Hardness': "500",
-
-                    //N cycle
-                    // N-fixation
-                    // nitrogenase -- already in list
-
-                    // Ammonification
-                    // amidase -- already in list
-                    // urease -- already in list
-
-                    // Nitrificiation
-                    '1.14.99.39  ammonia monooxygenase': "1e9",
-                    '1.7.2.6  hydroxylamine dehydrogenase': "1e9",
-                    '1.7.99.4  nitrate reductase': "1e9",
-
-                    // DNRA
-                    // nitrate reductase -- already in list
-                    '1.7.5.1  nitrate reductase (quinone)': "1e9",
-                    '1.7.1.15  nitrite reductase (NADH)': "1e9",
-                    '1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)': "1e9",
-
-                    // ANRA
-                    '1.7.7.1  ferredoxin---nitrite reductase': "1e9",
-                    '1.7.7.2  ferredoxin---nitrite reductase': "1e9",
-                    // nitrate reductase -- already in list
-                    '1.7.1.4  nitrite reductase [NAD(P)H]': "1e9",
-                    '1.7.1.1  nitrate reductase (NADH)': "1e9",
-
-                    // Denitrification
-                    // nitrate reductase -- already in list
-                    '1.7.2.1  nitrite reductase (NO-forming)': "1e9",
-                    '1.7.2.5  nitric oxide reductase (cytochrome c)': "1e9",
-                    '1.7.2.4  nitrous-oxide reductase': "1e9",
-
-                    // Anammox
-                    '1.7.2.7  hydrazine synthase subunit': "1e9",
-                    '1.7.2.8  hydrazine dehydrogenase': "1e9"
+                    'Subsurface Hardness': "500"
                 };
                 //set column 4 value at row c to value of maxValDict with entry names[c]
                 for (var c=0; c<names.length; c++) {
@@ -592,49 +586,79 @@
                 locMax = false;
                 //initialize maxValDict with forest pairs
                 maxValDict = {
-                    // GIBBS
-                    '3.2.1.4  cellulase': "1e9",
-                    '3.2.1.91  cellulose 1,4-beta-cellobiosidase (non-reducing end)': "1e9",
-                    '3.2.1.21  beta-glucosidase': "1e9",
-                    '3.2.1.8  endo-1,4-beta-xylanase': "1e9",
-                    '3.2.1.37  xylan 1,4-beta-xylosidase': "1e9",
+                    //GIBBs
+                    // C decomposition
+                    'bglX': 1e9,
+                    'bglB': 1e9,
+                    'E3.2.1.21': 1e9,
 
                     // N decomposition
-                    '3.5.1.4  amidase': "1e9",
-                    '3.5.1.5  urease': "1e9",
+                    'amiE': 1e9,
+                    'ureC': 1e9,
 
                     // P decomposition
-                    '3.1.3.1  alkaline phosphatase': "1e9",
-                    '3.1.3.2  acid phosphatase': "1e9",
+                    'phoA': 1e9,
+                    'phoD': 1e9,
+                    'E3.1.3.2': 1e9,
+                    'appA': 1e9,
+                    'phoN': 1e9,
 
                     // S decomposition
-                    '3.1.6.1  arylsulfatase': "1e9",
+                    'aslA': 1e9,
 
                     // N-fixation
-                    '1.18.6.1  nitrogenase': "1e9",
+                    'nifH': 1e9,
+                    'nifDK': 1e9,
 
                     // P solubility
-                    '1.3.3.11  pyrroloquinoline-quinone synthase': "1e9",
+                    'pqqC': 1e9,
 
                     // Biocontrol
-                    '1.4.99.5  glycine dehydrogenase (cyanide-forming)': "1e9",
-                    '4.1.1.5  acetolactate decarboxylase': "1e9",
-                    '1.1.1.76  (S,S)-butanediol dehydrogenase': "1e9",
-                    '3.2.1.6  endo-1,3(4)-beta-glucanase': "1e9",
-                    '3.2.1.14  chitinase': "1e9",
+                    'hcnABC': 1e9,
+                    'budA': 1e9,
+                    'budC': 1e9,
+                    'E3.2.1.6': 1e9,
+                    'E3.2.1.14': 1e9,
 
                     // Root growth
-                    '4.1.1.74  indolepyruvate decarboxylase': "1e9",
-                    '3.5.99.7  1-aminocyclopropane-1-carboxylate deaminase': "1e9",
+                    'ipdC': 1e9,
+                    'acdS': 1e9,
 
                     // Siderophore
-                    '6.3.2.39  aerobactin synthase': "1e9",
-                    '6.3.2.14  enterobactin synthase': "1e9",
-                    'mycobactin salicyl-AMP ligase [EC:6.3.2.-]': "1e9",
-                    'yersiniabactin salicyl-AMP ligase [EC:6.3.2.-]': "1e9",
+                    'iucC': 1e9,
+                    'entDF': 1e9,
+                    'mbtA': 1e9,
+                    'ybtE': 1e9,
+
+                    // N cycle
+                    // N-fixation
+                    // nitrogenase -- already in list
+
+                    // Ammonification
+                    // amidase -- already in list
+                    // urease -- already in list
+
+                    // Nitrificiation
+                    'pmoA-amoA': 1e9,
+                    'hao': 1e9,
+                    'narGH': 1e9,
+
+                    // DNRA
+                    'nirBD': 1e9,
+                    'nrfA': 1e9,
+
+                    // ANRA
+                    'nirA': 1e9,
+                    'NIT-6': 1e9,
+
+                    // Denitrification
+                    'nirK': 1e9,
+                    'nirS': 1e9,
+                    'norBC': 1e9,
+                    'nosZ': 1e9,
 
                     //Biological
-                    'Abundance': "1e10",
+                    'Abundance': "1e9",
                     'Richness': "10000",
                     'Diversity': "6",
                     'ACE Soil Protein Index': "10",
@@ -656,43 +680,7 @@
                     'Available Water Capacity': "1",
                     'Aggregate Stability': "100",
                     'Surface Hardness': "500",
-                    'Subsurface Hardness': "500",
-
-                    //N cycle
-                    // N-fixation
-                    // nitrogenase -- already in list
-
-                    // Ammonification
-                    // amidase -- already in list
-                    // urease -- already in list
-
-                    // Nitrificiation
-                    '1.14.99.39  ammonia monooxygenase': "1e9",
-                    '1.7.2.6  hydroxylamine dehydrogenase': "1e9",
-                    '1.7.99.4  nitrate reductase': "1e9",
-
-                    // DNRA
-                    // nitrate reductase -- already in list
-                    '1.7.5.1  nitrate reductase (quinone)': "1e9",
-                    '1.7.1.15  nitrite reductase (NADH)': "1e9",
-                    '1.7.2.2  nitrite reductase (cytochrome; ammonia-forming)': "1e9",
-
-                    // ANRA
-                    '1.7.7.1  ferredoxin---nitrite reductase': "1e9",
-                    '1.7.7.2  ferredoxin---nitrite reductase': "1e9",
-                    // nitrate reductase -- already in list
-                    '1.7.1.4  nitrite reductase [NAD(P)H]': "1e9",
-                    '1.7.1.1  nitrate reductase (NADH)': "1e9",
-
-                    // Denitrification
-                    // nitrate reductase -- already in list
-                    '1.7.2.1  nitrite reductase (NO-forming)': "1e9",
-                    '1.7.2.5  nitric oxide reductase (cytochrome c)': "1e9",
-                    '1.7.2.4  nitrous-oxide reductase': "1e9",
-
-                    // Anammox
-                    '1.7.2.7  hydrazine synthase subunit': "1e9",
-                    '1.7.2.8  hydrazine dehydrogenase': "1e9"
+                    'Subsurface Hardness': "500"
                 };
                 //set column 4 value at row d to value of maxValDict with entry names[d]
                 for (var d=0; d<names.length; d++) {

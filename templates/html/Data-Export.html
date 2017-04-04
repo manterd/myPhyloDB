@@ -6,7 +6,8 @@
 <tr>
     <td bgcolor="white" width="5px"></td>
     <td bgcolor="white">
-        <input id="TabButton" type="button" disabled value="Export Data" onClick="getTab()"/>
+        <input id="TabButton" type="button" disabled value="Export Tabular Data" onClick="getTab()"/>
+        <!--<input id="BiomButton" type="button" disabled value="Export Biom Data" onClick="getBiom()"/>-->
     </td>
     <td bgcolor="white"></td>
 </tr>
@@ -40,6 +41,48 @@
         $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
             $.ajax({
                 url: '/myPhyloDB/getRawData/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID,
+                    func: func,
+                    treeType: treeType
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    window.location.href = obj['name'];
+                    $("#TabButton").css("background-color", "green").val("Done!");
+                }
+            });
+        }
+    function getBiom() {
+        var func;
+        if (document.title == 'ANcOVA') {
+            func = 'anova';
+        } else if (document.title == 'DiffAbund') {
+            func = 'diffabund';
+        } else if (document.title == 'GAGE') {
+            func = 'gage';
+        } else if (document.title == 'PCA') {
+            func = 'pca';
+        } else if (document.title == 'PCoA') {
+            func = 'pcoa';
+        } else if (document.title == 'SpAC') {
+            func = 'spac';
+        } else if (document.title == 'sPLS-Regr') {
+            func = 'spls';
+        } else if (document.title == 'WGCNA') {
+            func = 'wgcna';
+        } else if (document.title == 'CARET') {
+            func = 'rf';
+        } else {
+            func = 'unknown';
+        }
+
+        $("#BiomButton").css("background-color", "yellow").val("Gathering your data...please wait!");
+            $.ajax({
+                url: '/myPhyloDB/getRawDataBiom/',
                 type: 'GET',
                 dataType: 'json',
                 data: {

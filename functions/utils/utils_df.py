@@ -303,7 +303,7 @@ def analysisThreads():
     return int(num_threads)
 
 
-def getRawData(request):
+def getRawDataTab(request):
     if request.is_ajax():
         RID = request.GET["all"]
         func = request.GET["func"]
