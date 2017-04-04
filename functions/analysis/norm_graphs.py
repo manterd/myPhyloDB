@@ -244,6 +244,54 @@ def getNorm(request, RID, stopList, PID):
 
             shape = [len(taxaList), len(nameList)]
             myBiom['id'] = 'None'
+            myBiom['format'] = 'myPhyloDB v.1.2.0'
+            myBiom['format_url'] = 'http://biom-format.org'
+            myBiom['generated_by'] = 'myPhyloDB'
+            myBiom['type'] = 'OTU table'
+            myBiom['date'] = str(datetime.datetime.now())
+            myBiom['matrix_type'] = 'dense'
+            myBiom['matrix_element_type'] = 'float'
+            myBiom["shape"] = shape
+            myBiom['rows'] = taxaList
+            myBiom['columns'] = nameList
+            myBiom['data'] = abundList
+
+            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+            path = str(myDir) + 'myphylodb.biom'
+            with open(path, 'w') as outfile:
+                json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
+
+            myBiom = {}
+            nameList = []
+            for i in myList:
+                nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
+
+            # get list of lists with abundances
+            taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]
+            abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
+            abundList = abundDF.values.tolist()
+
+            # get list of taxa
+            namesDF = finalDF.loc[:, ['sampleid', 'otuid']]
+            finalDF['kingdom'] = finalDF['kingdom'].str.split(": ").str[1]
+            finalDF['phyla'] = finalDF['phyla'].str.split(": ").str[1]
+            finalDF['class'] = finalDF['class'].str.split(": ").str[1]
+            finalDF['order'] = finalDF['order'].str.split(": ").str[1]
+            finalDF['family'] = finalDF['family'].str.split(": ").str[1]
+            finalDF['genus'] = finalDF['genus'].str.split(": ").str[1]
+            finalDF['species'] = finalDF['species'].str.split(": ").str[1]
+            finalDF['otu'] = finalDF['otu'].str.split(": ").str[1]
+            finalDF['otu'] = finalDF['otu'].str.replace('gg', '')
+            namesDF['taxa'] = finalDF.loc[:, ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].values.tolist()
+            namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
+
+            taxaList = []
+            for index, row in namesDF.iterrows():
+                metaDict = {'taxonomy':  row[0]}
+                taxaList.append({"id": row[0][-1], "metadata": metaDict})
+
+            shape = [len(taxaList), len(nameList)]
+            myBiom['id'] = 'None'
             myBiom['format'] = 'Biological Observation Matrix 1.0.0'
             myBiom['format_url'] = 'http://biom-format.org'
             myBiom['generated_by'] = 'myPhyloDB'
@@ -257,7 +305,7 @@ def getNorm(request, RID, stopList, PID):
             myBiom['data'] = abundList
 
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-            path = str(myDir) + 'usr_norm_data.biom'
+            path = str(myDir) + 'phyloseq.biom'
             with open(path, 'w') as outfile:
                 json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
 
@@ -647,7 +695,7 @@ def getTab(request):
     if request.is_ajax():
         myDict = {}
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_norm_data.biom'
+        path = str(myDir) + 'myphylodb.biom'
 
         df, metaDF, remCatFields = functions.exploding_panda(path)
 
@@ -655,13 +703,13 @@ def getTab(request):
         df.to_csv(fileName2)
 
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        fileName3 = str(myDir) + 'usr_norm_data.gz'
+        fileName3 = str(myDir) + 'usr_norm_data.csv.gz'
         zf = zipfile.ZipFile(fileName3, "w", zipfile.ZIP_DEFLATED)
         zf.write(fileName2, 'usr_norm_data.csv')
         zf.close()
 
         myDir = '../../myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        fileName3 = str(myDir) + 'usr_norm_data.gz'
+        fileName3 = str(myDir) + 'usr_norm_data.csv.gz'
         myDict['name'] = str(fileName3)
         res = json.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
@@ -670,8 +718,19 @@ def getTab(request):
 def getBiom(request):
     if request.is_ajax():
         myDict = {}
-        myDir = '/myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        fileName = str(myDir) + 'usr_norm_data.biom'
-        myDict['name'] = str(fileName)
+        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        fileName1 = str(myDir) + 'myphylodb.biom'
+        fileName2 = str(myDir) + 'phyloseq.biom'
+
+        zip_file = os.path.join(os.getcwd(), 'myPhyloDB', 'media', 'usr_temp', request.user.username, 'usr_norm_data.biom.gz')
+        zf = zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED)
+
+        zf.write(fileName1)
+        zf.write(fileName2)
+        zf.close()
+
+        myDir = '../../myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+        fileName3 = str(myDir) + 'usr_norm_data.biom.gz'
+        myDict['name'] = str(fileName3)
         res = json.dumps(myDict)
         return HttpResponse(res, content_type='application/json')

@@ -1639,23 +1639,9 @@ def select(request):
 
         functions.handle_uploaded_file(uploaded, myDir, uploaded.name)
 
+        filename = str(myDir) + 'myphylodb.biom'
         try:
-            tar = tarfile.open(os.path.join(myDir, uploaded.name))
-            tar.extractall(myDir)
-            name = tar.getnames()[0]
-            tar.close()
-        except Exception:
-            try:
-                zip = zipfile.ZipFile(os.path.join(myDir, uploaded.name), 'r')
-                zip.extractall(myDir)
-                name = zip.namelist()[0]
-                zip.close()
-            except Exception:
-                name = uploaded.name
-
-        filename = str(myDir) + str(name)
-        try:
-            savedDF = pd.read_csv(filename, index_col=0, sep=',')
+            savedDF, metaDF, remCatFields = functions.exploding_panda(filename, finalSampleIDs=[], catFields=[], quantFields=[])
         except Exception:
             return render(
                 request,
@@ -1673,12 +1659,6 @@ def select(request):
 
         with open(path, 'wb') as f:
             pickle.dump(selList, f)
-
-        # save normalized file to hdf format
-        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_norm_data.h5'
-
-        savedDF.to_hdf(path, 'data')
 
         projectList = list(set(savedDF['projectid']))
 
@@ -1730,30 +1710,33 @@ def select(request):
 
         # get list of taxa
         namesDF = savedDF.loc[:, ['sampleid', 'otuid']]
+        savedDF['otuName'] = savedDF['otuName'].str.replace('gg', '')
         namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName']].values.tolist()
         namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
 
         taxaList = []
         for index, row in namesDF.iterrows():
-            metaDict = {}
-            metaDict['taxonomy'] = row[0]
-            taxaList.append({"id": index, "metadata": metaDict})
+            metaDict = {'taxonomy':  row[0]}
+            taxaList.append({"id": row[0][-1], "metadata": metaDict})
 
-        biome['format'] = 'Biological Observation Matrix 0.9.1-dev'
-        biome['format_url'] = 'http://biom-format.org/documentation/format_versions/biom-1.0.html'
-        biome['type'] = 'OTU table'
+        shape = [len(taxaList), len(nameList)]
+        biome['id'] = 'None'
+        biome['format'] = 'Biological Observation Matrix 1.0.0'
+        biome['format_url'] = 'http://biom-format.org'
         biome['generated_by'] = 'myPhyloDB'
+        biome['type'] = 'OTU table'
         biome['date'] = str(datetime.datetime.now())
         biome['matrix_type'] = 'dense'
         biome['matrix_element_type'] = 'float'
+        biome["shape"] = shape
         biome['rows'] = taxaList
         biome['columns'] = nameList
         biome['data'] = dataList
 
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_norm_data.biom'
+        path = str(myDir) + 'phyloseq.biom'
         with open(path, 'w') as outfile:
-            json.dump(biome, outfile, ensure_ascii=True, indent=4, sort_keys=True)
+            json.dump(biome, outfile, ensure_ascii=True, indent=4)
 
         return render(
             request,
@@ -2364,7 +2347,7 @@ user_logged_in.connect(login_usr_callback)  # does this belong in a function?
 # Function has been added to context processor in setting file
 def usrFiles(request):
     selFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
-    normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_norm_data.biom')
+    normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/myphylodb.biom')
 
     try:
         dataID = UserProfile.objects.get(user=request.user).dataID

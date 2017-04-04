@@ -430,7 +430,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
         finalSampleIDs = list(set(catSampleIDs) & set(quantSampleIDs))
 
     myDir = 'myPhyloDB/media/usr_temp/' + str(username) + '/'
-    path = str(myDir) + 'usr_norm_data.biom'
+    path = str(myDir) + 'myphylodb.biom'
 
     savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields)
 
