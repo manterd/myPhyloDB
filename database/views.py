@@ -1802,23 +1802,9 @@ def pathTaxaJSON(request):
         finalotuList = []
         if koList:
             qs = PICRUSt.objects.using('picrust')
-            picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'], verbose=False)
-            picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
-            otuList = picrustDF['otuid'].tolist()
-            picrustDF.set_index('otuid', drop=True, inplace=True)
-            picrustDF['gene'] = 'No'
-
-            finalotuList = []
-            for otu in otuList:
-                cell = picrustDF.at[otu, 'geneCount']
-                d = ast.literal_eval(cell)
-                present = 'No'
-                for key, value in d.items():
-                    if key in koList and value > 0:
-                        present = 'Yes'
-                        break
-                if present == 'Yes':
-                    finalotuList.append(otu)
+            for item in qs:
+                if any(i in item.geneList for i in koList):
+                    finalotuList.append(item.otuid_id)
 
         results = {}
         qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuName', 'otuid')
@@ -1866,23 +1852,9 @@ def nzTaxaJSON(request):
         finalotuList = []
         if koList:
             qs = PICRUSt.objects.using('picrust')
-            picrustDF = read_frame(qs, fieldnames=['otuid__otuid', 'geneCount'], verbose=False)
-            picrustDF.rename(columns={'otuid__otuid': 'otuid'}, inplace=True)
-            otuList = picrustDF['otuid'].tolist()
-            picrustDF.set_index('otuid', drop=True, inplace=True)
-            picrustDF['gene'] = 'No'
-
-            finalotuList = []
-            for otu in otuList:
-                cell = picrustDF.at[otu, 'geneCount']
-                d = ast.literal_eval(cell)
-                present = 'No'
-                for key, value in d.items():
-                    if key in koList and value > 0:
-                        present = 'Yes'
-                        break
-                if present == 'Yes':
-                    finalotuList.append(otu)
+            for item in qs:
+                if any(i in item.geneList for i in koList):
+                    finalotuList.append(item.otuid_id)
 
         results = {}
         qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
