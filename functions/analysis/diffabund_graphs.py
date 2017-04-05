@@ -295,8 +295,9 @@ def getDiffAbund(request, stops, RID, PID):
                                 idList = functions.getFullKO(list(df.rank_id.unique()))
                                 df['Taxonomy'] = df['rank_id'].map(idList)
                             elif treeType == 3:
-                                idList = functions.getFullNZ(list(df.rank_id.unique()))
-                                df['Taxonomy'] = df['rank_id'].map(idList)
+                                if nzAll < 5:
+                                    idList = functions.getFullNZ(list(df.rank_id.unique()))
+                                    df['Taxonomy'] = df['rank_id'].map(idList)
 
                             df.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
 
