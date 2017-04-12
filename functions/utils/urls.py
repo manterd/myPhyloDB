@@ -29,5 +29,6 @@ urlpatterns = [
 
     ### urls from utils page
     url(r'^getRawDataTab/$', functions.getRawDataTab, name='getRawDataTab'),
+    url(r'^getRawDataBiom/$', functions.getRawDataBiom, name='getRawDataBiom'),
     url(r'^removeFiles/$', functions.removeFiles, name='removeFiles'),
 ]

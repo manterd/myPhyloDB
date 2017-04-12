@@ -32,7 +32,7 @@ from utils.trees import getProjectTree, getProjectTreeChildren, \
     getKEGGTree2, \
     getPermissionTree, makeReproTree, makeUpdateTree
 from utils.utils_df import cleanup, handle_uploaded_file, multidict, remove_proj, remove_list, analysisThreads, \
-    getViewProjects, getEditProjects, getMetaDF, transformDF, taxaProfileDF, exploding_panda, \
-    wOdum, getRawDataTab, removeFiles, excel_to_dict
+    getViewProjects, getEditProjects, getMetaDF, transformDF, taxaProfileDF, exploding_panda, imploding_panda, \
+    wOdum, getRawDataTab, getRawDataBiom, removeFiles, excel_to_dict
 from utils.utils_kegg import getFullKO, getFullNZ, getFullTaxonomy, \
     getTaxaDF, getKeggDF, getNZDF, filterDF

@@ -186,12 +186,11 @@ def getWGCNA(request, stops, RID, PID):
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/wgcna/'
-                path = str(myDir) + str(RID) + '.pkl'
-
-                # now save file to computer
                 if not os.path.exists(myDir):
                     os.makedirs(myDir)
-                finalDF.to_pickle(path)
+
+                path = str(myDir) + str(RID) + '.biom'
+                functions.imploding_panda(path, treeType, finalSampleIDs, metaDF, finalDF)
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 0:

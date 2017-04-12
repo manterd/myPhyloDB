@@ -48,8 +48,11 @@
         function checkButtons() {
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
-            $("#TabButton").css("background-color", "lightgray").val("Export Data");
+            $("#TabButton").css("background-color", "lightgray").val("Export Tabular Data");
             document.getElementById("TabButton").disabled = true;
+            $("#BiomButton").css("background-color", "lightgray").val("Export Biom Data");
+            document.getElementById("BiomButton").disabled = true;
+
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-1").empty().hide();
@@ -641,7 +644,9 @@
                         }).draw();
 
                         $("div.toolbar").html('<br><br><br>');
+
                         document.getElementById("TabButton").disabled = false;
+                        document.getElementById("BiomButton").disabled = false;
 
                         scatter(xAxis, yAxis, series);
                         chooseDisplay();

@@ -45,8 +45,10 @@
         function checkButtons() {
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
-            $("#TabButton").css("background-color", "lightgray").val("Export Data");
+            $("#TabButton").css("background-color", "lightgray").val("Export Tabular Data");
             document.getElementById("TabButton").disabled = true;
+            $("#BiomButton").css("background-color", "lightgray").val("Export Biom Data");
+            document.getElementById("BiomButton").disabled = true;
 
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
@@ -78,7 +80,7 @@
             }
         }
         function chooseData() {
-            $("#TabButton")
+            $("#TabButton");
             $("#run").css("background-color", "yellow");
             $("#container-0").empty().append('Analysis is running...please be patient');
             getGraphData();
@@ -298,7 +300,9 @@
                         $('#text-1').val(text);
 
                         $("div.toolbar").html('<br><br>');
+
                         document.getElementById("TabButton").disabled = false;
+                        document.getElementById("BiomButton").disabled = false;
 
                         chooseDisplay();
                     }

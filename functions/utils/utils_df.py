@@ -1,5 +1,6 @@
 from collections import defaultdict
 import ctypes
+import datetime
 from django import forms
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
@@ -310,22 +311,8 @@ def getRawDataTab(request):
         treeType = int(request.GET["treeType"])
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
-        fileName = str(myDir) + str(RID) + '.pkl'
-        savedDF = pd.read_pickle(fileName)
-
-        if treeType == 1:
-            idList = functions.getFullTaxonomy(list(savedDF.rank_id.unique()))
-            savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
-        elif treeType == 2:
-            idList = functions.getFullKO(list(savedDF.rank_id.unique()))
-            savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
-        elif treeType == 3:
-            idList = functions.getFullNZ(list(savedDF.rank_id.unique()))
-            savedDF['Taxonomy'] = savedDF['rank_id'].map(idList)
-
-        savedDF.replace(to_replace='N/A', value=np.nan, inplace=True)
-        savedDF.dropna(axis=1, how='all', inplace=True)
-        savedDF.drop('rank_name', axis=1, inplace=True)
+        path = str(myDir) + str(RID) + '.biom'
+        savedDF = exploding_panda2(path, treeType)
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         fileName = str(myDir) + str(request.user.username) + '.' + str(func) + '.csv'
@@ -345,6 +332,19 @@ def getRawDataTab(request):
         return HttpResponse(res, content_type='application/json')
 
 
+def getRawDataBiom(request):
+    if request.is_ajax():
+        RID = request.GET["all"]
+        func = request.GET["func"]
+
+        myDir = '../../myPhyloDB/media/temp/' + str(func) + '/'
+        fileName = str(myDir) + str(RID) + '.biom'
+
+        myDict = {'name': str(fileName)}
+        res = json.dumps(myDict)
+        return HttpResponse(res, content_type='application/json')
+
+
 def removeFiles(request):
     if request.is_ajax():
         RID = request.GET["all"]
@@ -354,7 +354,7 @@ def removeFiles(request):
         if os.path.exists(file):
             os.remove(file)
 
-        file = "myPhyloDB/media/temp/" + str(func) + "/" + str(RID) + ".pkl"
+        file = "myPhyloDB/media/temp/" + str(func) + "/" + str(RID) + ".biom"
         if os.path.exists(file):
             os.remove(file)
 
@@ -697,22 +697,30 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     for i in d:
         tempDict = {}
         taxon = i['metadata']['taxonomy']
-        tempDict['kingdomid'] = taxon[0].split(': ')[0]
-        tempDict['kingdomName'] = taxon[0].split(': ')[1]
-        tempDict['phylaid'] = taxon[1].split(': ')[0]
-        tempDict['phylaName'] = taxon[1].split(': ')[1]
-        tempDict['classid'] = taxon[2].split(': ')[0]
-        tempDict['className'] = taxon[2].split(': ')[1]
-        tempDict['orderid'] = taxon[3].split(': ')[0]
-        tempDict['orderName'] = taxon[3].split(': ')[1]
-        tempDict['familyid'] = taxon[4].split(': ')[0]
-        tempDict['familyName'] = taxon[4].split(': ')[1]
-        tempDict['genusid'] = taxon[5].split(': ')[0]
-        tempDict['genusName'] = taxon[5].split(': ')[1]
-        tempDict['speciesid'] = taxon[6].split(': ')[0]
-        tempDict['speciesName'] = taxon[6].split(': ')[1]
-        tempDict['otuid'] = taxon[7].split(': ')[0]
-        tempDict['otuName'] = taxon[7].split(': ')[1]
+        if taxon[0]:
+            tempDict['kingdomid'] = taxon[0].split(': ')[0]
+            tempDict['kingdomName'] = taxon[0].split(': ')[1]
+        if taxon[1]:
+            tempDict['phylaid'] = taxon[1].split(': ')[0]
+            tempDict['phylaName'] = taxon[1].split(': ')[1]
+        if taxon[2]:
+            tempDict['classid'] = taxon[2].split(': ')[0]
+            tempDict['className'] = taxon[2].split(': ')[1]
+        if taxon[3]:
+            tempDict['orderid'] = taxon[3].split(': ')[0]
+            tempDict['orderName'] = taxon[3].split(': ')[1]
+        if taxon[4]:
+            tempDict['familyid'] = taxon[4].split(': ')[0]
+            tempDict['familyName'] = taxon[4].split(': ')[1]
+        if taxon[5]:
+            tempDict['genusid'] = taxon[5].split(': ')[0]
+            tempDict['genusName'] = taxon[5].split(': ')[1]
+        if taxon[6]:
+            tempDict['speciesid'] = taxon[6].split(': ')[0]
+            tempDict['speciesName'] = taxon[6].split(': ')[1]
+        if taxon[7]:
+            tempDict['otuid'] = taxon[7].split(': ')[0]
+            tempDict['otuName'] = taxon[7].split(': ')[1]
         taxaDict[str(i['id'])] = tempDict
     taxaDF = pd.DataFrame.from_dict(taxaDict, orient='index').reset_index()
     taxaDF.set_index('index', inplace=True)
@@ -728,3 +736,189 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     savedDF.reset_index(drop=False, inplace=True)
 
     return savedDF, metaDF, remCatFields
+
+
+def exploding_panda2(path, treeType):
+    # Load file
+    file = open(path)
+    data = json.load(file)
+    file.close()
+
+    # Get metadata
+    d = data['columns']
+    metaDict = {}
+    for i in d:
+        metaDict[str(i['id'])] = i['metadata']
+    metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
+    metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    metaDF.set_index('sampleid', inplace=True)
+
+    metaDF.dropna(axis=1, how='all', inplace=True)
+    metaDF.dropna(axis=0, how='all', inplace=True)
+
+    # Get count data and calculate various dependent variables
+    sampleids = [col['id'] for col in data['columns']]
+    taxaids = [col['id'] for col in data['rows']]
+
+    mat = data['data']
+    mat = np.asarray(mat).T.tolist()
+    df = pd.DataFrame(mat, index=sampleids, columns=taxaids)
+
+    abundDF = df.reset_index(drop=False)
+    abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
+    abundDF.set_index('sampleid', inplace=True)
+
+    rel_abundDF = df.div(df.sum(axis=1).astype(float), axis=0)
+    rel_abundDF.reset_index(drop=False, inplace=True)
+    rel_abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    rel_abundDF = pd.melt(rel_abundDF, id_vars='sampleid', value_vars=taxaids)
+    rel_abundDF.set_index('sampleid', inplace=True)
+
+    richDF = df / df
+    richDF.fillna(0, inplace=True)
+    richDF.reset_index(drop=False, inplace=True)
+    richDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
+    richDF.set_index('sampleid', inplace=True)
+
+    diversityDF = -df.div(df.sum(axis=1).astype(float), axis=0) * np.log(df.div(df.sum(axis=1).astype(float), axis=0))
+    diversityDF[np.isinf(diversityDF)] = np.nan
+    diversityDF.fillna(0.0, inplace=True)
+    diversityDF.reset_index(drop=False, inplace=True)
+    diversityDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    diversityDF = pd.melt(diversityDF, id_vars='sampleid', value_vars=taxaids)
+    diversityDF.set_index('sampleid', inplace=True)
+
+    if 'rRNA_copies' in metaDF.columns:
+        abund_16SDF = df.div(df.sum(axis=1).astype(float), axis=0).multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
+        abund_16SDF.fillna(0.0, inplace=True)
+        abund_16SDF.reset_index(drop=False, inplace=True)
+        abund_16SDF.rename(columns={'index': 'sampleid'}, inplace=True)
+        abund_16SDF = pd.melt(abund_16SDF, id_vars='sampleid', value_vars=taxaids)
+        abund_16SDF.set_index('sampleid', inplace=True)
+
+        countDF = pd.DataFrame({
+            'taxaid': abundDF['variable'],
+            'abund': abundDF['value'],
+            'rel_abund': rel_abundDF['value'],
+            'rich': richDF['value'],
+            'diversity': diversityDF['value'],
+            'abund_16S': abund_16SDF['value']
+        }, index=abundDF.index)
+
+    else:
+        rows, cols = abundDF.shape
+        abund_16SDF = np.zeros(rows)
+
+        countDF = pd.DataFrame({
+            'taxaid': abundDF['variable'],
+            'abund': abundDF['value'],
+            'rel_abund': rel_abundDF['value'],
+            'rich': richDF['value'],
+            'diversity': diversityDF['value'],
+            'abund_16S': abund_16SDF
+        }, index=abundDF.index)
+
+    savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
+    savedDF.reset_index(drop=False, inplace=True)
+
+    d = data['rows']
+    taxaDict = {}
+    for i in d:
+        tempDict = {}
+        taxon = i['metadata']['taxonomy']
+        length = len(taxon)
+        if treeType == 1:
+            if length > 0:
+                tempDict['Kingdom'] = taxon[0]
+            if length > 1:
+                tempDict['Phylum'] = taxon[1]
+            if length > 2:
+                tempDict['Class'] = taxon[2]
+            if length > 3:
+                tempDict['Order'] = taxon[3]
+            if length > 4:
+                tempDict['Family'] = taxon[4]
+            if length > 5:
+                tempDict['Genus'] = taxon[5]
+            if length > 6:
+                tempDict['Species'] = taxon[6]
+            if length > 7:
+                tempDict['OTU99'] = taxon[7]
+        elif treeType != 1:
+            if length > 0:
+                tempDict['Level 1'] = taxon[0]
+            if length > 1:
+                tempDict['Level 2'] = taxon[1]
+            if length > 2:
+                tempDict['Level 3'] = taxon[2]
+            if length > 3:
+                tempDict['Level 4'] = taxon[3]
+            if length > 4:
+                tempDict['Level 5'] = taxon[4]
+
+        taxaDict[str(i['id'])] = tempDict
+    taxaDF = pd.DataFrame.from_dict(taxaDict, orient='index').reset_index()
+    taxaDF.set_index('index', inplace=True)
+    taxaDF.reset_index(drop=False, inplace=True)
+    taxaDF.rename(columns={'index': 'taxaid'}, inplace=True)
+
+    savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')
+    savedDF.reset_index(drop=False, inplace=True)
+
+    return savedDF
+
+
+def imploding_panda(path, treeType, myList, metaDF, finalDF):
+    myBiom = {}
+    nameList = []
+    tempDF = metaDF.set_index('sampleid', inplace=False)
+    for i in myList:
+        nameList.append({"id": str(i), "metadata": tempDF.loc[i].to_dict()})
+
+    # get list of lists with abundances
+    abundDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
+    abundDF.sort_index(axis=0, inplace=True)
+    abundList = abundDF.values.tolist()
+
+    # get list of taxa
+    rank_id = abundDF.index.values.tolist()
+    taxDict = {}
+    if treeType == 1:
+        taxDict = functions.getFullTaxonomy(rank_id)
+    elif treeType == 2:
+        taxDict = functions.getFullKO(rank_id)
+    elif treeType == 3:
+        taxDict = functions.getFullNZ(rank_id)
+
+    for i in taxDict:
+        if taxDict[i] == 'N|o|t| |f|o|u|n|d':
+            taxDict[i] = 'N/A'
+
+    namesDF = pd.DataFrame.from_dict(taxDict, orient='index')
+    namesDF.sort_index(axis=0, inplace=True)
+
+    taxaList = []
+    for index, row in namesDF.iterrows():
+        rowList = row[0].split('|')
+        metaDict = {'taxonomy':  rowList}
+        taxaList.append({"id": index, "metadata": metaDict})
+
+    shape = [len(taxaList), len(nameList)]
+    myBiom['id'] = 'None'
+    myBiom['format'] = 'myPhyloDB v.1.2.0'
+    myBiom['format_url'] = 'http://biom-format.org'
+    myBiom['generated_by'] = 'myPhyloDB'
+    myBiom['type'] = 'OTU table'
+    myBiom['date'] = str(datetime.datetime.now())
+    myBiom['matrix_type'] = 'dense'
+    myBiom['matrix_element_type'] = 'float'
+    myBiom["shape"] = shape
+    myBiom['rows'] = taxaList
+    myBiom['columns'] = nameList
+    myBiom['data'] = abundList
+
+    with open(path, 'w') as outfile:
+        json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
+

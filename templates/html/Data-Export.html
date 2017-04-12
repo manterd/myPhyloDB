@@ -7,10 +7,11 @@
     <td bgcolor="white" width="5px"></td>
     <td bgcolor="white">
         <input id="TabButton" type="button" disabled value="Export Tabular Data" onClick="getTab()"/>
-        <!--<input id="BiomButton" type="button" disabled value="Export Biom Data" onClick="getBiom()"/>-->
+        <input id="BiomButton" type="button" disabled value="Export Biom Data" onClick="getBiom()"/>
     </td>
     <td bgcolor="white"></td>
 </tr>
+<a id="download" download href="" style="display:none">download</a>
 
 
 <script type="text/javascript">
@@ -40,7 +41,7 @@
 
         $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
             $.ajax({
-                url: '/myPhyloDB/getRawData/',
+                url: '/myPhyloDB/getRawDataTab/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -93,8 +94,11 @@
                 success: function(data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
-                    window.location.href = obj['name'];
-                    $("#TabButton").css("background-color", "green").val("Done!");
+                    var filename = obj['name'];
+                    $("a#download").attr({
+                        href: filename
+                    }).get(0).click();
+                    $("#BiomButton").css("background-color", "green").val("Done!");
                 }
             });
         }

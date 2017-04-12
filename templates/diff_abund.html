@@ -48,8 +48,11 @@
         function checkButtons() {
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
-            $("#TabButton").css("background-color", "lightgray").val("Export Data");
+            $("#TabButton").css("background-color", "lightgray").val("Export Tabular Data");
             document.getElementById("TabButton").disabled = true;
+            $("#BiomButton").css("background-color", "lightgray").val("Export Biom Data");
+            document.getElementById("BiomButton").disabled = true;
+
             $("#container-1").empty().append('Settings have been changed by the user!');
         }
         function chooseData() {
@@ -375,6 +378,7 @@
 
                         scatter(xAxis, yAxis, series);
                         document.getElementById("TabButton").disabled = false;
+                        document.getElementById("BiomButton").disabled = false;
                     }
                 }
             });

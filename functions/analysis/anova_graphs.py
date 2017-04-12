@@ -125,12 +125,11 @@ def getCatUnivData(request, RID, stops, PID):
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'
-                path = str(myDir) + str(RID) + '.pkl'
-
-                # now save file to computer
                 if not os.path.exists(myDir):
                     os.makedirs(myDir)
-                finalDF.to_pickle(path)
+
+                path = str(myDir) + str(RID) + '.biom'
+                functions.imploding_panda(path, treeType, finalSampleIDs, metaDF, finalDF)
 
                 functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
@@ -684,12 +683,11 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 # save location info to session
                 myDir = 'myPhyloDB/media/temp/anova/'
-                path = str(myDir) + str(RID) + '.pkl'
-
-                # now save file to computer
                 if not os.path.exists(myDir):
                     os.makedirs(myDir)
-                finalDF.to_pickle(path)
+
+                path = str(myDir) + str(RID) + '.biom'
+                functions.imploding_panda(path, treeType, finalSampleIDs, metaDF, finalDF)
 
                 functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
