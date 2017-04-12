@@ -192,7 +192,7 @@ def getPCoA(request, stops, RID, PID):
                     os.makedirs(myDir)
 
                 path = str(myDir) + str(RID) + '.biom'
-                functions.imploding_panda(path, treeType, finalSampleIDs, metaDF, finalDF)
+                functions.imploding_panda(path, treeType, DepVar, finalSampleIDs, metaDF, finalDF)
 
                 count_rDF = pd.DataFrame()
                 if DepVar == 0:

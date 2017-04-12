@@ -129,7 +129,7 @@ def getCatUnivData(request, RID, stops, PID):
                     os.makedirs(myDir)
 
                 path = str(myDir) + str(RID) + '.biom'
-                functions.imploding_panda(path, treeType, finalSampleIDs, metaDF, finalDF)
+                functions.imploding_panda(path, treeType, DepVar, finalSampleIDs, metaDF, finalDF)
 
                 functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
@@ -687,7 +687,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     os.makedirs(myDir)
 
                 path = str(myDir) + str(RID) + '.biom'
-                functions.imploding_panda(path, treeType, finalSampleIDs, metaDF, finalDF)
+                functions.imploding_panda(path, treeType, DepVar, finalSampleIDs, metaDF, finalDF)
 
                 functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 

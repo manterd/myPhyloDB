@@ -769,56 +769,10 @@ def exploding_panda2(path, treeType):
     abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
     abundDF.set_index('sampleid', inplace=True)
 
-    rel_abundDF = df.div(df.sum(axis=1).astype(float), axis=0)
-    rel_abundDF.reset_index(drop=False, inplace=True)
-    rel_abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    rel_abundDF = pd.melt(rel_abundDF, id_vars='sampleid', value_vars=taxaids)
-    rel_abundDF.set_index('sampleid', inplace=True)
-
-    richDF = df / df
-    richDF.fillna(0, inplace=True)
-    richDF.reset_index(drop=False, inplace=True)
-    richDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
-    richDF.set_index('sampleid', inplace=True)
-
-    diversityDF = -df.div(df.sum(axis=1).astype(float), axis=0) * np.log(df.div(df.sum(axis=1).astype(float), axis=0))
-    diversityDF[np.isinf(diversityDF)] = np.nan
-    diversityDF.fillna(0.0, inplace=True)
-    diversityDF.reset_index(drop=False, inplace=True)
-    diversityDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    diversityDF = pd.melt(diversityDF, id_vars='sampleid', value_vars=taxaids)
-    diversityDF.set_index('sampleid', inplace=True)
-
-    if 'rRNA_copies' in metaDF.columns:
-        abund_16SDF = df.div(df.sum(axis=1).astype(float), axis=0).multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
-        abund_16SDF.fillna(0.0, inplace=True)
-        abund_16SDF.reset_index(drop=False, inplace=True)
-        abund_16SDF.rename(columns={'index': 'sampleid'}, inplace=True)
-        abund_16SDF = pd.melt(abund_16SDF, id_vars='sampleid', value_vars=taxaids)
-        abund_16SDF.set_index('sampleid', inplace=True)
-
-        countDF = pd.DataFrame({
-            'taxaid': abundDF['variable'],
-            'abund': abundDF['value'],
-            'rel_abund': rel_abundDF['value'],
-            'rich': richDF['value'],
-            'diversity': diversityDF['value'],
-            'abund_16S': abund_16SDF['value']
-        }, index=abundDF.index)
-
-    else:
-        rows, cols = abundDF.shape
-        abund_16SDF = np.zeros(rows)
-
-        countDF = pd.DataFrame({
-            'taxaid': abundDF['variable'],
-            'abund': abundDF['value'],
-            'rel_abund': rel_abundDF['value'],
-            'rich': richDF['value'],
-            'diversity': diversityDF['value'],
-            'abund_16S': abund_16SDF
-        }, index=abundDF.index)
+    countDF = pd.DataFrame({
+        'taxaid': abundDF['variable'],
+        'DepVar': abundDF['value']
+    }, index=abundDF.index)
 
     savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
     savedDF.reset_index(drop=False, inplace=True)
@@ -870,7 +824,7 @@ def exploding_panda2(path, treeType):
     return savedDF
 
 
-def imploding_panda(path, treeType, myList, metaDF, finalDF):
+def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
     myBiom = {}
     nameList = []
     tempDF = metaDF.set_index('sampleid', inplace=False)
@@ -878,7 +832,18 @@ def imploding_panda(path, treeType, myList, metaDF, finalDF):
         nameList.append({"id": str(i), "metadata": tempDF.loc[i].to_dict()})
 
     # get list of lists with abundances
-    abundDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
+    abundDF = pd.DataFrame()
+    if DepVar == 0:
+        abundDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
+    if DepVar == 1:
+        abundDF = finalDF.pivot(index='rank_id', columns='sampleid', values='rel_abund')
+    elif DepVar == 2:
+        abundDF = finalDF.pivot(index='rank_id', columns='sampleid', values='rich')
+    elif DepVar == 3:
+        abundDF = finalDF.pivot(index='rank_id', columns='sampleid', values='diversity')
+    elif DepVar == 4:
+        abundDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
+
     abundDF.sort_index(axis=0, inplace=True)
     abundList = abundDF.values.tolist()
 

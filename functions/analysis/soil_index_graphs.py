@@ -77,7 +77,7 @@ def getsoil_index(request, stops, RID, PID):
                     os.makedirs(myDir)
 
                 path = str(myDir) + str(RID) + '.biom'
-                functions.imploding_panda(path, treeType, finalSampleIDs, metaDF, finalDF)
+                functions.imploding_panda(path, treeType, DepVar, finalSampleIDs, metaDF, finalDF)
                 '''
 
                 # Calculate Good's Coverage Estimate

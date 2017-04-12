@@ -139,7 +139,7 @@ def getCorr(request, stops, RID, PID):
                     os.makedirs(myDir)
 
                 path = str(myDir) + str(RID) + '.biom'
-                functions.imploding_panda(path, treeType, finalSampleIDs, metaDF, finalDF)
+                functions.imploding_panda(path, treeType, DepVar, finalSampleIDs, metaDF, finalDF)
 
                 functions.setBase(RID, 'Step 3 of 6: Selecting your chosen taxa or KEGG level...done')
 
