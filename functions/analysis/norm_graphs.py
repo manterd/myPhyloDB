@@ -224,18 +224,21 @@ def getNorm(request, RID, stopList, PID):
 
             myBiom = {}
             nameList = []
+            myList.sort()
             for i in myList:
                 nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
             # get list of lists with abundances
             taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]
             abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
+            abundDF.sort_index(axis=0, inplace=True)
             abundList = abundDF.values.tolist()
 
             # get list of taxa
             namesDF = finalDF.loc[:, ['sampleid', 'otuid']]
             namesDF['taxa'] = finalDF.loc[:, ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].values.tolist()
             namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
+            namesDF.sort_index(axis=0, inplace=True)
 
             taxaList = []
             for index, row in namesDF.iterrows():
@@ -263,12 +266,14 @@ def getNorm(request, RID, stopList, PID):
 
             myBiom = {}
             nameList = []
+            myList.sort()
             for i in myList:
                 nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
 
             # get list of lists with abundances
             taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]
             abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
+            abundDF.sort_index(axis=0, inplace=True)
             abundList = abundDF.values.tolist()
 
             # get list of taxa
@@ -284,6 +289,7 @@ def getNorm(request, RID, stopList, PID):
             finalDF['otu'] = finalDF['otu'].str.replace('gg', '')
             namesDF['taxa'] = finalDF.loc[:, ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].values.tolist()
             namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
+            namesDF.sort_index(axis=0, inplace=True)
 
             taxaList = []
             for index, row in namesDF.iterrows():
