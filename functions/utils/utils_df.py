@@ -828,6 +828,7 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
     myBiom = {}
     nameList = []
     tempDF = metaDF.set_index('sampleid', inplace=False)
+    myList.sort()
     for i in myList:
         nameList.append({"id": str(i), "metadata": tempDF.loc[i].to_dict()})
 
