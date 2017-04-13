@@ -733,7 +733,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     metaDF[catFields] = metaDF[catFields].astype(str)
     metaDF[quantFields] = metaDF[quantFields].astype(float)
 
-    savedDF.reset_index(drop=False, inplace=True)
+    savedDF.reset_index(drop=True, inplace=True)
 
     return savedDF, metaDF, remCatFields
 

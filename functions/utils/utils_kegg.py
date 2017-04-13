@@ -1241,39 +1241,30 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
 
     myLevel = 'otuName'
     myID = ''
-    numTaxa = 0
     if level == 1:
         myLevel = 'kingdomName'
         myID = 'kingdomid'
-        numTaxa = len(savedDF['kingdomid'].unique())
     elif level == 2:
         myLevel = 'phylaName'
         myID = 'phylaid'
-        numTaxa = len(savedDF['phylaid'].unique())
     elif level == 3:
         myLevel = 'className'
         myID = 'classid'
-        numTaxa = len(savedDF['classid'].unique())
     elif level == 4:
         myLevel = 'orderName'
         myID = 'orderid'
-        numTaxa = len(savedDF['orderid'].unique())
     elif level == 5:
         myLevel = 'familyName'
         myID = 'familyid'
-        numTaxa = len(savedDF['familyid'].unique())
     elif level == 6:
         myLevel = 'genusName'
         myID = 'genusid'
-        numTaxa = len(savedDF['genusid'].unique())
     elif level == 7:
         myLevel = 'speciesName'
         myID = 'speciesid'
-        numTaxa = len(savedDF['speciesid'].unique())
     elif level == 9:
         myLevel = 'otuName'
         myID = 'otuid'
-        numTaxa = len(savedDF['otuid'].unique())
 
     if remUnclass == 'yes':
         # check if selecting based on level first, create else statement for tree usage
@@ -1290,31 +1281,41 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         if filterMeth == 1:
             pass
         elif filterMeth == 2:
-            bytag_q3 = savedDF.groupby(myID)[myVar].quantile(0.75)
-            bytag_q1 = savedDF.groupby(myID)[myVar].quantile(0.25)
+            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
+            sumDF = sum.reset_index(drop=False)
+            bytag_q3 = sumDF.groupby(myID)[myVar].quantile(0.75)
+            bytag_q1 = sumDF.groupby(myID)[myVar].quantile(0.25)
             bytag = bytag_q3 - bytag_q1
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 3:
-            bytag_sd = savedDF.groupby(myID)[myVar].std()
-            bytag_mean = savedDF.groupby(myID)[myVar].mean()
+            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
+            sumDF = sum.reset_index(drop=False)
+            bytag_sd = sumDF.groupby(myID)[myVar].std()
+            bytag_mean = sumDF.groupby(myID)[myVar].mean()
             bytag = bytag_sd / bytag_mean
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 4:
-            bytag = savedDF.groupby(myID)[myVar].std()
+            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
+            sumDF = sum.reset_index(drop=False)
+            bytag = sumDF.groupby(myID)[myVar].std()
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 5:
-            bytag = savedDF.groupby(myID)[myVar].mean()
+            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
+            sumDF = sum.reset_index(drop=False)
+            bytag = sumDF.groupby(myID)[myVar].mean()
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 6:
-            bytag = savedDF.groupby(myID)[myVar].median()
+            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
+            sumDF = sum.reset_index(drop=False)
+            bytag = sumDF.groupby(myID)[myVar].median()
             bytag.sort(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
