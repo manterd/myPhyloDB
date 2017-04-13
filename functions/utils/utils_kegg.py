@@ -1285,8 +1285,8 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         tags = bytag[bytag[myVar] >= threshold].index.tolist()
         savedDF = savedDF[savedDF[myID].isin(tags)]
 
-    if filterData == 'yes' and filterPer < 100 and not level == 8:
-        threshold = int(filterPer / 100.0 * numTaxa)
+    if filterData == 'yes' and not level == 8:
+        threshold = int(filterPer)
         if filterMeth == 1:
             pass
         elif filterMeth == 2:

@@ -173,10 +173,7 @@
             dataType = document.getElementById("dataType").value;
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
-            $("#TabButton").css("background-color", "lightgray").val("Export Tabular Data");
-            document.getElementById("TabButton").disabled = true;
-            $("#BiomButton").css("background-color", "lightgray").val("Export Biom Data");
-            document.getElementById("BiomButton").disabled = true;
+            $("#Export").css("background-color", "lightgray").val('Export Data');
 
             if (dataType == "1") {
                 $("#unstackButton").show();
@@ -1477,8 +1474,6 @@
                             }
                             $('#text-2').val(text);
                         }
-                        document.getElementById("TabButton").disabled = false;
-                        document.getElementById("BiomButton").disabled = false;
                     }
 
                 }

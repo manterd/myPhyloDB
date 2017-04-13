@@ -69,8 +69,7 @@
         {% include "js/commonFunctions.js" %}
         function checkButtons() {
             $("#run").css("background-color", "lightgray");
-            $("#TabButton").css("background-color", "lightgray");
-            $("#BiomButton").css("background-color", "lightgray");
+            $("#Export").css("background-color", "lightgray");
             chooseDisplay();
         }
         function chooseData() {
@@ -128,6 +127,15 @@
                 $("#FilterRow").show();
             }
         }
+        function exportData() {
+            var format = $('input[name="exportB"]:checked').val();
+            if (format=='Tabular') {
+                getTab();
+            }
+            if (format=='Biom') {
+                getBiom();
+            }
+        }
         function getCatGraphData() {
             RID = makeGUID();
             startTimer(RID);
@@ -160,7 +168,7 @@
             });
         }
         function getTab() {
-            $("#TabButton").css("background-color", "yellow").val("Creating file...");
+            $("#Export").css("background-color", "yellow").val("Running!");
             var ul = document.getElementById("message");
             var li = document.createElement("li");
             li.appendChild(document.createTextNode("This may take several minutes..."));
@@ -173,13 +181,15 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     window.location.href = obj['name'];
-                    $("#TabButton").css("background-color", "green").val("Tabular");
+                    $("#Export").css("background-color", "green").val("Done!");
                     ul.removeChild(li);
                 }
+            }).fail(function() {
+                $("#Export").css("background-color", "red").val("No data!");
             });
         }
         function getBiom() {
-            $("#BiomButton").css("background-color", "yellow").val("Creating file...");
+            $("#Export").css("background-color", "yellow").val("Running!");
             var request = function() {
                 $.ajax({
                     url: '/myPhyloDB/getBiom/',
@@ -192,8 +202,10 @@
                         $("a#download").attr({
                             href: filename
                         }).get(0).click();
-                        $("#BiomButton").css("background-color", "green").val("BIOM");
+                        $("#Export").css("background-color", "green").val("Done!");
                     }
+                }).fail(function() {
+                    $("#Export").css("background-color", "red").val("No data!");
                 });
             };
             request('/echo/json/', 'request.txt');
@@ -205,6 +217,7 @@
             }
             running = true;
             $("#run").css("background-color", "yellow");
+            $("#Export").css("background-color", "lightgray").val('Export Data');
             $("#container-1").empty();
             $("#res_table").empty();
             chooseData();
@@ -262,10 +275,6 @@
                         $("#container-1").empty().append(text);
 
                         running = false;
-
-                        document.getElementById("TabButton").disabled = false;
-                        document.getElementById("BiomButton").disabled = false;
-
                         setNorm(true);
                         menu();
 
@@ -353,9 +362,9 @@
             </tr>
             <tr>
                 <td bgcolor="white">
-                    <input id="TabButton" type="button" disabled value="Tabular" onClick="getTab()"/>
-                    &nbsp
-                    <input id="BiomButton" type="button" disabled value="BIOM" onClick="getBiom()"/>
+                    <input name="exportB" type="radio" checked value="Tabular"/>Tabular
+                    <input name="exportB" type="radio" value="Biom"/>Biom
+                    <input id="Export" type="button" value="Export Data" onClick="exportData()"/>
                 </td>
             </tr>
         </table>

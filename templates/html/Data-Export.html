@@ -1,13 +1,14 @@
 <tr>
     <td bgcolor="white" width="5px"></td>
-    <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Export Raw Data:</em></strong></td>
+    <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Export Data:</em></strong></td>
 </tr>
 
 <tr>
     <td bgcolor="white" width="5px"></td>
     <td bgcolor="white">
-        <input id="TabButton" type="button" disabled value="Export Tabular Data" onClick="getTab()"/>
-        <input id="BiomButton" type="button" disabled value="Export Biom Data" onClick="getBiom()"/>
+        <input name="exportB" type="radio" checked value="Tabular"/>Tabular
+        <input name="exportB" type="radio" value="Biom"/>Biom
+        <input id="Export" type="button" value="Export Data" onClick="exportData()"/>
     </td>
     <td bgcolor="white"></td>
 </tr>
@@ -15,6 +16,15 @@
 
 
 <script type="text/javascript">
+    function exportData() {
+        var format = $('input[name="exportB"]:checked').val();
+        if (format=='Tabular') {
+            getTab();
+        }
+        if (format=='Biom') {
+            getBiom();
+        }
+    }
     function getTab() {
         var func;
         if (document.title == 'ANcOVA') {
@@ -39,7 +49,7 @@
             func = 'unknown';
         }
 
-        $("#TabButton").css("background-color", "yellow").val("Gathering your data...please wait!");
+        $("#Export").css("background-color", "yellow").val("Running!");
             $.ajax({
                 url: '/myPhyloDB/getRawDataTab/',
                 type: 'GET',
@@ -53,8 +63,10 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     window.location.href = obj['name'];
-                    $("#TabButton").css("background-color", "green").val("Done!");
+                    $("#Export").css("background-color", "green").val("Done!");
                 }
+            }).fail(function() {
+                    $("#Export").css("background-color", "red").val("No data!");
             });
         }
     function getBiom() {
@@ -81,7 +93,7 @@
             func = 'unknown';
         }
 
-        $("#BiomButton").css("background-color", "yellow").val("Gathering your data...please wait!");
+        $("#Export").css("background-color", "yellow").val("Running!");
             $.ajax({
                 url: '/myPhyloDB/getRawDataBiom/',
                 type: 'GET',
@@ -98,8 +110,10 @@
                     $("a#download").attr({
                         href: filename
                     }).get(0).click();
-                    $("#BiomButton").css("background-color", "green").val("Done!");
+                    $("#Export").css("background-color", "green").val("Done!");
                 }
+            }).fail(function() {
+                    $("#Export").css("background-color", "red").val("No data!");
             });
         }
 
