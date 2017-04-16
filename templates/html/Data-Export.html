@@ -1,6 +1,6 @@
-<tr>
+<tr class="accordion">
     <td bgcolor="white" width="5px"></td>
-    <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Export Data:</em></strong></td>
+    <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Export Data:</em></strong></td>
 </tr>
 
 <tr>
@@ -29,6 +29,8 @@
         var func;
         if (document.title == 'ANcOVA') {
             func = 'anova';
+        } else if (document.title == 'CorrPlot') {
+            func = 'corr';
         } else if (document.title == 'DiffAbund') {
             func = 'diffabund';
         } else if (document.title == 'GAGE') {
@@ -73,6 +75,8 @@
         var func;
         if (document.title == 'ANcOVA') {
             func = 'anova';
+        } else if (document.title == 'CorrPlot') {
+            func = 'corr';
         } else if (document.title == 'DiffAbund') {
             func = 'diffabund';
         } else if (document.title == 'GAGE') {

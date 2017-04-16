@@ -39,25 +39,41 @@
                     }
                 });
             });
+            $(".input tr:not(.accordion)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(4)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
         function checkButtons() {
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
-            $("#Export").css("background-color", "lightgray").val('Export Data');
 
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").show();
+                $("#row_kegg").hide();
+                $("#row_nz").hide();
             }
             if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
             }
             if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").hide();
+                $("#row_nz").show();
             }
 
             var method = document.getElementById("Method").value;
@@ -67,12 +83,6 @@
             } else {
                 $("#scaleRow").show();
                 $("#constrainRow").show();
-            }
-            var ellipse = document.getElementById("ellipseVal").value;
-            if (ellipse != 'None') {
-                $("#CI-row").show();
-            } else {
-                $("#CI-row").hide();
             }
         }
         function chooseData() {
@@ -397,7 +407,10 @@
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
-            //$("#my_image").attr("src", "#");
+
+            $("#my_image").attr("src", "#");
+            $("#Export").val('Export Data').css('background-color', 'lightgray');
+
             $("#container-0").empty().show();
             $("#container-2").hide();
             $("#text-1").val('');
@@ -556,10 +569,10 @@
         </tr>
     </table>
 
-    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
-        <tr>
+    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable input">
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Selection:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Data Selection:</strong></em></td>
         </tr>
 
         <tr>
@@ -575,10 +588,10 @@
             <td bgcolor="white"></td>
         </tr>
 
-        <tr id="row_taxa">
+        <tr>
             <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <select id="selectall-taxa" onChange="checkButtons()">
+            <td id="row_taxa" bgcolor="white">
+                <select id="selectall-taxa" onChange="selectTree()">
                     <option value="2">Phyla</option>
                     <option value="3">Classes</option>
                     <option value="4">Orders</option>
@@ -590,12 +603,7 @@
                 </select>
                 &nbsp; <-- Taxa level
             </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="row_kegg" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td  id="row_kegg" bgcolor="white" style="display:none">
                 <select id="selectall-kegg" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
@@ -603,12 +611,7 @@
                 </select>
                 &nbsp; <-- KEGG pathway level
             </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="row_nz" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td id="row_nz" bgcolor="white" style="display:none">
                 <select id="selectall-nz" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
@@ -656,9 +659,9 @@
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-Filtering.html" %}
 
-        <tr>
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Ordination Settings:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Ordination Settings:</strong></em></td>
         </tr>
 
         <tr>
@@ -670,23 +673,13 @@
                     <option value="decorana">Detrended Correspondences Analysis (DCA)</option>
                 </select>
                 &nbsp; <-- Ordination Method
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="scaleRow">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="checkbox" id="scaled" checked onClick="checkButtons()">&nbsp; <-- scale data
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="constrainRow">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="checkbox" title="Click to turn on/off" id="constrain" onClick="checkButtons()"/>
-                &nbsp; <-- Constrain analysis using selected meta-variables
+                <div id="scaleRow" style="padding-left: 30px;">
+                    <input type="checkbox" id="scaled" checked onClick="checkButtons()">&nbsp; <-- scale data
+                </div>
+                <div id="constrainRow" style="padding-left: 30px;">
+                    <input type="checkbox" title="Click to turn on/off" id="constrain" onClick="checkButtons()"/>
+                    &nbsp; <-- Constrain analysis using selected meta-variables
+                </div>
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -725,9 +718,9 @@
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
 
-        <tr>
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plots:</em></strong></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em><span class="arrow">►</span> Optimize R plots:</em></strong></td>
         </tr>
 
         <tr>
@@ -842,7 +835,7 @@
 
         <tr id="CI-row" style="display:none">
             <td bgcolor="white"></td>
-            <td bgcolor="white">
+            <td bgcolor="white" style="padding-left: 40px;">
                 <input type="text" title="Confidence interval must be between 0 and 1" id="CI" value="0.95" style="background-color: white; width: 50px" onChange="checkButtons()"/>
                 &nbsp; <-- Enter the confidence interval to be displayed by the ellipse
             </td>

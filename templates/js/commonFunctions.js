@@ -15,41 +15,25 @@ function checkDupes(list) {
         }
 
 function clearMeta() {
-    if (dataType == 0) {
-        $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
-            node.select(false);
-        });
-        $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
-            node.select(false);
-        });
-    }
-    else if (dataType == 1) {
-        $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
-            node.select(false);
-        });
-    }
-    else if (dataType == 2) {
-        $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
-            node.select(false);
-        });
-    }
+    $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+        node.select(false);
+    });
+    $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
+        node.select(false);
+    });
     $("#run").css("background-color", "lightgray");
 }
 
 function clearTaxa() {
-    if (treeType == 1) {
-        $("#tree_taxa").dynatree("getRoot").visit(function (node) {
-            node.select(false);
-        });
-    } else if (treeType == 2) {
-        $("#tree_kegg").dynatree("getRoot").visit(function (node) {
-            node.select(false);
-        });
-    } else if (treeType == 3) {
-        $("#tree_nz").dynatree("getRoot").visit(function (node) {
-            node.select(false);
-        });
-    }
+    $("#tree_taxa").dynatree("getRoot").visit(function (node) {
+        node.select(false);
+    });
+    $("#tree_kegg").dynatree("getRoot").visit(function (node) {
+        node.select(false);
+    });
+    $("#tree_nz").dynatree("getRoot").visit(function (node) {
+        node.select(false);
+    });
 
     $("#run").css("background-color", "lightgray");
 }

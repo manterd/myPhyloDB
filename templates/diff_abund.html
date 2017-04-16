@@ -42,15 +42,41 @@
                     }
                 });
             });
+            $(".input tr:not(.accordion)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(3)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
         function checkButtons() {
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
-            $("#Export").css("background-color", "lightgray").val('Export Data');
+            $("#Export").val('Export Data').css('background-color', 'lightgray');
 
+            if (treeType == 1) {
             $("#container-1").empty().append('Settings have been changed by the user!');
+                $("#row_taxa").show();
+                $("#row_kegg").hide();
+                $("#row_nz").hide();
+            }
+            if (treeType == 2) {
+            $("#container-1").empty().append('Settings have been changed by the user!');
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
+            }
+            if (treeType == 3) {
+            $("#container-1").empty().append('Settings have been changed by the user!');
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
+            }
+
         }
         function chooseData() {
             if (treeType == 1) {
@@ -397,11 +423,10 @@
             </tr>
         </table>
 
-        <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
-            <tr>
+        <table border="0" cellspacing="0" cellpadding="5" class="inlineTable input">
+            <tr class="accordion">
                 <td bgcolor="white" width="5px"></td>
-                <td bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Selection:</strong></em></td>
-                <td bgcolor="white"></td>
+                <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Data Selection:</strong></em></td>
             </tr>
 
             <tr>
@@ -417,52 +442,42 @@
                 <td bgcolor="white"></td>
             </tr>
 
-            <tr id="row_taxa">
-                <td bgcolor="white" width="5px"></td>
-                <td bgcolor="white">
-                    <select id="selectall-taxa" onChange="checkButtons()">
-                        <option value="2">Phyla</option>
-                        <option value="3">Classes</option>
-                        <option value="4">Orders</option>
-                        <option value="5">Families</option>
-                        <option value="6">Genera</option>
-                        <option value="7">Species</option>
-                        <option value="9" selected="selected">OTU_99</option>
-                        <option value="8">PGPRs</option>
-                    </select>
-                    &nbsp; <-- Taxa level
-                </td>
-                <td bgcolor="white"></td>
-            </tr>
-
-            <tr id="row_kegg" style="display:none">
-                <td bgcolor="white" width="5px"></td>
-                <td bgcolor="white">
-                    <select id="selectall-kegg" onChange="checkButtons()">
-                        <option value="1" selected="selected">Level 1</option>
-                        <option value="2">Level 2</option>
-                        <option value="3">Level 3</option>
-                    </select>
-                    &nbsp; <-- KEGG pathway level
-                </td>
-                <td bgcolor="white"></td>
-            </tr>
-
-            <tr id="row_nz" style="display:none">
-                <td bgcolor="white" width="5px"></td>
-                <td bgcolor="white">
-                    <select id="selectall-nz" onChange="checkButtons()">
-                        <option value="1" selected="selected">Level 1</option>
-                        <option value="2">Level 2</option>
-                        <option value="3">Level 3</option>
-                        <option value="4">Level 4</option>
-                        <option value="5">GIBBs</option>
-                        <option value="6">N cycle</option>
-                    </select>
-                    &nbsp; <-- KEGG enzyme level
-                </td>
-                <td bgcolor="white"></td>
-            </tr>
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td id="row_taxa" bgcolor="white">
+                <select id="selectall-taxa" onChange="selectTree()">
+                    <option value="2">Phyla</option>
+                    <option value="3">Classes</option>
+                    <option value="4">Orders</option>
+                    <option value="5">Families</option>
+                    <option value="6">Genera</option>
+                    <option value="7">Species</option>
+                    <option value="9" selected="selected">OTU_99</option>
+                    <option value="8">PGPRs</option>
+                </select>
+                &nbsp; <-- Taxa level
+            </td>
+            <td  id="row_kegg" bgcolor="white" style="display:none">
+                <select id="selectall-kegg" onChange="checkButtons()">
+                    <option value="1" selected="selected">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                </select>
+                &nbsp; <-- KEGG pathway level
+            </td>
+            <td id="row_nz" bgcolor="white" style="display:none">
+                <select id="selectall-nz" onChange="checkButtons()">
+                    <option value="1" selected="selected">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                    <option value="4">Level 4</option>
+                    <option value="5">GIBBs</option>
+                    <option value="6">N cycle</option>
+                </select>
+                &nbsp; <-- KEGG enzyme level
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
 
             <tr>
                 <td bgcolor="white" width="5px"></td>
@@ -479,9 +494,9 @@
             <tr><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-Filtering.html" %}
 
-            <tr>
+            <tr class="accordion">
                 <td bgcolor="white"></td>
-                <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>edgeR Settings:</strong></em></td>
+                <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> edgeR Settings:</strong></em></td>
             </tr>
 
             <tr>

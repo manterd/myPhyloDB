@@ -42,6 +42,14 @@
                     }
                 });
             });
+            $(".input tr:not(.accordion):not(.maxValBox)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(3)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
@@ -71,7 +79,7 @@
             $.each(finalDict, function(myKey, myRows) {
                 if (indexNo == 0) {
                     var headerData = '';
-                    headerData += '<tr id=trainHeader>';
+                    headerData += '<tr id=trainHeader class=maxValBox>';
                     headerData += '<th>Selection</th>';
                     headerData += '<th>Project Name</th>';
                     headerData += '<th>Sample Name</th>';
@@ -90,7 +98,7 @@
                         var name = rowData[3];
                         var trt = rowData[4].slice(0, -1);
                         if ($.inArray(sid, wantedIDs) >= 0) {
-                            newRow += '<tr id=row-' + sid + '>';
+                            newRow += '<tr id=row-' + sid + ' class=maxValBox>';
                             newRow += '<td>';
                             newRow += '<input type="radio" name="test-' + count + '" value="test">Test</br>';
                             newRow += '<input type="radio" name="test-' + count + '" value="train" checked>Train';
@@ -131,14 +139,23 @@
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").show();
+                $("#row_kegg").hide();
+                $("#row_nz").hide();
             }
             if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
             }
             if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
             }
 
             var trainMethod = document.getElementById("trainMethod").value;
@@ -871,7 +888,7 @@
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
-            //$("#my_image").attr("src", "#");
+            $("#my_image").attr("src", "#");
             $("#container-0").empty().show();
             $("#container-2").hide();
             $("#text-1").val('');
@@ -977,10 +994,10 @@
         </tr>
     </table>
 
-    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
-        <tr>
+    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable input">
+        <tr class="accordion">
             <td bgcolor="white" width="5px"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Selection:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Data Selection:</strong></em></td>
         </tr>
 
         <tr>
@@ -996,10 +1013,10 @@
             <td bgcolor="white"></td>
         </tr>
 
-        <tr id="row_taxa">
+        <tr>
             <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <select id="selectall-taxa" onChange="checkButtons()">
+            <td id="row_taxa" bgcolor="white">
+                <select id="selectall-taxa" onChange="selectTree()">
                     <option value="2">Phyla</option>
                     <option value="3">Classes</option>
                     <option value="4">Orders</option>
@@ -1011,12 +1028,7 @@
                 </select>
                 &nbsp; <-- Taxa level
             </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="row_kegg" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td  id="row_kegg" bgcolor="white" style="display:none">
                 <select id="selectall-kegg" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
@@ -1024,12 +1036,7 @@
                 </select>
                 &nbsp; <-- KEGG pathway level
             </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="row_nz" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td id="row_nz" bgcolor="white" style="display:none">
                 <select id="selectall-nz" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
@@ -1076,9 +1083,9 @@
         {% include "html/Data-Filtering.html" %}
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>CARET Settings:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> CARET Settings:</strong></em></td>
         </tr>
 
         <tr>
@@ -1109,34 +1116,21 @@
             <td bgcolor="white"></td>
         </tr>
 
-        <tr id="number1-row" style="display:none">
+        <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <input type="text" id="number1" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of folds in cross-fold validation
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="number2-row">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="text" id="number2" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of resampling iterations
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="repeats-row" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="text" id="repeats" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of independent cross-fold validations to perform
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="proportion-row" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <input type="text" id="proportion" style="background-color: white; width: 40px" value="0.75"/>&nbsp; <-- proportion of training dataset to include in each iteration
+                <div id="number1-row">
+                    <input type="text" id="number1" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of folds in cross-fold validation
+                </div>
+                <div id="number2-row">
+                    <input type="text" id="number2" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of resampling iterations
+                </div>
+                <div id="repeats-row">
+                    <input type="text" id="repeats" style="background-color: white; width: 40px" value="10"/>&nbsp; <-- number of independent cross-fold validations to perform
+                </div>
+                <div id="proportion-row">
+                    <input type="text" id="proportion" style="background-color: white; width: 40px" value="0.75"/>&nbsp; <-- proportion of training dataset to include in each iteration
+                </div>
             </td>
             <td bgcolor="white"></td>
         </tr>
@@ -1152,7 +1146,7 @@
             <td bgcolor="white"></td>
         </tr>
 
-        <tr class="maxValBox" style="display: none">
+        <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
                 <div style="background-color: white">
@@ -1162,10 +1156,10 @@
             <td bgcolor="white"></td>
         </tr>
 
-        <tr class="maxValBox" style="display: none">
+        <tr>
             <td bgcolor="white" width="5px"></td>
             <td colspan="2" bgcolor="white">
-                <div style="height:400px; overflow:auto">
+                <div style="max-height:400px; overflow:auto">
                     <table id="myTable" border="2"></table>
                 </div>
             </td>

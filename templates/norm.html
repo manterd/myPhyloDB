@@ -39,6 +39,18 @@
         var running = false, refresh = 0, RID = 0;
 
         $(function () {
+            $(window).load(function() {
+                checkButtons();
+            });
+            $(".input tr:not(.accordion)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(2)").trigger('click');
+
             $("#NormMeth").change(function () {
                 NormMeth = $(this).val();
                 checkButtons();
@@ -70,7 +82,28 @@
         function checkButtons() {
             $("#run").css("background-color", "lightgray");
             $("#Export").css("background-color", "lightgray");
-            chooseDisplay();
+            NormMeth = document.getElementById('NormMeth').value;
+
+            if (NormMeth == 1) {
+                $("#NormRow").hide();
+                $("#IterRow").hide();
+                $("#LambdaRow").hide();
+            }
+            if (NormMeth == 2) {
+                $("#NormRow").show();
+                $("#IterRow").show();
+                $("#LambdaRow").hide();
+            }
+            if (NormMeth == 3) {
+                $("#NormRow").show();
+                $("#IterRow").show();
+                $("#LambdaRow").show();
+            }
+            if (NormMeth == 4) {
+                $("#NormRow").hide();
+                $("#IterRow").hide();
+                $("#LambdaRow").hide();
+            }
         }
         function chooseData() {
             if (document.getElementById("NormVal").value < 0) {
@@ -84,48 +117,6 @@
                 return;
             }
             getCatGraphData();
-        }
-        function chooseDisplay() {
-            if (NormMeth == 1) {
-                $("#NormRow").hide();
-                $("#IterRow").hide();
-                $("#LambdaRow").hide();
-                $("#MinRow").show();
-                $("#VSRow").hide();
-                $("#FilterRow").hide();
-            }
-            if (NormMeth == 2) {
-                $("#NormRow").show();
-                $("#IterRow").show();
-                $("#LambdaRow").hide();
-                $("#MinRow").show();
-                $("#VSRow").hide();
-                $("#FilterRow").hide();
-            }
-            if (NormMeth == 3) {
-                $("#NormRow").show();
-                $("#IterRow").show();
-                $("#LambdaRow").show();
-                $("#MinRow").show();
-                $("#VSRow").hide();
-                $("#FilterRow").hide();
-            }
-            if (NormMeth == 4) {
-                $("#NormRow").hide();
-                $("#IterRow").hide();
-                $("#LambdaRow").hide();
-                $("#MinRow").show();
-                $("#VSRow").hide();
-                $("#FilterRow").hide();
-            }
-            if (NormMeth == 5) {
-                $("#NormRow").hide();
-                $("#IterRow").hide();
-                $("#LambdaRow").hide();
-                $("#MinRow").show();
-                $("#VSRow").show();
-                $("#FilterRow").show();
-            }
         }
         function exportData() {
             var format = $('input[name="exportB"]:checked').val();
@@ -218,6 +209,7 @@
             running = true;
             $("#run").css("background-color", "yellow");
             $("#Export").css("background-color", "lightgray").val('Export Data');
+
             $("#container-1").empty();
             $("#res_table").empty();
             chooseData();
@@ -291,12 +283,13 @@
 {% block my_content %}
     <br>
     <div>
-        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
-            <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Select normalization method:</em></strong></td>
+        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable input">
+            <tr class="accordion">
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Select normalization method:</em></strong></td>
             </tr>
+
             <tr>
-                <td  bgcolor="white">
+                <td bgcolor="white">
                     <select id="NormMeth">
                         <option value="1" selected="selected">None</option>
                         <option value="2">Rarefaction (remove)</option>
@@ -307,46 +300,47 @@
                     &nbsp<-- Normalization method <span title="None = no sub-sampling<br>Rarefaction (remove) = sub-sampling <strong><em>without</strong></em> replacement<br>Rarefaction (keep) = laplace smoothing followed by sub-sampling <em><strong>with</strong></em> replacement<br>Proportion = all abundances are divided by the total number of sequence reads for that sample<br>DESeq2 = normalization by the geometic mean (see DESeq manual for more details)"><font color="red">[info]</font></span>
                 </td>
             </tr>
-            <tr id="NormRow" style="display: none;" bgcolor="white">
-                <td>
-                    <input style="background-color: white" type="text" id="NormVal" value=""/>
-                    &nbsp<-- Sub-sample size
+
+            <tr>
+                <td bgcolor="white">
+                    <div id="NormRow">
+                        <input style="background-color: white" type="text" id="NormVal" value=""/>
+                        &nbsp<-- Sub-sample size
+                    </div>
+                    <div id="IterRow">
+                        <input style="background-color: white" type="text" id="Iters" value="100"/>
+                        &nbsp<-- Iterations
+                    </div>
+                    <div id="LambdaRow">
+                        <input style="background-color: white" type="text" id="Lambda" value="0.1"/>
+                        &nbsp<-- Lambda
+                    </div>
                 </td>
             </tr>
 
-            <tr id="IterRow" style="display: none;" bgcolor="white">
-                <td>
-                    <input style="background-color: white" type="text" id="Iters" value="100"/>
-                    &nbsp<-- Iterations
-                </td>
-            </tr>
-            <tr id="LambdaRow" style="display: none;" bgcolor="white">
-                <td>
-                    <input style="background-color: white" type="text" id="Lambda" value="0.1"/>
-                    &nbsp<-- Lambda
-                </td>
-            </tr>
             <tr><td bgcolor="white"></td></tr>
-            <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Select sample/OTU cutoffs:</em></strong></td>
+            <tr class="accordion">
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Select sample/OTU cutoffs:</em></strong></td>
             </tr>
-            <tr id="MinRow" bgcolor="white">
+
+            <tr bgcolor="white">
                 <td>
-                    <input type="checkbox" title="Click to turn on/off" id="MinSize"/>
-                    <input style="background-color: white"  type="text" id="MinVal" value="0"/>
-                    &nbsp<-- Minimum sample size
+                    <div>
+                        <input type="checkbox" title="Click to turn on/off" id="MinSize"/>
+                        <input style="background-color: white"  type="text" id="MinVal" value="0"/>
+                        &nbsp<-- Minimum sample size
+                    </div>
+                    <div>
+                        <input type="checkbox" title="Click to turn on/off" id="Remove"/>
+                        <input style="background-color: white"  type="text" id="Cutoff" value="0"/>
+                        &nbsp<-- Minimum OTU size
+                    </div>
                 </td>
             </tr>
-            <tr id="CutoffRow">
-                <td bgcolor="white">
-                    <input type="checkbox" title="Click to turn on/off" id="Remove"/>
-                    <input style="background-color: white"  type="text" id="Cutoff" value="0"/>
-                    &nbsp<-- Minimum OTU size
-                </td>
-            </tr>
+
             <tr><td bgcolor="white"></td></tr>
-            <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Run normalization:</em></strong></td>
+            <tr class="accordion">
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Run normalization:</em></strong></td>
             </tr>
             <tr>
                 <td bgcolor="white">
@@ -357,8 +351,8 @@
                 </td>
             </tr>
             <tr><td bgcolor="white"></td></tr>
-            <tr>
-                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em>Direct download of your data (optional):</em></strong></td>
+            <tr class="accordion">
+                <td bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Direct download of your data (optional):</em></strong></td>
             </tr>
             <tr>
                 <td bgcolor="white">

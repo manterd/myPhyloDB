@@ -103,3 +103,7 @@ table, fieldset {
     height: 20px !important;
     background-color: white;
 }
+
+.accordion {
+	cursor: pointer;
+}

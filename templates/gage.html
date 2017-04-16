@@ -40,6 +40,14 @@
                     }
                 });
             });
+            $(".input tr:not(.accordion)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(1)").trigger('click');
             $("#tree_kegg").dynatree({
                 checkbox: true,
                 selectMode: 2,
@@ -59,10 +67,30 @@
         function checkButtons() {
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
-            $("#Export").css("background-color", "lightgray").val('Export Data');
+            $("#Export").val('Export Data').css('background-color', 'lightgray');
 
-            $("#container-0").empty().show().append('Settings have been changed by the user!');
-            $("#container-2").hide();
+            if (treeType == 1) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-2").hide();
+                $("#row_taxa").show();
+                $("#row_kegg").hide();
+                $("#row_nz").hide();
+            }
+            if (treeType == 2) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
+            }
+            if (treeType == 3) {
+                $("#container-0").empty().show().append('Settings have been changed by the user!');
+                $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
+            }
+
         }
         function chooseData() {
             if (nodesCat == "") {
@@ -189,7 +217,9 @@
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
-            //$("#my_image").attr("src", "#");
+            $("#my_image").attr("src", "#");
+            $("#Export").val('Export Data').css('background-color', 'lightgray');
+
             $("#container-0").empty().show();
             $("#container-2").hide();
             $("#text-1").val('');
@@ -357,6 +387,7 @@
                         $("div.toolbar").html('<br><br><br>');
 
                         chooseDisplay();
+
                     }
 
                 }
@@ -393,10 +424,10 @@
             </tr>
         </table>
 
-        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
-            <tr>
+        <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable input">
+            <tr class="accordion">
                 <td bgcolor="white" width="5px"></td>
-                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data selection:</em></strong></td>
+                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Data selection:</em></strong></td>
             </tr>
 
             <tr>

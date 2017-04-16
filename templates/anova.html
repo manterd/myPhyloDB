@@ -44,6 +44,14 @@
                     }
                 });
             });
+            $(".input tr:not(.accordion)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(1)").trigger('click');
+            $(".input tr.accordion:eq(4)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
@@ -173,7 +181,6 @@
             dataType = document.getElementById("dataType").value;
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
-            $("#Export").css("background-color", "lightgray").val('Export Data');
 
             if (dataType == "1") {
                 $("#unstackButton").show();
@@ -198,8 +205,13 @@
 
                 $("#taxDiv").hide();
                 $("#taxTableH2").hide();
+
                 $(".map").hide();
                 document.getElementById("map_taxa").checked = false;
+
+                $("#row_taxa").show();
+                $("#row_kegg").hide();
+                $("#row_nz").hide();
 
                 if (dataType == "1") {
                     $("#container-1").empty().show().append('Settings have been changed by the user!');
@@ -223,6 +235,10 @@
                 $("#cat_gibbs").hide();
                 $("#cat_nitrogen").hide();
 
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
+
                 $(".map").show();
 
                 if (dataType == "1") {
@@ -243,6 +259,10 @@
                 $("#tree_taxa").hide();
                 $("#tree_kegg").hide();
                 $("#tree_nz").show();
+
+                $("#row_taxa").hide();
+                $("#row_kegg").hide();
+                $("#row_nz").show();
 
                 $(".map").show();
 
@@ -1279,6 +1299,7 @@
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
+            $("#Export").val('Export Data').css('background-color', 'lightgray');
 
             $("#container-1").empty();
             $("#container-2").empty();
@@ -1513,10 +1534,10 @@
             </tr>
         </table>
 
-        <table border="0" cellspacing="0" cellpadding="5" class="inlineTable" style="table-layout: fixed">
-            <tr>
+        <table border="0" cellspacing="0" cellpadding="5" class="inlineTable input" style="table-layout: fixed">
+            <tr class="accordion">
                 <td bgcolor="white" width="5px"></td>
-                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Analysis Type:</em></strong></td>
+                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Analysis Type:</em></strong></td>
             </tr>
             <tr>
                 <td bgcolor="white" width="5px"></td>
@@ -1530,9 +1551,9 @@
                 <td bgcolor="white"></td>
             </tr>
             <tr><td colspan="3" bgcolor="white"></td></tr>
-            <tr>
+            <tr class="accordion">
                 <td bgcolor="white" width="5px"></td>
-                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Data Selection:</em></strong></td>
+                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Data Selection:</em></strong></td>
             </tr>
 
             <tr>
@@ -1548,45 +1569,35 @@
                 <td bgcolor="white"></td>
             </tr>
 
-            <tr id="row_taxa">
+            <tr>
                 <td bgcolor="white" width="5px"></td>
-                <td bgcolor="white">
-                    <select id="selectall-taxa" onChange="selectAll('none')">
-                        <option value="0" selected="selected">Off</option>
+                <td id="row_taxa" bgcolor="white">
+                    <select id="selectall-taxa" onChange="selectTree()">
+                        <option value="0">None</option>
                         <option value="2">Phyla</option>
                         <option value="3">Classes</option>
                         <option value="4">Orders</option>
                         <option value="5">Families</option>
                         <option value="6">Genera</option>
                         <option value="7">Species</option>
-                        <option value="9">OTU_99</option>
+                        <option value="9" selected="selected">OTU_99</option>
                         <option value="8">PGPRs</option>
                     </select>
                     &nbsp; <-- Taxa level
                 </td>
-                <td bgcolor="white"></td>
-            </tr>
-
-            <tr id="row_kegg" style="display:none">
-                <td bgcolor="white" width="5px"></td>
-                <td bgcolor="white">
-                    <select id="selectall-kegg" onChange="selectAll('none')">
-                        <option value="0" selected="selected">Off</option>
-                        <option value="1">Level 1</option>
+                <td  id="row_kegg" bgcolor="white" style="display:none">
+                    <select id="selectall-kegg" onChange="checkButtons()">
+                        <option value="0">None</option>
+                        <option value="1" selected="selected">Level 1</option>
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
                     </select>
-                    &nbsp; <-- KEGG orthology level
+                    &nbsp; <-- KEGG pathway level
                 </td>
-                <td bgcolor="white"></td>
-            </tr>
-
-            <tr id="row_nz" style="display:none">
-                <td bgcolor="white" width="5px"></td>
-                <td bgcolor="white">
-                    <select id="selectall-nz" onChange="selectAll(this.value)">
-                        <option value="0" selected="selected">Off</option>
-                        <option value="1">Level 1</option>
+                <td id="row_nz" bgcolor="white" style="display:none">
+                    <select id="selectall-nz" onChange="checkButtons()">
+                        <option value="0">None</option>
+                        <option value="1" selected="selected">Level 1</option>
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
                         <option value="4">Level 4</option>
@@ -1641,12 +1652,12 @@
             <tr><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-Filtering.html" %}
 
-            <tr class="map" style="display:none"><td colspan="3" bgcolor="white"></td></tr>
-            <tr class="map" style="display:none">
+            <tr><td colspan="3" bgcolor="white"></td></tr>
+            <tr class="accordion map">
                 <td bgcolor="white" width="5px"></td>
-                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em>Map Taxa to KEGG Pathway/Enzyme:</em></strong></td>
+                <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Map Taxa to KEGG Pathway/Enzyme:</em></strong></td>
             </tr>
-            <tr class="map" style="display:none">
+            <tr>
                 <td bgcolor="white" width="5px"></td>
                 <td id="sig_text" bgcolor="white">
                     <input type="checkbox" id="map_taxa" onChange="checkButtons()">
@@ -1654,7 +1665,8 @@
                 </td>
                 <td bgcolor="white"></td>
             </tr>
-            <tr class="map" style="display:none"><td colspan="3" bgcolor="white"></td></tr>
+
+            <tr style="display:none"><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-RunButton.html" %}
             <tr><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-Export.html" %}

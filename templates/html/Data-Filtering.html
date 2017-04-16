@@ -1,6 +1,6 @@
-<tr>
+<tr class="accordion">
     <td bgcolor="white" width="5px"></td>
-    <td colspan="2" bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use the taxonomy tree, PGPRs or KEGG mapping"><em><strong>Data Filtering:</strong></em></td>
+    <td colspan="2" bgcolor="lightgray" style="outline: thin solid" title="Note: Data filters will be ignored if you use the taxonomy tree, PGPRs or KEGG mapping"><em><strong><span class="arrow">►</span> Data Filtering:</strong></em></td>
 </tr>
 
 <tr>
@@ -21,7 +21,7 @@
 
 <tr>
     <td bgcolor="white" width="5px"></td>
-    <td bgcolor="white">
+    <td colspan="2" bgcolor="white">
         <input type="checkbox" id="filterData" onClick="checkButtons()"/>&nbsp; <-- Select the top <input type="text" id="filterPer" style="background-color: white; width: 40px" value="10"/> phylotypes based on:
         <select id="filterMeth" onChange="checkButtons()">
             <!--<option value="1">None</option>-->
@@ -32,5 +32,4 @@
             <option value="6">Median value</option>
         </select>
     </td>
-    <td bgcolor="white"></td>
 </tr>

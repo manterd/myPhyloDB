@@ -42,6 +42,14 @@
                     }
                 });
             });
+            $(".input tr:not(.accordion)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(4)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
@@ -53,22 +61,25 @@
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-1").empty().hide();
                 $("#container-2").hide();
+                $("#row_taxa").show();
+                $("#row_kegg").hide();
+                $("#row_nz").hide();
             }
             if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-1").empty().hide();
                 $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
             }
             if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-1").empty().hide();
                 $("#container-2").hide();
-            }
-            var ellipse = document.getElementById("ellipseVal").value;
-            if (ellipse != 'None') {
-                $("#CI-row").show();
-            } else {
-                $("#CI-row").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
             }
         }
         function colorBox() {
@@ -412,6 +423,8 @@
                 return false;
             }
             $("#my_image").attr("src", "#");
+            $("#Export").val('Export Data').css('background-color', 'lightgray');
+
             $("#container-0").empty().show();
             $("#container-1").hide();
             $("#container-2").hide();
@@ -643,6 +656,7 @@
 
                         scatter(xAxis, yAxis, series);
                         chooseDisplay();
+
                     }
 
                 }
@@ -668,11 +682,12 @@
         </tr>
     </table>
 
-    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
-        <tr>
+    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable input">
+        <tr class="accordion">
             <td bgcolor="white" width="5px"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Selection:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Data Selection:</strong></em></td>
         </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
@@ -685,9 +700,10 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
-        <tr id="row_taxa">
+
+        <tr>
             <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td id="row_taxa" bgcolor="white">
                 <select id="selectall-taxa" onChange="selectTree()">
                     <option value="2">Phyla</option>
                     <option value="3">Classes</option>
@@ -700,11 +716,7 @@
                 </select>
                 &nbsp; <-- Taxa level
             </td>
-            <td bgcolor="white"></td>
-        </tr>
-        <tr id="row_kegg" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td  id="row_kegg" bgcolor="white" style="display:none">
                 <select id="selectall-kegg" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
@@ -712,12 +724,7 @@
                 </select>
                 &nbsp; <-- KEGG pathway level
             </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="row_nz" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td id="row_nz" bgcolor="white" style="display:none">
                 <select id="selectall-nz" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
@@ -730,6 +737,7 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
+
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
@@ -765,9 +773,9 @@
         {% include "html/Data-Filtering.html" %}
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Ordination Settings:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Ordination Settings:</strong></em></td>
         </tr>
 
         <tr>
@@ -853,9 +861,9 @@
         </tr>
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plot:</em></strong></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em><span class="arrow">►</span> Optimize R plot:</em></strong></td>
         </tr>
 
         <tr>
@@ -953,9 +961,9 @@
             <td bgcolor="white"></td>
         </tr>
 
-        <tr id="CI-row" style="display:none">
+        <tr id="CI-row">
             <td bgcolor="white"></td>
-            <td bgcolor="white">
+            <td bgcolor="white" style="padding-left: 30px;">
                 <input type="text" title="Confidence interval must be between 0 and 1" id="CI" value="0.95" style="background-color: white; width: 50px" onChange="checkButtons()"/>
                 &nbsp; <-- Enter the confidence interval to be displayed by the ellipse
             </td>

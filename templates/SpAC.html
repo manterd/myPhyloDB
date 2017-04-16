@@ -39,6 +39,14 @@
                     }
                 });
             });
+            $(".input tr:not(.accordion)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(3)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
@@ -51,18 +59,27 @@
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
+                $("#row_taxa").show();
+                $("#row_kegg").hide();
+                $("#row_nz").hide();
             }
 
             if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
             }
 
             if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
                 $("#my_image").attr("src", "#");
+                $("#row_taxa").hide();
+                $("#row_kegg").hide();
+                $("#row_nz").show();
             }
 
         }
@@ -180,7 +197,9 @@
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
-            //$("#my_image").attr("src", "#");
+            $("#my_image").attr("src", "#");
+            $("#Export").val('Export Data').css('background-color', 'lightgray');
+
             $("#container-0").empty().show();
             $("#container-2").hide();
             $("#text-1").val('');
@@ -322,10 +341,10 @@
         </tr>
     </table>
 
-    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable">
-        <tr>
+    <table border="0" cellspacing="0" cellpadding="5" class="inlineTable input">
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Selection:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Data Selection:</strong></em></td>
         </tr>
 
         <tr>
@@ -362,9 +381,9 @@
         {% include "html/Data-Filtering.html" %}
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Accumulation Curve Settings:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Accumulation Curve Settings:</strong></em></td>
         </tr>
 
         <tr>

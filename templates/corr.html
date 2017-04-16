@@ -39,25 +39,42 @@
                     }
                 });
             });
+            $(".input tr:not(.accordion)").hide();
+            $(".input tr.accordion").click(function () {
+                var $arrow = $(this).find(".arrow:first");
+                $arrow.text($arrow.text() == '►' ? '▼' : '►');
+                $(this).nextUntil(".accordion").fadeToggle('fast');
+            });
+            $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(2)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
         function checkButtons() {
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");
-            $("#Export").css("background-color", "lightgray").val('Export Data');
+            $("#Export").val('Export Data').css('background-color', 'lightgray');
 
             if (treeType == 1) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").show();
+                $("#row_kegg").hide();
+                $("#row_nz").hide();
             }
             if (treeType == 2) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").show();
+                $("#row_nz").hide();
             }
             if (treeType == 3) {
                 $("#container-0").empty().show().append('Settings have been changed by the user!');
                 $("#container-2").hide();
+                $("#row_taxa").hide();
+                $("#row_kegg").hide();
+                $("#row_nz").show();
             }
         }
         function chooseDisplay() {
@@ -195,6 +212,7 @@
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
+            $("#export").hide();
             $("#container-0").empty().show();
             $("#container-2").hide();
             $("#text-1").val('');
@@ -307,6 +325,7 @@
                         }).draw();
 
                         $("div.toolbar").html('<br><br><br>');
+                        $("#export").show();
 
                     }
                 }
@@ -331,10 +350,10 @@
         </tr>
     </table>
 
-    <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
-        <tr>
+    <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable input">
+        <tr class="accordion">
             <td bgcolor="white" width="5px"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong>Data Selection:</strong></em></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Data Selection:</strong></em></td>
         </tr>
 
         <tr>
@@ -350,10 +369,10 @@
             <td bgcolor="white"></td>
         </tr>
 
-        <tr id="row_taxa">
+        <tr>
             <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <select id="selectall-taxa" onChange="checkButtons()">
+            <td id="row_taxa" bgcolor="white">
+                <select id="selectall-taxa" onChange="selectTree()">
                     <option value="2">Phyla</option>
                     <option value="3">Classes</option>
                     <option value="4">Orders</option>
@@ -365,12 +384,7 @@
                 </select>
                 &nbsp; <-- Taxa level
             </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="row_kegg" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td  id="row_kegg" bgcolor="white" style="display:none">
                 <select id="selectall-kegg" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
@@ -378,12 +392,7 @@
                 </select>
                 &nbsp; <-- KEGG pathway level
             </td>
-            <td bgcolor="white"></td>
-        </tr>
-
-        <tr id="row_nz" style="display:none">
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
+            <td id="row_nz" bgcolor="white" style="display:none">
                 <select id="selectall-nz" onChange="checkButtons()">
                     <option value="1" selected="selected">Level 1</option>
                     <option value="2">Level 2</option>
