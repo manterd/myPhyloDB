@@ -49,6 +49,7 @@
                 $(this).nextUntil(".accordion").fadeToggle('fast');
             });
             $(".input tr.accordion:eq(0)").trigger('click');
+            $(".input tr.accordion:eq(1)").trigger('click');
             $(".input tr.accordion:eq(2)").trigger('click');
 
             $("#NormMeth").change(function () {
@@ -252,7 +253,6 @@
                         var stage = obj['stage'];
                         $('#container-1').empty().append(stage);
                     } else {
-
                         var error = data['error'];
                         if (error != "none") {
                             alert(error);
@@ -263,16 +263,14 @@
 
                         clearInterval(refresh);
 
+                        running = false;
+                        normNorm = true;
+                        menu();
+
                         var text = data['text'];
                         $("#container-1").empty().append(text);
 
-                        running = false;
-                        setNorm(true);
-                        menu();
-
                     }
-
-
                 }
             });
         }

@@ -51,3 +51,54 @@ function startTimer() {
     }, 1000);
     return refresh;
 }
+
+function setNorm(arg) {
+    normNorm = arg
+}
+
+function menu () {
+    selFiles = "{{ selFiles }}";
+    normFiles = "{{ normFiles }}";
+    dataID = "{{ dataID }}";
+    if (normNorm == true) normFiles = "True";
+    normNorm = false;
+
+    if ((selFiles == "True") && (normFiles == "True"))  {
+        $("#link0").show();
+        $("#link1").show();
+        $("#link2").show();
+        $("#link3").show();
+        $("#link4").show();
+        $("#link5").show();
+        $("#link6").show();
+    }
+
+    if ((selFiles == "False") && (normFiles == "True"))  {
+        $("#link0").show();
+        $("#link1").show();
+        $("#link2").show();
+        $("#link3").show();
+        $("#link4").show();
+        $("#link5").hide();
+        $("#link6").show();
+    }
+
+    if ((selFiles == "True") && (normFiles == "False"))  {
+        $("#link0").hide();
+        $("#link1").hide();
+        $("#link2").hide();
+        $("#link3").hide();
+        $("#link4").hide();
+        $("#link5").show();
+        $("#link6").hide();
+    }
+    if ((selFiles == "False") && (normFiles == "False"))  {
+        $("#link0").hide();
+        $("#link1").hide();
+        $("#link2").hide();
+        $("#link3").hide();
+        $("#link4").hide();
+        $("#link5").hide();
+        $("#link6").hide();
+    }
+}

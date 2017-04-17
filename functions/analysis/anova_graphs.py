@@ -200,21 +200,29 @@ def getCatUnivData(request, RID, stops, PID):
                 if gridVal_X == 'None' and gridVal_Y == 'None':
                     r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
                         myFill=finalDF[,paste(colorVal)])")
+                    r("gDF <- aggregate(gDF[, 'y'], list(gDF$x, gDF$myFill), mean)")
+                    r("names(gDF) <- c('x', 'myFill', 'y')")
                 elif gridVal_X != 'None' and gridVal_Y == 'None':
                     r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
                         gridVal_X=finalDF[,paste(gridVal_X)], \
                         myFill=finalDF[,paste(colorVal)])")
+                    r("gDF <- aggregate(gDF[, 'y'], list(gDF$x, gDF$myFill, gDF$gridVal_X), mean)")
+                    r("names(gDF) <- c('x', 'myFill', 'gridVal_X', 'y')")
                 elif gridVal_X == 'None' and gridVal_Y != 'None':
                     r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
                         gridVal_Y=finalDF[,paste(gridVal_Y)], \
                         myFill=finalDF[,paste(colorVal)])")
+                    r("gDF <- aggregate(gDF[, 'y'], list(gDF$x, gDF$myFill, gDF$gridVal_Y), mean)")
+                    r("names(gDF) <- c('x', 'myFill', 'gridVal_Y', 'y')")
                 elif gridVal_X != 'None' and gridVal_Y != 'None':
                     r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
                         gridVal_X=finalDF[,paste(gridVal_X)], gridVal_Y=finalDF[,paste(gridVal_Y)], \
                         myFill=finalDF[,paste(colorVal)])")
+                    r("gDF <- aggregate(gDF[, 'y'], list(gDF$x, gDF$myFill, gDF$gridVal_X, gDF$gridVal_Y), mean)")
+                    r("names(gDF) <- c('x', 'myFill', 'gridVal_X', 'gridVal_Y', 'y')")
 
                 r("p <- ggplot(gDF, aes(x=x, y=y, fill=myFill))")
-                r("p <- p + geom_bar(stat='summary', fun.y='mean', position='stack')")
+                r("p <- p + geom_bar(stat='identity', position='stack')")
 
                 if gridVal_X != 'None' and gridVal_Y == 'None':
                     r("p <- p + facet_grid(. ~ gridVal_X)")
@@ -439,8 +447,8 @@ def getCatUnivData(request, RID, stops, PID):
 
                     if sig_only == 0:
                         if DepVar == 0:
-                            mean = group1.groupby(catFields)['abund'].mean()
-                            se = group1.groupby(catFields)['abund'].std()
+                            mean = group1.groupby(catFields, sort=False)['abund'].mean()
+                            se = group1.groupby(catFields, sort=False)['abund'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -448,8 +456,8 @@ def getCatUnivData(request, RID, stops, PID):
                             errorTuple = zip(low, high)
                             errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 1:
-                            mean = group1.groupby(catFields)['rel_abund'].mean()
-                            se = group1.groupby(catFields)['rel_abund'].std()
+                            mean = group1.groupby(catFields, sort=False)['rel_abund'].mean()
+                            se = group1.groupby(catFields, sort=False)['rel_abund'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -457,8 +465,8 @@ def getCatUnivData(request, RID, stops, PID):
                             errorTuple = zip(low, high)
                             errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 2:
-                            mean = group1.groupby(catFields)['rich'].mean()
-                            se = group1.groupby(catFields)['rich'].std()
+                            mean = group1.groupby(catFields, sort=False)['rich'].mean()
+                            se = group1.groupby(catFields, sort=False)['rich'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -466,8 +474,8 @@ def getCatUnivData(request, RID, stops, PID):
                             errorTuple = zip(low, high)
                             errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 3:
-                            mean = group1.groupby(catFields)['diversity'].mean()
-                            se = group1.groupby(catFields)['diversity'].std()
+                            mean = group1.groupby(catFields, sort=False)['diversity'].mean()
+                            se = group1.groupby(catFields, sort=False)['diversity'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -475,8 +483,8 @@ def getCatUnivData(request, RID, stops, PID):
                             errorTuple = zip(low, high)
                             errorList = [list(elem) for elem in errorTuple]
                         elif DepVar == 4:
-                            mean = group1.groupby(catFields)['abund_16S'].mean()
-                            se = group1.groupby(catFields)['abund_16S'].std()
+                            mean = group1.groupby(catFields, sort=False)['abund_16S'].mean()
+                            se = group1.groupby(catFields, sort=False)['abund_16S'].std()
                             se.fillna(0, inplace=True)
                             high = [x + y for x, y in zip(mean, se)]
                             low = [x - y for x, y in zip(mean, se)]
@@ -500,8 +508,8 @@ def getCatUnivData(request, RID, stops, PID):
                     elif sig_only == 1:
                         if pValue < 0.05:
                             if DepVar == 0:
-                                mean = group1.groupby(catFields)['abund'].mean()
-                                se = group1.groupby(catFields)['abund'].std()
+                                mean = group1.groupby(catFields, sort=False)['abund'].mean()
+                                se = group1.groupby(catFields, sort=False)['abund'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -509,8 +517,8 @@ def getCatUnivData(request, RID, stops, PID):
                                 errorTuple = zip(low, high)
                                 errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 1:
-                                mean = group1.groupby(catFields)['rel_abund'].mean()
-                                se = group1.groupby(catFields)['rel_abund'].std()
+                                mean = group1.groupby(catFields, sort=False)['rel_abund'].mean()
+                                se = group1.groupby(catFields, sort=False)['rel_abund'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -518,8 +526,8 @@ def getCatUnivData(request, RID, stops, PID):
                                 errorTuple = zip(low, high)
                                 errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 2:
-                                mean = group1.groupby(catFields)['rich'].mean()
-                                se = group1.groupby(catFields)['rich'].std()
+                                mean = group1.groupby(catFields, sort=False)['rich'].mean()
+                                se = group1.groupby(catFields, sort=False)['rich'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -527,8 +535,8 @@ def getCatUnivData(request, RID, stops, PID):
                                 errorTuple = zip(low, high)
                                 errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 3:
-                                mean = group1.groupby(catFields)['diversity'].mean()
-                                se = group1.groupby(catFields)['diversity'].std()
+                                mean = group1.groupby(catFields, sort=False)['diversity'].mean()
+                                se = group1.groupby(catFields, sort=False)['diversity'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -536,8 +544,8 @@ def getCatUnivData(request, RID, stops, PID):
                                 errorTuple = zip(low, high)
                                 errorList = [list(elem) for elem in errorTuple]
                             elif DepVar == 4:
-                                mean = group1.groupby(catFields)['abund_16S'].mean()
-                                se = group1.groupby(catFields)['abund_16S'].std()
+                                mean = group1.groupby(catFields, sort=False)['abund_16S'].mean()
+                                se = group1.groupby(catFields, sort=False)['abund_16S'].std()
                                 se.fillna(0, inplace=True)
                                 high = [x + y for x, y in zip(mean, se)]
                                 low = [x - y for x, y in zip(mean, se)]
@@ -566,20 +574,20 @@ def getCatUnivData(request, RID, stops, PID):
 
                     catFieldsList = []
                     for i in catFields:
-                        catFieldsList.append(len(group1.groupby(i)))
+                        catFieldsList.append(len(group1.groupby(i, sort=False)))
 
                     catFields = [x for (y, x) in sorted(zip(catFieldsList, catFields))]
 
                     if DepVar == 0:
-                        grouped2 = group1.groupby(catFields)['abund'].mean()
+                        grouped2 = group1.groupby(catFields, sort=False)['abund'].mean()
                     elif DepVar == 1:
-                        grouped2 = group1.groupby(catFields)['rel_abund'].mean()
+                        grouped2 = group1.groupby(catFields, sort=False)['rel_abund'].mean()
                     elif DepVar == 4:
-                        grouped2 = group1.groupby(catFields)['abund_16S'].mean()
+                        grouped2 = group1.groupby(catFields, sort=False)['abund_16S'].mean()
                     elif DepVar == 2:
-                        grouped2 = group1.groupby(catFields)['rich'].mean()
+                        grouped2 = group1.groupby(catFields, sort=False)['rich'].mean()
                     elif DepVar == 3:
-                        grouped2 = group1.groupby(catFields)['diversity'].mean()
+                        grouped2 = group1.groupby(catFields, sort=False)['diversity'].mean()
                     else:
                         raise Exception("Something went horribly wrong")
 
@@ -830,6 +838,7 @@ def getQuantUnivData(request, RID, stops, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
                 functions.setBase(RID, 'Step 3 of 4: Performing statistical test...!')
+
                 finalDict = {}
                 # group DataFrame by each taxa level selected
                 shapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
@@ -838,6 +847,155 @@ def getQuantUnivData(request, RID, stops, PID):
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+                functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
+                # R packages from cran
+                r("list.of.packages <- c('ggplot2', 'RColorBrewer', 'ggthemes')")
+                r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+                functions.setBase(RID, 'Step 3 of 4: Performing statistical test...')
+
+                print r("library(ggplot2)")
+                print r("library(ggthemes)")
+                print r("library(RColorBrewer)")
+                print r('source("R/myFunctions/myFunctions.R")')
+
+                # R graph
+                r.assign('finalDF', finalDF)
+
+                colorVal = all['colorVal']
+                if colorVal == 'None':
+                    r("colorTrt <- c('All')")
+                else:
+                    r.assign("colorVal", colorVal)
+                    r("colorTrt <- as.factor(finalDF[,paste(colorVal)])")
+
+                r.assign('xVal', quantFields[0])
+
+                gridVal_X = all['gridVal_X']
+                if gridVal_X == 'None':
+                    r("gridTrt_X <- c('All')")
+                else:
+                    r.assign("gridVal_X", gridVal_X)
+                    r("gridTrt_X <- as.factor(finalDF[,paste(gridVal_X)])")
+
+                gridVal_Y = all['gridVal_Y']
+                if gridVal_Y == 'None':
+                    r("gridTrt_Y <- c('All')")
+                else:
+                    r.assign("gridVal_Y", gridVal_Y)
+                    r("gridTrt_Y <- as.factor(finalDF[,paste(gridVal_Y)])")
+
+                shapeVal = all['shapeVal']
+                if shapeVal == 'None':
+                    r("shapeTrt <- c('All')")
+                else:
+                    r.assign("shapeVal", shapeVal)
+                    r("shapeTrt <- as.factor(finalDF[,paste(shapeVal)])")
+
+                if DepVar == 0:
+                    r('DepVar <- "abund"')
+                elif DepVar == 1:
+                    r('DepVar <- "rel_abund"')
+                elif DepVar == 2:
+                    r('DepVar <- "rich"')
+                elif DepVar == 3:
+                    r('DepVar <- "diversity"')
+                elif DepVar == 4:
+                    r('DepVar <- "abund_16S"')
+
+                r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
+                    gridVal_X=gridTrt_X, gridVal_Y=gridTrt_Y, \
+                    myColor=colorTrt, myShape=shapeTrt)")
+
+                r("p <- ggplot(gDF, aes(x=x, y=y, fill=factor(myColor), shape=factor(myShape)) )")
+                r("p <- p + geom_point(size=4)")
+
+                if gridVal_X != 'None' and gridVal_Y == 'None':
+                    r("p <- p + facet_grid(. ~ gridVal_X)")
+                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                elif gridVal_X == 'None' and gridVal_Y != 'None':
+                    r("p <- p + facet_grid(gridVal_Y ~ .)")
+                    r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+                elif gridVal_X != 'None' and gridVal_Y != 'None':
+                    r("p <- p + facet_grid(gridVal_Y ~ gridVal_X)")
+                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                    r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+
+                r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+
+                palette = all['palette']
+                r.assign('palette', palette)
+                if palette == 'gdocs':
+                    r('pal <- gdocs_pal()(20)')
+                elif palette == 'hc':
+                    r('pal <- hc_pal()(10)')
+                elif palette == 'Set1':
+                    r('pal <- brewer.pal(8, "Set1")')
+                elif palette == 'Set2':
+                    r('pal <- brewer.pal(8, "Set2")')
+                elif palette == 'Set3':
+                    r('pal <- brewer.pal(12, "Set3")')
+                elif palette == 'Paired':
+                    r('pal <- brewer.pal(12, "Paired")')
+                elif palette == 'Dark2':
+                    r('pal <- brewer.pal(12, "Dark2")')
+                elif palette == 'Accent':
+                    r('pal <- brewer.pal(12, "Accent")')
+                r('nColors <- length(pal)')
+
+                r('number <- nlevels(gDF$myColor)')
+                r('colors <- rep(pal, length.out=number) ')
+                r("p <- p + scale_fill_manual(name='', values=colors, guide=guide_legend(override.aes=list(shape=21)))")
+
+                r('number <- nlevels(gDF$myShape)')
+                r('shapes <- rep(c(21, 22, 23, 24, 25), length.out=number) ')
+                r("p <- p + scale_shape_manual(name='', values=shapes)")
+
+                r("p <- p + theme(legend.text=element_text(size=7))")
+                r("p <- p + theme(legend.position='bottom')")
+
+                r("my.formula <- y ~ x")
+                r("p <- p + geom_smooth(method='lm', se=T, color='black', formula=my.formula)")
+
+                if DepVar == 0:
+                    r("p <- p + ylab('Abundance') + xlab(paste(xVal))")
+                elif DepVar == 1:
+                    r("p <- p + ylab('Relative Abundance') + xlab(paste(xVal))")
+                elif DepVar == 2:
+                    r("p <- p + ylab('OTU Richness') + xlab(paste(xVal))")
+                elif DepVar == 3:
+                    r("p <- p + ylab('OTU Diversity') + xlab(paste(xVal))")
+                elif DepVar == 4:
+                    r("p <- p + ylab('Total Abundance') + xlab(paste(xVal))")
+
+                path = "myPhyloDB/media/temp/anova/Rplots"
+                if not os.path.exists(path):
+                    os.makedirs(path)
+
+                r.assign("path", path)
+                r.assign("RID", RID)
+                r("file <- paste(path, '/', RID, '.anova.pdf', sep='')")
+                r("p <- set_panel_size(p, height=unit(3, 'in'), width=unit(3, 'in'))")
+
+                r("nlev <- nlevels(as.factor(gDF$gridVal_X))")
+                r('if (nlev == 0) { \
+                        myWidth <- 8 \
+                    } else { \
+                        myWidth <- min(3*nlev+4, 50) \
+                }')
+
+                r("nlev <- nlevels(as.factor(gDF$gridVal_Y))")
+                r('if (nlev == 0) { \
+                        myHeight <- 8 \
+                    } else { \
+                        myHeight <- min(3*nlev+4, 50) \
+                }')
+
+                r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
 
                 pValDict = {}
                 counter = 1

@@ -159,6 +159,9 @@ f{% extends 'site_base.html' %}
 
             if (dataType == "1") {
                 $("#unstackButton").show();
+                $("#xDiv").show();
+                $("#shapeDiv").hide();
+                $("#")
                 if (countCat < 2) {
                     $("#reorder").show();
                 } else {
@@ -166,6 +169,8 @@ f{% extends 'site_base.html' %}
                 }
             } else {
                 $("#unstackButton").hide();
+                $("#xDiv").hide();
+                $("#shapeDiv").show();
                 $("#reorder").hide();
             }
 
@@ -867,6 +872,11 @@ f{% extends 'site_base.html' %}
                 myDict['kegg'] = kegg;
                 myDict['nz'] = nz;
                 myDict['treeType'] = treeType;
+                myDict['colorVal'] = document.getElementById("colorVal").value;
+                myDict['shapeVal'] = document.getElementById("shapeVal").value;
+                myDict['gridVal_X'] = document.getElementById("gridVal_X").value;
+                myDict['gridVal_Y'] = document.getElementById("gridVal_Y").value;
+                myDict['palette'] = document.getElementById("palette").value;
                 myDict['funcName'] = "getQuantUnivData";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
@@ -1506,6 +1516,32 @@ f{% extends 'site_base.html' %}
                 $('#text-2').val('');
             }
         }
+        function shapeBox() {
+            $("#shapeVal").empty()
+                    .prepend('<option selected="selected" value="None">None</option>');
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#shapeVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
+        }
         function stopAnalysis() {
             running = false;
             clearInterval(refresh);
@@ -1875,11 +1911,17 @@ f{% extends 'site_base.html' %}
             <tr>
                 <td bgcolor="white"></td>
                 <td bgcolor="white">
-                    <div style="background-color: white">
+                    <div id="xDiv" style="background-color: white">
                         <select id="xVal" onChange="checkButtons()">
                             <option value="None">None</option>
                         </select>
                         &nbsp; <-- Grouping variable for X-axis
+                    </div>
+                    <div id="shapeDiv" style="background-color: white">
+                        <select id="shapeVal" onChange="checkButtons()">
+                            <option value="None">None</option>
+                        </select>
+                        &nbsp; <-- Grouping variable for symbol shapes
                     </div>
                 </td>
                 <td bgcolor="white"></td>
