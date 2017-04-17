@@ -1,4 +1,4 @@
-{% extends 'site_base.html' %}
+f{% extends 'site_base.html' %}
 {% load static %}
 
 {% block pagetitle %}<title>ANcOVA</title>{% endblock pagetitle%}
@@ -51,35 +51,10 @@
                 $(this).nextUntil(".accordion").fadeToggle('fast');
             });
             $(".input tr.accordion:eq(1)").trigger('click');
-            $(".input tr.accordion:eq(4)").trigger('click');
+            $(".input tr.accordion:eq(5)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
-        function swapElement(array, indexA, indexB) {
-            var tmp = array[indexA];
-            array[indexA] = array[indexB];
-            array[indexB] = tmp;
-        }
-        function reOrder() {
-            $("#reorder").css("background-color", "yellow");
-            var pos1 = prompt("Please enter the x-axis position you wish to move from:", 0);
-            var pos2 = prompt("Please enter the x-axis position you wish to move to:", 1);
-            var cat = chart1.xAxis[0].categories;
-            swapElement(cat, pos1, pos2);
-            chart1.xAxis[0].setCategories(cat);
-
-            var seriez = chart1.series;
-            for (var i=0; i < seriez.length; i++) {
-                var dat = chart1.series[i];
-                var arr = dat.options.data;
-                swapElement(arr, pos1, pos2);
-                chart1.series[i].update({
-                    data: arr
-                });
-            }
-            $("#reorder").css("background-color", "green");
-        }
-
         function barChart(xAxis, yAxis, series) {
             var categories = series[0].data.length;
             var width = categories*100+600;
@@ -272,11 +247,12 @@
                     $("#text-1").empty().show();
                     $("#text-2").empty().hide();
 
-                    if (nzAll == 5) {
+                    var plot = document.getElementById("graphDisplay").value;
+                    if ((nzAll == 5) && (plot == 'Highcharts')) {
                         $("#cat_off").hide();
                         $("#cat_gibbs").show();
                         $("#cat_nitrogen").hide();
-                    } else if (nzAll == 6) {
+                    } else if ((nzAll == 6) && (plot == 'Highcharts')) {
                         $("#cat_off").hide();
                         $("#cat_gibbs").hide();
                         $("#cat_nitrogen").show();
@@ -295,6 +271,7 @@
                     $("#cat_nitrogen").hide();
                 }
             }
+            chooseDisplay();
         }
         function chooseData() {
             if (treeType == 1) {
@@ -420,6 +397,69 @@
                 }
             }
 
+        }
+        function chooseDisplay() {
+            var graphType = document.getElementById("graphDisplay").value;
+            if (graphType == 1) {
+                if (dataType == 1) {
+                    $("#container-1").show();
+                    $("#container-2").hide();
+                }
+                if (dataType == 2) {
+                    $("#container-1").hide();
+                    $("#container-2").show();
+                }
+                $("#container-3").hide();
+                $("#highchartButtons").show();
+                $("#reorder").show();
+                $("#unstackButton").show();
+            }
+            if (graphType == 2) {
+                $("#container-1").hide();
+                $("#container-2").hide();
+                $("#container-3").show();
+                $("#highchartButtons").hide();
+                $("#reorder").hide();
+                $("#unstackButton").hide();
+
+                {% static "" as baseUrl %}
+                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/anova/Rplots/" + RID +".anova.pdf");
+            }
+        }
+        function colorBox() {
+            $("#colorVal").empty().prepend('<option selected="selected" value="None">None</option>');
+
+            if (treeType == 1) {
+                $("#colorVal").append('<option value="rank_name">Taxonomy</option>');
+            }
+            if (treeType == 2) {
+                $("#colorVal").append('<option value="rank_name">KEGG Pathway</option>');
+            }
+            if (treeType == 3) {
+                $("#colorVal").append('<option value="rank_name">KEGG Enzyme</option>');
+            }
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#xVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
         }
         function DepVar() {
             var DepVar = document.getElementById("DepVar").value;
@@ -636,6 +676,11 @@
                 myDict['nz'] = nz;
                 myDict['RID'] = RID;
                 myDict['treeType'] = treeType;
+                myDict['colorVal'] = document.getElementById("colorVal").value;
+                myDict['xVal'] = document.getElementById("xVal").value;
+                myDict['gridVal_X'] = document.getElementById("gridVal_X").value;
+                myDict['gridVal_Y'] = document.getElementById("gridVal_Y").value;
+                myDict['palette'] = document.getElementById("palette").value;
                 myDict['funcName'] = "getCatUnivData";
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
@@ -1066,6 +1111,47 @@
             }
             chart1.redraw();
         }
+        function gridBox() {
+            $("#gridVal_X").empty().prepend('<option selected="selected" value="None">None</option>');
+            $("#gridVal_Y").empty().prepend('<option selected="selected" value="None">None</option>');
+
+            if (treeType == 1) {
+                $("#gridVal_X").append('<option value="rank_name">Taxonomy</option>');
+                $("#gridVal_Y").append('<option value="rank_name">Taxonomy</option>');
+            }
+            if (treeType == 2) {
+                $("#gridVal_X").append('<option value="rank_name">KEGG Pathway</option>');
+                $("#gridVal_Y").append('<option value="rank_name">KEGG Pathway</option>');
+            }
+            if (treeType == 3) {
+                $("#gridVal_X").append('<option value="rank_name">KEGG Enzyme</option>');
+                $("#gridVal_Y").append('<option value="rank_name">KEGG Enzyme</option>');
+            }
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#gridVal_X").append('<option value='+title+'>'+title+'</option>');
+                            $("#gridVal_Y").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#gridVal_X").append('<option value='+title+'>'+title+'</option>');
+                            $("#gridVal_Y").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+            });
+        }
         function lineChart(xAxis, yAxis, series) {
             quantOptions = {
                 chart: {
@@ -1294,17 +1380,45 @@
             }
             chart1.redraw();
         }
+        function reOrder() {
+            $("#reorder").css("background-color", "yellow");
+            var pos1 = prompt("Please enter the x-axis position you wish to move from:", 0);
+            var pos2 = prompt("Please enter the x-axis position you wish to move to:", 1);
+            var cat = chart1.xAxis[0].categories;
+            swapElement(cat, pos1, pos2);
+            chart1.xAxis[0].setCategories(cat);
+
+            var seriez = chart1.series;
+            for (var i=0; i < seriez.length; i++) {
+                var dat = chart1.series[i];
+                var arr = dat.options.data;
+                swapElement(arr, pos1, pos2);
+                chart1.series[i].update({
+                    data: arr
+                });
+            }
+            $("#reorder").css("background-color", "green");
+        }
         function runAnalysis() {
             if (running == true) {
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
+            $("#my_image").attr("src", "#");
             $("#Export").val('Export Data').css('background-color', 'lightgray');
+            $("#graphDisplay").val("1");
 
-            $("#container-1").empty();
-            $("#container-2").empty();
-            $("#text-1").val('');
-            $("#text-2").val('');
+            if (dataType == 1) {
+                $("#container-3").hide();
+                $("#container-1").empty().show();
+                $("#text-1").val('');
+            }
+            if (dataType == 2) {
+                $("#container-3").hide();
+                $("#container-2").empty().show();
+                $("#text-2").val('');
+            }
+
             $("#taxDiv").empty();
             $("#reorder").css("background-color", "lightgray");
 
@@ -1415,6 +1529,11 @@
                 }
             });
         }
+        function swapElement(array, indexA, indexB) {
+            var tmp = array[indexA];
+            array[indexA] = array[indexB];
+            array[indexB] = tmp;
+        }
         function updateStatus() {
             var myDict = {};
             myDict['reqType'] = "status";
@@ -1497,6 +1616,41 @@
                         }
                     }
 
+                }
+            });
+        }
+        function xBox() {
+            $("#xVal").empty().prepend('<option selected="selected" value="None">None</option>');
+
+            if (treeType == 1) {
+                $("#xVal").append('<option value="rank_name">Taxonomy</option>');
+            }
+            if (treeType == 2) {
+                $("#xVal").append('<option value="rank_name">KEGG Pathway</option>');
+            }
+            if (treeType == 3) {
+                $("#xVal").append('<option value="rank_name">KEGG Enzyme</option>');
+            }
+
+            var titleArray = [];
+            $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3) {
+                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#xVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
+                }
+                if (node.getLevel() == 4) {
+                    if ((node.data.pType == 'human_associated') || (node.data.pType == 'soil') || (node.data.pType == 'air') || (node.data.pType == 'microbial') || (node.data.pType == 'water')) {
+                        if (node.bSelected || node.hasSubSel) {
+                            var title = node.data.title;
+                            titleArray.push(title);
+                            $("#xVal").append('<option value='+title+'>'+title+'</option>');
+                        }
+                    }
                 }
             });
         }
@@ -1666,6 +1820,84 @@
                 <td bgcolor="white"></td>
             </tr>
 
+            <tr><td colspan="3" bgcolor="white"></td></tr>
+            <tr class="accordion">
+                <td bgcolor="white" width="5px"></td>
+                <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em><span class="arrow">►</span> Optimize R plot:</em></strong></td>
+            </tr>
+
+            <tr>
+                <td bgcolor="white"></td>
+                <td bgcolor="white">
+                    <div style="background-color: white">
+                        <select id="palette" onChange="checkButtons()">
+                            <option value="Set1">Set1</option>
+                            <option value="Set2">Set2</option>
+                            <option value="Set3">Set3</option>
+                            <option value="Paired">Paired</option>
+                            <option value="Dark2">Dark2</option>
+                            <option value="Accent">Accent</option>
+                            <option value="gdocs">Google</option>
+                            <option value="hc">Highcharts</option>
+                        </select>
+                        &nbsp; <-- Color palette for symbol colors
+                    </div>
+                </td>
+                <td bgcolor="white"></td>
+            </tr>
+
+            <tr>
+                <td bgcolor="white"></td>
+                <td bgcolor="white">
+                    <div style="background-color: white">
+                        <select id="gridVal_X" onChange="checkButtons()">
+                            <option value="None">None</option>
+                        </select>
+                        &nbsp; <-- Grouping variable for graph panels (horizontal)
+                    </div>
+                </td>
+                <td bgcolor="white"></td>
+            </tr>
+
+            <tr>
+                <td bgcolor="white"></td>
+                <td bgcolor="white">
+                    <div style="background-color: white">
+                        <select id="gridVal_Y" onChange="checkButtons()">
+                            <option value="None">None</option>
+                        </select>
+                        &nbsp; <-- Grouping variable for graph panels (vertical)
+                    </div>
+                </td>
+                <td bgcolor="white"></td>
+            </tr>
+
+            <tr>
+                <td bgcolor="white"></td>
+                <td bgcolor="white">
+                    <div style="background-color: white">
+                        <select id="xVal" onChange="checkButtons()">
+                            <option value="None">None</option>
+                        </select>
+                        &nbsp; <-- Grouping variable for X-axis
+                    </div>
+                </td>
+                <td bgcolor="white"></td>
+            </tr>
+
+            <tr>
+                <td bgcolor="white"></td>
+                <td bgcolor="white">
+                    <div style="background-color: white">
+                        <select id="colorVal" onChange="checkButtons()">
+                            <option value="None">None</option>
+                        </select>
+                        &nbsp; <-- Grouping variable for colors
+                    </div>
+                </td>
+                <td bgcolor="white"></td>
+            </tr>
+
             <tr style="display:none"><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-RunButton.html" %}
             <tr><td colspan="3" bgcolor="white"></td></tr>
@@ -1692,10 +1924,12 @@
             <th colspan="20" style="padding-right: 10px;">GraphData</th>
         </tr>
         <tr>
-            <td colspan="8" style="text-align: center;"><input type="button" id="reorder" value="Reorder bars" onclick="reOrder();"></td>
-            <td colspan="4" style="text-align: center;"><input type="button" id="unstackButton" value="Unstack bars" onclick="flipStack();"></td>
-            <td id="cat_off" colspan="8" style="text-align: center"></td>
+            <td colspan="6" style="text-align: center;">
+                <input type="button" id="reorder" value="Reorder bars" onclick="reOrder();">
+                <input type="button" id="unstackButton" value="Unstack bars" onclick="flipStack();">
+            </td>
 
+            <td id="cat_off" colspan="8" style="text-align: center"></td>
             <td id="cat_gibbs" colspan="8" style="text-align: center; display: none">
                 Category:
                 <select id="GIBBs" onChange="gibbs()">
@@ -1724,11 +1958,22 @@
                     <option value="6">Denitrification</option>
                 </select>
             </td>
+
+            <td colspan="6" style="text-align: center">
+                Display graph:
+                <select id="graphDisplay" onChange="chooseDisplay()">
+                    <option value="1">Highcharts</option>
+                    <option value="2">R plot</option>
+                </select>
+            </td>
+
         </tr>
+
         <tr>
             <td colspan="20" style="text-align: left">
                 <div id="container-1" style="height: 425px; width: 935px; overflow-x: auto;">No Data has been selected!</div>
                 <div id="container-2" style="height: 425px; width: 935px; overflow-x: auto; display: none">No Data has been selected!</div>
+                <div id="container-3" style="height: 650px; width: 935px; display:none"><iframe id="my_image" src="#" height="100%" width="100%"></iframe></div>
             </td>
         </tr>
         <tr id="highchartButtons">

@@ -320,7 +320,7 @@ def getRawDataTab(request):
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         fileName2 = str(myDir) + str(request.user.username) + '.' + str(func) + '.gz'
-        zf = zipfile.ZipFile(fileName2, "w", zipfile.ZIP_DEFLATED)
+        zf = zipfile.ZipFile(fileName2, "w", zipfile.ZIP_DEFLATED, allowZip64=True)
         zf.write(fileName, 'usr_data.csv')
         zf.close()
 
@@ -621,7 +621,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
     abundDF.set_index('sampleid', inplace=True)
 
-    rel_abundDF = df.div(df.sum(axis=1).astype(float), axis=0)
+    rel_abundDF = df.div(df.sum(axis=1), axis=0)
     rel_abundDF.reset_index(drop=False, inplace=True)
     rel_abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
     rel_abundDF = pd.melt(rel_abundDF, id_vars='sampleid', value_vars=taxaids)
@@ -634,7 +634,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
     richDF.set_index('sampleid', inplace=True)
 
-    diversityDF = -df.div(df.sum(axis=1).astype(float), axis=0) * np.log(df.div(df.sum(axis=1).astype(float), axis=0))
+    diversityDF = -df.div(df.sum(axis=1), axis=0) * np.log(df.div(df.sum(axis=1), axis=0))
     diversityDF[np.isinf(diversityDF)] = np.nan
     diversityDF.fillna(0.0, inplace=True)
     diversityDF.reset_index(drop=False, inplace=True)
@@ -643,7 +643,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     diversityDF.set_index('sampleid', inplace=True)
 
     if 'rRNA_copies' in metaDF.columns:
-        abund_16SDF = df.div(df.sum(axis=1).astype(float), axis=0).multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
+        abund_16SDF = df.div(df.sum(axis=1), axis=0).multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
         abund_16SDF.fillna(0.0, inplace=True)
         abund_16SDF.reset_index(drop=False, inplace=True)
         abund_16SDF.rename(columns={'index': 'sampleid'}, inplace=True)

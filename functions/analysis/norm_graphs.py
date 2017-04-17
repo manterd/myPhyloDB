@@ -710,7 +710,7 @@ def getTab(request):
 
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         fileName3 = str(myDir) + 'usr_norm_data.csv.gz'
-        zf = zipfile.ZipFile(fileName3, "w", zipfile.ZIP_DEFLATED)
+        zf = zipfile.ZipFile(fileName3, "w", zipfile.ZIP_DEFLATED, allowZip64=True)
         zf.write(fileName2, 'usr_norm_data.csv')
         zf.close()
 
@@ -729,7 +729,7 @@ def getBiom(request):
         fileName2 = str(myDir) + 'phyloseq.biom'
 
         zip_file = os.path.join(os.getcwd(), 'myPhyloDB', 'media', 'usr_temp', request.user.username, 'usr_norm_data.biom.gz')
-        zf = zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED)
+        zf = zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED, allowZip64=True)
 
         zf.write(fileName1)
         zf.write(fileName2)

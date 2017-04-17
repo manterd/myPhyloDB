@@ -153,13 +153,145 @@ def getCatUnivData(request, RID, stops, PID):
                 functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
                 # R packages from cran
-                r("list.of.packages <- c('lsmeans')")
+                r("list.of.packages <- c('lsmeans', 'ggplot2', 'RColorBrewer', 'ggthemes')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
                 functions.setBase(RID, 'Step 3 of 4: Performing statistical test...')
 
                 print r("library(lsmeans)")
+                print r("library(ggplot2)")
+                print r("library(ggthemes)")
+                print r("library(RColorBrewer)")
+                print r('source("R/myFunctions/myFunctions.R")')
+
+                # R graph
+                r.assign('finalDF', finalDF)
+
+                colorVal = all['colorVal']
+                if colorVal != 'None':
+                    r.assign('colorVal', colorVal)
+                else:
+                    r.assign('colorVal', 'rank_name')
+
+                xVal = all['xVal']
+                if xVal != 'None':
+                    r.assign('xVal', xVal)
+                else:
+                    r.assign('xVal', catFields[0])
+
+                gridVal_X = all['gridVal_X']
+                r.assign('gridVal_X', gridVal_X)
+
+                gridVal_Y = all['gridVal_Y']
+                r.assign('gridVal_Y', gridVal_Y)
+
+                if DepVar == 0:
+                    r('DepVar <- "abund"')
+                elif DepVar == 1:
+                    r('DepVar <- "rel_abund"')
+                elif DepVar == 2:
+                    r('DepVar <- "rich"')
+                elif DepVar == 3:
+                    r('DepVar <- "diversity"')
+                elif DepVar == 4:
+                    r('DepVar <- "abund_16S"')
+
+                if gridVal_X == 'None' and gridVal_Y == 'None':
+                    r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
+                        myFill=finalDF[,paste(colorVal)])")
+                elif gridVal_X != 'None' and gridVal_Y == 'None':
+                    r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
+                        gridVal_X=finalDF[,paste(gridVal_X)], \
+                        myFill=finalDF[,paste(colorVal)])")
+                elif gridVal_X == 'None' and gridVal_Y != 'None':
+                    r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
+                        gridVal_Y=finalDF[,paste(gridVal_Y)], \
+                        myFill=finalDF[,paste(colorVal)])")
+                elif gridVal_X != 'None' and gridVal_Y != 'None':
+                    r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
+                        gridVal_X=finalDF[,paste(gridVal_X)], gridVal_Y=finalDF[,paste(gridVal_Y)], \
+                        myFill=finalDF[,paste(colorVal)])")
+
+                r("p <- ggplot(gDF, aes(x=x, y=y, fill=myFill))")
+                r("p <- p + geom_bar(stat='summary', fun.y='mean', position='stack')")
+
+                if gridVal_X != 'None' and gridVal_Y == 'None':
+                    r("p <- p + facet_grid(. ~ gridVal_X)")
+                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                elif gridVal_X == 'None' and gridVal_Y != 'None':
+                    r("p <- p + facet_grid(gridVal_Y ~ .)")
+                    r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+                elif gridVal_X != 'None' and gridVal_Y != 'None':
+                    r("p <- p + facet_grid(gridVal_Y ~ gridVal_X)")
+                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                    r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+
+                r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+
+                palette = all['palette']
+                r.assign('palette', palette)
+                if palette == 'gdocs':
+                    r('pal <- gdocs_pal()(20)')
+                elif palette == 'hc':
+                    r('pal <- hc_pal()(10)')
+                elif palette == 'Set1':
+                    r('pal <- brewer.pal(8, "Set1")')
+                elif palette == 'Set2':
+                    r('pal <- brewer.pal(8, "Set2")')
+                elif palette == 'Set3':
+                    r('pal <- brewer.pal(12, "Set3")')
+                elif palette == 'Paired':
+                    r('pal <- brewer.pal(12, "Paired")')
+                elif palette == 'Dark2':
+                    r('pal <- brewer.pal(12, "Dark2")')
+                elif palette == 'Accent':
+                    r('pal <- brewer.pal(12, "Accent")')
+                r('nColors <- length(pal)')
+
+                r("p <- p + scale_fill_manual(values=rep(pal, ceiling(nlevels(gDF$myFill)/nColors)))")
+
+                r("p <- p + theme(legend.text=element_text(size=7))")
+                r("p <- p + theme(axis.text.x=element_text(angle=45, vjust=1, hjust=1))")
+
+                r("p <- p + theme(legend.title=element_blank())")
+                r("p <- p + theme(legend.position='bottom')")
+                if DepVar == 0:
+                    r("p <- p + ylab('Abundance') + xlab('')")
+                elif DepVar == 1:
+                    r("p <- p + ylab('Relative Abundance') + xlab('')")
+                elif DepVar == 2:
+                    r("p <- p + ylab('OTU Richness') + xlab('')")
+                elif DepVar == 3:
+                    r("p <- p + ylab('OTU Diversity') + xlab('')")
+                elif DepVar == 4:
+                    r("p <- p + ylab('Total Abundance') + xlab('')")
+
+                path = "myPhyloDB/media/temp/anova/Rplots"
+                if not os.path.exists(path):
+                    os.makedirs(path)
+
+                r.assign("path", path)
+                r.assign("RID", RID)
+                r("file <- paste(path, '/', RID, '.anova.pdf', sep='')")
+                r("p <- set_panel_size(p, height=unit(3, 'in'), width=unit(3, 'in'))")
+
+                r("nlev <- nlevels(as.factor(gDF$gridVal_X))")
+                r('if (nlev == 0) { \
+                        myWidth <- 8 \
+                    } else { \
+                        myWidth <- 3*nlev+4 \
+                }')
+
+                r("nlev <- nlevels(as.factor(gDF$gridVal_Y))")
+                r('if (nlev == 0) { \
+                        myHeight <- 8 \
+                    } else { \
+                        myHeight <- 3*nlev+4 \
+                }')
+
+                r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
 
                 # group DataFrame by each taxa level selected
                 grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
@@ -706,6 +838,7 @@ def getQuantUnivData(request, RID, stops, PID):
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
                 else:
                     r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
                 pValDict = {}
                 counter = 1
                 catLevels = len(set(catValues))

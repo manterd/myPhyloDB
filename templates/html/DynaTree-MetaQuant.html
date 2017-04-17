@@ -39,6 +39,10 @@
             $("#run").css("background-color", "lightgray");
 
             if (document.title == 'ANcOVA') {
+                xBox();
+                gridBox();
+                colorBox();
+
                 var count = 0;
                 $.each(nodesQuant, function (key, value) {
                     if (value.data.pType != undefined) {
