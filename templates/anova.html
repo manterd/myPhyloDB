@@ -460,7 +460,7 @@ f{% extends 'site_base.html' %}
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
                             titleArray.push(title);
-                            $("#xVal").append('<option value='+title+'>'+title+'</option>');
+                            $("#colorVal").append('<option value='+title+'>'+title+'</option>');
                         }
                     }
                 }
@@ -1519,6 +1519,16 @@ f{% extends 'site_base.html' %}
         function shapeBox() {
             $("#shapeVal").empty()
                     .prepend('<option selected="selected" value="None">None</option>');
+
+            if (treeType == 1) {
+                $("#shapeVal").append('<option value="rank_name">Taxonomy</option>');
+            }
+            if (treeType == 2) {
+                $("#shapeVal").append('<option value="rank_name">KEGG Pathway</option>');
+            }
+            if (treeType == 3) {
+                $("#shapeVal").append('<option value="rank_name">KEGG Enzyme</option>');
+            }
 
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
