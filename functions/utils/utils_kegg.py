@@ -1309,7 +1309,9 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
             sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
             sumDF = sum.reset_index(drop=False)
             bytag = sumDF.groupby(myID)[myVar].mean()
+            print bytag
             bytag.sort(axis=0, ascending=False, inplace=True)
+            print bytag
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 6:

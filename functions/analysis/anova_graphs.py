@@ -281,14 +281,14 @@ def getCatUnivData(request, RID, stops, PID):
                 r('if (nlev == 0) { \
                         myWidth <- 8 \
                     } else { \
-                        myWidth <- 3*nlev+4 \
+                        myWidth <- min(3*nlev+4, 50) \
                 }')
 
                 r("nlev <- nlevels(as.factor(gDF$gridVal_Y))")
                 r('if (nlev == 0) { \
                         myHeight <- 8 \
                     } else { \
-                        myHeight <- 3*nlev+4 \
+                        myHeight <- min(3*nlev+4, 50) \
                 }')
 
                 r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
