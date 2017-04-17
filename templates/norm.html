@@ -295,7 +295,7 @@
                         <option value="4">Proportion</option>
                         <!--<option value="5">DESeq2</option>-->
                     </select>
-                    &nbsp<-- Normalization method <span title="None = no sub-sampling<br>Rarefaction (remove) = sub-sampling <strong><em>without</strong></em> replacement<br>Rarefaction (keep) = laplace smoothing followed by sub-sampling <em><strong>with</strong></em> replacement<br>Proportion = all abundances are divided by the total number of sequence reads for that sample<br>DESeq2 = normalization by the geometic mean (see DESeq manual for more details)"><font color="red">[info]</font></span>
+                    &nbsp<-- Normalization method <span title="None = no sub-sampling<br>Rarefaction (remove) = sub-sampling <strong><em>without</strong></em> replacement<br>Rarefaction (keep) = laplace smoothing followed by sub-sampling <em><strong>with</strong></em> replacement<br>Proportion = all abundances are divided by the total number of sequence reads for that sample<br>DESeq2 = normalization by the geometic mean (see DESeq manual for more details)"><font class="info" color="red">[info]</font></span>
                     <div id="NormRow">
                         <input style="background-color: white" type="text" id="NormVal" value=""/>
                         &nbsp<-- Sub-sample size
@@ -352,7 +352,7 @@
                     <input name="exportB" type="radio" value="Tabular"/>Tabular
                     <input name="exportB" type="radio" checked value="Biom"/>Biom
                     <input id="Export" type="button" value="Export Data" onClick="exportData()"/>
-                    <span title="Tabular (.csv) format may result in very large files."><font color="red">[warning]</font></span>
+                    <span title="Tabular (.csv) format may result in very large files."><font class="info" color="red">[warning]</font></span>
                 </td>
             </tr>
         </table>

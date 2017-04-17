@@ -107,3 +107,7 @@ table, fieldset {
 .accordion {
 	cursor: pointer;
 }
+
+.info {
+	cursor: pointer;
+}
