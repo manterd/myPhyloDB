@@ -18,7 +18,7 @@ f{% extends 'site_base.html' %}
     </style>
 
     <script type="text/javascript">
-        var dataType = 1, treeType = 1;
+        var dataType = 1, treeType = 1, graphType = 1;
         var nodesCat = "", nodesQuant = "", nodesTaxa = "", nodesKEGG = "", nodesNZ = "";
         var taxaAll = 0; var nzAll = 0; var keggAll = 0;
         var chart1 = {}, catOptions = {};
@@ -155,13 +155,14 @@ f{% extends 'site_base.html' %}
         function checkButtons() {
             dataType = document.getElementById("dataType").value;
             treeType = document.getElementById("selectTree").value;
+
             $("#run").css("background-color", "lightgray");
 
             if (dataType == "1") {
                 $("#unstackButton").show();
                 $("#xDiv").show();
                 $("#shapeDiv").hide();
-                $("#")
+
                 if (countCat < 2) {
                     $("#reorder").show();
                 } else {
@@ -252,12 +253,11 @@ f{% extends 'site_base.html' %}
                     $("#text-1").empty().show();
                     $("#text-2").empty().hide();
 
-                    var plot = document.getElementById("graphDisplay").value;
-                    if ((nzAll == 5) && (plot == 'Highcharts')) {
+                    if ((nzAll == 5) && (graphType == 1)) {
                         $("#cat_off").hide();
                         $("#cat_gibbs").show();
                         $("#cat_nitrogen").hide();
-                    } else if ((nzAll == 6) && (plot == 'Highcharts')) {
+                    } else if ((nzAll == 6) && (graphType == 1)) {
                         $("#cat_off").hide();
                         $("#cat_gibbs").hide();
                         $("#cat_nitrogen").show();
@@ -279,6 +279,9 @@ f{% extends 'site_base.html' %}
             chooseDisplay();
         }
         function chooseData() {
+            dataType = document.getElementById("dataType").value;
+            treeType = document.getElementById("selectTree").value;
+            graphType = document.getElementById("graphDisplay").value;
             if (treeType == 1) {
                 taxaAll = document.getElementById("selectall-taxa").value;
                 if (dataType == 1) {
@@ -404,7 +407,10 @@ f{% extends 'site_base.html' %}
 
         }
         function chooseDisplay() {
-            var graphType = document.getElementById("graphDisplay").value;
+            dataType = document.getElementById("dataType").value;
+            treeType = document.getElementById("selectTree").value;
+            graphType = document.getElementById("graphDisplay").value;
+
             if (graphType == 1) {
                 if (dataType == 1) {
                     $("#container-1").show();
@@ -430,19 +436,12 @@ f{% extends 'site_base.html' %}
                 {% static "" as baseUrl %}
                 $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/anova/Rplots/" + RID +".anova.pdf");
             }
+            checkButtons();
         }
         function colorBox() {
             $("#colorVal").empty().prepend('<option selected="selected" value="None">None</option>');
 
-            if (treeType == 1) {
-                $("#colorVal").append('<option value="rank_name">Taxonomy</option>');
-            }
-            if (treeType == 2) {
-                $("#colorVal").append('<option value="rank_name">KEGG Pathway</option>');
-            }
-            if (treeType == 3) {
-                $("#colorVal").append('<option value="rank_name">KEGG Enzyme</option>');
-            }
+            $("#colorVal").append('<option value="rank_name">Taxa/KEGG</option>');
 
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
@@ -1125,18 +1124,8 @@ f{% extends 'site_base.html' %}
             $("#gridVal_X").empty().prepend('<option selected="selected" value="None">None</option>');
             $("#gridVal_Y").empty().prepend('<option selected="selected" value="None">None</option>');
 
-            if (treeType == 1) {
-                $("#gridVal_X").append('<option value="rank_name">Taxonomy</option>');
-                $("#gridVal_Y").append('<option value="rank_name">Taxonomy</option>');
-            }
-            if (treeType == 2) {
-                $("#gridVal_X").append('<option value="rank_name">KEGG Pathway</option>');
-                $("#gridVal_Y").append('<option value="rank_name">KEGG Pathway</option>');
-            }
-            if (treeType == 3) {
-                $("#gridVal_X").append('<option value="rank_name">KEGG Enzyme</option>');
-                $("#gridVal_Y").append('<option value="rank_name">KEGG Enzyme</option>');
-            }
+            $("#gridVal_X").append('<option value="rank_name">Taxa/KEGG</option>');
+            $("#gridVal_Y").append('<option value="rank_name">Taxa/KEGG</option>');
 
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
@@ -1468,7 +1457,8 @@ f{% extends 'site_base.html' %}
             checkButtons();
         }
         function selectTree() {
-            checkButtons();
+            treeType = document.getElementById("selectTree").value;
+
             if (treeType == 1) {
                 $('#tree_taxa').show().dynatree("getRoot").visit(function (node) {
                     node.select(false);
@@ -1520,15 +1510,7 @@ f{% extends 'site_base.html' %}
             $("#shapeVal").empty()
                     .prepend('<option selected="selected" value="None">None</option>');
 
-            if (treeType == 1) {
-                $("#shapeVal").append('<option value="rank_name">Taxonomy</option>');
-            }
-            if (treeType == 2) {
-                $("#shapeVal").append('<option value="rank_name">KEGG Pathway</option>');
-            }
-            if (treeType == 3) {
-                $("#shapeVal").append('<option value="rank_name">KEGG Enzyme</option>');
-            }
+            $("#shapeVal").append('<option value="rank_name">Taxa/KEGG</option>');
 
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
@@ -1668,15 +1650,7 @@ f{% extends 'site_base.html' %}
         function xBox() {
             $("#xVal").empty().prepend('<option selected="selected" value="None">None</option>');
 
-            if (treeType == 1) {
-                $("#xVal").append('<option value="rank_name">Taxonomy</option>');
-            }
-            if (treeType == 2) {
-                $("#xVal").append('<option value="rank_name">KEGG Pathway</option>');
-            }
-            if (treeType == 3) {
-                $("#xVal").append('<option value="rank_name">KEGG Enzyme</option>');
-            }
+            $("#xVal").append('<option value="rank_name">Taxa/KEGG</option>');
 
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {

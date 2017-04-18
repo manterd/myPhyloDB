@@ -283,23 +283,24 @@ def getCatUnivData(request, RID, stops, PID):
                 r.assign("path", path)
                 r.assign("RID", RID)
                 r("file <- paste(path, '/', RID, '.anova.pdf', sep='')")
-                r("p <- set_panel_size(p, height=unit(3, 'in'), width=unit(3, 'in'))")
+                r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
 
                 r("nlev <- nlevels(as.factor(gDF$gridVal_X))")
+
                 r('if (nlev == 0) { \
                         myWidth <- 8 \
                     } else { \
-                        myWidth <- min(3*nlev+4, 50) \
+                        myWidth <- 3*nlev+4 \
                 }')
 
                 r("nlev <- nlevels(as.factor(gDF$gridVal_Y))")
                 r('if (nlev == 0) { \
                         myHeight <- 8 \
                     } else { \
-                        myHeight <- min(3*nlev+4, 50) \
+                        myHeight <- 3*nlev+4 \
                 }')
 
-                r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
+                r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
 
                 # group DataFrame by each taxa level selected
                 grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
@@ -979,23 +980,23 @@ def getQuantUnivData(request, RID, stops, PID):
                 r.assign("path", path)
                 r.assign("RID", RID)
                 r("file <- paste(path, '/', RID, '.anova.pdf', sep='')")
-                r("p <- set_panel_size(p, height=unit(3, 'in'), width=unit(3, 'in'))")
+                r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
 
                 r("nlev <- nlevels(as.factor(gDF$gridVal_X))")
                 r('if (nlev == 0) { \
                         myWidth <- 8 \
                     } else { \
-                        myWidth <- min(3*nlev+4, 50) \
+                        myWidth <- 3*nlev+4, 50 \
                 }')
 
                 r("nlev <- nlevels(as.factor(gDF$gridVal_Y))")
                 r('if (nlev == 0) { \
                         myHeight <- 8 \
                     } else { \
-                        myHeight <- min(3*nlev+4, 50) \
+                        myHeight <- 3*nlev+4, 50 \
                 }')
 
-                r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth)")
+                r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
 
                 pValDict = {}
                 counter = 1
