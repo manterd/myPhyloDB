@@ -46,7 +46,7 @@
                 $(this).nextUntil(".accordion").fadeToggle('fast');
             });
             $(".input tr.accordion:eq(0)").trigger('click');
-            $(".input tr.accordion:eq(3)").trigger('click');
+            $(".input tr.accordion:eq(2)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
@@ -85,7 +85,8 @@
         }
         function chooseDisplay() {
             if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
-                $("#my_image").removeAttr("src").attr("src", "/myPhyloDB/media/temp/spac/Rplots/" + RID +"/SpAC_final.pdf");
+                {% static "" as baseUrl %}
+                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/spac/Rplots/" + RID + ".spac.pdf");
                 $("#container-2").show();
                 $("#container-0").hide();
             } else {
@@ -153,7 +154,6 @@
             myDict['reqType'] = "call";
             myDict['dataID'] = dataID;
             myDict['selectAll'] = document.getElementById("selectall-taxa").value;
-            myDict['method'] = document.getElementById("method").value;
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
@@ -379,26 +379,6 @@
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-Filtering.html" %}
-
-        <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr class="accordion">
-            <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Accumulation Curve Settings:</strong></em></td>
-        </tr>
-
-        <tr>
-            <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <div style="background-color: white">
-                    <select id="method" onChange="checkButtons()">
-                        <option value="estaccumR">estaccumR</option>
-                        <!--<option value="poolaccum">poolaccum</option>-->
-                    </select>
-                    &nbsp<-- Method
-                </div>
-            </td>
-            <td bgcolor="white"></td>
-        </tr>
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-RunButton.html" %}

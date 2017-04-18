@@ -253,14 +253,20 @@ f{% extends 'site_base.html' %}
                     $("#text-1").empty().show();
                     $("#text-2").empty().hide();
 
-                    if ((nzAll == 5) && (graphType == 1)) {
-                        $("#cat_off").hide();
-                        $("#cat_gibbs").show();
-                        $("#cat_nitrogen").hide();
-                    } else if ((nzAll == 6) && (graphType == 1)) {
-                        $("#cat_off").hide();
-                        $("#cat_gibbs").hide();
-                        $("#cat_nitrogen").show();
+                    if (graphType == 1) {
+                        if (nzAll == 5) {
+                            $("#cat_off").hide();
+                            $("#cat_gibbs").show();
+                            $("#cat_nitrogen").hide();
+                        } else if (nzAll == 6) {
+                            $("#cat_off").hide();
+                            $("#cat_gibbs").hide();
+                            $("#cat_nitrogen").show();
+                        } else {
+                            $("#cat_off").show();
+                            $("#cat_gibbs").hide();
+                            $("#cat_nitrogen").hide();
+                        }
                     } else {
                         $("#cat_off").show();
                         $("#cat_gibbs").hide();
@@ -436,7 +442,6 @@ f{% extends 'site_base.html' %}
                 {% static "" as baseUrl %}
                 $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/anova/Rplots/" + RID +".anova.pdf");
             }
-            checkButtons();
         }
         function colorBox() {
             $("#colorVal").empty().prepend('<option selected="selected" value="None">None</option>');
@@ -480,7 +485,7 @@ f{% extends 'site_base.html' %}
                     .append('<option value="2">Log10</option>')
                     .append('<option value="3">Sqrt</option>');
             }
-            checkButtons();
+            //checkButtons();
         }
         function errorBars() {
             var seriesLen = chart1.series.length;
@@ -1426,7 +1431,6 @@ f{% extends 'site_base.html' %}
             chooseData();
         }
         function selectAnalysis() {
-            checkButtons();
             if (dataType == 1) {
                 $("#tree_metaQuant").show();
                 $("#tree_metaCat").show();
@@ -1454,7 +1458,7 @@ f{% extends 'site_base.html' %}
                 subset = 'none'
             }
             clearTaxa();
-            checkButtons();
+            //checkButtons();
         }
         function selectTree() {
             treeType = document.getElementById("selectTree").value;

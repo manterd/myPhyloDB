@@ -91,10 +91,6 @@ def getSpAC(request, stops, RID, PID):
 
                     finalDF, missingList = functions.getTaxaDF(selectAll, '', filteredDF, metaDF, allFields, DepVar, RID, stops, PID)
 
-                    if selectAll == 8:
-                        result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
-                        result += '===============================================\n'
-
                 # make sure column types are correct
                 finalDF[catFields] = finalDF[catFields].astype(str)
 
@@ -137,59 +133,61 @@ def getSpAC(request, stops, RID, PID):
 
                 functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
 
-                r("list.of.packages <- c('vegan')")
+                r("list.of.packages <- c('vegan', 'ggplot2', 'ggthemes', 'RColorBrewer', 'reshape2')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
                 functions.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...')
 
                 print r("library(vegan)")
+                print r("library(reshape2)")
+                print r("library(ggplot2)")
+                print r("library(ggthemes)")
+                print r("library(RColorBrewer)")
+                print r('source("R/myFunctions/myFunctions.R")')
 
-                path = os.path.join('myPhyloDB', 'media', 'temp', 'spac', 'Rplots', RID)
-                if not os.path.exists(path):
-                    os.makedirs(path)
+                r.assign('data', count_rDF)
+                metaDF.sort('sampleid', axis=0, inplace=True)
 
-                r.assign("path", path)
-                r("setwd(path)")
-                r("options('width'=5000)")
-                r.assign("RID", RID)
+                if len(catFields) > 1:
+                    for index, row in metaDF.iterrows():
+                       metaDF.loc[index, 'merge'] = ".".join(row[catFields])
+                else:
+                    metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
-                method = all['method']
-                r.assign('method', method)
+                '''
+                r.assign('meta', metaDF)
+                r("x <- specpool(data, pool=meta$merge)")
 
-                r("pdf_counter <- 1")
+                values = r.get("as.data.frame(x)")
+                result += str(values) + '\n'
+                result += '===============================================\n'
+                '''
+
                 if allFields:
-                    grouped = metaDF.groupby(allFields)
+                    grouped = metaDF.groupby('merge')
+                    counter = 0
+                    total = len(grouped)
                     for name, group in grouped:
-                        # print name
-                        if isinstance(name, tuple):
-                            name = "; ".join(name)
                         r.assign('name', name)
                         IDs = group['sampleid'].tolist()
                         data = count_rDF.ix[IDs]
                         r.assign("data", data)
 
-                        r("pdf(paste('SpAC_temp', pdf_counter, '.pdf', sep=''))")
-                        if method == 'estaccumR':
-                            r("x <- estaccumR(data, permutations=100)")
-                        #elif method == 'poolaccum':
-                        #    r("x <- poolaccum(data, permutations=100, minsize=3)")
-                        values = r("summary(x)")
-                        values = values.lstrip('try({summary(x)})')
-                        result += str(name) + '\n'
-                        values = values.lstrip('try({y})')
-                        result += str(values) + '\n'
-                        result += '===============================================\n'
+                        r("x <- poolaccum(data)")
 
-                        nSamps, cols = group.shape
-                        if nSamps > 2:
-                            r("plot(x, main=paste(name))")
+                        if counter == 0:
+                            r('gDF <- as.data.frame(x$means)')
+                            r('gDF$trt <-name')
+                            r('gDF')
                         else:
-                            r("plot(0:10, type='n', axes=FALSE, bty='n', xlab='', ylab='', \
-                                main=paste(name, '\nInsufficient data to generate plot (n <= 3)!', sep='')) \
-                            ")
-                        r("dev.off()")
-                        r("pdf_counter <- pdf_counter + 1")
+                            r('df <- as.data.frame(x$means)')
+                            r('df$trt <- name')
+                            r('gDF <- rbind(gDF, df)')
+
+                        counter += 1
+                        myStr = 'Sample ' + str(counter) + ' out of ' + str(total) + ' is done.'
+                        functions.setBase(RID, myStr)
 
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                         if stops[PID] == RID:
@@ -197,44 +195,35 @@ def getSpAC(request, stops, RID, PID):
                             return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                else:
-                    r.assign("data", count_rDF)
+                    # create graph here
+                    r('gDF <- melt(gDF, id.vars=c("N", "trt"))')
+                    r('p <- ggplot(gDF, aes(x=N, y=value, color=factor(trt)))')
+                    r("p <- p + geom_point(size=4)")
+                    r("p <- p + facet_wrap(~ variable, ncol=3)")
+                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
 
-                    r("pdf(paste('SpAC_temp', pdf_counter, '.pdf', sep=''))")
-                    if method == 'estaccumR':
-                        r("x <- estaccumR(data)")
-                    if method == 'poolaccum':
-                        r("x <- poolaccum(data)")
+                    r('pal <- brewer.pal(8, "Set1")')
+                    r('number <- nlevels(as.factor(gDF$trt))')
+                    r('colors <- rep(pal, length.out=number) ')
+                    r("p <- p + scale_color_manual(values=colors)")
 
-                    values = r("summary(x)")
-                    values = values.lstrip('try({summary(x)})')
-                    result += str(values) + '\n'
+                    r("p <- p + theme(legend.title=element_blank())")
+                    r("p <- p + theme(legend.position='bottom')")
+                    r("p <- p + ylab('Richness Estimator') + xlab('Number of Samples')")
 
-                    r("plot(x)")
-                    r("dev.off()")
-                    r("pdf_counter <- pdf_counter + 1")
+                    path = "myPhyloDB/media/temp/spac/Rplots"
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+
+                    r.assign("path", path)
+                    r.assign("RID", RID)
+                    r("file <- paste(path, '/', RID, '.spac.pdf', sep='')")
+                    r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
+                    r("ggsave(filename=file, plot=p, units='in', height=10, width=10)")
 
                 functions.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...done!')
 
-                functions.setBase(RID, 'Step 5 of 5: Pooling pdf files for display...')
-
-                # Combining Pdf files
-                finalFile = 'myPhyloDB/media/temp/spac/Rplots/' + str(RID) + '/SpAC_final.pdf'
-
-                pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
-                pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
-
-                merger = PdfFileMerger()
-                for filename in pdf_files:
-                    merger.append(PdfFileReader(os.path.join(path, filename), 'rb'))
-
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if stops[PID] == RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                merger.write(finalFile)
+                functions.setBase(RID, 'Step 5 of 5: Sending files for display...')
 
                 finalDict = {}
                 finalDict['text'] = result

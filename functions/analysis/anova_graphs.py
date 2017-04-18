@@ -916,14 +916,10 @@ def getQuantUnivData(request, RID, stops, PID):
 
                 if gridVal_X != 'None' and gridVal_Y == 'None':
                     r("p <- p + facet_grid(. ~ gridVal_X)")
-                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
                 elif gridVal_X == 'None' and gridVal_Y != 'None':
                     r("p <- p + facet_grid(gridVal_Y ~ .)")
-                    r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
                 elif gridVal_X != 'None' and gridVal_Y != 'None':
                     r("p <- p + facet_grid(gridVal_Y ~ gridVal_X)")
-                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
-                    r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
 
                 r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
                 r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
