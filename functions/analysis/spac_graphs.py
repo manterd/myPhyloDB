@@ -139,6 +139,7 @@ def getSpAC(request, stops, RID, PID):
 
                 functions.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...')
 
+                r("options(width=5000)")
                 print r("library(vegan)")
                 print r("library(reshape2)")
                 print r("library(ggplot2)")
@@ -155,14 +156,13 @@ def getSpAC(request, stops, RID, PID):
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
-                '''
                 r.assign('meta', metaDF)
                 r("x <- specpool(data, pool=meta$merge)")
 
-                values = r.get("as.data.frame(x)")
+                values = r("print(x)")
+                values = values.lstrip('try({print(x)})')
                 result += str(values) + '\n'
                 result += '===============================================\n'
-                '''
 
                 if allFields:
                     grouped = metaDF.groupby('merge')
@@ -198,7 +198,7 @@ def getSpAC(request, stops, RID, PID):
                     # create graph here
                     r('gDF <- melt(gDF, id.vars=c("N", "trt"))')
                     r('p <- ggplot(gDF, aes(x=N, y=value, color=factor(trt)))')
-                    r("p <- p + geom_point(size=4)")
+                    r("p <- p + geom_point() + geom_line()")
                     r("p <- p + facet_wrap(~ variable, ncol=3)")
                     r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
 
