@@ -174,7 +174,7 @@ def getSpAC(request, stops, RID, PID):
                         data = count_rDF.ix[IDs]
                         r.assign("data", data)
 
-                        r("x <- poolaccum(data)")
+                        r("x <- poolaccum(data, minsize=1)")
 
                         if counter == 0:
                             r('gDF <- as.data.frame(x$means)')
