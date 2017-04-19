@@ -236,7 +236,7 @@ def getGAGE(request, stops, RID, PID):
                 r.assign("RID", RID)
 
                 gageDF = pd.DataFrame(columns=['comparison', 'pathway', ' p.geomean ', ' stat.mean ', ' p.val ', ' q.val ', ' set.size '])
-                diffDF = pd.DataFrame(columns=['comparison', 'kegg', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' logFC ', ' logCPM ', ' stderr ', ' pval ', ' padj '])
+                diffDF = pd.DataFrame(columns=['comparison', 'kegg', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' logFC ', ' logCPM ', ' LR ', ' pval ', ' FDR '])
 
                 mergeList = metaDF['merge'].tolist()
                 mergeSet = list(set(mergeList))

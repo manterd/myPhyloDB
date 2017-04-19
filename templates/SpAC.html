@@ -46,7 +46,7 @@
                 $(this).nextUntil(".accordion").fadeToggle('fast');
             });
             $(".input tr.accordion:eq(0)").trigger('click');
-            $(".input tr.accordion:eq(2)").trigger('click');
+            $(".input tr.accordion:eq(3)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
@@ -157,6 +157,8 @@
             myDict['perZeroes'] = document.getElementById("perZeroes").value;
             myDict['filterPer'] = document.getElementById("filterPer").value;
             myDict['filterMeth'] = document.getElementById("filterMeth").value;
+            myDict['palette'] = document.getElementById("palette").value;
+            myDict['std_error'] = document.getElementById("std_error").checked;
 
             if ($("#remUnclass").is(':checked')) {
                 myDict['remUnclass'] = 'yes'
@@ -192,19 +194,26 @@
             });
         }
         function runAnalysis() {
-            checkButtons();
-            if(running == true) {
+            if (running == true) {
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
-            $("#my_image").attr("src", "#");
-            $("#Export").val('Export Data').css('background-color', 'lightgray');
 
-            $("#container-0").empty().show();
-            $("#container-2").hide();
-            $("#text-1").val('');
-            running = true;
-            chooseData();
+            if (nodesCat == "") {
+                $("#run").css("background-color", "red");
+                $("#container-0").empty().append('Please choose your categorical variable(s)!');
+                running = false;
+            } else {
+                checkButtons();
+                $("#my_image").attr("src", "#");
+                $("#Export").val('Export Data').css('background-color', 'lightgray');
+
+                $("#container-0").empty().show();
+                $("#container-2").hide();
+                $("#text-1").val('');
+                running = true;
+                chooseData();
+            }
         }
         function selectTree() {
             checkButtons();
@@ -315,6 +324,17 @@
                         var text = obj['text'];
                         $('#text-1').val(text);
 
+                        var res_table = obj['gDF'];
+                        $('#res_table').empty().append(res_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
                         $("div.toolbar").html('<br><br>');
 
                         chooseDisplay();
@@ -381,6 +401,41 @@
         {% include "html/Data-Filtering.html" %}
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
+        <tr class="accordion">
+            <td bgcolor="white" width="5px"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em><span class="arrow">►</span> Optimize R plot:</em></strong></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white"></td>
+            <td bgcolor="white">
+                <div style="background-color: white">
+                    <select id="palette" onChange="checkButtons()">
+                        <option value="Set1">Set1</option>
+                        <option value="Set2">Set2</option>
+                        <option value="Set3">Set3</option>
+                        <option value="Paired">Paired</option>
+                        <option value="Dark2">Dark2</option>
+                        <option value="Accent">Accent</option>
+                        <option value="gdocs">Google</option>
+                        <option value="hc">Highcharts</option>
+                    </select>
+                    &nbsp; <-- Color palette for symbol colors
+                </div>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td id="sig_text" bgcolor="white">
+                <input type="checkbox" id="std_error" checked onChange="checkButtons()">
+                &nbsp; <-- Display standard deviation error bars
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-RunButton.html" %}
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
@@ -417,7 +472,7 @@
         <tr>
             <td colspan="20" style="text-align: left">
                 <div id="container-0" style="height: 425px; width: 950px;">No Data has been selected!</div>
-                <div id="container-2" style="height: 425px; width: 950px; display:none"><iframe id="my_image" src="#" height="100%" width="98%"></iframe></div>
+                <div id="container-2" style="height: 750px; width: 950px; display:none"><iframe id="my_image" src="#" height="100%" width="98%"></iframe></div>
             </td>
         </tr>
         <tr id="highchartButtons">
@@ -432,6 +487,9 @@
         <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
         <br>
     </div>
+    <br><br>
+    <h2>Species Accumulation Curve Data:</h2>
+    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br>
 
     <br><br><br>

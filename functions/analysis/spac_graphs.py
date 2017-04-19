@@ -1,10 +1,8 @@
 import datetime
 from django.http import HttpResponse
 import logging
-from natsort import natsorted
 import pandas as pd
 from pyper import *
-from PyPDF2 import PdfFileReader, PdfFileMerger
 import json
 
 import functions
@@ -156,14 +154,6 @@ def getSpAC(request, stops, RID, PID):
                 else:
                     metaDF.loc[:, 'merge'] = metaDF.loc[:, catFields[0]]
 
-                r.assign('meta', metaDF)
-                r("x <- specpool(data, pool=meta$merge)")
-
-                values = r("print(x)")
-                values = values.lstrip('try({print(x)})')
-                result += str(values) + '\n'
-                result += '===============================================\n'
-
                 if allFields:
                     grouped = metaDF.groupby('merge')
                     counter = 0
@@ -174,15 +164,31 @@ def getSpAC(request, stops, RID, PID):
                         data = count_rDF.ix[IDs]
                         r.assign("data", data)
 
-                        r("x <- poolaccum(data, minsize=1)")
+                        r("x <- poolaccum(data, minsize=2)")
+
+                        r("boot <- summary(x, display='boot')")
+                        r("boot <- data.frame(boot$boot)")
+                        r("chao <- summary(x, display='chao')")
+                        r("chao <- data.frame(chao$chao)")
+                        r("jack1 <- summary(x, display='jack1')")
+                        r("jack1 <- data.frame(jack1$jack1)")
+                        r("jack2 <- summary(x, display='jack2')")
+                        r("jack2 <- data.frame(jack2$jack2)")
+                        r("S <- summary(x, display='S')")
+                        r("S <- data.frame(S$S)")
+
+                        r("df <- data.frame(N.Samples=boot$N, \
+                             Observed=S$S, Observed.SD=S$Std.Dev, \
+                             Chao=chao$Chao, Chao.SD=chao$Std.Dev, \
+                             Jackknife.1=jack1$Jackknife.1, Jackknife.1.SD=jack1$Std.Dev, \
+                             Jackknife.2=jack2$Jackknife.2, Jackknife.2.SD=jack2$Std.Dev, \
+                             Bootstrap=boot$Bootstrap, Bootstrap.SD=boot$Std.Dev \
+                        )")
+                        r('df$Treatment <- name')
 
                         if counter == 0:
-                            r('gDF <- as.data.frame(x$means)')
-                            r('gDF$trt <-name')
-                            r('gDF')
+                            r('gDF <- cbind(df)')
                         else:
-                            r('df <- as.data.frame(x$means)')
-                            r('df$trt <- name')
                             r('gDF <- rbind(gDF, df)')
 
                         counter += 1
@@ -195,39 +201,72 @@ def getSpAC(request, stops, RID, PID):
                             return HttpResponse(res, content_type='application/json')
                         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                    # create graph here
-                    r('gDF <- melt(gDF, id.vars=c("N", "trt"))')
-                    r('p <- ggplot(gDF, aes(x=N, y=value, color=factor(trt)))')
-                    r("p <- p + geom_point() + geom_line()")
-                    r("p <- p + facet_wrap(~ variable, ncol=3)")
-                    r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+                finalDict = {}
+                gDF = r.get('gDF')
+                table = gDF.to_html(classes="table display")
+                table = table.replace('border="1"', 'border="0"')
+                finalDict['gDF'] = str(table)
 
+                # create graph here
+                r('gDF.val <- melt(gDF, id.vars=c("N.Samples", "Treatment"), measure.vars=c("Observed", "Chao", \
+                    "Jackknife.1", "Jackknife.2", "Bootstrap"))')
+                r('gDF.sd <- melt(gDF, id.vars=c("N.Samples", "Treatment"), measure.vars=c("Observed.SD", "Chao.SD", \
+                    "Jackknife.1.SD", "Jackknife.2.SD", "Bootstrap.SD"))')
+                r('gDF.final <- data.frame(N.Samples=gDF.val$N.Samples, Treatment=gDF.val$Treatment, \
+                    variable=gDF.val$variable, value=gDF.val$value, sd=gDF.sd$value)')
+
+                r('p <- ggplot(gDF.final, aes(x=N.Samples, y=value, color=factor(Treatment)))')
+                r("p <- p + geom_point() + geom_line()")
+
+                std_error = int(all["std_error"])
+                if std_error == 1:
+                    r("p <- p + geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=0.1)")
+
+                r("p <- p + facet_wrap(~ variable, ncol=3)")
+                r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+
+                palette = all['palette']
+                r.assign('palette', palette)
+                if palette == 'gdocs':
+                    r('pal <- gdocs_pal()(20)')
+                elif palette == 'hc':
+                    r('pal <- hc_pal()(10)')
+                elif palette == 'Set1':
                     r('pal <- brewer.pal(8, "Set1")')
-                    r('number <- nlevels(as.factor(gDF$trt))')
-                    r('colors <- rep(pal, length.out=number) ')
-                    r("p <- p + scale_color_manual(values=colors)")
+                elif palette == 'Set2':
+                    r('pal <- brewer.pal(8, "Set2")')
+                elif palette == 'Set3':
+                    r('pal <- brewer.pal(12, "Set3")')
+                elif palette == 'Paired':
+                    r('pal <- brewer.pal(12, "Paired")')
+                elif palette == 'Dark2':
+                    r('pal <- brewer.pal(12, "Dark2")')
+                elif palette == 'Accent':
+                    r('pal <- brewer.pal(12, "Accent")')
+                r('nColors <- length(pal)')
 
-                    r("p <- p + theme(legend.title=element_blank())")
-                    r("p <- p + theme(legend.position='bottom')")
-                    r("p <- p + ylab('Richness Estimator') + xlab('Number of Samples')")
+                r('number <- nlevels(as.factor(gDF$Treatment))')
+                r('colors <- rep(pal, length.out=number) ')
+                r("p <- p + scale_color_manual(values=rep(pal, ceiling(nlevels(as.factor(gDF$Treatment))/nColors)))")
 
-                    path = "myPhyloDB/media/temp/spac/Rplots"
-                    if not os.path.exists(path):
-                        os.makedirs(path)
+                r("p <- p + theme(legend.title=element_blank())")
+                r("p <- p + theme(legend.position='bottom')")
+                r("p <- p + ylab('Richness Estimator') + xlab('Number of Samples')")
 
-                    r.assign("path", path)
-                    r.assign("RID", RID)
-                    r("file <- paste(path, '/', RID, '.spac.pdf', sep='')")
-                    r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
-                    r("ggsave(filename=file, plot=p, units='in', height=10, width=10)")
+                path = "myPhyloDB/media/temp/spac/Rplots"
+                if not os.path.exists(path):
+                    os.makedirs(path)
+
+                r.assign("path", path)
+                r.assign("RID", RID)
+                r("file <- paste(path, '/', RID, '.spac.pdf', sep='')")
+                r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
+                print r("ggsave(filename=file, plot=p, units='in', height=10, width=10)")
 
                 functions.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...done!')
-
                 functions.setBase(RID, 'Step 5 of 5: Sending files for display...')
 
-                finalDict = {}
                 finalDict['text'] = result
-
                 finalDict['error'] = 'none'
                 res = json.dumps(finalDict)
                 return HttpResponse(res, content_type='application/json')
