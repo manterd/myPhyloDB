@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from pyper import *
 from scipy import stats
+import zipfile
 
 from database.models import Sample
 
@@ -660,6 +661,12 @@ def getCatUnivData(request, RID, stops, PID):
                     myDir = 'myPhyloDB/media/temp/anova/'
                     fileName = str(myDir) + 'Mapped_Taxa.csv'
                     allDF.to_csv(fileName)
+
+                    myDir = 'myPhyloDB/media/temp/anova/'
+                    fileName2 = str(myDir) + 'Mapped_Taxa.gz'
+                    zf = zipfile.ZipFile(fileName2, "w", zipfile.ZIP_DEFLATED, allowZip64=True)
+                    zf.write(fileName, 'Mapped_Taxa.csv')
+                    zf.close()
 
                 finalDict['resType'] = 'res'
                 finalDict['error'] = 'none'
