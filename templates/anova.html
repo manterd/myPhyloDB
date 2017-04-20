@@ -163,7 +163,7 @@ f{% extends 'site_base.html' %}
                 $("#xDiv").show();
                 $("#shapeDiv").hide();
 
-                if (countCat < 2) {
+                if (countCat == 1) {
                     $("#reorder").show();
                 } else {
                     $("#reorder").hide();
@@ -428,16 +428,12 @@ f{% extends 'site_base.html' %}
                 }
                 $("#container-3").hide();
                 $("#highchartButtons").show();
-                $("#reorder").show();
-                $("#unstackButton").show();
             }
             if (graphType == 2) {
                 $("#container-1").hide();
                 $("#container-2").hide();
                 $("#container-3").show();
                 $("#highchartButtons").hide();
-                $("#reorder").hide();
-                $("#unstackButton").hide();
 
                 {% static "" as baseUrl %}
                 $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/anova/Rplots/" + RID +".anova.pdf");
@@ -1385,7 +1381,6 @@ f{% extends 'site_base.html' %}
             chart1.redraw();
         }
         function reOrder() {
-            $("#reorder").css("background-color", "yellow");
             var pos1 = prompt("Please enter the x-axis position you wish to move from:", 0);
             var pos2 = prompt("Please enter the x-axis position you wish to move to:", 1);
             var cat = chart1.xAxis[0].categories;
@@ -1401,7 +1396,6 @@ f{% extends 'site_base.html' %}
                     data: arr
                 });
             }
-            $("#reorder").css("background-color", "green");
         }
         function runAnalysis() {
             if (running == true) {
@@ -1424,7 +1418,6 @@ f{% extends 'site_base.html' %}
             }
 
             $("#taxDiv").empty();
-            $("#reorder").css("background-color", "lightgray");
 
             running = true;
             checkButtons();

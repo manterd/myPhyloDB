@@ -400,7 +400,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
                 elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=level).exists():
                     name = ko_entry.objects.using('picrust').get(ko_lvl4_id=level).ko_desc
                 else:
-                    print str(level) + ' not found in database'
+                    str(level) + ' not found in database'
                 namesDict[level] = name
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -428,7 +428,6 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
             order = ['otuid', 'Taxonomy'] + levelList
             allDF = allDF[order]
-            allDF.rename(columns=namesDict, inplace=True)
         else:
             allDF = ''
 
@@ -1004,7 +1003,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
                 elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=level).exists():
                     name = nz_entry.objects.using('picrust').get(nz_lvl5_id=level).nz_desc
                 else:
-                    print str(level) + ' not found in database'
+                    str(level) + ' not found in database'
                 namesDict[level] = name
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -1032,7 +1031,6 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
             order = ['otuid', 'Taxonomy'] + levelList
             allDF = allDF[order]
-            allDF.rename(columns=namesDict, inplace=True)
         else:
             allDF = ''
 
