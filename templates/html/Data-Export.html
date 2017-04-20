@@ -53,25 +53,25 @@
         }
 
         $("#Export").css("background-color", "yellow").val("Running!");
-            $.ajax({
-                url: '/myPhyloDB/getRawDataTab/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID,
-                    func: func,
-                    treeType: treeType
-                },
-                success: function(data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    window.location.href = obj['name'];
-                    $("#Export").css("background-color", "green").val("Done!");
-                }
-            }).fail(function() {
-                    $("#Export").css("background-color", "red").val("No data!");
-            });
-        }
+        $.ajax({
+            url: '/myPhyloDB/getRawDataTab/',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                all: RID,
+                func: func,
+                treeType: treeType
+            },
+            success: function(data) {
+                var result = JSON.stringify(data);
+                var obj = $.parseJSON(result);
+                window.location.href = obj['name'];
+                $("#Export").css("background-color", "green").val("Done!");
+            }
+        }).fail(function() {
+                $("#Export").css("background-color", "red").val("No data!");
+        });
+    }
     function getBiom() {
         var func;
         if (document.title == 'ANcOVA') {

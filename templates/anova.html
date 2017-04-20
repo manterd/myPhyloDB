@@ -1,4 +1,4 @@
-f{% extends 'site_base.html' %}
+{% extends 'site_base.html' %}
 {% load static %}
 
 {% block pagetitle %}<title>ANcOVA</title>{% endblock pagetitle%}
@@ -500,6 +500,11 @@ f{% extends 'site_base.html' %}
                 }
             }
             chart1.redraw();
+        }
+        function exportMap() {
+            var file = '../../myPhyloDB/media/temp/anova/Mapped_Taxa.csv';
+            window.location.href = file;
+            $("#map_export").css("background-color", "green").val("Done!");
         }
         function flipStack() {
             var options = chart1.options;
@@ -1404,6 +1409,7 @@ f{% extends 'site_base.html' %}
             }
             $("#my_image").attr("src", "#");
             $("#Export").val('Export Data').css('background-color', 'lightgray');
+            $("#map_export").attr('disabled', true).css('background-color', 'lightgray');
             $("#graphDisplay").val("1");
 
             if (dataType == 1) {
@@ -1471,6 +1477,7 @@ f{% extends 'site_base.html' %}
                 $('#row_nz').hide();
                 $('#text-1').val('');
                 $('#text-2').val('');
+                $('.map').hide();
             } else if (treeType == 2) {
                 $('#tree_taxa').hide().dynatree("getRoot").visit(function (node) {
                     node.select(false);
@@ -1486,6 +1493,7 @@ f{% extends 'site_base.html' %}
                 $('#row_nz').hide();
                 $('#text-1').val('');
                 $('#text-2').val('');
+                $('.map').show();
             } else if (treeType == 3) {
                 $('#tree_taxa').hide().dynatree("getRoot").visit(function (node) {
                     node.select(false);
@@ -1501,6 +1509,7 @@ f{% extends 'site_base.html' %}
                 $('#row_nz').show();
                 $('#text-1').val('');
                 $('#text-2').val('');
+                $('.map').show();
             }
         }
         function shapeBox() {
@@ -1601,28 +1610,6 @@ f{% extends 'site_base.html' %}
 
                         var text = data['text'];
 
-                        if ((treeType != "1") && (document.getElementById("map_taxa").checked)) {
-                            var taxData = eval(data['taxData']);
-                            var taxColumns = JSON.parse(data['taxColumns']);
-                            var tableHeaders = '';
-                            for (var i = 0; i < taxColumns.length; i++) {
-                                tableHeaders += "<th>" + taxColumns[i] + "</th>";
-                            }
-
-                            $("#taxDiv").empty().append('<table id="taxTable" class="display" cellspacing="0" width="100%"><thead><tr>' + tableHeaders + '</tr></thead></table>');
-
-                            var table = $('#taxTable').DataTable({
-                                "dom": 'B<"toolbar">lfrtip',
-                                "deferRender": true,
-                                "data": taxData,
-                                "scrollX": true,
-                                "bPaginate": true,
-                                "sPaginationType": 'full_numbers',
-                                "buttons": ['copy', 'csv', 'excel', 'pdf', 'print']
-                            });
-                            $("div.toolbar").html('<br><br><br>');
-                        }
-
                         if (document.getElementById("dataType").value == 1) {
                             if (empty == 0) {
                                 $("#container-1").empty().append('No significant tests!');
@@ -1638,6 +1625,10 @@ f{% extends 'site_base.html' %}
                                 lineChart(xAxis, yAxis, series);
                             }
                             $('#text-2').val(text);
+                        }
+
+                        if ($("#map_taxa").is(':checked')) {
+                            $("#map_export").attr('disabled', false);
                         }
                     }
 
@@ -1832,7 +1823,8 @@ f{% extends 'site_base.html' %}
                 <td bgcolor="white" width="5px"></td>
                 <td id="sig_text" bgcolor="white">
                     <input type="checkbox" id="map_taxa" onChange="checkButtons()">
-                    &nbsp; <-- Display mapped taxa
+                    &nbsp; <-- Save mapped taxa &nbsp;&nbsp;
+                    <input id="map_export" disabled type="button" value="Export Data" onClick="exportMap()"/>
                 </td>
                 <td bgcolor="white"></td>
             </tr>
@@ -2013,9 +2005,6 @@ f{% extends 'site_base.html' %}
         <br>
     </div>
     <br><br>
-
-    <h2 class="map" id="taxTableH2" style="display: none">Mapped Taxa:</h2>
-    <div class="map" id="taxDiv" style="display: none; width: 950px; overflow-x: auto;"></div>
     <br><br><br><br>
 
 {% endblock my_content%}

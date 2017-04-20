@@ -657,10 +657,9 @@ def getCatUnivData(request, RID, stops, PID):
 
                 # datatable of taxa mapped to selected kegg orthologies
                 if not treeType == 1 and mapTaxa == 'yes':
-                    records = allDF.values.tolist()
-                    finalDict['taxData'] = json.dumps(records)
-                    columns = allDF.columns.values.tolist()
-                    finalDict['taxColumns'] = json.dumps(columns)
+                    myDir = 'myPhyloDB/media/temp/anova/'
+                    fileName = str(myDir) + 'Mapped_Taxa.csv'
+                    allDF.to_csv(fileName)
 
                 finalDict['resType'] = 'res'
                 finalDict['error'] = 'none'

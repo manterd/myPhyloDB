@@ -428,6 +428,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
             order = ['otuid', 'Taxonomy'] + levelList
             allDF = allDF[order]
+            allDF.rename(columns=namesDict, inplace=True)
         else:
             allDF = ''
 
@@ -1031,6 +1032,8 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
             order = ['otuid', 'Taxonomy'] + levelList
             allDF = allDF[order]
+            if nzAll < 5:
+                allDF.rename(columns=namesDict, inplace=True)
         else:
             allDF = ''
 
