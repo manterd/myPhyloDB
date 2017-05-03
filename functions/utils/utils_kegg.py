@@ -418,15 +418,18 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
                 allDF[i] = allDF[i] / allDF[i]
             allDF.fillna(value=0, inplace=True)
             recordDict = {}
-            for id in allDF.otuid.tolist():
+            otuList = allDF.otuid.tolist()
+            for id in otuList:
                 try:
                     qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
                     record = '|'.join(qs[0])
                     recordDict[id] = record
                 except:
                     recordDict[id] = 'No data'
+            rnaList = PICRUSt.objects.using('picrust').filter(otuid_id__in=otuList).values_list('otuid', 'rRNACount')
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
-            order = ['otuid', 'Taxonomy'] + levelList
+            allDF['rRNACount'] = allDF['otuid'].map(dict(rnaList))
+            order = ['otuid', 'Taxonomy', 'rRNACount'] + levelList
             allDF = allDF[order]
             allDF.rename(columns=namesDict, inplace=True)
         else:
@@ -636,8 +639,12 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             idList = ['K03895']
             nzDict[id] = idList
 
-            id = 'entDF: enterobactin synthase'
-            idList = ['K02362', 'K02364']
+            id = 'entD: enterobactin synthetase component D'
+            idList = ['K02362']
+            nzDict[id] = idList
+
+            id = 'entF: enterobactin synthetase component F'
+            idList = ['K02364']
             nzDict[id] = idList
 
             id = 'mbtA: mycobactin salicyl-AMP ligase'
@@ -646,6 +653,54 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
             id = 'ybtE: yersiniabactin salicyl-AMP ligase'
             idList = ['K04783']
+            nzDict[id] = idList
+
+            id = 'prnD: aminopyrrolnitrin oxygenase'
+            idList = ['K19982']
+            nzDict[id] = idList
+
+            id = 'phlD: phloroglucinol synthase'
+            idList = ['K15431']
+            nzDict[id] = idList
+
+            id = 'ituA: iturin family lipopeptide synthetase A'
+            idList = ['K15661']
+            nzDict[id] = idList
+
+            id = 'ituB: iturin family lipopeptide synthetase B'
+            idList = ['K15662']
+            nzDict[id] = idList
+
+            id = 'fenA: fengycin family lipopeptide synthetase D'
+            idList = ['K15667']
+            nzDict[id] = idList
+
+            id = 'srfAA: surfactin family lipopeptide synthetase A'
+            idList = ['K15654']
+            nzDict[id] = idList
+
+            id = 'srfAB: surfactin family lipopeptide synthetase B'
+            idList = ['K15655']
+            nzDict[id] = idList
+
+            id = 'srfAC: surfactin family lipopeptide synthetase C'
+            idList = ['K15656']
+            nzDict[id] = idList
+
+            id = 'rifM: AHBA synthesis associated protein'
+            idList = ['K16017']
+            nzDict[id] = idList
+
+            id = 'phzA_B: phenazine biosynthesis protein'
+            idList = ['K20260']
+            nzDict[id] = idList
+
+            id = 'phzG: phenazine biosynthesis protein'
+            idList = ['K20262']
+            nzDict[id] = idList
+
+            id = 'phzE: 2-amino-4-deoxychorismate synthase'
+            idList = ['K13063']
             nzDict[id] = idList
 
             ### C decomposition
@@ -790,6 +845,54 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             idList = ['K01183']
             nzDict[id] = idList
 
+            id = 'prnD: aminopyrrolnitrin oxygenase'
+            idList = ['K19982']
+            nzDict[id] = idList
+
+            id = 'phlD: phloroglucinol synthase'
+            idList = ['K15431']
+            nzDict[id] = idList
+
+            id = 'ituA: iturin family lipopeptide synthetase A'
+            idList = ['K15661']
+            nzDict[id] = idList
+
+            id = 'ituB: iturin family lipopeptide synthetase B'
+            idList = ['K15662']
+            nzDict[id] = idList
+
+            id = 'fenA: fengycin family lipopeptide synthetase D'
+            idList = ['K15667']
+            nzDict[id] = idList
+
+            id = 'srfAA: surfactin family lipopeptide synthetase A'
+            idList = ['K15654']
+            nzDict[id] = idList
+
+            id = 'srfAB: surfactin family lipopeptide synthetase B'
+            idList = ['K15655']
+            nzDict[id] = idList
+
+            id = 'srfAC: surfactin family lipopeptide synthetase C'
+            idList = ['K15656']
+            nzDict[id] = idList
+
+            id = 'rifM: AHBA synthesis associated protein'
+            idList = ['K16017']
+            nzDict[id] = idList
+
+            id = 'phzA_B: phenazine biosynthesis protein'
+            idList = ['K20260']
+            nzDict[id] = idList
+
+            id = 'phzG: phenazine biosynthesis protein'
+            idList = ['K20262']
+            nzDict[id] = idList
+
+            id = 'phzE: 2-amino-4-deoxychorismate synthase'
+            idList = ['K13063']
+            nzDict[id] = idList
+
             ### Root growth (drought/salt stress)
             id = 'ipdC: indolepyruvate decarboxylase'
             idList = ['K04103']
@@ -804,8 +907,12 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             idList = ['K03895']
             nzDict[id] = idList
 
-            id = 'entDF: enterobactin synthase'
-            idList = ['K02362', 'K02364']
+            id = 'entDF: enterobactin synthetase component D'
+            idList = ['K02362']
+            nzDict[id] = idList
+
+            id = 'entDF: enterobactin synthetase component F'
+            idList = ['K02364']
             nzDict[id] = idList
 
             id = 'mbtA: mycobactin salicyl-AMP ligase'
@@ -1022,15 +1129,18 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
                 allDF[i] = allDF[i] / allDF[i]
             allDF.fillna(value=0, inplace=True)
             recordDict = {}
-            for id in allDF.otuid.tolist():
+            otuList = allDF.otuid.tolist()
+            for id in otuList:
                 try:
                     qs = OTU_99.objects.all().filter(otuid=id).values_list('kingdomid_id__kingdomName', 'phylaid_id__phylaName', 'classid_id__className', 'orderid_id__orderName', 'familyid_id__familyName', 'genusid_id__genusName', 'speciesid_id__speciesName', 'otuName')
                     record = '|'.join(qs[0])
                     recordDict[id] = record
                 except:
                     recordDict[id] = 'No data'
+            rnaList = PICRUSt.objects.using('picrust').filter(otuid_id__in=otuList).values_list('otuid', 'rRNACount')
             allDF['Taxonomy'] = allDF['otuid'].map(recordDict)
-            order = ['otuid', 'Taxonomy'] + levelList
+            allDF['rRNACount'] = allDF['otuid'].map(dict(rnaList))
+            order = ['otuid', 'Taxonomy', 'rRNACount'] + levelList
             allDF = allDF[order]
             if nzAll < 5:
                 allDF.rename(columns=namesDict, inplace=True)
