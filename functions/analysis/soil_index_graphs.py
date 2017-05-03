@@ -292,7 +292,7 @@ def getsoil_index(request, stops, RID, PID):
                     u'pqqC: pyrroloquinoline-quinone synthase',
                     #
                     # Biocontrol
-                    u'hcnABC: glycine dehydrogenase (cyanide-forming)',
+                    u'hcnA: glycine dehydrogenase (cyanide-forming)',
                     u'budA: acetolactate decarboxylase',
                     u'budC: (S,S)-butanediol dehydrogenase',
                     u'E3.2.1.6: endo-1,3(4)-beta-gulcanase',
@@ -300,14 +300,9 @@ def getsoil_index(request, stops, RID, PID):
                     u'prnD: aminopyrrolnitrin oxygenase',
                     u'phlD: phloroglucinol synthase',
                     u'ituA: iturin family lipopeptide synthetase A',
-                    u'ituB: iturin family lipopeptide synthetase B',
                     u'fenA: fengycin family lipopeptide synthetase D',
                     u'srfAA: surfactin family lipopeptide synthetase A',
-                    u'srfAB: surfactin family lipopeptide synthetase B',
-                    u'srfAC: surfactin family lipopeptide synthetase C',
                     u'rifM: AHBA synthesis associated protein',
-                    u'phzA_B: phenazine biosynthesis protein',
-                    u'phzG: phenazine biosynthesis protein',
                     u'phzE: 2-amino-4-deoxychorismate synthase',
                     #
                     # Root growth
@@ -391,7 +386,7 @@ def getsoil_index(request, stops, RID, PID):
                     u'pqqC: pyrroloquinoline-quinone synthase': 'pqqC',
                     #
                     # Biocontrol
-                    u'hcnABC: glycine dehydrogenase (cyanide-forming)': 'hcnABC',
+                    u'hcnA: glycine dehydrogenase (cyanide-forming)': 'hcnA',
                     u'budA: acetolactate decarboxylase': 'budA',
                     u'budC: (S,S)-butanediol dehydrogenase': 'budC',
                     u'E3.2.1.6: endo-1,3(4)-beta-gulcanase': 'E3.2.1.6',
@@ -399,14 +394,9 @@ def getsoil_index(request, stops, RID, PID):
                     u'prnD: aminopyrrolnitrin oxygenase': 'prnD',
                     u'phlD: phloroglucinol synthase': 'phlD',
                     u'ituA: iturin family lipopeptide synthetase A': 'ituA',
-                    u'ituB: iturin family lipopeptide synthetase B': 'ituB',
                     u'fenA: fengycin family lipopeptide synthetase D': 'fenA',
                     u'srfAA: surfactin family lipopeptide synthetase A': 'srfAA',
-                    u'srfAB: surfactin family lipopeptide synthetase B': 'srfAB',
-                    u'srfAC: surfactin family lipopeptide synthetase C': 'srfAC',
                     u'rifM: AHBA synthesis associated protein': 'rifM',
-                    u'phzA_B: phenazine biosynthesis protein': 'phzA_B',
-                    u'phzG: phenazine biosynthesis protein': 'phzG',
                     u'phzE: 2-amino-4-deoxychorismate synthase': 'phzE',
                     #
                     # Root growth
@@ -497,7 +487,7 @@ def getsoil_index(request, stops, RID, PID):
                     u'pqqC',
                     #
                     # Biocontrol
-                    u'hcnABC',
+                    u'hcnA',
                     u'budA',
                     u'budC',
                     u'E3.2.1.6',
@@ -505,14 +495,9 @@ def getsoil_index(request, stops, RID, PID):
                     u'prnD',
                     u'phlD',
                     u'ituA',
-                    u'ituB',
                     u'fenA',
                     u'srfAA',
-                    u'srfAB',
-                    u'srfAC',
                     u'rifM',
-                    u'phzA_B',
-                    u'phzG',
                     u'phzE',
                     #
                     # Root growth
@@ -585,7 +570,7 @@ def getsoil_index(request, stops, RID, PID):
                     u'pqqC': 1e9,
                     #
                     # Biocontrol
-                    u'hcnABC': 1e9,
+                    u'hcnA': 1e9,
                     u'budA': 1e9,
                     u'budC': 1e9,
                     u'E3.2.1.6': 1e9,
@@ -593,14 +578,9 @@ def getsoil_index(request, stops, RID, PID):
                     u'prnD': 1e9,
                     u'phlD': 1e9,
                     u'ituA': 1e9,
-                    u'ituB': 1e9,
                     u'fenA': 1e9,
                     u'srfAA': 1e9,
-                    u'srfAB': 1e9,
-                    u'srfAC': 1e9,
                     u'rifM': 1e9,
-                    u'phzA_B': 1e9,
-                    u'phzG': 1e9,
                     u'phzE': 1e9,
                     #
                     # Root growth
@@ -795,20 +775,15 @@ def getsoil_index(request, stops, RID, PID):
                         'phoN', \
                         'aslA', \
                         'pqqC', \
-                        'hcnABC', \
+                        'hcnA', \
                         'budA', \
                         'budC', \
                         'prnD', \
                         'phlD', \
                         'ituA', \
-                        'ituB', \
                         'fenA', \
                         'srfAA', \
-                        'srfAB', \
-                        'srfAC', \
                         'rifM', \
-                        'phzA_B', \
-                        'phzG', \
                         'phzE', \
                         'E3.2.1.6', \
                         'E3.2.1.14', \
@@ -832,20 +807,15 @@ def getsoil_index(request, stops, RID, PID):
                         'phoN', \
                         'aslA', \
                         'pqqC', \
-                        'hcnABC', \
+                        'hcnA', \
                         'budA', \
                         'budC', \
                         'prnD', \
                         'phlD', \
                         'ituA', \
-                        'ituB', \
                         'fenA', \
                         'srfAA', \
-                        'srfAB', \
-                        'srfAC', \
                         'rifM', \
-                        'phzA_B', \
-                        'phzG', \
                         'phzE', \
                         'E3.2.1.6', \
                         'E3.2.1.14', \
@@ -860,8 +830,8 @@ def getsoil_index(request, stops, RID, PID):
 
                     r("gibbs <- data[,GIBBsList]")
 
-                    r('stars(matrix(1, ncol=34, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=1), 34), \
+                    r('stars(matrix(1, ncol=29, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=1), 29), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.7, mar=c(1,1,2,1), add=F, lty=2, \
                         key.xpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
@@ -876,9 +846,8 @@ def getsoil_index(request, stops, RID, PID):
                         'turquoise', \
                         'magenta', 'magenta', 'magenta', 'magenta', 'magenta', \
                         'yellow', 'yellow', \
-                        'salmon', 'salmon', 'salmon', 'salmon', 'salmon', \
                         'salmon', 'salmon', 'salmon', 'salmon', 'salmon', 'salmon', \
-                        'salmon', 'salmon', 'salmon', 'salmon', 'salmon', 'salmon'\
+                        'salmon', 'salmon', 'salmon', 'salmon', 'salmon', 'salmon' \
                     )")
 
                     r('stars(gibbs[off,], \
@@ -886,18 +855,18 @@ def getsoil_index(request, stops, RID, PID):
                         ncol=1, scale=F, full=T, labels=NULL, \
                         cex=0.5, add=T, lty=1, key.xpd=F)')
 
-                    r('stars(matrix(0.75, ncol=34, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 34), \
+                    r('stars(matrix(0.75, ncol=29, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 29), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.xpd=F)')
 
-                    r('stars(matrix(0.5, ncol=34, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 34), \
+                    r('stars(matrix(0.5, ncol=29, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 29), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.xpd=F)')
 
-                    r('stars(matrix(0.25, ncol=34, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 34), \
+                    r('stars(matrix(0.25, ncol=29, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 29), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.xpd=F)')
 

@@ -605,8 +605,8 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             nzDict[id] = idList
 
             ### Biocontrol
-            id = 'hcnABC: glycine dehydrogenase (cyanide-forming)'
-            idList = ['K10814', 'K10815', 'K10816']
+            id = 'hcnA: glycine dehydrogenase (cyanide-forming)'
+            idList = ['K10814']
             nzDict[id] = idList
 
             id = 'budA: acetolactate decarboxylase'
@@ -623,6 +623,34 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
             id = 'E3.2.1.14: chitinase'
             idList = ['K01183']
+            nzDict[id] = idList
+
+            id = 'prnD: aminopyrrolnitrin oxygenase'
+            idList = ['K19982']
+            nzDict[id] = idList
+
+            id = 'phlD: phloroglucinol synthase'
+            idList = ['K15431']
+            nzDict[id] = idList
+
+            id = 'ituA: iturin family lipopeptide synthetase A'
+            idList = ['K15661']
+            nzDict[id] = idList
+
+            id = 'fenA: fengycin family lipopeptide synthetase D'
+            idList = ['K15667']
+            nzDict[id] = idList
+
+            id = 'srfAA: surfactin family lipopeptide synthetase A'
+            idList = ['K15654']
+            nzDict[id] = idList
+
+            id = 'rifM: AHBA synthesis associated protein'
+            idList = ['K16017']
+            nzDict[id] = idList
+
+            id = 'phzE: 2-amino-4-deoxychorismate synthase'
+            idList = ['K13063']
             nzDict[id] = idList
 
             ### Root growth (drought/salt stress)
@@ -653,54 +681,6 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
             id = 'ybtE: yersiniabactin salicyl-AMP ligase'
             idList = ['K04783']
-            nzDict[id] = idList
-
-            id = 'prnD: aminopyrrolnitrin oxygenase'
-            idList = ['K19982']
-            nzDict[id] = idList
-
-            id = 'phlD: phloroglucinol synthase'
-            idList = ['K15431']
-            nzDict[id] = idList
-
-            id = 'ituA: iturin family lipopeptide synthetase A'
-            idList = ['K15661']
-            nzDict[id] = idList
-
-            id = 'ituB: iturin family lipopeptide synthetase B'
-            idList = ['K15662']
-            nzDict[id] = idList
-
-            id = 'fenA: fengycin family lipopeptide synthetase D'
-            idList = ['K15667']
-            nzDict[id] = idList
-
-            id = 'srfAA: surfactin family lipopeptide synthetase A'
-            idList = ['K15654']
-            nzDict[id] = idList
-
-            id = 'srfAB: surfactin family lipopeptide synthetase B'
-            idList = ['K15655']
-            nzDict[id] = idList
-
-            id = 'srfAC: surfactin family lipopeptide synthetase C'
-            idList = ['K15656']
-            nzDict[id] = idList
-
-            id = 'rifM: AHBA synthesis associated protein'
-            idList = ['K16017']
-            nzDict[id] = idList
-
-            id = 'phzA_B: phenazine biosynthesis protein'
-            idList = ['K20260']
-            nzDict[id] = idList
-
-            id = 'phzG: phenazine biosynthesis protein'
-            idList = ['K20262']
-            nzDict[id] = idList
-
-            id = 'phzE: 2-amino-4-deoxychorismate synthase'
-            idList = ['K13063']
             nzDict[id] = idList
 
             ### C decomposition
@@ -825,8 +805,8 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             nzDict[id] = idList
 
             ### Biocontrol
-            id = 'hcnABC: glycine dehydrogenase (cyanide-forming)'
-            idList = ['K10814', 'K10815', 'K10816']
+            id = 'hcnA: glycine dehydrogenase (cyanide-forming)'
+            idList = ['K10814']
             nzDict[id] = idList
 
             id = 'budA: acetolactate decarboxylase'
@@ -857,10 +837,6 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             idList = ['K15661']
             nzDict[id] = idList
 
-            id = 'ituB: iturin family lipopeptide synthetase B'
-            idList = ['K15662']
-            nzDict[id] = idList
-
             id = 'fenA: fengycin family lipopeptide synthetase D'
             idList = ['K15667']
             nzDict[id] = idList
@@ -869,24 +845,8 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             idList = ['K15654']
             nzDict[id] = idList
 
-            id = 'srfAB: surfactin family lipopeptide synthetase B'
-            idList = ['K15655']
-            nzDict[id] = idList
-
-            id = 'srfAC: surfactin family lipopeptide synthetase C'
-            idList = ['K15656']
-            nzDict[id] = idList
-
             id = 'rifM: AHBA synthesis associated protein'
             idList = ['K16017']
-            nzDict[id] = idList
-
-            id = 'phzA_B: phenazine biosynthesis protein'
-            idList = ['K20260']
-            nzDict[id] = idList
-
-            id = 'phzG: phenazine biosynthesis protein'
-            idList = ['K20262']
             nzDict[id] = idList
 
             id = 'phzE: 2-amino-4-deoxychorismate synthase'
