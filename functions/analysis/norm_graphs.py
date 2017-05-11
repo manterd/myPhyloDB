@@ -286,14 +286,15 @@ def getNorm(request, RID, stopList, PID):
             finalDF['genus'] = finalDF['genus'].str.split(": ").str[1]
             finalDF['species'] = finalDF['species'].str.split(": ").str[1]
             finalDF['otu'] = finalDF['otu'].str.split(": ").str[1]
-            finalDF['otu'] = finalDF['otu'].str.replace('gg', '')
             namesDF['taxa'] = finalDF.loc[:, ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].values.tolist()
             namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
             namesDF.sort_index(axis=0, inplace=True)
 
             taxaList = []
             for index, row in namesDF.iterrows():
-                metaDict = {'taxonomy':  row[0]}
+                taxonomy = row[0][:-1]
+                taxonomy = filter(lambda a: a != 'unclassified', taxonomy)
+                metaDict = {'taxonomy': taxonomy }
                 taxaList.append({"id": row[0][-1], "metadata": metaDict})
 
             shape = [len(taxaList), len(nameList)]
