@@ -663,24 +663,16 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             nzDict[id] = idList
 
             ### Siderophores
-            id = 'iucC: aerobactin synthase'
-            idList = ['K03895']
+            id = 'mbtI: salicylate synthetase'
+            idList = ['K04781']
             nzDict[id] = idList
 
-            id = 'entD: enterobactin synthetase component D'
-            idList = ['K02362']
+            id = 'entA: 2,3-dihydro-2,3-dihydroxybenzoate dehydrogenase'
+            idList = ['K00216']
             nzDict[id] = idList
 
-            id = 'entF: enterobactin synthetase component F'
+            id = 'pchB: isochorismate pyruvate lysase'
             idList = ['K02364']
-            nzDict[id] = idList
-
-            id = 'mbtA: mycobactin salicyl-AMP ligase'
-            idList = ['K04787']
-            nzDict[id] = idList
-
-            id = 'ybtE: yersiniabactin salicyl-AMP ligase'
-            idList = ['K04783']
             nzDict[id] = idList
 
             ### C decomposition
@@ -863,24 +855,16 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             nzDict[id] = idList
 
             ### Siderophores
-            id = 'iucC: aerobactin synthase'
-            idList = ['K03895']
+            id = 'mbtI: salicylate synthetase'
+            idList = ['K04781']
             nzDict[id] = idList
 
-            id = 'entDF: enterobactin synthetase component D'
-            idList = ['K02362']
+            id = 'entA: 2,3-dihydro-2,3-dihydroxybenzoate dehydrogenase'
+            idList = ['K00216']
             nzDict[id] = idList
 
-            id = 'entDF: enterobactin synthetase component F'
+            id = 'pchB: isochorismate pyruvate lysase'
             idList = ['K02364']
-            nzDict[id] = idList
-
-            id = 'mbtA: mycobactin salicyl-AMP ligase'
-            idList = ['K04787']
-            nzDict[id] = idList
-
-            id = 'ybtE: yersiniabactin salicyl-AMP ligase'
-            idList = ['K04783']
             nzDict[id] = idList
 
             ### C decomposition

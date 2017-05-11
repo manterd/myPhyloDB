@@ -310,11 +310,9 @@ def getsoil_index(request, stops, RID, PID):
                     u'acdS: 1-aminocyclopropane-1-carboxylate deaminase',
                     #
                     # Siderophore
-                    u'iucC: aerobactin synthase',
-                    u'entD: enterobactin synthetase component D',
-                    u'entF: enterobactin synthetase component F',
-                    u'mbtA: mycobactin salicyl-AMP ligase',
-                    u'ybtE: yersiniabactin salicyl-AMP ligase',
+                    u'mbtI: salicylate synthetase',
+                    u'entA: 2,3-dihydro-2,3-dihydroxybenzoate dehydrogenase',
+                    u'pchB: isochorismate pyruvate lysase',
                     #
                     # N-fixation
                     # nitrogenase -- already in list
@@ -404,11 +402,9 @@ def getsoil_index(request, stops, RID, PID):
                     u'acdS: 1-aminocyclopropane-1-carboxylate deaminase': 'acdS',
                     #
                     # Siderophore
-                    u'iucC: aerobactin synthase': 'iucC',
-                    u'entD: enterobactin synthetase component D': 'entD',
-                    u'entF: enterobactin synthetase component F': 'entF',
-                    u'mbtA: mycobactin salicyl-AMP ligase': 'mbtA',
-                    u'ybtE: yersiniabactin salicyl-AMP ligase': 'ybtE',
+                    u'mbtI: salicylate synthetase': 'mbtI',
+                    u'entA: 2,3-dihydro-2,3-dihydroxybenzoate dehydrogenase': 'entA',
+                    u'pchB: isochorismate pyruvate lysase': 'pchB',
                     #
                     # N-fixation
                     # nitrogenase -- already in list
@@ -505,11 +501,9 @@ def getsoil_index(request, stops, RID, PID):
                     u'acdS',
                     #
                     # Siderophore
-                    u'iucC',
-                    u'entD',
-                    u'entF',
-                    u'mbtA',
-                    u'ybtE',
+                    u'mbtI',
+                    u'entA',
+                    u'pchB',
                     #
                     # N-fixation
                     # nitrogenase -- already in list
@@ -588,11 +582,9 @@ def getsoil_index(request, stops, RID, PID):
                     u'acdS': 1e9,
                     #
                     # Siderophore
-                    u'iucC': 1e9,
-                    u'entD': 1e9,
-                    u'entF': 1e9,
-                    u'mbtA': 1e9,
-                    u'ybtE': 1e9,
+                    u'mbtI': 1e9,
+                    u'entA': 1e9,
+                    u'pchB': 1e9,
                     #
                     # N cycle
                     # N-fixation
@@ -789,11 +781,9 @@ def getsoil_index(request, stops, RID, PID):
                         'E3.2.1.14', \
                         'ipdC', \
                         'acdS', \
-                        'iucC', \
-                        'entD', \
-                        'entF', \
-                        'mbtA', \
-                        'ybtE' \
+                        'mbtI', \
+                        'entA', \
+                        'pchB' \
                      )")
 
                     r("legList <- c( \
@@ -821,17 +811,15 @@ def getsoil_index(request, stops, RID, PID):
                         'E3.2.1.14', \
                         'ipdC', \
                         'acdS', \
-                        'iucC', \
-                        'entD', \
-                        'entF', \
-                        'mbtA', \
-                        'ybtE' \
+                        'mbtI', \
+                        'entA', \
+                        'pchB' \
                     )")
 
                     r("gibbs <- data[,GIBBsList]")
 
-                    r('stars(matrix(1, ncol=29, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=1), 29), \
+                    r('stars(matrix(1, ncol=27, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=1), 27), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.7, mar=c(1,1,2,1), add=F, lty=2, \
                         key.xpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
@@ -840,14 +828,14 @@ def getsoil_index(request, stops, RID, PID):
                     r('mtext("N cycle", side=3, line=0, at=0.75, cex=1, outer=T, font=2)')
                     r('mtext(curName, side=2, cex=1.2, outer=T, font=2)')
 
-                    r("colGIBBs <- c('blue', 'blue', 'blue', \
-                        'green', 'green', 'green', 'green', 'green', \
-                        'red', \
-                        'turquoise', \
-                        'magenta', 'magenta', 'magenta', 'magenta', 'magenta', \
-                        'yellow', 'yellow', \
-                        'salmon', 'salmon', 'salmon', 'salmon', 'salmon', 'salmon', \
-                        'salmon', 'salmon', 'salmon', 'salmon', 'salmon', 'salmon' \
+                    r("colGIBBs <- c('#3366CC', '#3366CC', '#3366CC', \
+                        '#DC3912', '#DC3912', '#DC3912', '#DC3912', '#DC3912', \
+                        '#FF9900', \
+                        '#109618', \
+                        '#990099', '#990099', '#990099', '#990099', '#990099', '#990099', \
+                        '#990099', '#990099', '#990099', '#990099', '#990099', '#990099', \
+                        '#0099C6', '#0099C6', \
+                        '#DD4477', '#DD4477', '#DD4477' \
                     )")
 
                     r('stars(gibbs[off,], \
@@ -855,18 +843,18 @@ def getsoil_index(request, stops, RID, PID):
                         ncol=1, scale=F, full=T, labels=NULL, \
                         cex=0.5, add=T, lty=1, key.xpd=F)')
 
-                    r('stars(matrix(0.75, ncol=29, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 29), \
+                    r('stars(matrix(0.75, ncol=27, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 27), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.xpd=F)')
 
-                    r('stars(matrix(0.5, ncol=29, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 29), \
+                    r('stars(matrix(0.5, ncol=27, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 27), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.xpd=F)')
 
-                    r('stars(matrix(0.25, ncol=29, nrow=1), \
-                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 29), \
+                    r('stars(matrix(0.25, ncol=27, nrow=1), \
+                        draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 27), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.5, add=T, lty=2, key.xpd=F)')
 
@@ -907,18 +895,20 @@ def getsoil_index(request, stops, RID, PID):
                         'nosZ' \
                     )")
 
+                    r("ncycle <- data[,NList]")
+
                     r('stars(matrix(1, ncol=15, nrow=1), \
                         draw.segments=T, col.segments=rep(adjustcolor("white", alpha=0), 15), \
                         scale=F, full=T, labels=NULL, len=1, axes=F, \
                         cex=0.7, mar=c(1,1,2,1), add=F, lty=2, \
                         key.xpd=T, key.loc=c(2.1, 2.1), key.labels=legList)')
 
-                    r("colN <- c('blue', 'blue', \
-                        'green', 'green', \
-                        'red', 'red', 'red', \
-                        'turquoise', 'turquoise', \
-                        'magenta', 'magenta', \
-                        'yellow', 'yellow', 'yellow', 'yellow' \
+                    r("colN <- c('#3366CC', '#3366CC', \
+                        '#DC3912', '#DC3912', \
+                        '#FF9900', '#FF9900', '#FF9900', \
+                        '#109618', '#109618', \
+                        '#990099', '#990099', \
+                        '#0099C6', '#0099C6', '#0099C6', '#0099C6' \
                     )")
 
                     r('stars(ncycle[off,], \
