@@ -217,7 +217,7 @@ def getDiffAbund(request, stops, RID, PID):
 
                 r.assign("count", count_rDF)
                 r('e <- DGEList(counts=count)')
-                r('e <- calcNormFactors(e, method="TMM")')
+                r('e <- calcNormFactors(e, method="none")')
 
                 r('design <- model.matrix(~ 0 + trt)')
                 r('trtLevels <- levels(trt)')

@@ -198,6 +198,7 @@ def getGAGE(request, stops, RID, PID):
                 r("names(count) <- sampleIDs")
 
                 r('e <- DGEList(counts=count)')
+                r('e <- calcNormFactors(e, method="none")')
 
                 r('design <- model.matrix(~ 0 + trt)')
                 r('trtLevels <- levels(trt)')

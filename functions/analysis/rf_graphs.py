@@ -216,7 +216,10 @@ def getRF(request, stops, RID, PID):
                 # Wrangle data into R
                 rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
                 rankNameDF.sort(columns='rank_id', inplace=True)
-                rankNameDF.loc[:, 'name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
+                if treeType == 3 and nzAll >= 5:
+                    rankNameDF.loc[:, 'name_id'] = rankNameDF['rank_name'].str.split(': ').str[0]
+                else:
+                    rankNameDF.loc[:, 'name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
                 r.assign('rankNames', rankNameDF.name_id.values)
 
                 count_rDF.sort_index(axis=0, inplace=True)
@@ -290,7 +293,7 @@ def getRF(request, stops, RID, PID):
                 if method == 'rf':
                     r("method <- 'rf' ")
                     r("title <- 'Random Forest' ")
-                    r("grid <- expand.grid(.mtry=seq(1:10))")
+                    r("grid <- expand.grid(.mtry=seq(1, nrow(myData), by=ceiling(nrow(myData)/50) ))")
                 elif method == 'nnet':
                     r("method <- 'nnet' ")
                     r("grid <- expand.grid(.size=seq(1:5), .decay=seq(0, 2, 0.5))")
@@ -374,7 +377,7 @@ def getRF(request, stops, RID, PID):
                     r("badNameVec <- names(myData)[2:length(names(myData))]")
                     r("row.names(varDF) <- mapvalues(row.names(varDF), from=badNameVec, to=goodNameVec)")
 
-                    r("rankDF <- apply(-varDF, 2, rank, ties.method='random')")
+                    r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='random')")
                     r("rankDF <- (rankDF <= 6)")
                     r("rankDF <- rankDF * 1")
                     r("myFilter <- as.vector(rowSums(rankDF) > 0)")
@@ -512,6 +515,7 @@ def getRF(request, stops, RID, PID):
                     }")
                     r("p <- p + facet_wrap(~rank_id, nc=4, labeller=as_labeller(parse_labels))")
                     r("p <- p + geom_point(size=0.5)")
+                    r("p <- p + scale_x_log10()")
                     r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
                     r("p <- p + theme(legend.title=element_blank())")
                     r("p <- p + theme(legend.text=element_text(size=6))")
