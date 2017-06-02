@@ -19,7 +19,7 @@ datStopDict = {}
 datStopped = 0
 
 
-def datstop(request):
+def datstop(request):   # this function needs reworked, some code needs to exit instead of being terminated, for cleanup
     global datActiveList, datStopList, datThreadDict, datStopDict, datStopped
     RID = str(request.GET['all'])
     datStopDict[RID] = True
@@ -28,15 +28,15 @@ def datstop(request):
         datStopList[pid] = RID
         datActiveList[pid] = 0
         threadName = datThreadDict[RID]
-        functions.termP()
+        functions.termP()   # only time this is called in entire code
         threads = threading.enumerate()
-        for thread in threads:
-            if thread.name == threadName:
-                thread.terminate()
+        for thread in threads:  # for each thread
+            if thread.name == threadName:   # check if thread name matches
+                #thread.terminate()  # terminate it
                 datStopList[pid] = RID
-                myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
+                myDict = {'error': 'none', 'message': 'Your database changes have been cancelled!'}  # canceled is valid
                 stop = json.dumps(myDict)
-                datStopped += 1
+                # datStopped += 1   # might be redundant
                 return HttpResponse(stop, content_type='application/json')
     except Exception:
         myDict = {'error': 'Analysis not running'}
@@ -65,6 +65,7 @@ def dataprocess(pid):
             datThreadDict[RID] = thread.name
             if datActiveList[pid] == RID:
                 if funcName == "uploadFunc":
+                    # save that this is an upload in a dict somewhere, in stopdict, check if upload, removeproj if true
                     datRecent[RID] = database.views.uploadFunc(request, datStopList)
                 if funcName == "reanalyze":
                     resp = functions.reanalyze(request, datStopList)
@@ -98,6 +99,7 @@ def datfuncCall(request):
             datRecent.pop(RID, 0)
             datStatDict.pop(RID, 0)
             datStopDict.pop(RID, 0)
+            # this return resets data like mothurStatSave
             return results
         except KeyError:
             if RID in datStopList:

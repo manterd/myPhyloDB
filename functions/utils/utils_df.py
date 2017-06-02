@@ -73,19 +73,17 @@ def remove_list(refList):
 
 
 def remove_proj(path):
+    # remove project, files and database
     pid = Reference.objects.get(path=path).projectid.projectid
-
-    # Remove paths (if necessary)
-    qs = Project.objects.all().filter(projectid=pid)
-    for item in qs:
-        refLength = len(item.reference_set.values_list('refid', flat=True))
-        if refLength == 0:
-            path = os.path.join("uploads", str(pid))
-            if os.path.exists(path):
-                shutil.rmtree(path, ignore_errors=True)
-        else:
-            pass
-
+    # remove current reference object, if its the last/only one, remove the project as a whole
+    Reference.objects.get(path=path).delete()
+    if not Reference.objects.filter(projectid_id=pid).exists():
+        # actually remove project from database
+        # print "Removing full project" # debating having this print in just in case its popping up when it shouldn't
+        Project.objects.get(projectid=pid).delete()
+        path = "/".join(["uploads", str(pid)])
+        if os.path.exists(path):
+            shutil.rmtree(path)
 
 def multidict(ordered_pairs):
     d = defaultdict(list)

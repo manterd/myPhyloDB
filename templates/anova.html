@@ -1397,7 +1397,7 @@
             var cat = chart1.xAxis[0].categories;
             swapElement(cat, pos1, pos2);
             chart1.xAxis[0].setCategories(cat);
-
+            // this takes an alarming amount of time
             var seriez = chart1.series;
             for (var i=0; i < seriez.length; i++) {
                 var dat = chart1.series[i];

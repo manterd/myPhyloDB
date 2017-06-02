@@ -189,6 +189,8 @@ def funcCall(request):
             removeRID(RID)
             gc.collect()  # attempting to cleanup memory leaks since processes technically are still there
             # results on anova quant not working occasionally, depends on categorical selection
+            # return results to client, verify timing?
+            #print "Returning a thing!"
             return results
         except KeyError:
             time2[RID] = time()
@@ -198,21 +200,24 @@ def funcCall(request):
                 TimeDiff[RID] = 0
 
             try:
-                if TimeDiff[RID] == 0:
+                if TimeDiff[RID] == 0:  # has not started running yet but data is valid
                     stage[RID] = 'Analysis has been placed in queue, there are ' + str(stat(RID)) + ' others in front of you.'
-                else:
+                else:   # analysis has started, data is valid
                     stage[RID] = str(base[RID]) + '\n<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
-            except Exception:
+            except Exception:   # data is not valid
                 if TimeDiff[RID] == 0:
                     try:
-                        if not complete[RID]:
+                        if not complete[RID]:   # complete is valid, but false. Bug if encountered?
                             stage[RID] = 'In queue'
-                        else:
+                        else:   # complete is valid and true, results are probably on the way
                             stage[RID] = 'Analysis complete, preparing results'  # stuck on one of these occasionally
-                    except Exception:
-                        stage[RID] = 'Downloading results'  # maybe?
-                else:
+                            #print "Finished"
+                    except Exception:   # complete is not valid, implying variables have been cleaned up (or not created yet?)
+                        stage[RID] = 'Downloading results'  # bug with timing if this sticks ?
+                        #print "Done?"
+                else:   # timediff not zero, so analysis has started to run despite data not valid (?)
                     stage[RID] = 'Analysis starting'
+                    #print "Start"
 
             myDict = {'stage': stage[RID], 'resType': 'status'}
             json_data = json.dumps(myDict)

@@ -41,7 +41,7 @@
         var RID = "";
 
         window.onload = function() {
-            var mothurStat = localStorage.getItem(name);
+            var mothurStat = localStorage.getItem("mothurStatSave");
             if (mothurStat !== null) $('#mothurStat').val(mothurStat);
         };
 
@@ -140,8 +140,16 @@
                     var project = obj['project'];
                     updateStage(project, stage);
                     progressBar(perc, $("#progressBar"));
-                    document.getElementById("mothurStat").value = document.getElementById("mothurStat").value + obj['mothurStat'];
-                    document.getElementById("mothurStat").scrollTop = document.getElementById("mothurStat").scrollHeight;
+                    // get text box
+                    var out = document.getElementById("mothurStat");
+                    // calculate difference between scroll position, box height, and max height (check if scroll to bottom)
+                    var isScrolledToBottom = out.scrollHeight - out.clientHeight <= out.scrollTop + 1;
+                    // append box text with new text
+                    out.value = out.value + obj['mothurStat'];
+                    // if already scrolled to bottom, scroll to new bottom automatically
+                    if(isScrolledToBottom) {
+                        out.scrollTop = out.scrollHeight - out.clientHeight;
+                    }
                 }
             });
         }
@@ -174,7 +182,7 @@
         }
 
         window.onbeforeunload = function() {
-            localStorage.setItem(name, $('#mothurStat').val());
+            localStorage.setItem("mothurStatSave", $('#mothurStat').val());
         };
 
     </script>

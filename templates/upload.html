@@ -35,8 +35,10 @@
         var remNodes = "";
 
         window.onload = function() {
-            var mothurStat = localStorage.getItem(name);
-            if (mothurStat != null) $('#mothurStat').val(mothurStat);
+            var mothurStat = localStorage.getItem("moStatSave");
+            if (mothurStat != null) {
+                document.getElementById("mothurStat").value = mothurStat;
+            }
         };
 
 
@@ -176,7 +178,7 @@
             });
         }
 
-        function updateStatus() {
+        function updateStatus() {   // check mothur upload status / display console output
             $.ajax({
                 url: '/myPhyloDB/status/',
                 type: 'GET',
@@ -191,13 +193,16 @@
                     var perc = obj['perc'];
                     updateStage(stage);
                     progressBar(perc, $("#progressBar"));
-                    //document.getElementById("mothurStat").value = document.getElementById("mothurStat").value + obj['mothurStat'];
-                    //document.getElementById("mothurStat").scrollTop = document.getElementById("mothurStat").scrollHeight;
+                    // get text box
                     var out = document.getElementById("mothurStat");
-                    out.value = out.value + obj['mothurStat'];
+                    // calculate difference between scroll position, box height, and max height (check if scroll to bottom)
                     var isScrolledToBottom = out.scrollHeight - out.clientHeight <= out.scrollTop + 1;
-                    if(isScrolledToBottom)
-                          out.scrollTop = out.scrollHeight - out.clientHeight;
+                    // append box text with new text
+                    out.value = out.value + obj['mothurStat'];
+                    // if already scrolled to bottom, scroll to new bottom automatically
+                    if(isScrolledToBottom) {
+                        out.scrollTop = out.scrollHeight - out.clientHeight;
+                    }
                 }
             });
         }
@@ -207,7 +212,7 @@
         }
 
         window.onbeforeunload = function() {
-            localStorage.setItem(name, $('#mothurStat').val());
+            localStorage.setItem("moStatSave", $('#mothurStat').val());
         };
 
     </script>

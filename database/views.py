@@ -111,6 +111,9 @@ def getProjectFiles(request):
 
 def upStop(request):
     # cleanup mid upload project!
+
+    print "Cleaning up upload!"
+
     projects = Reference.objects.none()
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -124,6 +127,7 @@ def upStop(request):
          'form2': UploadForm2,
          'error': "Upload stopped"
          }
+        # how to get this to let mothurStatSave stay
     )
 
 
@@ -131,8 +135,11 @@ def upErr(msg, request, dest, sid):
     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
     logging.exception(myDate)
-    functions.remove_proj(dest)
-    transaction.savepoint_rollback(sid)
+    try:
+        functions.remove_proj(dest)
+        transaction.savepoint_rollback(sid)
+    except Exception as e:
+        print "Tried to remove non existent project probably: ", e
 
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -174,7 +181,7 @@ def uploadFunc(request, stopList):
         if form1.is_valid():
             file1 = request.FILES['docfile1']
             try:
-                p_uuid, pType, num_samp = functions.projectid(file1)
+                p_uuid, pType, num_samp = functions.projectid(file1)    # crashes here if actual parse fails
                 if not num_samp:
                     return render(
                         request,
@@ -222,6 +229,7 @@ def uploadFunc(request, stopList):
                     print "Parsed project with no errors"
                 else:
                     print "Encountered error while parsing meta file: "+res
+                    return upErr("Encountered error while parsing meta file: "+res, request, dest, sid)
             except Exception:
                 return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
 
@@ -572,7 +580,7 @@ def uploadFunc(request, stopList):
                             myStr = "mothur/temp/" + str(file.name)
                         tempList.append(myStr)
 
-                    inputList = "-".join(tempList)
+                    inputList = "-".join(tempList)  # remove project if mothur is shut down, somehow
                     if os.name == 'nt':
                         os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
                     else:

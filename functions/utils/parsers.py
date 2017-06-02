@@ -19,6 +19,7 @@ import shutil
 import json
 import subprocess
 from uuid import uuid4
+from database.views import upErr
 
 from database.models import Project, Reference, \
     Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
@@ -35,11 +36,11 @@ rep_project = ''
 pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
 
-p = None
+pro = None
 
 
 def mothur(dest, source):
-    global p
+    global pro
     try:
         global stage, perc, mothurStat
         stage = "Step 3 of 5: Running mothur..."
@@ -59,11 +60,11 @@ def mothur(dest, source):
         else:
             filepath = "mothur/mothur-linux/mothur mothur/temp/mothur.batch"
         try:
-            p = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            for line in iter(p.stdout.readline, ''):
+            pro = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            for line in iter(pro.stdout.readline, ''):
                 print line
                 mothurStat += line
-            mothurStat = 'Previous mothur output:\n'
+            mothurStat = 'Completed mothur processing, see above for log\n'  # change as needed
         except Exception as e:
             print "Mothur failed: " + str(e)
 
@@ -100,16 +101,23 @@ def mothur(dest, source):
         logging.exception(myDate)
 
 
-def termP():
-    global p
+def termP():    # relies on global of pro because only one dataprocess should ever be running at a single time
+    global pro
     try:
-        parent = psutil.Process(p.pid)
+        parent = psutil.Process(pro.pid)
         children = parent.children(recursive=True)
         for process in children:
             process.send_signal(signal.SIGTERM)
-        os.kill(p.pid, signal.SIGTERM)
+        os.kill(pro.pid, signal.SIGTERM)
+        # clean up mothur files here
+        dir = os.getcwd()
+        stuff = os.listdir(dir)
+        for thing in stuff:
+            if thing.endswith(".num.temp") or thing.endswith(".logfile"):
+                # print thing
+                os.remove(os.path.join(dir, thing))
     except Exception as e:
-        print "Error with terminate: "+str(e)
+        print "Error with terminate: "+str(e)  # +", probably just not mothur"
         pass
 
 
@@ -148,7 +156,7 @@ def projectid(Document):
         global stage, perc
         perc = 0
         stage = "Step 1 of 5: Parsing project file..."
-        wb = openpyxl.load_workbook(BytesIO(Document.read()), data_only=True, read_only=False)
+        wb = openpyxl.load_workbook(BytesIO(Document.read()), data_only=True, read_only=False)  # treated as an archive?
         ws = wb.get_sheet_by_name('Project')
         pType = ws.cell(row=6, column=3).value
         projectid = ws.cell(row=6, column=4).value
@@ -169,6 +177,8 @@ def projectid(Document):
 
 
 def parse_project(Document, p_uuid, curUser):
+    # parse meta file (xlxs file?) improve output for users when error occurs
+    # check formatting and such, boxes have ranges of valid responses, check project type and permissions for now
     try:
         global stage, perc
         perc = 50
@@ -177,13 +187,29 @@ def parse_project(Document, p_uuid, curUser):
         rowDict = myDict[0]
         rowDict.pop('num_samp')
 
+        #print "rowDict: ", rowDict  # key 0 is status, key 3 is type
+
+        # check project status
+        if rowDict['status'] == "public" or rowDict['status'] == "private":
+            print "status is valid"
+        else:
+            return "status has options public and private only"
+
+        # check project type
+        if rowDict['projectType'] in {'air', 'human gut', 'human associated', 'microbial', 'soil', 'water'}:
+            print "projectType is valid"
+        else:
+            return "projectType options are air, human gut, human associated," \
+                " microbial, soil, and water"
+
         if not Project.objects.filter(projectid=p_uuid).exists():
+            # is this searching for a specific randomly accessibly location?
             for key in rowDict.keys():
                 if key == 'projectid':
                     rowDict[key] = p_uuid
             myProj = Project.objects.create(**rowDict)  # save pointer to this somehow (myProj = ?)
             # get project and set owner to current user (if project is new)
-            myProj.owner = curUser
+            myProj.owner = curUser  # might break if different user adds files later
             myProj.save()
         else:
             rowDict.pop('projectid')
@@ -191,6 +217,7 @@ def parse_project(Document, p_uuid, curUser):
         stage = "Step 1 of 5: Parsing project file...done"
         return "none"
     except Exception as ex:
+        # need to make this more specific, give out specific row and column info + type of error
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)

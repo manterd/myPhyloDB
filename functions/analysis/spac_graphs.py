@@ -59,7 +59,6 @@ def getSpAC(request, stops, RID, PID):
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
                 result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
-                result += '===============================================\n\n'
 
                 functions.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...done')
 
@@ -158,48 +157,63 @@ def getSpAC(request, stops, RID, PID):
                     grouped = metaDF.groupby('merge')
                     counter = 0
                     total = len(grouped)
+
+                    skipped = []
+
                     for name, group in grouped:
-                        r.assign('name', name)
-                        IDs = group['sampleid'].tolist()
-                        data = count_rDF.ix[IDs]
-                        r.assign("data", data)
+                        if len(group) >= 3:
+                            r.assign('name', name)
+                            IDs = group['sampleid'].tolist()
+                            data = count_rDF.ix[IDs]
+                            r.assign("data", data)
 
-                        r("x <- poolaccum(data, minsize=2)")
+                            r("x <- poolaccum(data, minsize=2)")
 
-                        r("boot <- summary(x, display='boot')")
-                        r("boot <- data.frame(boot$boot)")
-                        r("chao <- summary(x, display='chao')")
-                        r("chao <- data.frame(chao$chao)")
-                        r("jack1 <- summary(x, display='jack1')")
-                        r("jack1 <- data.frame(jack1$jack1)")
-                        r("jack2 <- summary(x, display='jack2')")
-                        r("jack2 <- data.frame(jack2$jack2)")
-                        r("S <- summary(x, display='S')")
-                        r("S <- data.frame(S$S)")
+                            r("boot <- summary(x, display='boot')")
+                            r("boot <- data.frame(boot$boot)")
+                            r("chao <- summary(x, display='chao')")
+                            r("chao <- data.frame(chao$chao)")
+                            r("jack1 <- summary(x, display='jack1')")
+                            r("jack1 <- data.frame(jack1$jack1)")
+                            r("jack2 <- summary(x, display='jack2')")
+                            r("jack2 <- data.frame(jack2$jack2)")
+                            r("S <- summary(x, display='S')")
+                            r("S <- data.frame(S$S)")
 
-                        r("df <- data.frame(N.Samples=boot$N, \
-                             Observed=S$S, Observed.SD=S$Std.Dev, \
-                             Chao=chao$Chao, Chao.SD=chao$Std.Dev, \
-                             Jackknife.1=jack1$Jackknife.1, Jackknife.1.SD=jack1$Std.Dev, \
-                             Jackknife.2=jack2$Jackknife.2, Jackknife.2.SD=jack2$Std.Dev, \
-                             Bootstrap=boot$Bootstrap, Bootstrap.SD=boot$Std.Dev \
-                        )")
-                        r('df$Treatment <- name')
+                            r("df <- data.frame(N.Samples=boot$N, \
+                                 Observed=S$S, Observed.SD=S$Std.Dev, \
+                                 Chao=chao$Chao, Chao.SD=chao$Std.Dev, \
+                                 Jackknife.1=jack1$Jackknife.1, Jackknife.1.SD=jack1$Std.Dev, \
+                                 Jackknife.2=jack2$Jackknife.2, Jackknife.2.SD=jack2$Std.Dev, \
+                                 Bootstrap=boot$Bootstrap, Bootstrap.SD=boot$Std.Dev \
+                            )")
+                            r('df$Treatment <- name')
 
-                        if counter == 0:
-                            r('gDF <- cbind(df)')
+                            if counter == 0:
+                                r('gDF <- cbind(df)')
+                            else:
+                                r('gDF <- rbind(gDF, df)')
+
+                            counter += 1
+                            myStr = 'Sample ' + str(counter) + ' out of ' + str(total) + ' is done.'
+                            functions.setBase(RID, myStr)
+
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                            if stops[PID] == RID:
+                                res = ''
+                                return HttpResponse(res, content_type='application/json')
+                            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
                         else:
-                            r('gDF <- rbind(gDF, df)')
+                            skipped.append(name)
 
-                        counter += 1
-                        myStr = 'Sample ' + str(counter) + ' out of ' + str(total) + ' is done.'
-                        functions.setBase(RID, myStr)
+                    result += "\n"+str(len(skipped))+" groups ignored: \n\t- "
+                    for thing in skipped:
+                        result += thing + " - "
+                    result += "\n\n"
 
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                        if stops[PID] == RID:
-                            res = ''
-                            return HttpResponse(res, content_type='application/json')
-                        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
+                result += '===============================================\n\n'
 
                 finalDict = {}
                 gDF = r.get('gDF')
@@ -261,7 +275,7 @@ def getSpAC(request, stops, RID, PID):
                 r.assign("RID", RID)
                 r("file <- paste(path, '/', RID, '.spac.pdf', sep='')")
                 r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
-                print r("ggsave(filename=file, plot=p, units='in', height=10, width=10)")
+                r("ggsave(filename=file, plot=p, units='in', height=10, width=10)")
 
                 functions.setBase(RID, 'Step 4 of 5: Calculating OTU Accumulation Curves...done!')
                 functions.setBase(RID, 'Step 5 of 5: Sending files for display...')
