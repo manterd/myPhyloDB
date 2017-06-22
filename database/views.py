@@ -1,4 +1,3 @@
-import ast
 import datetime
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -8,7 +7,6 @@ from django.contrib.auth.signals import user_logged_in
 from django.db import transaction
 from django.db.models import Q
 from django.http import *
-from django_pandas.io import read_frame
 from django.shortcuts import render
 import fileinput
 import json
@@ -127,7 +125,6 @@ def upStop(request):
          'form2': UploadForm2,
          'error': "Upload stopped"
          }
-        # how to get this to let mothurStatSave stay
     )
 
 
@@ -255,7 +252,7 @@ def uploadFunc(request, stopList):
                 return upStop(request)
 
             try:
-                refDict = functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
+                refDict = functions.parse_sample('new', metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
             except Exception:
                 return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
 
@@ -2145,10 +2142,10 @@ def updateFunc(request, stopList):
 
             if os.path.exists(batPath):
                 with open(batPath, 'rb') as batFile:
-                    functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+                    functions.parse_sample('new', metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
             else:
                 batFile = 'you do not really need me'
-                functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+                functions.parse_sample('new', metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
 
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
@@ -2315,7 +2312,7 @@ def uploadNorm(request):
 
 
 # Function to create a user folder at login
-def login_usr_callback(sender, user, request, **kwargs):  # JUMP
+def login_usr_callback(sender, user, request, **kwargs):
     user = request.user
     if not os.path.exists('myPhyloDB/media/usr_temp/'+str(user)):
         os.makedirs('myPhyloDB/media/usr_temp/'+str(user))

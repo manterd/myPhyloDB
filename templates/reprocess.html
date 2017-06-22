@@ -150,6 +150,7 @@
                     if(isScrolledToBottom) {
                         out.scrollTop = out.scrollHeight - out.clientHeight;
                     }
+                    localStorage.setItem("mothurStatSave", $('#mothurStat').val());
                 }
             });
         }
@@ -174,6 +175,10 @@
                     $('#stage').empty().append(mstage);
                 }
             });
+        }
+
+        function clearMothurLog() {
+            document.getElementById("mothurStat").value = "";
         }
 
         function progressBar(percent, $element) {
@@ -255,6 +260,11 @@
                 &nbsp<-- Choose taxonomy file:
             </td>
         </tr>
+        <tr>
+            <td>
+                <!-- Mothur file chooser goes here -->
+            </td>
+        </tr>
     </table>
     <br><br>
     <div id="project" style="display: none"></div>
@@ -292,7 +302,7 @@
     </form>
 
     <br>
-    <h2>Mothur status and output: </h2>
+    <table><tr><td><h2>Mothur status and output: </h2></td><td>Clear: <input id="clearLog" type="button" onClick="clearMothurLog();"/></td></tr></table>
     <textarea id="mothurStat" rows=25 cols=72 style="width: 925px"></textarea>
     <br><br><br>
 {% endblock my_content %}

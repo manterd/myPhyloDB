@@ -5,7 +5,6 @@ from django.db import transaction
 from django.db.models import Sum
 from django.http import HttpResponse
 import glob
-from io import BytesIO
 import logging
 from numpy import *
 import numpy as np
@@ -19,7 +18,6 @@ import shutil
 import json
 import subprocess
 from uuid import uuid4
-from database.views import upErr
 
 from database.models import Project, Reference, \
     Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
@@ -109,13 +107,26 @@ def termP():    # relies on global of pro because only one dataprocess should ev
         for process in children:
             process.send_signal(signal.SIGTERM)
         os.kill(pro.pid, signal.SIGTERM)
+
         # clean up mothur files here
         dir = os.getcwd()
         stuff = os.listdir(dir)
         for thing in stuff:
             if thing.endswith(".num.temp") or thing.endswith(".logfile"):
-                # print thing
                 os.remove(os.path.join(dir, thing))
+
+        path = os.path.join(dir, 'mothur', 'reference', 'taxonomy')
+        stuff = os.listdir(path)
+        for thing in stuff:
+            if thing.endswith(".numNonZero") or thing.endswith(".prob") or thing.endswith(".sum"):
+                os.remove(os.path.join(dir, thing))
+
+        path = os.path.join(dir, 'mothur', 'reference', 'template')
+        stuff = os.listdir(path)
+        for thing in stuff:
+            if thing.endswith(".8mer"):
+                os.remove(os.path.join(dir, thing))
+
     except Exception as e:
         print "Error with terminate: "+str(e)  # +", probably just not mothur"
         pass
@@ -156,11 +167,12 @@ def projectid(Document):
         global stage, perc
         perc = 0
         stage = "Step 1 of 5: Parsing project file..."
-        wb = openpyxl.load_workbook(BytesIO(Document.read()), data_only=True, read_only=False)  # treated as an archive?
-        ws = wb.get_sheet_by_name('Project')
-        pType = ws.cell(row=6, column=3).value
-        projectid = ws.cell(row=6, column=4).value
-        num_samp = ws.cell(row=6, column=1).value
+        wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)  # treated as an archive?
+        myDict = functions.excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
+        rowDict = myDict[0]
+        num_samp = rowDict['num_samp']
+        pType = rowDict['projectType']
+        projectid = rowDict['projectid']
 
         if projectid:
             p_uuid = projectid
@@ -169,7 +181,8 @@ def projectid(Document):
 
         return p_uuid, pType, num_samp
 
-    except Exception:
+    except Exception as e:
+        print "Error parsing meta project file: ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -186,8 +199,6 @@ def parse_project(Document, p_uuid, curUser):
         myDict = functions.excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
         rowDict = myDict[0]
         rowDict.pop('num_samp')
-
-        #print "rowDict: ", rowDict  # key 0 is status, key 3 is type
 
         # check project status
         if rowDict['status'] == "public" or rowDict['status'] == "private":
@@ -269,7 +280,7 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
         logging.exception(myDate)
 
 
-def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, userID):
+def parse_sample(repo, Document, p_uuid, pType, num_samp, dest, batch, raw, source, userID):
     try:
         global stage, perc
         stage = "Step 2 of 5: Parsing sample file..."
@@ -289,7 +300,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
             dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Human Associated')
 
         elif pType == 'microbial':
-            dict2 = functions.excel_to_dict(wb,headerRow=6, nRows=num_samp, sheet='Microbial')
+            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Microbial')
 
         elif pType == 'soil':
             dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Soil')
@@ -324,6 +335,9 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
 
             parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
             reference = Reference.objects.get(refid=refid)
+
+            if repo == 'reprocess':
+                Sample.objects.filter(sampleid=s_uuid).delete()
 
             if Sample.objects.filter(sampleid=s_uuid).exists():
                 idList.append(s_uuid)
@@ -423,7 +437,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         return refDict
 
     except Exception as e:
-        print e
+        print "Error parsing sample: ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -608,7 +622,8 @@ def parse_profile(file3, file4, p_uuid, refDict):
             sample.reads = reads['count']
             sample.save()
 
-    except Exception:
+    except Exception as e:
+        print "Error with taxa parsing: ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -639,11 +654,13 @@ def reanalyze(request, stopList):
         if stopList[PID] == RID:
             return repStop(request)
 
+        # reference files selected
         new_align = 'reference=mothur/reference/align/' + str(request.POST['alignDB'])
         new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(request.POST['taxonomyDB'])
         new_tax = str(request.POST['taxonomyDB'])
         new_tax_tag = str(new_tax.split('.')[-2:-1][0])
         new_template = 'template=mothur/reference/template/' + str(request.POST['templateDB'])
+
 
         if isinstance(ids, list):
             projects = Reference.objects.all().filter(refid__in=ids)
@@ -653,7 +670,19 @@ def reanalyze(request, stopList):
         if stopList[PID] == RID:
             return repStop(request)
 
-        for project in projects:
+        curUser = User.objects.get(username=request.user.username)
+
+        for project in projects:    # project is technically a reference?
+
+            # WIP
+            # get current reference, delete?
+            #Reference.objects.filter(projectid=project.projectid).delete()  # should get reference by project
+            #  but projects are references here so ???
+            # make new reference here after removing old one
+            #Reference.objects.create(
+            #    refid=refid, projectid=project.projectid, path='mothur/reference', source=source, raw=raw, alignDB=str(request.POST['alignDB']),
+            #    templateDB=str(request.POST['templateDB']), taxonomyDB=str(request.POST['taxonomyDB']), author=curUser)
+
             rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
             dest = project.path
             source = project.source
@@ -683,6 +712,10 @@ def reanalyze(request, stopList):
                         if stopList[PID] == RID:
                             return repStop(request)
                         file = each
+
+                        # remove reference files? replace with reanalyze options
+                        # where are new reference file names....
+
                         functions.handle_uploaded_file(file, mothurdest, each)
                         functions.handle_uploaded_file(file, dest, each)
                         if os.name == 'nt':
@@ -838,8 +871,7 @@ def reanalyze(request, stopList):
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
                 userID = str(request.user.id)
-
-                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+                refDict = parse_sample('reprocess', metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
 
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)

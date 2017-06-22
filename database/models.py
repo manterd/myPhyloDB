@@ -55,9 +55,9 @@ class Project(models.Model):
 
 
 class Reference(models.Model):
-    refid = models.CharField(max_length=50, primary_key=True)
+    refid = models.CharField(max_length=50, primary_key=True)   # WHAT IS THIS???
     raw = models.BooleanField()
-    projectid = models.ForeignKey(Project)
+    projectid = models.ForeignKey(Project)  # PID reference was used with?
     path = models.CharField(max_length=90)
     source = models.CharField(max_length=90)
     alignDB = models.CharField(max_length=90, blank=True)

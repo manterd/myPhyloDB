@@ -201,10 +201,15 @@
                     out.value = out.value + obj['mothurStat'];
                     // if already scrolled to bottom, scroll to new bottom automatically
                     if(isScrolledToBottom) {
-                        out.scrollTop = out.scrollHeight - out.clientHeight;
+                        out.scrollTop = out.scrollHeight - out.clientHeight;    // on stop, old stuff stayed but mothur log wiped
                     }
+                    localStorage.setItem("moStatSave", $('#mothurStat').val());
                 }
             });
+        }
+
+        function clearMothurLog() {
+            document.getElementById("mothurStat").value = "";
         }
 
         function updateStage(stage) {
@@ -361,7 +366,7 @@
     <div id="progressBar" style="display: none"><div></div></div>
     <br>
 
-    <h2>Mothur status and output: </h2>
+    <table><tr><td><h2>Mothur status and output: </h2></td><td>Clear: <input id="clearLog" type="button" onClick="clearMothurLog();"/></td></tr></table>
     <textarea id="mothurStat" rows=25 cols=72 style="width: 925px"></textarea>
 
     <h2>List of previous uploads:</h2>

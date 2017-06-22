@@ -24,7 +24,7 @@ DEBUG = True
 
 # Application definition
 INSTALLED_APPS = [
-    'database',
+    'database.apps.DatabaseConfig',
     'django.contrib.sites',
     'django.contrib.auth',
     'django.contrib.contenttypes',

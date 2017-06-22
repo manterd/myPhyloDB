@@ -8,13 +8,14 @@
 
 ### To run this file type the following in your terminal
 # cd $HOME/PycharmProjects/myPhyloDB/build_installers/Linux
-# workon myphylodb
 # sh make.sh
 
+workon myphylodb
 cd $HOME/PycharmProjects/myPhyloDB
 export DJANGO_SETTINGS_MODULE=myPhyloDB.settings
-pyinstaller -D $HOME/PycharmProjects/myPhyloDB/serve-linux.spec
+pyinstaller -D --additional-hooks-dir=$HOME/PycharmProjects/myPhyloDB/Pyinstaller_hooks $HOME/PycharmProjects/myPhyloDB/serve-linux.spec
 deactivate
+
 cd $HOME/PycharmProjects/myPhyloDB/dist/
 tar -zcvf myPhyloDB.tar.gz myPhyloDB/*
 mv myPhyloDB.tar.gz $HOME/PycharmProjects/myPhyloDB/build_installers/Linux/myPhyloDB.tar.gz
