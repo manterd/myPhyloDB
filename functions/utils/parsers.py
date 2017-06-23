@@ -93,6 +93,20 @@ def mothur(dest, source):
         for afile in glob.glob(r'*.logfile'):
             shutil.move(afile, dest)
 
+        dir = os.getcwd()
+
+        path = os.path.join(dir, 'mothur', 'reference', 'taxonomy')
+        stuff = os.listdir(path)
+        for thing in stuff:
+            if thing.endswith(".numNonZero") or thing.endswith(".prob") or thing.endswith(".sum") or thing.endswith(".train"):
+                os.remove(os.path.join(path, thing))
+
+        path = os.path.join(dir, 'mothur', 'reference', 'template')
+        stuff = os.listdir(path)
+        for thing in stuff:
+            if thing.endswith(".8mer"):
+                os.remove(os.path.join(path, thing))
+
     except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -118,14 +132,14 @@ def termP():    # relies on global of pro because only one dataprocess should ev
         path = os.path.join(dir, 'mothur', 'reference', 'taxonomy')
         stuff = os.listdir(path)
         for thing in stuff:
-            if thing.endswith(".numNonZero") or thing.endswith(".prob") or thing.endswith(".sum"):
-                os.remove(os.path.join(dir, thing))
+            if thing.endswith(".numNonZero") or thing.endswith(".prob") or thing.endswith(".sum") or thing.endswith(".train"):
+                os.remove(os.path.join(path, thing))
 
         path = os.path.join(dir, 'mothur', 'reference', 'template')
         stuff = os.listdir(path)
         for thing in stuff:
             if thing.endswith(".8mer"):
-                os.remove(os.path.join(dir, thing))
+                os.remove(os.path.join(path, thing))
 
     except Exception as e:
         print "Error with terminate: "+str(e)  # +", probably just not mothur"
@@ -651,6 +665,18 @@ def reanalyze(request, stopList):
         RID = request.POST['RID']
         PID = 0  # change if adding additional data threads
 
+        repMothur = False
+        mFile = None
+
+        try:
+            mFile = request.FILES['mothurFile']
+            # successfully received mothur batch file, replace default in selected projects folders?
+            # mothur file replacement time!
+            repMothur = True
+        except Exception as e:
+            pass
+            # file not found most likely, use default mothur batch
+
         if stopList[PID] == RID:
             return repStop(request)
 
@@ -686,6 +712,9 @@ def reanalyze(request, stopList):
             rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
             dest = project.path
             source = project.source
+
+            if repMothur:
+                functions.handle_uploaded_file(mFile, dest, 'mothur.batch')
 
             if stopList[PID] == RID:
                 return repStop(request)

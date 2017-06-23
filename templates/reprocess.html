@@ -229,9 +229,11 @@
             </td>
         </tr>
     </table>
+    <!-- spacing? -->
+    <form id='form2' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
     <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
         <tr>
-            <td bgcolor="white">
+            <td bgcolor="white" colspan="2">
                 <select id="align">
                     {% for DB in alignDB %}
                         <option>{{ DB }}</option>
@@ -241,7 +243,7 @@
             </td>
         </tr>
         <tr>
-            <td bgcolor="white">
+            <td bgcolor="white" colspan="2">
                 <select id="template">
                     {% for DB in templateDB %}
                         <option value="{{ DB }}">{{ DB }}</option>
@@ -251,7 +253,7 @@
             </td>
         </tr>
         <tr>
-            <td bgcolor="white">
+            <td bgcolor="white" colspan="2">
                 <select id="taxonomy">
                     {% for DB in taxonomyDB %}
                         <option>{{ DB }}</option>
@@ -261,9 +263,8 @@
             </td>
         </tr>
         <tr>
-            <td>
-                <!-- Mothur file chooser goes here -->
-            </td>
+            <td>{{ mform.mothurFile.label_tag }}</td>
+            <td>{{ mform.mothurFile }}</td>
         </tr>
     </table>
     <br><br>
@@ -271,7 +272,7 @@
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>
     <br>
-    <form id='form2' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
+
         {% csrf_token %}
         <table id="proc_table" width="100%" border="0" cellspacing="0" cellpadding="5">
             <tr>

@@ -57,6 +57,11 @@ class UploadForm8(forms.Form):
 class UploadForm9(forms.Form):
     normFile = forms.FileField()
 
+
+class UploadForm10(forms.Form):
+    mothurFile = forms.FileField(label='Select mothur batch file to use for reprocessing:')
+
+
 reference_choices = (
     ('No data', '(not selected)'),
     ('Publication', 'Publication'),

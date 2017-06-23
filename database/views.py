@@ -23,7 +23,7 @@ from uuid import uuid4
 import zipfile
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
-    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UserRegForm, UserUpdateForm
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserRegForm, UserUpdateForm
 
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, PICRUSt, UserProfile, \
@@ -2056,6 +2056,7 @@ def reprocess(request):
         request,
         'reprocess.html',
         {'form4': UploadForm4,
+         'mform': UploadForm10,
          'alignDB': alignDB,
          'templateDB': templateDB,
          'taxonomyDB': taxonomyDB},
