@@ -41,7 +41,7 @@ def mothur(dest, source):
     global pro
     try:
         global stage, perc, mothurStat
-        stage = "Step 3 of 5: Running mothur..."
+        stage = "Step 3 of 5: Running mothur..."        # jump
         perc = 0
 
         if not os.path.exists('mothur/reference/align'):
@@ -60,7 +60,7 @@ def mothur(dest, source):
         try:
             pro = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             for line in iter(pro.stdout.readline, ''):
-                #print line
+                # print line
                 mothurStat += line
             mothurStat = '\n\n  Mothur processing is done! \n'
         except Exception as e:
@@ -184,9 +184,16 @@ def projectid(Document):
         wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)  # treated as an archive?
         myDict = functions.excel_to_dict(wb, headerRow=5, nRows=1, sheet='Project')
         rowDict = myDict[0]
-        num_samp = rowDict['num_samp']
         pType = rowDict['projectType']
         projectid = rowDict['projectid']
+
+        sampSheet = wb.worksheets[2]
+        rowMax = sampSheet.max_row
+        num_samp = 0
+        for val in range(7, rowMax):
+            samp = sampSheet['C'+str(val)].value
+            if samp is not "" and samp is not None:
+                num_samp += 1
 
         if projectid is np.nan or projectid is None:
             p_uuid = uuid4().hex
@@ -216,13 +223,15 @@ def parse_project(Document, p_uuid, curUser):
 
         # check project status
         if rowDict['status'] == "public" or rowDict['status'] == "private":
-            print "status is valid"
+            pass
+            # print "status is valid"
         else:
             return "status has options public and private only"
 
         # check project type
         if rowDict['projectType'] in {'air', 'human gut', 'human associated', 'microbial', 'soil', 'water'}:
-            print "projectType is valid"
+            pass
+            # print "projectType is valid"
         else:
             return "projectType options are air, human gut, human associated," \
                 " microbial, soil, and water"
@@ -348,7 +357,7 @@ def parse_sample(repo, Document, p_uuid, pType, num_samp, dest, batch, raw, sour
             row.pop('lat_lon')
 
             parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
-            reference = Reference.objects.get(refid=refid)
+            reference = Reference.objects.get(refid=refid)  # refid defined?
 
             if repo == 'reprocess':
                 Sample.objects.filter(sampleid=s_uuid).delete()
@@ -463,7 +472,6 @@ def parse_taxonomy(Document):
         global stage, perc
         stage = "Step 4 of 5: Parsing taxonomy file..."
         perc = 0
-        print "Parsing taxonomy!"
         f = csv.reader(Document, delimiter='\t')
         f.next()
         total = 0.0
@@ -545,7 +553,6 @@ def parse_profile(file3, file4, p_uuid, refDict):
         global stage, perc
         stage = "Step 5 of 5: Parsing shared file..."
         perc = 0
-        print "Parsing profile!"
         data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True)
         arr1 = np.delete(data1, 1, axis=1)
         df1 = pd.DataFrame(arr1[1:, 1:], index=arr1[1:, 0], columns=arr1[0, 1:])
@@ -614,7 +621,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
                     sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
                     sampid = sample.sampleid
                     idList.append(sampid)
-                    refid = refDict[sampid]
+                    refid = refDict[sampid]  # NoneType!
                     reference = Reference.objects.get(refid=refid)
 
                     if Profile.objects.filter(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu).exists():
@@ -645,7 +652,6 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
 def repStop(request):
     # cleanup in repro project!
-    print "Stopping!"
     return "Stopped"
 
 
@@ -688,25 +694,22 @@ def reanalyze(request, stopList):
         new_template = 'template=mothur/reference/template/' + str(request.POST['templateDB'])
 
         if isinstance(ids, list):
-            projects = Reference.objects.all().filter(refid__in=ids)
+            refList = Reference.objects.all().filter(refid__in=ids)
         else:
-            projects = Reference.objects.all().filter(refid=ids)
+            refList = Reference.objects.all().filter(refid=ids)
 
         if stopList[PID] == RID:
             return repStop(request)
 
-        # update reference
-        for id in ids:
-            ref = Reference.objects.get(refid=id)
-            ref.alignDB = str(request.POST['alignDB'])
-            ref.templateDB = str(request.POST['templateDB'])
-            ref.taxonomyDB = str(request.POST['taxonomyDB'])
-            ref.save()
+        for ref in refList:
 
-        for project in projects:    # project is technically a reference?
-            rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
-            dest = project.path
-            source = project.source
+            orig_align = 'reference=mothur/reference/align/' + str(ref.alignDB)
+            orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(ref.taxonomyDB)
+            orig_template = 'template=mothur/reference/template/' + str(ref.templateDB)
+
+            rep_project = 'myPhyloDB is currently reprocessing project: ' + str(ref.projectid.project_name)
+            dest = ref.path
+            source = ref.source
 
             if repMothur:
                 functions.handle_uploaded_file(mFile, dest, 'mothur.batch')
@@ -814,22 +817,12 @@ def reanalyze(request, stopList):
             if stopList[PID] == RID:
                 return repStop(request)
 
-            orig_align = 'reference=mothur/reference/align/' + str(project.alignDB)
-            orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(project.taxonomyDB)
-            orig_tax = str(project.taxonomyDB)
-            orig_tax_tag = str(orig_tax.split('.')[-2:-1][0])
-            orig_template = 'template=mothur/reference/template/' + str(project.templateDB)
-
             if stopList[PID] == RID:
                 return repStop(request)
 
             try:
                 with open("% s/mothur.batch" % dest, 'r+') as bat:
                     with open("% s/mothur.batch" % mothurdest, 'wb+') as destination:
-                        method = 'wang'
-                        foundClassify = False
-                        orig_tag_meth = ''
-                        new_tag_meth = ''
                         for line in bat:
                             if "processors" in line:
                                 line = line.replace('processors=X', 'processors='+str(processors))
@@ -838,15 +831,6 @@ def reanalyze(request, stopList):
                             if "classify.seqs" in line:
                                 line = line.replace(str(orig_template), str(new_template))
                                 line = line.replace(str(orig_taxonomy), str(new_taxonomy))
-                                cmds = line.split(',')
-                                for item in cmds:
-                                    if "method=" in item:
-                                        method = item.split('=')[1]
-                                orig_tag_meth = str(orig_tax_tag) + "." + str(method)
-                                new_tag_meth = str(new_tax_tag) + "." + str(method)
-                                foundClassify = True
-                            if (str(orig_tag_meth) in line) and foundClassify:
-                                line = line.replace(str(orig_tag_meth), str(new_tag_meth))
                             destination.write(line)
             except Exception as e:
                 print("Error with batch file: ", e)
@@ -896,7 +880,7 @@ def reanalyze(request, stopList):
                 raw = True
                 userID = str(request.user.id)
                 refDict = parse_sample('reprocess', metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
-
+                # jump
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
@@ -904,10 +888,16 @@ def reanalyze(request, stopList):
                 with open('% s/final.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid, refDict)
 
+            ref = Reference.objects.get(refid=ids)   # jump
+            ref.alignDB = str(request.POST['alignDB'])
+            ref.templateDB = str(request.POST['templateDB'])
+            ref.taxonomyDB = str(request.POST['taxonomyDB'])
+            ref.save()  # check behavior during cancellation
+
         return None
 
     except Exception as e:
-        print " e = ", e
+        print "Error during reprocessing: ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         transaction.savepoint_rollback(sid)
