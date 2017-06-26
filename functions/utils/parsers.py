@@ -60,9 +60,9 @@ def mothur(dest, source):
         try:
             pro = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             for line in iter(pro.stdout.readline, ''):
-                print line
+                #print line
                 mothurStat += line
-            mothurStat = 'Completed mothur processing, see above for log\n'  # change as needed
+            mothurStat = '\n\n  Mothur processing is done! \n'
         except Exception as e:
             print "Mothur failed: " + str(e)
 
@@ -188,10 +188,10 @@ def projectid(Document):
         pType = rowDict['projectType']
         projectid = rowDict['projectid']
 
-        if projectid:
-            p_uuid = projectid
-        else:
+        if projectid is np.nan or projectid is None:
             p_uuid = uuid4().hex
+        else:
+            p_uuid = projectid
 
         return p_uuid, pType, num_samp
 
@@ -687,7 +687,6 @@ def reanalyze(request, stopList):
         new_tax_tag = str(new_tax.split('.')[-2:-1][0])
         new_template = 'template=mothur/reference/template/' + str(request.POST['templateDB'])
 
-
         if isinstance(ids, list):
             projects = Reference.objects.all().filter(refid__in=ids)
         else:
@@ -696,19 +695,15 @@ def reanalyze(request, stopList):
         if stopList[PID] == RID:
             return repStop(request)
 
-        curUser = User.objects.get(username=request.user.username)
+        # update reference
+        for id in ids:
+            ref = Reference.objects.get(refid=id)
+            ref.alignDB = str(request.POST['alignDB'])
+            ref.templateDB = str(request.POST['templateDB'])
+            ref.taxonomyDB = str(request.POST['taxonomyDB'])
+            ref.save()
 
         for project in projects:    # project is technically a reference?
-
-            # WIP
-            # get current reference, delete?
-            #Reference.objects.filter(projectid=project.projectid).delete()  # should get reference by project
-            #  but projects are references here so ???
-            # make new reference here after removing old one
-            #Reference.objects.create(
-            #    refid=refid, projectid=project.projectid, path='mothur/reference', source=source, raw=raw, alignDB=str(request.POST['alignDB']),
-            #    templateDB=str(request.POST['templateDB']), taxonomyDB=str(request.POST['taxonomyDB']), author=curUser)
-
             rep_project = 'myPhyloDB is currently reprocessing project: ' + str(project.projectid.project_name)
             dest = project.path
             source = project.source
