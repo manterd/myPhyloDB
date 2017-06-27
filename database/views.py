@@ -2047,8 +2047,11 @@ def reprocess(request):
         pass
 
     alignDB = sorted(os.listdir('mothur/reference/align/'))
+    alignDB.insert(0, 'null')
     templateDB = sorted(os.listdir('mothur/reference/template/'))
+    templateDB.insert(0, 'null')
     taxonomyDB = sorted(os.listdir('mothur/reference/taxonomy/'))
+    taxonomyDB.insert(0, 'null')
 
     return render(
         request,

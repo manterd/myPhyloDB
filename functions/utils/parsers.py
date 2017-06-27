@@ -59,10 +59,14 @@ def mothur(dest, source):
             filepath = "mothur/mothur-linux/mothur mothur/temp/mothur.batch"
         try:
             pro = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            for line in iter(pro.stdout.readline, ''):
-                # print line
-                mothurStat += line
-            mothurStat = '\n\n  Mothur processing is done! \n'
+            while True:
+                line = pro.stdout.readline()
+                if line != '':
+                    mothurStat += line
+                else:
+                    break
+            mothurStat = '\n\nMothur processing is done! \n\n'
+
         except Exception as e:
             print "Mothur failed: " + str(e)
 
@@ -291,11 +295,10 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
                 templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
         else:
             ref = Reference.objects.get(path=path)
-            ref.source = source
+            ref.refid = refid
             ref.alignDB = align_ref
             ref.templateDB = template_ref
             ref.taxonomyDB = taxonomy_ref
-            ref.author = author
             ref.save()
 
     except Exception:
@@ -674,6 +677,7 @@ def reanalyze(request, stopList):
         mothurdest = 'mothur/temp/'
         if not os.path.exists(mothurdest):
             os.makedirs(mothurdest)
+
         ids = request.POST["ids"]
         processors = request.POST["processors"]
         RID = request.POST['RID']
@@ -684,12 +688,9 @@ def reanalyze(request, stopList):
 
         try:
             mFile = request.FILES['mothurFile']
-            # successfully received mothur batch file, replace default in selected projects folders?
-            # mothur file replacement time!
             repMothur = True
         except Exception as e:
-            pass
-            # file not found most likely, use default mothur batch
+            pass  # file not found, use default mothur batch
 
         if stopList[PID] == RID:
             return repStop(request)
@@ -697,8 +698,6 @@ def reanalyze(request, stopList):
         # reference files selected
         new_align = 'reference=mothur/reference/align/' + str(request.POST['alignDB'])
         new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(request.POST['taxonomyDB'])
-        new_tax = str(request.POST['taxonomyDB'])
-        new_tax_tag = str(new_tax.split('.')[-2:-1][0])
         new_template = 'template=mothur/reference/template/' + str(request.POST['templateDB'])
 
         if isinstance(ids, list):
@@ -710,10 +709,16 @@ def reanalyze(request, stopList):
             return repStop(request)
 
         for ref in refList:
-
             orig_align = 'reference=mothur/reference/align/' + str(ref.alignDB)
             orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(ref.taxonomyDB)
             orig_template = 'template=mothur/reference/template/' + str(ref.templateDB)
+
+            if new_align == 'null':
+                new_align = orig_align
+            if new_taxonomy == 'null':
+                new_taxonomy = orig_taxonomy
+            if new_template == 'null':
+                new_template = orig_template
 
             rep_project = 'myPhyloDB is currently reprocessing project: ' + str(ref.projectid.project_name)
             dest = ref.path
@@ -747,9 +752,6 @@ def reanalyze(request, stopList):
                         if stopList[PID] == RID:
                             return repStop(request)
                         file = each
-
-                        # remove reference files? replace with reanalyze options
-                        # where are new reference file names....
 
                         functions.handle_uploaded_file(file, mothurdest, each)
                         functions.handle_uploaded_file(file, dest, each)
@@ -887,20 +889,14 @@ def reanalyze(request, stopList):
             with open('% s/mothur.batch' % dest, 'rb') as file7:
                 raw = True
                 userID = str(request.user.id)
-                refDict = parse_sample('reprocess', metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
-                # jump
+                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 with open('% s/final.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid, refDict)
-
-            ref = Reference.objects.get(refid=ids)   # jump
-            ref.alignDB = str(request.POST['alignDB'])
-            ref.templateDB = str(request.POST['templateDB'])
-            ref.taxonomyDB = str(request.POST['taxonomyDB'])
-            ref.save()  # check behavior during cancellation
 
         return None
 

@@ -35,6 +35,7 @@
             });
 
             $("#submit").click(function() {
+                $("#submit").css("background-color", "yellow").val("Updating...");
                 $("#stage").show();
                 document.getElementById("mothurStat").value = "";
                 setInterval(updateStatus, 1000);
