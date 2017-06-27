@@ -259,9 +259,9 @@ def parse_project(Document, p_uuid, curUser):
 def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
     try:
         author = User.objects.get(id=userid)
-        align_ref = ''
-        template_ref = ''
-        taxonomy_ref = ''
+        align_ref = 'null'
+        template_ref = 'null'
+        taxonomy_ref = 'null'
 
         if raw:
             batch.seek(0)
@@ -290,10 +290,13 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
                 refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref,
                 templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
         else:
-            project = Project.objects.get(projectid=p_uuid)
-            Reference.objects.filter(path=path).update(
-                refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref,
-                templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
+            ref = Reference.objects.get(path=path)
+            ref.source = source
+            ref.alignDB = align_ref
+            ref.templateDB = template_ref
+            ref.taxonomyDB = taxonomy_ref
+            ref.author = author
+            ref.save()
 
     except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
