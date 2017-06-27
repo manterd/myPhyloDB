@@ -41,7 +41,7 @@ def mothur(dest, source):
     global pro
     try:
         global stage, perc, mothurStat
-        stage = "Step 3 of 5: Running mothur..."        # jump
+        stage = "Step 3 of 5: Running mothur..."
         perc = 0
 
         if not os.path.exists('mothur/reference/align'):
@@ -302,7 +302,6 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
             ref.templateDB = template_ref
             ref.taxonomyDB = taxonomy_ref
             ref.save()
-
         return refid
 
     except Exception:
@@ -670,7 +669,12 @@ def repStop(request):
     return "Stopped"
 
 
-#@transaction.atomic
+def mothurRestore(dest):
+    # if reprocess is cancelled / fails, replace new mothur file with old
+    shutil.copyfile(str(dest)+'/mothur.batch.old', str(dest)+'/mothur.batch')
+
+
+@transaction.atomic
 def reanalyze(request, stopList):
     ### create savepoint
     sid = transaction.savepoint()
@@ -728,16 +732,22 @@ def reanalyze(request, stopList):
             dest = ref.path
             source = ref.source
 
-            if repMothur:
+            # copy old mothur file with new name
+            shutil.copyfile(str(dest)+'/mothur.batch', str(dest)+'/mothur.batch.old')
+
+            if repMothur:   # jump
+                # drop new mothur file onto old
                 functions.handle_uploaded_file(mFile, dest, 'mothur.batch')
 
             if stopList[PID] == RID:
+                mothurRestore(dest)
                 return repStop(request)
 
             if source == '454_sff':
                 ls_dir = os.listdir(dest)
                 for afile in ls_dir:
                     if stopList[PID] == RID:
+                        mothurRestore(dest)
                         return repStop(request)
                     srcStr = str(dest) + '/' + str(afile)
                     destStr = str(mothurdest) + '/' + str(afile)
@@ -747,6 +757,7 @@ def reanalyze(request, stopList):
                 file_list = []
                 for afile in glob.glob(r'% s/*.fna' % dest):
                     if stopList[PID] == RID:
+                        mothurRestore(dest)
                         return repStop(request)
                     file_list.append(afile)
 
@@ -754,6 +765,7 @@ def reanalyze(request, stopList):
                 if file_list.__len__() > 1:
                     for each in file_list:
                         if stopList[PID] == RID:
+                            mothurRestore(dest)
                             return repStop(request)
                         file = each
 
@@ -767,6 +779,7 @@ def reanalyze(request, stopList):
                     inputList = "-".join(tempList)
 
                     if stopList[PID] == RID:
+                        mothurRestore(dest)
                         return repStop(request)
 
                     if os.name == 'nt':
@@ -777,6 +790,7 @@ def reanalyze(request, stopList):
                 else:
                     for each in file_list:
                         if stopList[PID] == RID:
+                            mothurRestore(dest)
                             return repStop(request)
 
                         file = each
@@ -829,9 +843,7 @@ def reanalyze(request, stopList):
                     shutil.copyfile(srcStr, destStr)
 
             if stopList[PID] == RID:
-                return repStop(request)
-
-            if stopList[PID] == RID:
+                mothurRestore(dest)
                 return repStop(request)
 
             try:
@@ -852,6 +864,7 @@ def reanalyze(request, stopList):
             shutil.copy('% s/final_meta.xlsx' % dest, '% s/final_meta.xlsx' % mothurdest)
 
             if stopList[PID] == RID:
+                mothurRestore(dest)
                 return repStop(request)
 
             if not os.path.exists(dest):
@@ -859,6 +872,7 @@ def reanalyze(request, stopList):
 
             shutil.copy('% s/final_meta.xlsx' % mothurdest, '% s/final_meta.xlsx' % dest)
             if stopList[PID] == RID:
+                mothurRestore(dest)
                 transaction.savepoint_rollback(sid)
                 return repStop(request)
 
@@ -873,6 +887,7 @@ def reanalyze(request, stopList):
             parse_project(metaFile, p_uuid, curUser)
 
             if stopList[PID] == RID:
+                mothurRestore(dest)
                 transaction.savepoint_rollback(sid)
                 return repStop(request)
 
@@ -880,6 +895,11 @@ def reanalyze(request, stopList):
                 raw = True
                 userID = str(request.user.id)
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+
+            if stopList[PID] == RID:
+                mothurRestore(dest)
+                transaction.savepoint_rollback(sid)
+                return repStop(request)
 
             try:
                 mothur(dest, source)
@@ -892,15 +912,28 @@ def reanalyze(request, stopList):
                 )
 
             if stopList[PID] == RID:
-                transaction.savepoint_rollback(sid)
+                mothurRestore(dest)
+                transaction.savepoint_rollback(sid)  # this does not seem to cancel properly
                 return repStop(request)
 
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
+            if stopList[PID] == RID:
+                mothurRestore(dest)
+                transaction.savepoint_rollback(sid)  # this does not seem to cancel properly
+                return repStop(request)
+
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 with open('% s/final.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid, refDict)
+
+            if stopList[PID] == RID:
+                mothurRestore(dest)
+                transaction.savepoint_rollback(sid)  # this does not seem to cancel properly
+                return repStop(request)
+            # reprocess completed, delete old mothur
+            os.remove(os.path.join(dest, "mothur.batch.old"))
 
         return None
 
@@ -910,5 +943,11 @@ def reanalyze(request, stopList):
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         transaction.savepoint_rollback(sid)
         logging.exception(myDate)
+
+        try:
+            mothurRestore(dest)
+        except Exception:
+            pass
+
         return repStop(request)
 

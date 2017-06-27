@@ -382,7 +382,7 @@ def excel_to_dict(wb, headerRow=1, nRows=1, sheet='Sheet1'):
     return result_dict
 
 
-def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar):
+def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar, levelDep=False):
 
     catFields = []
     catValues = []
@@ -430,7 +430,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     myDir = 'myPhyloDB/media/usr_temp/' + str(username) + '/'
     path = str(myDir) + 'myphylodb.biom'
 
-    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields)
+    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields, levelDep=levelDep)
 
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
 
@@ -582,7 +582,7 @@ def getEditProjects(request):
     return projects
 
 
-def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
+def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False):
     # Load file
     file = open(path)
     data = json.load(file)
@@ -673,13 +673,15 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[]):
     # Check if there is at least one categorical variable with multiple levels
     # Remove fields with only 1 level
     remCatFields = []
-    if catFields:
-        tempList = catFields[:]
-        for i in tempList:
-            noLevels = len(list(pd.unique(metaDF[i])))
-            if noLevels < 2:
-                catFields.remove(i)
-                remCatFields.append(i)
+
+    if levelDep:
+        if catFields:
+            tempList = catFields[:]
+            for i in tempList:
+                noLevels = len(list(pd.unique(metaDF[i])))
+                if noLevels < 2:
+                    catFields.remove(i)
+                    remCatFields.append(i)
 
     if catFields or quantFields:
         allFields = catFields + quantFields

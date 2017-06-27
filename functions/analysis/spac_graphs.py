@@ -206,6 +206,9 @@ def getSpAC(request, stops, RID, PID):
 
                         else:
                             skipped.append(name)
+                            finalDict = {"error": "Error: Not enough replication"}
+                            res = json.dumps(finalDict)
+                            return HttpResponse(res, content_type='application/json')
 
                     result += "\n"+str(len(skipped))+" groups ignored: \n\t- "
                     for thing in skipped:
