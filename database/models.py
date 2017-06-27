@@ -612,7 +612,6 @@ class OTU_99(models.Model):
 class Profile(models.Model):
     projectid = models.ForeignKey(Project)
     sampleid = models.ForeignKey(Sample)
-    refid = models.ForeignKey(Reference)
 
     kingdomid = models.ForeignKey(Kingdom)
     phylaid = models.ForeignKey(Phyla)

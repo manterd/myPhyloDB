@@ -252,7 +252,8 @@ def uploadFunc(request, stopList):
                 return upStop(request)
 
             try:
-                refDict = functions.parse_sample('new', metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
+                refDict = functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
+                print "Parsed samples with no errors"
             except Exception:
                 return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
 
@@ -1073,29 +1074,26 @@ def referenceTableJSON(request):
 
         if selSamples:
             if request.user.is_superuser:
-                qs = Sample.objects.filter(sampleid__in=selSamples)
+                qs = Reference.objects.filter(sample__sampleid__in=selSamples).distinct()
             elif request.user.is_authenticated():
-                path_list = Sample.objects.filter(refid__author=request.user).values_list('sampleid', flat=True)
-                qs = Sample.objects.filter( Q(sampleid__in=path_list) | Q(projectid__status='public') ).filter(sampleid__in=selSamples)
+                qs = Reference.objects.filter( Q(author=request.user) | Q(projectid__status='public') ).distinct()
             else:
-                qs = Sample.objects.none()
+                qs = Reference.objects.none()
         else:
-            qs = Sample.objects.none()
+            qs = Reference.objects.none()
 
         results = {}
         qs1 = qs.values_list(
             "projectid__project_name",
             "projectid",
             "refid",
-            "sample_name",
-            "sampleid",
-            "refid__raw",
-            "refid__path",
-            "refid__source",
-            "refid__alignDB",
-            "refid__templateDB",
-            "refid__taxonomyDB",
-            "refid__author_id__username"
+            "raw",
+            "path",
+            "source",
+            "alignDB",
+            "templateDB",
+            "taxonomyDB",
+            "author_id__username"
         )
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]
@@ -2143,10 +2141,10 @@ def updateFunc(request, stopList):
 
             if os.path.exists(batPath):
                 with open(batPath, 'rb') as batFile:
-                    functions.parse_sample('new', metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+                    functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
             else:
                 batFile = 'you do not really need me'
-                functions.parse_sample('new', metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+                functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
 
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)

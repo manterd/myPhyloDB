@@ -224,20 +224,17 @@ def parse_project(Document, p_uuid, curUser):
         # check project status
         if rowDict['status'] == "public" or rowDict['status'] == "private":
             pass
-            # print "status is valid"
         else:
             return "status has options public and private only"
 
         # check project type
         if rowDict['projectType'] in {'air', 'human gut', 'human associated', 'microbial', 'soil', 'water'}:
             pass
-            # print "projectType is valid"
         else:
             return "projectType options are air, human gut, human associated," \
                 " microbial, soil, and water"
 
         if not Project.objects.filter(projectid=p_uuid).exists():
-            # is this searching for a specific randomly accessibly location?
             for key in rowDict.keys():
                 if key == 'projectid':
                     rowDict[key] = p_uuid
@@ -250,6 +247,7 @@ def parse_project(Document, p_uuid, curUser):
             Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, **rowDict)
         stage = "Step 1 of 5: Parsing project file...done"
         return "none"
+
     except Exception as ex:
         # need to make this more specific, give out specific row and column info + type of error
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -286,14 +284,14 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
             template_ref = 'null'
             taxonomy_ref = 'null'
 
-        if not Reference.objects.filter(refid=refid).exists():
+        if not Reference.objects.filter(path=path).exists():
             project = Project.objects.get(projectid=p_uuid)
             Reference.objects.create(
                 refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref,
                 templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
         else:
             project = Project.objects.get(projectid=p_uuid)
-            Reference.objects.filter(refid=refid).update(
+            Reference.objects.filter(path=path).update(
                 refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref,
                 templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
 
@@ -303,7 +301,7 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
         logging.exception(myDate)
 
 
-def parse_sample(repo, Document, p_uuid, pType, num_samp, dest, batch, raw, source, userID):
+def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, userID):
     try:
         global stage, perc
         stage = "Step 2 of 5: Parsing sample file..."
@@ -337,41 +335,38 @@ def parse_sample(repo, Document, p_uuid, pType, num_samp, dest, batch, raw, sour
         dict3 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='User')
         perc = 75
 
+        refid = uuid4().hex
+        parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
+        reference = Reference.objects.get(refid=refid)
+
         idList = []
-        refid = ''
         refDict = {}
-        newRefID = uuid4().hex
         for i in xrange(num_samp):
             row = dict1[i]
-            pathid = row['refid']
-
-            if isinstance(pathid, unicode):
-                refid = pathid
-            else:
-                refid = newRefID
 
             s_uuid = row['sampleid']
-            row.pop('refid')
+            if s_uuid is np.nan:
+                s_uuid = uuid4().hex
+                row['sampleid'] = s_uuid
+
+            # to be used in parse_profile()
+            type = row['sample_type']
+            if type is not np.nan:
+                refDict[s_uuid] = type
+            else:
+                refDict[s_uuid] = 'replace'
+
+            row.pop('sample_type')
             row.pop('seq_method')
             row.pop('geo_loc_name')
             row.pop('lat_lon')
 
-            parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
-            reference = Reference.objects.get(refid=refid)  # refid defined?
-
-            if repo == 'reprocess':
-                Sample.objects.filter(sampleid=s_uuid).delete()
-
+            idList.append(s_uuid)
             if Sample.objects.filter(sampleid=s_uuid).exists():
-                idList.append(s_uuid)
                 Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
             else:
-                s_uuid = uuid4().hex
-                row['sampleid'] = s_uuid
-                idList.append(s_uuid)
                 Sample.objects.create(projectid=project, refid=reference, **row)
 
-            refDict[s_uuid] = refid
             sample = Sample.objects.get(sampleid=s_uuid)
 
             row = dict2[i]
@@ -452,8 +447,8 @@ def parse_sample(repo, Document, p_uuid, pType, num_samp, dest, batch, raw, sour
         ws = wb.get_sheet_by_name('MIMARKs')
         for i in xrange(len(idList)):
             j = i + 7
-            ws.cell(row=j, column=1).value = refid
-            ws.cell(row=j, column=2).value = idList[i]
+            ws.cell(row=j, column=1).value = idList[i]
+            ws.cell(row=j, column=2).value = 'replace'  # all samples are automatically set to replace in meta-file
             perc += 5/len(idList)
 
         wb.save(Document)
@@ -621,21 +616,31 @@ def parse_profile(file3, file4, p_uuid, refDict):
                     sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
                     sampid = sample.sampleid
                     idList.append(sampid)
-                    refid = refDict[sampid]  # NoneType!
-                    reference = Reference.objects.get(refid=refid)
+                    replaceType = refDict[sampid]
 
-                    if Profile.objects.filter(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu).exists():
-                        t = Profile.objects.get(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu)
-                        old = t.count
-                        new = old + int(count)
-                        t.count = new
-                        t.save()
-                    else:
-                        Profile.objects.create(projectid=project, refid=reference, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
+                    if replaceType == 'new':
+                        Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
+
+                    if replaceType == 'append':
+                        if Profile.objects.filter(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu).exists():
+                            t = Profile.objects.get(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu)
+                            old = t.count
+                            new = old + int(count)
+                            t.count = new
+                            t.save()
+                        else:
+                            Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
+
+                    if replaceType == 'replace':
+                        if Profile.objects.filter(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu).exists():
+                            t = Profile.objects.get(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu)
+                            t.count = int(count)
+                            t.save()
+                        else:
+                            Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
             step += 1.0
 
-        # TODO: this is really slow
         idUnique = list(set(idList))
         for ID in idUnique:
             sample = Sample.objects.get(sampleid=ID)
