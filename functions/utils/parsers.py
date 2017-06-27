@@ -294,12 +294,16 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
                 refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref,
                 templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
         else:
-            ref = Reference.objects.get(path=path)
-            ref.refid = refid
+            refs = Reference.objects.all().filter(path=path)
+            for ref in refs:
+                refid = ref.refid
+            ref = Reference.objects.get(refid=refid)
             ref.alignDB = align_ref
             ref.templateDB = template_ref
             ref.taxonomyDB = taxonomy_ref
             ref.save()
+
+        return refid
 
     except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -341,8 +345,8 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         dict3 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='User')
         perc = 75
 
-        refid = uuid4().hex
-        parse_reference(p_uuid, refid, dest, batch, raw, source, userID)
+        tempid = uuid4().hex
+        refid = parse_reference(p_uuid, tempid, dest, batch, raw, source, userID)
         reference = Reference.objects.get(refid=refid)
 
         idList = []
@@ -583,6 +587,14 @@ def parse_profile(file3, file4, p_uuid, refDict):
         sampleList = df3.columns.values.tolist()
         sampleList.remove('Taxonomy')
 
+        # need to get rid of any old taxonomy data if sample type is set to replace
+        for name in sampleList:
+            sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
+            sampid = sample.sampleid
+            replaceType = refDict[sampid]
+            if replaceType == 'replace':
+                Profile.objects.filter(sampleid=sampid).delete()
+
         idList = []
         step = 0.0
         for index, row in df3.iterrows():
@@ -624,7 +636,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
                     idList.append(sampid)
                     replaceType = refDict[sampid]
 
-                    if replaceType == 'new':
+                    if replaceType == 'new' or replaceType == 'replace':
                         Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
                     if replaceType == 'append':
@@ -633,14 +645,6 @@ def parse_profile(file3, file4, p_uuid, refDict):
                             old = t.count
                             new = old + int(count)
                             t.count = new
-                            t.save()
-                        else:
-                            Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
-
-                    if replaceType == 'replace':
-                        if Profile.objects.filter(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu).exists():
-                            t = Profile.objects.get(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu)
-                            t.count = int(count)
                             t.save()
                         else:
                             Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
@@ -858,20 +862,6 @@ def reanalyze(request, stopList):
                 transaction.savepoint_rollback(sid)
                 return repStop(request)
 
-            try:
-                mothur(dest, source)
-            except Exception as e:
-                transaction.savepoint_rollback(sid)
-                print("Error with mothur: " + str(e))
-                return HttpResponse(
-                    json.dumps({"error": "yes"}),
-                    content_type="application/json"
-                )
-
-            if stopList[PID] == RID:
-                transaction.savepoint_rollback(sid)
-                return repStop(request)
-
             # subQueue()
             metaName = 'final_meta.xlsx'
             metaFile = '/'.join([dest, metaName])
@@ -886,10 +876,24 @@ def reanalyze(request, stopList):
                 transaction.savepoint_rollback(sid)
                 return repStop(request)
 
-            with open('% s/mothur.batch' % dest, 'rb') as file7:
+            with open('% s/mothur.batch' % mothurdest, 'rb') as file7:
                 raw = True
                 userID = str(request.user.id)
                 refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+
+            try:
+                mothur(dest, source)
+            except Exception as e:
+                transaction.savepoint_rollback(sid)
+                print("Error with mothur: " + str(e))
+                return HttpResponse(
+                    json.dumps({"error": "yes"}),
+                    content_type="application/json"
+                )
+
+            if stopList[PID] == RID:
+                transaction.savepoint_rollback(sid)
+                return repStop(request)
 
             with open('% s/final.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
