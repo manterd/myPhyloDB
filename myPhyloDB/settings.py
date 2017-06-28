@@ -24,7 +24,7 @@ DEBUG = True
 
 # Application definition
 INSTALLED_APPS = [
-    'database.apps.DatabaseConfig',
+    'database',
     'django.contrib.sites',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -98,10 +98,12 @@ TEMPLATES = [
             'libraries': {
                 'static': 'django.templatetags.static',
                 'i18n': 'django.templatetags.i18n',
+                'l10n': 'django.templatetags.l10n',
                 'admin_list': 'django.contrib.admin.templatetags.admin_list',
                 'admin_modify': 'django.contrib.admin.templatetags.admin_modify',
                 'admin_static': 'django.contrib.admin.templatetags.admin_static',
                 'admin_urls': 'django.contrib.admin.templatetags.admin_urls',
+                'log': 'django.contrib.admin.templatetags.log',
 
                 # allauth template tags
                 'account': 'allauth.account.templatetags.account',

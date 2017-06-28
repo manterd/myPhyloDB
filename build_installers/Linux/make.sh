@@ -11,9 +11,12 @@
 # sh make.sh
 
 workon myphylodb
+rm myPhyloDB.tar.gz
+rm myPhyloDB_v.1.2.0_Linux_x64_install.sh
 cd $HOME/PycharmProjects/myPhyloDB
 export DJANGO_SETTINGS_MODULE=myPhyloDB.settings
-pyinstaller -D --additional-hooks-dir=$HOME/PycharmProjects/myPhyloDB/Pyinstaller_hooks $HOME/PycharmProjects/myPhyloDB/serve-linux.spec
+#pyinstaller -D --additional-hooks-dir=$HOME/PycharmProjects/myPhyloDB/Pyinstaller_hooks $HOME/PycharmProjects/myPhyloDB/serve-linux.spec
+pyinstaller -D $HOME/PycharmProjects/myPhyloDB/serve-linux.spec
 deactivate
 
 cd $HOME/PycharmProjects/myPhyloDB/dist/
