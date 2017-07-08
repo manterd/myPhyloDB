@@ -74,30 +74,36 @@ def mothur(dest, source):
             shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
             shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
             shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
-            shutil.copy('mothur/temp/final.taxonomy', '% s/final.taxonomy' % dest)
-            shutil.copy('mothur/temp/final.shared', '% s/final.shared' % dest)
+            shutil.copy('mothur/temp/final.cons.taxonomy', '% s/final.cons.taxonomy' % dest)
+            shutil.copy('mothur/temp/final.tx.shared', '% s/final.tx.shared' % dest)
             shutil.rmtree('mothur/temp')
 
         if source == '454_fastq':
             shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
             shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
             shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
-            shutil.copy('mothur/temp/final.taxonomy', '% s/final.taxonomy' % dest)
-            shutil.copy('mothur/temp/final.shared', '% s/final.shared' % dest)
+            shutil.copy('mothur/temp/final.cons.taxonomy', '% s/final.cons.taxonomy' % dest)
+            shutil.copy('mothur/temp/final.tx.shared', '% s/final.tx.shared' % dest)
             shutil.rmtree('mothur/temp')
 
         if source == 'miseq':
             shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
             shutil.copy('mothur/temp/final.names', '% s/final.names' % dest)
             shutil.copy('mothur/temp/final.groups', '% s/final.groups' % dest)
-            shutil.copy('mothur/temp/final.taxonomy', '% s/final.taxonomy' % dest)
-            shutil.copy('mothur/temp/final.shared', '% s/final.shared' % dest)
+            shutil.copy('mothur/temp/final.cons.taxonomy', '% s/final.cons.taxonomy' % dest)
+            shutil.copy('mothur/temp/final.tx.shared', '% s/final.tx.shared' % dest)
             shutil.rmtree('mothur/temp')
 
         for afile in glob.glob(r'*.logfile'):
             shutil.move(afile, dest)
 
         dir = os.getcwd()
+
+        path = os.path.join(dir, 'mothur', 'reference', 'align')
+        stuff = os.listdir(path)
+        for thing in stuff:
+            if thing.endswith(".8mer"):
+                os.remove(os.path.join(path, thing))
 
         path = os.path.join(dir, 'mothur', 'reference', 'taxonomy')
         stuff = os.listdir(path)
@@ -132,6 +138,12 @@ def termP():    # relies on global of pro because only one dataprocess should ev
         for thing in stuff:
             if thing.endswith(".num.temp") or thing.endswith(".logfile"):
                 os.remove(os.path.join(dir, thing))
+
+        path = os.path.join(dir, 'mothur', 'reference', 'align')
+        stuff = os.listdir(path)
+        for thing in stuff:
+            if thing.endswith(".8mer"):
+                os.remove(os.path.join(path, thing))
 
         path = os.path.join(dir, 'mothur', 'reference', 'taxonomy')
         stuff = os.listdir(path)
@@ -916,7 +928,7 @@ def reanalyze(request, stopList):
                 transaction.savepoint_rollback(sid)  # this does not seem to cancel properly
                 return repStop(request)
 
-            with open('% s/final.taxonomy' % dest, 'rb') as file3:
+            with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
                 parse_taxonomy(file3)
 
             if stopList[PID] == RID:
@@ -924,8 +936,8 @@ def reanalyze(request, stopList):
                 transaction.savepoint_rollback(sid)  # this does not seem to cancel properly
                 return repStop(request)
 
-            with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                with open('% s/final.shared' % dest, 'rb') as file4:
+            with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+                with open('% s/final.tx.shared' % dest, 'rb') as file4:
                     parse_profile(file3, file4, p_uuid, refDict)
 
             if stopList[PID] == RID:

@@ -485,7 +485,7 @@ def uploadFunc(request, stopList):
                 subQueue()
 
                 try:
-                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
                         functions.parse_taxonomy(file3)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -504,7 +504,7 @@ def uploadFunc(request, stopList):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your taxonomy file: final.taxonomy"
+                         'error': "There was an error parsing your taxonomy file: final.cons.taxonomy"
                          }
                     )
 
@@ -514,8 +514,8 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 try:
-                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/final.shared' % dest, 'rb') as file4:
+                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/final.tx.shared' % dest, 'rb') as file4:
                             functions.parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
@@ -537,7 +537,7 @@ def uploadFunc(request, stopList):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.shared"
+                         'error': "There was an error parsing your shared file: final.tx.shared"
                          }
                     )
 
@@ -731,7 +731,7 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 try:
-                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
                         functions.parse_taxonomy(file3)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -750,7 +750,7 @@ def uploadFunc(request, stopList):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your taxonomy file: final.taxonomy"
+                         'error': "There was an error parsing your taxonomy file: final.cons.taxonomy"
                          }
                     )
 
@@ -760,8 +760,8 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 try:
-                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/final.shared' % dest, 'rb') as file4:
+                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/final.tx.shared' % dest, 'rb') as file4:
                             functions.parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
@@ -782,7 +782,7 @@ def uploadFunc(request, stopList):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.shared"
+                         'error': "There was an error parsing your shared file: final.tx.shared"
                          }
                     )
 
@@ -889,7 +889,7 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 try:
-                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
+                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
                         functions.parse_taxonomy(file3)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
@@ -908,7 +908,7 @@ def uploadFunc(request, stopList):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing taxonomy file: final.taxonomy"}
+                         'error': "There was an error parsing taxonomy file: final.cons.taxonomy"}
                     )
 
                 if stopList[PID] == RID:
@@ -917,8 +917,8 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 try:
-                    with open('% s/final.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/final.shared' % dest, 'rb') as file4:
+                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+                        with open('% s/final.tx.shared' % dest, 'rb') as file4:
                             functions.parse_profile(file3, file4, p_uuid, refDict)
                             end = datetime.datetime.now()
                     print 'Total time for upload:', end-start
@@ -939,7 +939,7 @@ def uploadFunc(request, stopList):
                         {'projects': projects,
                          'form1': UploadForm1,
                          'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.shared"}
+                         'error': "There was an error parsing your shared file: final.tx.shared"}
                     )
 
                 if stopList[PID] == RID:

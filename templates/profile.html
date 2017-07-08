@@ -22,7 +22,8 @@
             var input = document.createElement("input");
             input.type = "text";
             input.id = "name_" + num;
-            input.value = "username #" + num;
+            input.value = "<username>";
+            input.style = "font-style:italic;";
             namebox.appendChild(input);
             namebox.appendChild(document.createElement("br"));
             num++;
@@ -106,12 +107,10 @@
         </tr>
     </table>
     <br>
-    <h2>Add users to selected project(s):</h2>
-    <div id="addNamesList">
-        <input type="button" id="addMoreNames" onclick="addMoreNamesFunc()" value="Add user" title="Add an additional user."><br>
-    </div>
+    <h2>Add users to selected project(s):     <input type="button" id="addMoreNames" onclick="addMoreNamesFunc()" value="Add another user" title="Click to add an additional user to list."></h2>
+    <div id="addNamesList"></div>
     <input type="checkbox" id="permLevel" value="false"> <span title="Applies to all users listed">Grant editing permission</span>
-    <br><br><br>
+    <br><br>
     <input type="submit" id="addNames" value="Submit changes" onclick="submitNames()">
     <br><br>
 {% endblock my_content %}
