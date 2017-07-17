@@ -268,7 +268,8 @@ def getNorm(request, RID, stopList, PID):
             nameList = []
             myList.sort()
             for i in myList:
-                nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
+                tempPanda = metaDF.fillna("NaN")
+                nameList.append({"id": str(i), "metadata": tempPanda.loc[i].to_dict()})
 
             # get list of lists with abundances
             taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]

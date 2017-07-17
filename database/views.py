@@ -12,6 +12,7 @@ import fileinput
 import json
 import logging
 import multiprocessing as mp
+import openpyxl
 import os
 import pandas as pd
 import pickle
@@ -429,6 +430,14 @@ def uploadFunc(request, stopList):
                 functions.handle_uploaded_file(file5, mothurdest, 'temp.txt')
                 functions.handle_uploaded_file(file5, dest, 'temp.txt')
 
+                #function to check if mothur and metafiles samples match
+                error = checkSamples(metaFile, source, 'mothur/temp/temp.txt')
+
+                if error != "":
+                    print "Handling sample name error"
+                    return upErr(error, request, dest, sid)
+
+
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
 
@@ -672,6 +681,14 @@ def uploadFunc(request, stopList):
 
                 functions.handle_uploaded_file(file6, dest, file6.name)
 
+                #function to check if mothur and metafiles samples match
+                error = checkSamples(metaFile, source, 'mothur/temp/temp.oligos')
+
+                if error != "":
+                    print "Handling sample name error"
+                    return upErr(error, request, dest, sid)
+
+
                 if stopList[PID] == RID:
                     functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
@@ -800,6 +817,13 @@ def uploadFunc(request, stopList):
                 file13 = request.FILES['docfile13']
                 functions.handle_uploaded_file(file13, mothurdest, fastq)
 
+                #function to check if mothur and metafiles samples match
+                error = checkSamples(metaFile, source, 'mothur/temp/temp.files')
+
+                if error != "":
+                    print "Handling sample name error"
+                    return upErr(error, request, dest, sid)
+
                 if stopList[PID] == RID:
                     functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
@@ -891,6 +915,26 @@ def uploadFunc(request, stopList):
                 try:
                     with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
                         functions.parse_taxonomy(file3)
+                except IOError:
+                    # file not found probably, mothur failed to create readable taxonomy file
+                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                    logging.exception(myDate)
+                    functions.remove_proj(dest)
+                    transaction.savepoint_rollback(sid)
+
+                    if request.user.is_superuser:
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                    elif request.user.is_authenticated():
+                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+                    return render(
+                        request,
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': "There was an error with mothur: please check the logfile (from download page)"}
+                    )
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -1704,7 +1748,8 @@ def select(request):
 
         nameList = []
         for i in myList:
-            nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
+            tempPanda = metaDF.fillna("NaN")
+            nameList.append({"id": str(i), "metadata": tempPanda.loc[i].to_dict()})
 
         # get list of lists with abundances
         taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund']]
@@ -2482,3 +2527,81 @@ def addPerms(request):
 def remPerms(request):
     print "NYI"
     return
+
+
+def checkSamples(metaFile, source, fileName):
+    wb = openpyxl.load_workbook(metaFile, data_only=True, read_only=True)
+    ws = wb.get_sheet_by_name('MIMARKs')
+    metaList = []
+    for row in xrange(7, ws.max_row+1):
+        val = ws.cell(row=row, column=3).value
+        if val is not None:
+            metaList.append(str(val))
+
+    # now get list from contig or oligo files
+    mothurList = []
+    # if 454_sff or 454_fastq check oligos
+    if source == "454_sff":
+        # multiple oligos named in given file column index 2
+        lc = 0
+        with open(fileName, 'rb') as myFile:
+            oligosList = []
+            for line in myFile:
+                segments = line.strip('\n').strip('\r').split("\t")
+                if len(segments) >= 2:
+                    if '\n' not in segments[1] and '\r' not in segments[1]:
+                        oligosList.append(segments[1])
+            for oligos in oligosList:
+                with open("mothur/temp/"+oligos, 'rb') as myOligos:
+                    for line in myOligos:
+                        if lc == 0:
+                            lc += 1
+                            continue
+                        segments = line.strip('\n').strip('\r').split("\t")
+                        if len(segments) >= 3:
+                            if '\n' not in segments[2] and '\r' not in segments[2]:
+                                mothurList.append(segments[2])
+    if source == "454_fastq":
+        # single oligos file to parse, column index 2
+        lc = 0
+        with open(fileName, 'rb') as myFile:
+            for line in myFile:
+                if lc == 0:
+                    lc += 1
+                    continue
+                segments = line.strip('\n').strip('\r').split("\t")
+                if len(segments) >= 3:
+                    if '\n' not in segments[2] and '\r' not in segments[2]:
+                        mothurList.append(segments[2])
+    # if miseq check contig
+    if source == "miseq":
+        # open temp.files, check column 0
+        with open(fileName, 'rb') as myFile:
+            for line in myFile:
+                segments = line.strip('\n').strip('\r').split("\t")
+                if len(segments) >= 1:
+                    if '\n' not in segments[0] and '\r' not in segments[0]:
+                        mothurList.append(segments[0])
+
+    # match two lists and return result
+    problemMothurList = []
+    problemMetaList = []
+    for thing in mothurList:
+        if thing not in metaList:
+            problemMothurList.append(thing)
+    for thing in metaList:
+        if thing not in mothurList:
+            problemMetaList.append(thing)
+
+    errorString = ""
+
+    if len(problemMothurList) > 0:
+        errorString += "The following samples are in your mothur files but not in your meta file:\n"
+        for problem in problemMothurList:
+            errorString += " "+problem
+    if len(problemMetaList) > 0:
+        errorString += " The following samples are in your meta file but not in your mothur files:\n"
+        for problem in problemMetaList:
+            errorString += " "+problem
+
+    return errorString

@@ -65,10 +65,10 @@ def mothur(dest, source):
                     mothurStat += line
                 else:
                     break
-            mothurStat = '\n\nMothur processing is done! \n\n'
+            mothurStat = '\n\nmothur processing is done! \n\n'
 
         except Exception as e:
-            print "Mothur failed: " + str(e)
+            print "mothur failed: " + str(e)
 
         if source == '454_sff':
             shutil.copy('mothur/temp/final.fasta', '% s/final.fasta' % dest)
@@ -558,7 +558,7 @@ def parse_taxonomy(Document):
                         oid = uuid4().hex
                         OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName='unclassified')
 
-    except Exception:
+    except Exception:   # jump
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -703,12 +703,12 @@ def reanalyze(request, stopList):
         RID = request.POST['RID']
         PID = 0  # change if adding additional data threads
 
-        repMothur = False
+        repmothur = False
         mFile = None
 
         try:
             mFile = request.FILES['mothurFile']
-            repMothur = True
+            repmothur = True
         except Exception as e:
             pass  # file not found, use default mothur batch
 
@@ -747,7 +747,7 @@ def reanalyze(request, stopList):
             # copy old mothur file with new name
             shutil.copyfile(str(dest)+'/mothur.batch', str(dest)+'/mothur.batch.old')
 
-            if repMothur:   # jump
+            if repmothur:
                 # drop new mothur file onto old
                 functions.handle_uploaded_file(mFile, dest, 'mothur.batch')
 
