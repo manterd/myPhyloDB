@@ -24,7 +24,8 @@ def subQueue():
 
 class Project(models.Model):
     projectid = models.CharField(max_length=50, primary_key=True)
-    status = models.CharField(max_length=15, blank=False)  # visibility, "public" and "private", error if other value
+    status = models.CharField(max_length=15, blank=False)  # visibility, "public" "private", error if other value
+    wip = models.BooleanField(default=False)
     projectType = models.CharField(max_length=90, blank=False)
     project_name = models.CharField(max_length=100, blank=True)
     project_desc = models.TextField(blank=True)

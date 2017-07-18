@@ -257,10 +257,11 @@ def parse_project(Document, p_uuid, curUser):
             myProj = Project.objects.create(**rowDict)  # save pointer to this somehow (myProj = ?)
             # get project and set owner to current user (if project is new)
             myProj.owner = curUser  # might break if different user adds files later
+            myProj.wip = True
             myProj.save()
         else:
             rowDict.pop('projectid')
-            Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, **rowDict)
+            Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, wip=True, **rowDict)
         stage = "Step 1 of 5: Parsing project file...done"
         return "none"
 

@@ -66,6 +66,10 @@ table, fieldset {
 	text-align: center;
 }
 
+span.dynatree-highlight {
+	background-color: red;
+}
+
 .menuItems {
     margin-top: 10px;
 	text-align: center;

@@ -43,9 +43,11 @@
 
 
         $(function () {
-            var test = '{{ error }}';
-            if (test != "") {
-                alert(test);
+            var test = '{{ upErr|linebreaks }}';
+            if (test != "<p></p>") {
+                $("#error").show();
+                $("#errorLog").empty().append(test);
+                $("#Upload").css("background-color", "red");
             }
 
             $("#treeRem").dynatree({
@@ -71,6 +73,8 @@
             });
 
             $("#Upload").click(function() {
+                $("#error").hide();
+                $("#Upload").css("background-color", "lightgray");
                 $("#stage").show();
                 $("#progressBar").show();
                 document.getElementById("mothurStat").value = "";
@@ -366,13 +370,18 @@
     <div id="progressBar" style="display: none"><div></div></div>
     <br>
 
+    <div id="error" style="display: none">
+        <h2>Error: Please check your uploaded files</h2>
+        <span id="errorLog"></span>
+    </div>
+
     <div>
         <h2>mothur status and output: </h2>
         Clear text: <input id="clearLog" type="button" onClick="clearmothurLog();"/>
         <br>
     </div>
 
-    <textarea id="mothurStat" rows=25 cols=72 style="width: 925px"></textarea>
+    <textarea id="mothurStat" rows="25" cols="72" style="width: 925px"></textarea>
 
     <h2>List of previous uploads:</h2>
     <table id="meta_files" border="2" cellspacing="0" cellpadding="1">

@@ -151,7 +151,7 @@ def upErr(msg, request, dest, sid):
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'error': msg
+         'upErr': msg
          }
     )
 
@@ -990,6 +990,10 @@ def uploadFunc(request, stopList):
                     functions.remove_proj(dest)
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
+
+                myProject = Project.objects.get(projectid=p_uuid)
+                myProject.wip = False
+                myProject.save()
 
             else:
                 print ('Please check that all necessary files have been selected.')
@@ -2549,8 +2553,8 @@ def checkSamples(metaFile, source, fileName):
             for line in myFile:
                 segments = line.strip('\n').strip('\r').split("\t")
                 if len(segments) >= 2:
-                    if '\n' not in segments[1] and '\r' not in segments[1]:
-                        oligosList.append(segments[1])
+                    if '\n' not in segments[1] and '\r' not in segments[1] and str(segments[1]) != '':
+                        oligosList.append(str(segments[1]))
             for oligos in oligosList:
                 with open("mothur/temp/"+oligos, 'rb') as myOligos:
                     for line in myOligos:
@@ -2559,8 +2563,8 @@ def checkSamples(metaFile, source, fileName):
                             continue
                         segments = line.strip('\n').strip('\r').split("\t")
                         if len(segments) >= 3:
-                            if '\n' not in segments[2] and '\r' not in segments[2]:
-                                mothurList.append(segments[2])
+                            if '\n' not in segments[2] and '\r' not in segments[2] and str(segments[2]) != '':
+                                mothurList.append(str(segments[2]))
     if source == "454_fastq":
         # single oligos file to parse, column index 2
         lc = 0
@@ -2571,8 +2575,8 @@ def checkSamples(metaFile, source, fileName):
                     continue
                 segments = line.strip('\n').strip('\r').split("\t")
                 if len(segments) >= 3:
-                    if '\n' not in segments[2] and '\r' not in segments[2]:
-                        mothurList.append(segments[2])
+                    if '\n' not in segments[2] and '\r' not in segments[2] and str(segments[2]) != '':
+                        mothurList.append(str(segments[2]))
     # if miseq check contig
     if source == "miseq":
         # open temp.files, check column 0
@@ -2580,8 +2584,8 @@ def checkSamples(metaFile, source, fileName):
             for line in myFile:
                 segments = line.strip('\n').strip('\r').split("\t")
                 if len(segments) >= 1:
-                    if '\n' not in segments[0] and '\r' not in segments[0]:
-                        mothurList.append(segments[0])
+                    if '\n' not in segments[0] and '\r' not in segments[0] and str(segments[0]) != '':
+                        mothurList.append(str(segments[0]))
 
     # match two lists and return result
     problemMothurList = []
@@ -2597,11 +2601,10 @@ def checkSamples(metaFile, source, fileName):
 
     if len(problemMothurList) > 0:
         errorString += "The following samples are in your mothur files but not in your meta file:\n"
-        for problem in problemMothurList:
-            errorString += " "+problem
+        errorString += str(problemMothurList) + "\n"
+
     if len(problemMetaList) > 0:
-        errorString += " The following samples are in your meta file but not in your mothur files:\n"
-        for problem in problemMetaList:
-            errorString += " "+problem
+        errorString += "The following samples are in your meta file but not in your mothur files:\n"
+        errorString += str(problemMetaList) + "\n"
 
     return errorString

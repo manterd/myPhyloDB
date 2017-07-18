@@ -617,8 +617,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     namesDF['family'] = namesDF['familyid'].astype(str) + ': ' + namesDF['familyName']
     namesDF.drop(['familyid', 'familyName'], axis=1, inplace=True)
     namesDF['genus'] = namesDF['genusid'].astype(str) + ': ' + namesDF['genusName']
+    namesDF['species'] = namesDF['speciesid'].astype(str) + ': ' + namesDF['genusName'] + " " + namesDF['speciesName']
     namesDF.drop(['genusid', 'genusName'], axis=1, inplace=True)
-    namesDF['species'] = namesDF['speciesid'].astype(str) + ': ' + namesDF['speciesName']
     namesDF.drop(['speciesid', 'speciesName'], axis=1, inplace=True)
     namesDF['otu'] = namesDF['otuid'].astype(str) + ': ' + namesDF['otuName']
     namesDF.drop(['otuName'], axis=1, inplace=True)

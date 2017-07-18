@@ -531,6 +531,7 @@ def getViewProjects(request):
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.order_by('project_name')
+        # check if project is WIP, flag for dynatree highlighting?
 
     elif request.user.is_authenticated():
         # run through list of projects, when valid project is found, append filterIDS with ID
@@ -546,6 +547,8 @@ def getViewProjects(request):
             for name in checkList:
                 if name == request.user.username:
                     good = True
+            if proj.wip:
+                good = False
             if good:
                 filterIDS.append(proj.projectid)
         projects = Project.objects.filter(projectid__in=filterIDS).order_by('project_name')
