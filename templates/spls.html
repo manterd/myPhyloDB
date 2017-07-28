@@ -47,7 +47,7 @@
                 $(this).nextUntil(".accordion").fadeToggle('fast');
             });
             $(".input tr.accordion:eq(0)").trigger('click');
-            $(".input tr.accordion:eq(2)").trigger('click');
+            $(".input tr.accordion:eq(4)").trigger('click');
         });
 
         {% include "js/commonFunctions.js" %}
@@ -252,7 +252,7 @@
                     renderTo: 'container-1',
                     type: 'heatmap',
                     height: parseFloat(yAxis.categories.length)*16+300,
-                    width: parseFloat(xAxis.categories.length)*16+250,
+                    width: parseFloat(xAxis.categories.length)*20+250,
                     marginRight: 150,
                     spacingRight: 50
                 },
@@ -374,7 +374,9 @@
                     if (resType == "status") {
                         var stage = obj['stage'];
                         if (running) {
-                            $('#container-0').empty().append(stage);
+                            if (stage != "Downloading results") {
+                                $('#container-0').empty().append(stage);
+                            }
                         }
                     } else {
                         running = false;
@@ -538,9 +540,9 @@
         {% include "html/Data-Filtering.html" %}
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        <tr>
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>sPLS Settings:</em></strong></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em><span class="arrow">►</span> sPLS Settings:</em></strong></td>
         </tr>
         <tr>
             <td bgcolor="white"></td>
@@ -592,9 +594,9 @@
             </td>
             <td bgcolor="white"></td>
         </tr>
-        <tr>
+        <tr class="accordion">
             <td bgcolor="white"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em>Optimize R plot:</em></strong></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em><span class="arrow">►</span> Optimize R plot:</em></strong></td>
         </tr>
         <tr>
             <td bgcolor="white"></td>

@@ -1315,7 +1315,8 @@ def makeUpdateTree(request):
             'tooltip': project.project_desc,
             'isFolder': True,
             'hideCheckbox': True,
-            'children': []
+            'children': [],
+            'wip': project.wip
         }
 
         refids = project.reference_set.all().order_by('path')
@@ -1349,7 +1350,8 @@ def makeReproTree(request):
             'title': "Project: " + str(project.project_name),
             'tooltip': project.project_desc,
             'isFolder': True,
-            'children': []
+            'children': [],
+            'wip': project.wip
         }
 
         refids = project.reference_set.all().order_by('path')
@@ -1417,7 +1419,8 @@ def getDownloadTree(request):
                 'id': project.projectid,
                 'isFolder': True,
                 'hideCheckbox': False,
-                'isLazy': True
+                'isLazy': True,
+                'wip': project.wip
             }
             myTree['children'].append(myNode)
     # Convert result list to a JSON string
@@ -1478,7 +1481,8 @@ def getPermissionTree(request):
                 'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
                 'id': project.projectid,
                 'isFolder': False,
-                'isLazy': False
+                'isLazy': False,
+                'wip': project.wip
             }
             if project.status == "public":  # should only be private and public, defaulting to private just in case
                 publicTree['children'].append(myNode)

@@ -251,8 +251,11 @@
                     var resType = obj['resType'];
                     if (resType == "status") {
                         var stage = obj['stage'];
-                        $('#container-1').empty().append(stage);
+                        if (stage != "Downloading results") {
+                            $('#container-1').empty().append(stage);
+                        }
                     } else {
+                        clearInterval(refresh);
                         var error = data['error'];
                         if (error != "none") {
                             alert(error);
@@ -261,7 +264,6 @@
                             $("#run").css("background-color", "green");
                         }
 
-                        clearInterval(refresh);
 
                         running = false;
                         normNorm = true;

@@ -214,6 +214,7 @@ def funcCall(request):
                             #print "Finished"
                     except Exception:   # complete is not valid, implying variables have been cleaned up (or not created yet?)
                         stage[RID] = 'Downloading results'  # bug with timing if this sticks ?
+                        # bug is more likely on the page side
                         #print "Done?"
                 else:   # timediff not zero, so analysis has started to run despite data not valid (?)
                     stage[RID] = 'Analysis starting'

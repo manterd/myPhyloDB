@@ -56,6 +56,13 @@
                 },
                 onSelect: function (select, node) {
                     selNodes = node.tree.getSelectedNodes();
+                },
+                onRender: function(){
+                    $("#tree").dynatree("getRoot").visit(function (node){
+                        if (node.data.wip) {
+                            node.data.addClass = "dynatree-highlight";
+                        }
+                  });
                 }
             });
 

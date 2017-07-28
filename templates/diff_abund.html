@@ -365,7 +365,9 @@
                     if (resType == "status") {
                         var stage = obj['stage'];
                         if (running) {
-                            $('#container-1').empty().append(stage);
+                            if (stage != "Downloading results") {
+                                $('#container-1').empty().append(stage);
+                            }
                         }
                     } else {
                         running = false;

@@ -100,7 +100,6 @@ class UserRegForm(forms.Form):
     purpose = forms.ChoiceField(widget=forms.Select, choices=purpose_choices)
 
     def signup(self, request, user):
-        print("HEY WAIT A SECOND")
         form = UserRegForm(request.POST or None, request.FILES or None)
         if form.is_valid():
             user.first_name = self.cleaned_data['firstName']
@@ -138,7 +137,6 @@ class UserUpdateForm(forms.Form):
     pword = forms.CharField(label="Password", widget=forms.PasswordInput)
 
     def update(self, request, user):
-        print("HEY WAIT TWO SECONDS")
         form = UserRegForm(request.POST or None, request.FILES or None)
         if form.is_valid():
             user.first_name = self.cleaned_data['firstName']

@@ -77,6 +77,13 @@
                     dataType: "jsonp",
                     data: {}
                 },
+                onRender: function(){
+                    $("#tree").dynatree("getRoot").visit(function (node){
+                        if (node.data.wip) {
+                            node.data.addClass = "dynatree-highlight";
+                        }
+                  });
+                },
                 onclick: function () {
                     $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
                 }

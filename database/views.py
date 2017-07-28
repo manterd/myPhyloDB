@@ -22,6 +22,8 @@ import time
 import ujson
 from uuid import uuid4
 import zipfile
+import gc
+
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserRegForm, UserUpdateForm
@@ -1833,36 +1835,55 @@ def pathJSON(request):
     return HttpResponse(myJson)
 
 
+def qsFunc(koList): # works, but is still slow, still leaks (although only maybe 100 MB at a time vs 10 GB)
+    finalotuList = []
+    #print "Starting QS"
+    #errors = 0
+    otuList = OTU_99.objects.all().values_list('otuid', flat=True)
+    if koList:
+        for otu in otuList:
+            try:
+                qs = PICRUSt.objects.using('picrust').filter(otuid=otu)
+                # memory goes up from loading objects in qs list, can load early with print
+                # need to clean up memory used from iterating through qs
+                # print "qs: ", len(qs)
+                if any(i in qs[0].geneList for i in koList):
+                    finalotuList.append(otu)
+            except:
+                #errors += 1
+                pass
+    #print "Done with QS. Errored " + str(errors) + " times"
+    return finalotuList
+
+
 def pathTaxaJSON(request):
-    if request.is_ajax():
-        wanted = request.GET['key']
-        wanted = wanted.replace('"', '')
-        koList = []
+    try:
+        if request.is_ajax():
+            wanted = request.GET['key']
+            wanted = wanted.replace('"', '')
+            koList = []
 
-        if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=wanted).exists():
-            record = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=wanted)
-            koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
-        elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=wanted).exists():
-            record = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=wanted)
-            koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
-        elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=wanted).exists():
-            record = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=wanted)
-            koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
-        elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():
-            koList = ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).values_list('ko_orthology', flat=True)
+            if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=wanted).exists():
+                record = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=wanted)
+                koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
+            elif ko_lvl2.objects.using('picrust').filter(ko_lvl2_id=wanted).exists():
+                record = ko_lvl2.objects.using('picrust').get(ko_lvl2_id=wanted)
+                koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
+            elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=wanted).exists():
+                record = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=wanted)
+                koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
+            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():
+                koList = ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).values_list('ko_orthology', flat=True)
 
-        finalotuList = []
-        if koList:
-            qs = PICRUSt.objects.using('picrust')
-            for item in qs:
-                if any(i in item.geneList for i in koList):
-                    finalotuList.append(item.otuid_id)
+            finalotuList = qsFunc(koList)
 
-        results = {}
-        qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuName', 'otuid')
-        results['data'] = list(qs1)
-        myJson = ujson.dumps(results, ensure_ascii=False)
-        return HttpResponse(myJson)
+            results = {}
+            qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuName', 'otuid')
+            results['data'] = list(qs1)
+            myJson = ujson.dumps(results, ensure_ascii=False)
+            return HttpResponse(myJson)
+    except Exception as e:
+        print "Error during kegg path: ", e
 
 
 def kegg_path(request):
@@ -1880,40 +1901,50 @@ def nzJSON(request):
     return HttpResponse(myJson)
 
 
-def nzTaxaJSON(request):
-    if request.is_ajax():
-        wanted = request.GET['key']
-        wanted = wanted.replace('"', '')
-        koList = []
+def nzTaxaJSON(request):    # Jump
+    try:
+        if request.is_ajax():
+            wanted = request.GET['key']
+            wanted = wanted.replace('"', '')
+            koList = []
 
-        if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=wanted).exists():
-            record = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=wanted)
-            koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
-        elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=wanted).exists():
-            record = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=wanted)
-            koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
-        elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=wanted).exists():
-            record = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=wanted)
-            koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
-        elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=wanted).exists():
-            record = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=wanted)
-            koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
-        elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).exists():
-            koList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).values_list('nz_orthology', flat=True)
+            if nz_lvl1.objects.using('picrust').filter(nz_lvl1_id=wanted).exists():
+                record = nz_lvl1.objects.using('picrust').get(nz_lvl1_id=wanted)
+                koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
+            elif nz_lvl2.objects.using('picrust').filter(nz_lvl2_id=wanted).exists():
+                record = nz_lvl2.objects.using('picrust').get(nz_lvl2_id=wanted)
+                koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
+            elif nz_lvl3.objects.using('picrust').filter(nz_lvl3_id=wanted).exists():
+                record = nz_lvl3.objects.using('picrust').get(nz_lvl3_id=wanted)
+                koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
+            elif nz_lvl4.objects.using('picrust').filter(nz_lvl4_id=wanted).exists():
+                record = nz_lvl4.objects.using('picrust').get(nz_lvl4_id=wanted)
+                koList = record.nz_entry_set.values_list('nz_orthology', flat=True)
+            elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).exists():
+                koList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).values_list('nz_orthology', flat=True)
 
-        finalotuList = []
-        if koList:
-            qs = PICRUSt.objects.using('picrust')
-            for item in qs:
-                if any(i in item.geneList for i in koList):
-                    finalotuList.append(item.otuid_id)
+            finalotuList = qsFunc(koList)
+            '''finalotuList = []
+            if koList:
+                qs = PICRUSt.objects.using('picrust')
+                for item in qs:
+                    if any(i in item.geneList for i in koList):
+                        finalotuList.append(item.otuid_id)'''
 
-        results = {}
-        qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
-        results['data'] = list(qs1)
-        myJson = ujson.dumps(results, ensure_ascii=False)
-        return HttpResponse(myJson)
-
+            results = {}
+            qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
+            results['data'] = list(qs1)
+            myJson = ujson.dumps(results, ensure_ascii=False)
+            finalotuList = None
+            qs1 = None
+            results = None
+            del finalotuList
+            del qs1
+            del results
+            gc.collect()    # Jump?
+            return HttpResponse(myJson)
+    except Exception as e:
+        print "Error during kegg enzyme: ", e
 
 def kegg_enzyme(request):
     return render(
@@ -2452,7 +2483,7 @@ def updateInfo(request):
     return render(
         request,
         'changeuser.html',
-        {"form": UserRegForm, "error": error}
+        {"form": UserUpdateForm, "error": error}
     )
 
 

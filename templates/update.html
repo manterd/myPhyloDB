@@ -31,6 +31,13 @@
                         return node.data.id;
                     });
                     $('#ids').val(selKeys);
+                },
+                onRender: function(){
+                    $("#tree").dynatree("getRoot").visit(function (node){
+                        if (node.data.wip) {
+                            node.data.addClass = "dynatree-highlight";
+                        }
+                  });
                 }
             });
 

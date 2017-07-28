@@ -679,6 +679,16 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
 def repStop(request):
     # cleanup in repro project!
+    # reset WIP flag
+    ids = request.POST["ids"]
+    if isinstance(ids, list):
+        refList = Reference.objects.all().filter(refid__in=ids)
+    else:
+        refList = Reference.objects.all().filter(refid=ids)
+    for ref in refList:
+        curProj = Project.objects.get(projectid=ref.projectid)
+        curProj.wip = False
+        curProj.save()
     return "Stopped"
 
 
@@ -730,6 +740,11 @@ def reanalyze(request, stopList):
             return repStop(request)
 
         for ref in refList:
+
+            curProj = Project.objects.get(projectid=ref.projectid)
+            curProj.wip = True
+            curProj.save()
+
             orig_align = 'reference=mothur/reference/align/' + str(ref.alignDB)
             orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(ref.taxonomyDB)
             orig_template = 'template=mothur/reference/template/' + str(ref.templateDB)
@@ -947,6 +962,10 @@ def reanalyze(request, stopList):
                 return repStop(request)
             # reprocess completed, delete old mothur
             os.remove(os.path.join(dest, "mothur.batch.old"))
+
+            curProj = Project.objects.get(projectid=ref.projectid)
+            curProj.wip = False
+            curProj.save()
 
         return None
 

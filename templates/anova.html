@@ -1591,10 +1591,12 @@
                     if (resType == "status") {
                         var stage = obj['stage'];
                         if (running) {
-                            if (dataType == 1) {
-                                $('#container-1').empty().append(stage);
-                            } else if (dataType == 2) {
-                                $('#container-2').empty().append(stage);
+                            if (stage != "Downloading results") {
+                                if (dataType == 1) {
+                                    $('#container-1').empty().append(stage);
+                                } else if (dataType == 2) {
+                                    $('#container-2').empty().append(stage);
+                                }
                             }
                         }
                     } else {
