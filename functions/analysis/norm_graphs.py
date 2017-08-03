@@ -226,7 +226,10 @@ def getNorm(request, RID, stopList, PID):
             nameList = []
             myList.sort()
             for i in myList:
-                nameList.append({"id": str(i), "metadata": metaDF.loc[i].to_dict()})
+                nameDict = metaDF.loc[i].to_dict()
+                for key in nameDict:
+                    nameDict[key] = str(nameDict[key])
+                nameList.append({"id": str(i), "metadata": nameDict})
 
             # get list of lists with abundances
             taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]
@@ -269,7 +272,10 @@ def getNorm(request, RID, stopList, PID):
             myList.sort()
             for i in myList:
                 tempPanda = metaDF.fillna("NaN")
-                nameList.append({"id": str(i), "metadata": tempPanda.loc[i].to_dict()})
+                nameDict = tempPanda.loc[i].to_dict()
+                for key in nameDict:
+                    nameDict[key] = str(nameDict[key])
+                nameList.append({"id": str(i), "metadata": nameDict})
 
             # get list of lists with abundances
             taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]
@@ -279,14 +285,6 @@ def getNorm(request, RID, stopList, PID):
 
             # get list of taxa
             namesDF = finalDF.loc[:, ['sampleid', 'otuid']]
-            finalDF['kingdom'] = finalDF['kingdom'].str.split(": ").str[1]
-            finalDF['phyla'] = finalDF['phyla'].str.split(": ").str[1]
-            finalDF['class'] = finalDF['class'].str.split(": ").str[1]
-            finalDF['order'] = finalDF['order'].str.split(": ").str[1]
-            finalDF['family'] = finalDF['family'].str.split(": ").str[1]
-            finalDF['genus'] = finalDF['genus'].str.split(": ").str[1]
-            finalDF['species'] = finalDF['species'].str.split(": ").str[1]
-            finalDF['otu'] = finalDF['otu'].str.split(": ").str[1]
             namesDF['taxa'] = finalDF.loc[:, ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].values.tolist()
             namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
             namesDF.sort_index(axis=0, inplace=True)
@@ -294,9 +292,10 @@ def getNorm(request, RID, stopList, PID):
             taxaList = []
             for index, row in namesDF.iterrows():
                 taxonomy = row[0][:-1]
+                taxonomy = [i.split(': ', 1)[1] for i in taxonomy]
                 taxonomy = filter(lambda a: a != 'unclassified', taxonomy)
-                metaDict = {'taxonomy': taxonomy }
-                taxaList.append({"id": row[0][-1], "metadata": metaDict})
+                metaDict = {'taxonomy': taxonomy}
+                taxaList.append({"id": row[0][-1].split(': ')[1], "metadata": metaDict})
 
             shape = [len(taxaList), len(nameList)]
             myBiom['id'] = 'None'
@@ -622,6 +621,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     namesDF.drop(['speciesid', 'speciesName'], axis=1, inplace=True)
     namesDF['otu'] = namesDF['otuid'].astype(str) + ': ' + namesDF['otuName']
     namesDF.drop(['otuName'], axis=1, inplace=True)
+    namesDF.replace('unclassified unclassified', 'unclassified', regex=True, inplace=True)
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
     if stopList[PID] == RID:

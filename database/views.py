@@ -1835,24 +1835,17 @@ def pathJSON(request):
     return HttpResponse(myJson)
 
 
-def qsFunc(koList): # works, but is still slow, still leaks (although only maybe 100 MB at a time vs 10 GB)
+def qsFunc(koList):  # works, but is still slow, still leaks (although only maybe 100 MB at a time vs 10 GB)
     finalotuList = []
-    #print "Starting QS"
-    #errors = 0
     otuList = OTU_99.objects.all().values_list('otuid', flat=True)
     if koList:
         for otu in otuList:
             try:
                 qs = PICRUSt.objects.using('picrust').filter(otuid=otu)
-                # memory goes up from loading objects in qs list, can load early with print
-                # need to clean up memory used from iterating through qs
-                # print "qs: ", len(qs)
                 if any(i in qs[0].geneList for i in koList):
                     finalotuList.append(otu)
             except:
-                #errors += 1
                 pass
-    #print "Done with QS. Errored " + str(errors) + " times"
     return finalotuList
 
 
@@ -1901,7 +1894,7 @@ def nzJSON(request):
     return HttpResponse(myJson)
 
 
-def nzTaxaJSON(request):    # Jump
+def nzTaxaJSON(request):
     try:
         if request.is_ajax():
             wanted = request.GET['key']
@@ -1938,13 +1931,10 @@ def nzTaxaJSON(request):    # Jump
             finalotuList = None
             qs1 = None
             results = None
-            del finalotuList
-            del qs1
-            del results
-            gc.collect()    # Jump?
             return HttpResponse(myJson)
     except Exception as e:
         print "Error during kegg enzyme: ", e
+
 
 def kegg_enzyme(request):
     return render(
