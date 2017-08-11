@@ -23,6 +23,7 @@ import ujson
 from uuid import uuid4
 import zipfile
 import gc
+import fnmatch
 
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
@@ -166,6 +167,7 @@ def uploadFunc(request, stopList):
 
     ### start of main upload function
     projects = Reference.objects.none()
+    p_uuid = ""
     if request.method == 'POST' and 'Upload' in request.POST:
         start = datetime.datetime.now()
         form1 = UploadForm1(request.POST, request.FILES)
@@ -432,7 +434,9 @@ def uploadFunc(request, stopList):
                 functions.handle_uploaded_file(file5, mothurdest, 'temp.txt')
                 functions.handle_uploaded_file(file5, dest, 'temp.txt')
 
-                #function to check if mothur and metafiles samples match
+                bubbleFiles(mothurdest)
+
+                # function to check if mothur and metafiles samples match
                 error = checkSamples(metaFile, source, 'mothur/temp/temp.txt')
 
                 if error != "":
@@ -564,54 +568,12 @@ def uploadFunc(request, stopList):
                     os.makedirs(mothurdest)
 
                 file_list = request.FILES.getlist('fna_files')
-                tempList = []
-                if len(file_list) > 1:
-                    for file in file_list:
-                        try:
-                            functions.handle_uploaded_file(file, dest, file.name)
-                            tar = tarfile.open(os.path.join(dest, file.name))
-                            tar.extractall(path=mothurdest)
-                            tar.close()
-                        except Exception:
-                            try:
-                                functions.handle_uploaded_file(file, dest, file.name)
-                                zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                                zip.extractall(mothurdest)
-                                zip.close()
-                            except Exception:
-                                functions.handle_uploaded_file(file, mothurdest, file.name)
-
-                        functions.handle_uploaded_file(file, dest, file.name)
-
-                        if os.name == 'nt':
-                            myStr = "mothur\\temp\\" + str(file.name)
-                        else:
-                            myStr = "mothur/temp/" + str(file.name)
-                        tempList.append(myStr)
-
-                    inputList = "-".join(tempList)  # remove project if mothur is shut down, somehow
-                    if os.name == 'nt':
-                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
-                    else:
-                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
+                tempList = prepMultiFiles(file_list, dest, mothurdest, 'temp.fasta')
+                inputList = "-".join(tempList)
+                if os.name == 'nt':
+                    os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
                 else:
-                    for file in file_list:
-                        fasta = 'temp.fasta'
-                        try:
-                            functions.handle_uploaded_file(file, dest, file.name)
-                            tar = tarfile.open(os.path.join(dest, file.name))
-                            tar.extractall(path=mothurdest)
-                            tar.close()
-                        except Exception:
-                            try:
-                                functions.handle_uploaded_file(file, dest, file.name)
-                                zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                                zip.extractall(mothurdest)
-                                zip.close()
-                            except Exception:
-                                functions.handle_uploaded_file(file, mothurdest, fasta)
-
-                        functions.handle_uploaded_file(file, dest, file.name)
+                    os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
 
                 if stopList[PID] == RID:
                     functions.remove_proj(dest)
@@ -619,53 +581,12 @@ def uploadFunc(request, stopList):
                     return upStop(request)
 
                 file_list = request.FILES.getlist('qual_files')
-                tempList = []
-                if len(file_list) > 1:
-                    for file in file_list:
-                        try:
-                            functions.handle_uploaded_file(file, dest, file.name)
-                            tar = tarfile.open(os.path.join(dest, file.name))
-                            tar.extractall(path=mothurdest)
-                            tar.close()
-                        except Exception:
-                            try:
-                                functions.handle_uploaded_file(file, dest, file.name)
-                                zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                                zip.extractall(mothurdest)
-                                zip.close()
-                            except Exception:
-                                functions.handle_uploaded_file(file, mothurdest, file.name)
-
-                        if os.name == 'nt':
-                            myStr = "mothur\\temp\\" + str(file.name)
-                        else:
-                            myStr = "mothur/temp/" + str(file.name)
-                        tempList.append(myStr)
-                        functions.handle_uploaded_file(file, dest, file.name)
-
-                    inputList = "-".join(tempList)
-                    if os.name == 'nt':
-                        os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
-                    else:
-                        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
+                tempList = prepMultiFiles(file_list, dest, mothurdest, 'temp.qual')
+                inputList = "-".join(tempList)
+                if os.name == 'nt':
+                    os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
                 else:
-                    for file in file_list:
-                        qual = 'temp.qual'
-                        try:
-                            functions.handle_uploaded_file(file, dest, file.name)
-                            tar = tarfile.open(os.path.join(dest, file.name))
-                            tar.extractall(path=mothurdest)
-                            tar.close()
-                        except Exception:
-                            try:
-                                functions.handle_uploaded_file(file, dest, file.name)
-                                zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                                zip.extractall(mothurdest)
-                                zip.close()
-                            except Exception:
-                                functions.handle_uploaded_file(file, mothurdest, qual)
-
-                        functions.handle_uploaded_file(file, dest, file)
+                    os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
 
                 if stopList[PID] == RID:
                     functions.remove_proj(dest)
@@ -683,7 +604,7 @@ def uploadFunc(request, stopList):
 
                 functions.handle_uploaded_file(file6, dest, file6.name)
 
-                #function to check if mothur and metafiles samples match
+                # function to check if mothur and metafiles samples match
                 error = checkSamples(metaFile, source, 'mothur/temp/temp.oligos')
 
                 if error != "":
@@ -862,6 +783,8 @@ def uploadFunc(request, stopList):
                         transaction.savepoint_rollback(sid)
                         return upStop(request)
 
+                bubbleFiles(mothurdest)
+
                 batch = 'mothur.batch'
                 file15 = request.FILES['docfile15']
 
@@ -993,12 +916,12 @@ def uploadFunc(request, stopList):
                     transaction.savepoint_rollback(sid)
                     return upStop(request)
 
-                myProject = Project.objects.get(projectid=p_uuid)
-                myProject.wip = False
-                myProject.save()
-
             else:
                 print ('Please check that all necessary files have been selected.')
+
+    myProject = Project.objects.get(projectid=p_uuid)
+    myProject.wip = False
+    myProject.save()
 
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -1013,6 +936,76 @@ def uploadFunc(request, stopList):
          'form2': UploadForm2,
          'error': ""}
     )
+
+
+def bubbleFiles(dest):
+    # recursively find all files in dest directory
+    # move each file to dest, delete subdirectories
+    for root, dirnames, filenames in os.walk(dest):
+        for filename in fnmatch.filter(filenames, '*'):
+            shutil.move(os.path.join(root, filename), os.path.join(dest, filename))
+    return
+
+
+def prepMultiFiles(file_list, dest, mothurdest, outFileName):   # outFileName is 'temp.qual' var
+    tempList = []
+    for file in file_list:
+        try:
+            functions.handle_uploaded_file(file, dest, file.name)
+            tar = tarfile.open(os.path.join(dest, file.name))
+            tarParts = tar.getmembers()
+            tar.extractall(path=mothurdest)
+            for tarp in tarParts:
+                if os.name == 'nt':
+                    splitTar = tarp.name.split('\\')
+                    splitEnd = splitTar[len(splitTar)-1]
+                    splitSplit = splitEnd.split('.')
+                    if splitSplit[len(splitSplit)-1] == "qual" or splitSplit[len(splitSplit)-1] == "fna":
+                        myStr = "mothur\\temp\\" + str(splitTar[len(splitTar)-1])
+                        tempList.append(myStr)
+                else:
+                    splitTar = tarp.name.split('/')
+                    splitEnd = splitTar[len(splitTar)-1]
+                    splitSplit = splitEnd.split('.')
+                    if splitSplit[len(splitSplit)-1] == "qual" or splitSplit[len(splitSplit)-1] == "fna":
+                        myStr = "mothur/temp/" + str(splitEnd)
+                        tempList.append(myStr)
+            tar.close()
+        except Exception:
+            try:
+                functions.handle_uploaded_file(file, dest, file.name)
+                zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                zipParts = zip.namelist()
+                zip.extractall(mothurdest)
+                for zips in zipParts:
+                    if os.name == 'nt':
+                        splitZip = zips.split('\\')
+                        splitEnd = splitZip[len(splitZip)-1]
+                        splitSplit = splitEnd.split('.')
+                        if splitSplit[len(splitSplit)-1] == "qual" or splitSplit[len(splitSplit)-1] == "fna":
+                            myStr = "mothur\\temp\\" + str(splitZip[len(splitZip)-1])
+                            tempList.append(myStr)
+                    else:
+                        splitZip = zips.split('/')
+                        splitEnd = splitZip[len(splitZip)-1]
+                        splitSplit = splitEnd.split('.')
+                        if splitSplit[len(splitSplit)-1] == "qual" or splitSplit[len(splitSplit)-1] == "fna":
+                            myStr = "mothur/temp/" + str(splitZip[len(splitZip)-1])
+                            tempList.append(myStr)
+                zip.close()
+            except Exception:
+                functions.handle_uploaded_file(file, mothurdest, file.name)
+                functions.handle_uploaded_file(file, dest, file.name)
+                if os.name == 'nt':
+                    myStr = "mothur\\temp\\" + str(file.name)
+                else:
+                    myStr = "mothur/temp/" + str(file.name)
+                tempList.append(myStr)
+                if len(file_list) == 1:
+                    functions.handle_uploaded_file(file, mothurdest, outFileName)
+
+    bubbleFiles(mothurdest)  # bubble up subdirected files, templist already has file names chopped
+    return tempList
 
 
 def remProjectFiles(request):
