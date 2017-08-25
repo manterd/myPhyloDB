@@ -600,6 +600,13 @@ def getSampleQuantTree(request):
             soil_class['children'].append(myNode)
         soil['children'].append(soil_class)
 
+        fertilizer = {'title': 'Fertilizer Mgt',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+        list = ['fert_tot_amount', 'fert_N_tot_amount', 'fert_P_tot_amount', 'fert_K_tot_amount']
+        for i in range(len(list)):
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
+            fertilizer['children'].append(myNode)
+        soil['children'].append(fertilizer)
+
         irrigation = {'title': 'Irrigation',  'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
         list = ['irrigation_tot_amount']
         for i in range(len(list)):

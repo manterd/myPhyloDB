@@ -22,21 +22,22 @@ Source: "..\..\dist\myPhyloDB\*.exe"; DestDir: "{app}"; Components: Main
 
 Source: "..\..\dist\myPhyloDB\Include\*"; DestDir: "{app}\Include"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\R\R-portable\*"; DestDir: "{app}\R\R-Portable"; Flags: recursesubdirs; Components: Main
+Source: "..\..\dist\myPhyloDB\R\myFunctions\*"; DestDir: "{app}\R\myFunctions"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\config\*"; DestDir: "{app}\config"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\django\*"; DestDir: "{app}\django"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\instructions\current\*"; DestDir: "{app}\instructions\current"; Flags: recursesubdirs; Components: Manual
-Source: "..\..\dist\myPhyloDB\media\*"; DestDir: "{app}\media"; Flags: recursesubdirs; Components: Main
+Source: "..\..\dist\myPhyloDB\myPhyloDB\media\*"; DestDir: "{app}\myPhyloDB\media"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\mothur-win\*"; DestDir: "{app}\mothur\mothur-win"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\mothur\reference\*"; DestDir: "{app}\mothur\reference"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\pytz\*"; DestDir: "{app}\pytz"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs; Components: Main
 Source: "..\..\dist\myPhyloDB\uploads\*"; DestDir: "{app}\uploads"; Flags: recursesubdirs uninsneveruninstall; Components: Main
 Source: "..\..\dist\myPhyloDB\database\migrations\*"; DestDir: "{app}\database\migrations"; Flags: recursesubdirs; Components: Main
-Source: "..\..\dist\myPhyloDB\registration\migrations\*"; DestDir: "{app}\registration\migrations"; Flags: recursesubdirs; Components: Main
-
+Source: "..\..\dist\myPhyloDB\cryptography-1.8.1-py2.7.egg-info\*"; DestDir: "{app}\cryptography-1.8.1-py2.7.egg-info"; Flags: recursesubdirs; Components: Main
+Source: "..\..\dist\myPhyloDB\openpyxl\*"; DestDir: "{app}\openpyxl"; Flags: recursesubdirs; Components: Main
 
 [Icons]
-Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\media\images\myPhyloDB_Logo.ico"
+Name: "{group}\myPhyloDB"; Filename: "{app}\myPhyloDB.exe"; IconFilename: "{app}\myPhyloDB\media\images\myPhyloDB_Logo.ico"
 Name: "{group}\Manual.pdf"; Filename: "{app}\instructions\current\Manual.pdf"
 Name: "{group}\Uninstall"; Filename: "{uninstallexe}"
 
