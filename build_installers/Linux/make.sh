@@ -14,8 +14,8 @@
 rm myPhyloDB.tar.gz
 rm myPhyloDB_v.1.2.0_Linux_x64_install.sh
 cd $HOME/PycharmProjects/myPhyloDB
-sed -i -e 's/\/PycharmProjects\/myPhyloDB/g' 'R/R-Linux/bin/R'
-sed -i -e 's/\/PycharmProjects\/myPhyloDB/g' 'R/R-Linux/lin/R/bin/R'
+sed -i -e 's/\/PycharmProjects\/myPhyloDB//g' 'R/R-Linux/bin/R'
+sed -i -e 's/\/PycharmProjects\/myPhyloDB//g' 'R/R-Linux/lin/R/bin/R'
 export DJANGO_SETTINGS_MODULE=myPhyloDB.settings
 pyinstaller -D $HOME/PycharmProjects/myPhyloDB/serve-linux.spec
 
