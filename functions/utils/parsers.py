@@ -87,9 +87,9 @@ def dada2(dest, source):
             mothurStat = '\n\nR processing is done! \n\n'
 
             if os.name == 'nt':
-                cmd = "mothur\\mothur-win\\mothur.exe mothur\\temp\\dada2.batch"
+                cmd = "mothur\\mothur-win\\mothur.exe mothur\\dada2_classify.batch"
             else:
-                cmd = "mothur/mothur-linux/mothur mothur/temp/dada2.batch"
+                cmd = "mothur/mothur-linux/mothur mothur/dada2_classify.batch"
 
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
