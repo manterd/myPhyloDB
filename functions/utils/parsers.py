@@ -16,6 +16,7 @@ import pandas as pd
 import re
 import shutil
 import json
+from pyper import *
 import subprocess
 from uuid import uuid4
 
@@ -35,6 +36,105 @@ pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
 
 pro = None
+
+
+def dada2(dest, source):
+    global pro
+    try:
+        global stage, perc, mothurStat
+        stage = "Step 3 of 5: Running R..."
+        perc = 0
+
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+        if os.name == 'nt':
+            cmd = "R\\R-Portable\\App\\R-Portable\\bin\\R.exe --no-save --no-restore < mothur\\temp\\dada2.R"
+        else:
+            cmd = "R/R-Linux/bin/R --no-save --no-restore < mothur/temp/dada2.R"
+
+        r('.cran_packages <-  c("ggplot2", "gridExtra", "reshape2", "qiimer")')
+        r("new.packages <- .cran_packages[!(.cran_packages%in% installed.packages()[,'Package'])]")
+        print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+        r('.dev_tools <- c("biom")')
+        r("new.packages <- .dev_tools[!(.dev_tools %in% installed.packages()[,'Package'])]")
+        print r('if (length(new.packages)) devtools::install_github("biom", "joey711")')
+
+        r('.bioc_packages <- c("dada2", "phyloseq")')
+        r("new.packages <- .bioc_packages[!(.bioc_packages %in% installed.packages()[,'Package'])]")
+        r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+        print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=TRUE, dependencies=T)")
+
+        try:
+            pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            while True:
+                line = pro.stdout.readline()
+                if line != '':
+                    mothurStat += line
+                else:
+                    break
+            mothurStat = '\n\nR processing is done! \n\n'
+
+            if os.name == 'nt':
+                cmd = "mothur\\mothur-win\\mothur.exe mothur\\dada2_classify.batch"
+            else:
+                cmd = "mothur/mothur-linux/mothur mothur/dada2_classify.batch"
+
+            pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            while True:
+                line = pro.stdout.readline()
+                if line != '':
+                    mothurStat += line
+                else:
+                    break
+            mothurStat = '\n\nR processing is done! \n\n'
+
+            with file('mothur/temp/dada.dkm.knn.taxonomy', 'r') as original:
+                data = original.read()
+            with file('mothur/temp/dada.cons.taxonomy', 'w') as modified:
+                modified.write("OTU\tTaxonomy\n" + data)
+            shutil.copy('mothur/temp/dada.fasta', '% s/dada.rep_seqs.fasta' % dest)
+            shutil.copy('mothur/temp/dada.cons.taxonomy', '% s/final.cons.taxonomy' % dest)
+            shutil.copy('mothur/temp/dada.shared', '% s/final.tx.shared' % dest)
+            shutil.copy('mothur/temp/dada2.R', '% s/dada2.R' % dest)
+            shutil.rmtree('mothur/temp')
+
+            for afile in glob.glob(r'*.logfile'):
+                shutil.move(afile, dest)
+
+            for afile in glob.glob(r'.Rhistory'):
+                shutil.move(afile, dest)
+
+            dir = os.getcwd()
+
+            path = os.path.join(dir, 'mothur', 'reference', 'align')
+            stuff = os.listdir(path)
+            for thing in stuff:
+                if thing.endswith(".8mer"):
+                    os.remove(os.path.join(path, thing))
+
+            path = os.path.join(dir, 'mothur', 'reference', 'taxonomy')
+            stuff = os.listdir(path)
+            for thing in stuff:
+                if thing.endswith(".numNonZero") or thing.endswith(".prob") or thing.endswith(".sum") or thing.endswith(".train"):
+                    os.remove(os.path.join(path, thing))
+
+            path = os.path.join(dir, 'mothur', 'reference', 'template')
+            stuff = os.listdir(path)
+            for thing in stuff:
+                if thing.endswith(".8mer"):
+                    os.remove(os.path.join(path, thing))
+
+        except Exception as e:
+            print "R failed: " + str(e)
+
+    except Exception:
+        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+        logging.exception(myDate)
 
 
 def mothur(dest, source):
@@ -504,7 +604,10 @@ def parse_taxonomy(Document):
             if row:
                 step += 1.0
                 perc = int(step / total * 100)
-                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])
+                if len(row) == 3:
+                    subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])
+                else:
+                    subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[1])
                 subbed = subbed[:-1]
                 taxon = subbed.split(';')
 
@@ -571,7 +674,11 @@ def parse_profile(file3, file4, p_uuid, refDict):
         stage = "Step 5 of 5: Parsing shared file..."
         perc = 0
         data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True)
-        arr1 = np.delete(data1, 1, axis=1)
+        row, col = data1.shape
+        if col == 3:
+            arr1 = np.delete(data1, 1, axis=1)
+        else:
+            arr1 = data1
         df1 = pd.DataFrame(arr1[1:, 1:], index=arr1[1:, 0], columns=arr1[0, 1:])
         df1 = df1[df1.index != 'False']
         a = df1.columns.values.tolist()
@@ -694,7 +801,14 @@ def repStop(request):
 
 def mothurRestore(dest):
     # if reprocess is cancelled / fails, replace new mothur file with old
-    shutil.copyfile(str(dest)+'/mothur.batch.old', str(dest)+'/mothur.batch')
+    try:
+        shutil.copyfile(str(dest)+'/mothur.batch.old', str(dest)+'/mothur.batch')
+    except:
+        pass
+    try:
+        shutil.copyfile(str(dest)+'/dada2.R.old', str(dest)+'/dada2.R')
+    except:
+        pass
 
 
 @transaction.atomic
@@ -711,15 +825,16 @@ def reanalyze(request, stopList):
 
         ids = request.POST["ids"]
         processors = request.POST["processors"]
+        platform = request.POST["platform"]
         RID = request.POST['RID']
         PID = 0  # change if adding additional data threads
 
-        repmothur = False
+        replaceBatch = False
         mFile = None
 
         try:
             mFile = request.FILES['mothurFile']
-            repmothur = True
+            replaceBatch = True
         except Exception as e:
             pass  # file not found, use default mothur batch
 
@@ -740,7 +855,6 @@ def reanalyze(request, stopList):
             return repStop(request)
 
         for ref in refList:
-
             curProj = Project.objects.get(projectid=ref.projectid)
             curProj.wip = True
             curProj.save()
@@ -760,12 +874,18 @@ def reanalyze(request, stopList):
             dest = ref.path
             source = ref.source
 
-            # copy old mothur file with new name
-            shutil.copyfile(str(dest)+'/mothur.batch', str(dest)+'/mothur.batch.old')
-
-            if repmothur:
-                # drop new mothur file onto old
-                functions.handle_uploaded_file(mFile, dest, 'mothur.batch')
+            if platform == 'mothur':
+                # copy old mothur file with new name
+                shutil.copyfile(str(dest)+'/mothur.batch', str(dest)+'/mothur.batch.old')
+                if replaceBatch:
+                    # drop new mothur file onto old
+                    functions.handle_uploaded_file(mFile, dest, 'mothur.batch')
+            else:
+                # copy old R file with new name
+                shutil.copyfile(str(dest)+'/dada2.R', str(dest)+'/dada2.R.old')
+                if replaceBatch:
+                    # drop new mothur file onto old
+                    functions.handle_uploaded_file(mFile, dest, 'dada2.R')
 
             if stopList[PID] == RID:
                 mothurRestore(dest)
@@ -874,20 +994,21 @@ def reanalyze(request, stopList):
                 mothurRestore(dest)
                 return repStop(request)
 
-            try:
-                with open("% s/mothur.batch" % dest, 'r+') as bat:
-                    with open("% s/mothur.batch" % mothurdest, 'wb+') as destination:
-                        for line in bat:
-                            if "processors" in line:
-                                line = line.replace('processors=X', 'processors='+str(processors))
-                            if "align.seqs" in line:
-                                line = line.replace(str(orig_align), str(new_align))
-                            if "classify.seqs" in line:
-                                line = line.replace(str(orig_template), str(new_template))
-                                line = line.replace(str(orig_taxonomy), str(new_taxonomy))
-                            destination.write(line)
-            except Exception as e:
-                print("Error with batch file: ", e)
+            if platform == 'mothur':
+                try:
+                    with open("% s/mothur.batch" % dest, 'r+') as bat:
+                        with open("% s/mothur.batch" % mothurdest, 'wb+') as destination:
+                            for line in bat:
+                                if "processors" in line:
+                                    line = line.replace('processors=X', 'processors='+str(processors))
+                                if "align.seqs" in line:
+                                    line = line.replace(str(orig_align), str(new_align))
+                                if "classify.seqs" in line:
+                                    line = line.replace(str(orig_template), str(new_template))
+                                    line = line.replace(str(orig_taxonomy), str(new_taxonomy))
+                                destination.write(line)
+                except Exception as e:
+                    print("Error with batch file: ", e)
 
             shutil.copy('% s/final_meta.xlsx' % dest, '% s/final_meta.xlsx' % mothurdest)
 
@@ -919,10 +1040,17 @@ def reanalyze(request, stopList):
                 transaction.savepoint_rollback(sid)
                 return repStop(request)
 
-            with open('% s/mothur.batch' % mothurdest, 'rb') as file7:
-                raw = True
-                userID = str(request.user.id)
-                refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+            if platform == 'mothur':
+                with open('% s/mothur.batch' % mothurdest, 'rb') as file7:
+                    raw = True
+                    userID = str(request.user.id)
+                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+            else:
+                with open('% s/dada2.R' % mothurdest, 'rb') as file7:
+                    raw = True
+                    userID = str(request.user.id)
+                    "print parsing sample"
+                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
 
             if stopList[PID] == RID:
                 mothurRestore(dest)
@@ -930,10 +1058,13 @@ def reanalyze(request, stopList):
                 return repStop(request)
 
             try:
-                mothur(dest, source)
+                if platform == 'mothur':
+                    mothur(dest, source)
+                else:
+                    dada2(dest, source)
             except Exception as e:
                 transaction.savepoint_rollback(sid)
-                print("Error with mothur: " + str(e))
+                print("Error with mothur/R: " + str(e))
                 return HttpResponse(
                     json.dumps({"error": "yes"}),
                     content_type="application/json"
@@ -960,6 +1091,7 @@ def reanalyze(request, stopList):
                 mothurRestore(dest)
                 transaction.savepoint_rollback(sid)  # this does not seem to cancel properly
                 return repStop(request)
+
             # reprocess completed, delete old mothur
             os.remove(os.path.join(dest, "mothur.batch.old"))
 

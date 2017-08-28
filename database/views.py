@@ -22,7 +22,6 @@ import time
 import ujson
 from uuid import uuid4
 import zipfile
-import gc
 import fnmatch
 
 
@@ -159,7 +158,6 @@ def upErr(msg, request, dest, sid):
     )
 
 
-#@transaction.atomic
 def uploadFunc(request, stopList):
     ### create a savepoint
     sid = transaction.savepoint()
@@ -172,6 +170,8 @@ def uploadFunc(request, stopList):
         start = datetime.datetime.now()
         form1 = UploadForm1(request.POST, request.FILES)
         source = str(request.POST['source'])
+        platform = str(request.POST['platform'])
+
         userID = str(request.user.id)
         processors = int(request.POST['processors'])
         RID = request.POST['RID']
@@ -246,7 +246,7 @@ def uploadFunc(request, stopList):
                 batch = request.FILES['docfile7']
             elif source == 'miseq':
                 raw = True
-                batch = request.FILES['docfile15']
+                batch = request.FILES['docfile7']
             else:
                 raw = False
                 batch = ''
@@ -785,57 +785,99 @@ def uploadFunc(request, stopList):
 
                 bubbleFiles(mothurdest)
 
-                batch = 'mothur.batch'
-                file15 = request.FILES['docfile15']
+                if platform == 'mothur':
+                    batch = 'mothur.batch'
+                    file15 = request.FILES['docfile7']
 
-                avail_proc = mp.cpu_count()
-                use_proc = min(avail_proc, processors)
-                actual_proc = 'processors=' + str(use_proc)
+                    avail_proc = mp.cpu_count()
+                    use_proc = min(avail_proc, processors)
+                    actual_proc = 'processors=' + str(use_proc)
 
-                functions.handle_uploaded_file(file15, mothurdest, batch)
+                    functions.handle_uploaded_file(file15, mothurdest, batch)
 
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
+                    if stopList[PID] == RID:
+                        functions.remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
+                        return upStop(request)
 
-                for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
-                    print line.replace("processors=X", actual_proc),
+                    for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
+                        print line.replace("processors=X", actual_proc),
 
-                functions.handle_uploaded_file(file15, dest, batch)
+                    functions.handle_uploaded_file(file15, dest, batch)
 
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
+                    if stopList[PID] == RID:
+                        functions.remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
+                        return upStop(request)
 
-                try:
-                    functions.mothur(dest, source)
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
+                    try:
+                        functions.mothur(dest, source)
+                    except Exception:
+                        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                        logging.exception(myDate)
+                        functions.remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
 
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error with your mothur batch file: " + str(file15.name)
-                         }
-                    )
+                        if request.user.is_superuser:
+                            projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                        elif request.user.is_authenticated():
+                            projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+                        return render(
+                            request,
+                            'upload.html',
+                            {'projects': projects,
+                             'form1': UploadForm1,
+                             'form2': UploadForm2,
+                             'error': "There was an error with your mothur batch file: " + str(file15.name)
+                             }
+                        )
 
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
+                    if stopList[PID] == RID:
+                        functions.remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
+                        return upStop(request)
+
+                elif platform == 'dada2':
+                    batch = 'dada2.R'
+                    file7 = request.FILES['docfile7']
+                    functions.handle_uploaded_file(file7, mothurdest, batch)
+
+                    avail_proc = mp.cpu_count()
+                    use_proc = min(avail_proc, processors)
+                    actual_proc = 'processors=' + str(use_proc)
+
+                    shutil.copy('mothur/dada2_classify.batch', 'mothur/temp/dada2.batch')
+                    for line in fileinput.input('mothur/temp/dada2.batch', inplace=1):
+                        print line.replace("processors=X", actual_proc),
+
+                    try:
+                        functions.dada2(dest, source)
+                    except Exception:
+                        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+                        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+                        logging.exception(myDate)
+                        functions.remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
+
+                        if request.user.is_superuser:
+                            projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+                        elif request.user.is_authenticated():
+                            projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+                        return render(
+                            request,
+                            'upload.html',
+                            {'projects': projects,
+                             'form1': UploadForm1,
+                             'form2': UploadForm2,
+                             'error': "There was an error with your mothur batch file: " + str(file7.name)
+                             }
+                        )
+
+                    if stopList[PID] == RID:
+                        functions.remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
+                        return upStop(request)
 
                 try:
                     with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:

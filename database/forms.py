@@ -18,11 +18,11 @@ class UploadForm2(forms.Form):
     fna_files = MultiFileField()
     qual_files = MultiFileField()
     docfile6 = forms.FileField(label='Select Oligos file:')
-    docfile7 = forms.FileField(label='Select mothur batch file:')
+    docfile7 = forms.FileField(label='Select batch file:')
     docfile13 = forms.FileField(label='Select 3-column contig file:')
+    platform = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'mothur'), ('dada2', 'dada2')))
     fastq_files = MultiFileField()
-    docfile15 = forms.FileField(label='Select mothur batch file:')
-    source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed mothur files'), ('454_sff', 'sff files'), ('454_fastq', 'fna/qual files'), ('miseq', 'fastq files')))
+    source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed files'), ('454_sff', 'sff files'), ('454_fastq', 'fna/qual files'), ('miseq', 'fastq files')))
     processors = forms.IntegerField(initial=2, min_value=1, max_value=100)
 
 
@@ -59,7 +59,8 @@ class UploadForm9(forms.Form):
 
 
 class UploadForm10(forms.Form):
-    mothurFile = forms.FileField(label='Select mothur batch file to use for reprocessing:')
+    platform = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'mothur'), ('dada2', 'dada2')))
+    mothurFile = forms.FileField(label='Select batch file:')
 
 
 reference_choices = (

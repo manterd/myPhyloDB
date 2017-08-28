@@ -21,7 +21,7 @@ from queues.dataqueue import datstop, dataprocess, datfuncCall, datstat
 
 ### utils folder
 from utils.parsers import parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile, \
-    mothur, reanalyze, status, termP, projectid
+    mothur, dada2, reanalyze, status, termP, projectid
 from utils.trees import getProjectTree, getProjectTreeChildren, \
     getSampleCatTree, getSampleCatTreeChildren, \
     getSampleQuantTree, getSampleQuantTreeChildren, \

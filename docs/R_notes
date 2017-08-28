@@ -3,8 +3,8 @@ This is for development purposes only...
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 1: Download R source file
 
-    R-3.2.3.tar.gz
-    unzip to $HOME/R-3.2.3
+    R-3.4.1.tar.gz
+    unzip to $HOME/R-3.4.1
     open terminal and navigate to your temporary folder
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

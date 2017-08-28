@@ -43,11 +43,9 @@
 
 
         $(function () {
-            var test = '{{ upErr|linebreaks }}';
-            if (test != "<p></p>") {
-                $("#error").show();
-                $("#errorLog").empty().append(test);
-                $("#Upload").css("background-color", "red");
+            var test = '{{ error }}';
+            if (test != "") {
+                alert(test);
             }
 
             $("#treeRem").dynatree({
@@ -73,8 +71,6 @@
             });
 
             $("#Upload").click(function() {
-                $("#error").hide();
-                $("#Upload").css("background-color", "lightgray");
                 $("#stage").show();
                 $("#progressBar").show();
                 document.getElementById("mothurStat").value = "";
@@ -212,7 +208,7 @@
             });
         }
 
-        function clearmothurLog() {
+        function clearMothurLog() {
             document.getElementById("mothurStat").value = "";
         }
 
@@ -329,8 +325,8 @@
                             <td><input type="file" name="fastq_files" multiple></td>
                         </tr>
                         <tr>
-                            <td>{{ form2.docfile15.label_tag }}</td>
-                            <td>{{ form2.docfile15 }}</td>
+                            <td>{{ form2.docfile7.label_tag }}&nbsp;{{ form2.platform }}&nbsp;<span title="Is this a mothur or dada2 (R package) batch file?"><font class="info" color="red">[info]</font></span></td>
+                            <td>{{ form2.docfile7 }}</td>
                         </tr>
                     </table>
                 </td>
@@ -370,18 +366,13 @@
     <div id="progressBar" style="display: none"><div></div></div>
     <br>
 
-    <div id="error" style="display: none">
-        <h2>Error: Please check your uploaded files</h2>
-        <span id="errorLog"></span>
-    </div>
-
     <div>
-        <h2>mothur status and output: </h2>
-        Clear text: <input id="clearLog" type="button" onClick="clearmothurLog();"/>
+        <h2>Mothur/R status and output: </h2>
+        <input id="clearLog" type="button" value="Clear Text" onClick="clearMothurLog();"/>
         <br>
     </div>
 
-    <textarea id="mothurStat" rows="25" cols="72" style="width: 925px"></textarea>
+    <textarea id="mothurStat" rows=25 cols=72 style="width: 925px"></textarea>
 
     <h2>List of previous uploads:</h2>
     <table id="meta_files" border="2" cellspacing="0" cellpadding="1">
