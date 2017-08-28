@@ -1150,7 +1150,7 @@ def reanalyze(request, stopList):
             except:
                 pass
 
-            curProj = Project.objects.get(projectid=ref.projectid)
+            curProj = Project.objects.get(projectid=ref.projectid.projectid)
             curProj.wip = False
             curProj.save()
 
