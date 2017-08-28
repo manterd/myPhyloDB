@@ -39,14 +39,12 @@ Step 4:  Edit files
 
     edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/bin/R" file
         replace all instances of "/home/<username>/PycharmProjects/myPhyloDB"
-        with "$HOME"
+        with "$HOME/myPhyloDB"
 
     edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R/bin/R" file
         replace all instances of "/home/<username>/PycharmProjects/myPhyloDB"
-        with "${PWD}"
+        with "$HOME/myPhylodb"
 
-        For example, line 4 should now be:
-            R_HOME_DIR=${PWD}/R/R-Linux/lib/R
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Optional: R-packages
 When each analysis is run the first time, myPhyloDB will attempt to install the necessary packages.
