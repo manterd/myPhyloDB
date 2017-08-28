@@ -1093,7 +1093,10 @@ def reanalyze(request, stopList):
                 return repStop(request)
 
             # reprocess completed, delete old mothur
-            os.remove(os.path.join(dest, "mothur.batch.old"))
+            if platform == 'mothur':
+                os.remove(os.path.join(dest, "mothur.batch.old"))
+            else:
+                os.remove(os.path.join(dest, "dada2.R.old"))
 
             curProj = Project.objects.get(projectid=ref.projectid)
             curProj.wip = False
