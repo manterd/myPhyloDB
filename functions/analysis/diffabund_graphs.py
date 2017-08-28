@@ -192,7 +192,7 @@ def getDiffAbund(request, stops, RID, PID):
                 r("list.of.packages <- c('edgeR')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-                print r("if (length(new.packages)) biocLite(new.packages)")
+                print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
                 functions.setBase(RID, 'Step 4 of 6: Performing statistical test...')
 

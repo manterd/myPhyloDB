@@ -228,13 +228,13 @@ def getWGCNA(request, stops, RID, PID):
                 r("list.of.packages <- c('XML')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-                r("if (length(new.packages)) biocLite(new.packages)")
+                r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
                 # R packages from biocLite
                 r("list.of.packages <- c('impute', 'preprocessCore', 'GO.db', 'AnnotationDbi')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-                r("if (length(new.packages)) biocLite(new.packages)")
+                r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
                 # R packages from cran
                 r("list.of.packages <- c('devtools', 'ggplot2', 'reshape2', 'WGCNA', 'cluster', 'igraph')")
@@ -244,8 +244,7 @@ def getWGCNA(request, stops, RID, PID):
                 # R packages from github
                 r("list.of.packages <- c('ggplus')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-                print r("if (length(new.packages)) library('devtools')")
-                print r("if (length(new.packages)) install_github('guiastrennec/ggplus')")
+                print r("if (length(new.packages)) devtools::install_github('guiastrennec/ggplus')")
 
                 functions.setBase(RID, 'Step 4 of 7: WGCNA analysis...')
 

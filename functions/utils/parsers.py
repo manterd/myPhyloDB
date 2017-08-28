@@ -19,6 +19,9 @@ import json
 from pyper import *
 import subprocess
 from uuid import uuid4
+import fnmatch
+import zipfile, tarfile
+
 
 from database.models import Project, Reference, \
     Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
@@ -50,14 +53,14 @@ def dada2(dest, source):
         else:
             r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-        if os.name == 'nt':
-            cmd = "R\\R-Portable\\App\\R-Portable\\bin\\R.exe --no-save --no-restore < mothur\\temp\\dada2.R"
-        else:
-            cmd = "R/R-Linux/bin/R --no-save --no-restore < mothur/temp/dada2.R"
-
-        r('.cran_packages <-  c("ggplot2", "gridExtra", "reshape2", "qiimer")')
+        r('.cran_packages <-  c("ggplot2", "gridExtra", "reshape2", "qiimer", "devtools")')
         r("new.packages <- .cran_packages[!(.cran_packages%in% installed.packages()[,'Package'])]")
         print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+        r('.bioc_packages <- c("rhdf5")')
+        r("new.packages <- .bioc_packages[!(.bioc_packages %in% installed.packages()[,'Package'])]")
+        r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+        print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
         r('.dev_tools <- c("biom")')
         r("new.packages <- .dev_tools[!(.dev_tools %in% installed.packages()[,'Package'])]")
@@ -66,10 +69,15 @@ def dada2(dest, source):
         r('.bioc_packages <- c("dada2", "phyloseq")')
         r("new.packages <- .bioc_packages[!(.bioc_packages %in% installed.packages()[,'Package'])]")
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-        print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=TRUE, dependencies=T)")
+        print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
+
+        if os.name == 'nt':
+            cmd = "R\\R-Portable\\App\\R-Portable\\bin\\R.exe --no-save --no-restore < mothur\\temp\\dada2.R"
+        else:
+            cmd = "R/R-Linux/bin/R --no-save --no-restore < mothur/temp/dada2.R"
 
         try:
-            pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
                 line = pro.stdout.readline()
                 if line != '':
@@ -79,11 +87,11 @@ def dada2(dest, source):
             mothurStat = '\n\nR processing is done! \n\n'
 
             if os.name == 'nt':
-                cmd = "mothur\\mothur-win\\mothur.exe mothur\\dada2_classify.batch"
+                cmd = "mothur\\mothur-win\\mothur.exe mothur\\temp\\dada2.batch"
             else:
-                cmd = "mothur/mothur-linux/mothur mothur/dada2_classify.batch"
+                cmd = "mothur/mothur-linux/mothur mothur/temp/dada2.batch"
 
-            pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
                 line = pro.stdout.readline()
                 if line != '':
@@ -158,7 +166,7 @@ def mothur(dest, source):
         else:
             filepath = "mothur/mothur-linux/mothur mothur/temp/mothur.batch"
         try:
-            pro = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            pro = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
                 line = pro.stdout.readline()
                 if line != '':
@@ -472,13 +480,17 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                 row['sampleid'] = s_uuid
 
             # to be used in parse_profile()
-            type = row['sample_type']
+            try:
+                type = row['sample_type']
+                row.pop('sample_type')
+            except:
+                type = np.nan
+
             if type is not np.nan:
                 refDict[s_uuid] = type
             else:
                 refDict[s_uuid] = 'replace'
 
-            row.pop('sample_type')
             row.pop('seq_method')
             row.pop('geo_loc_name')
             row.pop('lat_lon')
@@ -811,6 +823,15 @@ def mothurRestore(dest):
         pass
 
 
+def bubbleFiles(dest):
+    # recursively find all files in dest directory
+    # move each file to dest, delete subdirectories
+    for root, dirnames, filenames in os.walk(dest):
+        for filename in fnmatch.filter(filenames, '*'):
+            shutil.move(os.path.join(root, filename), os.path.join(dest, filename))
+    return
+
+
 @transaction.atomic
 def reanalyze(request, stopList):
     ### create savepoint
@@ -855,7 +876,7 @@ def reanalyze(request, stopList):
             return repStop(request)
 
         for ref in refList:
-            curProj = Project.objects.get(projectid=ref.projectid)
+            curProj = Project.objects.get(projectid=ref.projectid.projectid)
             curProj.wip = True
             curProj.save()
 
@@ -874,18 +895,27 @@ def reanalyze(request, stopList):
             dest = ref.path
             source = ref.source
 
-            if platform == 'mothur':
-                # copy old mothur file with new name
-                shutil.copyfile(str(dest)+'/mothur.batch', str(dest)+'/mothur.batch.old')
-                if replaceBatch:
-                    # drop new mothur file onto old
-                    functions.handle_uploaded_file(mFile, dest, 'mothur.batch')
-            else:
-                # copy old R file with new name
-                shutil.copyfile(str(dest)+'/dada2.R', str(dest)+'/dada2.R.old')
-                if replaceBatch:
-                    # drop new mothur file onto old
-                    functions.handle_uploaded_file(mFile, dest, 'dada2.R')
+            try:
+                if platform == 'mothur':
+                    # copy old mothur file with new name
+                    try:
+                        shutil.copyfile(str(dest)+'/mothur.batch', str(dest)+'/mothur.batch.old')
+                    except:
+                        pass
+                    if replaceBatch:
+                        # drop new mothur file onto old
+                        functions.handle_uploaded_file(mFile, dest, 'mothur.batch')
+                else:
+                    # copy old R file with new name
+                    try:
+                        shutil.copyfile(str(dest)+'/dada2.R', str(dest)+'/dada2.R.old')
+                    except:
+                        pass
+                    if replaceBatch:
+                        # drop new mothur file onto old
+                        functions.handle_uploaded_file(mFile, dest, 'dada2.R')
+            except:
+                pass
 
             if stopList[PID] == RID:
                 mothurRestore(dest)
@@ -990,6 +1020,21 @@ def reanalyze(request, stopList):
                     destStr = str(mothurdest) + '/' + str(afile)
                     shutil.copyfile(srcStr, destStr)
 
+                for subdir, dirs, files in os.walk(mothurdest):
+                    for zipp in files:
+                        filepath= os.path.join(subdir, zipp)
+                        try:
+                            zip_ref = zipfile.ZipFile(filepath, 'r')
+                            zip_ref.extractall(mothurdest)
+                            zip_ref.close()
+                        except:
+                            try:
+                                tar = tarfile.open(filepath, 'r')
+                                tar.extractall(path=mothurdest)
+                                tar.close()
+                            except:
+                                pass
+
             if stopList[PID] == RID:
                 mothurRestore(dest)
                 return repStop(request)
@@ -1009,6 +1054,8 @@ def reanalyze(request, stopList):
                                 destination.write(line)
                 except Exception as e:
                     print("Error with batch file: ", e)
+            else:
+                shutil.copy('% s/dada2.R' % dest, '% s/dada2.R' % mothurdest)
 
             shutil.copy('% s/final_meta.xlsx' % dest, '% s/final_meta.xlsx' % mothurdest)
 
@@ -1024,6 +1071,8 @@ def reanalyze(request, stopList):
                 mothurRestore(dest)
                 transaction.savepoint_rollback(sid)
                 return repStop(request)
+
+            bubbleFiles(mothurdest)
 
             # subQueue()
             metaName = 'final_meta.xlsx'
@@ -1041,12 +1090,12 @@ def reanalyze(request, stopList):
                 return repStop(request)
 
             if platform == 'mothur':
-                with open('% s/mothur.batch' % mothurdest, 'rb') as file7:
+                with open('% smothur.batch' % mothurdest, 'rb') as file7:
                     raw = True
                     userID = str(request.user.id)
                     refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
             else:
-                with open('% s/dada2.R' % mothurdest, 'rb') as file7:
+                with open('% sdada2.R' % mothurdest, 'rb') as file7:
                     raw = True
                     userID = str(request.user.id)
                     "print parsing sample"
@@ -1093,10 +1142,13 @@ def reanalyze(request, stopList):
                 return repStop(request)
 
             # reprocess completed, delete old mothur
-            if platform == 'mothur':
-                os.remove(os.path.join(dest, "mothur.batch.old"))
-            else:
-                os.remove(os.path.join(dest, "dada2.R.old"))
+            try:
+                if platform == 'mothur':
+                    os.remove(os.path.join(dest, "mothur.batch.old"))
+                else:
+                    os.remove(os.path.join(dest, "dada2.R.old"))
+            except:
+                pass
 
             curProj = Project.objects.get(projectid=ref.projectid)
             curProj.wip = False

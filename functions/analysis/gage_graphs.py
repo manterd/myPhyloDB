@@ -76,7 +76,7 @@ def getGAGE(request, stops, RID, PID):
                 r("list.of.packages <- c('gage', 'edgeR', 'pathview')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-                print r("if (length(new.packages)) biocLite(new.packages)")
+                print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
                 # R packages from cran
                 r("list.of.packages <- c('png', 'grid')")

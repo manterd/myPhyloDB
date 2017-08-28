@@ -37,13 +37,8 @@ Step 3: Build new R installation
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Step 4:  Edit files
 
-    edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/bin/R" file
-        replace all instances of "/home/<username>/PycharmProjects/myPhyloDB"
-        with "$HOME/myPhyloDB"
-
-    edit the "$HOME/PycharmProjects/myPhyloDB/R/R-Linux/lib/R/bin/R" file
-        replace all instances of "/home/<username>/PycharmProjects/myPhyloDB"
-        with "$HOME/myPhylodb"
+    edit "$HOME/PycharmProject/myPhyloDB/R/R-Linux/lib/r/etc/Renviron"
+        set R_LIBS_USER=${R_LIBS_USER-'${R_HOME}/library'}
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Optional: R-packages

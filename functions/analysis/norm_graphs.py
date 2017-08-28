@@ -551,7 +551,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         r("list.of.packages <- c('DESeq2')")
         r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-        print r("if (length(new.packages)) biocLite(new.packages)")
+        print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
         functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
 
