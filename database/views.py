@@ -787,13 +787,13 @@ def uploadFunc(request, stopList):
 
                 if platform == 'mothur':
                     batch = 'mothur.batch'
-                    file15 = request.FILES['docfile7']
+                    file7 = request.FILES['docfile7']
 
                     avail_proc = mp.cpu_count()
                     use_proc = min(avail_proc, processors)
                     actual_proc = 'processors=' + str(use_proc)
 
-                    functions.handle_uploaded_file(file15, mothurdest, batch)
+                    functions.handle_uploaded_file(file7, mothurdest, batch)
 
                     if stopList[PID] == RID:
                         functions.remove_proj(dest)
@@ -803,7 +803,7 @@ def uploadFunc(request, stopList):
                     for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
                         print line.replace("processors=X", actual_proc),
 
-                    functions.handle_uploaded_file(file15, dest, batch)
+                    functions.handle_uploaded_file(file7, dest, batch)
 
                     if stopList[PID] == RID:
                         functions.remove_proj(dest)
@@ -829,7 +829,7 @@ def uploadFunc(request, stopList):
                             {'projects': projects,
                              'form1': UploadForm1,
                              'form2': UploadForm2,
-                             'error': "There was an error with your mothur batch file: " + str(file15.name)
+                             'error': "There was an error with your mothur batch file: " + str(file7.name)
                              }
                         )
 
@@ -842,14 +842,6 @@ def uploadFunc(request, stopList):
                     batch = 'dada2.R'
                     file7 = request.FILES['docfile7']
                     functions.handle_uploaded_file(file7, mothurdest, batch)
-
-                    avail_proc = mp.cpu_count()
-                    use_proc = min(avail_proc, processors)
-                    actual_proc = 'processors=' + str(use_proc)
-
-                    shutil.copy('mothur/dada2_classify.batch', 'mothur/temp/dada2.batch')
-                    for line in fileinput.input('mothur/temp/dada2.batch', inplace=1):
-                        print line.replace("processors=X", actual_proc),
 
                     try:
                         functions.dada2(dest, source)
