@@ -1167,9 +1167,6 @@ def referenceTableJSON(request):
             "raw",
             "path",
             "source",
-            "alignDB",
-            "templateDB",
-            "taxonomyDB",
             "author_id__username"
         )
 
