@@ -61,9 +61,6 @@ class Reference(models.Model):
     projectid = models.ForeignKey(Project)  # PID reference was used with?
     path = models.CharField(max_length=90)
     source = models.CharField(max_length=90)
-    alignDB = models.CharField(max_length=90, blank=True)
-    templateDB = models.CharField(max_length=90, blank=True)
-    taxonomyDB = models.CharField(max_length=90, blank=True)
     author = models.ForeignKey(Users, related_name='entries')
 
     def __unicode__(self):

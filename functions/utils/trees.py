@@ -1370,30 +1370,6 @@ def makeReproTree(request):
                 'isFolder': True,
                 'children': []
             }
-
-            myNode2={
-                'title': ref.alignDB,
-                'tooltip': 'Current align file...',
-                'hideCheckbox': True,
-                'isFolder': False
-            }
-            myNode1['children'].append(myNode2)
-
-            myNode3={
-                'title': ref.templateDB,
-                'tooltip': 'Current template file...',
-                'hideCheckbox': True,
-                'isFolder': False
-            }
-            myNode1['children'].append(myNode3)
-
-            myNode4={
-                'title': ref.taxonomyDB,
-                'tooltip': 'Current taxonomy file...',
-                'hideCheckbox': True,
-                'isFolder': False
-            }
-            myNode1['children'].append(myNode4)
             myNode['children'].append(myNode1)
 
         myTree['children'].append(myNode)

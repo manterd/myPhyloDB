@@ -2130,42 +2130,11 @@ def saveSampleList(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def reprocess(request):
-    try:
-        alignFile = request.FILES['docfile8']
-        alignDB = request.FILES['docfile8'].name
-        functions.handle_uploaded_file(alignFile, 'mothur/reference/align', alignDB)
-    except Exception:
-        pass
-
-    try:
-        templateFile = request.FILES['docfile9']
-        templateDB = request.FILES['docfile9'].name
-        functions.handle_uploaded_file(templateFile, 'mothur/reference/template', templateDB)
-    except Exception:
-        pass
-
-    try:
-        taxonomyFile = request.FILES['docfile10']
-        taxonomyDB = request.FILES['docfile10'].name
-        functions.handle_uploaded_file(taxonomyFile, 'mothur/reference/taxonomy', taxonomyDB)
-    except Exception:
-        pass
-
-    alignDB = sorted(os.listdir('mothur/reference/align/'))
-    alignDB.insert(0, 'null')
-    templateDB = sorted(os.listdir('mothur/reference/template/'))
-    templateDB.insert(0, 'null')
-    taxonomyDB = sorted(os.listdir('mothur/reference/taxonomy/'))
-    taxonomyDB.insert(0, 'null')
-
     return render(
         request,
         'reprocess.html',
         {'form4': UploadForm4,
-         'mform': UploadForm10,
-         'alignDB': alignDB,
-         'templateDB': templateDB,
-         'taxonomyDB': taxonomyDB},
+         'mform': UploadForm10},
     )
 
 

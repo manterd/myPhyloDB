@@ -201,30 +201,6 @@
 {% endblock javascript %}
 
 {% block my_content %}
-    <h2>Upload New Taxonomy Reference Files:</h2>
-    <form id='form' action="{% url 'reprocess' %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <table id="meta_files" width="100%" border="2" cellspacing="0" cellpadding="1">
-            <tr>
-                <th colspan="2">Upload new reference database files:</th>
-            </tr>
-            <tr>
-                <td>{{ form4.docfile8.label_tag }}</td>
-                <td>{{ form4.docfile8 }}</td>
-            </tr>
-            <tr>
-                <td>{{ form4.docfile9.label_tag }}</td>
-                <td>{{ form4.docfile9 }}</td>
-            </tr>
-            <tr>
-                <td>{{ form4.docfile10.label_tag }}</td>
-                <td>{{ form4.docfile10 }}</td>
-            </tr>
-        </table>
-        <br>
-        <input id="submit" type="submit" value="Upload!"/>
-    </form>
-    <br><br>
     <h2>Reprocess Project(s):</h2>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
@@ -236,48 +212,15 @@
             </td>
         </tr>
     </table>
-
+    <br><br>
     <form id='form2' action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
-    <table border="0" cellspacing="0" cellpadding="5"  class="inlineTable">
-        <tr>
-            <td bgcolor="white" colspan="2">
-                <select id="align">
-                    {% for DB in alignDB %}
-                        <option>{{ DB }}</option>
-                    {% endfor %}
-                </select>
-                &nbsp<-- Choose alignment file:
-            </td>
-        </tr>
-        <tr>
-            <td bgcolor="white" colspan="2">
-                <select id="template">
-                    {% for DB in templateDB %}
-                        <option value="{{ DB }}">{{ DB }}</option>
-                    {% endfor %}
-                </select>
-                &nbsp<-- Choose template file:
-            </td>
-        </tr>
-        <tr>
-            <td bgcolor="white" colspan="2">
-                <select id="taxonomy">
-                    {% for DB in taxonomyDB %}
-                        <option>{{ DB }}</option>
-                    {% endfor %}
-                </select>
-                &nbsp<-- Choose taxonomy file:
-            </td>
-        </tr>
-    </table>
-
     <table width="650px" border="2" cellspacing="0" cellpadding="5">
         <tr>
             <td bgcolor="white">{{ mform.mothurFile.label_tag }}&nbsp;{{ mform.platform }}&nbsp;<span title="Is this a mothur or dada2 (R package) batch file?"><font class="info" color="red">[info]</font></span></td>
             <td bgcolor="white">{{ mform.mothurFile }}</td>
         </tr>
     </table>
-
+    <br>
     <div id="project" style="display: none"></div>
     <div id="stage" style="display: none"></div>
     <div id="progressBar" style="display: none"><div></div></div>

@@ -87,9 +87,13 @@ def dada2(dest, source):
             mothurStat = '\n\nR processing is done! \n\n'
 
             if os.name == 'nt':
-                cmd = "mothur\\mothur-win\\mothur.exe mothur\\temp\\dada2.batch"
+                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta " \
+                      "-db mothur\\reference\\dada2\\gg_13_5_99.dkm.fa.gz -strand plus -id 0.80 " \
+                      "--fastapairs pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
             else:
-                cmd = "mothur/mothur-linux/mothur mothur/temp/dada2.batch"
+                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta " \
+                      "-db mothur/reference/dada2/gg_13_5_99.dkm.fa.gz -strand plus -id 0.80 " \
+                      "--fastapairs pairs.fasta --notmatched mothur/temp/nomatch.fasta"
 
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
@@ -100,10 +104,23 @@ def dada2(dest, source):
                     break
             mothurStat = '\n\nR processing is done! \n\n'
 
-            with file('mothur/temp/dada.dkm.knn.taxonomy', 'r') as original:
-                data = original.read()
-            with file('mothur/temp/dada.cons.taxonomy', 'w') as modified:
-                modified.write("OTU\tTaxonomy\n" + data)
+            f = open('mothur\temp\dada.cons.taxonomy', 'w')
+            with file('mothur\temp\pairs.fasta', 'r') as myFile:
+                f.write("OTU\tTaxonomy\n")
+                for line in myFile:
+                    if line.startswith('>OTU'):
+                        f.write(line.rstrip().replace('>', ''))
+                        f.write('\t')
+                        continue
+                    if line.startswith('>'):
+                        f.write(line.replace('>', ''))
+            with file('mothur\temp\nomatch.fasta', 'r') as myFile:
+                for line in myFile:
+                    if line.startswith('>OTU'):
+                        f.write(line.rstrip().replace('>', ''))
+                        f.write('\t')
+                    f.write('k__unclassified;p__unclassified;c__unclassified;o__unclassified;f__unclassified;g__unclassified;s__unclassified;otu__unclassified;\n')
+
             shutil.copy('mothur/temp/dada.fasta', '% s/dada.rep_seqs.fasta' % dest)
             shutil.copy('mothur/temp/dada.cons.taxonomy', '% s/final.cons.taxonomy' % dest)
             shutil.copy('mothur/temp/dada.shared', '% s/final.tx.shared' % dest)
@@ -384,44 +401,15 @@ def parse_project(Document, p_uuid, curUser):
 def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
     try:
         author = User.objects.get(id=userid)
-        align_ref = 'null'
-        template_ref = 'null'
-        taxonomy_ref = 'null'
-
-        if raw:
-            batch.seek(0)
-            for row in batch:
-                if "align.seqs" in row:
-                    for item in row.split(','):
-                        if "reference=" in item:
-                            string = item.split('=')
-                            align_ref = string[1].replace('mothur/reference/align/', '')
-                if "classify.seqs" in row:
-                    for item in row.split(','):
-                        if "template=" in item:
-                            string = item.split('=')
-                            template_ref = string[1].replace('mothur/reference/template/', '')
-                        if "taxonomy=" in item:
-                            string = item.split('=')
-                            taxonomy_ref = string[1].replace('mothur/reference/taxonomy/', '')
-        else:
-            align_ref = 'null'
-            template_ref = 'null'
-            taxonomy_ref = 'null'
-
         if not Reference.objects.filter(path=path).exists():
             project = Project.objects.get(projectid=p_uuid)
             Reference.objects.create(
-                refid=refid, projectid=project, path=path, source=source, raw=raw, alignDB=align_ref,
-                templateDB=template_ref, taxonomyDB=taxonomy_ref, author=author)
+                refid=refid, projectid=project, path=path, source=source, raw=raw, author=author)
         else:
             refs = Reference.objects.all().filter(path=path)
             for ref in refs:
                 refid = ref.refid
             ref = Reference.objects.get(refid=refid)
-            ref.alignDB = align_ref
-            ref.templateDB = template_ref
-            ref.taxonomyDB = taxonomy_ref
             ref.save()
         return refid
 
@@ -862,11 +850,6 @@ def reanalyze(request, stopList):
         if stopList[PID] == RID:
             return repStop(request)
 
-        # reference files selected
-        new_align = 'reference=mothur/reference/align/' + str(request.POST['alignDB'])
-        new_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(request.POST['taxonomyDB'])
-        new_template = 'template=mothur/reference/template/' + str(request.POST['templateDB'])
-
         if isinstance(ids, list):
             refList = Reference.objects.all().filter(refid__in=ids)
         else:
@@ -879,17 +862,6 @@ def reanalyze(request, stopList):
             curProj = Project.objects.get(projectid=ref.projectid.projectid)
             curProj.wip = True
             curProj.save()
-
-            orig_align = 'reference=mothur/reference/align/' + str(ref.alignDB)
-            orig_taxonomy = 'taxonomy=mothur/reference/taxonomy/' + str(ref.taxonomyDB)
-            orig_template = 'template=mothur/reference/template/' + str(ref.templateDB)
-
-            if new_align == 'null':
-                new_align = orig_align
-            if new_taxonomy == 'null':
-                new_taxonomy = orig_taxonomy
-            if new_template == 'null':
-                new_template = orig_template
 
             rep_project = 'myPhyloDB is currently reprocessing project: ' + str(ref.projectid.project_name)
             dest = ref.path
@@ -1046,11 +1018,6 @@ def reanalyze(request, stopList):
                             for line in bat:
                                 if "processors" in line:
                                     line = line.replace('processors=X', 'processors='+str(processors))
-                                if "align.seqs" in line:
-                                    line = line.replace(str(orig_align), str(new_align))
-                                if "classify.seqs" in line:
-                                    line = line.replace(str(orig_template), str(new_template))
-                                    line = line.replace(str(orig_taxonomy), str(new_taxonomy))
                                 destination.write(line)
                 except Exception as e:
                     print("Error with batch file: ", e)
@@ -1111,6 +1078,7 @@ def reanalyze(request, stopList):
                     mothur(dest, source)
                 else:
                     dada2(dest, source)
+
             except Exception as e:
                 transaction.savepoint_rollback(sid)
                 print("Error with mothur/R: " + str(e))
