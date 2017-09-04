@@ -84,16 +84,11 @@ def dada2(dest, source):
                     mothurStat += line
                 else:
                     break
-            mothurStat = '\n\nR processing is done! \n\n'
 
             if os.name == 'nt':
-                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta " \
-                      "-db mothur\\reference\\dada2\\gg_13_5_99.dkm.fa.gz -strand plus -id 0.80 " \
-                      "--fastapairs pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
+                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand plus --id 0.80 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
             else:
-                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta " \
-                      "-db mothur/reference/dada2/gg_13_5_99.dkm.fa.gz -strand plus -id 0.80 " \
-                      "--fastapairs pairs.fasta --notmatched mothur/temp/nomatch.fasta"
+                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/temp/ref_trimmed.fa.gz --strand plus --id 0.80 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
 
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
@@ -102,36 +97,64 @@ def dada2(dest, source):
                     mothurStat += line
                 else:
                     break
-            mothurStat = '\n\nR processing is done! \n\n'
+            mothurStat += '\n\nR processing is done! \n\n'
 
-            f = open('mothur\temp\dada.cons.taxonomy', 'w')
-            with file('mothur\temp\pairs.fasta', 'r') as myFile:
-                f.write("OTU\tTaxonomy\n")
-                for line in myFile:
-                    if line.startswith('>OTU'):
-                        f.write(line.rstrip().replace('>', ''))
-                        f.write('\t')
-                        continue
-                    if line.startswith('>'):
-                        f.write(line.replace('>', ''))
-            with file('mothur\temp\nomatch.fasta', 'r') as myFile:
-                for line in myFile:
-                    if line.startswith('>OTU'):
-                        f.write(line.rstrip().replace('>', ''))
-                        f.write('\t')
-                    f.write('k__unclassified;p__unclassified;c__unclassified;o__unclassified;f__unclassified;g__unclassified;s__unclassified;otu__unclassified;\n')
+            f = open('mothur/temp/R.history', 'w')
+            f.write(mothurStat)
+            f.flush()
+            f.close()
 
+            f = open('mothur/temp/dada.cons.taxonomy', 'w')
+            f.write("OTU\tSeq\tTaxonomy\n")
+            pairDict = {}
+
+            inFile1 = open('mothur/temp/pairs.fasta', 'r')
+            counter = 1
+            for line in inFile1:
+                if counter == 1:
+                    key = line.rstrip().replace('>', '')
+                if counter == 3:
+                    value = line.rstrip().replace('>', '')
+                    pairDict[key] = value
+                if counter == 5:
+                    counter = 0
+                counter += 1
+            inFile1.close()
+
+            inFile2 = open('mothur/temp/dada.fasta', 'r')
+            counter = 1
+            for line in inFile2:
+                if counter == 1:
+                    key = line.rstrip().replace('>', '')
+                if counter == 2:
+                    seq = line.rstrip()
+                    if pairDict.has_key(key):
+                        f.write(key)
+                        f.write('\t')
+                        f.write(seq)
+                        f.write('\t')
+                        f.write(pairDict[key])
+                        f.write('\n')
+                    else:
+                        f.write(key)
+                        f.write('\t')
+                        f.write(seq)
+                        f.write('\t')
+                        f.write('k__unclassified;p__unclassified;c__unclassified;o__unclassified;f__unclassified;g__unclassified;s__unclassified;otu__unclassified;')
+                        f.write('\n')
+                    counter = 0
+                counter += 1
+
+            inFile2.close()
+            f.close()
+
+            shutil.copy('mothur/temp/pairs.fasta', '% s/dada.vsearch_pairs.txt' % dest)
             shutil.copy('mothur/temp/dada.fasta', '% s/dada.rep_seqs.fasta' % dest)
             shutil.copy('mothur/temp/dada.cons.taxonomy', '% s/final.cons.taxonomy' % dest)
             shutil.copy('mothur/temp/dada.shared', '% s/final.tx.shared' % dest)
             shutil.copy('mothur/temp/dada2.R', '% s/dada2.R' % dest)
+            shutil.copy('mothur/temp/R.history', '% s/R.history' % dest)
             shutil.rmtree('mothur/temp')
-
-            for afile in glob.glob(r'*.logfile'):
-                shutil.move(afile, dest)
-
-            for afile in glob.glob(r'.Rhistory'):
-                shutil.move(afile, dest)
 
             dir = os.getcwd()
 
@@ -387,7 +410,8 @@ def parse_project(Document, p_uuid, curUser):
         else:
             rowDict.pop('projectid')
             Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, wip=True, **rowDict)
-        stage = "Step 1 of 5: Parsing project file...done"
+
+        stage = "Step 1 of 5: Parsing project file..."
         return "none"
 
     except Exception as ex:
@@ -604,10 +628,7 @@ def parse_taxonomy(Document):
             if row:
                 step += 1.0
                 perc = int(step / total * 100)
-                if len(row) == 3:
-                    subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])
-                else:
-                    subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[1])
+                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])
                 subbed = subbed[:-1]
                 taxon = subbed.split(';')
 
@@ -662,7 +683,7 @@ def parse_taxonomy(Document):
                         oid = uuid4().hex
                         OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName='unclassified')
 
-    except Exception:   # jump
+    except Exception:
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -674,11 +695,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
         stage = "Step 5 of 5: Parsing shared file..."
         perc = 0
         data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True)
-        row, col = data1.shape
-        if col == 3:
-            arr1 = np.delete(data1, 1, axis=1)
-        else:
-            arr1 = data1
+        arr1 = np.delete(data1, 1, axis=1)
         df1 = pd.DataFrame(arr1[1:, 1:], index=arr1[1:, 0], columns=arr1[0, 1:])
         df1 = df1[df1.index != 'False']
         a = df1.columns.values.tolist()
@@ -776,6 +793,8 @@ def parse_profile(file3, file4, p_uuid, refDict):
             reads = Profile.objects.filter(sampleid=sample).aggregate(count=Sum('count'))
             sample.reads = reads['count']
             sample.save()
+
+        stage = "Step 1 of 5: Parsing project file..."
 
     except Exception as e:
         print "Error with taxa parsing: ", e
