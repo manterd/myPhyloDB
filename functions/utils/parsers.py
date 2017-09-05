@@ -77,11 +77,13 @@ def dada2(dest, source):
             cmd = "R/R-Linux/bin/R --no-save --no-restore < mothur/temp/dada2.R"
 
         try:
+            f = open('mothur/temp/R.history', 'w')
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
                 line = pro.stdout.readline()
                 if line != '':
                     mothurStat += line
+                    f.write(line)
                 else:
                     break
 
@@ -95,13 +97,10 @@ def dada2(dest, source):
                 line = pro.stdout.readline()
                 if line != '':
                     mothurStat += line
+                    f.write(line)
                 else:
                     break
             mothurStat += '\n\nR processing is done! \n\n'
-
-            f = open('mothur/temp/R.history', 'w')
-            f.write(mothurStat)
-            f.flush()
             f.close()
 
             f = open('mothur/temp/dada.cons.taxonomy', 'w')
@@ -110,6 +109,7 @@ def dada2(dest, source):
 
             inFile1 = open('mothur/temp/pairs.fasta', 'r')
             counter = 1
+            key = ''
             for line in inFile1:
                 if counter == 1:
                     key = line.rstrip().replace('>', '')
