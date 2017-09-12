@@ -88,9 +88,9 @@ def dada2(dest, source):
                     break
 
             if os.name == 'nt':
-                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand plus --id 0.80 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
+                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand plus --id 0.97 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
             else:
-                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/temp/ref_trimmed.fa.gz --strand plus --id 0.80 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
+                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/temp/ref_trimmed.fa.gz --strand plus --id 0.97 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
 
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
@@ -128,7 +128,7 @@ def dada2(dest, source):
                     key = line.rstrip().replace('>', '')
                 if counter == 2:
                     seq = line.rstrip()
-                    if pairDict.has_key(key):
+                    if key in pairDict:
                         f.write(key)
                         f.write('\t')
                         f.write(seq)
@@ -839,7 +839,6 @@ def bubbleFiles(dest):
     return
 
 
-@transaction.atomic
 def reanalyze(request, stopList):
     ### create savepoint
     sid = transaction.savepoint()

@@ -528,7 +528,7 @@ def getPCoA(request, stops, RID, PID):
 
                 if perms < 10:
                     bigf = 'A minimum of 10 permutations is required...'
-                elif len(catFields) == 0:
+                elif len(catFields) == 0 or len(catFields) == 1:
                     bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
                 elif perms >= 10 and len(catFields) > 0:
                     if test == 1:
