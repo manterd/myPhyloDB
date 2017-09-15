@@ -765,13 +765,13 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
             for name in sampleList:
                 count = int(row[name])
-                if count > 0:
-                    project = Project.objects.get(projectid=p_uuid)
-                    sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
-                    sampid = sample.sampleid
-                    idList.append(sampid)
-                    replaceType = refDict[sampid]
+                project = Project.objects.get(projectid=p_uuid)
+                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
+                sampid = sample.sampleid
+                idList.append(sampid)
+                replaceType = refDict[sampid]
 
+                if count > 0:
                     if replaceType == 'new' or replaceType == 'replace':
                         Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
