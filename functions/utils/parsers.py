@@ -100,6 +100,12 @@ def dada2(dest, source):
                     f.write(line)
                 else:
                     break
+                line = pro.stderr.readline()
+                if line != '':
+                    mothurStat += line
+                    f.write(line)
+                else:
+                    break
             mothurStat += '\n\nR processing is done! \n\n'
             f.close()
 
@@ -209,6 +215,11 @@ def mothur(dest, source):
             pro = subprocess.Popen(filepath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
                 line = pro.stdout.readline()
+                if line != '':
+                    mothurStat += line
+                else:
+                    break
+                line = pro.stderr.readline()
                 if line != '':
                     mothurStat += line
                 else:
