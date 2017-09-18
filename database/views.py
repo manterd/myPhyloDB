@@ -26,7 +26,7 @@ import fnmatch
 
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
-    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserRegForm, UserUpdateForm
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserUpdateForm
 
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, PICRUSt, UserProfile, \
@@ -864,7 +864,7 @@ def uploadFunc(request, stopList):
                         return upStop(request)
 
                     for line in fileinput.input('mothur/temp/dada2.R', inplace=1):
-                        print line.replace("mutithread=TRUE", actual_proc),
+                        print line.replace("multithread=TRUE", actual_proc),
 
                     functions.handle_uploaded_file(file7, dest, batch)
 
