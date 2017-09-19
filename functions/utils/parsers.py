@@ -20,7 +20,8 @@ from pyper import *
 import subprocess
 from uuid import uuid4
 import fnmatch
-import zipfile, tarfile
+import zipfile
+import tarfile
 
 
 from database.models import Project, Reference, \
@@ -95,6 +96,12 @@ def dada2(dest, source):
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
                 line = pro.stdout.readline()
+                if line != '':
+                    mothurStat += line
+                    f.write(line)
+                else:
+                    break
+                line = pro.stderr.readline()
                 if line != '':
                     mothurStat += line
                     f.write(line)
@@ -765,13 +772,13 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
             for name in sampleList:
                 count = int(row[name])
-                if count > 0:
-                    project = Project.objects.get(projectid=p_uuid)
-                    sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
-                    sampid = sample.sampleid
-                    idList.append(sampid)
-                    replaceType = refDict[sampid]
+                project = Project.objects.get(projectid=p_uuid)
+                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
+                sampid = sample.sampleid
+                idList.append(sampid)
+                replaceType = refDict[sampid]
 
+                if count > 0:
                     if replaceType == 'new' or replaceType == 'replace':
                         Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
@@ -839,7 +846,6 @@ def bubbleFiles(dest):
     return
 
 
-@transaction.atomic
 def reanalyze(request, stopList):
     ### create savepoint
     sid = transaction.savepoint()
@@ -915,9 +921,6 @@ def reanalyze(request, stopList):
             if source == '454_sff':
                 ls_dir = os.listdir(dest)
                 for afile in ls_dir:
-                    if stopList[PID] == RID:
-                        mothurRestore(dest)
-                        return repStop(request)
                     srcStr = str(dest) + '/' + str(afile)
                     destStr = str(mothurdest) + '/' + str(afile)
                     shutil.copyfile(srcStr, destStr)
@@ -925,26 +928,15 @@ def reanalyze(request, stopList):
             if source == '454_fastq':
                 file_list = []
                 for afile in glob.glob(r'% s/*.fna' % dest):
-                    if stopList[PID] == RID:
-                        mothurRestore(dest)
-                        return repStop(request)
                     file_list.append(afile)
 
                 tempList = []
                 if file_list.__len__() > 1:
-                    for each in file_list:
-                        if stopList[PID] == RID:
-                            mothurRestore(dest)
-                            return repStop(request)
-                        file = each
-
-                        functions.handle_uploaded_file(file, mothurdest, each)
-                        functions.handle_uploaded_file(file, dest, each)
-                        if os.name == 'nt':
-                            myStr = "mothur\\temp\\" + str(file.name)
-                        else:
-                            myStr = "mothur/temp/" + str(file.name)
-                        tempList.append(myStr)
+                    for oldPath in file_list:
+                        name = os.path.basename(oldPath)
+                        newPath = 'mothur/temp/' + str(name)
+                        shutil.copy(oldPath, newPath)
+                        tempList.append(newPath)
                     inputList = "-".join(tempList)
 
                     if stopList[PID] == RID:
@@ -957,15 +949,8 @@ def reanalyze(request, stopList):
                         os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
 
                 else:
-                    for each in file_list:
-                        if stopList[PID] == RID:
-                            mothurRestore(dest)
-                            return repStop(request)
-
-                        file = each
-                        fasta = 'temp.fasta'
-                        functions.handle_uploaded_file(file, mothurdest, fasta)
-                        functions.handle_uploaded_file(file, dest, each)
+                    fPath = 'mothur/temp' + os.path.basename(file_list[0])
+                    shutil.copyfile(file_list[0], fPath)
 
                 file_list = []
                 for afile in glob.glob(r'% s/*.qual' % dest):
@@ -973,36 +958,35 @@ def reanalyze(request, stopList):
 
                 tempList = []
                 if file_list.__len__() > 1:
-                    for each in file_list:
-                        file = each
-                        functions.handle_uploaded_file(file, mothurdest, each)
-                        functions.handle_uploaded_file(file, dest, each)
-                        if os.name == 'nt':
-                            myStr = "mothur\\temp\\" + str(file.name)
-                        else:
-                            myStr = "mothur/temp/" + str(file.name)
-                        tempList.append(myStr)
+                    for oldPath in file_list:
+                        name = os.path.basename(oldPath)
+                        newPath = 'mothur/temp/' + str(name)
+                        shutil.copy(oldPath, newPath)
+                        tempList.append(newPath)
                     inputList = "-".join(tempList)
+
+                    if stopList[PID] == RID:
+                        mothurRestore(dest)
+                        return repStop(request)
+
                     if os.name == 'nt':
                         os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
                     else:
                         os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
+
                 else:
-                    for each in file_list:
-                        file = each
-                        qual = 'temp.qual'
-                        functions.handle_uploaded_file(file, mothurdest, qual)
-                        functions.handle_uploaded_file(file, dest, each)
+                    fPath = 'mothur/temp' + os.path.basename(file_list[0])
+                    shutil.copyfile(file_list[0], fPath)
 
-                for afile in glob.glob(r'% s/*.oligos' % dest):
-                    srcStr = str(dest) + '/' + str(afile)
-                    destStr = str(mothurdest) + '/' + str(afile)
-                    shutil.copyfile(srcStr, destStr)
+                for oldPath in glob.glob(r'% s/*.oligos' % dest):
+                    name = os.path.basename(oldPath)
+                    newPath = 'mothur/temp/' + str(name)
+                    shutil.copyfile(oldPath, newPath)
 
-                for afile in glob.glob(r'% s/*.batch' % dest):
-                    srcStr = str(dest) + '/' + str(afile)
-                    destStr = str(mothurdest) + '/' + str(afile)
-                    shutil.copyfile(srcStr, destStr)
+                for oldPath in glob.glob(r'% s/*.batch' % dest):
+                    name = os.path.basename(oldPath)
+                    newPath = 'mothur/temp/' + str(name)
+                    shutil.copyfile(oldPath, newPath)
 
             if source == 'miseq':
                 ls_dir = os.listdir(dest)

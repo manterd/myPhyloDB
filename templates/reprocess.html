@@ -77,6 +77,7 @@
                     return node.data.id;
                 });
                 RID = makeGUID();
+                $("#reprocess").css("background-color", "yellow");
 
                 $("#project").show();
                 $("#stage").show();
@@ -100,24 +101,6 @@
                     type: 'hidden',
                     name: 'funcName',
                     value: 'reanalyze'
-                }).appendTo('form').appendTo('form2');
-
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'alignDB',
-                    value: $("#align").val()
-                }).appendTo('form').appendTo('form2');
-
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'templateDB',
-                    value: $("#template").val()
-                }).appendTo('form').appendTo('form2');
-
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'taxonomyDB',
-                    value: $("#taxonomy").val()
                 }).appendTo('form').appendTo('form2');
 
             });

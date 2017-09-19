@@ -26,7 +26,7 @@ import fnmatch
 
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
-    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserRegForm, UserUpdateForm
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserUpdateForm
 
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, PICRUSt, UserProfile, \
@@ -376,6 +376,10 @@ def uploadFunc(request, stopList):
 
             elif source == '454_sff':
                 mothurdest = 'mothur/temp'
+
+                if os.path.exists(mothurdest):
+                    shutil.rmtree(mothurdest)
+
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
@@ -564,6 +568,9 @@ def uploadFunc(request, stopList):
             elif source == '454_fastq':
                 mothurdest = 'mothur/temp'
 
+                if os.path.exists(mothurdest):
+                    shutil.rmtree(mothurdest)
+
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
@@ -610,7 +617,6 @@ def uploadFunc(request, stopList):
                 if error != "":
                     print "Handling sample name error"
                     return upErr(error, request, dest, sid)
-
 
                 if stopList[PID] == RID:
                     functions.remove_proj(dest)
@@ -733,6 +739,10 @@ def uploadFunc(request, stopList):
 
             elif source == 'miseq':
                 mothurdest = 'mothur/temp'
+
+                if os.path.exists(mothurdest):
+                    shutil.rmtree(mothurdest)
+
                 if not os.path.exists(mothurdest):
                     os.makedirs(mothurdest)
 
@@ -841,7 +851,27 @@ def uploadFunc(request, stopList):
                 elif platform == 'dada2':
                     batch = 'dada2.R'
                     file7 = request.FILES['docfile7']
+
+                    avail_proc = mp.cpu_count()
+                    use_proc = min(avail_proc, processors)
+                    actual_proc = 'multithread=' + str(use_proc)
+
                     functions.handle_uploaded_file(file7, mothurdest, batch)
+
+                    if stopList[PID] == RID:
+                        functions.remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
+                        return upStop(request)
+
+                    for line in fileinput.input('mothur/temp/dada2.R', inplace=1):
+                        print line.replace("multithread=TRUE", actual_proc),
+
+                    functions.handle_uploaded_file(file7, dest, batch)
+
+                    if stopList[PID] == RID:
+                        functions.remove_proj(dest)
+                        transaction.savepoint_rollback(sid)
+                        return upStop(request)
 
                     try:
                         functions.dada2(dest, source)
