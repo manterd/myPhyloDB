@@ -3,14 +3,20 @@ import json
 from Queue import Queue
 from time import sleep
 import threading
-import time
 
 import functions
 import database.views
 
+# imported for dataQueue fixes 2017/09/28
+from django.shortcuts import render
+from database.models import Reference
+from database.forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, UploadForm6, UploadForm7, UploadForm8, UploadForm10
+
 
 datQ = Queue(maxsize=0)
 datActiveList = [0]
+datQueueList = {}
+datQueueFuncs = {}
 datStopList = [0]
 datRecent = {}
 datQList = []
@@ -20,29 +26,99 @@ datStopDict = {}
 datStopped = 0
 
 
-def datstop(request):   # this function needs reworked, some code needs to exit instead of being terminated, for cleanup
-    global datActiveList, datStopList, datThreadDict, datStopDict, datStopped
+def datstop(request):
+    global datActiveList, datQueueList, datQueueFuncs, datStopList, datThreadDict, datStopDict, datStopped, datRecent
     RID = str(request.GET['all'])
-    datStopDict[RID] = True
+    datStopDict[RID] = RID
     try:
         pid = datActiveList.index(RID)
         datStopList[pid] = RID
         datActiveList[pid] = 0
-        threadName = datThreadDict[RID]
         functions.termP()   # only time this is called in entire code
-        threads = threading.enumerate()
-        for thread in threads:  # for each thread
-            if thread.name == threadName:   # check if thread name matches
-                #thread.terminate()  # terminate it
-                datStopList[pid] = RID
-                myDict = {'error': 'none', 'message': 'Your database changes have been cancelled!'}  # canceled is valid
-                stop = json.dumps(myDict)
-                # datStopped += 1   # might be redundant
-                return HttpResponse(stop, content_type='application/json')
-    except Exception:
-        myDict = {'error': 'Analysis not running'}
+        datStopList[pid] = RID
+        myDict = {'error': 'none', 'message': 'Your database changes have been cancelled!'}  # canceled is valid
         stop = json.dumps(myDict)
         return HttpResponse(stop, content_type='application/json')
+    except Exception:   # not in activelist
+        try:    # check queuelist
+            pid = datQueueList[RID]
+
+            # wait for status, then cleanup
+            # get function from funccall, return correct page rendering
+            thisFunc = datQueueFuncs[pid]
+            # can't populate these from here
+            projects = Reference.objects.none()
+            if request.user.is_superuser:
+                projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+            elif request.user.is_authenticated():
+                projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+            # uploadFunc reanalyze updateFunc pybake
+            retStuff = None
+            if thisFunc == "uploadFunc":
+                print "Upload stopping early"
+                retStuff = render(
+                        request,
+                        'upload.html',
+                        {'projects': projects,
+                         'form1': UploadForm1,
+                         'form2': UploadForm2,
+                         'error': ""}
+                    )
+            elif thisFunc == "reanalyze":
+                retStuff = render(
+                        request,
+                        'reprocess.html',
+                        {'form4': UploadForm4,
+                         'mform': UploadForm10},
+                    )
+            elif thisFunc == "updateFunc":
+                state = ''
+                retStuff = render(
+                        request,
+                        'update.html',
+                        {'form5': UploadForm5,
+                         'state': state}
+                    )
+            elif thisFunc == "pybake":
+                form6 = UploadForm6(request.POST, request.FILES)
+                form7 = UploadForm7(request.POST, request.FILES)
+                form8 = UploadForm8(request.POST, request.FILES)
+
+                if form6.is_valid():
+                    file1 = request.FILES['taxonomy']
+                    file2 = request.FILES['precalc_16S']
+                    file3 = request.FILES['precalc_KEGG']
+                    functions.geneParse(file1, file2, file3)
+
+                if form7.is_valid():
+                    file4 = request.FILES['ko_htext']
+                    functions.koParse(file4)
+
+                if form8.is_valid():
+                    file5 = request.FILES['nz_htext']
+                    functions.nzParse(file5)
+
+                retStuff = render(
+                    request,
+                    'pybake.html',
+                    {'form6': UploadForm6,
+                     'form7': UploadForm7,
+                     'form8': UploadForm8}
+                )
+
+            if retStuff == None:
+                print "This is a problem"
+            datRecent[pid] = retStuff
+
+            myDict = {'error': 'none', 'message': 'Your database changes have been cancelled!'}
+            stop = json.dumps(myDict)
+            return HttpResponse(stop, content_type='application/json')
+
+        except Exception as er:   # not in queuelist either. actual error
+            print "Error with datStop:", er
+            myDict = {'error': 'Analysis not running'}
+            stop = json.dumps(myDict)
+            return HttpResponse(stop, content_type='application/json')
 
 
 def decremQ():
@@ -51,16 +127,18 @@ def decremQ():
 
 
 def dataprocess(pid):
-    global datActiveList, datThreadDict, datStopped, datRecent
+    global datActiveList, datQueueList, datThreadDict, datStopped, datRecent
     while True:
         data = datQ.get(block=True, timeout=None)
         decremQ()
         RID = data['RID']
         if RID in datStopDict:
+            print "Queue gave pre-stopped request"
             datStopDict.pop(RID, 0)
         else:
             funcName = data['funcName']
             request = data['request']
+            datQueueList.pop(RID, 0)
             datActiveList[pid] = RID
             thread = threading.current_thread()
             datThreadDict[RID] = thread.name
@@ -82,14 +160,17 @@ def dataprocess(pid):
                     datRecent[RID] = database.views.pybake(request)
             datActiveList[pid] = ''
             datThreadDict.pop(RID, 0)
+            datStopDict.pop(RID, 0)  # clean this up when done or stopped, needs to be here since funcCall can end early
         sleep(1)
 
 
 def datfuncCall(request):
-    global datActiveList, datStopList, datStopDict, datStatDict, datQList
+    global datActiveList, datQueueList, datQueueFuncs, datStopList, datStopDict, datStatDict, datQList
     RID = request.POST['RID']
     request.POST['stopList'] = datStopList
     funcName = request.POST['funcName']
+    datQueueList[RID] = RID  # add to queuelist, remove when processed or stopped
+    datQueueFuncs[RID] = funcName
     qDict = {'RID': RID, 'funcName': funcName, 'request': request}
     datQList.append(qDict)
     datQ.put(qDict, True)
@@ -99,7 +180,6 @@ def datfuncCall(request):
             results = datRecent[RID]
             datRecent.pop(RID, 0)
             datStatDict.pop(RID, 0)
-            datStopDict.pop(RID, 0)
             # this return resets data like mothurStatSave
             return results
         except KeyError:
@@ -113,7 +193,10 @@ def datfuncCall(request):
 def datstat(RID):
     try:
         datStopDict[RID] = datStopDict[RID]
-        return -1024
+        if RID in datQueueList:
+            return -512
+        else:
+            return -1024
     except Exception:
         return datStatDict[RID] - datStopped
 

@@ -447,7 +447,6 @@ def uploadFunc(request, stopList):
                     print "Handling sample name error"
                     return upErr(error, request, dest, sid)
 
-
                 batch = 'mothur.batch'
                 file7 = request.FILES['docfile7']
 

@@ -72,7 +72,7 @@ def removeRID(RID):
 def stop(request):
     global activeList, stopList, threadDict, stopDict
     RID = str(request.GET['all'])
-    stopDict[RID] = True
+    stopDict[RID] = RID
     try:
         pid = activeList.index(RID)
         stopList[pid] = RID
@@ -140,6 +140,7 @@ def process(pid):
                     recent[RID] = functions.getsoil_index(request, stopList, RID, pid)
             activeList[pid] = ''
             threadDict.pop(RID, 0)
+            stopDict.pop(RID, 0)
         sleep(1)
 
 
@@ -185,7 +186,6 @@ def funcCall(request):
             results = recent[RID]
             recent.pop(RID, 0)
             statDict.pop(RID, 0)
-            stopDict.pop(RID, 0)
             removeRID(RID)
             gc.collect()  # attempting to cleanup memory leaks since processes technically are still there
             # results on anova quant not working occasionally, depends on categorical selection

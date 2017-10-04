@@ -335,8 +335,12 @@ def status(request):
             dict['perc'] = perc
             dict['project'] = rep_project
         else:
-            if (queuePos == -1024):
-                dict['stage'] = "Stopping...please be patient while we restore the database!"
+            if queuePos == -1024:  # need to distinguish between active and inactive PID
+                dict['stage'] = "Stopping...please be patient while we restore the database!"   # jump
+            elif queuePos == -512:  # for inactive processes, problem is when process DOES get stopped, queuepos
+                                    #  switches to this and THEN loops anyways
+                dict['stage'] = "Removing request from queue..."
+                # need front end to catch this... need to get datfuncall to its page too (specific to function called)
             else:
                 dict['stage'] = "In queue for processing, "+str(queuePos)+" requests in front of you"
             dict['perc'] = 0
@@ -811,17 +815,21 @@ def parse_profile(file3, file4, p_uuid, refDict):
 
 
 def repStop(request):
-    # cleanup in repro project!
-    # reset WIP flag
-    ids = request.POST["ids"]
-    if isinstance(ids, list):
-        refList = Reference.objects.all().filter(refid__in=ids)
-    else:
-        refList = Reference.objects.all().filter(refid=ids)
-    for ref in refList:
-        curProj = Project.objects.get(projectid=ref.projectid)
-        curProj.wip = False
-        curProj.save()
+    print "Repstop!"
+    try:
+        # cleanup in repro project!
+        # reset WIP flag
+        ids = request.POST["ids"]
+        if isinstance(ids, list):
+            refList = Reference.objects.all().filter(refid__in=ids)
+        else:
+            refList = Reference.objects.all().filter(refid=ids)
+        for ref in refList:
+            curProj = Project.objects.get(projectid=ref.projectid)
+            curProj.wip = False
+            curProj.save()
+    except Exception as e:
+        print "Repstop errored:", e
     return "Stopped"
 
 
