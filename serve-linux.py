@@ -89,7 +89,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     num_threads = functions.analysisThreads()
 
-    for pid in xrange(num_threads):
+    for pid in xrange(1):     # num_threads normally, 1 for testing queue logic
         thread = threading.Thread(target=functions.process, args=(pid, ))
         thread.setDaemon(True)
         thread.start()

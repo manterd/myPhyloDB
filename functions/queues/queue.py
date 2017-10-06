@@ -30,6 +30,8 @@ def analysisThreads():
 q = Queue(maxsize=0)
 activeList = [0] * analysisThreads()
 stopList = [0] * analysisThreads()
+queueList = {}
+queueFuncs = {}
 recent = {}
 qList = []
 threadDict = {}
@@ -70,18 +72,23 @@ def removeRID(RID):
 
 
 def stop(request):
-    global activeList, stopList, threadDict, stopDict
+    global activeList, stopList, threadDict, stopDict, queueList, queueFuncs   # needs queuelist (maybe queuefuncs) from dataqueue, currently not at the same level
     RID = str(request.GET['all'])
     stopDict[RID] = RID
     try:
         pid = activeList.index(RID)
         stopList[pid] = RID
         activeList[pid] = 0
+        try:
+            queueList.pop(RID, 0)   # try to remove from queuelist
+        except:
+            pass    # already removed probably, moving on
+
         threadName = threadDict[RID]
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == threadName:
-                thread.terminate()
+                thread.terminate()      # is this necessary? can simplify this code a lot if not
                 stopList[pid] = RID
                 myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
                 stop = json.dumps(myDict)
@@ -103,6 +110,7 @@ def process(pid):
         data = q.get(block=True, timeout=None)
         decremQ()
         RID = data['RID']
+        queueList.pop(RID, 0)   # remove from queue position tracker
         if RID in stopDict:
             stopDict.pop(RID, 0)
         else:
@@ -156,16 +164,18 @@ def funcCall(request):
         try:
             dataID = data['dataID']
         except Exception:
-            print "Missing dataID"
             myDict = {}
-            myDict['error'] = "Error: Dev done goofed!"
+            myDict['error'] = "Error: Missing dataID"
             json_data = json.dumps(myDict)
             return HttpResponse(json_data,  content_type='application/json')
 
         if dataID == UserProfile.objects.get(user=request.user).dataID:
             time1[RID] = time()
             qDict = {'RID': RID, 'funcName': funcName, 'request': request}
-            qList.append(qDict)
+            qList.append(qDict)  # what on earth does this do?
+            # add to queue
+            queueList[RID] = RID
+            queueFuncs[RID] = funcName
             q.put(qDict, True)
             statDict[RID] = int(q.qsize())
             complete[RID] = False
@@ -200,7 +210,7 @@ def funcCall(request):
                 TimeDiff[RID] = 0
 
             try:
-                if TimeDiff[RID] == 0:  # has not started running yet but data is valid
+                if RID in queueList:  # has not started running yet but data is valid
                     stage[RID] = 'Analysis has been placed in queue, there are ' + str(stat(RID)) + ' others in front of you.'
                 else:   # analysis has started, data is valid
                     stage[RID] = str(base[RID]) + '\n<br>Analysis has been running for %.1f seconds' % TimeDiff[RID]
@@ -217,7 +227,7 @@ def funcCall(request):
                         # bug is more likely on the page side
                         #print "Done?"
                 else:   # timediff not zero, so analysis has started to run despite data not valid (?)
-                    stage[RID] = 'Analysis starting'
+                    stage[RID] = 'Analysis starting'    # getting this when queued
                     #print "Start"
 
             myDict = {'stage': stage[RID], 'resType': 'status'}
