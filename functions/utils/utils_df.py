@@ -21,8 +21,37 @@ from database.models import Project, Reference, Profile
 import config.local_cfg
 import functions
 
+from Queue import Queue
+
 
 pd.set_option('display.max_colwidth', -1)
+
+# logging code
+loggerRunning = 0
+preLogBackLog = Queue(maxsize=0)    # queue containing entries to add write to log file
+
+
+def log(text):     # put standard formatting here, will make log calls simpler
+    global preLogBackLog
+    preLogBackLog.put(text, True)
+    print text  # keep this for console output?
+
+
+def startLogger():
+    global loggerRunning, preLogBackLog
+    if loggerRunning == 0:
+        loggerRunning = 1
+        while True:     # needs an exit in case server shutdown is called
+            try:
+                newText = preLogBackLog.get(block=True, timeout=None)
+                logFile = open('server_log.txt', 'a')
+                logFile.write(newText+"\n")
+                logFile.close()
+            except Exception as e:
+                print "Error while logging: ", e
+    else:
+        print "Error: logger already active"
+
 
 
 def ordered_set(seq, idfun=None):
@@ -84,6 +113,7 @@ def remove_proj(path):
         path = "/".join(["uploads", str(pid)])
         if os.path.exists(path):
             shutil.rmtree(path)
+
 
 def multidict(ordered_pairs):
     d = defaultdict(list)

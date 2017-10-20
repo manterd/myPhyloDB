@@ -89,9 +89,9 @@ def dada2(dest, source):
                     break
 
             if os.name == 'nt':
-                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand plus --id 0.97 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
+                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand both --id 0.97 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
             else:
-                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/temp/ref_trimmed.fa.gz --strand plus --id 0.97 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
+                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/temp/ref_trimmed.fa.gz --strand both --id 0.97 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
 
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
@@ -523,6 +523,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                 Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
             else:
                 Sample.objects.create(projectid=project, refid=reference, **row)
+                # error: create() got multiple values for keyword argument 'refid'
 
             sample = Sample.objects.get(sampleid=s_uuid)
 

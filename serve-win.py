@@ -98,5 +98,9 @@ if __name__ == '__main__':
     dataThread.setDaemon(True)
     dataThread.start()
 
+    logThread = threading.Thread(target=functions.startLogger)  # new thread dedicated to logging
+    logThread.setDaemon(True)
+    logThread.start()
+
     mp.freeze_support()
     Server().run()

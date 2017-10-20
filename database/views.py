@@ -37,12 +37,15 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
 import functions
 
 
+
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
 
 
 def home(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for HOME"
+    functions.log(msg)
     return render(
         request,
         'home.html'
@@ -51,6 +54,8 @@ def home(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def upload(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for UPLOAD"
+    functions.log(msg)
     projects = Reference.objects.none()
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -69,6 +74,8 @@ def upload(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def download(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for DOWNLOAD"
+    functions.log(msg)
     projects = Reference.objects.none()
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -139,7 +146,7 @@ def upErr(msg, request, dest, sid):
         functions.remove_proj(dest)
         transaction.savepoint_rollback(sid)
     except Exception as e:
-        print "Tried to remove non existent project probably: ", e
+        print "Error during upload: ", e
 
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -1733,6 +1740,8 @@ def userTableJSON(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def select(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for SELECT"
+    functions.log(msg)
     if request.method == 'POST':
         uploaded = request.FILES["normFile"]
 
@@ -1874,6 +1883,8 @@ def taxaJSON(request):
 
 
 def taxa(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for TAXA"
+    functions.log(msg)
     return render(
         request,
         'taxa.html'
@@ -1933,6 +1944,8 @@ def pathTaxaJSON(request):
 
 
 def kegg_path(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for KEGG_PATH"
+    functions.log(msg)
     return render(
         request,
         'kegg_path.html'
@@ -1990,6 +2003,8 @@ def nzTaxaJSON(request):
 
 
 def kegg_enzyme(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for KEGG_NZ"
+    functions.log(msg)
     return render(
         request,
         'kegg_enzyme.html'
@@ -1998,6 +2013,8 @@ def kegg_enzyme(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def norm(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for NORM"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/norm')
 
     return render(
@@ -2008,6 +2025,8 @@ def norm(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def ANOVA(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for ANOVA"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/anova')
 
     return render(
@@ -2018,6 +2037,8 @@ def ANOVA(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def CORR(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for CORR"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/corr')
 
     return render(
@@ -2027,7 +2048,9 @@ def CORR(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def rich(request):
+def rich(request):  # actually SPAC, should change name TODO
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for SPAC"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/spac')
 
     return render(
@@ -2038,6 +2061,8 @@ def rich(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def soil_index(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for SOIL_INDEX"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/soil_index')
 
     return render(
@@ -2048,6 +2073,8 @@ def soil_index(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def DiffAbund(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for DIFFABUND"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/diffabund')
 
     return render(
@@ -2058,6 +2085,8 @@ def DiffAbund(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def GAGE(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for GAGE"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/gage')
 
     return render(
@@ -2068,6 +2097,8 @@ def GAGE(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def PCA(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for PCA"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/pca')
 
     return render(
@@ -2078,6 +2109,8 @@ def PCA(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def PCoA(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for PCOA"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/pcoa')
 
     return render(
@@ -2088,6 +2121,8 @@ def PCoA(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def RF(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for RF"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/rf')
 
     return render(
@@ -2098,6 +2133,8 @@ def RF(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def SPLS(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for SPLS"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/spls')
 
     return render(
@@ -2108,6 +2145,8 @@ def SPLS(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def WGCNA(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for WGCNA"
+    functions.log(msg)
     functions.cleanup('myPhyloDB/media/temp/wgcna')
 
     return render(
@@ -2148,6 +2187,8 @@ def saveSampleList(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def reprocess(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for REPROCESS"
+    functions.log(msg)
     return render(
         request,
         'reprocess.html',
@@ -2158,6 +2199,8 @@ def reprocess(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def update(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for UPDATE"
+    functions.log(msg)
     state = ''
     return render(
         request,
@@ -2168,6 +2211,12 @@ def update(request):
 
 
 def updaStop(request):
+    file1 = request.FILES['docfile11']
+    p_uuid, pType, num_samp = functions.projectid(file1)
+    proj = Project.objects.get(projectid=p_uuid)
+    proj.wip = False
+    proj.save()
+
     state = "Update stopped"
     return render(
         request,
@@ -2253,6 +2302,10 @@ def updateFunc(request, stopList):
         if stopList[PID] == RID:
             return updaStop(request)
 
+        proj = Project.objects.get(projectid=p_uuid)
+        proj.wip = False
+        proj.save()
+
         state = 'Path: ' + str(dest) + ' is finished parsing!'
 
     if stopList[PID] == RID:
@@ -2269,6 +2322,8 @@ def updateFunc(request, stopList):
 @login_required(login_url='/myPhyloDB/accounts/login/')
 @user_passes_test(lambda u: u.is_superuser)
 def pybake(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for PYBAKE"
+    functions.log(msg)
     # split up for queue
     form6 = UploadForm6(request.POST, request.FILES)
     form7 = UploadForm7(request.POST, request.FILES)
@@ -2434,6 +2489,8 @@ def usrFiles(request):
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def profile(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for PROFILE"
+    functions.log(msg)
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.all().order_by('project_name')
@@ -2451,6 +2508,8 @@ def profile(request):
 
 
 def changeuser(request):
+    msg = str(datetime.datetime.now())+": Page request from " + str(request.user.username) + " for CHANGEUSER"
+    functions.log(msg)
     return render(
         request,
         'changeuser.html',

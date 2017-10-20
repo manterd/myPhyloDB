@@ -11,6 +11,12 @@ from database.models import UserProfile
 
 import functions
 
+#from pycallgraph import PyCallGraph
+#from pycallgraph.output import GephiOutput
+#from pycallgraph import Config
+
+import datetime
+
 
 def analysisThreads():
     try:
@@ -106,50 +112,62 @@ def decremQ():
 
 def process(pid):
     global activeList, threadDict, stopped
+    #count = 0   # counts number of functions cycled through
+    #graphConfig = Config(max_depth=3)
     while True:
-        data = q.get(block=True, timeout=None)
-        decremQ()
-        RID = data['RID']
-        queueList.pop(RID, 0)   # remove from queue position tracker
-        if RID in stopDict:
-            stopDict.pop(RID, 0)
-        else:
-            funcName = data['funcName']
-            request = data['request']
-            activeList[pid] = RID
-            thread = threading.current_thread()
-            threadDict[RID] = thread.name
-            if activeList[pid] == RID:
-                if funcName == "getNorm":
-                    recent[RID] = functions.getNorm(request, RID, stopList, pid)
-                if funcName == "getCatUnivData":
-                    recent[RID] = functions.getCatUnivData(request, RID, stopList, pid)
-                if funcName == "getQuantUnivData":
-                    recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
-                if funcName == "getCorr":
-                    recent[RID] = functions.getCorr(request, stopList, RID, pid)
-                if funcName == "getPCA":
-                    recent[RID] = functions.getPCA(request, stopList, RID, pid)
-                if funcName == "getPCoA":
-                    recent[RID] = functions.getPCoA(request, stopList, RID, pid)
-                if funcName == "getRF":
-                    recent[RID] = functions.getRF(request, stopList, RID, pid)
-                if funcName == "getDiffAbund":
-                    recent[RID] = functions.getDiffAbund(request, stopList, RID, pid)
-                if funcName == "getGAGE":
-                    recent[RID] = functions.getGAGE(request, stopList, RID, pid)
-                if funcName == "getSPLS":
-                    recent[RID] = functions.getSPLS(request, stopList, RID, pid)
-                if funcName == "getWGCNA":
-                    recent[RID] = functions.getWGCNA(request, stopList, RID, pid)
-                if funcName == "getSpAC":
-                    recent[RID] = functions.getSpAC(request, stopList, RID, pid)
-                if funcName == "getsoil_index":
-                    recent[RID] = functions.getsoil_index(request, stopList, RID, pid)
-            activeList[pid] = ''
-            threadDict.pop(RID, 0)
-            stopDict.pop(RID, 0)
-        sleep(1)
+        try:
+            #graphOut = GephiOutput(output_file='funcCall'+str(count)+'.gdf')
+            #count += 1
+            #with PyCallGraph(output=graphOut, config=graphConfig):  # when not debugging, tab back under here
+            data = q.get(block=True, timeout=None)
+            decremQ()
+            RID = data['RID']
+            queueList.pop(RID, 0)   # remove from queue position tracker
+            if RID in stopDict:
+                stopDict.pop(RID, 0)
+            else:
+                funcName = data['funcName']
+                request = data['request']
+                activeList[pid] = RID
+                thread = threading.current_thread()
+                threadDict[RID] = thread.name
+                msg = str(datetime.datetime.now())+": Starting on request from " + str(request.user.username) + " for " + str(funcName)
+                functions.log(msg)
+                if activeList[pid] == RID:
+                    if funcName == "getNorm":
+                        recent[RID] = functions.getNorm(request, RID, stopList, pid)
+                    if funcName == "getCatUnivData":
+                        recent[RID] = functions.getCatUnivData(request, RID, stopList, pid)
+                    if funcName == "getQuantUnivData":
+                        recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
+                    if funcName == "getCorr":
+                        recent[RID] = functions.getCorr(request, stopList, RID, pid)
+                    if funcName == "getPCA":
+                        recent[RID] = functions.getPCA(request, stopList, RID, pid)
+                    if funcName == "getPCoA":
+                        recent[RID] = functions.getPCoA(request, stopList, RID, pid)
+                    if funcName == "getRF":
+                        recent[RID] = functions.getRF(request, stopList, RID, pid)
+                    if funcName == "getDiffAbund":
+                        recent[RID] = functions.getDiffAbund(request, stopList, RID, pid)
+                    if funcName == "getGAGE":
+                        recent[RID] = functions.getGAGE(request, stopList, RID, pid)
+                    if funcName == "getSPLS":
+                        recent[RID] = functions.getSPLS(request, stopList, RID, pid)
+                    if funcName == "getWGCNA":
+                        recent[RID] = functions.getWGCNA(request, stopList, RID, pid)
+                    if funcName == "getSpAC":
+                        recent[RID] = functions.getSpAC(request, stopList, RID, pid)
+                    if funcName == "getsoil_index":
+                        recent[RID] = functions.getsoil_index(request, stopList, RID, pid)
+                activeList[pid] = ''
+                threadDict.pop(RID, 0)
+                stopDict.pop(RID, 0)
+                msg = str(datetime.datetime.now())+": Finished request from " + str(request.user.username) + " for " + str(funcName)
+                functions.log(msg)
+            sleep(1)
+        except Exception as e:
+            print "Error during primary queue:", e
 
 
 def funcCall(request):
@@ -179,6 +197,10 @@ def funcCall(request):
             q.put(qDict, True)
             statDict[RID] = int(q.qsize())
             complete[RID] = False
+
+            # print log info, need to write this to a file somewhere
+            msg = str(datetime.datetime.now())+": Received request from " + str(request.user.username) + " for " + str(funcName)
+            functions.log(msg)
 
             myDict = {}
             myDict['resType'] = "status"

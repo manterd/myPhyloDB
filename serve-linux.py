@@ -89,7 +89,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     num_threads = functions.analysisThreads()
 
-    for pid in xrange(1):     # num_threads normally, 1 for testing queue logic
+    for pid in xrange(num_threads):     # num_threads normally, 1 for testing queue logic
         thread = threading.Thread(target=functions.process, args=(pid, ))
         thread.setDaemon(True)
         thread.start()
@@ -97,6 +97,10 @@ if __name__ == '__main__':
     dataThread = threading.Thread(target=functions.dataprocess, args=(0, ))
     dataThread.setDaemon(True)
     dataThread.start()
+
+    logThread = threading.Thread(target=functions.startLogger)  # new dedicated logging thread
+    logThread.setDaemon(True)
+    logThread.start()
 
     mp.freeze_support()
     Server().run()

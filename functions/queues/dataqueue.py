@@ -12,6 +12,11 @@ from django.shortcuts import render
 from database.models import Reference
 from database.forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, UploadForm6, UploadForm7, UploadForm8, UploadForm10
 
+#from pycallgraph import PyCallGraph
+#from pycallgraph.output import GephiOutput
+#from pycallgraph import Config
+
+import datetime
 
 datQ = Queue(maxsize=0)
 datActiveList = [0]
@@ -128,12 +133,16 @@ def decremQ():
 
 def dataprocess(pid):
     global datActiveList, datQueueList, datThreadDict, datStopped, datRecent
+    #count = 0   # counts number of functions cycled through
+    #graphConfig = Config(max_depth=3)
     while True:
+        #graphOut = GephiOutput(output_file='datFuncCall'+str(count)+'.gdf')
+        #count += 1
+        #with PyCallGraph(output=graphOut, config=graphConfig):  # when not debugging, tab back under here
         data = datQ.get(block=True, timeout=None)
         decremQ()
         RID = data['RID']
         if RID in datStopDict:
-            print "Queue gave pre-stopped request"
             datStopDict.pop(RID, 0)
         else:
             funcName = data['funcName']
@@ -142,6 +151,8 @@ def dataprocess(pid):
             datActiveList[pid] = RID
             thread = threading.current_thread()
             datThreadDict[RID] = thread.name
+            msg = str(datetime.datetime.now())+": Starting on request from " + str(request.user.username) + " for " + str(funcName)
+            functions.log(msg)
             if datActiveList[pid] == RID:
                 if funcName == "uploadFunc":
                     # save that this is an upload in a dict somewhere, in stopdict, check if upload, removeproj if true
@@ -161,6 +172,8 @@ def dataprocess(pid):
             datActiveList[pid] = ''
             datThreadDict.pop(RID, 0)
             datStopDict.pop(RID, 0)  # clean this up when done or stopped, needs to be here since funcCall can end early
+            msg = str(datetime.datetime.now())+": Finished request from " + str(request.user.username) + " for " + str(funcName)
+            functions.log(msg)
         sleep(1)
 
 
@@ -175,6 +188,11 @@ def datfuncCall(request):
     datQList.append(qDict)
     datQ.put(qDict, True)
     datStatDict[RID] = int(datQ.qsize())
+
+    # print log info, need to write this to a file somewhere
+    msg = str(datetime.datetime.now())+": Received request from " + str(request.user.username) + " for " + str(funcName)
+    functions.log(msg)
+
     while True:
         try:
             results = datRecent[RID]
