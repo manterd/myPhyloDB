@@ -45,11 +45,11 @@ def datstop(request):
         stop = json.dumps(myDict)
         return HttpResponse(stop, content_type='application/json')
     except Exception:   # not in activelist
-        try:    # check queuelist
-            pid = datQueueList[RID]
-
+        try:
+            # check queuelist
             # wait for status, then cleanup
             # get function from funccall, return correct page rendering
+            pid = datQueueList[RID]
             thisFunc = datQueueFuncs[pid]
             # can't populate these from here
             projects = Reference.objects.none()
@@ -58,6 +58,7 @@ def datstop(request):
             elif request.user.is_authenticated():
                 projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
             # uploadFunc reanalyze updateFunc pybake
+            functions.log(request, "QSTOP", thisFunc)
             retStuff = None
             if thisFunc == "uploadFunc":
                 print "Upload stopping early"
@@ -151,8 +152,7 @@ def dataprocess(pid):
             datActiveList[pid] = RID
             thread = threading.current_thread()
             datThreadDict[RID] = thread.name
-            msg = str(datetime.datetime.now())+": Starting on request from " + str(request.user.username) + " for " + str(funcName)
-            functions.log(msg)
+            functions.log(request, "QSTART", funcName)
             if datActiveList[pid] == RID:
                 if funcName == "uploadFunc":
                     # save that this is an upload in a dict somewhere, in stopdict, check if upload, removeproj if true
@@ -172,8 +172,7 @@ def dataprocess(pid):
             datActiveList[pid] = ''
             datThreadDict.pop(RID, 0)
             datStopDict.pop(RID, 0)  # clean this up when done or stopped, needs to be here since funcCall can end early
-            msg = str(datetime.datetime.now())+": Finished request from " + str(request.user.username) + " for " + str(funcName)
-            functions.log(msg)
+            functions.log(request, "QFINISH", funcName)
         sleep(1)
 
 
@@ -190,8 +189,7 @@ def datfuncCall(request):
     datStatDict[RID] = int(datQ.qsize())
 
     # print log info, need to write this to a file somewhere
-    msg = str(datetime.datetime.now())+": Received request from " + str(request.user.username) + " for " + str(funcName)
-    functions.log(msg)
+    functions.log(request, "QADD", funcName)
 
     while True:
         try:

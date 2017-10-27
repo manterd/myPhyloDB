@@ -86,6 +86,9 @@ def stop(request):
         stopList[pid] = RID
         activeList[pid] = 0
         try:
+            pid = queueList[RID]    # hi
+            thisFunc = queueFuncs[pid]
+            functions.log(request, "QSTOP", thisFunc)
             queueList.pop(RID, 0)   # try to remove from queuelist
         except:
             pass    # already removed probably, moving on
@@ -99,7 +102,7 @@ def stop(request):
                 myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
                 stop = json.dumps(myDict)
                 return HttpResponse(stop, content_type='application/json')
-    except Exception:
+    except Exception as e:
         myDict = {'error': 'Analysis not running'}
         stop = json.dumps(myDict)
         return HttpResponse(stop, content_type='application/json')
@@ -131,8 +134,7 @@ def process(pid):
                 activeList[pid] = RID
                 thread = threading.current_thread()
                 threadDict[RID] = thread.name
-                msg = str(datetime.datetime.now())+": Starting on request from " + str(request.user.username) + " for " + str(funcName)
-                functions.log(msg)
+                functions.log(request, "QSTART", funcName)
                 if activeList[pid] == RID:
                     if funcName == "getNorm":
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
@@ -163,8 +165,7 @@ def process(pid):
                 activeList[pid] = ''
                 threadDict.pop(RID, 0)
                 stopDict.pop(RID, 0)
-                msg = str(datetime.datetime.now())+": Finished request from " + str(request.user.username) + " for " + str(funcName)
-                functions.log(msg)
+                functions.log(request, "QFINISH", funcName)
             sleep(1)
         except Exception as e:
             print "Error during primary queue:", e
@@ -199,8 +200,7 @@ def funcCall(request):
             complete[RID] = False
 
             # print log info, need to write this to a file somewhere
-            msg = str(datetime.datetime.now())+": Received request from " + str(request.user.username) + " for " + str(funcName)
-            functions.log(msg)
+            functions.log(request, "QADD", funcName)
 
             myDict = {}
             myDict['resType'] = "status"

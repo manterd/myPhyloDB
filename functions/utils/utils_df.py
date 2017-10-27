@@ -31,8 +31,16 @@ loggerRunning = 0
 preLogBackLog = Queue(maxsize=0)    # queue containing entries to add write to log file
 
 
-def log(text):     # put standard formatting here, will make log calls simpler
+def log(request, reqType, name):
     global preLogBackLog
+    text = ""
+    text += str(datetime.datetime.now())
+    typeLength = str(reqType).__len__()
+    while typeLength < 8:
+        reqType += " "
+        typeLength += 1
+    text += "  User: " + str(request.user.username) + "  \tType: " + str(reqType) + " \tName: " + str(name)
+    # formatting subject to change
     preLogBackLog.put(text, True)
     print text  # keep this for console output?
 
