@@ -931,3 +931,53 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
     with open(path, 'w') as outfile:
         json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
 
+
+def recLabels(lists, level):
+    if lists.__len__() == 0:
+        return {}
+
+    first = lists
+    splitset = []
+    for i in range(0, level):
+        children = []
+        parents = []
+        for set in first:
+            children.append(set[set.__len__()-1])
+            parents.append(set[0:set.__len__()-1])
+        first = parents
+        splitset.append(children)
+    return makeLabels(" ", splitset)
+
+
+def makeLabels(name, list):
+    retDict = {}
+    if list.__len__() == 1:
+        # final layer
+        retDict['name'] = name
+        retDict['categories'] = list[0]
+        return retDict
+
+    # change here
+    children = []
+    first = list[list.__len__()-1][0]
+    iter = 0
+    start = 0
+    for stuff in list[list.__len__()-1]:
+        if stuff != first:
+            sublist = []
+            for otherstuff in list[0:list.__len__()-1]:
+                sublist.append(otherstuff[start:iter])
+            children.append(makeLabels(first, sublist))
+            first = stuff
+            start = iter
+        iter += 1
+
+    # Repeat else condition at the end of the list
+    sublist = []
+    for otherstuff in list[0:list.__len__()-1]:
+        sublist.append(otherstuff[start:iter])
+    children.append(makeLabels(first, sublist))
+
+    retDict['name'] = name
+    retDict['categories'] = children
+    return retDict

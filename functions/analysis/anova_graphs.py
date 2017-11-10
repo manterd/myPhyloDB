@@ -19,7 +19,7 @@ pd.set_option('display.max_colwidth', -1)
 
 def getCatUnivData(request, RID, stops, PID):
     try:
-        while True:
+        while True:  # why is this looped?
             if request.is_ajax():
                 # Get variables from web page
                 allJson = request.body.split('&')[0]
@@ -68,6 +68,9 @@ def getCatUnivData(request, RID, stops, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                # END VALIDATE
+                # START QUERY
 
                 functions.setBase(RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
 
@@ -139,6 +142,9 @@ def getCatUnivData(request, RID, stops, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                # END QUERY
+                # START STATS
 
                 functions.setBase(RID, 'Step 3 of 4: Performing statistical test...')
                 finalDict = {}
@@ -442,6 +448,10 @@ def getCatUnivData(request, RID, stops, PID):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 functions.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
+
+                # END STATS
+                # START GRAPH
+
                 functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
 
                 grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
