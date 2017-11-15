@@ -45,15 +45,16 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.stopList = iStops
         self.PID = iPID
 
+        self.result = ""
         # 'declare' all variables used in multiple steps here
         self.all, self.selectAll, self.treeType, self.savedDF, self.DepVar, self.metaDF, self.allFields = (None,)*7
-        self.result, self.keggAll, self.nzAll, self.catFields, self.quantFields, self.finalSampleIDs = (None,)*6
+        self.keggAll, self.nzAll, self.catFields, self.quantFields, self.finalSampleIDs = (None,)*5
         self.finalDict, self.seriesList, self.xAxisDict, self.yAxisDict, self.finalDF, self.pValDict = (None,)*6
         self.sig_only, self.transform, self.finalDict, self.zipFile, self.mapTaxa, self.allDF = (None,)*6
 
     @abstractmethod
     def run(self):
-        print "Really shouldn't be able to see this"
+        pass
 
     def validate(self):
         print "Validate!"
@@ -155,8 +156,8 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.finalDF[self.quantFields] = self.finalDF[self.quantFields].astype(float)
 
         # transform Y, if requested
-        transform = int(self.all["transform"])
-        self.finalDF = functions.transformDF(transform, self.DepVar, self.finalDF)
+        self.transform = int(self.all["transform"])
+        self.finalDF = functions.transformDF(self.transform, self.DepVar, self.finalDF)
 
         # save location info to session
         myDir = 'myPhyloDB/media/temp/anova/'
@@ -216,7 +217,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             r.assign('xVal', xVal)
         else:
             r.assign('xVal', self.catFields[0])
-        print "Checkpoint"
         gridVal_X = self.all['gridVal_X']
         r.assign('gridVal_X', gridVal_X)
 
@@ -340,12 +340,12 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
 
-        print "Checkpoint"
 
         # group DataFrame by each taxa level selected
         grouped1 = self.finalDF.groupby(['rank_name', 'rank_id'])
-        pValDict = {}
+        self.pValDict = {}
         counter = 1
+
         for name1, group1 in grouped1:
             D = ''
             r.assign("df", group1)
@@ -446,8 +446,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 p_val = 1.0
                 D = 'ANOVA cannot be performed, please check that you have more than one treatment level and appropriate replication.\n'
 
-            pValDict[name1] = p_val
-
+            self.pValDict[name1] = p_val
             self.result += 'Name: ' + str(name1[0]) + '\n'
             self.result += 'ID: ' + str(name1[1]) + '\n'
             if self.DepVar == 0:
@@ -483,7 +482,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
     def graph(self):
         print "Graph!"
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
-
         grouped1 = self.finalDF.groupby(['rank_name', 'rank_id'])
         for name1, group1 in grouped1:
             dataList = []
@@ -645,7 +643,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 level = g2indexvals[0].__len__()
                 labelTree = recLabels(g2indexvals, level)
                 self.xAxisDict['categories'] = labelTree['categories']
-
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
                 res = ''
@@ -669,8 +666,8 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             tname = {
                 '1': "Ln", '2': "Log10", '3': "Sqrt", '4': "Logit", '5': "Arcsin"
             }
-            yTitle['text'] = tname[str(self.transform)] + "(" + str(yTitle['text']) + ")"
-
+            science = tname[str(self.transform)]
+            yTitle['text'] = science + "(" + str(yTitle['text']) + ")"
         self.yAxisDict['title'] = yTitle
 
         xStyleDict = {'style': {'fontSize': '14px'}, 'rotation': 0}

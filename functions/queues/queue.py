@@ -141,9 +141,9 @@ def process(pid):
                     if funcName == "getNorm":
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
                     if funcName == "getCatUnivData":
-                        #myAnalysis = analysis.Anova(request, RID, stopList, pid)
-                        #recent[RID] = myAnalysis.run()
-                        recent[RID] = functions.getCatUnivData(request, RID, stopList, pid)
+                        myAnalysis = analysis.Anova(request, RID, stopList, pid)
+                        recent[RID] = myAnalysis.run()
+                        #recent[RID] = functions.getCatUnivData(request, RID, stopList, pid)
                     if funcName == "getQuantUnivData":
                         recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
                     if funcName == "getCorr":
