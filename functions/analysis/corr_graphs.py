@@ -18,7 +18,7 @@ def getCorr(request, stops, RID, PID):
         while True:
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
-                functions.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
+                functions.setBase(RID, 'Step 1 of 6: Reading normalized data file...')  # this step doesn't exist?
 
                 functions.setBase(RID, 'Step 2 of 6: Selecting your chosen meta-variables...')
                 selectAll = int(all["selectAll"])
@@ -149,6 +149,8 @@ def getCorr(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                # stats start ?
+
                 functions.setBase(RID, 'Step 4 of 6: Calculating Correlations Matrix...')
 
                 if DepVar == 0:
@@ -266,7 +268,7 @@ def getCorr(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-                functions.setBase(RID, 'Step 5 of 6: Formatting correlation coefficient table...')
+                functions.setBase(RID, 'Step 5 of 6: Formatting correlation coefficient table...')  # again, does this step actually exist?
 
                 finalDict = {}
                 dat = r.get("M")

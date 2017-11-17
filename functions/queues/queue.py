@@ -147,7 +147,9 @@ def process(pid):
                     if funcName == "getQuantUnivData":
                         recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
                     if funcName == "getCorr":
-                        recent[RID] = functions.getCorr(request, stopList, RID, pid)
+                        myAnalysis = analysis.Corr(request, RID, stopList, pid)
+                        recent[RID] = myAnalysis.run()
+                        #recent[RID] = functions.getCorr(request, stopList, RID, pid)
                     if funcName == "getPCA":
                         recent[RID] = functions.getPCA(request, stopList, RID, pid)
                     if funcName == "getPCoA":

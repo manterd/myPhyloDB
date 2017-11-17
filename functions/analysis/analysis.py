@@ -29,6 +29,7 @@ import zipfile
 import pandas as pd
 from pyper import *
 import os
+import collections
 
 
 
@@ -56,7 +57,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
     def run(self):
         pass
 
-    def validate(self):
+    def validate(self, sig=True, meta=True, reqMultiLevel=True):  # supports flags for sig_only, metaValsCat
         print "Validate!"
         # Get variables from web page
         allJson = self.request.body.split('&')[0]
@@ -66,10 +67,18 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.selectAll = int(self.all["selectAll"])
         self.keggAll = int(self.all["keggAll"])
         self.nzAll = int(self.all["nzAll"])
-        self.sig_only = int(self.all["sig_only"])
+        if sig:  # check for sig_only support, use value if yes, treat as false if not
+            self.sig_only = int(self.all["sig_only"])
+        else:
+            self.sig_only = 0
 
-        metaValsCat = self.all['metaValsCat']
-        metaIDsCat = self.all['metaIDsCat']
+        if meta:
+            metaValsCat = self.all['metaValsCat']
+            metaIDsCat = self.all['metaIDsCat']
+        else:
+            metaValsCat = []
+            metaIDsCat = []
+
         metaValsQuant = self.all['metaValsQuant']
         metaIDsQuant = self.all['metaIDsQuant']
 
@@ -80,11 +89,12 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.savedDF, self.metaDF, self.finalSampleIDs, self.catFields, remCatFields, self.quantFields, self.catValues, self.quantValues = functions.getMetaDF(self.request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, self.DepVar, levelDep=True)
         self.allFields = self.catFields + self.quantFields
 
-        if not self.catFields:
-            error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
-            myDict = {'error': error}
-            res = json.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
+        if reqMultiLevel:
+            if not self.catFields:
+                error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
+                myDict = {'error': error}
+                res = json.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
 
         if not self.finalSampleIDs:
             error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
@@ -107,7 +117,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         return 0
 
-    def query(self):
+    def query(self, taxmap=True):
         print "Query!"
         functions.setBase(self.RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
         # filter otus based on user settings
@@ -117,7 +127,12 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         filterData = self.all['filterData']
         filterPer = int(self.all['filterPer'])
         filterMeth = int(self.all['filterMeth'])
-        self.mapTaxa = self.all['map_taxa']
+
+        if taxmap:
+            self.mapTaxa = self.all['map_taxa']
+        else:
+            self.mapTaxa = "no"
+
         self.finalDF = pd.DataFrame()
         self.allDF = pd.DataFrame()
         if self.treeType == 1:
@@ -233,6 +248,10 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             r('DepVar <- "diversity"')
         elif self.DepVar == 4:
             r('DepVar <- "abund_16S"')
+
+        # not sure this is worth splitting
+
+
         if gridVal_X == 'None' and gridVal_Y == 'None':
             r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
                 myFill=finalDF[,paste(colorVal)])")
@@ -339,7 +358,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         }')
 
         r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
-
 
         # group DataFrame by each taxa level selected
         grouped1 = self.finalDF.groupby(['rank_name', 'rank_id'])
@@ -712,10 +730,10 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         return HttpResponse(res, content_type='application/json')
 
 
-class Anova(Analysis):
+class Anova(Analysis):  # needs a bit more testing but seems to work so far
 
     def run(self):
-        print "I'm an anova. WIP"
+        print "Running Anova"
         ret = self.validate()
         if ret == 0:
             ret = self.query()
@@ -724,4 +742,171 @@ class Anova(Analysis):
                 if ret == 0:
                     return self.graph()
         print "Something went wrong with Anova"
+        return ret
+
+
+class Corr(Analysis):
+
+    # overwrite stats and graph
+    def statsGraph(self):
+        print ("Corr Stats!")
+        functions.setBase(self.RID, 'Step 4 of 6: Calculating Correlations Matrix...')
+        if self.DepVar == 0:
+            self.result += 'Dependent Variable: Abundance' + '\n'
+        elif self.DepVar == 1:
+            self.result += 'Dependent Variable: Relative Abundance' + '\n'
+        elif self.DepVar == 2:
+            self.result += 'Dependent Variable: OTU Richness' + '\n'
+        elif self.DepVar == 3:
+            self.result += 'Dependent Variable: OTU Diversity' + '\n'
+        elif self.DepVar == 4:
+            self.result += 'Dependent Variable: Total Abundance' + '\n'
+        self.result += '\n===============================================\n'
+
+        count_rDF = pd.DataFrame()
+        if self.DepVar == 0:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+        elif self.DepVar == 1:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
+        elif self.DepVar == 2:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
+        elif self.DepVar == 3:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
+        elif self.DepVar == 4:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
+
+        count_rDF.fillna(0, inplace=True)
+
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+        functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
+
+        # R packages from cran
+        r("list.of.packages <- c('corrplot', 'RColorBrewer', 'WGCNA')")
+        r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+        print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+        functions.setBase(self.RID, 'Step 4 of 6: Calculating correlation matirx...')
+
+        print r("library(corrplot)")
+        print r("library(WGCNA)")
+        print r("library(RColorBrewer)")
+
+        idList = count_rDF.columns.values.tolist()
+        namesList = []
+        if self.treeType == 1:
+            namesDict = functions.getFullTaxonomy(idList)
+            od = collections.OrderedDict(sorted(namesDict.items()))
+            namesList = od.values()
+            namesList = [i.split('|')[-1] for i in namesList]
+        elif self.treeType == 2:
+            namesDict = functions.getFullKO(idList)
+            od = collections.OrderedDict(sorted(namesDict.items()))
+            namesList = od.values()
+            namesList = [i.split('|')[-1] for i in namesList]
+        elif self.treeType == 3:
+            if self.nzAll < 5:
+                namesDict = functions.getFullNZ(idList)
+                od = collections.OrderedDict(sorted(namesDict.items()))
+                namesList = od.values()
+                namesList = [i.split('|')[-1] for i in namesList]
+            else:
+                namesList = [i.split(':', 1)[0] for i in idList]
+
+        count_rDF.sort_index(axis=0, inplace=True)
+        self.metaDF.sort('sampleid', inplace=True)
+
+        r.assign("X", count_rDF)
+        r('X <- X * 1.0')
+        r.assign("names", namesList)
+        r("colnames(X) <- names")
+
+        if self.quantFields:
+            r.assign("Y", self.metaDF[self.quantFields])
+            r('M <- cor(as.matrix(Y), as.matrix(X))')
+            r('M[is.na(M)] <- 0')
+            r("M.p <- corPvalueFisher(M, nrow(X))")
+        else:
+            r('M <- cor(X)')
+            r('M[is.na(M)] <- 0')
+            r("M.p <- corPvalueFisher(M, nrow(X))")
+
+        path = "myPhyloDB/media/temp/corr/Rplots/" + str(self.RID) + ".corr.pdf"
+        if os.path.exists(path):
+            os.remove(path)
+
+        if not os.path.exists('myPhyloDB/media/temp/corr/Rplots'):
+            os.makedirs('myPhyloDB/media/temp/corr/Rplots')
+
+        row, col = count_rDF.shape
+        width = 2 + col*0.15
+        if self.quantFields:
+            height = 4 + len(self.quantFields)*0.1
+        else:
+            height = width
+        file = "pdf('myPhyloDB/media/temp/corr/Rplots/" + str(self.RID) + ".corr.pdf', height=" + str(height) + ", width=" + str(width) + ")"
+        r.assign("cmd", file)
+        r("eval(parse(text=cmd))")
+
+        if self.quantFields:
+            r('corrplot(M, p.mat=M.p, method="pie", sig.level=0.05, insig="blank", cl.length=5, tl.cex=0.7, cl.cex=0.5)')
+        else:
+            r('corrplot(M, p.mat=M.p, method="pie", sig.level=0.05, insig="blank", cl.length=5, tl.cex=0.7, cl.cex=0.5, order="hclust")')
+
+        r("dev.off()")
+
+        functions.setBase(self.RID, 'Step 4 of 6: Calculating correlation matrix...done!')
+
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        finalDict = {}
+        dat = r.get("M")
+        if self.quantFields:
+            coeffsDF = pd.DataFrame(dat, columns=namesList, index=self.quantFields)
+        else:
+            coeffsDF = pd.DataFrame(dat, columns=namesList, index=namesList)
+        res_table = coeffsDF.to_html(classes="table display")
+        res_table = res_table.replace('border="1"', 'border="0"')
+        finalDict['coeff_table'] = str(res_table)
+
+        dat = r.get("M.p")
+        if self.quantFields:
+            coeffsDF = pd.DataFrame(dat, columns=namesList, index=self.quantFields)
+        else:
+            coeffsDF = pd.DataFrame(dat, columns=namesList, index=namesList)
+        res_table = coeffsDF.to_html(classes="table display")
+        res_table = res_table.replace('border="1"', 'border="0"')
+        finalDict['p_table'] = str(res_table)
+
+        finalDict['text'] = self.result
+
+        functions.setBase(self.RID, 'Step 6 of 6: Formatting graph data for display...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        finalDict['error'] = 'none'
+        res = json.dumps(finalDict)
+        return HttpResponse(res, content_type='application/json')
+
+
+    def run(self):
+        print "Running Corr"
+        ret = self.validate(sig=False, meta=False, reqMultiLevel=False)
+        if ret == 0:
+            ret = self.query(taxmap=False)
+            if ret == 0:
+                return self.statsGraph()
+        print "Something went wrong with Corr"
         return ret
