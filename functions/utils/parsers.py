@@ -518,6 +518,8 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
             row.pop('geo_loc_name')
             row.pop('lat_lon')
 
+            print "Sample searching"
+
             idList.append(s_uuid)
             if Sample.objects.filter(sampleid=s_uuid).exists():
                 Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
@@ -526,6 +528,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                 # error: create() got multiple values for keyword argument 'refid'
 
             sample = Sample.objects.get(sampleid=s_uuid)
+
 
             row = dict2[i]
             if pType == "air":
@@ -558,7 +561,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
                     row.pop('sample_name')
                     Microbial.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-            #TODO: remove extras once they are added to the excel metafile
+            # TODO: remove extras once they are added to the excel metafile
             elif pType == "soil":
                 if not Soil.objects.filter(sampleid=s_uuid).exists():
                     row.pop('sampleid')
@@ -620,7 +623,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         return None
 
 
-def parse_taxonomy(Document):
+def parse_taxonomy(Document, stopList, PID, RID):   # this step needs a stop check in the main loop, pass list in as an argument?
     try:
         global stage, perc
         stage = "Step 4 of 5: Parsing taxonomy file..."
@@ -640,7 +643,8 @@ def parse_taxonomy(Document):
             if row:
                 step += 1.0
                 perc = int(step / total * 100)
-                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])
+                rowlen = len(row)
+                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])  # oor
                 subbed = subbed[:-1]
                 taxon = subbed.split(';')
 
@@ -674,6 +678,8 @@ def parse_taxonomy(Document):
                     Genus.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
 
                 try:
+                    if len(taxon) < 6:
+                        taxon.append("unclassified")
                     g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
                     if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
                         sid = uuid4().hex
@@ -685,17 +691,23 @@ def parse_taxonomy(Document):
                         Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName='unclassified')
 
                 try:
+                    if len(taxon) < 7:  # place on other levels?
+                        taxon.append("unclassified")
                     s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
                     if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
                         oid = uuid4().hex
                         OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName=taxon[7])
                 except Exception:
-                    s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
-                    if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName='unclassified').exists():
-                        oid = uuid4().hex
-                        OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName='unclassified')
+                        s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid  # oor
+                        if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName='unclassified').exists():
+                            oid = uuid4().hex
+                            OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName='unclassified')
 
-    except Exception:
+            if stopList[PID] == RID:  # just returning here means exiting to higher level, which will call upStop or repStop (or at least should)
+                return
+
+    except Exception as e:
+        print "Parse_taxonomy error: ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -711,6 +723,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
         df1 = pd.DataFrame(arr1[1:, 1:], index=arr1[1:, 0], columns=arr1[0, 1:])
         df1 = df1[df1.index != 'False']
         a = df1.columns.values.tolist()
+        print "A: ", a
         a = [x for x in a if x != 'False']
         df1 = df1[a]
         file3.close()
@@ -722,6 +735,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
         df2 = pd.DataFrame(arr2[1:, 1:], index=arr2[1:, 0], columns=arr2[0, 1:])
         df2 = df2[df2.index != 'False']
         b = df2.columns.values.tolist()
+        print "B: ", b
         b = [x for x in b if x != 'False']
         df2 = df2[b]
         file4.close()
@@ -732,16 +746,21 @@ def parse_profile(file3, file4, p_uuid, refDict):
         del df1, df2
 
         total, columns = df3.shape
-        sampleList = df3.columns.values.tolist()
+        sampleList = df3.columns.values.tolist()  # this line works as it seems like it should but its not a list of samples
+        print "sampleList: ", sampleList
         sampleList.remove('Taxonomy')
-
+        print "Check"
+        # in here, "Sample matching query does not exist", looking for a102 despite not being part of the upload
+        # need to find where and why a102 is being searched
         # need to get rid of any old taxonomy data if sample type is set to replace
-        for name in sampleList:
+        for name in sampleList:  # JUMP     # is this actually a list of samples?
+            print "Looking for sample "+str(name)+" in project "+str(p_uuid)
             sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
             sampid = sample.sampleid
             replaceType = refDict[sampid]
             if replaceType == 'replace':
                 Profile.objects.filter(sampleid=sampid).delete()
+        print "Check"
 
         idList = []
         step = 0.0
@@ -798,6 +817,7 @@ def parse_profile(file3, file4, p_uuid, refDict):
                             Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
             step += 1.0
+        print "Check"
 
         idUnique = list(set(idList))
         for ID in idUnique:
@@ -805,11 +825,12 @@ def parse_profile(file3, file4, p_uuid, refDict):
             reads = Profile.objects.filter(sampleid=sample).aggregate(count=Sum('count'))
             sample.reads = reads['count']
             sample.save()
+        print "Check"
 
         stage = "Step 1 of 5: Parsing project file..."
 
     except Exception as e:
-        print "Error with taxa parsing: ", e
+        print "Error with taxa parsing: ", e    # even though this is profile?
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
@@ -1105,7 +1126,7 @@ def reanalyze(request, stopList):
                 return repStop(request)
 
             with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                parse_taxonomy(file3)
+                parse_taxonomy(file3, stopList, PID, RID)
 
             if stopList[PID] == RID:
                 mothurRestore(dest)

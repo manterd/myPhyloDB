@@ -141,6 +141,9 @@ def getPCoA(request, stops, RID, PID):
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+                # END VALIDATE
+                # START QUERY
+
                 functions.setBase(RID, 'Step 3 of 9: Selecting your chosen taxa or KEGG level...')
 
                 # filter otus based on user settings
@@ -193,6 +196,9 @@ def getPCoA(request, stops, RID, PID):
                 path = str(myDir) + str(RID) + '.biom'
                 functions.imploding_panda(path, treeType, DepVar, finalSampleIDs, metaDF, finalDF)
 
+                # END QUERY
+                # START STATS
+
                 count_rDF = pd.DataFrame()
                 if DepVar == 0:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
@@ -214,6 +220,7 @@ def getPCoA(request, stops, RID, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
 
                 functions.setBase(RID, 'Step 4 of 9: Calculating distance matrix...')
 
@@ -603,6 +610,9 @@ def getPCoA(request, stops, RID, PID):
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                # END STATS
+                # START GRAPH
 
                 functions.setBase(RID, 'Step 7 of 9: Formatting graph data for display...')
                 finalDict = {}

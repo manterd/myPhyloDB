@@ -116,7 +116,7 @@ def getProjectFiles(request):
     return HttpResponse(myJson)
 
 
-def upStop(request):
+def upStop(request):  # upStop is not cleaning up uploaded files (directory, selection)
     # cleanup mid upload project!
     functions.log(request, "STOP", "UPLOAD")
 
@@ -301,7 +301,7 @@ def uploadFunc(request, stopList):
                 functions.handle_uploaded_file(file3, dest, file3.name)
 
                 try:
-                    functions.parse_taxonomy(file3)
+                    functions.parse_taxonomy(file3, stopList, PID, RID)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -512,7 +512,7 @@ def uploadFunc(request, stopList):
 
                 try:
                     with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        functions.parse_taxonomy(file3)
+                        functions.parse_taxonomy(file3, stopList, PID, RID)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -685,7 +685,7 @@ def uploadFunc(request, stopList):
 
                 try:
                     with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        functions.parse_taxonomy(file3)
+                        functions.parse_taxonomy(file3, stopList, PID, RID)
                 except Exception:
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
                     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
@@ -910,7 +910,7 @@ def uploadFunc(request, stopList):
 
                 try:
                     with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        functions.parse_taxonomy(file3)
+                        functions.parse_taxonomy(file3, stopList, PID, RID)
                 except IOError:
                     # file not found probably, mothur failed to create readable taxonomy file
                     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)

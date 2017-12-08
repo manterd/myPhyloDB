@@ -143,17 +143,17 @@ def process(pid):
                     if funcName == "getCatUnivData":
                         myAnalysis = analysis.Anova(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
-                        #recent[RID] = functions.getCatUnivData(request, RID, stopList, pid)
                     if funcName == "getQuantUnivData":
                         recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
                     if funcName == "getCorr":
                         myAnalysis = analysis.Corr(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
-                        #recent[RID] = functions.getCorr(request, stopList, RID, pid)
                     if funcName == "getPCA":
-                        recent[RID] = functions.getPCA(request, stopList, RID, pid)
+                        myAnalysis = analysis.PCA(request, RID, stopList, pid)
+                        recent[RID] = myAnalysis.run()
                     if funcName == "getPCoA":
-                        recent[RID] = functions.getPCoA(request, stopList, RID, pid)
+                        myAnalysis = analysis.PCoA(request, RID, stopList, pid)
+                        recent[RID] = myAnalysis.run()
                     if funcName == "getRF":
                         recent[RID] = functions.getRF(request, stopList, RID, pid)
                     if funcName == "getDiffAbund":

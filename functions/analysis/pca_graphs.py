@@ -150,6 +150,9 @@ def getPCA(request, stops, RID, PID):
                 path = str(myDir) + str(RID) + '.biom'
                 functions.imploding_panda(path, treeType, DepVar, finalSampleIDs, metaDF, finalDF)
 
+                # STOP SHARED
+                # START STATSGRAPH
+
                 count_rDF = pd.DataFrame()
                 if DepVar == 0:
                     count_rDF = finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
