@@ -141,23 +141,24 @@ def process(pid):
                     if funcName == "getNorm":
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
                     if funcName == "getCatUnivData":
-                        myAnalysis = analysis.Anova(request, RID, stopList, pid)
+                        myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=False)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getQuantUnivData":
                         recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
                     if funcName == "getCorr":
-                        myAnalysis = analysis.Corr(request, RID, stopList, pid)
+                        myAnalysis = analysis.Corr(request, RID, stopList, pid, debug=True)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getPCA":
-                        myAnalysis = analysis.PCA(request, RID, stopList, pid)
+                        myAnalysis = analysis.PCA(request, RID, stopList, pid, debug=False)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getPCoA":
-                        myAnalysis = analysis.PCoA(request, RID, stopList, pid)
+                        myAnalysis = analysis.PCoA(request, RID, stopList, pid, debug=False)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getRF":
                         recent[RID] = functions.getRF(request, stopList, RID, pid)
                     if funcName == "getDiffAbund":
-                        recent[RID] = functions.getDiffAbund(request, stopList, RID, pid)
+                        myAnalysis = analysis.diffAbund(request, RID, stopList, pid, debug=False)
+                        recent[RID] = myAnalysis.run()
                     if funcName == "getGAGE":
                         recent[RID] = functions.getGAGE(request, stopList, RID, pid)
                     if funcName == "getSPLS":

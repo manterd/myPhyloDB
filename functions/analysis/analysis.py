@@ -58,16 +58,13 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
     def run(self):
         pass
 
-    def validate(self, sig=True, meta=True, reqMultiLevel=True, dist=False):  # supports flags for sig_only, metaValsCat
-        print "Validate!"
+    def validate(self, sig=True, metaCat=True, metaQuant=True, reqMultiLevel=True, dist=False):  # supports flags for sig_only, metaValsCat
         if self.debug:
-            print "Check 63"
+            print "Validate!"
         # Get variables from web page
         allJson = self.request.body.split('&')[0]
         self.all = json.loads(allJson)
         functions.setBase(self.RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
-        if self.debug:
-            print "Check 69"
 
         self.selectAll = int(self.all["selectAll"])
         self.keggAll = int(self.all["keggAll"])
@@ -83,17 +80,19 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         else:
             self.distance = 0
 
-        if meta:
+        if metaCat:
             metaValsCat = self.all['metaValsCat']
             metaIDsCat = self.all['metaIDsCat']
         else:
             metaValsCat = []
             metaIDsCat = []
 
-        metaValsQuant = self.all['metaValsQuant']
-        metaIDsQuant = self.all['metaIDsQuant']
-        if self.debug:
-            print "Check 91"
+        if metaQuant:
+            metaValsQuant = self.all['metaValsQuant']
+            metaIDsQuant = self.all['metaIDsQuant']
+        else:
+            metaValsQuant = []
+            metaIDsQuant = []
 
         self.treeType = int(self.all['treeType'])
         self.DepVar = int(self.all["DepVar"])
@@ -101,9 +100,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
         self.savedDF, self.metaDF, self.finalSampleIDs, self.catFields, remCatFields, self.quantFields, self.catValues, self.quantValues = functions.getMetaDF(self.request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, self.DepVar, levelDep=True)
         self.allFields = self.catFields + self.quantFields
-
-        if self.debug:
-            print "Check 101"
         if reqMultiLevel:
             if not self.catFields:
                 error = "Selected categorical variable(s) contain only one level.\nPlease select different variable(s)."
@@ -111,11 +107,11 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 res = json.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
 
-        if not self.finalSampleIDs:
-            error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
-            myDict = {'error': error}
-            res = json.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
+            if not self.finalSampleIDs:
+                error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
+                myDict = {'error': error}
+                res = json.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
 
         self.result = ''
         if self.treeType == 1:
@@ -190,10 +186,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         self.result += 'Categorical variables selected by user: ' + ", ".join(self.catFields + remCatFields) + '\n'
         self.result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
-        self.result += 'Quantitative variables selected by user: ' + ", ".join(self.quantFields) + '\n'
+        if metaQuant:
+            self.result += 'Quantitative variables selected by user: ' + ", ".join(self.quantFields) + '\n'
         self.result += '===============================================\n\n'
-        if self.debug:
-            print "Check 121"
 
         functions.setBase(self.RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
@@ -204,10 +199,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         return 0
 
-    def query(self, taxmap=True):
-        print "Query!"
+    def query(self, taxmap=True, usetransform=True):
         if self.debug:
-            print "Check 135"
+            print "Query!"
         functions.setBase(self.RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
         # filter otus based on user settings
         remUnclass = self.all['remUnclass']
@@ -216,8 +210,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         filterData = self.all['filterData']
         filterPer = int(self.all['filterPer'])
         filterMeth = int(self.all['filterMeth'])
-        if self.debug:
-            print "Check 145"
 
         if taxmap:
             self.mapTaxa = self.all['map_taxa']
@@ -256,23 +248,20 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             myDict = {'error': error}
             res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
-        if self.debug:
-            print "Check 185"
 
         # make sure column types are correct
         self.finalDF[self.catFields] = self.finalDF[self.catFields].astype(str)
         self.finalDF[self.quantFields] = self.finalDF[self.quantFields].astype(float)
 
-        # transform Y, if requested
-        self.transform = int(self.all["transform"])
-        self.finalDF = functions.transformDF(self.transform, self.DepVar, self.finalDF)
+        if usetransform:
+            # transform Y, if requested
+            self.transform = int(self.all["transform"])
+            self.finalDF = functions.transformDF(self.transform, self.DepVar, self.finalDF)
 
         # save location info to session
         myDir = 'myPhyloDB/media/temp/anova/'
         if not os.path.exists(myDir):
             os.makedirs(myDir)
-        if self.debug:
-            print "Check 200"
 
         path = str(myDir) + str(self.RID) + '.biom'
         functions.imploding_panda(path, self.treeType, self.DepVar, self.finalSampleIDs, self.metaDF, self.finalDF)
@@ -286,7 +275,8 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         return 0
 
     def stats(self):
-        print "Stats!"
+        if self.debug:
+            print "Stats!"
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
         self.finalDict = {}
@@ -300,18 +290,21 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
         functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
 
+        if self.debug:
+            print "Check!"
+
         # R packages from cran
         r("list.of.packages <- c('lsmeans', 'ggplot2', 'RColorBrewer', 'ggthemes')")
         r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-        print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
 
-        print r("library(lsmeans)")
-        print r("library(ggplot2)")
-        print r("library(ggthemes)")
-        print r("library(RColorBrewer)")
-        print r('source("R/myFunctions/myFunctions.R")')
+        r("library(lsmeans)")
+        r("library(ggplot2)")
+        r("library(ggthemes)")
+        r("library(RColorBrewer)")
+        r('source("R/myFunctions/myFunctions.R")')
         # R graph
         r.assign('finalDF', self.finalDF)
 
@@ -592,7 +585,8 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         return 0
 
     def graph(self):
-        print "Graph!"
+        if self.debug:
+            print "Graph!"
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
         grouped1 = self.finalDF.groupby(['rank_name', 'rank_id'])
         for name1, group1 in grouped1:
@@ -824,10 +818,732 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         return HttpResponse(res, content_type='application/json')
 
 
-class Anova(Analysis):  # needs a bit more testing but seems to work so far
+class Anova(Analysis):  # base template, is essentially getCatUnivData
+
+    # so quant Univ is huge... like >700 lines long.... implementing is one thing, but this could easily be split 6 ways
+    def quantstats(self):       # for getQuantUnivData      WIP
+
+        functions.setBase(RID, 'Step 3 of 4: Performing statistical test...!')
+
+        finalDict = {}
+        # group DataFrame by each taxa level selected
+        shapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
+
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+        functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
+        # R packages from cran
+        r("list.of.packages <- c('ggplot2', 'RColorBrewer', 'ggthemes')")
+        r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+        print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+        functions.setBase(RID, 'Step 3 of 4: Performing statistical test...')
+
+        print r("library(ggplot2)")
+        print r("library(ggthemes)")
+        print r("library(RColorBrewer)")
+        print r('source("R/myFunctions/myFunctions.R")')
+
+        # R graph
+        r.assign('finalDF', finalDF)
+
+        colorVal = all['colorVal']
+        if colorVal == 'None':
+            r("colorTrt <- c('All')")
+        else:
+            r.assign("colorVal", colorVal)
+            r("colorTrt <- as.factor(finalDF[,paste(colorVal)])")
+
+        r.assign('xVal', quantFields[0])
+
+        gridVal_X = all['gridVal_X']
+        if gridVal_X == 'None':
+            r("gridTrt_X <- c('All')")
+        else:
+            r.assign("gridVal_X", gridVal_X)
+            r("gridTrt_X <- as.factor(finalDF[,paste(gridVal_X)])")
+
+        gridVal_Y = all['gridVal_Y']
+        if gridVal_Y == 'None':
+            r("gridTrt_Y <- c('All')")
+        else:
+            r.assign("gridVal_Y", gridVal_Y)
+            r("gridTrt_Y <- as.factor(finalDF[,paste(gridVal_Y)])")
+
+        shapeVal = all['shapeVal']
+        if shapeVal == 'None':
+            r("shapeTrt <- c('All')")
+        else:
+            r.assign("shapeVal", shapeVal)
+            r("shapeTrt <- as.factor(finalDF[,paste(shapeVal)])")
+
+        if DepVar == 0:
+            r('DepVar <- "abund"')
+        elif DepVar == 1:
+            r('DepVar <- "rel_abund"')
+        elif DepVar == 2:
+            r('DepVar <- "rich"')
+        elif DepVar == 3:
+            r('DepVar <- "diversity"')
+        elif DepVar == 4:
+            r('DepVar <- "abund_16S"')
+
+        r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
+            gridVal_X=gridTrt_X, gridVal_Y=gridTrt_Y, \
+            myColor=colorTrt, myShape=shapeTrt)")
+
+        r("p <- ggplot(gDF, aes(x=x, y=y, fill=factor(myColor), shape=factor(myShape)) )")
+        r("p <- p + geom_point(size=4)")
+
+        if gridVal_X != 'None' and gridVal_Y == 'None':
+            r("p <- p + facet_grid(. ~ gridVal_X)")
+        elif gridVal_X == 'None' and gridVal_Y != 'None':
+            r("p <- p + facet_grid(gridVal_Y ~ .)")
+        elif gridVal_X != 'None' and gridVal_Y != 'None':
+            r("p <- p + facet_grid(gridVal_Y ~ gridVal_X)")
+
+        r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+        r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+
+        palette = all['palette']
+        r.assign('palette', palette)
+        if palette == 'gdocs':
+            r('pal <- gdocs_pal()(20)')
+        elif palette == 'hc':
+            r('pal <- hc_pal()(10)')
+        elif palette == 'Set1':
+            r('pal <- brewer.pal(8, "Set1")')
+        elif palette == 'Set2':
+            r('pal <- brewer.pal(8, "Set2")')
+        elif palette == 'Set3':
+            r('pal <- brewer.pal(12, "Set3")')
+        elif palette == 'Paired':
+            r('pal <- brewer.pal(12, "Paired")')
+        elif palette == 'Dark2':
+            r('pal <- brewer.pal(12, "Dark2")')
+        elif palette == 'Accent':
+            r('pal <- brewer.pal(12, "Accent")')
+        r('nColors <- length(pal)')
+
+        r('number <- nlevels(gDF$myColor)')
+        r('colors <- rep(pal, length.out=number) ')
+        r("p <- p + scale_fill_manual(name='', values=colors, guide=guide_legend(override.aes=list(shape=21)))")
+
+        r('number <- nlevels(gDF$myShape)')
+        r('shapes <- rep(c(21, 22, 23, 24, 25), length.out=number) ')
+        r("p <- p + scale_shape_manual(name='', values=shapes)")
+
+        r("p <- p + theme(legend.text=element_text(size=7))")
+        r("p <- p + theme(legend.position='bottom')")
+
+        r("my.formula <- y ~ x")
+        r("p <- p + geom_smooth(method='lm', se=T, color='black', formula=my.formula)")
+
+        if DepVar == 0:
+            r("p <- p + ylab('Abundance') + xlab(paste(xVal))")
+        elif DepVar == 1:
+            r("p <- p + ylab('Relative Abundance') + xlab(paste(xVal))")
+        elif DepVar == 2:
+            r("p <- p + ylab('OTU Richness') + xlab(paste(xVal))")
+        elif DepVar == 3:
+            r("p <- p + ylab('OTU Diversity') + xlab(paste(xVal))")
+        elif DepVar == 4:
+            r("p <- p + ylab('Total Abundance') + xlab(paste(xVal))")
+
+        path = "myPhyloDB/media/temp/anova/Rplots"
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        r.assign("path", path)
+        r.assign("RID", RID)
+        r("file <- paste(path, '/', RID, '.anova.pdf', sep='')")
+        r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
+
+        r("nlev <- nlevels(as.factor(gDF$gridVal_X))")
+        r('if (nlev == 0) { \
+                myWidth <- 8 \
+            } else { \
+                myWidth <- min(3*nlev+4, 50) \
+        }')
+
+        r("nlev <- nlevels(as.factor(gDF$gridVal_Y))")
+        r('if (nlev == 0) { \
+                myHeight <- 8 \
+            } else { \
+                myHeight <- min(3*nlev+4, 50) \
+        }')
+
+        r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
+
+        pValDict = {}
+        counter = 1
+        catLevels = len(set(catValues))
+        grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
+        for name1, group1 in grouped1:
+            D = ''
+            r.assign("df", group1)
+
+            trtString = " * ".join(allFields)
+            if DepVar == 0:
+                anova_string = "fit <- lm(abund ~ " + str(trtString) + ", data=df)"
+                r.assign("cmd", anova_string)
+                r("eval(parse(text=cmd))")
+            elif DepVar == 1:
+                anova_string = "fit <- lm(rel_abund ~ " + str(trtString) + ", data=df)"
+                r.assign("cmd", anova_string)
+                r("eval(parse(text=cmd))")
+            elif DepVar == 2:
+                anova_string = "fit <- lm(rich ~ " + str(trtString) + ", data=df)"
+                r.assign("cmd", anova_string)
+                r("eval(parse(text=cmd))")
+            elif DepVar == 3:
+                anova_string = "fit <- lm(diversity ~ " + str(trtString) + ", data=df)"
+                r.assign("cmd", anova_string)
+                r("eval(parse(text=cmd))")
+            elif DepVar == 4:
+                anova_string = "fit <- lm(abund_16S ~ " + str(trtString) + ", data=df)"
+                r.assign("cmd", anova_string)
+                r("eval(parse(text=cmd))")
+
+            # calculate predicted scores (full model)
+            pred_string = "df$pred <- predict(fit, df)"
+            r.assign("cmd", pred_string)
+            r("eval(parse(text=cmd))")
+
+            r("options(width=5000)")
+            r("aov <- anova(fit)")
+            aov = r("aov")
+
+            tempStuff = aov.split('\n')
+            for i in xrange(len(tempStuff)):
+                if i >= 4:
+                    D += tempStuff[i] + '\n'
+
+            fit = r("summary(fit)")
+            tempStuff = fit.split('\n')
+            for i in xrange(len(tempStuff)):
+                if i >= 8:
+                    D += tempStuff[i] + '\n'
+            r("p_vals <- summary(fit)$coefficients[,4]")
+            p_vals = r.get("p_vals")
+
+            if not np.isnan(p_vals).any():
+                p_value = min(p_vals)
+                pValDict[name1] = p_value
+            else:
+                pValDict[name1] = np.nan
+
+            result += 'Name: ' + str(name1[0]) + '\n'
+            result += 'ID: ' + str(name1[1]) + '\n'
+            if DepVar == 0:
+                result += 'Dependent Variable: Abundance' + '\n'
+            elif DepVar == 1:
+                result += 'Dependent Variable: Relative Abundance' + '\n'
+            elif DepVar == 2:
+                result += 'Dependent Variable: OTU Richness' + '\n'
+            elif DepVar == 3:
+                result += 'Dependent Variable: OTU Diversity' + '\n'
+            elif DepVar == 4:
+                result += 'Dependent Variable: Total Abundance' + '\n'
+
+            result += '\nANCOVA table:\n'
+            D = D.decode('utf-8')
+            result += D + '\n'
+            result += '===============================================\n'
+            result += '\n\n\n\n'
+
+            taxa_no = len(grouped1)
+            functions.setBase(RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
+            counter += 1
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
+        functions.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+        functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
+
+        finalDF['sample_name'] = ''
+        for index, row in finalDF.iterrows():
+            val = Sample.objects.get(sampleid=row['sampleid']).sample_name
+            finalDF.loc[index, 'sample_name'] = val
+
+        shapes_idx = 0
+        seriesList = []
+        grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
+        for name1, group1 in grouped1:
+            pValue = pValDict[name1]
+
+            if sig_only == 0:
+                if catLevels > 1:
+                    grouped2 = group1.groupby(catFields)
+                    for name2, group2 in grouped2:
+                        dataList = []
+                        x = []
+                        y = []
+                        if DepVar == 0:
+                            x = group2[quantFields[0]].values.astype(float).tolist()
+                            y = group2['abund'].values.astype(float).tolist()
+                        elif DepVar == 1:
+                            x = group2[quantFields[0]].values.astype(float).tolist()
+                            y = group2['rel_abund'].values.astype(float).tolist()
+                        elif DepVar == 2:
+                            x = group2[quantFields[0]].values.astype(float).tolist()
+                            y = group2['rich'].values.astype(float).tolist()
+                        elif DepVar == 3:
+                            x = group2[quantFields[0]].values.astype(float).tolist()
+                            y = group2['diversity'].values.astype(float).tolist()
+                        elif DepVar == 4:
+                            x = group2[quantFields[0]].values.astype(float).tolist()
+                            y = group2['abund_16S'].values.astype(float).tolist()
+
+                        if DepVar == 0:
+                            for index, row in group2.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['abund'])
+                                dataList.append(dataDict)
+                        elif DepVar == 1:
+                            for index, row in group2.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['rel_abund'])
+                                dataList.append(dataDict)
+                        elif DepVar == 2:
+                            for index, row in group2.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['rich'])
+                                dataList.append(dataDict)
+                        elif DepVar == 3:
+                            for index, row in group2.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['diversity'])
+                                dataList.append(dataDict)
+                        elif DepVar == 4:
+                            for index, row in group2.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['abund_16S'])
+                                dataList.append(dataDict)
+
+                        seriesDict = {}
+                        seriesDict['turboThreshold'] = 0
+                        seriesDict['type'] = 'scatter'
+                        seriesDict['name'] = str(name1[0]) + ": " + str(name2)
+                        seriesDict['data'] = dataList
+
+                        markerDict = {}
+                        markerDict['symbol'] = shapes[shapes_idx]
+                        seriesDict['marker'] = markerDict
+                        seriesDict['data'] = dataList
+
+                        seriesList.append(seriesDict)
+
+                        slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                        min_y = float(slp*min(x) + inter)
+                        max_y = float(slp*max(x) + inter)
+                        slope = "%0.3f" % slp
+                        intercept = "%0.3f" % inter
+                        r_sq = r_value * r_value
+                        r_square = "%0.3f" % r_sq
+
+                        regrList = []
+                        regrList.append([float(min(x)), min_y])
+                        regrList.append([float(max(x)), max_y])
+
+                        regrDict = {}
+                        regrDict['type'] = 'line'
+                        sup2 = u"\u00B2"
+                        regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R' + sup2 + ' = ' + str(r_square)
+                        regrDict['data'] = regrList
+                        regrDict['color'] = 'black'
+
+                        markerDict = {}
+                        markerDict['enabled'] = False
+                        regrDict['marker'] = markerDict
+                        seriesList.append(regrDict)
+
+                        shapes_idx += 1
+                        if shapes_idx >= len(shapes):
+                            shapes_idx = 0
+
+                else:   # if catLevel <=1
+                    dataList = []
+                    x = []
+                    y = []
+                    if DepVar == 0:
+                        x = group1[quantFields[0]].values.astype(float).tolist()
+                        y = group1['abund'].values.astype(float).tolist()
+                    elif DepVar == 1:
+                        x = group1[quantFields[0]].values.astype(float).tolist()
+                        y = group1['rel_abund'].values.astype(float).tolist()
+                    elif DepVar == 2:
+                        x = group1[quantFields[0]].values.astype(float).tolist()
+                        y = group1['rich'].values.astype(float).tolist()
+                    elif DepVar == 3:
+                        x = group1[quantFields[0]].values.astype(float).tolist()
+                        y = group1['diversity'].values.astype(float).tolist()
+                    elif DepVar == 4:
+                        x = group1[quantFields[0]].values.astype(float).tolist()
+                        y = group1['abund_16S'].values.astype(float).tolist()
+
+                    if DepVar == 0:
+                        for index, row in group1.iterrows():
+                            dataDict = {}
+                            dataDict['name'] = row['sample_name']
+                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['y'] = float(row['abund'])
+                            dataList.append(dataDict)
+                    elif DepVar == 1:
+                        for index, row in group1.iterrows():
+                            dataDict = {}
+                            dataDict['name'] = row['sample_name']
+                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['y'] = float(row['rel_abund'])
+                            dataList.append(dataDict)
+                    elif DepVar == 2:
+                        for index, row in group1.iterrows():
+                            dataDict = {}
+                            dataDict['name'] = row['sample_name']
+                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['y'] = float(row['rich'])
+                            dataList.append(dataDict)
+                    elif DepVar == 3:
+                        for index, row in group1.iterrows():
+                            dataDict = {}
+                            dataDict['name'] = row['sample_name']
+                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['y'] = float(row['diversity'])
+                            dataList.append(dataDict)
+                    elif DepVar == 4:
+                        for index, row in group1.iterrows():
+                            dataDict = {}
+                            dataDict['name'] = row['sample_name']
+                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['y'] = float(row['abund_16S'])
+                            dataList.append(dataDict)
+
+                    seriesDict = {}
+                    seriesDict['turboThreshold'] = 0
+                    seriesDict['type'] = 'scatter'
+                    seriesDict['name'] = str(name1[0])
+                    seriesDict['data'] = dataList
+
+                    markerDict = {}
+                    markerDict['symbol'] = shapes[shapes_idx]
+                    seriesDict['marker'] = markerDict
+                    seriesDict['data'] = dataList
+
+                    seriesList.append(seriesDict)
+
+                    slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                    min_y = float(slp*min(x) + inter)
+                    max_y = float(slp*max(x) + inter)
+                    slope = "%0.3f" % slp
+                    intercept = "%0.3f" % inter
+                    r_sq = r_value * r_value
+                    r_square = "%0.3f" % r_sq
+
+                    regrList = []
+                    regrList.append([float(min(x)), min_y])
+                    regrList.append([float(max(x)), max_y])
+
+                    regrDict = {}
+                    regrDict['type'] = 'line'
+                    sup2 = u"\u00B2"
+                    regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R' + sup2 + ' = ' + str(r_square)
+                    regrDict['data'] = regrList
+                    regrDict['color'] = 'black'
+
+                    markerDict = {}
+                    markerDict['enabled'] = False
+                    regrDict['marker'] = markerDict
+                    seriesList.append(regrDict)
+
+            elif sig_only == 1:
+                if pValue < 0.05:
+                    if catLevels > 1:
+                        grouped2 = group1.groupby(catFields)
+                        for name2, group2 in grouped2:
+                            dataList = []
+                            x = []
+                            y = []
+                            if DepVar == 0:
+                                x = group2[quantFields[0]].values.astype(float).tolist()
+                                y = group2['abund'].values.astype(float).tolist()
+                            elif DepVar == 1:
+                                x = group2[quantFields[0]].values.astype(float).tolist()
+                                y = group2['rel_abund'].values.astype(float).tolist()
+                            elif DepVar == 2:
+                                x = group2[quantFields[0]].values.astype(float).tolist()
+                                y = group2['rich'].values.astype(float).tolist()
+                            elif DepVar == 3:
+                                x = group2[quantFields[0]].values.astype(float).tolist()
+                                y = group2['diversity'].values.astype(float).tolist()
+                            elif DepVar == 4:
+                                x = group2[quantFields[0]].values.astype(float).tolist()
+                                y = group2['abund_16S'].values.astype(float).tolist()
+
+                            if DepVar == 0:
+                                for index, row in group2.iterrows():
+                                    dataDict = {}
+                                    dataDict['name'] = row['sample_name']
+                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['y'] = float(row['abund'])
+                                    dataList.append(dataDict)
+                            elif DepVar == 1:
+                                for index, row in group2.iterrows():
+                                    dataDict = {}
+                                    dataDict['name'] = row['sample_name']
+                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['y'] = float(row['rel_abund'])
+                                    dataList.append(dataDict)
+                            elif DepVar == 2:
+                                for index, row in group2.iterrows():
+                                    dataDict = {}
+                                    dataDict['name'] = row['sample_name']
+                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['y'] = float(row['rich'])
+                                    dataList.append(dataDict)
+                            elif DepVar == 3:
+                                for index, row in group2.iterrows():
+                                    dataDict = {}
+                                    dataDict['name'] = row['sample_name']
+                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['y'] = float(row['diversity'])
+                                    dataList.append(dataDict)
+                            elif DepVar == 4:
+                                for index, row in group2.iterrows():
+                                    dataDict = {}
+                                    dataDict['name'] = row['sample_name']
+                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['y'] = float(row['abund_16S'])
+                                    dataList.append(dataDict)
+
+                            seriesDict = {}
+                            seriesDict['turboThreshold'] = 0
+                            seriesDict['type'] = 'scatter'
+                            seriesDict['name'] = str(name1[0]) + ": " + str(name2)
+                            seriesDict['data'] = dataList
+
+                            markerDict = {}
+                            markerDict['symbol'] = shapes[shapes_idx]
+                            seriesDict['marker'] = markerDict
+                            seriesDict['data'] = dataList
+
+                            seriesList.append(seriesDict)
+
+                            slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                            min_y = float(slp*min(x) + inter)
+                            max_y = float(slp*max(x) + inter)
+                            slope = "%0.3f" % slp
+                            intercept = "%0.3f" % inter
+                            r_sq = r_value * r_value
+                            r_square = "%0.3f" % r_sq
+
+                            regrList = []
+                            regrList.append([float(min(x)), min_y])
+                            regrList.append([float(max(x)), max_y])
+
+                            regrDict = {}
+                            regrDict['type'] = 'line'
+                            regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
+                            regrDict['data'] = regrList
+                            regrDict['color'] = 'black'
+
+                            markerDict = {}
+                            markerDict['enabled'] = False
+                            regrDict['marker'] = markerDict
+                            seriesList.append(regrDict)
+
+                            shapes_idx += 1
+                            if shapes_idx >= len(shapes):
+                                shapes_idx = 0
+
+                    else:   # if catLevel <=1
+                        dataList = []
+                        x = []
+                        y = []
+                        if DepVar == 0:
+                            x = group1[quantFields[0]].values.astype(float).tolist()
+                            y = group1['abund'].values.astype(float).tolist()
+                        elif DepVar == 1:
+                            x = group1[quantFields[0]].values.astype(float).tolist()
+                            y = group1['rel_abund'].values.astype(float).tolist()
+                        elif DepVar == 2:
+                            x = group1[quantFields[0]].values.astype(float).tolist()
+                            y = group1['rich'].values.astype(float).tolist()
+                        elif DepVar == 3:
+                            x = group1[quantFields[0]].values.astype(float).tolist()
+                            y = group1['diversity'].values.astype(float).tolist()
+                        elif DepVar == 4:
+                            x = group1[quantFields[0]].values.astype(float).tolist()
+                            y = group1['abund_16S'].values.astype(float).tolist()
+
+                        if DepVar == 0:
+                            for index, row in group1.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['abund'])
+                                dataList.append(dataDict)
+                        elif DepVar == 1:
+                            for index, row in group1.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['rel_abund'])
+                                dataList.append(dataDict)
+                        elif DepVar == 2:
+                            for index, row in group1.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['rich'])
+                                dataList.append(dataDict)
+                        elif DepVar == 3:
+                            for index, row in group1.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['diversity'])
+                                dataList.append(dataDict)
+                        elif DepVar == 4:
+                            for index, row in group1.iterrows():
+                                dataDict = {}
+                                dataDict['name'] = row['sample_name']
+                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['y'] = float(row['abund_16S'])
+                                dataList.append(dataDict)
+
+                        seriesDict = {}
+                        seriesDict['turboThreshold'] = 0
+                        seriesDict['type'] = 'scatter'
+                        seriesDict['name'] = str(name1[0])
+                        seriesDict['data'] = dataList
+
+                        markerDict = {}
+                        markerDict['symbol'] = shapes[shapes_idx]
+                        seriesDict['marker'] = markerDict
+                        seriesDict['data'] = dataList
+
+                        seriesList.append(seriesDict)
+
+                        slp, inter, r_value, p, std_err = stats.linregress(x, y)
+                        min_y = float(slp*min(x) + inter)
+                        max_y = float(slp*max(x) + inter)
+                        slope = "%0.3f" % slp
+                        intercept = "%0.3f" % inter
+                        r_sq = r_value * r_value
+                        r_square = "%0.3f" % r_sq
+
+                        regrList = []
+                        regrList.append([float(min(x)), min_y])
+                        regrList.append([float(max(x)), max_y])
+
+                        regrDict = {}
+                        regrDict['type'] = 'line'
+                        regrDict['name'] = 'y = ' + str(slope) + 'x' + ' + ' + str(intercept) + '; R2 = ' + str(r_square)
+                        regrDict['data'] = regrList
+                        regrDict['color'] = 'black'
+
+                        markerDict = {}
+                        markerDict['enabled'] = False
+                        regrDict['marker'] = markerDict
+                        seriesList.append(regrDict)
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+            if stops[PID] == RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
+        xAxisDict = {}
+        xTitle = {}
+        xTitle['text'] = quantFields[0]
+        xTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
+        xAxisDict['title'] = xTitle
+
+        yAxisDict = {}
+        yTitle = {}
+        if DepVar == 0:
+            yTitle['text'] = 'Abundance'
+        elif DepVar == 1:
+            yTitle['text'] = 'Relative Abundance'
+        elif DepVar == 2:
+            yTitle['text'] = 'OTU Richness'
+        elif DepVar == 3:
+            yTitle['text'] = 'OTU Diversity'
+        elif DepVar == 4:
+            yTitle['text'] = 'Total Abundance'
+        yAxisDict['title'] = yTitle
+
+        if transform != 0:
+            tname = {
+                '1': "Ln", '2': "Log10", '3': "Sqrt", '4': "Logit", '5': "Arcsin"
+            }
+            yTitle['text'] = tname[str(transform)] + "(" + str(yTitle['text']) + ")"
+
+        yTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
+        yAxisDict['title'] = yTitle
+
+        styleDict = {'style': {'fontSize': '14px'}}
+        xAxisDict['labels'] = styleDict
+        yAxisDict['labels'] = styleDict
+
+        finalDict['series'] = seriesList
+        finalDict['xAxis'] = xAxisDict
+        finalDict['yAxis'] = yAxisDict
+
+        if not seriesList:
+            finalDict['empty'] = 0
+        else:
+            finalDict['empty'] = 1
+
+        functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if stops[PID] == RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        # datatable of taxa mapped to selected kegg orthologies
+        if not treeType == 1 and mapTaxa == 'yes':
+            records = allDF.values.tolist()
+            finalDict['taxData'] = json.dumps(records)
+            columns = allDF.columns.values.tolist()
+            finalDict['taxColumns'] = json.dumps(columns)
+
+        finalDict['resType'] = 'res'
+        finalDict['text'] = result
+
+        finalDict['error'] = 'none'
+        res = json.dumps(finalDict)
+        return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        print "Running Anova"
+        if self.debug:
+            print "Running Anova"
         ret = self.validate()
         if ret == 0:
             ret = self.query()
@@ -836,7 +1552,8 @@ class Anova(Analysis):  # needs a bit more testing but seems to work so far
                 if ret == 0:
                     ret = self.graph()
                     return ret
-        print "Something went wrong with Anova"
+        if self.debug:
+            print "Something went wrong with Anova"
         return ret
 
 
@@ -844,8 +1561,9 @@ class Corr(Analysis):
 
     # overwrite stats and graph
     def statsGraph(self):
-        print ("Corr Stats!")
-        functions.setBase(self.RID, 'Step 4 of 6: Calculating Correlations Matrix...')
+        if self.debug:
+            print ("statsgraph! (corr)")
+        functions.setBase(self.RID, 'Step 3 of 4: Calculating Correlations Matrix...')
         if self.DepVar == 0:
             self.result += 'Dependent Variable: Abundance' + '\n'
         elif self.DepVar == 1:
@@ -882,13 +1600,11 @@ class Corr(Analysis):
         # R packages from cran
         r("list.of.packages <- c('corrplot', 'RColorBrewer', 'WGCNA')")
         r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-        print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-        functions.setBase(self.RID, 'Step 4 of 6: Calculating correlation matirx...')
-
-        print r("library(corrplot)")
-        print r("library(WGCNA)")
-        print r("library(RColorBrewer)")
+        r("library(corrplot)")
+        r("library(WGCNA)")
+        r("library(RColorBrewer)")
 
         idList = count_rDF.columns.values.tolist()
         namesList = []
@@ -953,7 +1669,7 @@ class Corr(Analysis):
 
         r("dev.off()")
 
-        functions.setBase(self.RID, 'Step 4 of 6: Calculating correlation matrix...done!')
+        functions.setBase(self.RID, 'Step 3 of 4: Calculating correlation matrix...done!')
 
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -961,6 +1677,8 @@ class Corr(Analysis):
             res = ''
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
 
         finalDict = {}
         dat = r.get("M")
@@ -983,7 +1701,7 @@ class Corr(Analysis):
 
         finalDict['text'] = self.result
 
-        functions.setBase(self.RID, 'Step 6 of 6: Formatting graph data for display...done!')
+        functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
@@ -996,511 +1714,302 @@ class Corr(Analysis):
         return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        print "Running Corr"
-        ret = self.validate(sig=False, meta=False, reqMultiLevel=False, dist=True)
+        if self.debug:
+            print "Running Corr"
+        ret = self.validate(sig=False, metaCat=False, metaQuant=True, reqMultiLevel=False)
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
                 return self.statsGraph()
-        print "Something went wrong with Corr"
+        if self.debug:
+            print "Something went wrong with Corr"
         return ret
 
 
-class PCoA(Analysis):   # STAGES/STEPS VERY INCONSISTENT
+class diffAbund(Analysis):
 
     def statsGraph(self):
+        if self.debug:
+            print "statsGraph! (diffabund)"
 
-        PC1 = int(self.all["PC1"])
-        PC2 = int(self.all["PC2"])
-        test = int(self.all["test"])
-        perms = int(self.all["perms"])
+        if len(self.catFields) > 1:
+            for index, row in self.metaDF.iterrows():
+                self.metaDF.loc[index, 'merge'] = ".".join(row[self.catFields])
+        else:
+            self.metaDF.loc[:, 'merge'] = self.metaDF.loc[:, self.catFields[0]]
 
+        functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
         count_rDF = pd.DataFrame()
         if self.DepVar == 0:
-            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
-        elif self.DepVar == 1:
-            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
-        elif self.DepVar == 2:
-            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
-        elif self.DepVar == 3:
-            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
+            count_rDF = self.finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
         elif self.DepVar == 4:
-            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
+            count_rDF = self.finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
+
+        if self.debug:
+            print "Check!"
 
         count_rDF.fillna(0, inplace=True)
 
-        functions.setBase(self.RID, 'Step 3 of 9: Selecting your chosen taxa...done')
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        functions.setBase(self.RID, 'Step 4 of 9: Calculating distance matrix...')
-
+        self.finalDict = {}
         if os.name == 'nt':
             r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         else:
             r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+        if self.debug:
+            print "Check!"
+
         functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
 
-        r("list.of.packages <- c('vegan', 'ggplot2', 'data.table')")
+        r("list.of.packages <- c('edgeR')")
         r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+        r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+        r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
-        functions.setBase(self.RID, 'Step 4 of 9: Calculating distance matrix...')
+        functions.setBase(self.RID, 'Step 4 of 6: Performing statistical test...')
 
-        r("options(width=5000)")
-        r("library(vegan)")
-        r("library(ggplot2)")
-        r('library(data.table)')
-        r('source("R/myFunctions/myFunctions.R")')
+        if self.debug:
+            print "Check!"
 
-        count_rDF.sort_index(axis=0, inplace=True)
-        r.assign("data", count_rDF)
-        r.assign("cols", count_rDF.columns.values.tolist())
-        r("colnames(data) <- cols")
+        r("library(edgeR)")
 
-        if self.distance == 1:
-            r("dist <- vegdist(data, method='manhattan')")
-        elif self.distance == 2:
-            r("dist <- vegdist(data, method='euclidean')")
-        elif self.distance == 3:
-            r("dist <- vegdist(data, method='canberra')")
-        elif self.distance == 4:
-            r("dist <- vegdist(data, method='bray')")
-        elif self.distance == 5:
-            r("dist <- vegdist(data, method='kulczynski')")
-        elif self.distance == 6:
-            r("dist <- vegdist(data, method='jaccard')")
-        elif self.distance == 7:
-            r("dist <- vegdist(data, method='gower')")
-        elif self.distance == 8:
-            r("dist <- vegdist(data, method='altGower')")
-        elif self.distance == 9:
-            r("dist <- vegdist(data, method='morisita')")
-        elif self.distance == 10:
-            r("dist <- vegdist(data, method='horn')")
-        elif self.distance == 11:
-            r("dist <- vegdist(data, method='mountford')")
-        elif self.distance == 12:
-            r("dist <- vegdist(data, method='binomial')")
-        elif self.distance == 13:
-            r("dist <- vegdist(data, method='chao')")
-        elif self.distance == 14:
-            r("dist <- vegdist(data, method='cao')")
-        elif self.distance == 15:
-            datamtx = np.asarray(count_rDF)
-            dists = functions.wOdum(datamtx, self.alpha)
-            r.assign("dist", dists)
-            r("dist <- as.dist(dist)")
+        if self.DepVar == 0:
+            self.result += 'Dependent Variable: Abundance' + '\n'
+        elif self.DepVar == 4:
+            self.result += 'Dependent Variable: Total Abundance' + '\n'
+        self.result += '\n===============================================\n\n\n'
 
-        r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
-        mat = r.get("mat")
+        if self.debug:
+            print "Check!"
 
-        self.metaDF.sort('sampleid', inplace=True)
-        rowList = self.metaDF.sampleid.values.tolist()
-        distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
+        myList = list(self.metaDF.select_dtypes(include=['object']).columns)
+        for i in myList:
+            self.metaDF[i] = self.metaDF[i].str.replace(' ', '_')
+            self.metaDF[i] = self.metaDF[i].str.replace('-', '.')
+            self.metaDF[i] = self.metaDF[i].str.replace('(', '.')
+            self.metaDF[i] = self.metaDF[i].str.replace(')', '.')
 
-        functions.setBase(self.RID, 'Step 4 of 9: Calculating distance matrix...done!')
+        self.metaDF.sort(columns='sampleid', inplace=True)
+        r.assign("metaDF", self.metaDF)
+        r("trt <- factor(metaDF$merge)")
 
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if self.stopList[self.PID] == self.RID:
-            res = ''
+        r.assign("count", count_rDF)
+        r('e <- DGEList(counts=count)')
+        r('e <- calcNormFactors(e, method="none")')
+
+        r('design <- model.matrix(~ 0 + trt)')    # here
+        r('trtLevels <- levels(trt)')
+        r('colnames(design) <- trtLevels')
+
+        r('e <- estimateGLMCommonDisp(e, design)')
+        r('e <- estimateGLMTrendedDisp(e, design)')
+        r('e <- estimateGLMTagwiseDisp(e, design)')
+        r('fit <- glmFit(e, design)')
+        fit = r.get('fit')
+
+        if self.debug:
+            print "Check!"
+
+        if not fit:
+            error = "edgeR failed!\nUsually this is caused by one or more taxa having a negative disperion.\nTry filtering your data to remove problematic taxa (e.g. remove phylotypes with 50% or more zeros)."
+            myDict = {'error': error}
+            res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        functions.setBase(self.RID, 'Step 5 of 9: Principal coordinates analysis...')
+        nTopTags = int(self.all['nTopTags'])
+        r.assign('nTopTags', nTopTags)
 
-        trtLength = len(set(self.catValues))
-        trtString = " * ".join(self.catFields)
+        if self.debug:
+            print "Check!"
 
-        bigf = ''
-        r.assign("PC1", PC1)
-        r.assign("PC2", PC2)
+        mergeList = self.metaDF['merge'].tolist()
+        mergeSet = list(set(mergeList))
+        nbinom_res = pd.DataFrame()
+        for i, val in enumerate(mergeSet):
+            start = i + 1
+            stop = int(len(mergeSet))
+            for j in range(start, stop):
+                if i != j:
+                    r.assign("trt1", mergeSet[i])
+                    r.assign("trt2", mergeSet[j])
 
-        addContrib2 = self.all['addContrib2']
-        contribVal2 = float(self.all['contribVal2'])
-        r.assign("meta", self.metaDF)
-        method = self.all['Method']
-        if method == 'capscale':
-            if trtLength > 0:
-                pcoa_string = "ord <- capscale(dist ~ " + str(trtString) + ", meta)"
-                r.assign("cmd", pcoa_string)
-                r("eval(parse(text=cmd))")
-            else:
-                state = "Your selected variable(s) only have one treatment level, please select additional data!"
-                myDict = {}
-                myDict['error'] = state
-                res = json.dumps(myDict)
+                    r('contVec <- sprintf("%s-%s", trt1, trt2)')
+                    r('cont.matrix= makeContrasts(contVec, levels=design)')
+                    r('lrt <- glmLRT(fit, contrast=cont.matrix)')
+                    r("res <- as.data.frame(topTags(lrt, sort.by='PValue', n=min(nTopTags, nrow(fit$table))))")
+                    r('res <- res[ order(row.names(res)), ]')
+                    taxaIDs = r.get("row.names(res)")
+
+                    baseMean = count_rDF.mean(axis=1)
+                    baseMean = baseMean.loc[baseMean.index.isin(taxaIDs)]
+
+                    listA = self.metaDF[self.metaDF['merge'] == mergeSet[i]].sampleid.tolist()
+                    baseMeanA = count_rDF[listA].mean(axis=1)
+                    baseMeanA = baseMeanA.loc[baseMeanA.index.isin(taxaIDs)]
+
+                    listB = self.metaDF[self.metaDF['merge'] == mergeSet[j]].sampleid.tolist()
+                    baseMeanB = count_rDF[listB].mean(axis=1)
+                    baseMeanB = baseMeanB.loc[baseMeanB.index.isin(taxaIDs)]
+
+                    r.assign("baseMean", baseMean)
+                    r.assign("baseMeanA", baseMeanA)
+                    r.assign("baseMeanB", baseMeanB)
+
+                    r('baseMean <- baseMean[ order(as.numeric(row.names(baseMean))), ]')
+                    r('baseMeanA <- baseMeanA[ order(as.numeric(row.names(baseMeanA))), ]')
+                    r('baseMeanB <- baseMeanB[ order(as.numeric(row.names(baseMeanB))), ]')
+
+                    r("df <- data.frame(rank_id=rownames(res), baseMean=baseMean, baseMeanA=baseMeanA, \
+                         baseMeanB=baseMeanB, logFC=-res$logFC, logCPM=res$logCPM, \
+                         LR=res$LR, pval=res$PValue, FDR=res$FDR)")
+                    df = r.get("df")
+
+                    if df is None:
+                        myDict = {'error': "edgeR failed!\nPlease try a different data combination."}
+                        res = json.dumps(myDict)
+                        return HttpResponse(res, content_type='application/json')
+
+                    # remove taxa that failed (i.e., both trts are zero or log2FoldChange is NaN)
+                    df = df.loc[pd.notnull(df[' logFC '])]
+
+                    if self.treeType == 1:
+                        idList = functions.getFullTaxonomy(list(df.rank_id.unique()))
+                        df['Taxonomy'] = df['rank_id'].map(idList)
+                    elif self.treeType == 2:
+                        idList = functions.getFullKO(list(df.rank_id.unique()))
+                        df['Taxonomy'] = df['rank_id'].map(idList)
+                    elif self.treeType == 3:
+                        if self.nzAll < 5:
+                            idList = functions.getFullNZ(list(df.rank_id.unique()))
+                            df['Taxonomy'] = df['rank_id'].map(idList)
+
+                    df.rename(columns={'rank_id': 'Rank ID'}, inplace=True)
+
+                    iterationName = str(mergeSet[i]) + ' vs ' + str(mergeSet[j])
+                    df.insert(1, 'Comparison', iterationName)
+                    df.rename(columns={' baseMean ': 'baseMean'}, inplace=True)
+                    df.rename(columns={' baseMeanA ': 'baseMeanA'}, inplace=True)
+                    df.rename(columns={' baseMeanB ': 'baseMeanB'}, inplace=True)
+                    df.rename(columns={' logFC ': 'logFC'}, inplace=True)
+                    df['logFC'] = df['logFC'].round(3).astype(float)
+                    df.rename(columns={' logCPM ': 'logCPM'}, inplace=True)
+                    df.rename(columns={' LR ': 'Likelihood Ratio'}, inplace=True)
+                    df['Likelihood Ratio'] = df['Likelihood Ratio'].round(3).astype(float)
+                    df.rename(columns={' pval ': 'p-value'}, inplace=True)
+                    df.rename(columns={' FDR ': 'False Discovery Rate'}, inplace=True)
+
+                    functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...' + str(iterationName) + ' is done!')
+
+                    if nbinom_res.empty:
+                        nbinom_res = df.copy()
+                    else:
+                        nbinom_res = nbinom_res.append(df)
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if self.stopList[self.PID] == self.RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stopList[self.PID] == self.RID:
+                res = ''
                 return HttpResponse(res, content_type='application/json')
-        elif method == 'metaMDS':
-            r('ord <- metaMDS(dist, autotransform=FALSE, trace=FALSE)')
-        elif method == 'wcmdscale':
-            r('ord <- wcmdscale(dist, eig=TRUE)')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        self.result += str(r('print(ord)')) + '\n'
-        self.result += '===============================================\n'
+        if self.debug:
+            print "Check!"
 
-        r('sites <- scores(ord, display="sites")')
-        r("pcoa <- data.frame(meta, sites)")
-        pcoaDF = r.get("pcoa")
+        functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...done!')
+        functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
 
-        pcoaDF.rename(columns={'sampleid': 'Sample ID'}, inplace=True)
-
-        eigDF = pd.DataFrame()
-        if method != 'metaMDS':
-            r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
-            r("res <- summary(ord)")
-            r("eig <- data.frame(Stat, res$cont$importance)")
-            eigDF = r.get("eig")
-
-        if self.quantFields:
-            r.assign("quantFields", self.quantFields)
-            r("ef <- envfit(ord, meta[,paste(quantFields)], add=False)")
-
-            # create dataframe from envfit for export and adding to biplot
-            r('efDF <- as.data.frame(ef$vectors$arrows*ef$vectors$r)')
-            r('efDF$r2 <- ef$vectors$r')
-            r('efDF$p <- ef$vectors$pvals')
-            r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
-            r('efDF$p.adj <- pvals.adj')
-
-            # send data to result string
-            envfit = r("efDF")
-            self.result += 'EnvFit for selected quantitative variables\n'
-            self.result += str(envfit) + '\n'
-            self.result += '===============================================\n'
-
-        colorVal = self.all['colorVal']
-        if colorVal == 'None':
-            r("colorTrt <- c('All')")
-        if colorVal == 'interaction':
-            r.assign("catFields", self.catFields)
-            r("colorTrt <- interaction(meta[,paste(catFields)])")
-        if colorVal != 'None' and colorVal != 'interaction':
-            r.assign("colorVal", colorVal)
-            r("colorTrt <- as.factor(meta[,paste(colorVal)])")
-        r("if (!exists('colorTrt')) {colorTrt <- c('All')}")
-
-        shapeVal = self.all['shapeVal']
-        if shapeVal == 'None':
-            r("shapeTrt <- c('All')")
-        if shapeVal == 'interaction':
-            r.assign("catFields", self.catFields)
-            r("shapeTrt <- interaction(meta[,paste(catFields)])")
-        if shapeVal != 'None' and shapeVal != 'interaction':
-            r.assign("shapeVal", shapeVal)
-            r("shapeTrt <- as.factor(meta[,paste(shapeVal)])")
-        r("if (!exists('shapeTrt')) {shapeTrt <- c('All')}")
-
-        ellipseVal = self.all['ellipseVal']
-        if ellipseVal == 'None':
-            r("ellipseTrt <- c('All')")
-        if ellipseVal != 'None' and ellipseVal != 'interaction':
-            r.assign("ellipseVal", ellipseVal)
-            r("ellipseTrt <- as.factor(meta[,paste(ellipseVal)])")
-        if ellipseVal == 'interaction':
-            r.assign("catFields", self.catFields)
-            r("ellipseTrt <- interaction(meta[,paste(catFields)])")
-        r("if (!exists('ellipseTrt')) {ellipseTrt <- c('All')}")
-
-        surfVal = self.all['surfVal']
-        if surfVal != 'None':
-            r.assign("surfVal", surfVal)
-            r("quant <- meta[,paste(surfVal)]")
-            r("ordi <- ordisurf(ord ~ quant, add=FALSE)")
-            r("ordi.grid <- ordi$grid")
-            r("ordi.mat <- expand.grid(x=ordi.grid$x, y=ordi.grid$y)")
-            r("ordi.mat$z <- as.vector(ordi.grid$z)")
-            r("ordi.mat <- data.frame(na.omit(ordi.mat))")
-
-        # extract data and create dataframe for plotting
-        r("indDF <- data.frame( \
-            x=as.vector(scores(ord, choices=c(PC1), display=c('sites'))), \
-            y=as.vector(scores(ord, choices=c(PC2), display=c('sites'))), \
-            Color=colorTrt, \
-            Shape=shapeTrt, \
-            Fill=ellipseTrt) \
-        ")
-
-        gridVal_X = self.all['gridVal_X']
-        if gridVal_X != 'None':
-            r.assign("gridVal_X", gridVal_X)
-            r("indDF$myGrid_X <- meta[,paste(gridVal_X)]")
-
-        gridVal_Y = self.all['gridVal_Y']
-        if gridVal_Y != 'None':
-            r.assign("gridVal_Y", gridVal_Y)
-            r("indDF$myGrid_Y <- meta[,paste(gridVal_Y)]")
-
-        # set up plot
-        r("p <- ggplot(indDF, aes(x, y))")
-
-        if gridVal_X != 'None' and gridVal_Y == 'None':
-            r("p <- p + facet_grid(. ~ myGrid_X)")
-            r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
-        elif gridVal_X == 'None' and gridVal_Y != 'None':
-            r("p <- p + facet_grid(myGrid_Y ~ .)")
-            r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
-        elif gridVal_X != 'None' and gridVal_Y != 'None':
-            r("p <- p + facet_grid(myGrid_Y ~ myGrid_X)")
-            r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
-            r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
-
-        myPalette = self.all['palette']
-        r.assign("myPalette", myPalette)
-
-        r('number <- nlevels(indDF$Shape)')
-        r('shapes <- rep(c(21, 22, 23, 24, 25), length.out = number) ')
-
-        if not colorVal == 'None':
-            if not shapeVal == 'None':
-                r("p <- p + geom_point(aes(fill=factor(Color), shape=factor(Shape)), size=4)")
-                r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
-                r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
-            else:
-                r("p <- p + geom_point(aes(fill=factor(Color)), shape=21, size=4)")
-                r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
-        else:
-            if not shapeVal == 'None':
-                r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
-                r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
-            else:
-                r("p <- p + geom_point(color='gray', size=4)")
-
-        if not ellipseVal == 'None':
-            myCI = float(self.all["CI"])
-            r.assign("myCI", myCI)
-            r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=myCI, alpha=0)")
-            r("p <- p + scale_color_brewer(palette=myPalette)")
-            r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
-
-        if not surfVal == 'None':
-            r("p <- p + stat_contour(data=ordi.mat, aes(x, y, z=z, label=..level..), color='red')")
-            # get the last element in p (i.e., the one with the contour lines)
-            r("p.data <- tail(ggplot_build(p)$data, n=1)")
-            r("DT <- as.data.table(p.data[[1]], n=1)")
-            r("tmp <- unique(DT, by='level', fromLast=TRUE)")
-            r("p <- p + geom_text(aes(label=level, z=NULL), data=tmp)")
-
-        if self.quantFields and addContrib2 == 'yes':
-            # scale and remove non-significant objects from efDF
-            r('names(efDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
-            r('efDF$label <- unlist(quantFields)')
-            r.assign("contribVal2", contribVal2)
-            r('efDF.adj <- efDF[efDF$p.adj <= contribVal2,]')
-            r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
-            r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
-            r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
-            sigVar = r.get("nrow(efDF.adj)")
-            if sigVar >= 1:
-                r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
-                r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
-
-        r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
-        r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
-
-        r("p <- p + ggtitle('Principal Coordinates Analysis')")
-
-        if method != 'metaMDS':
-            r("eig <- eigenvals(ord)")
-            r("perExp <- eig / sum(eig) * 100")
-            r("p <- p + xlab(paste('Axis', PC1, ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
-            r("p <- p + ylab(paste('Axis', PC2, ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
-        else:
-            r("p <- p + xlab(paste('Axis', PC1, sep=''))")
-            r("p <- p + ylab(paste('Axis', PC2, sep=''))")
-
-        path = "myPhyloDB/media/temp/pcoa/Rplots"
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        r.assign("path", path)
-        r.assign("RID", self.RID)
-        r("file <- paste(path, '/', RID, '.pcoa.pdf', sep='')")
-        r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
-        r("nlev <- nlevels(as.factor(indDF$myGrid_X))")
-        r('if (nlev == 0) { \
-                myWidth <- 8 \
-            } else { \
-                myWidth <- 3*nlev+4 \
-        }')
-        r("nlev <- nlevels(as.factor(indDF$myGrid_Y))")
-        r('if (nlev == 0) { \
-                myHeight <- 8 \
-            } else { \
-                myHeight <- 3*nlev+4 \
-        }')
-        r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
-
-        functions.setBase(self.RID, 'Step 5 of 9: Principal coordinates analysis...done!')
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        functions.setBase(self.RID, 'Step 6 of 9: Performing perMANOVA...')
-
-        if perms < 10:
-            bigf = 'A minimum of 10 permutations is required...'
-        elif len(self.catFields) == 0 or trtLength <= 1:
-            bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
-        elif perms >= 10 and len(self.catFields) > 0:
-            if test == 1:
-                for i in self.catFields:
-                    factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
-                    r.assign("cmd", factor_string)
-                    r("eval(parse(text=cmd))")
-
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if self.stopList[self.PID] == self.RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                r.assign("perms", perms)
-                trtString = " * ".join(self.catFields)
-                amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
-                r.assign("cmd", amova_string)
-                r("eval(parse(text=cmd))")
-
-                res_aov = r("res$aov.tab")
-
-                tempStuff = res_aov.split('\n')
-                for part in tempStuff:
-                    if part != tempStuff[0]:
-                        bigf += part + '\n'
-                functions.setBase(self.RID, 'Step 6 of 9: Performing perMANOVA...done!')
-
-            elif test == 2:
-                functions.setBase(self.RID, 'Step 5 of 9: Principal coordinates analysis...done!')
-                functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...')
-
-                for i in self.catFields:
-                    factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
-                    r.assign("cmd", factor_string)
-                    r("eval(parse(text=cmd))")
-
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if self.stopList[self.PID] == self.RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                r.assign("perms", perms)
-                for i in self.catFields:
-                    beta_string = "res <- betadisper(dist, " + str(i) + ")"
-                    r.assign("cmd", beta_string)
-                    r("eval(parse(text=cmd))")
-
-                    r("something <- anova(res)")
-                    beta = r("something")
-                    tempStuff = beta.split('\n')
-                    bigf += 'group: ' + str(i) + '\n'
-                    for part in tempStuff:
-                        if part != tempStuff[0]:
-                            bigf += part + '\n'
-
-                    betaString = str(r('res'))
-                    lines = betaString.split('\n')
-                    for line in lines[1:]:
-                        bigf += str(line) + '\n'
-
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if self.stopList[self.PID] == self.RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-                    functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...done!')
-
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        functions.setBase(self.RID, 'Step 7 of 9: Formatting graph data for display...')
-        finalDict = {}
         seriesList = []
         xAxisDict = {}
         yAxisDict = {}
 
-        CAP1 = PC1 + len(self.catFields) + len(self.quantFields) + 1
-        CAP2 = PC2 + len(self.catFields) + len(self.quantFields) + 1
+        nbinom_res.fillna(value=1.0, inplace=True)
+        nbinom_res.reset_index(drop=True, inplace=True)
+        grouped = nbinom_res.groupby('Comparison')
 
-        if self.catFields:
-            grouped = pcoaDF.groupby(self.catFields)
-            for name, group in grouped:
-                if len(self.catFields) > 1:
-                    trt = "; ".join(name)
-                else:
-                    trt = name
+        listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
+        shapeIterator = 0
 
-                dataList = []
-                for index, row in group.iterrows():
-                    dataDict = {}
-                    dataDict['name'] = row['Sample ID']
-                    dataDict['x'] = float(row[CAP1])
-                    dataDict['y'] = float(row[CAP2])
-                    dataList.append(dataDict)
+        if self.debug:
+            print "Check!"
 
-                seriesDict = {}
-                seriesDict['name'] = str(trt)
-                seriesDict['data'] = dataList
-                seriesList.append(seriesDict)
+        FdrVal = float(self.all['FdrVal'])
+        for name, group in grouped:
+            nosigDF = group[group["False Discovery Rate"] > FdrVal]
+            nosigData = []
+            for index, row in nosigDF.iterrows():
+                dataDict = {}
+                dataDict['name'] = 'ID: ' + row['Rank ID']
+                dataDict['x'] = float(row['logCPM'])
+                dataDict['y'] = float(row['logFC'])
+                nosigData.append(dataDict)
 
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if self.stopList[self.PID] == self.RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            seriesDict = {}
+            seriesDict['name'] = "NotSig: " + str(name)
+            seriesDict['data'] = nosigData
+
+            markerDict = {}
+            markerDict['symbol'] = listOfShapes[shapeIterator]
+            seriesDict['marker'] = markerDict
+            seriesList.append(seriesDict)
+
+            sigDF = group[group["False Discovery Rate"] <= FdrVal]
+            sigData = []
+            for index, row in sigDF.iterrows():
+                dataDict = {}
+                dataDict['name'] = row['Rank ID']
+                dataDict['x'] = float(row['logCPM'])
+                dataDict['y'] = float(row['logFC'])
+                sigData.append(dataDict)
+
+            seriesDict = {}
+            seriesDict['name'] = "Sig: " + str(name)
+            seriesDict['data'] = sigData
+
+            markerDict = {}
+            markerDict['symbol'] = listOfShapes[shapeIterator]
+            seriesDict['marker'] = markerDict
+            seriesList.append(seriesDict)
+
+            shapeIterator += 1
+            if shapeIterator >= len(listOfShapes):
+                shapeIterator = 0
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stopList[self.PID] == self.RID:
+                res = ''
+                return HttpResponse(res, content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        if self.debug:
+            print "Check!"
 
         xTitle = {}
-        if method == 'capscale':
-            xTitle['text'] = 'Axis' + str(PC1) + " (" + str(round(eigDF.iloc[1][PC1] * 100, 1)) + "%)"
-        else:
-            xTitle['text'] = "Axis" + str(PC1)
+        xTitle['text'] = "logCPM"
         xTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
         xAxisDict['title'] = xTitle
+        xAxisDict['type'] = 'linear'
 
         yTitle = {}
-        if method == 'capscale':
-            yTitle['text'] = 'Axis' + str(PC2) + " (" + str(round(eigDF.iloc[1][PC2] * 100, 1)) + "%)"
-        else:
-            yTitle['text'] = "Axis" + str(PC2)
+        yTitle['text'] = "logFC"
         yTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
         yAxisDict['title'] = yTitle
+        yAxisDict['type'] = 'linear'
 
         styleDict = {'style': {'fontSize': '14px'}}
         xAxisDict['labels'] = styleDict
         yAxisDict['labels'] = styleDict
 
-        finalDict['series'] = seriesList
-        finalDict['xAxis'] = xAxisDict
-        finalDict['yAxis'] = yAxisDict
+        if self.debug:
+            print "Check!"
 
-        if test == 1:
-            self.result += 'perMANOVA results:' + '\n'
-        if test == 2:
-            self.result += 'betaDisper results:' + '\n'
-
-        if len(self.catFields) == 0:
-            self.result += 'test cannot be run...' + '\n'
-        else:
-            bigf = bigf.decode('utf-8')
-            self.result += bigf + '\n'
-
-        self.result += '===============================================\n\n\n'
-
-        finalDict['text'] = self.result
-
-        functions.setBase(self.RID, 'Step 7 of 9: Formatting graph data for display...done!')
+        self.finalDict['series'] = seriesList
+        self.finalDict['xAxis'] = xAxisDict
+        self.finalDict['yAxis'] = yAxisDict
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
@@ -1508,29 +2017,15 @@ class PCoA(Analysis):   # STAGES/STEPS VERY INCONSISTENT
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        functions.setBase(self.RID, 'Step 8 of 9: Formatting PCoA table...')
-
-        res_table = pcoaDF.to_html(classes="table display")
+        nbinom_res.replace(to_replace='N/A', value=np.nan, inplace=True)
+        nbinom_res.dropna(axis=1, how='all', inplace=True)
+        res_table = nbinom_res.to_html(classes="table display")
         res_table = res_table.replace('border="1"', 'border="0"')
-        finalDict['res_table'] = str(res_table)
+        self.finalDict['res_table'] = str(res_table)
 
-        functions.setBase(self.RID, 'Step 8 of 9: Formatting PCoA table...done!')
+        self.finalDict['text'] = self.result
 
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
-        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
-        functions.setBase(self.RID, 'Step 9 of 9: Formatting distance score table...')
-
-        distDF.sort_index(axis=1, inplace=True)
-        distDF.sort_index(axis=0, inplace=True)
-        dist_table = distDF.to_html(classes="table display")
-        dist_table = dist_table.replace('border="1"', 'border="0"')
-        finalDict['dist_table'] = str(dist_table)
-
-        functions.setBase(self.RID, 'Step 9 of 9: Formatting distance score table...done!')
+        functions.setBase(self.RID, 'Step 4 of 4: Formatting results for display...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
@@ -1538,19 +2033,22 @@ class PCoA(Analysis):   # STAGES/STEPS VERY INCONSISTENT
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        finalDict['error'] = 'none'
-        res = json.dumps(finalDict)
+        self.finalDict['error'] = 'none'
+        res = json.dumps(self.finalDict)
+
         return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        print "Running PCoA"
-        ret = self.validate(sig=False, dist=True)
+        if self.debug:
+            print "Running diffAbund"
+        ret = self.validate(sig=False, metaQuant=False, reqMultiLevel=False)
         if ret == 0:
-            ret = self.query(taxmap=False)
+            ret = self.query(taxmap=False, usetransform=False)
             if ret == 0:
                 ret = self.statsGraph()
                 return ret
-        print "Something went wrong with PCoA"
+        if self.debug:
+            print "Something went wrong with diffAbund"
         return ret
 
 
@@ -1578,15 +2076,13 @@ class PCA(Analysis):
 
         count_rDF.fillna(0, inplace=True)
 
-        functions.setBase(self.RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...done')
-
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
             res = ''
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        functions.setBase(self.RID, 'Step 4 of 5: Performing statistical test...')
+        functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
 
         if os.name == 'nt':
             r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -1597,15 +2093,14 @@ class PCA(Analysis):
 
         r("list.of.packages <- c('fpc', 'vegan', 'ggplot2')")
         r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-        print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-        functions.setBase(self.RID, 'Step 4 of 5: Performing statistical test...')
 
         r("options(width=5000)")
-        print r('library(fpc)')
-        print r('library(ggplot2)')
-        print r('library(vegan)')
-        print r('source("R/myFunctions/myFunctions.R")')
+        r('library(fpc)')
+        r('library(ggplot2)')
+        r('library(vegan)')
+        r('source("R/myFunctions/myFunctions.R")')
 
         count_rDF.sort_index(axis=0, inplace=True)
         r.assign("data", count_rDF)
@@ -1893,7 +2388,7 @@ class PCA(Analysis):
         }')
         r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
 
-        functions.setBase(self.RID, 'Step 4 of 5: Performing statistical test...done')
+        functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...done')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
@@ -1901,7 +2396,7 @@ class PCA(Analysis):
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        functions.setBase(self.RID, 'Step 5 of 5: Formatting graph data...')
+        functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data...')
 
         finalDict = {}
         r("options(width=5000)")
@@ -1972,12 +2467,561 @@ class PCA(Analysis):
         return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        print "Running PCA+"
+        if self.debug:
+            print "Running PCA+"
         ret = self.validate(sig=False)
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
                 ret = self.statsGraph()
                 return ret
-        print "Something went wrong with PCA+"
+        if self.debug:
+            print "Something went wrong with PCA+"
         return ret
+
+
+class PCoA(Analysis):
+
+    def statsGraph(self):
+
+        PC1 = int(self.all["PC1"])
+        PC2 = int(self.all["PC2"])
+        test = int(self.all["test"])
+        perms = int(self.all["perms"])
+
+        count_rDF = pd.DataFrame()
+        if self.DepVar == 0:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+        elif self.DepVar == 1:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
+        elif self.DepVar == 2:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
+        elif self.DepVar == 3:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
+        elif self.DepVar == 4:
+            count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
+
+        count_rDF.fillna(0, inplace=True)
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        functions.setBase(self.RID, 'Step 3 of 9: Calculating distance matrix...')
+
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+        functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
+
+        r("list.of.packages <- c('vegan', 'ggplot2', 'data.table')")
+        r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+        r("options(width=5000)")
+        r("library(vegan)")
+        r("library(ggplot2)")
+        r('library(data.table)')
+        r('source("R/myFunctions/myFunctions.R")')
+
+        count_rDF.sort_index(axis=0, inplace=True)
+        r.assign("data", count_rDF)
+        r.assign("cols", count_rDF.columns.values.tolist())
+        r("colnames(data) <- cols")
+
+        if self.distance == 1:
+            r("dist <- vegdist(data, method='manhattan')")
+        elif self.distance == 2:
+            r("dist <- vegdist(data, method='euclidean')")
+        elif self.distance == 3:
+            r("dist <- vegdist(data, method='canberra')")
+        elif self.distance == 4:
+            r("dist <- vegdist(data, method='bray')")
+        elif self.distance == 5:
+            r("dist <- vegdist(data, method='kulczynski')")
+        elif self.distance == 6:
+            r("dist <- vegdist(data, method='jaccard')")
+        elif self.distance == 7:
+            r("dist <- vegdist(data, method='gower')")
+        elif self.distance == 8:
+            r("dist <- vegdist(data, method='altGower')")
+        elif self.distance == 9:
+            r("dist <- vegdist(data, method='morisita')")
+        elif self.distance == 10:
+            r("dist <- vegdist(data, method='horn')")
+        elif self.distance == 11:
+            r("dist <- vegdist(data, method='mountford')")
+        elif self.distance == 12:
+            r("dist <- vegdist(data, method='binomial')")
+        elif self.distance == 13:
+            r("dist <- vegdist(data, method='chao')")
+        elif self.distance == 14:
+            r("dist <- vegdist(data, method='cao')")
+        elif self.distance == 15:
+            datamtx = np.asarray(count_rDF)
+            dists = functions.wOdum(datamtx, self.alpha)
+            r.assign("dist", dists)
+            r("dist <- as.dist(dist)")
+
+        r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
+        mat = r.get("mat")
+
+        self.metaDF.sort('sampleid', inplace=True)
+        rowList = self.metaDF.sampleid.values.tolist()
+        distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
+
+        functions.setBase(self.RID, 'Step 3 of 9: Calculating distance matrix...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        functions.setBase(self.RID, 'Step 4 of 9: Principal coordinates analysis...')
+
+        trtLength = len(set(self.catValues))
+        trtString = " * ".join(self.catFields)
+
+        bigf = ''
+        r.assign("PC1", PC1)
+        r.assign("PC2", PC2)
+
+        addContrib2 = self.all['addContrib2']
+        contribVal2 = float(self.all['contribVal2'])
+        r.assign("meta", self.metaDF)
+        method = self.all['Method']
+        if method == 'capscale':
+            if trtLength > 0:
+                pcoa_string = "ord <- capscale(dist ~ " + str(trtString) + ", meta)"
+                r.assign("cmd", pcoa_string)
+                r("eval(parse(text=cmd))")
+            else:
+                state = "Your selected variable(s) only have one treatment level, please select additional data!"
+                myDict = {}
+                myDict['error'] = state
+                res = json.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
+        elif method == 'metaMDS':
+            r('ord <- metaMDS(dist, autotransform=FALSE, trace=FALSE)')
+        elif method == 'wcmdscale':
+            r('ord <- wcmdscale(dist, eig=TRUE)')
+
+        self.result += str(r('print(ord)')) + '\n'
+        self.result += '===============================================\n'
+
+        r('sites <- scores(ord, display="sites")')
+        r("pcoa <- data.frame(meta, sites)")
+        pcoaDF = r.get("pcoa")
+
+        pcoaDF.rename(columns={'sampleid': 'Sample ID'}, inplace=True)
+
+        eigDF = pd.DataFrame()
+        if method != 'metaMDS':
+            r("Stat <- c('Eigenvalue', 'Proportion Explained', 'Cumulative Proportion')")
+            r("res <- summary(ord)")
+            r("eig <- data.frame(Stat, res$cont$importance)")
+            eigDF = r.get("eig")
+
+        if self.quantFields:
+            r.assign("quantFields", self.quantFields)
+            r("ef <- envfit(ord, meta[,paste(quantFields)], add=False)")
+
+            # create dataframe from envfit for export and adding to biplot
+            r('efDF <- as.data.frame(ef$vectors$arrows*ef$vectors$r)')
+            r('efDF$r2 <- ef$vectors$r')
+            r('efDF$p <- ef$vectors$pvals')
+            r('pvals.adj <- round(p.adjust(efDF$p, method="BH"),3)')
+            r('efDF$p.adj <- pvals.adj')
+
+            # send data to result string
+            envfit = r("efDF")
+            self.result += 'EnvFit for selected quantitative variables\n'
+            self.result += str(envfit) + '\n'
+            self.result += '===============================================\n'
+
+        colorVal = self.all['colorVal']
+        if colorVal == 'None':
+            r("colorTrt <- c('All')")
+        if colorVal == 'interaction':
+            r.assign("catFields", self.catFields)
+            r("colorTrt <- interaction(meta[,paste(catFields)])")
+        if colorVal != 'None' and colorVal != 'interaction':
+            r.assign("colorVal", colorVal)
+            r("colorTrt <- as.factor(meta[,paste(colorVal)])")
+        r("if (!exists('colorTrt')) {colorTrt <- c('All')}")
+
+        shapeVal = self.all['shapeVal']
+        if shapeVal == 'None':
+            r("shapeTrt <- c('All')")
+        if shapeVal == 'interaction':
+            r.assign("catFields", self.catFields)
+            r("shapeTrt <- interaction(meta[,paste(catFields)])")
+        if shapeVal != 'None' and shapeVal != 'interaction':
+            r.assign("shapeVal", shapeVal)
+            r("shapeTrt <- as.factor(meta[,paste(shapeVal)])")
+        r("if (!exists('shapeTrt')) {shapeTrt <- c('All')}")
+
+        ellipseVal = self.all['ellipseVal']
+        if ellipseVal == 'None':
+            r("ellipseTrt <- c('All')")
+        if ellipseVal != 'None' and ellipseVal != 'interaction':
+            r.assign("ellipseVal", ellipseVal)
+            r("ellipseTrt <- as.factor(meta[,paste(ellipseVal)])")
+        if ellipseVal == 'interaction':
+            r.assign("catFields", self.catFields)
+            r("ellipseTrt <- interaction(meta[,paste(catFields)])")
+        r("if (!exists('ellipseTrt')) {ellipseTrt <- c('All')}")
+
+        surfVal = self.all['surfVal']
+        if surfVal != 'None':
+            r.assign("surfVal", surfVal)
+            r("quant <- meta[,paste(surfVal)]")
+            r("ordi <- ordisurf(ord ~ quant, add=FALSE)")
+            r("ordi.grid <- ordi$grid")
+            r("ordi.mat <- expand.grid(x=ordi.grid$x, y=ordi.grid$y)")
+            r("ordi.mat$z <- as.vector(ordi.grid$z)")
+            r("ordi.mat <- data.frame(na.omit(ordi.mat))")
+
+        # extract data and create dataframe for plotting
+        r("indDF <- data.frame( \
+            x=as.vector(scores(ord, choices=c(PC1), display=c('sites'))), \
+            y=as.vector(scores(ord, choices=c(PC2), display=c('sites'))), \
+            Color=colorTrt, \
+            Shape=shapeTrt, \
+            Fill=ellipseTrt) \
+        ")
+
+        gridVal_X = self.all['gridVal_X']
+        if gridVal_X != 'None':
+            r.assign("gridVal_X", gridVal_X)
+            r("indDF$myGrid_X <- meta[,paste(gridVal_X)]")
+
+        gridVal_Y = self.all['gridVal_Y']
+        if gridVal_Y != 'None':
+            r.assign("gridVal_Y", gridVal_Y)
+            r("indDF$myGrid_Y <- meta[,paste(gridVal_Y)]")
+
+        # set up plot
+        r("p <- ggplot(indDF, aes(x, y))")
+
+        if gridVal_X != 'None' and gridVal_Y == 'None':
+            r("p <- p + facet_grid(. ~ myGrid_X)")
+            r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+        elif gridVal_X == 'None' and gridVal_Y != 'None':
+            r("p <- p + facet_grid(myGrid_Y ~ .)")
+            r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+        elif gridVal_X != 'None' and gridVal_Y != 'None':
+            r("p <- p + facet_grid(myGrid_Y ~ myGrid_X)")
+            r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
+            r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
+
+        myPalette = self.all['palette']
+        r.assign("myPalette", myPalette)
+
+        r('number <- nlevels(indDF$Shape)')
+        r('shapes <- rep(c(21, 22, 23, 24, 25), length.out = number) ')
+
+        if not colorVal == 'None':
+            if not shapeVal == 'None':
+                r("p <- p + geom_point(aes(fill=factor(Color), shape=factor(Shape)), size=4)")
+                r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
+                r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
+            else:
+                r("p <- p + geom_point(aes(fill=factor(Color)), shape=21, size=4)")
+                r("p <- p + scale_fill_brewer(name='Symbol-colors', palette=myPalette, guide=guide_legend(override.aes=list(shape=21)))")
+        else:
+            if not shapeVal == 'None':
+                r("p <- p + geom_point(aes(shape=factor(Shape)), size=4)")
+                r("p <- p + scale_shape_manual(name='Symbol-shapes', values=shapes)")
+            else:
+                r("p <- p + geom_point(color='gray', size=4)")
+
+        if not ellipseVal == 'None':
+            myCI = float(self.all["CI"])
+            r.assign("myCI", myCI)
+            r("p <- p + stat_ellipse(aes(color=factor(Fill)), geom='polygon', level=myCI, alpha=0)")
+            r("p <- p + scale_color_brewer(palette=myPalette)")
+            r("p <- p + guides(color=guide_legend('Ellipse-colors'))")
+
+        if not surfVal == 'None':
+            r("p <- p + stat_contour(data=ordi.mat, aes(x, y, z=z, label=..level..), color='red')")
+            # get the last element in p (i.e., the one with the contour lines)
+            r("p.data <- tail(ggplot_build(p)$data, n=1)")
+            r("DT <- as.data.table(p.data[[1]], n=1)")
+            r("tmp <- unique(DT, by='level', fromLast=TRUE)")
+            r("p <- p + geom_text(aes(label=level, z=NULL), data=tmp)")
+
+        if self.quantFields and addContrib2 == 'yes':
+            # scale and remove non-significant objects from efDF
+            r('names(efDF) <- c("PC1", "PC2", "r2", "p", "p.adj")')
+            r('efDF$label <- unlist(quantFields)')
+            r.assign("contribVal2", contribVal2)
+            r('efDF.adj <- efDF[efDF$p.adj <= contribVal2,]')
+            r("mult <- min( max(indDF$x)-min(indDF$x), max(indDF$y)-min(indDF$y) )")
+            r('efDF.adj$v1 <- efDF.adj[,PC1] * mult * 0.7')
+            r('efDF.adj$v2 <- efDF.adj[,PC2] * mult * 0.7')
+            sigVar = r.get("nrow(efDF.adj)")
+            if sigVar >= 1:
+                r("p <- p + geom_segment(data=efDF.adj, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,'cm')), alpha=0.75, color='red')")
+                r("p <- p + geom_text(data=efDF.adj, aes(x=v1, y=v2, label=label, vjust=ifelse(v2 >= 0, -1, 2)), size=3, color='red')")
+
+        r("p <- p + geom_hline(aes(yintercept=0), linetype='dashed')")
+        r("p <- p + geom_vline(aes(xintercept=0), linetype='dashed')")
+
+        r("p <- p + ggtitle('Principal Coordinates Analysis')")
+
+        if method != 'metaMDS':
+            r("eig <- eigenvals(ord)")
+            r("perExp <- eig / sum(eig) * 100")
+            r("p <- p + xlab(paste('Axis', PC1, ' (', round(perExp[[PC1]], 1), '%)', sep=''))")
+            r("p <- p + ylab(paste('Axis', PC2, ' (', round(perExp[[PC2]], 1), '%)', sep=''))")
+        else:
+            r("p <- p + xlab(paste('Axis', PC1, sep=''))")
+            r("p <- p + ylab(paste('Axis', PC2, sep=''))")
+
+        path = "myPhyloDB/media/temp/pcoa/Rplots"
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        r.assign("path", path)
+        r.assign("RID", self.RID)
+        r("file <- paste(path, '/', RID, '.pcoa.pdf', sep='')")
+        r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
+        r("nlev <- nlevels(as.factor(indDF$myGrid_X))")
+        r('if (nlev == 0) { \
+                myWidth <- 8 \
+            } else { \
+                myWidth <- 3*nlev+4 \
+        }')
+        r("nlev <- nlevels(as.factor(indDF$myGrid_Y))")
+        r('if (nlev == 0) { \
+                myHeight <- 8 \
+            } else { \
+                myHeight <- 3*nlev+4 \
+        }')
+        r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
+
+        functions.setBase(self.RID, 'Step 4 of 9: Principal coordinates analysis...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        functions.setBase(self.RID, 'Step 5 of 9: Performing perMANOVA...')
+
+        if perms < 10:
+            bigf = 'A minimum of 10 permutations is required...'
+        elif len(self.catFields) == 0 or trtLength <= 1:
+            bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
+        elif perms >= 10 and len(self.catFields) > 0:
+            if test == 1:
+                for i in self.catFields:
+                    factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                    r.assign("cmd", factor_string)
+                    r("eval(parse(text=cmd))")
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if self.stopList[self.PID] == self.RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                r.assign("perms", perms)
+                trtString = " * ".join(self.catFields)
+                amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
+                r.assign("cmd", amova_string)
+                r("eval(parse(text=cmd))")
+
+                res_aov = r("res$aov.tab")
+
+                tempStuff = res_aov.split('\n')
+                for part in tempStuff:
+                    if part != tempStuff[0]:
+                        bigf += part + '\n'
+                functions.setBase(self.RID, 'Step 5 of 9: Performing perMANOVA...done!')
+
+            elif test == 2:
+                functions.setBase(self.RID, 'Step 5 of 9: Principal coordinates analysis...done!')
+                functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...')
+
+                for i in self.catFields:
+                    factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                    r.assign("cmd", factor_string)
+                    r("eval(parse(text=cmd))")
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if self.stopList[self.PID] == self.RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                r.assign("perms", perms)
+                for i in self.catFields:
+                    beta_string = "res <- betadisper(dist, " + str(i) + ")"
+                    r.assign("cmd", beta_string)
+                    r("eval(parse(text=cmd))")
+
+                    r("something <- anova(res)")
+                    beta = r("something")
+                    tempStuff = beta.split('\n')
+                    bigf += 'group: ' + str(i) + '\n'
+                    for part in tempStuff:
+                        if part != tempStuff[0]:
+                            bigf += part + '\n'
+
+                    betaString = str(r('res'))
+                    lines = betaString.split('\n')
+                    for line in lines[1:]:
+                        bigf += str(line) + '\n'
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if self.stopList[self.PID] == self.RID:
+                        res = ''
+                        return HttpResponse(res, content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                    functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        functions.setBase(self.RID, 'Step 7 of 9: Formatting graph data for display...')
+        finalDict = {}
+        seriesList = []
+        xAxisDict = {}
+        yAxisDict = {}
+
+        CAP1 = PC1 + len(self.catFields) + len(self.quantFields) + 1
+        CAP2 = PC2 + len(self.catFields) + len(self.quantFields) + 1
+
+        if self.catFields:
+            grouped = pcoaDF.groupby(self.catFields)
+            for name, group in grouped:
+                if len(self.catFields) > 1:
+                    trt = "; ".join(name)
+                else:
+                    trt = name
+
+                dataList = []
+                for index, row in group.iterrows():
+                    dataDict = {}
+                    dataDict['name'] = row['Sample ID']
+                    dataDict['x'] = float(row[CAP1])
+                    dataDict['y'] = float(row[CAP2])
+                    dataList.append(dataDict)
+
+                seriesDict = {}
+                seriesDict['name'] = str(trt)
+                seriesDict['data'] = dataList
+                seriesList.append(seriesDict)
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stopList[self.PID] == self.RID:
+                    res = ''
+                    return HttpResponse(res, content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        xTitle = {}
+        if method == 'capscale':
+            xTitle['text'] = 'Axis' + str(PC1) + " (" + str(round(eigDF.iloc[1][PC1] * 100, 1)) + "%)"
+        else:
+            xTitle['text'] = "Axis" + str(PC1)
+        xTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
+        xAxisDict['title'] = xTitle
+
+        yTitle = {}
+        if method == 'capscale':
+            yTitle['text'] = 'Axis' + str(PC2) + " (" + str(round(eigDF.iloc[1][PC2] * 100, 1)) + "%)"
+        else:
+            yTitle['text'] = "Axis" + str(PC2)
+        yTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
+        yAxisDict['title'] = yTitle
+
+        styleDict = {'style': {'fontSize': '14px'}}
+        xAxisDict['labels'] = styleDict
+        yAxisDict['labels'] = styleDict
+
+        finalDict['series'] = seriesList
+        finalDict['xAxis'] = xAxisDict
+        finalDict['yAxis'] = yAxisDict
+
+        if test == 1:
+            self.result += 'perMANOVA results:' + '\n'
+        if test == 2:
+            self.result += 'betaDisper results:' + '\n'
+
+        if len(self.catFields) == 0:
+            self.result += 'test cannot be run...' + '\n'
+        else:
+            bigf = bigf.decode('utf-8')
+            self.result += bigf + '\n'
+
+        self.result += '===============================================\n\n\n'
+
+        finalDict['text'] = self.result
+
+        functions.setBase(self.RID, 'Step 7 of 9: Formatting graph data for display...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        functions.setBase(self.RID, 'Step 8 of 9: Formatting PCoA table...')
+
+        res_table = pcoaDF.to_html(classes="table display")
+        res_table = res_table.replace('border="1"', 'border="0"')
+        finalDict['res_table'] = str(res_table)
+
+        functions.setBase(self.RID, 'Step 8 of 9: Formatting PCoA table...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        functions.setBase(self.RID, 'Step 9 of 9: Formatting distance score table...')
+
+        distDF.sort_index(axis=1, inplace=True)
+        distDF.sort_index(axis=0, inplace=True)
+        dist_table = distDF.to_html(classes="table display")
+        dist_table = dist_table.replace('border="1"', 'border="0"')
+        finalDict['dist_table'] = str(dist_table)
+
+        functions.setBase(self.RID, 'Step 9 of 9: Formatting distance score table...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            res = ''
+            return HttpResponse(res, content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        finalDict['error'] = 'none'
+        res = json.dumps(finalDict)
+        return HttpResponse(res, content_type='application/json')
+
+    def run(self):
+        if self.debug:
+            print "Running PCoA"
+        ret = self.validate(sig=False, dist=True)
+        if ret == 0:
+            ret = self.query(taxmap=False)
+            if ret == 0:
+                ret = self.statsGraph()
+                return ret
+        if self.debug:
+            print "Something went wrong with PCoA"
+        return ret
+
