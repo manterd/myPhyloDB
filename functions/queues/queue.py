@@ -144,7 +144,8 @@ def process(pid):
                         myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=False)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getQuantUnivData":
-                        recent[RID] = functions.getQuantUnivData(request, RID, stopList, pid)
+                        myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=False)
+                        recent[RID] = myAnalysis.run(quant=True)
                     if funcName == "getCorr":
                         myAnalysis = analysis.Corr(request, RID, stopList, pid, debug=True)
                         recent[RID] = myAnalysis.run()

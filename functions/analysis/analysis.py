@@ -31,6 +31,8 @@ from pyper import *
 import os
 import collections
 import numpy as np
+from scipy import stats
+from database.models import Sample
 
 
 
@@ -823,7 +825,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
     # so quant Univ is huge... like >700 lines long.... implementing is one thing, but this could easily be split 6 ways
     def quantstats(self):       # for getQuantUnivData      WIP
 
-        functions.setBase(RID, 'Step 3 of 4: Performing statistical test...!')
+        functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...!')
 
         finalDict = {}
         # group DataFrame by each taxa level selected
@@ -834,62 +836,64 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
         else:
             r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-        functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
+        functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
 
         # R packages from cran
         r("list.of.packages <- c('ggplot2', 'RColorBrewer', 'ggthemes')")
         r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-        print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
-        functions.setBase(RID, 'Step 3 of 4: Performing statistical test...')
+        # package checker feedback should only print when it needs to install more, spams console otherwise
 
-        print r("library(ggplot2)")
-        print r("library(ggthemes)")
-        print r("library(RColorBrewer)")
-        print r('source("R/myFunctions/myFunctions.R")')
+        functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
+
+        r("library(ggplot2)")
+        r("library(ggthemes)")
+        r("library(RColorBrewer)")
+        r('source("R/myFunctions/myFunctions.R")')
 
         # R graph
-        r.assign('finalDF', finalDF)
+        r.assign('finalDF', self.finalDF)
 
-        colorVal = all['colorVal']
+        colorVal = self.all['colorVal']
         if colorVal == 'None':
             r("colorTrt <- c('All')")
         else:
             r.assign("colorVal", colorVal)
             r("colorTrt <- as.factor(finalDF[,paste(colorVal)])")
 
-        r.assign('xVal', quantFields[0])
+        r.assign('xVal', self.quantFields[0])
 
-        gridVal_X = all['gridVal_X']
+        gridVal_X = self.all['gridVal_X']
         if gridVal_X == 'None':
             r("gridTrt_X <- c('All')")
         else:
             r.assign("gridVal_X", gridVal_X)
             r("gridTrt_X <- as.factor(finalDF[,paste(gridVal_X)])")
 
-        gridVal_Y = all['gridVal_Y']
+        gridVal_Y = self.all['gridVal_Y']
         if gridVal_Y == 'None':
             r("gridTrt_Y <- c('All')")
         else:
             r.assign("gridVal_Y", gridVal_Y)
             r("gridTrt_Y <- as.factor(finalDF[,paste(gridVal_Y)])")
 
-        shapeVal = all['shapeVal']
+        shapeVal = self.all['shapeVal']
         if shapeVal == 'None':
             r("shapeTrt <- c('All')")
         else:
             r.assign("shapeVal", shapeVal)
             r("shapeTrt <- as.factor(finalDF[,paste(shapeVal)])")
 
-        if DepVar == 0:
+        if self.DepVar == 0:
             r('DepVar <- "abund"')
-        elif DepVar == 1:
+        elif self.DepVar == 1:
             r('DepVar <- "rel_abund"')
-        elif DepVar == 2:
+        elif self.DepVar == 2:
             r('DepVar <- "rich"')
-        elif DepVar == 3:
+        elif self.DepVar == 3:
             r('DepVar <- "diversity"')
-        elif DepVar == 4:
+        elif self.DepVar == 4:
             r('DepVar <- "abund_16S"')
 
         r("gDF <- data.frame(x=finalDF[,paste(xVal)], y=finalDF[,paste(DepVar)], \
@@ -909,7 +913,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
         r("p <- p + theme(strip.text.x=element_text(size=10, colour='blue', angle=0))")
         r("p <- p + theme(strip.text.y=element_text(size=10, colour='blue', angle=90))")
 
-        palette = all['palette']
+        palette = self.all['palette']
         r.assign('palette', palette)
         if palette == 'gdocs':
             r('pal <- gdocs_pal()(20)')
@@ -943,15 +947,15 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
         r("my.formula <- y ~ x")
         r("p <- p + geom_smooth(method='lm', se=T, color='black', formula=my.formula)")
 
-        if DepVar == 0:
+        if self.DepVar == 0:
             r("p <- p + ylab('Abundance') + xlab(paste(xVal))")
-        elif DepVar == 1:
+        elif self.DepVar == 1:
             r("p <- p + ylab('Relative Abundance') + xlab(paste(xVal))")
-        elif DepVar == 2:
+        elif self.DepVar == 2:
             r("p <- p + ylab('OTU Richness') + xlab(paste(xVal))")
-        elif DepVar == 3:
+        elif self.DepVar == 3:
             r("p <- p + ylab('OTU Diversity') + xlab(paste(xVal))")
-        elif DepVar == 4:
+        elif self.DepVar == 4:
             r("p <- p + ylab('Total Abundance') + xlab(paste(xVal))")
 
         path = "myPhyloDB/media/temp/anova/Rplots"
@@ -959,7 +963,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
             os.makedirs(path)
 
         r.assign("path", path)
-        r.assign("RID", RID)
+        r.assign("RID", self.RID)
         r("file <- paste(path, '/', RID, '.anova.pdf', sep='')")
         r("p <- set_panel_size(p, height=unit(2.9, 'in'), width=unit(2.9, 'in'))")
 
@@ -981,30 +985,30 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
 
         pValDict = {}
         counter = 1
-        catLevels = len(set(catValues))
-        grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
+        catLevels = len(set(self.catValues))
+        grouped1 = self.finalDF.groupby(['rank_name', 'rank_id'])
         for name1, group1 in grouped1:
             D = ''
             r.assign("df", group1)
 
-            trtString = " * ".join(allFields)
-            if DepVar == 0:
+            trtString = " * ".join(self.allFields)
+            if self.DepVar == 0:
                 anova_string = "fit <- lm(abund ~ " + str(trtString) + ", data=df)"
                 r.assign("cmd", anova_string)
                 r("eval(parse(text=cmd))")
-            elif DepVar == 1:
+            elif self.DepVar == 1:
                 anova_string = "fit <- lm(rel_abund ~ " + str(trtString) + ", data=df)"
                 r.assign("cmd", anova_string)
                 r("eval(parse(text=cmd))")
-            elif DepVar == 2:
+            elif self.DepVar == 2:
                 anova_string = "fit <- lm(rich ~ " + str(trtString) + ", data=df)"
                 r.assign("cmd", anova_string)
                 r("eval(parse(text=cmd))")
-            elif DepVar == 3:
+            elif self.DepVar == 3:
                 anova_string = "fit <- lm(diversity ~ " + str(trtString) + ", data=df)"
                 r.assign("cmd", anova_string)
                 r("eval(parse(text=cmd))")
-            elif DepVar == 4:
+            elif self.DepVar == 4:
                 anova_string = "fit <- lm(abund_16S ~ " + str(trtString) + ", data=df)"
                 r.assign("cmd", anova_string)
                 r("eval(parse(text=cmd))")
@@ -1037,111 +1041,111 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
             else:
                 pValDict[name1] = np.nan
 
-            result += 'Name: ' + str(name1[0]) + '\n'
-            result += 'ID: ' + str(name1[1]) + '\n'
-            if DepVar == 0:
-                result += 'Dependent Variable: Abundance' + '\n'
-            elif DepVar == 1:
-                result += 'Dependent Variable: Relative Abundance' + '\n'
-            elif DepVar == 2:
-                result += 'Dependent Variable: OTU Richness' + '\n'
-            elif DepVar == 3:
-                result += 'Dependent Variable: OTU Diversity' + '\n'
-            elif DepVar == 4:
-                result += 'Dependent Variable: Total Abundance' + '\n'
+            self.result += 'Name: ' + str(name1[0]) + '\n'
+            self.result += 'ID: ' + str(name1[1]) + '\n'
+            if self.DepVar == 0:
+                self.result += 'Dependent Variable: Abundance' + '\n'
+            elif self.DepVar == 1:
+                self.result += 'Dependent Variable: Relative Abundance' + '\n'
+            elif self.DepVar == 2:
+                self.result += 'Dependent Variable: OTU Richness' + '\n'
+            elif self.DepVar == 3:
+                self.result += 'Dependent Variable: OTU Diversity' + '\n'
+            elif self.DepVar == 4:
+                self.result += 'Dependent Variable: Total Abundance' + '\n'
 
-            result += '\nANCOVA table:\n'
+            self.result += '\nANCOVA table:\n'
             D = D.decode('utf-8')
-            result += D + '\n'
-            result += '===============================================\n'
-            result += '\n\n\n\n'
+            self.result += D + '\n'
+            self.result += '===============================================\n'
+            self.result += '\n\n\n\n'
 
             taxa_no = len(grouped1)
-            functions.setBase(RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
+            functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
             counter += 1
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-            if stops[PID] == RID:
+            if self.stopList[self.PID] == self.RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
-        functions.setBase(RID, 'Step 3 of 4: Performing statistical test...done!')
+        functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-        if stops[PID] == RID:
+        if self.stopList[self.PID] == self.RID:
             res = ''
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-        functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...')
+        functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
 
-        finalDF['sample_name'] = ''
-        for index, row in finalDF.iterrows():
+        self.finalDF['sample_name'] = ''
+        for index, row in self.finalDF.iterrows():
             val = Sample.objects.get(sampleid=row['sampleid']).sample_name
-            finalDF.loc[index, 'sample_name'] = val
+            self.finalDF.loc[index, 'sample_name'] = val
 
         shapes_idx = 0
         seriesList = []
-        grouped1 = finalDF.groupby(['rank_name', 'rank_id'])
+        grouped1 = self.finalDF.groupby(['rank_name', 'rank_id'])
         for name1, group1 in grouped1:
             pValue = pValDict[name1]
 
-            if sig_only == 0:
+            if self.sig_only == 0:
                 if catLevels > 1:
-                    grouped2 = group1.groupby(catFields)
+                    grouped2 = group1.groupby(self.catFields)
                     for name2, group2 in grouped2:
                         dataList = []
                         x = []
                         y = []
-                        if DepVar == 0:
-                            x = group2[quantFields[0]].values.astype(float).tolist()
+                        if self.DepVar == 0:
+                            x = group2[self.quantFields[0]].values.astype(float).tolist()
                             y = group2['abund'].values.astype(float).tolist()
-                        elif DepVar == 1:
-                            x = group2[quantFields[0]].values.astype(float).tolist()
+                        elif self.DepVar == 1:
+                            x = group2[self.quantFields[0]].values.astype(float).tolist()
                             y = group2['rel_abund'].values.astype(float).tolist()
-                        elif DepVar == 2:
-                            x = group2[quantFields[0]].values.astype(float).tolist()
+                        elif self.DepVar == 2:
+                            x = group2[self.quantFields[0]].values.astype(float).tolist()
                             y = group2['rich'].values.astype(float).tolist()
-                        elif DepVar == 3:
-                            x = group2[quantFields[0]].values.astype(float).tolist()
+                        elif self.DepVar == 3:
+                            x = group2[self.quantFields[0]].values.astype(float).tolist()
                             y = group2['diversity'].values.astype(float).tolist()
-                        elif DepVar == 4:
-                            x = group2[quantFields[0]].values.astype(float).tolist()
+                        elif self.DepVar == 4:
+                            x = group2[self.quantFields[0]].values.astype(float).tolist()
                             y = group2['abund_16S'].values.astype(float).tolist()
 
-                        if DepVar == 0:
+                        if self.DepVar == 0:
                             for index, row in group2.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['abund'])
                                 dataList.append(dataDict)
-                        elif DepVar == 1:
+                        elif self.DepVar == 1:
                             for index, row in group2.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['rel_abund'])
                                 dataList.append(dataDict)
-                        elif DepVar == 2:
+                        elif self.DepVar == 2:
                             for index, row in group2.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['rich'])
                                 dataList.append(dataDict)
-                        elif DepVar == 3:
+                        elif self.DepVar == 3:
                             for index, row in group2.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['diversity'])
                                 dataList.append(dataDict)
-                        elif DepVar == 4:
+                        elif self.DepVar == 4:
                             for index, row in group2.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['abund_16S'])
                                 dataList.append(dataDict)
 
@@ -1190,55 +1194,55 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
                     dataList = []
                     x = []
                     y = []
-                    if DepVar == 0:
-                        x = group1[quantFields[0]].values.astype(float).tolist()
+                    if self.DepVar == 0:
+                        x = group1[self.quantFields[0]].values.astype(float).tolist()
                         y = group1['abund'].values.astype(float).tolist()
-                    elif DepVar == 1:
-                        x = group1[quantFields[0]].values.astype(float).tolist()
+                    elif self.DepVar == 1:
+                        x = group1[self.quantFields[0]].values.astype(float).tolist()
                         y = group1['rel_abund'].values.astype(float).tolist()
-                    elif DepVar == 2:
-                        x = group1[quantFields[0]].values.astype(float).tolist()
+                    elif self.DepVar == 2:
+                        x = group1[self.quantFields[0]].values.astype(float).tolist()
                         y = group1['rich'].values.astype(float).tolist()
-                    elif DepVar == 3:
-                        x = group1[quantFields[0]].values.astype(float).tolist()
+                    elif self.DepVar == 3:
+                        x = group1[self.quantFields[0]].values.astype(float).tolist()
                         y = group1['diversity'].values.astype(float).tolist()
-                    elif DepVar == 4:
-                        x = group1[quantFields[0]].values.astype(float).tolist()
+                    elif self.DepVar == 4:
+                        x = group1[self.quantFields[0]].values.astype(float).tolist()
                         y = group1['abund_16S'].values.astype(float).tolist()
 
-                    if DepVar == 0:
+                    if self.DepVar == 0:
                         for index, row in group1.iterrows():
                             dataDict = {}
                             dataDict['name'] = row['sample_name']
-                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['x'] = float(row[self.quantFields[0]])
                             dataDict['y'] = float(row['abund'])
                             dataList.append(dataDict)
-                    elif DepVar == 1:
+                    elif self.DepVar == 1:
                         for index, row in group1.iterrows():
                             dataDict = {}
                             dataDict['name'] = row['sample_name']
-                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['x'] = float(row[self.quantFields[0]])
                             dataDict['y'] = float(row['rel_abund'])
                             dataList.append(dataDict)
-                    elif DepVar == 2:
+                    elif self.DepVar == 2:
                         for index, row in group1.iterrows():
                             dataDict = {}
                             dataDict['name'] = row['sample_name']
-                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['x'] = float(row[self.quantFields[0]])
                             dataDict['y'] = float(row['rich'])
                             dataList.append(dataDict)
-                    elif DepVar == 3:
+                    elif self.DepVar == 3:
                         for index, row in group1.iterrows():
                             dataDict = {}
                             dataDict['name'] = row['sample_name']
-                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['x'] = float(row[self.quantFields[0]])
                             dataDict['y'] = float(row['diversity'])
                             dataList.append(dataDict)
-                    elif DepVar == 4:
+                    elif self.DepVar == 4:
                         for index, row in group1.iterrows():
                             dataDict = {}
                             dataDict['name'] = row['sample_name']
-                            dataDict['x'] = float(row[quantFields[0]])
+                            dataDict['x'] = float(row[self.quantFields[0]])
                             dataDict['y'] = float(row['abund_16S'])
                             dataList.append(dataDict)
 
@@ -1279,63 +1283,63 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
                     regrDict['marker'] = markerDict
                     seriesList.append(regrDict)
 
-            elif sig_only == 1:
+            elif self.sig_only == 1:
                 if pValue < 0.05:
                     if catLevels > 1:
-                        grouped2 = group1.groupby(catFields)
+                        grouped2 = group1.groupby(self.catFields)
                         for name2, group2 in grouped2:
                             dataList = []
                             x = []
                             y = []
-                            if DepVar == 0:
-                                x = group2[quantFields[0]].values.astype(float).tolist()
+                            if self.DepVar == 0:
+                                x = group2[self.quantFields[0]].values.astype(float).tolist()
                                 y = group2['abund'].values.astype(float).tolist()
-                            elif DepVar == 1:
-                                x = group2[quantFields[0]].values.astype(float).tolist()
+                            elif self.DepVar == 1:
+                                x = group2[self.quantFields[0]].values.astype(float).tolist()
                                 y = group2['rel_abund'].values.astype(float).tolist()
-                            elif DepVar == 2:
-                                x = group2[quantFields[0]].values.astype(float).tolist()
+                            elif self.DepVar == 2:
+                                x = group2[self.quantFields[0]].values.astype(float).tolist()
                                 y = group2['rich'].values.astype(float).tolist()
-                            elif DepVar == 3:
-                                x = group2[quantFields[0]].values.astype(float).tolist()
+                            elif self.DepVar == 3:
+                                x = group2[self.quantFields[0]].values.astype(float).tolist()
                                 y = group2['diversity'].values.astype(float).tolist()
-                            elif DepVar == 4:
-                                x = group2[quantFields[0]].values.astype(float).tolist()
+                            elif self.DepVar == 4:
+                                x = group2[self.quantFields[0]].values.astype(float).tolist()
                                 y = group2['abund_16S'].values.astype(float).tolist()
 
-                            if DepVar == 0:
+                            if self.DepVar == 0:
                                 for index, row in group2.iterrows():
                                     dataDict = {}
                                     dataDict['name'] = row['sample_name']
-                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['x'] = float(row[self.quantFields[0]])
                                     dataDict['y'] = float(row['abund'])
                                     dataList.append(dataDict)
-                            elif DepVar == 1:
+                            elif self.DepVar == 1:
                                 for index, row in group2.iterrows():
                                     dataDict = {}
                                     dataDict['name'] = row['sample_name']
-                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['x'] = float(row[self.quantFields[0]])
                                     dataDict['y'] = float(row['rel_abund'])
                                     dataList.append(dataDict)
-                            elif DepVar == 2:
+                            elif self.DepVar == 2:
                                 for index, row in group2.iterrows():
                                     dataDict = {}
                                     dataDict['name'] = row['sample_name']
-                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['x'] = float(row[self.quantFields[0]])
                                     dataDict['y'] = float(row['rich'])
                                     dataList.append(dataDict)
-                            elif DepVar == 3:
+                            elif self.DepVar == 3:
                                 for index, row in group2.iterrows():
                                     dataDict = {}
                                     dataDict['name'] = row['sample_name']
-                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['x'] = float(row[self.quantFields[0]])
                                     dataDict['y'] = float(row['diversity'])
                                     dataList.append(dataDict)
-                            elif DepVar == 4:
+                            elif self.DepVar == 4:
                                 for index, row in group2.iterrows():
                                     dataDict = {}
                                     dataDict['name'] = row['sample_name']
-                                    dataDict['x'] = float(row[quantFields[0]])
+                                    dataDict['x'] = float(row[self.quantFields[0]])
                                     dataDict['y'] = float(row['abund_16S'])
                                     dataList.append(dataDict)
 
@@ -1383,55 +1387,55 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
                         dataList = []
                         x = []
                         y = []
-                        if DepVar == 0:
-                            x = group1[quantFields[0]].values.astype(float).tolist()
+                        if self.DepVar == 0:
+                            x = group1[self.quantFields[0]].values.astype(float).tolist()
                             y = group1['abund'].values.astype(float).tolist()
-                        elif DepVar == 1:
-                            x = group1[quantFields[0]].values.astype(float).tolist()
+                        elif self.DepVar == 1:
+                            x = group1[self.quantFields[0]].values.astype(float).tolist()
                             y = group1['rel_abund'].values.astype(float).tolist()
-                        elif DepVar == 2:
-                            x = group1[quantFields[0]].values.astype(float).tolist()
+                        elif self.DepVar == 2:
+                            x = group1[self.quantFields[0]].values.astype(float).tolist()
                             y = group1['rich'].values.astype(float).tolist()
-                        elif DepVar == 3:
-                            x = group1[quantFields[0]].values.astype(float).tolist()
+                        elif self.DepVar == 3:
+                            x = group1[self.quantFields[0]].values.astype(float).tolist()
                             y = group1['diversity'].values.astype(float).tolist()
-                        elif DepVar == 4:
-                            x = group1[quantFields[0]].values.astype(float).tolist()
+                        elif self.DepVar == 4:
+                            x = group1[self.quantFields[0]].values.astype(float).tolist()
                             y = group1['abund_16S'].values.astype(float).tolist()
 
-                        if DepVar == 0:
+                        if self.DepVar == 0:
                             for index, row in group1.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['abund'])
                                 dataList.append(dataDict)
-                        elif DepVar == 1:
+                        elif self.DepVar == 1:
                             for index, row in group1.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['rel_abund'])
                                 dataList.append(dataDict)
-                        elif DepVar == 2:
+                        elif self.DepVar == 2:
                             for index, row in group1.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['rich'])
                                 dataList.append(dataDict)
-                        elif DepVar == 3:
+                        elif self.DepVar == 3:
                             for index, row in group1.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['diversity'])
                                 dataList.append(dataDict)
-                        elif DepVar == 4:
+                        elif self.DepVar == 4:
                             for index, row in group1.iterrows():
                                 dataDict = {}
                                 dataDict['name'] = row['sample_name']
-                                dataDict['x'] = float(row[quantFields[0]])
+                                dataDict['x'] = float(row[self.quantFields[0]])
                                 dataDict['y'] = float(row['abund_16S'])
                                 dataList.append(dataDict)
 
@@ -1472,36 +1476,36 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
                         seriesList.append(regrDict)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
-            if stops[PID] == RID:
+            if self.stopList[self.PID] == self.RID:
                 res = ''
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
         xAxisDict = {}
         xTitle = {}
-        xTitle['text'] = quantFields[0]
+        xTitle['text'] = self.quantFields[0]
         xTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
         xAxisDict['title'] = xTitle
 
         yAxisDict = {}
         yTitle = {}
-        if DepVar == 0:
+        if self.DepVar == 0:
             yTitle['text'] = 'Abundance'
-        elif DepVar == 1:
+        elif self.DepVar == 1:
             yTitle['text'] = 'Relative Abundance'
-        elif DepVar == 2:
+        elif self.DepVar == 2:
             yTitle['text'] = 'OTU Richness'
-        elif DepVar == 3:
+        elif self.DepVar == 3:
             yTitle['text'] = 'OTU Diversity'
-        elif DepVar == 4:
+        elif self.DepVar == 4:
             yTitle['text'] = 'Total Abundance'
         yAxisDict['title'] = yTitle
 
-        if transform != 0:
+        if self.transform != 0:
             tname = {
                 '1': "Ln", '2': "Log10", '3': "Sqrt", '4': "Logit", '5': "Arcsin"
             }
-            yTitle['text'] = tname[str(transform)] + "(" + str(yTitle['text']) + ")"
+            yTitle['text'] = tname[str(self.transform)] + "(" + str(yTitle['text']) + ")"
 
         yTitle['style'] = {'fontSize': '18px', 'fontWeight': 'bold'}
         yAxisDict['title'] = yTitle
@@ -1519,39 +1523,48 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
         else:
             finalDict['empty'] = 1
 
-        functions.setBase(RID, 'Step 4 of 4: Formatting graph data for display...done!')
+        functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        if stops[PID] == RID:
+        if self.stopList[self.PID] == self.RID:
             res = ''
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # datatable of taxa mapped to selected kegg orthologies
-        if not treeType == 1 and mapTaxa == 'yes':
-            records = allDF.values.tolist()
+        if not self.treeType == 1 and self.mapTaxa == 'yes':
+            records = self.allDF.values.tolist()
             finalDict['taxData'] = json.dumps(records)
-            columns = allDF.columns.values.tolist()
+            columns = self.allDF.columns.values.tolist()
             finalDict['taxColumns'] = json.dumps(columns)
 
         finalDict['resType'] = 'res'
-        finalDict['text'] = result
+        finalDict['text'] = self.result
 
         finalDict['error'] = 'none'
         res = json.dumps(finalDict)
-        return HttpResponse(res, content_type='application/json')
+        return HttpResponse(res, content_type='application/json')   #
+    # WHAT IS THIS MONSTER OF A FUNCTION
 
-    def run(self):
+    def run(self, quant=False):
         if self.debug:
-            print "Running Anova"
-        ret = self.validate()
-        if ret == 0:
-            ret = self.query()
+            print "Running Anova. Quant = ", quant
+
+        if quant:
+            ret = self.validate(reqMultiLevel=False)
             if ret == 0:
-                ret = self.stats()
+                ret = self.query()
                 if ret == 0:
-                    ret = self.graph()
-                    return ret
+                    return self.quantstats()
+        else:
+            ret = self.validate()
+            if ret == 0:
+                ret = self.query()
+                if ret == 0:
+                    ret = self.stats()
+                    if ret == 0:
+                        return self.graph()
+
         if self.debug:
             print "Something went wrong with Anova"
         return ret
@@ -2045,8 +2058,8 @@ class diffAbund(Analysis):
         if ret == 0:
             ret = self.query(taxmap=False, usetransform=False)
             if ret == 0:
-                ret = self.statsGraph()
-                return ret
+                return self.statsGraph()
+
         if self.debug:
             print "Something went wrong with diffAbund"
         return ret
@@ -2473,8 +2486,8 @@ class PCA(Analysis):
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
-                ret = self.statsGraph()
-                return ret
+                return self.statsGraph()
+
         if self.debug:
             print "Something went wrong with PCA+"
         return ret
@@ -3019,8 +3032,8 @@ class PCoA(Analysis):
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
-                ret = self.statsGraph()
-                return ret
+                return self.statsGraph()
+
         if self.debug:
             print "Something went wrong with PCoA"
         return ret

@@ -12,6 +12,7 @@ from django.shortcuts import render
 from database.models import Reference
 from database.forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, UploadForm6, UploadForm7, UploadForm8, UploadForm10
 
+# only needed for code mapping
 #from pycallgraph import PyCallGraph
 #from pycallgraph.output import GephiOutput
 #from pycallgraph import Config
