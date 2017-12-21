@@ -8,16 +8,13 @@ import functions
 import database.views
 
 # imported for dataQueue fixes 2017/09/28
-from django.shortcuts import render
 from database.models import Reference
-from database.forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, UploadForm6, UploadForm7, UploadForm8, UploadForm10
 
 # only needed for code mapping
 #from pycallgraph import PyCallGraph
 #from pycallgraph.output import GephiOutput
 #from pycallgraph import Config
 
-import datetime
 
 datQ = Queue(maxsize=0)
 datActiveList = [0]
@@ -62,58 +59,15 @@ def datstop(request):
             functions.log(request, "QSTOP", thisFunc)
             retStuff = None
             if thisFunc == "uploadFunc":
-                print "Upload stopping early"
-                retStuff = render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': ""}
-                    )
+                retStuff = database.views.upload(request)
             elif thisFunc == "reanalyze":
-                retStuff = render(
-                        request,
-                        'reprocess.html',
-                        {'form4': UploadForm4,
-                         'mform': UploadForm10},
-                    )
+                retStuff = database.views.reprocess(request)
             elif thisFunc == "updateFunc":
-                state = ''
-                retStuff = render(
-                        request,
-                        'update.html',
-                        {'form5': UploadForm5,
-                         'state': state}
-                    )
+                retStuff = database.views.update(request)
             elif thisFunc == "pybake":
-                form6 = UploadForm6(request.POST, request.FILES)
-                form7 = UploadForm7(request.POST, request.FILES)
-                form8 = UploadForm8(request.POST, request.FILES)
+                retStuff = database.views.pybake(request)
 
-                if form6.is_valid():
-                    file1 = request.FILES['taxonomy']
-                    file2 = request.FILES['precalc_16S']
-                    file3 = request.FILES['precalc_KEGG']
-                    functions.geneParse(file1, file2, file3)
-
-                if form7.is_valid():
-                    file4 = request.FILES['ko_htext']
-                    functions.koParse(file4)
-
-                if form8.is_valid():
-                    file5 = request.FILES['nz_htext']
-                    functions.nzParse(file5)
-
-                retStuff = render(
-                    request,
-                    'pybake.html',
-                    {'form6': UploadForm6,
-                     'form7': UploadForm7,
-                     'form8': UploadForm8}
-                )
-
-            if retStuff == None:
+            if retStuff is None:
                 print "This is a problem"
             datRecent[pid] = retStuff
 

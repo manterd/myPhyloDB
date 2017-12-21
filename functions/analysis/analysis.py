@@ -2069,6 +2069,9 @@ class PCA(Analysis):
 
     def statsGraph(self):
 
+        if self.debug:
+            print "statsgraph! (PCA)"
+
         method = self.all["Method"]
         scale = self.all['scaled']
         constrain = self.all["constrain"]
@@ -2496,6 +2499,9 @@ class PCA(Analysis):
 class PCoA(Analysis):
 
     def statsGraph(self):
+
+        if self.debug:
+            print "statsgraph! (PCoA)"
 
         PC1 = int(self.all["PC1"])
         PC2 = int(self.all["PC2"])

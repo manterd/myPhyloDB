@@ -1900,10 +1900,7 @@ def pathJSON(request):
 
 def qsFunc(koList):  # works, but is still slow, still leaks (although only maybe 100 MB at a time vs 10 GB)
     finalotuList = []
-    print "koList: ", len(koList)
     otuList = OTU_99.objects.all().values_list('otuid', flat=True)
-    print "Got otuList: ", len(otuList)
-    missed = 0
     if koList:
         for otu in otuList:
             try:
@@ -1911,9 +1908,7 @@ def qsFunc(koList):  # works, but is still slow, still leaks (although only mayb
                 if any(i in qs[0].geneList for i in koList):
                     finalotuList.append(otu)
             except:
-                missed += 1
                 pass
-        print "Missed "+str(missed)+" ("+str(missed/len(otuList)*100)+"%)"
     return finalotuList
 
 
@@ -1923,8 +1918,6 @@ def pathTaxaJSON(request):
             wanted = request.GET['key']
             wanted = wanted.replace('"', '')
             koList = []
-
-            print "Started"
 
             if ko_lvl1.objects.using('picrust').filter(ko_lvl1_id=wanted).exists():
                 record = ko_lvl1.objects.using('picrust').get(ko_lvl1_id=wanted)
@@ -1938,18 +1931,12 @@ def pathTaxaJSON(request):
             elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():
                 koList = ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).values_list('ko_orthology', flat=True)
 
-            print "Entering qsFunc"
-
             finalotuList = qsFunc(koList)
-
-            print "Ran qsFunc. Got ", len(finalotuList)
 
             results = {}
             qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuName', 'otuid')
             results['data'] = list(qs1)
             myJson = ujson.dumps(results, ensure_ascii=False)
-
-            print "Got json"
 
             return HttpResponse(myJson)
     except Exception as e:
