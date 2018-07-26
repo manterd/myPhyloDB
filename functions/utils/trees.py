@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.db.models import Q
+from django.contrib.auth.models import User
 import operator
 import pandas as pd
 import pickle
@@ -9,7 +10,8 @@ import json
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile, \
     ko_lvl1, ko_entry, \
-    nz_lvl1, nz_entry \
+    nz_lvl1, nz_entry, \
+    UserProfile
 
 import functions
 
@@ -70,13 +72,19 @@ def getSampleCatTree(request):
     typeList = Project.objects.filter(projectid__in=projectList).values_list('projectType', flat=True)
 
     myTree = {'title': 'Meta Data: Categorical', 'id': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
+    project = {'title': 'Projects', 'id': 'project', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    air = {'title': 'Air Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    human_associated = {'title': 'Human Associated Project', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    microbial = {'title': 'Microbial Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    soil = {'title': 'Soil Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    water = {'title': 'Water Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    air = {'title': 'Air', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    human_associated = {'title': 'Human Associated', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    microbial = {'title': 'Microbial', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    soil = {'title': 'Soil', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    water = {'title': 'Water', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     user = {'title': 'User-defined', 'id': 'user', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+
+    list = ['project_name']
+    for i in range(len(list)):
+        myNode = {'title': list[i], 'id': 'project', 'isFolder': True, 'pType': 'project', 'isLazy': True, 'children': []}
+        project['children'].append(myNode)
 
     list = ['sample_name', 'organism', 'collection_date', 'depth', 'elev', 'seq_platform', 'seq_gene', 'seq_gene_region', 'seq_barcode', 'seq_for_primer', 'seq_rev_primer', 'env_biome', 'env_feature', 'env_material', 'geo_loc_country', 'geo_loc_state', 'geo_loc_city', 'geo_loc_farm', 'geo_loc_plot']
     for i in range(len(list)):
@@ -241,12 +249,18 @@ def getSampleCatTree(request):
         myNode = {'title': list[i], 'id': 'user', 'isFolder': True, 'pType': 'user', 'isLazy': True, 'children': []}
         user['children'].append(myNode)
 
+    myTree['children'].append(project)
     myTree['children'].append(mimark)
+    if 'air' in typeList:
+        myTree['children'].append(air)
+    if 'microbial' in typeList:
+        myTree['children'].append(microbial)
+    if 'water' in typeList:
+        myTree['children'].append(water)
     if 'human associated' in typeList:
         myTree['children'].append(human_associated)
     if 'soil' in typeList:
         myTree['children'].append(soil)
-
     myTree['children'].append(user)
 
     # Convert result list to a JSON string
@@ -295,7 +309,35 @@ def getSampleCatTreeChildren(request):
         water = [f.name for f in your_fields]
 
         myNode = []
-        if field in mimark:
+        if field == 'project_name':
+            table_field = 'projectid__' + field
+            values = Sample.objects.values_list('projectid__project_name', flat='True').filter(sampleid__in=filtered).exclude(projectid__wip=True).distinct()
+            for j in range(len(values)):
+                if pd.notnull(values[j]) and not values[j] == 'nan':
+                    myNode1 = {
+                        'title': values[j],
+                        'id': field,
+                        'isFolder': True,
+                        'children': []
+                    }
+                    args_list = []
+                    args_list.append(Q(**{table_field: values[j]}))
+                    items = Sample.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
+                    for item in items:
+                        myNode2 = {
+                            'title': str(item.sample_name) + ' (ID: ' + str(item.sampleid) + '; Reads: ' + str(item.reads) + ')',
+                            'id': item.sampleid,
+                            'field': field,
+                            'value': values[j],
+                            'table': 'project',
+                            'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
+                            'hideCheckbox': False,
+                            'isFolder': False
+                        }
+                        myNode1['children'].append(myNode2)
+                    myNode.append(myNode1)
+
+        elif field in mimark:
             values = Sample.objects.values_list(field, flat='True').filter(sampleid__in=filtered).distinct().order_by(field)
             for j in range(len(values)):
                 if pd.notnull(values[j]) and not values[j] == 'nan':
@@ -505,11 +547,11 @@ def getSampleQuantTree(request):
 
     myTree = {'title': 'Meta Data: Quantitative', 'id': 'root', 'isFolder': False,  'hideCheckbox': True, 'expand': True, 'children': []}
     mimark = {'title': 'MIMARKs', 'id': 'mimark', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    air = {'title': 'Air Project', 'id': 'air', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    human_associated = {'title': 'Human Associated Project', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    microbial = {'title': 'Microbial Project', 'id': 'microbial', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    soil = {'title': 'Soil Project', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-    water = {'title': 'Water Project', 'id': 'water', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    air = {'title': 'Air', 'id': 'air', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    human_associated = {'title': 'Human Associated', 'id': 'human_associated', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    microbial = {'title': 'Microbial', 'id': 'microbial', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    soil = {'title': 'Soil', 'id': 'soil', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+    water = {'title': 'Water', 'id': 'water', 'isFolder': True,  'hideCheckbox': True, 'children': []}
     user = {'title': 'User-defined', 'id': 'user', 'isFolder': True,  'hideCheckbox': True, 'children': []}
 
     list = ['latitude', 'longitude', 'annual_season_temp', 'annual_season_precpt']
@@ -683,11 +725,16 @@ def getSampleQuantTree(request):
         user['children'].append(myNode)
 
     myTree['children'].append(mimark)
+    if 'air' in typeList:
+        myTree['children'].append(air)
+    if 'microbial' in typeList:
+        myTree['children'].append(microbial)
+    if 'water' in typeList:
+        myTree['children'].append(water)
     if 'human associated' in typeList:
         myTree['children'].append(human_associated)
     if 'soil' in typeList:
         myTree['children'].append(soil)
-
     myTree['children'].append(user)
 
     # Convert result list to a JSON string
@@ -1313,12 +1360,12 @@ def getNZTreeChildren(request):
 
 
 def makeUpdateTree(request):
-    myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
     projects = functions.getEditProjects(request)
     for project in projects:
         myNode = {
-            'title': "Project: " + str(project.project_name),
+            'title': project.project_name,
             'tooltip': project.project_desc,
             'isFolder': True,
             'hideCheckbox': True,
@@ -1346,6 +1393,136 @@ def makeUpdateTree(request):
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')
+
+
+def makeFilesTree(request):
+    # print "Populating file tree"
+    userid = str(request.user.id)
+    name = request.GET['name']
+    # filter is true when we want specifically files with parent folder 'name', and don't want to display that in output
+    filter = request.GET['filter']
+    username = request.user.username
+    if name == 'Files':
+        myName = name
+    else:
+        myName = str(name) + ' Files'
+    myTree = {'title': myName, 'isFolder': True, 'expand': False, 'hideCheckbox': True, 'children': []}
+    cwd = os.getcwd()
+
+    userList = []
+
+    if request.user.is_authenticated:
+        if request.user.is_superuser:
+            # get all usernames
+            users = User.objects.all()
+            for user in users:
+                userList.append(user.username)
+        else:
+            # unfiltered mode is for file deletion tree, should only be this user unless super? disregard perms?
+            # get usernames which this user has permissions for, currently just adds current user
+            userList.append(username)
+            # add usernames based on hasPermsFrom attribute
+            myPerms = UserProfile.objects.get(user=request.user).hasPermsFrom.split(';')
+            for permname in myPerms:
+                if permname != "":
+                    userList.append(permname)
+
+        if filter == "true":
+            if name.lower() == "script":
+                userList = []
+                userList.append('admin')
+
+        for user in userList:
+            folderPath = cwd + "/user_uploads/" + user
+            myTree['children'].append(
+                fileTreeChildren(folderPath, user, filter, name))
+    else:
+        pass
+
+
+
+    # given a userid folder, should be able to populate a node with said folder and its subdirs, with actual files there
+    # print "MyTree:", myTree
+
+    # Convert result list to a JSON string
+    res = json.dumps(myTree)
+
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+
+def fileTreeChildren(path, name, filter, filterName):
+
+    '''
+
+    :param path: location to use as root
+    :param name: display name of folder (and id)
+    :return: a singular node, which contains its own children and grandchildren
+    '''
+
+    myNode = {
+        'title': name,
+        'id': name,
+        'isFolder': True,
+        'children': [],
+        'hideCheckbox': True
+    }
+    try:
+        for root, dirs, files in os.walk(path):
+            for curdir in dirs:
+                shouldAdd = False
+                dirNode = {
+                    'title': curdir,
+                    'id': curdir,
+                    'isFolder': True,
+                    'children': []
+                }
+                if filter == "false":   # javascript false vs python False, vs 0 vs '0'
+                    nextpath = os.path.join(path, curdir)
+                    for temproot, tempdirs, tempfiles in os.walk(nextpath):
+                        for tempdir in tempdirs:
+                            # add folder node here
+                            otherDirNode = {
+                                'title': tempdir,
+                                'id': tempdir,
+                                'isFolder': True,
+                                'children': []
+                            }
+                            for moreroot, moredirs, morefiles in os.walk(os.path.join(nextpath,tempdir)):
+                                for morefile in morefiles:
+                                    #print "Adding file", morefile
+                                    myNode2 = {
+                                        'title': morefile,
+                                        'id': morefile,
+                                        'isFolder': False
+                                    }
+                                    otherDirNode['children'].append(myNode2)
+                                    shouldAdd = True
+
+                            dirNode['children'].append(otherDirNode)
+                else:
+                    # if sff or oligos don't hide checkbox?, filter out ones with too few levels on python end
+                    # python end filtering because control, JS can get messed with easily
+
+                    if filterName.lower() not in "sff oligos fna qual":  # add all multis here
+                        dirNode['hideCheckbox'] = True
+
+                    for temproot, tempdirs, tempfiles in os.walk(os.path.join(path, curdir+"/"+filterName.lower())):
+                        for curfile in tempfiles:
+                            myNode2 = {
+                                'title': curfile,
+                                'id': curfile,
+                                'isFolder': False,
+                            }
+                            dirNode['children'].append(myNode2)
+                            shouldAdd = True
+                if shouldAdd:
+                    myNode['children'].append(dirNode)
+
+    except Exception as exc:
+        print "Error making file tree:", exc
+    return myNode
 
 
 def makeReproTree(request):
@@ -1477,6 +1654,93 @@ def getPermissionTree(request):
     # Convert result list to a JSON string
     res = json.dumps(myTree)
 
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+
+def getFilePermTree(request):   # given == True for gavePermsTo, else hasPermsFrom
+    # this tree should be a single level, just a list of usernames (case sensitive)
+    # user should be able to select usernames to revoke permissions for
+    # security goals should be to not display more information than necessary (uuid, actual case of username?)
+
+    given = request.GET['given']
+
+    if given == "true":
+        myTree = {'title': "Users you've given permission to", 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+        myPermList = UserProfile.objects.get(user=request.user).gavePermsTo.split(";")
+    else:
+        myTree = {'title': "", 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+        myPermList = UserProfile.objects.get(user=request.user).hasPermsFrom.split(";")
+
+    for username in myPermList:
+        if username != "":
+            myNode = {
+                'title': username,
+                'id': username,
+                'isFolder': False,
+                'isLazy': False
+            }
+            if given != "true":
+                myNode['hideCheckbox'] = True
+            myTree['children'].append(myNode)
+    # Convert result list to a JSON string
+    res = json.dumps(myTree)
+
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+
+def getLocationSamplesTree(request):
+    # request should contain marker data (aka lat lon pair, sampleids, projectnames)
+    # use sampleids to build tree of sample names, parent node is projectname (selectable but not sent if selected)
+    # tree should link sampleids of itself to ids in main select tree, mirror select/unselect
+    # actual select code should be unaffected, just want grouped sample data
+    sampString = request.GET['sampleIDs']
+    myTree = {'title': 'Samples at Location', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    sampIDs = sampString.split(":")
+    projectDict = {}
+    for sampID in sampIDs:
+        if sampID != "":
+            try:
+                thisSample = Sample.objects.get(sampleid=sampID)
+                thisProject = thisSample.projectid  # this attribute is misnamed, as its a full project object, not ID
+                projID = str(thisProject.projectid)
+                if projID not in projectDict:
+                    projectDict[projID] = []
+                projectDict[projID].append(thisSample)
+
+            except Exception as e:
+                print "Error during query for location tree:", e
+
+    for projID in projectDict:
+        thisProject = Project.objects.get(projectid=projID)
+        myProjNode = {
+            'title': thisProject.project_name,
+            'tooltip': "Project type: " + thisProject.projectType + "\nDescription: " + thisProject.project_desc + "\nID: " + thisProject.projectid + "\nPI: " + thisProject.pi_first + " " + thisProject.pi_last + "\nAffiliation: " + thisProject.pi_affiliation,
+            'id': thisProject.projectid,
+            'isFolder': True,
+            'wip': thisProject.wip,
+            'children': [],
+            # 'expend': True # use this for auto expanded projects, currently inactive for compactness sake
+        }
+        for samp in projectDict[projID]:
+            try:
+                mySampNode = {
+                    'title': 'Name: ' + str(samp.sample_name) + '; Reads: ' + str(samp.reads),
+                    'tooltip': 'ID: ' + str(samp.sampleid),
+                    'id': str(samp.sampleid),
+                    'isFolder': False
+                }
+                myProjNode['children'].append(mySampNode)
+            except Exception as e:
+                print "Error during sample selection for location tree:", e
+
+        myTree['children'].append(myProjNode)
+
+
+    res = json.dumps(myTree)
     if 'callback' in request.GET:
         response_dict = request.GET['callback'] + "(" + res + ")"
         return HttpResponse(response_dict, content_type='application/json')

@@ -169,7 +169,7 @@ def getGAGE(request, stops, RID, PID):
                     idDict[id] = entry
                 count_rDF['ko'] = count_rDF['rank_id'].map(idDict)
                 count_rDF.drop('rank_id', axis=1, inplace=True)
-                count_rDF.drop_duplicates(take_last=True, inplace=True)  # remove dups - KOs mapped to multiple pathways
+                count_rDF.drop_duplicates(keep='last', inplace=True)  # remove dups - KOs mapped to multiple pathways
                 count_rDF.set_index('ko', drop=True, inplace=True)
 
                 # Create combined metadata column
@@ -189,7 +189,7 @@ def getGAGE(request, stops, RID, PID):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 finalDict = {}
-                metaDF.sort(columns='sampleid', inplace=True)
+                metaDF.sort_values('sampleid', inplace=True)
                 r.assign("metaDF", metaDF)
                 r("trt <- factor(metaDF$merge)")
 

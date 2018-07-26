@@ -7,14 +7,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 import os
-
+from django.core.management.utils import get_random_secret_key
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '8nj%u+=zh2v1wxebakh3w#_2!0o$h_@typk82%fte4op2d3b3q'
+# generate secret key on bootup, will break current session (ie log out all users)
+# SECRET_KEY = "ALPHABETSOUPFORTESTINGONLY"   # TODO switch back to random (line below) before commits
+SECRET_KEY = get_random_secret_key()   # the actually secure version, will reset logins on boot
 ALLOWED_HOSTS = []
 
 
@@ -40,14 +42,19 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE_CLASSES = [
+
+    # django middleware
     'django.middleware.security.SecurityMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # custom middleware to logout users old sessions when switching machines
+    'database.middleware.UserRestrictMiddleware',
 ]
 
 
@@ -139,6 +146,7 @@ AUTH_PASSWORD_VALIDATORS = []
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 STATIC_URL = '/myPhyloDB/media/'
+
 
 try:
     from config.allauth_cfg import *

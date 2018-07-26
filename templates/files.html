@@ -1,0 +1,330 @@
+{% extends 'site_base.html' %}
+
+{% block pagetitle %}
+    <title>File Manager</title>
+{% endblock %}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
+{% block javascript %}
+    <style>
+        #progressBar {
+                width: 200px;
+                height: 22px;
+                border: 1px solid #111;
+                background-color: #292929;
+        }
+
+        #progressBar div {
+                height: 100%;
+                color: #fff;
+                text-align: right;
+                line-height: 22px;
+                width: 0;
+                background-color: #0099ff;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var RID = makeGUID();
+        var ref_data = 'yes';
+        var source = 'mothur';
+
+        $(function () {
+            var test = '{{ error }}';
+            if (test != "") {
+                alert(test);
+            }
+
+            $("#treeRem").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Files', 'filter': false}
+                },
+                onClick: function () {
+                    $("#clickMe").css("background-color", "lightgray").val('Remove selected');
+                }
+            });
+
+            $("#clearMeta").click(function () {
+                $("#treeRem").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
+            });
+
+            $("#Upload").click(function() {
+                $("#stage").show();
+                $("#progressBar").show();
+                setInterval(updateStatus, 1000);
+            });
+
+            $("#id_ref_data").change(function() {
+                ref_data = $("#id_ref_data").val();
+                if (ref_data == 'yes') {
+                    $(".vsearch").show();
+                    $(".taxa_file").hide();
+                }
+                if (ref_data == 'no') {
+                    $(".vsearch").hide();
+                    $(".taxa_file").show();
+                }
+            });
+
+            $("#id_source").change(function() {
+                source = $("#id_source").val();
+                if (source == "mothur") {
+                    $("#mothur").show();
+                    $("#454_sff").hide();
+                    $("#454_fastq").hide();
+                    $("#miseq").hide();
+                }
+                if (source == "454_sff") {
+                    $("#mothur").hide();
+                    $("#454_sff").show();
+                    $("#454_fastq").hide();
+                    $("#miseq").hide();
+                }
+                if (source == "454_fastq") {
+                    $("#mothur").hide();
+                    $("#454_sff").hide();
+                    $("#454_fastq").show();
+                    $("#miseq").hide();
+                }
+                if (source == "miseq") {
+                    $("#mothur").hide();
+                    $("#454_sff").hide();
+                    $("#454_fastq").hide();
+                    $("#miseq").show();
+                }
+            });
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'RID',
+                value: RID
+            }).appendTo('form');
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'funcName',
+                value: 'fileUpFunc'
+            }).appendTo('form');
+
+        });
+
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
+        function progressBar(percent, $element) {
+           var progressBarWidth = percent * $element.width() / 100;
+            $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
+        }
+
+        function removeUploads() {
+            $("#clickMe").css("background-color", "yellow").val('Removing Projects!');
+            var folders = [];
+            var files = [];
+            $.map($("#treeRem").dynatree("getSelectedNodes"), function(node) {
+                if (node.getLevel() == 3) {
+                    folders.push(node.parent.data.title + "/" + node.data.id);
+                }
+                if (node.getLevel() == 4) {
+                    folders.push(node.parent.parent.data.title + "/" + node.parent.data.title + "/" + node.data.id);
+                }
+                if (node.getLevel() == 5) {
+                    files.push(node.parent.parent.parent.data.title + "/" + node.parent.parent.data.title + "/" + node.parent.data.title + "/" + node.data.id);
+                }
+            });
+            var myDict = {};
+            myDict['folders'] = folders;
+            myDict['files'] = files;
+            var jsonDict = JSON.stringify(myDict);
+
+            $.ajax({
+                url: '/myPhyloDB/removeUploads/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: jsonDict
+                },
+                success: function (data) {
+                    $("#treeRem").dynatree("getTree").reload();
+                    $("#clickMe").css("background-color", "green").val('Done');
+                }
+            });
+        }
+
+        function stop() {
+            $.ajax({
+                url: '/myPhyloDB/datstop/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var mstage = obj['message'];
+                    $('#stage').empty().append(mstage);
+                }
+            });
+        }
+
+        function updateStatus() {   // check mothur upload status / display console output
+            $.ajax({
+                url: '/myPhyloDB/status/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    var perc = obj['perc'];
+                    updateStage(stage);
+                    progressBar(perc, $("#progressBar"));
+                }
+            });
+        }
+
+        function updateStage(stage) {
+            $("#stage").empty().append(stage);
+        }
+
+    </script>
+{% endblock %}
+{% block my_content %}
+
+    <h2>Upload new data files:</h2>
+
+    <form id="form" action="{% url 'datfuncCall' %}" method="post" onclick="RID = makeGUID();" enctype="multipart/form-data">
+        {% csrf_token %}
+        <br>
+        <h3>Select file(s) for upload:</h3>
+        <table id="uploadTable" width="100%" border="2" cellspacing="0" cellpadding="1">
+            <tr>
+                <td>Meta</td>
+                <td><input type="file" name="metafiles" multiple></td>
+            </tr>
+        </table>
+        <br>
+        <table width="100%" border="2" cellspacing="0" cellpadding="1">
+            <tr>
+                <td>Available Data Formats:</td>
+                <td>{{ form2.source }}</td>
+            </tr>
+        </table>
+        <br>
+        <table width="100%" border="2" cellspacing="0" cellpadding="1" id="mothur">
+            <tr>
+                <td>Shared</td>
+                <td><input type="file" name="sharedfiles" multiple></td>
+            </tr>
+            <tr>
+                <td>{{ form2.ref_data.label_tag }}</td>
+                <td>{{ form2.ref_data }}</td>
+            </tr>
+            <tr class="taxa_file" style="display: none">
+                <td>Taxa</td>
+                <td><input type="file" name="taxafiles" multiple></td>
+            </tr>
+            <tr class="vsearch">
+                <td>Sequence</td>
+                <td><input type="file" name="sequencefiles" multiple></td>
+            </tr>
+        </table>
+        <table width="100%" border="2" cellspacing="0" cellpadding="1" id="454_sff" style="display: none">
+            <tr>
+                <td>Sff</td>
+                <td><input type="file" name="sfffiles" multiple></td>
+            </tr>
+            <tr>
+                <td>Oligos</td>
+                <td><input type="file" name="oligosfiles" multiple></td>
+            </tr>
+            <tr>
+                <td>Files</td>
+                <td><input type="file" name="filesfiles" multiple></td>
+            </tr>
+            <tr>
+                <td>Script</td>
+                <td><input type="file" name="scriptfiles" multiple></td>
+            </tr>
+        </table>
+        <table width="100%" border="2" cellspacing="0" cellpadding="1" id="454_fastq" style="display: none">
+            <tr>
+                <td>Fna</td>
+                <td><input type="file" name="fnafiles" multiple></td>
+            </tr>
+            <tr>
+                <td>Qual</td>
+                <td><input type="file" name="qualfiles" multiple></td>
+            </tr>
+            <tr>
+                <td>Oligos</td>
+                <td><input type="file" name="oligosfiles" multiple></td>
+            </tr>
+            <tr>
+                <td>Script</td>
+                <td><input type="file" name="scriptfiles" multiple></td>
+            </tr>
+        </table>
+        <table width="100%" border="2" cellspacing="0" cellpadding="1" id="miseq" style="display: none">
+            <tr>
+                <td>Contig</td>
+                <td><input type="file" name="contigfiles" multiple></td>
+            </tr>
+            <tr>
+                <td>Fastq</td>
+                <td><input type="file" name="fastqfiles" multiple></td>
+            </tr>
+            <tr>
+                <td>Script</td>
+                <td><input type="file" name="scriptfiles" multiple></td>
+            </tr>
+        </table>
+        <br>
+        <br>
+        <table>
+            <tr>
+                <td>
+                    <input id='Upload' name='Upload' type="submit" value="Upload Files!"/>
+                </td>
+                <td>
+                    <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop!"/>
+                </td>
+            </tr>
+        </table>
+    </form>
+    <br>
+    <div id="stage" style="display: none"></div>
+    <div id="progressBar" style="display: none"><div></div></div>
+    <br>
+
+    <h2>List of previous uploads:</h2>
+    <table id="user_files" border="2" cellspacing="0" cellpadding="1">
+            <tr>
+                <th>Select project path to remove:<a href="#" id="deleteFiles" style="font-size: 12px;">-Deselect all-</a></th>
+            </tr>        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="treeRem"></div>
+            </td>
+        </tr>
+    </table>
+    <p><input id="clickMe" type="submit" value="Delete selected" onClick="removeUploads()"/></p>
+    <br><br>
+{% endblock my_content %}

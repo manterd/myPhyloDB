@@ -22,10 +22,13 @@ urlpatterns = [
     url(r'^getNZTree/$', functions.getNZTree, name='getNZTree'),
     url(r'^getNZTreeChildren/$', functions.getNZTreeChildren, name='getNZTreeChildren'),
     url(r'^makeUpdateTree/$', functions.makeUpdateTree, name='makeUpdateTree'),
+    url(r'^makeFilesTree/$', functions.makeFilesTree, name='makeFilesTree'),
     url(r'^makeReproTree/$', functions.makeReproTree, name='makeReproTree'),
     url(r'^getDownloadTree/$', functions.getDownloadTree, name='getDownloadTree'),
     url(r'^getDownloadTreeChildren/$', functions.getDownloadTreeChildren, name='getDownloadTreeChildren'),
     url(r'^getPermissionTree/$', functions.getPermissionTree, name='getPermissionTree'),
+    url(r'^getFilePermTree/$', functions.getFilePermTree, name='getFilePermTree'),
+    url(r'^getLocationSamplesTree/$', functions.getLocationSamplesTree, name='getLocationSamplesTree'),
 
     ### urls from utils page
     url(r'^getRawDataTab/$', functions.getRawDataTab, name='getRawDataTab'),

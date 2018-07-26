@@ -35,13 +35,14 @@ from scipy import stats
 from database.models import Sample
 
 
-
-# for now, analysis on its own is basically anova. Meaning you should be able to create an Anova and use run()
-# to complete the analysis entirely. At the same time, analysis should be split into functions to make it easy to
-# overwrite the anova specific components where needed
+# analysis class is a base for other analyses to overwrite (not intended for direct use)
+# TODO create R based alternative functions, which accept data querysets and R scripts to produce PDF format graphs
 class Analysis:  # abstract parent class, not to be run on its own. Instead, should be used as a template
     __metaclass__ = ABCMeta
 
+    # Initializes the slightly obnoxious amount of instance variables
+    # not all values are to be used at one time
+    # if a value must cross multiple functions, declare and initialize it here (yes, 'self.' is required)
     def __init__(self, iRequest, iRID, iStops, iPID, debug=False):
         self.request = iRequest
         self.RID = iRID
@@ -54,18 +55,24 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.keggAll, self.nzAll, self.catFields, self.quantFields, self.finalSampleIDs = (None,)*5
         self.finalDict, self.seriesList, self.xAxisDict, self.yAxisDict, self.finalDF, self.pValDict = (None,)*6
         self.sig_only, self.transform, self.finalDict, self.zipFile, self.mapTaxa, self.allDF = (None,)*6
-        self.distance, self.alpha = (None,)*2
+        self.distance, self.alpha, = (None,)*2
 
+    # construct 'run' in each analysis separately, as settings and sequencing vary
     @abstractmethod
     def run(self):
         pass
 
+    # verify request was formatted correctly and all variables are accounted for, as well as configure future steps
     def validate(self, sig=True, metaCat=True, metaQuant=True, reqMultiLevel=True, dist=False):  # supports flags for sig_only, metaValsCat
         if self.debug:
             print "Validate!"
         # Get variables from web page
         allJson = self.request.body.split('&')[0]
         self.all = json.loads(allJson)
+
+        if self.debug:
+            print "Analysis data: ", self.all
+
         functions.setBase(self.RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
 
         self.selectAll = int(self.all["selectAll"])
@@ -99,6 +106,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.treeType = int(self.all['treeType'])
         self.DepVar = int(self.all["DepVar"])
 
+        if self.debug:
+            print "First!"
+
         # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
         self.savedDF, self.metaDF, self.finalSampleIDs, self.catFields, remCatFields, self.quantFields, self.catValues, self.quantValues = functions.getMetaDF(self.request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, self.DepVar, levelDep=True)
         self.allFields = self.catFields + self.quantFields
@@ -114,6 +124,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 myDict = {'error': error}
                 res = json.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
+
+        if self.debug:
+            print "Second!"
 
         self.result = ''
         if self.treeType == 1:
@@ -186,6 +199,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             self.result += 'Distance score: wOdum' + '\n'
             self.result += 'alpha: ' + str(self.alpha) + '\n'
 
+        if self.debug:
+            print "Third!"
+
         self.result += 'Categorical variables selected by user: ' + ", ".join(self.catFields + remCatFields) + '\n'
         self.result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
         if metaQuant:
@@ -199,8 +215,13 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             res = ''
             return HttpResponse(res, content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        if self.debug:
+            print "Fourth!"
+
         return 0
 
+    # get actual data from database and format it for actual analysis step based on settings
     def query(self, taxmap=True, usetransform=True):
         if self.debug:
             print "Query!"
@@ -212,6 +233,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         filterData = self.all['filterData']
         filterPer = int(self.all['filterPer'])
         filterMeth = int(self.all['filterMeth'])
+
+        if self.debug:
+            print "First!"
 
         if taxmap:
             self.mapTaxa = self.all['map_taxa']
@@ -251,6 +275,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
+        if self.debug:
+            print "Second!"
+
         # make sure column types are correct
         self.finalDF[self.catFields] = self.finalDF[self.catFields].astype(str)
         self.finalDF[self.quantFields] = self.finalDF[self.quantFields].astype(float)
@@ -265,9 +292,15 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         if not os.path.exists(myDir):
             os.makedirs(myDir)
 
+        if self.debug:
+            print "Third!"
+
         path = str(myDir) + str(self.RID) + '.biom'
         functions.imploding_panda(path, self.treeType, self.DepVar, self.finalSampleIDs, self.metaDF, self.finalDF)
         functions.setBase(self.RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
+
+        if self.debug:
+            print "Fourth!"
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
@@ -276,6 +309,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         return 0
 
+    # do the actual statistics side of the analysis
     def stats(self):
         if self.debug:
             print "Stats!"
@@ -293,7 +327,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
 
         if self.debug:
-            print "Check!"
+            print "First!"
 
         # R packages from cran
         r("list.of.packages <- c('lsmeans', 'ggplot2', 'RColorBrewer', 'ggthemes')")
@@ -586,6 +620,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...done!')
         return 0
 
+    # format results from stats into desired output, typically the last step before returning request
     def graph(self):
         if self.debug:
             print "Graph!"
@@ -595,7 +630,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             dataList = []
             errorList = []
             pValue = self.pValDict[name1]
-
             if self.sig_only == 0:
                 if self.DepVar == 0:
                     mean = group1.groupby(self.catFields)['abund'].mean()
@@ -757,6 +791,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+        if self.debug:
+            print "First!"
+
         yTitle = {}
         if self.DepVar == 0:
             yTitle['text'] = 'Abundance'
@@ -793,6 +830,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         else:
             self.finalDict['empty'] = 1
 
+        if self.debug:
+            print "Second!"
+
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -816,14 +856,72 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.finalDict['resType'] = 'res'
         self.finalDict['error'] = 'none'
 
+        if self.debug:
+            print "Third!"
+
         res = json.dumps(self.finalDict)
         return HttpResponse(res, content_type='application/json')
 
+    # smaller shared functions
+    # prepare R for use
+    def initializeR(self):
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
+        # R packages from cran
+        r("list.of.packages <- c('lsmeans', 'ggplot2', 'RColorBrewer', 'ggthemes', 'picante', 'FD')")
+        r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+        r("library(lsmeans)")
+        r("library(ggplot2)")
+        r("library(ggthemes)")
+        r("library(RColorBrewer)")
+        r('source("R/myFunctions/myFunctions.R")')
+
+        return r
+
+    def fullRAnalysis(self, script):    # script is string for filename in R Scripts folder, R should do the most work
+        if self.validate() == 0:
+            if self.debug:
+                print "Here we go"
+            curUser = self.request.user
+            # query data vs read from phyloseq.biom
+            # need metadata to be passed in regardless, query would involve formatting for pandas only to send to R
+            # should send metadata to R but drop Query for phyloseq reading
+            pathToBiom = "myPhyloDB/media/usr_temp/"+str(curUser)
+            r = self.initializeR()  # need to see an example of a full script to plug it in correctly
+            if self.debug:
+                print "R initialized"
+            r.assign("pathToBiom", pathToBiom)
+            # actually run R given script and data, not sure which is needed where
+            r.assign("script", script)
+            print r("getwd()")
+            if self.debug:
+                print "Assigned script"
+            output = r("source(script)")
+            if self.debug:
+                print "Script run"
+            print "Output: ", output
+            print r("warnings()")
+            # get output from R and send it back up
+            return output
+        else:
+            print "Validate failed"
+
+
+
+# TODO trim these down and/or split them up further
 class Anova(Analysis):  # base template, is essentially getCatUnivData
 
     # so quant Univ is huge... like >700 lines long.... implementing is one thing, but this could easily be split 6 ways
     def quantstats(self):       # for getQuantUnivData      WIP
+
+        if self.debug:
+            print "statsgraph! (AnovaQuant)"
+
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...!')
 
@@ -831,26 +929,11 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
         # group DataFrame by each taxa level selected
         shapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
 
-        if os.name == 'nt':
-            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
-        else:
-            r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
-
         functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
 
-        # R packages from cran
-        r("list.of.packages <- c('ggplot2', 'RColorBrewer', 'ggthemes')")
-        r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
-
-        # package checker feedback should only print when it needs to install more, spams console otherwise
+        r = self.initializeR()  # get R ready by checking installed packages and libraries (includes os check)
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
-
-        r("library(ggplot2)")
-        r("library(ggthemes)")
-        r("library(RColorBrewer)")
-        r('source("R/myFunctions/myFunctions.R")')
 
         # R graph
         r.assign('finalDF', self.finalDF)
@@ -1544,7 +1627,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
         finalDict['error'] = 'none'
         res = json.dumps(finalDict)
         return HttpResponse(res, content_type='application/json')   #
-    # WHAT IS THIS MONSTER OF A FUNCTION
+    # ^ WHAT IS THIS MONSTER OF A FUNCTION ^
 
     def run(self, quant=False):
         if self.debug:
@@ -1564,6 +1647,9 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
                     ret = self.stats()
                     if ret == 0:
                         return self.graph()
+            # experimental R substitution
+            #return self.fullRAnalysis("functions/analysis/R_scripts/anova.r")
+
 
         if self.debug:
             print "Something went wrong with Anova"
@@ -1641,7 +1727,7 @@ class Corr(Analysis):
                 namesList = [i.split(':', 1)[0] for i in idList]
 
         count_rDF.sort_index(axis=0, inplace=True)
-        self.metaDF.sort('sampleid', inplace=True)
+        self.metaDF.sort_values('sampleid', inplace=True)
 
         r.assign("X", count_rDF)
         r('X <- X * 1.0')
@@ -1802,7 +1888,7 @@ class diffAbund(Analysis):
             self.metaDF[i] = self.metaDF[i].str.replace('(', '.')
             self.metaDF[i] = self.metaDF[i].str.replace(')', '.')
 
-        self.metaDF.sort(columns='sampleid', inplace=True)
+        self.metaDF.sort_values('sampleid', inplace=True)
         r.assign("metaDF", self.metaDF)
         r("trt <- factor(metaDF$merge)")
 
@@ -2123,7 +2209,7 @@ class PCA(Analysis):
         r.assign("cols", count_rDF.columns.values.tolist())
         r("colnames(data) <- unlist(cols)")
 
-        self.metaDF.sort('sampleid', inplace=True)
+        self.metaDF.sort_values('sampleid', inplace=True)
         r.assign("meta", self.metaDF)
         r.assign("rows", self.metaDF.index.values.tolist())
         r("rownames(meta) <- unlist(rows)")
@@ -2267,7 +2353,7 @@ class PCA(Analysis):
         ")
 
         # get taxa rank names
-        rankNameDF = self.finalDF.drop_duplicates(subset='rank_id', take_last=True)
+        rankNameDF = self.finalDF.drop_duplicates(subset='rank_id', keep='last')
         rankNameDF.set_index('rank_id', inplace=True)
         rankNameDF['rank_name'] = rankNameDF['rank_name'].str.split('|').str[-1]
         r.assign('rankNameDF', rankNameDF['rank_name'])
@@ -2419,7 +2505,7 @@ class PCA(Analysis):
         finalDict['text'] = self.result
 
         ## variables
-        nameDF = self.finalDF[['rank_id']].drop_duplicates(subset='rank_id', take_last=True)
+        nameDF = self.finalDF[['rank_id']].drop_duplicates(subset='rank_id', keep='last')
         nameDF.set_index('rank_id', inplace=True)
 
         r("df <- data.frame(species)")
@@ -2589,7 +2675,7 @@ class PCoA(Analysis):
         r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
         mat = r.get("mat")
 
-        self.metaDF.sort('sampleid', inplace=True)
+        self.metaDF.sort_values('sampleid', inplace=True)
         rowList = self.metaDF.sampleid.values.tolist()
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 

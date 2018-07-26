@@ -603,8 +603,9 @@ class OTU_99(models.Model):
     familyid = models.ForeignKey(Family)
     genusid = models.ForeignKey(Genus)
     speciesid = models.ForeignKey(Species)
-    otuid = models.TextField(primary_key=True)
+    otuid = models.TextField(primary_key=True)  # not specifying yet getting duplicates????
     otuName = models.CharField(max_length=90, blank=True)
+    otuSeq = models.TextField(blank=True)
 
 
 class Profile(models.Model):
@@ -693,7 +694,18 @@ class PICRUSt(models.Model):
     geneList = models.TextField(blank=True)
 
 
-class UserProfile(models.Model):
+class koOtuList(models.Model):
+    koID = models.TextField(primary_key=True)   # used as index for fast retrieval; write time increases w/ object count
+    otuList = models.TextField(blank=True)  # ';' separated list of otu names associated with this ko
+
+
+class UserProfile(models.Model):    # TODO add file viewing permission, user to user
+    # should be a list of usernames, I don't like this though
+    # you could wind up with a LOT of users in a database, and having to search each one for if they have added them
+    # is incredibly inefficient
+    # meanwhile, having each user keep a list of which users have whitelisted THEM, simplifies query
+    # but we have to be EXTREMELY careful when implementing this such that no user can edit their own list
+    # NEEDS TO GO BOTH WAYS FOR WHEN YOU REVOKE PERMS / VIEW ALREADY GIVEN PERMISSIONS
     user = models.OneToOneField(Users, related_name='profile')
     firstName = models.CharField(blank=True, max_length=200)
     lastName = models.CharField(blank=True, max_length=200)
@@ -706,6 +718,9 @@ class UserProfile(models.Model):
     reference = models.CharField(blank=True, max_length=100)
     purpose = models.CharField(blank=True, max_length=100)
     dataID = models.CharField(blank=True, max_length=200, default="TEMPID")
+
+    hasPermsFrom = models.TextField(blank=True)  # acts as a list via split with ';' delimiter
+    gavePermsTo = models.TextField(blank=True)
 
     @receiver(post_save, sender=Users)
     def create_user_profile(sender, instance, created, **kwargs):

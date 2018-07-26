@@ -30,9 +30,9 @@ from utils.trees import getProjectTree, getProjectTreeChildren, \
     getNZTree, getNZTreeChildren, \
     getDownloadTree, getDownloadTreeChildren, \
     getKEGGTree2, \
-    getPermissionTree, makeReproTree, makeUpdateTree
+    getPermissionTree, getFilePermTree, makeReproTree, makeUpdateTree, makeFilesTree, getLocationSamplesTree
 from utils.utils_df import cleanup, handle_uploaded_file, multidict, remove_proj, remove_list, analysisThreads, \
     getViewProjects, getEditProjects, getMetaDF, transformDF, taxaProfileDF, exploding_panda, imploding_panda, \
-    wOdum, getRawDataTab, getRawDataBiom, removeFiles, excel_to_dict, startLogger, log
+    wOdum, getRawDataTab, getRawDataBiom, removeFiles, excel_to_dict, startLogger, log, stoppableThread
 from utils.utils_kegg import getFullKO, getFullNZ, getFullTaxonomy, \
     getTaxaDF, getKeggDF, getNZDF, filterDF

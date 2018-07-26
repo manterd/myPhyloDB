@@ -9,11 +9,9 @@ import logging
 from numpy import *
 import numpy as np
 import openpyxl
-import os
 import signal
 import psutil
 import pandas as pd
-import re
 import shutil
 import json
 from pyper import *
@@ -26,7 +24,8 @@ import tarfile
 
 from database.models import Project, Reference, \
     Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
-    Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile
+    Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile, \
+    koOtuList, ko_entry, ko_lvl1, ko_lvl2, ko_lvl3, PICRUSt
 
 import functions
 
@@ -38,9 +37,7 @@ perc = 0
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
-
 pro = None
-
 
 def dada2(dest, source):
     global pro
@@ -56,21 +53,21 @@ def dada2(dest, source):
 
         r('.cran_packages <-  c("ggplot2", "gridExtra", "reshape2", "qiimer", "devtools")')
         r("new.packages <- .cran_packages[!(.cran_packages%in% installed.packages()[,'Package'])]")
-        print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
         r('.bioc_packages <- c("rhdf5")')
         r("new.packages <- .bioc_packages[!(.bioc_packages %in% installed.packages()[,'Package'])]")
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-        print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
+        r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
         r('.dev_tools <- c("biom")')
         r("new.packages <- .dev_tools[!(.dev_tools %in% installed.packages()[,'Package'])]")
-        print r('if (length(new.packages)) devtools::install_github("biom", "joey711")')
+        r('if (length(new.packages)) devtools::install_github("biom", "joey711")')
 
         r('.bioc_packages <- c("dada2", "phyloseq")')
         r("new.packages <- .bioc_packages[!(.bioc_packages %in% installed.packages()[,'Package'])]")
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-        print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
+        r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
         if os.name == 'nt':
             cmd = "R\\R-Portable\\App\\R-Portable\\bin\\R.exe --no-save --no-restore < mothur\\temp\\dada2.R"
@@ -89,9 +86,9 @@ def dada2(dest, source):
                     break
 
             if os.name == 'nt':
-                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand both --id 0.97 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
+                cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
             else:
-                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/temp/ref_trimmed.fa.gz --strand both --id 0.97 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
+                cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/temp/ref_trimmed.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
 
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             while True:
@@ -195,6 +192,7 @@ def dada2(dest, source):
 def mothur(dest, source):
     global pro
     try:
+        print "Starting mothur: dest", dest, "source", source
         global stage, perc, mothurStat
         stage = "Step 3 of 5: Running mothur..."
         perc = 0
@@ -281,36 +279,37 @@ def mothur(dest, source):
 def termP():    # relies on global of pro because only one dataprocess should ever be running at a single time
     global pro
     try:
-        parent = psutil.Process(pro.pid)
-        children = parent.children(recursive=True)
-        for process in children:
-            process.send_signal(signal.SIGTERM)
-        os.kill(pro.pid, signal.SIGTERM)
+        if pro is not None:
+            parent = psutil.Process(pro.pid)
+            children = parent.children(recursive=True)
+            for process in children:
+                process.send_signal(signal.SIGTERM)
+            os.kill(pro.pid, signal.SIGTERM)
 
-        # clean up mothur files here
-        dir = os.getcwd()
-        stuff = os.listdir(dir)
-        for thing in stuff:
-            if thing.endswith(".num.temp") or thing.endswith(".logfile"):
-                os.remove(os.path.join(dir, thing))
+            # clean up mothur files here
+            dir = os.getcwd()
+            stuff = os.listdir(dir)
+            for thing in stuff:
+                if thing.endswith(".num.temp") or thing.endswith(".logfile"):
+                    os.remove(os.path.join(dir, thing))
 
-        path = os.path.join(dir, 'mothur', 'reference', 'align')
-        stuff = os.listdir(path)
-        for thing in stuff:
-            if thing.endswith(".8mer"):
-                os.remove(os.path.join(path, thing))
+            path = os.path.join(dir, 'mothur', 'reference', 'align')
+            stuff = os.listdir(path)
+            for thing in stuff:
+                if thing.endswith(".8mer"):
+                    os.remove(os.path.join(path, thing))
 
-        path = os.path.join(dir, 'mothur', 'reference', 'taxonomy')
-        stuff = os.listdir(path)
-        for thing in stuff:
-            if thing.endswith(".numNonZero") or thing.endswith(".prob") or thing.endswith(".sum") or thing.endswith(".train"):
-                os.remove(os.path.join(path, thing))
+            path = os.path.join(dir, 'mothur', 'reference', 'taxonomy')
+            stuff = os.listdir(path)
+            for thing in stuff:
+                if thing.endswith(".numNonZero") or thing.endswith(".prob") or thing.endswith(".sum") or thing.endswith(".train"):
+                    os.remove(os.path.join(path, thing))
 
-        path = os.path.join(dir, 'mothur', 'reference', 'template')
-        stuff = os.listdir(path)
-        for thing in stuff:
-            if thing.endswith(".8mer"):
-                os.remove(os.path.join(path, thing))
+            path = os.path.join(dir, 'mothur', 'reference', 'template')
+            stuff = os.listdir(path)
+            for thing in stuff:
+                if thing.endswith(".8mer"):
+                    os.remove(os.path.join(path, thing))
 
     except Exception as e:
         print "Error with terminate: "+str(e)  # +", probably just not mothur"
@@ -335,7 +334,7 @@ def status(request):
             dict['perc'] = perc
             dict['project'] = rep_project
         else:
-            if queuePos == -1024:  # need to distinguish between active and inactive PID
+            if queuePos == -1024:  # need to distinguish between active and inactive PID    # gets stuck here?
                 dict['stage'] = "Stopping...please be patient while we restore the database!"   # jump
             elif queuePos == -512:  # for inactive processes, problem is when process DOES get stopped, queuepos
                                     #  switches to this and THEN loops anyways
@@ -343,9 +342,11 @@ def status(request):
                 # need front end to catch this... need to get datfuncall to its page too (specific to function called)
             else:
                 dict['stage'] = "In queue for processing, "+str(queuePos)+" requests in front of you"
+
             dict['perc'] = 0
             dict['project'] = rep_project
             dict['mothurStat'] = ''
+
         mothurStat = ""
         json_data = json.dumps(dict)
         return HttpResponse(json_data, content_type='application/json')
@@ -362,13 +363,16 @@ def projectid(Document):
         pType = rowDict['projectType']
         projectid = rowDict['projectid']
 
-        sampSheet = wb.worksheets[2]
-        rowMax = sampSheet.max_row
-        num_samp = 0
-        for val in range(7, rowMax):
-            samp = sampSheet['C'+str(val)].value
-            if samp is not "" and samp is not None:
-                num_samp += 1
+        try:
+            num_samp = int(rowDict['num_samp'])
+        except:
+            sampSheet = wb.worksheets[2]
+            rowMax = sampSheet.max_row
+            num_samp = 0
+            for val in range(7, rowMax):
+                samp = sampSheet['C'+str(val)].value
+                if samp is not "" and samp is not None:
+                    num_samp += 1
 
         if projectid is np.nan or projectid is None:
             p_uuid = uuid4().hex
@@ -385,7 +389,7 @@ def projectid(Document):
         return None
 
 
-def parse_project(Document, p_uuid, curUser):
+def parse_project(Document, p_uuid, curUser):   # no stoplist support because of how fast this is
     # parse meta file (xlxs file?) improve output for users when error occurs
     # check formatting and such, boxes have ranges of valid responses, check project type and permissions for now
     try:
@@ -433,7 +437,7 @@ def parse_project(Document, p_uuid, curUser):
         return str(ex)
 
 
-def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
+def parse_reference(p_uuid, refid, path, raw, source, userid):
     try:
         author = User.objects.get(id=userid)
         if not Reference.objects.filter(path=path).exists():
@@ -454,7 +458,7 @@ def parse_reference(p_uuid, refid, path, batch, raw, source, userid):
         logging.exception(myDate)
 
 
-def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, userID):
+def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID):
     try:
         global stage, perc
         stage = "Step 2 of 5: Parsing sample file..."
@@ -489,7 +493,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         perc = 75
 
         tempid = uuid4().hex
-        refid = parse_reference(p_uuid, tempid, dest, batch, raw, source, userID)
+        refid = parse_reference(p_uuid, tempid, dest, raw, source, userID)
         reference = Reference.objects.get(refid=refid)
 
         idList = []
@@ -518,7 +522,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
             row.pop('geo_loc_name')
             row.pop('lat_lon')
 
-            print "Sample searching"
+            # print "Parsing sample: ", str(row['sample_name'])
 
             idList.append(s_uuid)
             if Sample.objects.filter(sampleid=s_uuid).exists():
@@ -529,83 +533,71 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
 
             sample = Sample.objects.get(sampleid=s_uuid)
 
-
             row = dict2[i]
+            if 'sampleid' in row:
+                row.pop('sampleid')
+            if 'sample_name' in row:
+                row.pop('sample_name')
+
             if pType == "air":
                 if not Air.objects.filter(sampleid=s_uuid).exists():
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Air.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
                 else:
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Air.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
             elif pType == "human associated":
                 if not Human_Associated.objects.filter(sampleid=s_uuid).exists():
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Human_Associated.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
                 else:
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Human_Associated.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
             elif pType == "microbial":
                 if not Microbial.objects.filter(sampleid=s_uuid).exists():
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Microbial.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
                 else:
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Microbial.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
             # TODO: remove extras once they are added to the excel metafile
             elif pType == "soil":
                 if not Soil.objects.filter(sampleid=s_uuid).exists():
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Soil.objects.create(projectid=project, refid=reference, sampleid=sample, soil_water_cap=None,
                         soil_surf_hard=None, soil_subsurf_hard=None, soil_agg_stability=None, soil_ACE_protein=None,
                         soil_active_C=None, **row)
                 else:
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample,
                         soil_water_cap=None, soil_surf_hard=None, soil_subsurf_hard=None, soil_agg_stability=None,
                         soil_ACE_protein=None, soil_active_C=None, **row)
 
             elif pType == "water":
                 if not Water.objects.filter(sampleid=s_uuid).exists():
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Water.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
                 else:
-                    row.pop('sampleid')
-                    row.pop('sample_name')
                     Water.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
             else:
                 pass
 
             row = dict3[i]
-            if not UserDefined.objects.filter(sampleid=s_uuid).exists():
+            if 'sampleid' in row:
                 row.pop('sampleid')
+            if 'sample_name' in row:
                 row.pop('sample_name')
+
+            if not UserDefined.objects.filter(sampleid=s_uuid).exists():
                 UserDefined.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
             else:
-                row.pop('sampleid')
-                row.pop('sample_name')
                 UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
             perc += 20/num_samp
 
+            if stopList[PID] == RID:
+                return None
+
         ### add myPhyloDB generated IDs to excel metafile
         wb = openpyxl.load_workbook(Document, data_only=False, read_only=False)
-        ws = wb.get_sheet_by_name('Project')
+        ws = wb['Project']
         ws.cell(row=6, column=4).value = p_uuid
 
-        ws = wb.get_sheet_by_name('MIMARKs')
+        ws = wb['MIMARKs']
         for i in xrange(len(idList)):
             j = i + 7
             ws.cell(row=j, column=1).value = idList[i]
@@ -623,11 +615,19 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, batch, raw, source, us
         return None
 
 
-def parse_taxonomy(Document, stopList, PID, RID):   # this step needs a stop check in the main loop, pass list in as an argument?
+def parse_taxonomy(Document, stopList, PID, RID):
     try:
         global stage, perc
+        # get current number of unclassified seqs
+        numUnclass = OTU_99.objects.filter(otuName__startswith='isv_').count()
+        newOtuList = []
+
+        # read files
         stage = "Step 4 of 5: Parsing taxonomy file..."
         perc = 0
+
+        print "Reading taxa:", Document
+
         f = csv.reader(Document, delimiter='\t')
         f.next()
         total = 0.0
@@ -640,13 +640,32 @@ def parse_taxonomy(Document, stopList, PID, RID):   # this step needs a stop che
         f.next()
         step = 0.0
         for row in f:
+
+            if stopList[PID] == RID:
+                print "Stopping taxonomy!!!"
+                return
+
             if row:
                 step += 1.0
                 perc = int(step / total * 100)
-                rowlen = len(row)
-                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])  # oor
+                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])  # out of index?
                 subbed = subbed[:-1]
                 taxon = subbed.split(';')
+
+                if len(taxon) < 6:  # missing genus
+                    taxon.append("unclassified")
+
+                if len(taxon) < 7:  # missing species
+                    taxon.append("unclassified")
+
+                if len(taxon) < 8:  # missing otu, unclassified the best thing to fill here?
+                    taxon.append("unclassified")
+
+                if OTU_99.objects.filter(otuSeq=row[1]).exists():   # these statements behave like assertions (was this intentional?)
+                    continue
+
+                if OTU_99.objects.filter(otuName=taxon[7]).exists():
+                    continue
 
                 if not Kingdom.objects.filter(kingdomName=taxon[0]).exists():
                     kid = uuid4().hex
@@ -665,46 +684,66 @@ def parse_taxonomy(Document, stopList, PID, RID):   # this step needs a stop che
                 c = Class.objects.get(kingdomid_id=k, phylaid_id=p, className=taxon[2]).classid
                 if not Order.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).exists():
                     oid = uuid4().hex
-                    Order.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid, orderName=taxon[3])
+                    Order.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid=oid,
+                                         orderName=taxon[3])
 
                 o = Order.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderName=taxon[3]).orderid
-                if not Family.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).exists():
+                if not Family.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                             familyName=taxon[4]).exists():
                     fid = uuid4().hex
-                    Family.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid, familyName=taxon[4])
+                    Family.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid=fid,
+                                          familyName=taxon[4])
 
-                f = Family.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyName=taxon[4]).familyid
-                if not Genus.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).exists():
+                f = Family.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                       familyName=taxon[4]).familyid
+                if not Genus.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                            genusName=taxon[5]).exists():
                     gid = uuid4().hex
-                    Genus.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid=gid, genusName=taxon[5])
+                    Genus.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                         genusid=gid, genusName=taxon[5])
 
-                try:
-                    if len(taxon) < 6:
-                        taxon.append("unclassified")
-                    g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
-                    if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
-                        sid = uuid4().hex
-                        Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName=taxon[6])
-                except Exception:
-                    g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusName=taxon[5]).genusid
-                    if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName='unclassified').exists():
-                        sid = uuid4().hex
-                        Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid=sid, speciesName='unclassified')
+                g = Genus.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                      genusName=taxon[5]).genusid
+                if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                              familyid_id=f, genusid_id=g, speciesName=taxon[6]).exists():
+                    sid = uuid4().hex
+                    Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                           genusid_id=g, speciesid=sid, speciesName=taxon[6])
 
-                try:
-                    if len(taxon) < 7:  # place on other levels?
-                        taxon.append("unclassified")
-                    s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid
-                    if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName=taxon[7]).exists():
+                if taxon[7].startswith('gg'):
+                    if taxon[7].startswith('gg_'):
+                        pass
+                    else:
+                        taxon[7].replace('gg', 'gg_')
+
+                if taxon[0] == 'unclassified':
+                    otuName = 'isv_' + str(numUnclass)
+                    numUnclass += 1
+                    s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                            genusid_id=g, speciesName=taxon[6]).speciesid
+                    if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                                 familyid_id=f, genusid_id=g, speciesid_id=s, otuSeq=row[1],
+                                                 otuName=otuName).exists():
                         oid = uuid4().hex
-                        OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName=taxon[7])
-                except Exception:
-                        s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesName=taxon[6]).speciesid  # oor
-                        if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuName='unclassified').exists():
-                            oid = uuid4().hex
-                            OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuName='unclassified')
+                        OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                              familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuSeq=row[1],
+                                              otuName=otuName)
+                        newOtuList.append(oid)
+                else:
+                    otuName = taxon[7]
+                    s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                            genusid_id=g, speciesName=taxon[6]).speciesid
+                    if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                                 familyid_id=f, genusid_id=g, speciesid_id=s,
+                                                 otuName=otuName).exists():
+                        oid = uuid4().hex
+                        OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                              familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid,
+                                              otuSeq='', otuName=otuName)
+                        newOtuList.append(oid)
 
-            if stopList[PID] == RID:  # just returning here means exiting to higher level, which will call upStop or repStop (or at least should)
-                return
+        if newOtuList:
+            updateKoOtuList(newOtuList, stopList, PID, RID)
 
     except Exception as e:
         print "Parse_taxonomy error: ", e
@@ -712,55 +751,131 @@ def parse_taxonomy(Document, stopList, PID, RID):   # this step needs a stop che
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
 
+    print "End of taxa parsing"
 
-def parse_profile(file3, file4, p_uuid, refDict):
+
+def updateKoOtuList(otuList, stopList, PID, RID):  # for during a new upload
+    # get otuList from project data (argument): Should be a list of all  NEW otu's in project
+    # get all ko genelists and search for matching otus (out of new otus from related upload)
+    # add matching otus to related koOtuList entries
+    try:
+        # get every single ko_entry object (or equivalent data from levels 1-3)
+        koList = []
+        records = ko_lvl1.objects.using('picrust').all()
+        for record in records:
+            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+        records = ko_lvl2.objects.using('picrust').all()
+        for record in records:
+            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+        records = ko_lvl3.objects.using('picrust').all()
+        for record in records:
+            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+        koList.extend(ko_entry.objects.all())
+
+        if stopList[PID] == RID:
+            return
+
+        curOtu = 0
+        if koList:
+            for otu in otuList:
+                curTotal = 0
+                creTotal = 0
+                if PICRUSt.objects.using('picrust').filter(otuid=otu).exists():
+                    qs = PICRUSt.objects.using('picrust').filter(otuid=otu)
+                    geneList = qs[0].geneList
+                    geneList = geneList.replace("[", "")
+                    geneList = geneList.replace("]", "")
+                    geneList = geneList.replace("'", "")
+                    geneList = geneList.replace(" ", "")
+                    genes = geneList.split(",")
+                    for gene in genes:
+                        if gene in koList:
+                            # get or make koOtuList object for this ko
+                            if not koOtuList.objects.filter(koID=gene).exists():
+                                newList = koOtuList.objects.create(koID=gene)
+                                newList.otuList = ""
+                                newList.save()
+                                creTotal += 1
+                            thisList = koOtuList.objects.get(koID=gene)
+                            thisList.otuList += str(otu)+";"
+                            thisList.save()
+                            curTotal += 1
+
+                    # print "Otu "+str(curOtu)+" done. Found "+str(curTotal)+" ko matches. Created "+str(creTotal)+" new entries"
+                    curOtu += 1
+                    if stopList[PID] == RID:
+                        return
+
+    except Exception as er:
+        print "Problem with updateKOL (M) ", er
+    return
+
+
+def parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID):
+    print "Parsing profile!"
     try:
         global stage, perc
         stage = "Step 5 of 5: Parsing shared file..."
         perc = 0
-        data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True)
-        arr1 = np.delete(data1, 1, axis=1)
-        df1 = pd.DataFrame(arr1[1:, 1:], index=arr1[1:, 0], columns=arr1[0, 1:])
+
+        # taxonomy file
+        data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True, encoding=None)  # getting empty dataset...
+        df1 = pd.DataFrame(data1[1:, 1:], index=data1[1:, 0], columns=data1[0, 1:])  # too many indices crash
         df1 = df1[df1.index != 'False']
         a = df1.columns.values.tolist()
-        print "A: ", a
         a = [x for x in a if x != 'False']
         df1 = df1[a]
-        file3.close()
+        # file3.close() # this line breaks when using a filename instead of a file object
 
-        data2 = genfromtxt(file4, delimiter='\t', dtype=None, autostrip=True)
+        # shared file
+        data2 = genfromtxt(file4, delimiter='\t', dtype=None, autostrip=True, encoding=None)
         arr2 = data2.T
         arr2 = np.delete(arr2, 0, axis=0)
         arr2 = np.delete(arr2, 1, axis=0)
         df2 = pd.DataFrame(arr2[1:, 1:], index=arr2[1:, 0], columns=arr2[0, 1:])
         df2 = df2[df2.index != 'False']
         b = df2.columns.values.tolist()
-        print "B: ", b
         b = [x for x in b if x != 'False']
         df2 = df2[b]
         file4.close()
 
         df3 = pd.merge(df1, df2, left_index=True, right_index=True, how='inner')
-        df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', value='', regex=True, inplace=True)
+        df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', value='', regex=True,
+                                inplace=True)
         df3.reset_index(drop=True, inplace=True)
         del df1, df2
 
         total, columns = df3.shape
-        sampleList = df3.columns.values.tolist()  # this line works as it seems like it should but its not a list of samples
-        print "sampleList: ", sampleList
-        sampleList.remove('Taxonomy')
-        print "Check"
-        # in here, "Sample matching query does not exist", looking for a102 despite not being part of the upload
-        # need to find where and why a102 is being searched
+        sampleList = df3.columns.values.tolist()
+        try:
+            sampleList.remove('Seq')
+        except:
+            pass
+        try:
+            sampleList.remove('Taxonomy')
+        except:
+            pass
+        try:
+            sampleList.remove('Size')   # do we need this?
+        except:
+            pass
+
+        # print "SampleList: ", sampleList
+
         # need to get rid of any old taxonomy data if sample type is set to replace
-        for name in sampleList:  # JUMP     # is this actually a list of samples?
-            print "Looking for sample "+str(name)+" in project "+str(p_uuid)
+        for name in sampleList:
+            # print "Looking for sample "+str(name)+" in project " + str(p_uuid)
             sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
             sampid = sample.sampleid
             replaceType = refDict[sampid]
             if replaceType == 'replace':
                 Profile.objects.filter(sampleid=sampid).delete()
-        print "Check"
+            if stopList[PID] == RID:
+                return
+
 
         idList = []
         step = 0.0
@@ -776,48 +891,91 @@ def parse_profile(file3, file4, p_uuid, refDict):
             o = taxaList[3]
             f = taxaList[4]
             g = taxaList[5]
-            try:
-                s = taxaList[6]
-            except Exception:
-                s = 'unclassified'
-            try:
-                otu = taxaList[7]
-            except Exception:
-                otu = 'unclassified'
 
-            t_kingdom = Kingdom.objects.get(kingdomName=k)
-            t_phyla = Phyla.objects.get(kingdomid=t_kingdom, phylaName=p)
-            t_class = Class.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, className=c)
-            t_order = Order.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderName=o)
-            t_family = Family.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyName=f)
-            t_genus = Genus.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusName=g)
-            t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesName=s)
-            t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuName=otu)
+            if len(taxaList) < 7:
+                taxaList.append('unclassified')
+            if len(taxaList) < 8:
+                taxaList.append('unclassified')
+
+            s = taxaList[6]
+
+            otu = taxaList[7]
+
+            try:
+                t_kingdom = Kingdom.objects.get(kingdomName=k)
+                t_phyla = Phyla.objects.get(kingdomid=t_kingdom, phylaName=p)
+                t_class = Class.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, className=c)
+                t_order = Order.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderName=o)
+                t_family = Family.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                              familyName=f)
+                t_genus = Genus.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                            familyid=t_family, genusName=g)
+                t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                                familyid=t_family, genusid=t_genus, speciesName=s)
+            except Exception as e:
+                print "Error finding taxa: ", e
+
+            t_otu = ''
+            try:
+                if k == 'unclassified':
+                    t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                               familyid=t_family, genusid=t_genus, speciesid=t_species, otuSeq=row['Seq'])
+                else:
+                    t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                               familyid=t_family, genusid=t_genus, speciesid=t_species, otuName=otu)
+            except Exception as e:
+                # print 'Error: ', e, ' ', taxaList
+                # print "Info dump: ", t_kingdom.kingdomName, t_phyla.phylaName, t_class.className, t_order.orderName, t_family.familyName, t_genus.genusName, t_species.speciesName, otu    # this makes a duplicate otuID for some reason
+                # otuID needs to be unique, apparently not specifying allows duplicates? based on name maybe
+                oid = uuid4().hex
+                t_otu = OTU_99.objects.create(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                              familyid=t_family, genusid=t_genus, speciesid=t_species,
+                                              otuName=otu, otuid=oid)
+                t_otu.save()
+
+            if stopList[PID] == RID:
+                return
 
             for name in sampleList:
-                count = int(row[name])
-                project = Project.objects.get(projectid=p_uuid)
-                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
-                sampid = sample.sampleid
-                idList.append(sampid)
-                replaceType = refDict[sampid]
+                try:
+                    count = int(row[name])
+                    project = Project.objects.get(projectid=p_uuid)
+                    sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
+                    sampid = sample.sampleid
+                    idList.append(sampid)
+                    replaceType = refDict[sampid]
 
-                if count > 0:
-                    if replaceType == 'new' or replaceType == 'replace':
-                        Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
 
-                    if replaceType == 'append':
-                        if Profile.objects.filter(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu).exists():
-                            t = Profile.objects.get(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu)
-                            old = t.count
-                            new = old + int(count)
-                            t.count = new
-                            t.save()
-                        else:
-                            Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family, genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
+                    if count > 0:
+                        if replaceType == 'new' or replaceType == 'replace':
+                            Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom,
+                                                   phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family,
+                                                   genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
+
+                        if replaceType == 'append':
+                            if Profile.objects.filter(projectid=project, sampleid=sample, kingdomid=t_kingdom,
+                                                      phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                                      familyid=t_family, genusid=t_genus, speciesid=t_species,
+                                                      otuid=t_otu).exists():
+                                t = Profile.objects.get(projectid=project, sampleid=sample, kingdomid=t_kingdom,
+                                                        phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                                        familyid=t_family, genusid=t_genus, speciesid=t_species,
+                                                        otuid=t_otu)
+                                old = t.count
+                                new = old + int(count)
+                                t.count = new
+                                t.save()
+                            else:
+                                Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom,
+                                                       phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                                       familyid=t_family, genusid=t_genus, speciesid=t_species,
+                                                       otuid=t_otu, count=count)
+                except Exception as exc:
+                    print 'Sample could not be added: ', str(name), " because ", exc
+                if stopList[PID] == RID:
+                    return
 
             step += 1.0
-        print "Check"
 
         idUnique = list(set(idList))
         for ID in idUnique:
@@ -825,19 +983,22 @@ def parse_profile(file3, file4, p_uuid, refDict):
             reads = Profile.objects.filter(sampleid=sample).aggregate(count=Sum('count'))
             sample.reads = reads['count']
             sample.save()
-        print "Check"
+            if stopList[PID] == RID:
+                return
 
         stage = "Step 1 of 5: Parsing project file..."
 
     except Exception as e:
-        print "Error with taxa parsing: ", e    # even though this is profile?
+        print "Error with shared file parsing: ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
 
+    print "Done parsing profile"
+
 
 def repStop(request):
-    print "Repstop!"
+    # print "Repstop!"
     try:
         # cleanup in repro project!
         # reset WIP flag
@@ -1093,13 +1254,13 @@ def reanalyze(request, stopList):
                 with open('% smothur.batch' % mothurdest, 'rb') as file7:
                     raw = True
                     userID = str(request.user.id)
-                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID, stopList, RID)
             else:
                 with open('% sdada2.R' % mothurdest, 'rb') as file7:
                     raw = True
                     userID = str(request.user.id)
-                    "print parsing sample"
-                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID)
+                    # "print parsing sample"
+                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID, stopList, RID)
 
             if stopList[PID] == RID:
                 mothurRestore(dest)
@@ -1135,7 +1296,7 @@ def reanalyze(request, stopList):
 
             with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
                 with open('% s/final.tx.shared' % dest, 'rb') as file4:
-                    parse_profile(file3, file4, p_uuid, refDict)
+                    parse_profile(file3, file4, p_uuid, refDict, stopList, RID)
 
             if stopList[PID] == RID:
                 mothurRestore(dest)

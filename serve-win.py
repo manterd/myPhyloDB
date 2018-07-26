@@ -10,8 +10,8 @@ from myPhyloDB.wsgi import application
 import cherrypy
 import multiprocessing as mp
 import signal
-import threading
 import webbrowser
+from functions.utils.utils_df import stoppableThread
 
 
 class Server(object):
@@ -90,15 +90,15 @@ if __name__ == '__main__':
     num_threads = functions.analysisThreads()
 
     for pid in xrange(num_threads):
-        thread = threading.Thread(target=functions.process, args=(pid, ))
+        thread = stoppableThread(target=functions.process, args=(pid, ))
         thread.setDaemon(True)
         thread.start()
 
-    dataThread = threading.Thread(target=functions.dataprocess, args=(0, ))
+    dataThread = stoppableThread(target=functions.dataprocess(), args=(0, ))
     dataThread.setDaemon(True)
     dataThread.start()
 
-    logThread = threading.Thread(target=functions.startLogger)  # new thread dedicated to logging
+    logThread = stoppableThread(target=functions.startLogger)  # new thread dedicated to logging
     logThread.setDaemon(True)
     logThread.start()
 

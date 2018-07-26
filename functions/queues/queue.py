@@ -10,14 +10,11 @@ import config.local_cfg
 from database.models import UserProfile
 
 import functions
-
 from functions.analysis import analysis
 
 #from pycallgraph import PyCallGraph
 #from pycallgraph.output import GephiOutput
 #from pycallgraph import Config
-
-import datetime
 
 
 def analysisThreads():
@@ -88,19 +85,20 @@ def stop(request):
         stopList[pid] = RID
         activeList[pid] = 0
         try:
-            pid = queueList[RID]    # hi
+            pid = queueList[RID]
             thisFunc = queueFuncs[pid]
             functions.log(request, "QSTOP", thisFunc)
             queueList.pop(RID, 0)   # try to remove from queuelist
         except:
-            pass    # already removed probably, moving on
+            pass
 
         threadName = threadDict[RID]
         threads = threading.enumerate()
         for thread in threads:
             if thread.name == threadName:
-                thread.terminate()      # is this necessary? can simplify this code a lot if not
+                thread.terminate()
                 stopList[pid] = RID
+                functions.log(request, "QSTOP", request.user)
                 myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
                 stop = json.dumps(myDict)
                 return HttpResponse(stop, content_type='application/json')
@@ -116,11 +114,11 @@ def decremQ():
 
 
 def process(pid):
-    global activeList, threadDict, stopped
     #count = 0   # counts number of functions cycled through
     #graphConfig = Config(max_depth=3)
     while True:
         try:
+            global activeList, threadDict, stopped, stopList, stopDict
             #graphOut = GephiOutput(output_file='funcCall'+str(count)+'.gdf')
             #count += 1
             #with PyCallGraph(output=graphOut, config=graphConfig):  # when not debugging, tab back under here
@@ -147,7 +145,7 @@ def process(pid):
                         myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=False)
                         recent[RID] = myAnalysis.run(quant=True)
                     if funcName == "getCorr":
-                        myAnalysis = analysis.Corr(request, RID, stopList, pid, debug=True)
+                        myAnalysis = analysis.Corr(request, RID, stopList, pid, debug=False)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getPCA":
                         myAnalysis = analysis.PCA(request, RID, stopList, pid, debug=False)
@@ -170,7 +168,7 @@ def process(pid):
                         recent[RID] = functions.getSpAC(request, stopList, RID, pid)
                     if funcName == "getsoil_index":
                         recent[RID] = functions.getsoil_index(request, stopList, RID, pid)
-                activeList[pid] = ''
+                activeList[pid] = 0
                 threadDict.pop(RID, 0)
                 stopDict.pop(RID, 0)
                 functions.log(request, "QFINISH", funcName)
@@ -181,7 +179,7 @@ def process(pid):
 
 def funcCall(request):
     # new hybrid call
-    global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff
+    global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff, complete
     allJson = request.body.split('&')[0]
     data = json.loads(allJson)
     reqType = data['reqType']

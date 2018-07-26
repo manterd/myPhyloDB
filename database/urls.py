@@ -12,7 +12,7 @@ urlpatterns = [
     url(r'^kegg_enzyme/$', views.kegg_enzyme, name='kegg_enzyme'),
     url(r'^anova/$', views.ANOVA, name='anova'),
     url(r'^corr/$', views.CORR, name='corr'),
-    url(r'^spac/$', views.rich, name='spac'),
+    url(r'^spac/$', views.spac, name='spac'),
     url(r'^soil_index/$', views.soil_index, name='soil_index'),
     url(r'^norm/$', views.norm, name='norm'),
     url(r'^diffabund/', views.DiffAbund, name='diffabund'),
@@ -25,4 +25,5 @@ urlpatterns = [
     url(r'^reprocess/$', views.reprocess, name='reprocess'),
     url(r'^update/$', views.update, name='update'),
     url(r'^pybake/$', views.pybake, name='pybake'),
+    url(r'^files/$', views.files, name='files'),
 ]

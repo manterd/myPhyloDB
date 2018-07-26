@@ -32,7 +32,24 @@
     <script type="text/javascript">
         var RID = makeGUID();
         var source = 'mothur';
+        var ref_data = 'yes';
         var remNodes = "";
+
+        var selectedMeta = null;
+        var selectedShared = null;
+        var selectedSequence = null;
+        var selectedTaxa = null;
+        var selectedScript = null;
+        var selectedScript2 = null;
+        var selectedScript3 = null;
+        var selectedSFF = null;
+        var selectedOligos = null;
+        var selectedOligos2 = null;
+        var selectedFiles = null;
+        var selectedFNA = null;
+        var selectedQual = null;
+        var selectedContig = null;
+        var selectedFastq = null;
 
         window.onload = function() {
             var mothurStat = localStorage.getItem("moStatSave");
@@ -64,6 +81,253 @@
                 }
             });
 
+            $("#pickMeta").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Meta', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedMeta = $.map($("#pickMeta").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickShared").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Shared', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedShared = $.map($("#pickShared").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickSequence").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Sequence', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedSequence = $.map($("#pickSequence").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickTaxa").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Taxa', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedTaxa = $.map($("#pickTaxa").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickScript").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Script', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedScript = $.map($("#pickScript").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickScript2").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Script', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedScript2 = $.map($("#pickScript2").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickScript3").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Script', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedScript3 = $.map($("#pickScript3").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickSFF").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'SFF', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedSFF = $.map($("#pickSFF").dynatree("getSelectedNodes"), function (node) {
+                        if (node.getLevel() == 4) {
+                            return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                        }
+                    });
+                }
+            });
+
+            $("#pickOligos").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Oligos', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedOligos = $.map($("#pickOligos").dynatree("getSelectedNodes"), function (node) {
+                        if (node.getLevel() == 4) {
+                            return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                        }
+                    });
+                }
+            });
+            // should distinguish oligos and oligos2, as 2 is single select only
+            $("#pickOligos2").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Oligos', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedOligos2 = $.map($("#pickOligos2").dynatree("getSelectedNodes"), function (node) {
+                        if (node.getLevel() == 4) {
+                            return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                        }
+                    });
+                }
+            });
+
+            $("#pickFiles").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Files', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedFiles = $.map($("#pickFiles").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickFNA").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'FNA', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedFNA = $.map($("#pickFNA").dynatree("getSelectedNodes"), function(node) {
+                        if (node.getLevel() == 4) {
+                            return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                        }
+                    });
+                }
+            });
+
+            $("#pickQual").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Qual', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedQual = $.map($("#pickQual").dynatree("getSelectedNodes"), function(node) {
+                        if (node.getLevel() == 4) {
+                            return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                        }
+                    });
+                }
+            });
+
+            $("#pickContig").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Contig', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedContig = $.map($("#pickContig").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickFastq").dynatree({
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Fastq', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedFastq = $.map($("#pickFastq").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+            /*dnd :{
+                onDrop: function (node, sourceNode, hitMode, ui, draggable) {
+                    var copyNode = sourceNode.toDict(true, function (dict) {
+                        dict.title = sourceNode.parent.parent.data.title + "/" + sourceNode.parent.data.title + "/" + dict.title;
+                        delete dict.key;
+                    });
+                    node.addChild(copyNode);
+                },
+                onDragEnter: function (node, sourceNode) {
+                    return (node.getLevel() == 1);
+                }
+            },*/
+
             $("#clearMeta").click(function () {
                 $("#treeRem").dynatree("getRoot").visit(function (node) {
                     node.select(false);
@@ -75,6 +339,18 @@
                 $("#progressBar").show();
                 document.getElementById("mothurStat").value = "";
                 setInterval(updateStatus, 1000);
+            });
+
+            $("#id_ref_data").change(function() {
+                ref_data = $("#id_ref_data").val();
+                if (ref_data == 'yes') {
+                    $(".vsearch").show();
+                    $(".taxa_file").hide();
+                }
+                if (ref_data == 'no') {
+                    $(".vsearch").hide();
+                    $(".taxa_file").show();
+                }
             });
 
             $("#id_source").change(function() {
@@ -113,13 +389,13 @@
                 type: 'hidden',
                 name: 'RID',
                 value: RID
-            }).appendTo('form').appendTo('form2');
+            }).appendTo('form');
 
             $('<input>').attr({
                 type: 'hidden',
                 name: 'funcName',
                 value: 'uploadFunc'
-            }).appendTo('form').appendTo('form2');
+            }).appendTo('form');
 
         });
 
@@ -169,6 +445,57 @@
                 data: {
                     all: RID
                 },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var mstage = obj['message'];
+                    $('#stage').empty().append(mstage);
+                }
+            });
+        }
+
+        function createProject() {
+            var myDict = {};
+
+            myDict['meta'] = selectedMeta;
+            myDict['shared'] = selectedShared;
+            myDict['sequence'] = selectedSequence;
+            myDict['taxa'] = selectedTaxa;
+
+            myDict['sff'] = selectedSFF;
+            myDict['files'] = selectedFiles;
+            myDict['fna'] = selectedFNA;
+            myDict['qual'] = selectedQual;
+            myDict['contig'] = selectedContig;
+            myDict['fastq'] = selectedFastq;
+
+            // default
+            myDict['script'] = selectedScript;
+            if (selectedScript2 != null){
+                myDict['script'] = selectedScript2;
+            }
+            if (selectedScript3 != null){
+                myDict['script'] = selectedScript3;
+            }
+
+            // default
+            myDict['oligos'] = selectedOligos;
+            if (selectedOligos2 != null){
+                myDict['oligos'] = selectedOligos2;
+            }
+
+            var jsonDict = JSON.stringify(myDict);
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'data',
+                value: jsonDict
+            }).appendTo('form');
+
+            $.ajax({
+                url: '/myPhyloDB/datfuncCall/',
+                type: 'POST',
+                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
                 success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
@@ -238,7 +565,7 @@
                     <table width="100%" border="2" cellspacing="0" cellpadding="1">
                         <tr>
                             <td>{{ form1.docfile1.label_tag }}</td>
-                            <td>{{ form1.docfile1 }}</td>
+                            <td><div id="pickMeta"></div></td>
                         </tr>
                     </table>
                 </td>
@@ -269,64 +596,77 @@
             </tr>
             <tr>
                 <td>
-                    <table id="mothur" width="100%" border="2" cellspacing="0" cellpadding="1">
-                        <tr>
-                            <td>{{ form2.docfile3.label_tag }}</td>
-                            <td>{{ form2.docfile3 }}</td>
-                        </tr>
+                    <table id='mothur' width="100%" border="2" cellspacing="0" cellpadding="1">
                         <tr>
                             <td>{{ form2.docfile4.label_tag }}</td>
-                            <td>{{ form2.docfile4 }}</td>
+                            <td><div id="pickShared"></div></td>
                         </tr>
+                        <tr>
+                            <td>{{ form2.ref_data.label_tag }}</td>
+                            <td>{{ form2.ref_data }}</td>
+                        </tr>
+                        <tr class="taxa_file" style="display: none">
+                            <td>{{ form2.docfile3.label_tag }}</td>
+                            <td><div id="pickTaxa"></div></td>
+                        </tr>
+                        <tr class="vsearch">
+                            <td>{{ form2.ref_fasta.label_tag }}</td>
+                            <td><div id="pickSequence"></div></td>
+                        </tr>
+                        <tr class="vsearch">
+                            <td>{{ form2.ref_var.label_tag }}<span title="Currently this option only supports V3 or V34 hypervariable regions. If you used other primers, you must rerun your entire sequence pipeline."><font class="info" color="red">[info]</font></span></td>
+                            <td>{{ form2.ref_var }}</td>
+                        </tr>
+
                     </table>
                     <table id="454_sff" width="100%" border="2" cellspacing="0" cellpadding="1" style="display:none">
                         <tr>
                             <td>Select sff file(s):</td>
-                            <td><input type="file" name="sff_files" multiple></td>
+                            <td><div id="pickSFF"></div></td>
                         </tr>
                         <tr>
                             <td>Select oligo file(s):</td>
-                            <td><input type="file" name="oligo_files" multiple></td>
+                            <td><div id="pickOligos"></div></td>
                         </tr>
                         <tr>
                             <td>{{ form2.docfile5.label_tag }}</td>
-                            <td>{{ form2.docfile5 }}</td>
+                            <td><div id="pickFiles"></div></td>
                         </tr>
                         <tr>
-                            <td>{{ form2.docfile7.label_tag }}</td>
-                            <td>{{ form2.docfile7 }}</td>
-                        </tr>
+                        <tr>
+                            <td>{{ form2.docfile7.label_tag }}&nbsp;{{ form2.platform }}&nbsp;<span title="Is this a mothur or dada2 (R package) batch file?"><font class="info" color="red">[info]</font></span></td>
+                            <td><div id="pickScript"></div></td>
                     </table>
                     <table id="454_fastq" width="100%" border="2" cellspacing="0" cellpadding="1" style="display:none">
                         <tr>
                             <td>Select fna file(s):</td>
-                            <td><input type="file" name="fna_files" multiple></td>
+                            <td><div id="pickFNA"></div></td>
                         </tr>
                         <tr>
                             <td>Select qual file(s):</td>
-                            <td><input type="file" name="qual_files" multiple></td>
+                            <td><div id="pickQual"></div></td>
                         </tr>
                         <tr>
                             <td>{{ form2.docfile6.label_tag }}</td>
-                            <td>{{ form2.docfile6 }}</td>
+                            <td><div id="pickOligos2"></div></td>
                         </tr>
                         <tr>
                             <td>{{ form2.docfile7.label_tag }}</td>
-                            <td>{{ form2.docfile7 }}</td>
+                            <td><div id="pickScript2"></div></td>
                         </tr>
                     </table>
                     <table id="miseq" width="100%" border="2" cellspacing="0" cellpadding="1" style="display:none">
                         <tr>
                             <td>{{ form2.docfile13.label_tag }}</td>
-                            <td>{{ form2.docfile13 }}</td>
+                            <td><div id="pickContig"></div></td>
                         </tr>
                         <tr>
                             <td>Select fastq file(s): <span title="Compressed ('tgz', 'gz', 'zip') files are allowed<br>No folders are allowed<br>Maximum file size is 2GB"><font class="info" color="red">[info]</font></span></td>
-                            <td><input type="file" name="fastq_files" multiple></td>
+                            <td><div id="pickFastq"></div></td>
                         </tr>
                         <tr>
                             <td>{{ form2.docfile7.label_tag }}&nbsp;{{ form2.platform }}&nbsp;<span title="Is this a mothur or dada2 (R package) batch file?"><font class="info" color="red">[info]</font></span></td>
-                            <td>{{ form2.docfile7 }}</td>
+                            <td><div id="pickScript3"></div></td>
                         </tr>
                     </table>
                 </td>
@@ -352,7 +692,7 @@
         <table>
             <tr>
                 <td>
-                    <input id='Upload' name='Upload' type="submit" value="Upload Files!"/>
+                    <input id='Upload' name='Upload' type="submit" onclick="createProject();" value="Create new project"/>
                 </td>
                 <td>
                     <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop!"/>

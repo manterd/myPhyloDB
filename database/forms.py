@@ -2,7 +2,7 @@ from django import forms
 from django_countries import countries
 from localflavor.us.us_states import STATE_CHOICES
 from uuid import uuid4
-from functions.utils.utils_df import MultiFileField
+from multiupload.fields import MultiFileField
 
 
 class UploadForm1(forms.Form):
@@ -10,26 +10,30 @@ class UploadForm1(forms.Form):
 
 
 class UploadForm2(forms.Form):
-    docfile3 = forms.FileField(label='Select conserved taxonomy file:')
-    docfile4 = forms.FileField(label='Select .shared file:')
+    docfile4 = forms.FileField(label='Select shared file:', required=False)
+    ref_data = forms.ChoiceField(label='Create new taxonomy file:', widget=forms.Select, choices=(('yes', 'yes'), ('no', 'no')))
+    ref_fasta = forms.FileField(label='Select representative sequence file (e.g., dada.rep_seqs.fasta:', required=False)
+    ref_var = forms.ChoiceField(label='Select the variable region:', widget=forms.Select, choices=(('V34', 'V34'), ('V4', 'V4'), ('V13', 'V13')))
+    docfile3 = forms.FileField(label='Select conserved taxonomy file:', required=False)
     sff_files = MultiFileField()
     oligo_files = MultiFileField()
-    docfile5 = forms.FileField(label='Select filenames file:')
+    docfile5 = forms.FileField(label='Select filenames file:', required=False)
     fna_files = MultiFileField()
     qual_files = MultiFileField()
-    docfile6 = forms.FileField(label='Select Oligos file:')
-    docfile7 = forms.FileField(label='Select batch file:')
-    docfile13 = forms.FileField(label='Select 3-column contig file:')
+    docfile6 = forms.FileField(label='Select Oligos file:', required=False)
+    docfile7 = forms.FileField(label='Select batch file:', required=False)
+    docfile13 = forms.FileField(label='Select 3-column contig file:', required=False)
     platform = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'mothur'), ('dada2', 'dada2')))
     fastq_files = MultiFileField()
+    # make HTML version for file upload page
     source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed files'), ('454_sff', 'sff files'), ('454_fastq', 'fna/qual files'), ('miseq', 'fastq files')))
     processors = forms.IntegerField(initial=2, min_value=1, max_value=100)
 
 
 class UploadForm4(forms.Form):
-    docfile8 = forms.FileField(label='Select alignment file (e.g., silva.seed_v119.align):')
-    docfile9 = forms.FileField(label='Select template file (e.g., gg_13_5_99.fasta):')
-    docfile10 = forms.FileField(label='Select taxonomy file (e.g., gg_13_5_99.pds.tax):')
+    docfile8 = forms.FileField(label='Select alignment file (e.g., silva.seed_v119.align):', required=False)
+    docfile9 = forms.FileField(label='Select template file (e.g., gg_13_5_99.fasta):', required=False)
+    docfile10 = forms.FileField(label='Select taxonomy file (e.g., gg_13_5_99.pds.tax):', required=False)
     alignFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
     templateFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
     taxonomyFile = forms.ChoiceField(widget=forms.Select, choices=('f1', 'File1'))
@@ -41,17 +45,17 @@ class UploadForm5(forms.Form):
 
 
 class UploadForm6(forms.Form):
-    taxonomy = forms.FileField(label='Select file (e.g., gg_13_5_99.dkm.tax):')
-    precalc_16S = forms.FileField(label='Select zip file (e.g., 16S_13_5_precalculated.tab.gz):')
-    precalc_KEGG = forms.FileField(label='Select zip file (e.g., ko_13_5_precalculated.tab.gz):')
+    taxonomy = forms.FileField(label='Select file (e.g., gg_13_5_99.dkm.tax):', required=False)
+    precalc_16S = forms.FileField(label='Select zip file (e.g., 16S_13_5_precalculated.tab.gz):', required=False)
+    precalc_KEGG = forms.FileField(label='Select zip file (e.g., ko_13_5_precalculated.tab.gz):', required=False)
 
 
 class UploadForm7(forms.Form):
-    ko_htext = forms.FileField(label='Select file (e.g., ko00001.keg):')
+    ko_htext = forms.FileField(label='Select file (e.g., ko00001.keg):', required=False)
 
 
 class UploadForm8(forms.Form):
-    nz_htext = forms.FileField(label='Select file (e.g., ko01000.keg):')
+    nz_htext = forms.FileField(label='Select file (e.g., ko01000.keg):', required=False)
 
 
 class UploadForm9(forms.Form):
@@ -62,6 +66,13 @@ class UploadForm10(forms.Form):
     platform = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'mothur'), ('dada2', 'dada2')))
     mothurFile = forms.FileField(label='Select batch file:')
 
+
+class BulkForm(forms.Form):
+    metafiles = MultiFileField(required=False)
+    sharedfiles = MultiFileField(required=False)
+    taxafiles = MultiFileField(required=False)
+    sequencefiles = MultiFileField(required=False)
+    scriptfiles = MultiFileField(required=False)
 
 reference_choices = (
     ('No data', '(not selected)'),

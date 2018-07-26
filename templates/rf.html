@@ -313,7 +313,7 @@
 
             for (var i = 0; i < nodesCat.length; i++) {
                 if (nodesCat[i].getLevel() == 5) {
-                    if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
+                    if ((nodesCat[i].data.table == 'project') || (nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
                         key = nodesCat[i].data.field;
                         value = nodesCat[i].data.value;
                         id = nodesCat[i].data.id;
@@ -441,6 +441,35 @@
             var finalDict = {};
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
+                    if (node.data.pType == 'project') {
+                        if (node.bSelected || node.hasSubSel) {
+                            var allRows = [];
+                            var child1 = node.getChildren();
+                            var key = node.data.title;
+                            $.each(child1, function(index1, value1) {
+                                var child2 = value1.getChildren();
+                                $.each(child2, function(index2, value2) {
+                                    if (value2.bSelected) {
+                                        var row = [];
+                                        var sid = value2.data.id;
+                                        var fullTitle = value2.data.title;
+                                        var name = fullTitle.split("(ID:")[0];
+                                        var fullProject = value2.data.tooltip;
+                                        var project = fullProject.split("(ID:")[0];
+                                        var pid = fullProject.split("(ID:")[1].slice(0, -1);
+                                        var value = value1.data.title;
+                                        row.push(pid);
+                                        row.push(project);
+                                        row.push(sid);
+                                        row.push(name);
+                                        row.push(value);
+                                        allRows.push('[' + row + ']');
+                                    }
+                                });
+                            });
+                            finalDict[key] = allRows;
+                        }
+                    }
                     if (node.data.pType == 'mimark') {
                         if (node.bSelected || node.hasSubSel) {
                             var allRows = [];
@@ -651,6 +680,35 @@
 
             $("#tree_metaQuant").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
+                    if (node.data.pType == 'project') {
+                        if (node.bSelected || node.hasSubSel) {
+                            var allRows = [];
+                            var child1 = node.getChildren();
+                            var key = node.data.title;
+                            $.each(child1, function(index1, value1) {
+                                var child2 = value1.getChildren();
+                                $.each(child2, function(index2, value2) {
+                                    if (value2.bSelected) {
+                                        var row = [];
+                                        var sid = value2.data.id;
+                                        var fullTitle = value2.data.title;
+                                        var name = fullTitle.split("(ID:")[0];
+                                        var fullProject = value2.data.tooltip;
+                                        var project = fullProject.split("(ID:")[0];
+                                        var pid = fullProject.split("(ID:")[1].slice(0, -1);
+                                        var value = value1.data.title;
+                                        row.push(pid);
+                                        row.push(project);
+                                        row.push(sid);
+                                        row.push(name);
+                                        row.push(value);
+                                        allRows.push('[' + row + ']');
+                                    }
+                                });
+                            });
+                            finalDict[key] = allRows;
+                        }
+                    }
                     if (node.data.pType == 'mimark') {
                         if (node.bSelected || node.hasSubSel) {
                             var allRows = [];

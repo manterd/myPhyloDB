@@ -61,7 +61,6 @@ def startLogger():
         print "Error: logger already active"
 
 
-
 def ordered_set(seq, idfun=None):
     if idfun is None:
         def idfun(x):
@@ -78,12 +77,16 @@ def ordered_set(seq, idfun=None):
 
 
 def handle_uploaded_file(f, path, name):  # move file from memory to disc
-    if not os.path.exists(path):
-        os.makedirs(path)
-    dest = "/".join([str(path), str(name)])
-    with open(str(dest), 'wb+') as destination:
-        for chunk in f.chunks():
-            destination.write(chunk)
+    try:
+        if not os.path.exists(path):
+            os.makedirs(path)
+        dest = "/".join([str(path), str(name)])
+        with open(str(dest), 'wb+') as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)
+    except Exception as e:
+        print "Error with handling file:", e
+        print "Was moving", f, "to", path, "with name", name
 
 
 def remove_list(refList):
@@ -402,7 +405,7 @@ def removeFiles(request):
 
 
 def excel_to_dict(wb, headerRow=1, nRows=1, sheet='Sheet1'):
-    ws = wb.get_sheet_by_name(sheet)
+    ws = wb[sheet]
     headerDict = dict()
     for col in xrange(1, ws.max_column+1):
         if ws.cell(row=headerRow, column=col).value:
@@ -638,8 +641,15 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
     metaDF.set_index('sampleid', inplace=True)
 
+    projectIDs = metaDF['projectid'].unique()
+    projects = Project.objects.filter(projectid__in=projectIDs)
+    projectDict = {}
+    for project in projects:
+        projectDict[project.projectid] = project.project_name
+    metaDF['project_name'] = metaDF['projectid'].map(projectDict)
+
     if finalSampleIDs:
-        metaDF = metaDF.ix[finalSampleIDs]
+        metaDF = metaDF.loc[finalSampleIDs]
 
     metaDF.dropna(axis=1, how='all', inplace=True)
     metaDF.dropna(axis=0, how='all', inplace=True)
@@ -652,7 +662,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     mat = np.asarray(mat).T.tolist()
     df = pd.DataFrame(mat, index=sampleids, columns=taxaids)
     if finalSampleIDs:
-        df = df.ix[finalSampleIDs]
+        df = df.loc[finalSampleIDs]
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
     abundDF = df.reset_index(drop=False)
@@ -981,3 +991,13 @@ def makeLabels(name, list):
     retDict['name'] = name
     retDict['categories'] = children
     return retDict
+
+
+def remove_string_from_file_name(file_path, string_to_remove, dry_run=False):
+    path, file_name = os.path.split(file_path)
+    new_name = file_name.replace(string_to_remove, '')
+    new_path = os.path.join(path, new_name)
+    if dry_run:
+        print "Would rename {} to {}".format(file_path, new_path)
+    else:
+        os.rename(file_path, new_path)

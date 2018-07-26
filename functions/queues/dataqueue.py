@@ -7,7 +7,6 @@ import threading
 import functions
 import database.views
 
-# imported for dataQueue fixes 2017/09/28
 from database.models import Reference
 
 # only needed for code mapping
@@ -49,21 +48,16 @@ def datstop(request):
             # get function from funccall, return correct page rendering
             pid = datQueueList[RID]
             thisFunc = datQueueFuncs[pid]
-            # can't populate these from here
-            projects = Reference.objects.none()
-            if request.user.is_superuser:
-                projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-            elif request.user.is_authenticated():
-                projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+
             # uploadFunc reanalyze updateFunc pybake
             functions.log(request, "QSTOP", thisFunc)
             retStuff = None
             if thisFunc == "uploadFunc":
-                retStuff = database.views.upload(request)
+                retStuff = database.views.uploadFunc(request, datStopList)
             elif thisFunc == "reanalyze":
                 retStuff = database.views.reprocess(request)
             elif thisFunc == "updateFunc":
-                retStuff = database.views.update(request)
+                retStuff = database.views.updateFunc(request, datStopList)
             elif thisFunc == "pybake":
                 retStuff = database.views.pybake(request)
 
@@ -103,6 +97,7 @@ def dataprocess(pid):
         else:
             funcName = data['funcName']
             request = data['request']
+            stopList = data['stop']
             datQueueList.pop(RID, 0)
             datActiveList[pid] = RID
             thread = threading.current_thread()
@@ -110,8 +105,9 @@ def dataprocess(pid):
             functions.log(request, "QSTART", funcName)
             if datActiveList[pid] == RID:
                 if funcName == "uploadFunc":
-                    # save that this is an upload in a dict somewhere, in stopdict, check if upload, removeproj if true
-                    datRecent[RID] = database.views.uploadFunc(request, datStopList)
+                    datRecent[RID] = database.views.uploadFunc(request, stopList)
+                if funcName == "fileUpFunc":
+                    datRecent[RID] = database.views.fileUpFunc(request, stopList)
                 if funcName == "reanalyze":
                     resp = functions.reanalyze(request, datStopList)
                     if resp is None:
@@ -121,31 +117,34 @@ def dataprocess(pid):
                         resp['error'] = "Reprocessing stopped"
                     datRecent[RID] = resp
                 if funcName == "updateFunc":
-                    datRecent[RID] = database.views.updateFunc(request, datStopList)
-                if funcName == "pybake":
-                    datRecent[RID] = database.views.pybake(request)
+                    datRecent[RID] = database.views.updateFunc(request, stopList)
+                if funcName == "geneParse":
+                    print 'starting'
+                    datRecent[RID] = functions.geneParse(request)
+                if funcName == "koParse":
+                    datRecent[RID] = functions.koParse(request)
+                if funcName == "nzParse":
+                    datRecent[RID] = functions.nzParse(request)
             datActiveList[pid] = ''
             datThreadDict.pop(RID, 0)
             datStopDict.pop(RID, 0)  # clean this up when done or stopped, needs to be here since funcCall can end early
             functions.log(request, "QFINISH", funcName)
-        sleep(1)
+            sleep(1)    # TODO dos vuln? moved to after longer processes
 
 
 def datfuncCall(request):
     global datActiveList, datQueueList, datQueueFuncs, datStopList, datStopDict, datStatDict, datQList
     RID = request.POST['RID']
-    request.POST['stopList'] = datStopList
     funcName = request.POST['funcName']
     datQueueList[RID] = RID  # add to queuelist, remove when processed or stopped
     datQueueFuncs[RID] = funcName
-    qDict = {'RID': RID, 'funcName': funcName, 'request': request}
+    qDict = {'RID': RID, 'funcName': funcName, 'request': request, 'stop': datStopList}
     datQList.append(qDict)
     datQ.put(qDict, True)
     datStatDict[RID] = int(datQ.qsize())
 
     # print log info, need to write this to a file somewhere
     functions.log(request, "QADD", funcName)
-
     while True:
         try:
             results = datRecent[RID]
@@ -169,6 +168,7 @@ def datstat(RID):
         else:
             return -1024
     except Exception:
+        # if not in stopDict (ie not called to stop) queuepos is current (minus number of pre stops)
         return datStatDict[RID] - datStopped
 
 

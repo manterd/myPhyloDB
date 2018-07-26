@@ -3,10 +3,8 @@ from django.contrib import admin
 
 from database import views
 
-
 admin.site.site_url = '/myPhyloDB/'
 admin.autodiscover()
-
 
 urlpatterns = [
     # allauth Urls
@@ -39,8 +37,11 @@ urlpatterns = [
     url(r'^myPhyloDB/usrFiles/$', views.usrFiles, name='usrFiles'),
     url(r'^myPhyloDB/getProjectFiles/$', views.getProjectFiles, name='getProjectFiles'),
     url(r'^myPhyloDB/remProjectFiles/$', views.remProjectFiles, name='remProjectFiles'),
+    url(r'^myPhyloDB/removeUploads/$', views.removeUploads, name='removeUploads'),
     url(r'^myPhyloDB/addPerms/$', views.addPerms, name='addPerms'),
     url(r'^myPhyloDB/remPerms/$', views.remPerms, name='remPerms'),
+    url(r'^myPhyloDB/updateFilePerms/$', views.updateFilePerms, name='updateFilePerms'),
+
 
     url(r'^myPhyloDB/accounts/profile/$', views.profile, name='profile'),
     url(r'^myPhyloDB/accounts/changeuser/$', views.changeuser, name='changeuser'),

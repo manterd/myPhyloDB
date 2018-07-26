@@ -24,8 +24,80 @@
         var RID = 0;
         var method = "{{ method }}";
         var loading = true;
+        var selectedSamples = null;
+        var sampIDs = "";
 
         $(function () {
+            // actual markers for map will be generated from a string, turn string into dictionary
+            // loop through dictionary by key (lat-lon pair), create maker for each
+            // each entry will have a string as a value, split based on ';'
+            // then split each subsection off ':'
+            // first sub-sub entry will be projectname, the rest are sample ids
+            // populate temptree on select based on sample ids with projectname on top <- this seems cluttered
+            // markers only display projectnames, use sample ids for populating tree
+            // as in, when selecting a marker, get its sampleids
+            var map = new google.maps.Map(
+                document.getElementById('map'), {zoom: 3, center: {lat: 37.09024, lng: -95.712891}});
+
+            var markers = [];
+
+            var locationBasedSampleDict = {{ locationBasedSampleDict | safe }};
+            var locationKeys = Object.keys(locationBasedSampleDict);
+            for (var c=0; c<locationKeys.length; c++){
+                var myKey = locationKeys[c];
+                var myCoords= myKey.split(':');
+                var myLat = parseFloat(myCoords[0]);
+                var myLon = parseFloat(myCoords[1]);
+                var myLocation = {lat: myLat, lng: myLon};
+                // now get projects and samples
+                // for now, label = projectnames, title (mouseover) = samplenames
+                var myVals = locationBasedSampleDict[myKey].split(';');
+                // value is ; seperable string, each split contains sampid:sampname:projectname
+                var projectNameCountDict =  new Proxy({}, {
+                    get: function(object, property) {
+                        return object.hasOwnProperty(property) ? object[property] : 0;
+                    }
+                });
+                var sampleCount = 0;
+                var sampIDString = "";
+                for (var i=0; i<myVals.length; i++){
+                    var mySubset = myVals[i].split(':');
+                    projectNameCountDict[mySubset[2]]++;
+                    sampIDString += mySubset[0] + ":";
+                    sampleCount++;
+                }
+                var projectNames = "";
+                var projectNameCountKeys = Object.keys(projectNameCountDict);
+                for (var j=0; j<projectNameCountKeys.length; j++){
+                    projectNames += projectNameCountKeys[j] + ":" + projectNameCountDict[projectNameCountKeys[j]] + "\n";
+                }
+                // put it all on the map
+                // change id:c into id:string_of_all_sampleids so we can retrieve that data on click
+                var myMarker = new google.maps.Marker({position: myLocation, map: map, title: projectNames, label: ""+sampleCount, id: sampIDString});
+                markers.push(myMarker);
+                // this is strange looking by design, javascript closures are a thing, need to make sure the right values are in scope for this listener
+                google.maps.event.addListener(myMarker, 'click', (function(marker) {
+                    return function() {
+                        map.panTo(marker.getPosition());
+                        sampIDs = marker.id;
+                        $("#markTree").dynatree("option", "initAjax", {
+                            url: "/myPhyloDB/getLocationSamplesTree/",
+                            dataType: "jsonp",
+                             data: {
+                                'sampleIDs': sampIDs
+                             }
+                        });
+                        $("#markTree").dynatree("getTree").reload();
+                        // they clicked on the marker! populate the tree!
+                        // tree can be populated in javascript, we have all the data we need already (sampleid, name, project)
+                        //var mySampIDs = marker.id.split(':'); // remember, last entry will be blank
+                        //var curSampID;
+                        //var selTree = $.map($("#tree"));
+                        // call reload function for secondary selection tree, send sampleid list
+                    }
+                })(myMarker));
+
+            }
 
             table1 = $('#projectTable').DataTable({
                 "dom": 'B<"toolbar">lfrtip',
@@ -301,10 +373,48 @@
                         if (node.data.wip) {
                             node.data.addClass = "dynatree-highlight";
                         }
-                  });
+                    });
                 },
                 onClick: function () {
                     $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
+                }
+            });
+
+            $("#markTree").dynatree({
+                checkbox: true,
+                selectMode: 3,
+                initAjax: {
+                    url: "/myPhyloDB/getLocationSamplesTree/",
+                    dataType: "jsonp",
+                    data: {'sampleIDs': sampIDs}
+                },
+                onSelect: function (select, node) {
+                    // insert select mirroring logic here
+                    // main problem I can see here, base selection tree is on lazy load
+                    // so I guess get the project/parent nodes, expand those on the main tree (triggering lazy load?)
+                    // after that, we can select the new child nodes with matching sampleids (ALWAYS ID, names are NOT unique)
+                    // get selection status from tree? nah, just make it one way for now (click vs select? is it a toggle?)
+                    selectedSamples = $.map($("#markTree").dynatree("getSelectedNodes"), function(node) {
+                        if (node.getLevel() == 3) {
+                            var parID = node.parent.data.id;
+                            var selID = node.data.id;
+                            // goto parID level 2 on main seltree, then its child with id selID, then run select(true)
+                            $("#tree").dynatree("getRoot").visit(function (node) {
+                                if (node.data.id == parID){
+                                    node.expand(true);
+                                }
+                            });
+                            // these are split to make sure lazy load works
+                            setTimeout(function(){
+                                $("#tree").dynatree("getRoot").visit(function (node) {
+                                if (node.data.id == selID){
+                                    node.select(true);
+                                }
+                            });
+                            }, 100);
+
+                        }
+                    });
                 }
             });
 
@@ -313,6 +423,12 @@
                     node.select(false);
                 });
                 updateTables();
+            });
+
+            $("#clearMarks").click(function () {
+                $("#markTree").dynatree("getRoot").visit(function (node) {
+                    node.select(false);
+                });
             });
 
             $("#upload").click(function () {
@@ -444,6 +560,7 @@
         }
 
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?callback=myMap"></script>
 {% endblock javascript %}
 
 {% block my_content %}
@@ -991,5 +1108,19 @@
             </table>
         </div>
     </div>
+    <br><br>
+    <div id="map" style="width:400px;height:400px;float:left"></div>
+
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <th>Samples from map:<br><a href="#" id="clearMarks" style="font-size: 12px;">-Deselect all-</a></th>
+        </tr>
+        <tr>
+            <td style="padding-right: 10px; vertical-align: top">
+                <div id="markTree" style="float:right"></div>
+            </td>
+        </tr>
+    </table>
+
     <br><br>
 {% endblock my_content %}

@@ -109,7 +109,7 @@
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
-                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                    if ((node.data.pType == 'project') || (node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
                             titleArray.push(title);
@@ -156,7 +156,7 @@
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
-                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                    if ((node.data.pType == 'project') || (node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
                             titleArray.push(title);
@@ -185,7 +185,7 @@
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
-                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                    if ((node.data.pType == 'project') || (node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
                             titleArray.push(title);
@@ -246,7 +246,7 @@
 
             for (var i = 0; i < nodesCat.length; i++) {
                 if (nodesCat[i].getLevel() == 5) {
-                    if ((nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
+                    if ((nodesCat[i].data.table == 'project') || (nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
                         key = nodesCat[i].data.field;
                         value = nodesCat[i].data.value;
                         id = nodesCat[i].data.id;
@@ -441,7 +441,7 @@
             var titleArray = [];
             $("#tree_metaCat").dynatree("getRoot").visit(function (node) {
                 if (node.getLevel() == 3) {
-                    if ((node.data.pType == 'mimark') || (node.data.pType == 'user')) {
+                    if ((node.data.pType == 'project') || (node.data.pType == 'mimark') || (node.data.pType == 'user')) {
                         if (node.bSelected || node.hasSubSel) {
                             var title = node.data.title;
                             titleArray.push(title);

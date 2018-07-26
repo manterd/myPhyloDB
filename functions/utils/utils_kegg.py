@@ -1341,7 +1341,7 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
             bytag_q3 = sumDF.groupby(myID)[myVar].quantile(0.75)
             bytag_q1 = sumDF.groupby(myID)[myVar].quantile(0.25)
             bytag = bytag_q3 - bytag_q1
-            bytag.sort(axis=0, ascending=False, inplace=True)
+            bytag.sort_values(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 3:
@@ -1350,28 +1350,28 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
             bytag_sd = sumDF.groupby(myID)[myVar].std()
             bytag_mean = sumDF.groupby(myID)[myVar].mean()
             bytag = bytag_sd / bytag_mean
-            bytag.sort(axis=0, ascending=False, inplace=True)
+            bytag.sort_values(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 4:
             sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
             sumDF = sum.reset_index(drop=False)
             bytag = sumDF.groupby(myID)[myVar].std()
-            bytag.sort(axis=0, ascending=False, inplace=True)
+            bytag.sort_values(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 5:
             sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
             sumDF = sum.reset_index(drop=False)
             bytag = sumDF.groupby(myID)[myVar].mean()
-            bytag.sort(axis=0, ascending=False, inplace=True)
+            bytag.sort_values(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
         elif filterMeth == 6:
             sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
             sumDF = sum.reset_index(drop=False)
             bytag = sumDF.groupby(myID)[myVar].median()
-            bytag.sort(axis=0, ascending=False, inplace=True)
+            bytag.sort_values(axis=0, ascending=False, inplace=True)
             tags = bytag[:threshold].index.tolist()
             savedDF = savedDF[savedDF[myID].isin(tags)]
 

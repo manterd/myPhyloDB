@@ -1,5 +1,6 @@
 from datetime import datetime
 from django.http import HttpResponse
+from django.shortcuts import render
 import pandas as pd
 import json
 import gzip
@@ -11,6 +12,9 @@ from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
     nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry, \
     PICRUSt
 
+from database.forms import UploadForm6, UploadForm7, UploadForm8
+
+import functions
 
 stage = ''
 perc = 0
@@ -18,17 +22,41 @@ pd.set_option('display.max_colwidth', -1)
 
 
 def statusPyBake(request):
-    # add RID to differentiate between running and queued
-    global base, perc
+    global stage
     if request.is_ajax():
-        myDict = {'stage': stage}
+        RID = request.GET['all']
+        queuePos = functions.datstat(RID)
+
+        myDict = {}
+        if queuePos == 0:
+            myDict['stage'] = stage
+        else:
+            if queuePos == -1024:  # need to distinguish between active and inactive PID
+                myDict['stage'] = "Stopping...please be patient while we restore the database!"   # jump
+            elif queuePos == -512:  # for inactive processes, problem is when process DOES get stopped, queuepos
+                                    #  switches to this and THEN loops anyways
+                                    myDict['stage'] = "Removing request from queue..."
+                # need front end to catch this... need to get datfuncall to its page too (specific to function called)
+            else:
+                myDict['stage'] = "In queue for processing, "+str(queuePos)+" requests in front of you"
+
         json_data = json.dumps(myDict)
         return HttpResponse(json_data, content_type='application/json')
 
 
-def geneParse(file1, file2, file3):
+def geneParse(request):
     global stage
     time1 = datetime.now()
+
+    # get current number of unclassified seqs
+    numUnclass = OTU_99.objects.filter(otuName__startswith='isv').count()
+
+    form6 = UploadForm6(request.POST, request.FILES)
+
+    if form6.is_valid():
+        file1 = request.FILES['taxonomy']
+        file2 = request.FILES['precalc_16S']
+        file3 = request.FILES['precalc_KEGG']
 
     # remove all PICRUSt data
     PICRUSt.objects.using('picrust').all().delete()
@@ -130,13 +158,21 @@ def geneParse(file1, file2, file3):
     time2 = datetime.now()
     delta = time2 - time1
     print 'Total time to update PICRUSt database: ', delta
-    return None
+    return render(
+        request,
+        'pybake.html',
+        {'form6': UploadForm6,
+         'form7': UploadForm7,
+         'form8': UploadForm8}
+    )
 
 
-def koParse(file):
+def koParse(request):
     global stage, time1
     stage = 'Parsing KEGG pathways...'
     time1 = datetime.now()
+
+    file = request.FILES['ko_htext']
 
     # remove all KEGG data
     ko_lvl1.objects.using('picrust').all().delete()
@@ -199,13 +235,21 @@ def koParse(file):
     time2 = datetime.now()
     delta = time2 - time1
     print 'Total time to update KEGG database: ', delta
-    return None
+    return render(
+        request,
+        'pybake.html',
+        {'form6': UploadForm6,
+         'form7': UploadForm7,
+         'form8': UploadForm8}
+    )
 
 
-def nzParse(file):
+def nzParse(request):
     global stage, time1
     stage = 'Parsing KEGG enzyme...'
     time1 = datetime.now()
+
+    file = request.FILES['nz_htext']
 
     # remove all KEGG data
     nz_lvl1.objects.using('picrust').all().delete()
@@ -282,5 +326,12 @@ def nzParse(file):
     time2 = datetime.now()
     delta = time2 - time1
     print 'Total time to update KEGG database: ', delta
-    return None
+    return render(
+        request,
+        'pybake.html',
+        {'form6': UploadForm6,
+         'form7': UploadForm7,
+         'form8': UploadForm8}
+    )
+
 

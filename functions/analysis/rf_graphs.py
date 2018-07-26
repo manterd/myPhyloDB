@@ -214,8 +214,8 @@ def getRF(request, stops, RID, PID):
                     print r('library(e1071)')
 
                 # Wrangle data into R
-                rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
-                rankNameDF.sort(columns='rank_id', inplace=True)
+                rankNameDF = finalDF.drop_duplicates(subset='rank_id', keep='last')
+                rankNameDF.sort_values('rank_id', inplace=True)
                 if treeType == 3 and nzAll >= 5:
                     rankNameDF.loc[:, 'name_id'] = rankNameDF['rank_name'].str.split(': ').str[0]
                 else:
@@ -234,7 +234,7 @@ def getRF(request, stops, RID, PID):
                     metaDF[i] = metaDF[i].str.replace('(', '.')
                     metaDF[i] = metaDF[i].str.replace(')', '.')
 
-                metaDF.sort('sampleid', inplace=True)
+                metaDF.sort_values('sampleid', inplace=True)
                 metaDF.set_index('sampleid', inplace=True)
                 r.assign("meta_full", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())

@@ -5,7 +5,8 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.signals import user_logged_in
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Value
+from django.db.models.functions import Concat
 from django.http import *
 from django.shortcuts import render
 import fileinput
@@ -17,32 +18,33 @@ import os
 import pandas as pd
 import pickle
 import shutil
+import subprocess
 import tarfile
 import time
 import ujson
 from uuid import uuid4
 import zipfile
 import fnmatch
-
+import math
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
-    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserUpdateForm
+    UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserUpdateForm, BulkForm
 
 from database.models import Project, Reference, Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, PICRUSt, UserProfile, \
     ko_lvl1, ko_lvl2, ko_lvl3, ko_entry, \
     nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry, \
-    addQueue, getQueue, subQueue
+    addQueue, getQueue, subQueue, koOtuList
 
 import functions
 
 from django.contrib.admin.models import LogEntry
 
 
-
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
+pro = None
 
 
 def home(request):
@@ -50,6 +52,70 @@ def home(request):
     return render(
         request,
         'home.html'
+    )
+
+
+@login_required(login_url='/myPhyloDB/accounts/login/')
+def files(request):
+    functions.log(request, "PAGE", "FILES")
+
+    # TODO do not send script upload section to page if not admin
+    # just send a flag if admin, default to not displaying script files uploader
+    # script files are unusable unless uploaded by admin for security purposes
+
+    return render(
+        request,
+        'files.html',
+        {'BulkForm': BulkForm,
+         'form2': UploadForm2,
+         'error': ""}
+    )
+
+
+def fileUpFunc(request, stopList):
+    errorText = ""
+    RID = ''    # TODO stopList and RID NYI
+    try:
+        RID = request.POST['RID']
+    except:
+        pass
+    date = datetime.date.today().isoformat()
+    username = str(request.user.username)
+    fileForm = BulkForm(request.POST, request.FILES)
+    if fileForm.is_valid():
+
+        try:
+
+            uploadDest = str(os.getcwd()) + "/user_uploads/" + str(username) + "/" + date
+
+            if not os.path.exists(uploadDest):
+                os.makedirs(uploadDest)
+
+            # when adding new file types, just add name used in html (and for directory) to subDirList
+            subDirList = 'meta', 'shared', 'taxa', 'sequence', 'script', \
+                         'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq'
+            subFilesDict = {}
+            for subDir in subDirList:
+                subFilesDict[subDir] = request.FILES.getlist(str(subDir) + "files")
+                subDest = os.path.join(uploadDest, subDir)
+                if len(subFilesDict[subDir]) > 0:
+                    if not os.path.exists(subDest):
+                        os.makedirs(subDest)
+                    try:
+                        for each_file in subFilesDict[subDir]:
+                            functions.handle_uploaded_file(each_file, subDest, each_file.name)
+                    except Exception as upfileError:
+                        errorText = "Error: " + str(upfileError)
+        except Exception as genericUploadError:
+            errorText = "Error: " + str(genericUploadError)
+    else:
+        errorText = "Error: invalid form"
+
+    return render(
+        request,
+        'files.html',
+        {'BulkForm': BulkForm,
+         'error': errorText}
     )
 
 
@@ -120,7 +186,7 @@ def upStop(request):  # upStop is not cleaning up uploaded files (directory, sel
     # cleanup mid upload project!
     functions.log(request, "STOP", "UPLOAD")
 
-    print "Cleaning up upload!"
+    # print "Cleaning up upload!"
 
     projects = Reference.objects.none()
     if request.user.is_superuser:
@@ -139,9 +205,7 @@ def upStop(request):  # upStop is not cleaning up uploaded files (directory, sel
 
 
 def upErr(msg, request, dest, sid):
-    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-    logging.exception(myDate)
+    logException()
     functions.log(request, "ERROR", "UPLOAD")
     try:
         functions.remove_proj(dest)
@@ -149,846 +213,927 @@ def upErr(msg, request, dest, sid):
     except Exception as e:
         print "Error during upload: ", e
 
-    if request.user.is_superuser:
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-    elif request.user.is_authenticated():
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-    else:
+    try:
+
+        if request.user.is_superuser:
+            projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+        elif request.user.is_authenticated():
+            projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+        else:
+            projects = None
+
+    except:
         projects = None
+
     return render(
         request,
         'upload.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'upErr': msg
+         'error': msg
          }
     )
 
 
-def uploadFunc(request, stopList):
-    ### create a savepoint
-    sid = transaction.savepoint()
-    curUser = User.objects.get(username=request.user.username)
+# need to clean this up, make like 6 helper functions, I don't want to add another 1k line function to the codebase
+# needs dynamic input support, ie make it as simple as possible to add another data type to the upload chain
+def cleanInput(key, data, text, has, good):
 
-    ### start of main upload function
-    projects = Reference.objects.none()
-    p_uuid = ""
-    if request.method == 'POST' and 'Upload' in request.POST:
-        start = datetime.datetime.now()
-        form1 = UploadForm1(request.POST, request.FILES)
-        source = str(request.POST['source'])
-        platform = str(request.POST['platform'])
+    curText = str(data[key])
+    found = False
+    if curText != "None":
+        curText = ""
+        curSection = 1
+        for section in data[key]:
+            if curSection < len(data[key]):
+                curText += str(section) + ","
+            else:
+                curText += str(section)
+            curSection += 1
+        found = True
 
-        userID = str(request.user.id)
-        processors = int(request.POST['processors'])
-        RID = request.POST['RID']
-        PID = 0  # change if adding additional data threads
+    # verify no malicious characters are in input, verify input exists, get string form to hand back
+    if curText.find("..") != -1:
+        good = False
+
+    text[key] = curText
+    has[key] = found
+
+    return text, has, good
+
+
+def checkFilePresence(source, has, ref):
+    missingFiles = False
+    filesNeeded = ""
+
+    if not has['meta']:  # we always need a meta file
+        missingFiles = True
+        filesNeeded += "Meta; "
+
+    if source == 'mothur':
+        if not has['shared']:  # we always need a meta file
+            missingFiles = True
+            filesNeeded += "Shared; "
+        raw = False
+        if ref == 'yes':
+            if not has['sequence']:
+                missingFiles = True
+                filesNeeded += "Sequence; "
+        else:
+            if not has['taxa']:
+                missingFiles = True
+                filesNeeded += "Taxa; "
+    elif source == '454_sff':
+        raw = True
+
+        if not has['sff']:
+            missingFiles = True
+            filesNeeded += "SFF; "
+        if not has['oligos']:
+            missingFiles = True
+            filesNeeded += "Oligos; "
+        if not has['files']:
+            missingFiles = True
+            filesNeeded += "Files; "
+        if not has['script']:
+            missingFiles = True
+            filesNeeded += "Script; "
+
+    elif source == '454_fastq':
+        raw = True
+
+        if not has['fna']:
+            missingFiles = True
+            filesNeeded += "FNA; "
+        if not has['qual']:
+            missingFiles = True
+            filesNeeded += "Qual; "
+        if not has['oligos']:
+            missingFiles = True
+            filesNeeded += "Oligos; "
+        if not has['script']:
+            missingFiles = True
+            filesNeeded += "Script; "
+
+    elif source == 'miseq':
+        raw = True
+
+        if not has['contig']:
+            missingFiles = True
+            filesNeeded += "Contig; "
+        if not has['fastq']:
+            missingFiles = True
+            filesNeeded += "Fastq; "
+        if not has['script']:
+            missingFiles = True
+            filesNeeded += "Script; "
+
+    else:
+        # they sent a value we weren't expecting, cancel!!!
+        raw = False
+        missingFiles = True
+        filesNeeded += "Upload format not supported\t"
+    return missingFiles, filesNeeded, raw
+
+
+def copyFromUpload(source, dest, name):
+    # use shutil.copy to get file from source directory and copy to dest
+    # make sure source and dest are both valid locations (no '..' charsets, make needed directories)
+    # as in, this DOES NOT clean inputs, that's what cleanInput function is for
+    try:
+        if not os.path.exists(dest):
+            try:
+                os.makedirs(dest)
+            except Exception as errr:
+                print "Error with making new", name, "directory:", errr
+        trueDest = os.path.join(dest, name)
+        # copy file to working project directory
+        shutil.copy2(source, trueDest)
+    except Exception as er:
+        print "Error with", name, "shutil:", er
+
+
+def cancelUploadEarly(request, projects, reason):
+    functions.log(request, "UP_FAIL", reason)
+    return render(
+        request,
+        'upload.html',
+        {'projects': projects,
+         'form1': UploadForm1,
+         'form2': UploadForm2,
+         'error': reason}
+    )
+
+
+def checkCompsGetNames(compList, user, key):
+    keyName = ""
+    selcomps = compList.split('/')
+    selpart = ""
+    curComp = 0
+    lastComp = len(selcomps) - 1
+    if len(selcomps) > 3:
+        print user.username, "attempted to send invalid node data"  # log this in admin?
+        # this is legitimately the most sketchy thing someone can do on this site atm, why its being checked for
+        return "Illegal tree size", "error"
+    myProf = UserProfile.objects.get(user=user)
+    myPerms = myProf.hasPermsFrom.split(';')
+    for comp in selcomps:
+        if curComp == 0:
+            if key == 'script':
+                if comp != 'admin':
+                    return "Illegal file access", "error"
+            else:
+                # can bypass with superuser, or by whitelist from permissions/user_profile system
+                if comp != user.username and comp != "None":
+                    # print user.username, "attempted to access files outside of their permissions"
+                    if user.is_superuser or comp in myPerms:    # myPerms being the list of UserProfile perms granted
+                        # print "Passed permissions check though, moving on"
+                        pass    # TODO invert this, remember !OR -> AND
+                    # elif permission check
+                    else:
+                        return "Illegal file access", "error"
+                        # check comp, should be current user or a user current has permissions for
+                        # should return an error and log hacking attempt if otherwise
+
+        if curComp == lastComp:
+            selpart += key + "/" + comp
+            keyName = comp
+        else:
+            selpart += comp + "/"
+        curComp += 1
+
+    selectedPath = os.path.join("user_uploads", selpart)
+    return selectedPath, keyName
+
+
+def getSelectedPath(key, textDict, user):
+    # this function takes a key (type of file), textDict (actual strings given by user)
+    # also given user to check super status and username (could query for profile later)
+    # take given file type and text input, generate actual path from user_uploads to file, as well as filenames
+    # return list of paths and names
+
+    # need to do this tree length and first level match check with ALL file types involved
+    paths = []
+    filenames = []
+
+    for filepath in textDict[key].split(','):
+        retPath, retName = checkCompsGetNames(filepath, user, key)
+        if retName == "error":
+            print "Error!", retPath, "during checkComps. case:", filepath
+            return retPath, "error"
+        paths.append(retPath)
+        filenames.append(retName)
+        # store this in a list
+        # return the full list of selected files
+    return paths, filenames
+
+
+def logException():
+    # get debug/crash info and send it to error_log
+    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, )
+    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+    logging.exception(myDate)
+
+
+def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with this method, need different fasta?
+    # make taxa file for upload1 style using fasta data
+    print "Handling mothur reference data"
+    mothurdest = 'mothur/temp'
+    # wipe old temp mothur files, recreate directory for new process
+    if os.path.exists(mothurdest):
+        shutil.rmtree(mothurdest)
+
+    # write dada file to mothur
+    try:
+        if not os.path.exists(mothurdest):
+            try:
+                os.makedirs(mothurdest)
+            except Exception as errr:
+                print "Error with making new sequence directory:", errr
+                # should return and cancel upload if this exception occurs
+                return errr
+        trueDest = os.path.join(mothurdest, 'dada.fasta')
+        # copy file to working project directory
+        shutil.copy2(selDict['sequence'], trueDest)
+    except Exception as er:
+        return "Error during reference handling: " + str(er)
+
+    copyFromUpload(selDict['meta'], dest, nameDict['meta'])
+    cmd = ''
+    if os.name == 'nt':
+        if request.POST['ref_var'] == 'V4':
+            cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\reference\\dada2\\gg_13_5_99.V4.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
+        if request.POST['ref_var'] == 'V34':
+            cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\reference\\dada2\\gg_13_5_99.V3_V4.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
+        if request.POST['ref_var'] == 'V13':
+            cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\reference\\dada2\\gg_13_5_99.V1_V3.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
+    else:
+        if request.POST['ref_var'] == 'V4':
+            cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/reference/dada2/gg_13_5_99.V4.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
+        if request.POST['ref_var'] == 'V34':
+            cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/reference/dada2/gg_13_5_99.V3_V4.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
+        if request.POST['ref_var'] == 'V13':
+            cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/reference/dada2/gg_13_5_99.V1_V3.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
+
+    pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           bufsize=0)   # this should run mothur, does subprocess ever get started though?
+    print "Made subprocess, reading lines"
+    while True:
+        line = pro.stdout.readline()    # does this work?
+        print "Line:", line
+        if line != '':
+            print line  # actually printing this? TODO send to user instead of spamming console. ALSO this doesn't work?
+        else:
+            break
+    print "Read lines"
+
+    f = open('mothur/temp/dada.cons.taxonomy', 'w')
+    f.write("OTU\tSeq\tTaxonomy\n")
+    pairDict = {}
+
+    inFile1 = open('mothur/temp/pairs.fasta', 'r')
+    counter = 1
+    key = ''
+    for line in inFile1:
+        if counter == 1:
+            key = line.rstrip().replace('>', '')
+        if counter == 3:
+            value = line.rstrip().replace('>', '')
+            pairDict[key] = value
+        if counter == 5:
+            counter = 0
+        counter += 1
+    inFile1.close()
+
+    inFile2 = open('mothur/temp/dada.fasta', 'r')
+    counter = 1
+    for line in inFile2:
+        if counter == 1:
+            key = line.rstrip().replace('>', '')
+        if counter == 2:
+            seq = line.rstrip()
+            if key in pairDict:
+                f.write(key)
+                f.write('\t')
+                f.write(seq)
+                f.write('\t')
+                f.write(pairDict[key])
+                f.write('\n')
+            else:
+                f.write(key)
+                f.write('\t')
+                f.write(seq)
+                f.write('\t')
+                f.write(
+                    'k__unclassified;p__unclassified;c__unclassified;o__unclassified;f__unclassified;g__unclassified;s__unclassified;otu__unclassified;')
+                f.write('\n')
+            counter = 0
+        counter += 1
+
+    inFile2.close()
+    f.close()
+
+    shutil.copy('mothur/temp/pairs.fasta', '% s/dada.vsearch_pairs.txt' % dest)
+    shutil.copy('mothur/temp/dada.fasta', '% s/dada.rep_seqs.fasta' % dest)
+    shutil.copy('mothur/temp/dada.cons.taxonomy', '% s/final.cons.taxonomy' % dest)
+    return open('% s/final.cons.taxonomy' % dest)
+
+
+def uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID):
+    try:
+        if request.POST['ref_data'] == 'yes':  # sequence plus R script
+            file3 = handleMothurRefData(request, nameDict, selDict, dest)
+            if type(file3) is str:
+                return file3   # not getting samples from this method atm
+        else:  # directly added taxa file
+            # file3 = request.FILES['docfile3']
+            taxaname = nameDict['taxa']
+            copyFromUpload(selDict['taxa'], dest, taxaname)
+            file3 = open(os.path.join(dest, taxaname), 'r')
+    except Exception as e:
+        return "Problem with taxa file: " + str(e)
+
+    try:
+        functions.parse_taxonomy(file3, stopList, PID, RID)
+        file3 = file3.name
+    except Exception:
+        return "Failed parsing your taxonomy file:" + nameDict['taxa']
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    try:
+        copyFromUpload(selDict['shared'], dest, nameDict['shared'])
+        file4 = open(os.path.join(dest, nameDict['shared']), 'r')
+    except Exception:
+        return "Cannot open shared file"
+
+    try:
+        functions.parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID)  # taxafile vs file3
+    except Exception:
+        return "Failed parsing your shared file:" + str(file4.name)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    return "None"
+
+
+def uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors):
+    mothurdest = 'mothur/temp'
+
+    if os.path.exists(mothurdest):
+        shutil.rmtree(mothurdest)
+
+    if not os.path.exists(mothurdest):
+        os.makedirs(mothurdest)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    # unzip/tar uploaded files. Needs to work recursively, pulling everything back to the top
+    file_list = selDict['sff']
+    name_list = nameDict['sff']
+    # entries from these two dicts are lists, order SHOULD be synced via map (their lists were populated simultaneously)
+    for filepath, name in map(None, file_list, name_list):
+        copyFromUpload(filepath, mothurdest, name)
+        try:
+            tar = tarfile.open(os.path.join(mothurdest, name))
+            tar.extractall(path=mothurdest)
+            tar.close()
+        except Exception:
+            try:
+                zip = zipfile.ZipFile(os.path.join(mothurdest, name))
+                zip.extractall(mothurdest)
+                zip.close()
+            except Exception:
+                pass
+                # file is unlikely to be an archive, as unzip and untar both failed
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    file_list = selDict['oligos']
+    name_list = nameDict['oligos']
+    # entries from these two dicts are lists, order SHOULD be synced, need to verify (so far works)
+    for filepath, name in map(None, file_list, name_list):
+        copyFromUpload(filepath, mothurdest, name)
+        try:
+            tar = tarfile.open(os.path.join(mothurdest, name))
+            tar.extractall(path=mothurdest)
+            tar.close()
+        except Exception:
+            try:
+                zip = zipfile.ZipFile(os.path.join(mothurdest, name))
+                zip.extractall(mothurdest)
+                zip.close()
+            except Exception:
+                pass
+                # file is unlikely to be an archive, as unzip and untar both failed
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    copyFromUpload(selDict['files'], mothurdest, 'temp.txt')
+    copyFromUpload(selDict['files'], dest, 'temp.txt')  # backup to upload folder for downloading later
+    bubbleFiles(mothurdest)
+
+    # function to check if mothur and metafiles samples match
+    error = checkSamples(selDict['meta'], '454_sff', 'mothur/temp/temp.txt')
+
+    if error != "":
+        return "Error during checkSamples: " + str(error)
+
+    batch = 'mothur.batch'
+    batchPath = selDict['script']
+
+    avail_proc = mp.cpu_count()
+    use_proc = min(avail_proc, processors)
+    actual_proc = 'processors=' + str(use_proc)
+
+    copyFromUpload(batchPath, mothurdest, batch)
+
+    for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
+        line.replace("processors=X", actual_proc)
+
+    copyFromUpload(batchPath, dest, batch)  # copy into project dest for archive/download purposes
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    # check queue for mothur availability, then run or wait
+    # if mothur is available, run it
+    # else sleep, loop back to check again
+    addQueue()
+    while getQueue() > 1:
+        time.sleep(5)
+    try:
+        functions.mothur(dest, "454_sff")
+    except Exception as er:
+        logException()
+        return "mothur batch file:", str(nameDict['script']) + str(er)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    subQueue()
+
+    try:
+        with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+            functions.parse_taxonomy(file3, stopList, PID, RID)
+    except Exception as er:
+        logException()
+        return "parsing your taxonomy file: final.cons.taxonomy" + str(er)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    try:
+        with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+            with open('% s/final.tx.shared' % dest, 'rb') as file4:
+                functions.parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID)
+
+    except Exception as er:
+        logException()
+        return "parsing your shared file: final.tx.shared" + str(er)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    return "None"
+
+
+def uploadWithFastq(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors):
+    mothurdest = 'mothur/temp'
+
+    if os.path.exists(mothurdest):
+        shutil.rmtree(mothurdest)
+
+    if not os.path.exists(mothurdest):
+        os.makedirs(mothurdest)
+
+    file_list = selDict['fna']
+    tempList = prepMultiFiles(file_list, dest, mothurdest, 'temp.fasta')
+    inputList = "-".join(tempList)
+    if os.name == 'nt':
+        os.system(
+            '"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
+    else:
+        os.system(
+            "mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    file_list = selDict['qual']
+    tempList = prepMultiFiles(file_list, dest, mothurdest, 'temp.qual')
+    inputList = "-".join(tempList)
+    if os.name == 'nt':
+        os.system(
+            '"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
+    else:
+        os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    oligo = 'temp.oligos'
+    file6 = selDict['oligos'][0]    # remove list component when not a list? oligo vs oligos though
+    copyFromUpload(file6, mothurdest, oligo)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    # TODO split single and multi oligos formats
+    copyFromUpload(file6, dest, nameDict['oligos'][0])
+    # function to check if mothur and metafiles samples match
+    error = checkSamples(selDict['meta'], "454_fastq", 'mothur/temp/temp.oligos')
+
+    if error != "":
+        return "Error during sample check: " + str(error)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    batch = 'mothur.batch'
+    file7 = selDict['script']
+
+    avail_proc = mp.cpu_count()
+    use_proc = min(avail_proc, processors)
+    actual_proc = 'processors=' + str(use_proc)
+
+    copyFromUpload(file7, mothurdest, batch)
+    copyFromUpload(file7, dest, batch)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
+        line.replace("processors=X", actual_proc)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    try:
+        functions.mothur(dest, "454_fastq")
+
+    except Exception as er:
+        logException()
+        return "Encountered problem while running mothur:" + str(er)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    try:
+        with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+            functions.parse_taxonomy(file3, stopList, PID, RID)
+    except Exception as er:
+        logException()
+        return "Encountered problem while parsing taxonomy:" + str(er)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    try:
+        with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+            with open('% s/final.tx.shared' % dest, 'rb') as file4:
+                functions.parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID)
+    except Exception as er:
+        logException()
+        return "Encountered problem while parsing shared:" + str(er)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    return "None"
+
+
+def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors, platform):
+    mothurdest = 'mothur/temp'
+
+    if os.path.exists(mothurdest):
+        shutil.rmtree(mothurdest)
+
+    if not os.path.exists(mothurdest):
+        os.makedirs(mothurdest)
+
+    fastq = 'temp.files'
+    file13 = selDict['contig']   # contig
+    copyFromUpload(file13, mothurdest, fastq)
+
+    # function to check if mothur and metafiles samples match
+    error = checkSamples(selDict['meta'], "miseq", 'mothur/temp/temp.files')
+
+    if error != "":
+        return "Error during sample check: " + str(error)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    # functions.handle_uploaded_file(file13, dest, fastq)
+    copyFromUpload(file13, dest, fastq)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    # file_list = request.FILES.getlist('fastq_files')  # fastq unzipper, make recursive pool (do NOT unzip more)
+    file_list = selDict['fastq']
+    name_list = nameDict['fastq']
+
+    for file, name in map(None, file_list, name_list):
+        try:
+            # functions.handle_uploaded_file(file, dest, file.name)
+            copyFromUpload(file, dest, name)
+            tar = tarfile.open(os.path.join(dest, name))
+            tar.extractall(path=mothurdest)
+            tar.close()
+        except Exception:
+            try:
+                # functions.handle_uploaded_file(file, dest, file.name) # redundant
+                zip = zipfile.ZipFile(os.path.join(dest, name))
+                zip.extractall(mothurdest)
+                zip.close()
+            except Exception:
+                # functions.handle_uploaded_file(file, mothurdest, file.name)
+                copyFromUpload(file, mothurdest, name)
+
+        # functions.handle_uploaded_file(file, dest, file.name) # redundant again
 
         if stopList[PID] == RID:
-            return upStop(request)
-
-        if form1.is_valid():
-            file1 = request.FILES['docfile1']
-            try:
-                p_uuid, pType, num_samp = functions.projectid(file1)    # crashes here if actual parse fails
-                if not num_samp:
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "Error: Please open and save your meta file in Excel/OpenOffice in order to perform the necessary calculations..."
-                         }
-                    )
-
-            except Exception:
-                logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                logging.exception(myDate)
-
-                if request.user.is_superuser:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                elif request.user.is_authenticated():
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                return render(
-                    request,
-                    'upload.html',
-                    {'projects': projects,
-                     'form1': UploadForm1,
-                     'form2': UploadForm2,
-                     'error': "There was an error parsing your meta file:" + str(file1.name)
-                     }
-                )
-
-            date = datetime.date.today().isoformat()
-            hour = datetime.datetime.now().hour
-            minute = datetime.datetime.now().minute
-            second = datetime.datetime.now().second
-            timestamp = ".".join([str(hour), str(minute), str(second)])
-            datetimestamp = "_".join([str(date), str(timestamp)])
-            dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
-            metaName = 'final_meta.xlsx'
-            metaFile = '/'.join([dest, metaName])
-
-            try:
-                functions.handle_uploaded_file(file1, dest, metaName)
-                res = functions.parse_project(metaFile, p_uuid, curUser)
-                if res == "none":
-                    print "Parsed project with no errors"
-                else:
-                    print "Encountered error while parsing meta file: "+res
-                    return upErr("Encountered error while parsing meta file: "+res, request, dest, sid)
-            except Exception:
-                return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
-
-            if source == 'mothur':
-                raw = False
-                batch = 'blank'
-            elif source == '454_sff':
-                raw = True
-                batch = request.FILES['docfile7']
-            elif source == '454_fastq':
-                raw = True
-                batch = request.FILES['docfile7']
-            elif source == 'miseq':
-                raw = True
-                batch = request.FILES['docfile7']
-            else:
-                raw = False
-                batch = ''
-
-            if stopList[PID] == RID:
-                functions.remove_proj(dest)
-                transaction.savepoint_rollback(sid)
-                return upStop(request)
-
-            try:
-                refDict = functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batch, raw, source, userID)
-                print "Parsed samples with no errors"
-            except Exception:
-                return upErr("There was an error parsing your meta file:" + str(file1.name), request, dest, sid)
-
-            if stopList[PID] == RID:
-                functions.remove_proj(dest)
-                transaction.savepoint_rollback(sid)
-                return upStop(request)
-
-            if source == 'mothur':
-                try:
-                    file3 = request.FILES['docfile3']
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "Cannot open taxonomy file"
-                         }
-                    )
-                functions.handle_uploaded_file(file3, dest, file3.name)
-
-                try:
-                    functions.parse_taxonomy(file3, stopList, PID, RID)
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error parsing your taxonomy file:" + str(file3.name)
-                         }
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                try:
-                    file4 = request.FILES['docfile4']
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "Cannot open shared file"
-                         }
-                    )
-                functions.handle_uploaded_file(file4, dest, file4.name)
-
-                try:
-                    functions.parse_profile(file3, file4, p_uuid, refDict)
-                    end = datetime.datetime.now()
-                    print 'Total time for upload:', end-start
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file:" + str(file4.name)
-                         }
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-            elif source == '454_sff':
-                mothurdest = 'mothur/temp'
-
-                if os.path.exists(mothurdest):
-                    shutil.rmtree(mothurdest)
-
-                if not os.path.exists(mothurdest):
-                    os.makedirs(mothurdest)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                file_list = request.FILES.getlist('sff_files')
-                for file in file_list:
-                    try:
-                        functions.handle_uploaded_file(file, dest, file.name)
-                        tar = tarfile.open(os.path.join(dest, file.name))
-                        tar.extractall(path=mothurdest)
-                        tar.close()
-                    except Exception:
-                        try:
-                            functions.handle_uploaded_file(file, dest, file.name)
-                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                            zip.extractall(mothurdest)
-                            zip.close()
-                        except Exception:
-                            functions.handle_uploaded_file(file, mothurdest, file.name)
-
-                    functions.handle_uploaded_file(file, dest, file.name)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                file_list = request.FILES.getlist('oligo_files')
-                for file in file_list:
-                    try:
-                        functions.handle_uploaded_file(file, dest, file.name)
-                        tar = tarfile.open(os.path.join(dest, file.name))
-                        tar.extractall(path=mothurdest)
-                        tar.close()
-                    except Exception:
-                        try:
-                            functions.handle_uploaded_file(file, dest, file.name)
-                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                            zip.extractall(mothurdest)
-                            zip.close()
-                        except Exception:
-                            functions.handle_uploaded_file(file, mothurdest, file.name)
-
-                    functions.handle_uploaded_file(file, dest, file.name)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                file5 = request.FILES['docfile5']
-                functions.handle_uploaded_file(file5, mothurdest, 'temp.txt')
-                functions.handle_uploaded_file(file5, dest, 'temp.txt')
-
-                bubbleFiles(mothurdest)
-
-                # function to check if mothur and metafiles samples match
-                error = checkSamples(metaFile, source, 'mothur/temp/temp.txt')
-
-                if error != "":
-                    print "Handling sample name error"
-                    return upErr(error, request, dest, sid)
-
-                batch = 'mothur.batch'
-                file7 = request.FILES['docfile7']
-
-                avail_proc = mp.cpu_count()
-                use_proc = min(avail_proc, processors)
-                actual_proc = 'processors=' + str(use_proc)
-
-                functions.handle_uploaded_file(file7, mothurdest, batch)
-
-                for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
-                    print line.replace("processors=X", actual_proc),
-
-                functions.handle_uploaded_file(file7, dest, batch)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                # check queue for mothur availability, then run or wait
-                # if mothur is available, run it
-                # else sleep, loop back to check again
-                addQueue()
-                while getQueue() > 1:
-                    time.sleep(5)
-                try:
-                    functions.mothur(dest, source)
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error with your mothur batch file:" + str(file7.name)
-                         }
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                subQueue()
-
-                try:
-                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        functions.parse_taxonomy(file3, stopList, PID, RID)
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error parsing your taxonomy file: final.cons.taxonomy"
-                         }
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                try:
-                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/final.tx.shared' % dest, 'rb') as file4:
-                            functions.parse_profile(file3, file4, p_uuid, refDict)
-                            end = datetime.datetime.now()
-                    print 'Total time for upload:', end-start
-
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.tx.shared"
-                         }
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-            elif source == '454_fastq':
-                mothurdest = 'mothur/temp'
-
-                if os.path.exists(mothurdest):
-                    shutil.rmtree(mothurdest)
-
-                if not os.path.exists(mothurdest):
-                    os.makedirs(mothurdest)
-
-                file_list = request.FILES.getlist('fna_files')
-                tempList = prepMultiFiles(file_list, dest, mothurdest, 'temp.fasta')
-                inputList = "-".join(tempList)
-                if os.name == 'nt':
-                    os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.fasta)\""' % inputList)
-                else:
-                    os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.fasta)\"" % inputList)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                file_list = request.FILES.getlist('qual_files')
-                tempList = prepMultiFiles(file_list, dest, mothurdest, 'temp.qual')
-                inputList = "-".join(tempList)
-                if os.name == 'nt':
-                    os.system('"mothur\\mothur-win\\mothur.exe \"#merge.files(input=%s, output=mothur\\temp\\temp.qual)\""' % inputList)
-                else:
-                    os.system("mothur/mothur-linux/mothur \"#merge.files(input=%s, output=mothur/temp/temp.qual)\"" % inputList)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                oligo = 'temp.oligos'
-                file6 = request.FILES['docfile6']
-                functions.handle_uploaded_file(file6, mothurdest, oligo)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                functions.handle_uploaded_file(file6, dest, file6.name)
-
-                # function to check if mothur and metafiles samples match
-                error = checkSamples(metaFile, source, 'mothur/temp/temp.oligos')
-
-                if error != "":
-                    print "Handling sample name error"
-                    return upErr(error, request, dest, sid)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                batch = 'mothur.batch'
-                file7 = request.FILES['docfile7']
-
-                avail_proc = mp.cpu_count()
-                use_proc = min(avail_proc, processors)
-                actual_proc = 'processors=' + str(use_proc)
-
-                functions.handle_uploaded_file(file7, mothurdest, batch)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
-                    print line.replace("processors=X", actual_proc),
-
-                functions.handle_uploaded_file(file7, dest, batch)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                try:
-                    functions.mothur(dest, source)
-
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error with your mothur batch file: " + str(file7.name)
-                         }
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                try:
-                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        functions.parse_taxonomy(file3, stopList, PID, RID)
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error parsing your taxonomy file: final.cons.taxonomy"
-                         }
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                try:
-                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/final.tx.shared' % dest, 'rb') as file4:
-                            functions.parse_profile(file3, file4, p_uuid, refDict)
-                            end = datetime.datetime.now()
-                    print 'Total time for upload:', end-start
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.tx.shared"
-                         }
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-            elif source == 'miseq':
-                mothurdest = 'mothur/temp'
-
-                if os.path.exists(mothurdest):
-                    shutil.rmtree(mothurdest)
-
-                if not os.path.exists(mothurdest):
-                    os.makedirs(mothurdest)
-
-                fastq = 'temp.files'
-                file13 = request.FILES['docfile13']
-                functions.handle_uploaded_file(file13, mothurdest, fastq)
-
-                #function to check if mothur and metafiles samples match
-                error = checkSamples(metaFile, source, 'mothur/temp/temp.files')
-
-                if error != "":
-                    print "Handling sample name error"
-                    return upErr(error, request, dest, sid)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                functions.handle_uploaded_file(file13, dest, fastq)
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                file_list = request.FILES.getlist('fastq_files')
-
-                for file in file_list:
-                    try:
-                        functions.handle_uploaded_file(file, dest, file.name)
-                        tar = tarfile.open(os.path.join(dest, file.name))
-                        tar.extractall(path=mothurdest)
-                        tar.close()
-                    except Exception:
-                        try:
-                            functions.handle_uploaded_file(file, dest, file.name)
-                            zip = zipfile.ZipFile(os.path.join(dest, file.name))
-                            zip.extractall(mothurdest)
-                            zip.close()
-                        except Exception:
-                            functions.handle_uploaded_file(file, mothurdest, file.name)
-
-                    functions.handle_uploaded_file(file, dest, file.name)
-
-                    if stopList[PID] == RID:
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-                        return upStop(request)
-
-                bubbleFiles(mothurdest)
-
-                if platform == 'mothur':
-                    batch = 'mothur.batch'
-                    file7 = request.FILES['docfile7']
-
-                    avail_proc = mp.cpu_count()
-                    use_proc = min(avail_proc, processors)
-                    actual_proc = 'processors=' + str(use_proc)
-
-                    functions.handle_uploaded_file(file7, mothurdest, batch)
-
-                    if stopList[PID] == RID:
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-                        return upStop(request)
-
-                    for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
-                        print line.replace("processors=X", actual_proc),
-
-                    functions.handle_uploaded_file(file7, dest, batch)
-
-                    if stopList[PID] == RID:
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-                        return upStop(request)
-
-                    try:
-                        functions.mothur(dest, source)
-                    except Exception:
-                        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                        logging.exception(myDate)
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-
-                        if request.user.is_superuser:
-                            projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                        elif request.user.is_authenticated():
-                            projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                        return render(
-                            request,
-                            'upload.html',
-                            {'projects': projects,
-                             'form1': UploadForm1,
-                             'form2': UploadForm2,
-                             'error': "There was an error with your mothur batch file: " + str(file7.name)
-                             }
-                        )
-
-                    if stopList[PID] == RID:
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-                        return upStop(request)
-
-                elif platform == 'dada2':
-                    batch = 'dada2.R'
-                    file7 = request.FILES['docfile7']
-
-                    avail_proc = mp.cpu_count()
-                    use_proc = min(avail_proc, processors)
-                    actual_proc = 'multithread=' + str(use_proc)
-
-                    functions.handle_uploaded_file(file7, mothurdest, batch)
-
-                    if stopList[PID] == RID:
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-                        return upStop(request)
-
-                    for line in fileinput.input('mothur/temp/dada2.R', inplace=1):
-                        print line.replace("multithread=TRUE", actual_proc),
-
-                    functions.handle_uploaded_file(file7, dest, batch)
-
-                    if stopList[PID] == RID:
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-                        return upStop(request)
-
-                    try:
-                        functions.dada2(dest, source)
-                    except Exception:
-                        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                        logging.exception(myDate)
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-
-                        if request.user.is_superuser:
-                            projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                        elif request.user.is_authenticated():
-                            projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                        return render(
-                            request,
-                            'upload.html',
-                            {'projects': projects,
-                             'form1': UploadForm1,
-                             'form2': UploadForm2,
-                             'error': "There was an error with your mothur batch file: " + str(file7.name)
-                             }
-                        )
-
-                    if stopList[PID] == RID:
-                        functions.remove_proj(dest)
-                        transaction.savepoint_rollback(sid)
-                        return upStop(request)
-
-                try:
-                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        functions.parse_taxonomy(file3, stopList, PID, RID)
-                except IOError:
-                    # file not found probably, mothur failed to create readable taxonomy file
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error with mothur: please check the logfile (from download page)"}
-                    )
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error parsing taxonomy file: final.cons.taxonomy"}
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-                try:
-                    with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
-                        with open('% s/final.tx.shared' % dest, 'rb') as file4:
-                            functions.parse_profile(file3, file4, p_uuid, refDict)
-                            end = datetime.datetime.now()
-                    print 'Total time for upload:', end-start
-                except Exception:
-                    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-                    myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-                    logging.exception(myDate)
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-
-                    if request.user.is_superuser:
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                    elif request.user.is_authenticated():
-                        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-                    return render(
-                        request,
-                        'upload.html',
-                        {'projects': projects,
-                         'form1': UploadForm1,
-                         'form2': UploadForm2,
-                         'error': "There was an error parsing your shared file: final.tx.shared"}
-                    )
-
-                if stopList[PID] == RID:
-                    functions.remove_proj(dest)
-                    transaction.savepoint_rollback(sid)
-                    return upStop(request)
-
-            else:
-                print ('Please check that all necessary files have been selected.')
+            return "Stop"
+
+    bubbleFiles(mothurdest)
+
+    if platform == 'mothur':
+        batch = 'mothur.batch'
+        # file7 = request.FILES['docfile7']
+        file7 = selDict['script']
+
+        avail_proc = mp.cpu_count()
+        use_proc = min(avail_proc, processors)
+        actual_proc = 'processors=' + str(use_proc)
+
+        copyFromUpload(file7, mothurdest, batch)
+        copyFromUpload(file7, dest, batch)
+
+        if stopList[PID] == RID:
+            return "Stop"
+
+        for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
+            line.replace("processors=X", actual_proc)
+            # TODO 3rd time this line shows up, consider moving to its own function
+
+        if stopList[PID] == RID:
+            return "Stop"
+
+        try:
+            functions.mothur(dest, "miseq")
+        except Exception as er:
+            logException()
+            return "Encountered problem while running mothur:" + str(er)
+
+        if stopList[PID] == RID:
+            return "Stop"
+
+    elif platform == 'dada2':
+        batch = 'dada2.R'
+        # file7 = request.FILES['docfile7']
+        file7 = selDict['script']    # repeated from above, move up in scope
+
+        avail_proc = mp.cpu_count()
+        use_proc = min(avail_proc, processors)
+        actual_proc = 'multithread=' + str(use_proc)
+
+        # functions.handle_uploaded_file(file7, mothurdest, batch)
+        copyFromUpload(file7, mothurdest, batch)    # also repeated, batch is the only difference
+
+        if stopList[PID] == RID:
+            return "Stop"
+
+        for line in fileinput.input('mothur/temp/dada2.R', inplace=1):
+            line.replace("multithread=TRUE", actual_proc)   # TODO make that 4 times, granted inputs vary
+
+        # functions.handle_uploaded_file(file7, dest, batch)
+        copyFromUpload(file7, dest, batch)
+
+        if stopList[PID] == RID:
+            return "Stop"
+
+        try:
+            functions.dada2(dest, "miseq")
+        except Exception as er:
+            logException()
+            return "Encountered problem while processing data2:" + str(er)    # probably not an accurate error message
+
+        if stopList[PID] == RID:
+            return "Stop"
+
+    try:
+        with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+            functions.parse_taxonomy(file3, stopList, PID, RID)
+    except Exception as er:
+        logException()
+        return "Encountered problem while parsing taxonomy:" + str(er)
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    try:
+        with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+            with open('% s/final.tx.shared' % dest, 'rb') as file4:
+                functions.parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID)
+    except Exception as er:
+        logException()
+        return "Encountered problem while parsing profile:" + str(er)
+
+    if stopList[PID] == RID:
+        return "Stop"
+    return "None"
+
+
+def uploadFunc(request, stopList):
+    # TODO change permissions check for script files: only allow user_upload directory to be admin
+    # regardless of normal admin visibility. Also, consider making an account called myPhyloDB for this role instead
+    # having admin as the account looks less professional for some reason
+    allTheThings = request.POST
+
+    curData = json.loads(allTheThings['data'])
+
+    # validation process involves checking settings paired with actual files sent
+
+    projects = Reference.objects.none()
+
+    start = datetime.datetime.now()
+
+    source = ''
+    try:
+        source = str(request.POST['source'])
+    except Exception as ers:
+        print "Error with source:", ers
+        pass
+
+    platform = ''
+    try:
+        platform = str(request.POST['platform'])
+    except Exception as ers:
+        print "Error with platform:", ers
+        pass
+
+    processors = 2
+    try:
+        processors = int(request.POST['processors'])
+    except Exception as ers:
+        print "Error with processors:", ers
+        pass
+
+    RID = ''
+    try:
+        RID = request.POST['RID']
+    except Exception as ers:
+        print "Error with RID:", ers
+        pass
+
+    userID = str(request.user.id)
+    PID = 0  # change if adding additional data threads
+
+    if stopList[PID] == RID:
+        return upStop(request)
+
+    good = True   # verification flag, if ANYTHING goes wrong in security checks or we're missing data, make this False
+
+    # do this process of checking for files via helper function in loop?
+    # cleanInput function?
+    # dict for pre's, dict for has
+    # ie preDict['meta'] = "None" while hasDict['meta'] = False
+    # vs preDict['meta'] = "Example1.xlsx" while hasDict['meta'] = True
+
+    textDict = {}
+    hasDict = {}
+
+    # MUST KEEP THIS SYNCED WITH SAME NAME VARIABLE IN FILEUPFUNC, make global?
+    subDirList = 'meta', 'shared', 'taxa', 'sequence', 'script', \
+                 'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq'
+    # sff, oligos, and a couple others need multi select support
+
+    for subDir in subDirList:
+        textDict, hasDict, good = cleanInput(subDir, curData, textDict, hasDict, good)
+
+    if not good:
+        print request.user.username, "attempted to use illegal characters"
+        return cancelUploadEarly(request, projects, "Illegal characters in file path")  # .. in filename or hacking
+        # should probably make a separate potential hackers log
+        # could inform user which file and which characters, in case they just misnamed a file
+
+    # should probably include extra check steps on script if present TODO screen script files
+    # TODO scratch that, only display mothur and r script files from the admin (maybe call it myPhyloDB)
+    # point being, only scripts the host of a particular server have approved or personally uploaded will be usable
+    # thus we can skip screening scripts as only the highest permissions of users will be able to add them
+    # TODO block script uploading to non supers (non admins even? like 3 tiered perms)
+    # can R or mothur be used for traversal? or other attacks? probably, need safeguards for these incoming scripts
+
+    # verify all needed files are present based on source value
+    # turn source value checking into helper function, given source and hasDict, return false if missing anything
+    missingFiles, filesNeeded, raw = checkFilePresence(source, hasDict, request.POST['ref_data'])
+
+    if missingFiles:
+        return cancelUploadEarly(request, projects, "Missing files: "+filesNeeded)
+
+    # need helper function to cancel upload (ie return with error message), log failed upload attempt (w/reason)
+    # Search through each incoming node, filter and flag all .. occurrences, drop the request if found
+    # otherwise just double check each section has permissions
+
+    selDict = {}
+    nameDict = {}
+    for subDir in subDirList:
+        selPaths, selNames = getSelectedPath(subDir, textDict, request.user)
+        if selNames == "error":
+            return cancelUploadEarly(request, projects, selPaths)
+        if subDir.lower() in "meta sequence taxa shared files script contig":
+            # insert other always singular file types here  OLIGOS IS WEIRD OKAY?
+            selPaths = selPaths[0]
+            selNames = selNames[0]
+        selDict[subDir] = selPaths
+        nameDict[subDir] = selNames
+
+    try:
+        p_uuid, pType, num_samp = functions.projectid(selDict['meta'])  # crashes here if actual parse fails
+
+        if not num_samp:
+            reallyLongError = "Error: Please open and save your meta file in Excel/OpenOffice" \
+                              " in order to perform the necessary calculations..."
+            return cancelUploadEarly(request, projects, reallyLongError)    # last pre upload error
+            # past this point, use upErr because we're making a project
+
+    except Exception:
+        return uploadException(None, None, request, "There was an error parsing your meta file:" + str(selDict['meta']))
+
+    sid = transaction.savepoint()
+    # got puuid by here, next?
+    # actually run project parsing, file locating, etc
+    date = datetime.date.today().isoformat()
+    hour = datetime.datetime.now().hour
+    minute = datetime.datetime.now().minute
+    second = datetime.datetime.now().second
+    timestamp = ".".join([str(hour), str(minute), str(second)])
+    datetimestamp = "_".join([str(date), str(timestamp)])
+    dest = "/".join(["uploads", str(p_uuid), str(datetimestamp)])
+    metaName = 'final_meta.xlsx'
+    metaFile = '/'.join([dest, metaName])   # metafile vs metaFile, should refactor
+    curUser = User.objects.get(username=request.user.username)
+
+    try:
+        copyFromUpload(selDict['meta'], dest, metaName)
+        res = functions.parse_project(metaFile, p_uuid, curUser)
+        if res != "none":
+            print "Encountered error while parsing meta file: " + res
+            return upErr("Encountered error while parsing meta file: " + res, request, dest, sid)
+    except Exception:
+        return upErr("There was an error parsing your meta file:" + str(selDict['meta']), request, dest, sid)
+    # end of meta parsing
+
+    if stopList[PID] == RID:
+        functions.remove_proj(dest)
+        transaction.savepoint_rollback(sid)
+        return upStop(request)
+
+    # get sample info from selected meta file
+    try:
+        refDict = functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID)
+        # stop will force an early return, full stop will occur when detected again right after here
+    except Exception:
+        return upErr("There was an error parsing your meta file:" + str(selDict['meta']), request, dest, sid)
+
+    if stopList[PID] == RID:
+        functions.remove_proj(dest)
+        transaction.savepoint_rollback(sid)
+        return upStop(request)
+
+    # if using shared+taxa or shared+sequence mothur combo
+    errorText = ""
+    if source == 'mothur':
+        errorText = uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID)
+
+    if source == '454_sff':
+        errorText = uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors)
+
+    if source == "454_fastq":
+        errorText = uploadWithFastq(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors)
+
+    if source == "miseq":
+        errorText = uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors, platform)
+
+    if errorText == "Stop":  # upload subfuncs all return "Stop" when told to end early, saving cleanup for here
+        functions.remove_proj(dest)
+        transaction.savepoint_rollback(sid)
+        return upStop(request)
+    if errorText != "None":
+        return upErr("Error during " + str(source) + ":" + errorText, request, dest, sid)
+
+    # need an else case catch, if no source ran or it crashed somehow
+
+    end = datetime.datetime.now()
+    print 'Total time for ' + str(request.user.username) + '\'s upload:', end - start
 
     myProject = Project.objects.get(projectid=p_uuid)
     myProject.wip = False
@@ -997,7 +1142,8 @@ def uploadFunc(request, stopList):
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
     elif request.user.is_authenticated():
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(
+            author=request.user)
 
     return render(
         request,
@@ -1005,7 +1151,31 @@ def uploadFunc(request, stopList):
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'error': ""}
+         'error': "Upload complete"}
+    )
+
+
+def uploadException(dest, sid, request, error):
+    projects = Reference.objects.none()
+    logException()
+    if dest is not None:
+        functions.remove_proj(dest)
+    if sid is not None:
+        transaction.savepoint_rollback(sid)
+
+    if request.user.is_superuser:
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
+    elif request.user.is_authenticated():
+        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(
+            author=request.user)
+    return render(
+        request,
+        'upload.html',
+        {'projects': projects,
+         'form1': UploadForm1,
+         'form2': UploadForm2,
+         'error': error
+         }
     )
 
 
@@ -1021,9 +1191,11 @@ def bubbleFiles(dest):
 def prepMultiFiles(file_list, dest, mothurdest, outFileName):   # outFileName is 'temp.qual' var
     tempList = []
     for file in file_list:
+        splitFile = file.split('/')
+        end = len(splitFile) - 1
         try:
-            functions.handle_uploaded_file(file, dest, file.name)
-            tar = tarfile.open(os.path.join(dest, file.name))
+            copyFromUpload(file, dest, splitFile[end])  # into project directory with ye
+            tar = tarfile.open(os.path.join(dest, splitFile[end]))   # try to untar the file
             tarParts = tar.getmembers()
             tar.extractall(path=mothurdest)
             for tarp in tarParts:
@@ -1044,8 +1216,7 @@ def prepMultiFiles(file_list, dest, mothurdest, outFileName):   # outFileName is
             tar.close()
         except Exception:
             try:
-                functions.handle_uploaded_file(file, dest, file.name)
-                zip = zipfile.ZipFile(os.path.join(dest, file.name))
+                zip = zipfile.ZipFile(os.path.join(dest, splitFile[end]))    # attempt to unzip
                 zipParts = zip.namelist()
                 zip.extractall(mothurdest)
                 for zips in zipParts:
@@ -1065,15 +1236,15 @@ def prepMultiFiles(file_list, dest, mothurdest, outFileName):   # outFileName is
                             tempList.append(myStr)
                 zip.close()
             except Exception:
-                functions.handle_uploaded_file(file, mothurdest, file.name)
-                functions.handle_uploaded_file(file, dest, file.name)
+                copyFromUpload(file, mothurdest, splitFile[end])  # copy to mothurdest because tar and zip failed
                 if os.name == 'nt':
-                    myStr = "mothur\\temp\\" + str(file.name)
+                    myStr = "mothur\\temp\\" + str(splitFile[end])
                 else:
-                    myStr = "mothur/temp/" + str(file.name)
+                    myStr = "mothur/temp/" + str(splitFile[end])
                 tempList.append(myStr)
                 if len(file_list) == 1:
-                    functions.handle_uploaded_file(file, mothurdest, outFileName)
+                    # post as outfile name if only one
+                    copyFromUpload(file, mothurdest, outFileName)
 
     bubbleFiles(mothurdest)  # bubble up subdirected files, templist already has file names chopped
     return tempList
@@ -1085,6 +1256,77 @@ def remProjectFiles(request):
         data = json.loads(allJson)
         refList = data['paths']
         functions.remove_list(refList)
+
+        results = {'error': 'none'}
+        myJson = json.dumps(results)
+        return HttpResponse(myJson)
+
+
+def removeUploads(request):  # removes files from user_upload directory based on request from upload page
+    # currently assumes timestamp on folders to be unique (as only one batch of files can be uploaded at a time)
+    # so asserting dataqueue is implemented and working properly, attempt to delete files at path+reflist
+    # use try except, if it fails try it on another folder set with permissions (later)
+    if request.is_ajax():
+        allJson = request.GET['all']
+        data = json.loads(allJson)
+        folderList = data['folders']
+        fileList = data['files']
+
+        print "Deleting uploaded folders:", folderList, "and files:", fileList
+
+        path = str(os.getcwd()) + "/user_uploads/"
+
+        # SECURITY CONCERN: Traversal attacks, deleting files outside of folder using /../
+        # Verify that path given is part of natural tree?
+        # could just screen all incoming strings for the .. substring, flag em and drop em
+
+        # use to verify permissions ??? TODO permissions security
+        # tree gets populated by permissions, should verify when using though
+        # need to get user profile permissions as well as screen each top level for being correct
+        # AFTER erroring the heck out when someone sends a .. or any other sensitive character combinations
+        username = request.user.username
+
+        # check if username is request.user.username OR contained in user's UserProfile.hasPermsFrom.split(';') list
+        # if ANY permissions issues come up, cancel the whole process
+        for curFolder in folderList:
+            if curFolder.find("..") != -1:
+                print "Security!!! Folders w/ malicious characters,", username, "did it!"
+                results = {'error': 'Illegal characters in request'}
+                myJson = json.dumps(results)
+                return HttpResponse(myJson)
+            else:
+                firstDir = curFolder.split('/')[0]
+                if firstDir == username or firstDir in UserProfile.objects.get(user=request.user).hasPermsFrom.split(';'):
+                    curPath = os.path.join(path, curFolder)
+                    try:
+                        shutil.rmtree(curPath)
+                    except Exception as e:
+                        pass  # print "Error while deleting path:", curFolder, ":", e
+                else:
+                    print "Security!!! Folders outside of given permissions,", username, "did it!"
+                    results = {'error': 'Illegal access attempt'}
+                    myJson = json.dumps(results)
+                    return HttpResponse(myJson)
+
+        for curFile in fileList:
+            if curFile.find("..") != -1:
+                print "Security!!! Filepaths w/ malicious characters,", username, "did it!"
+                results = {'error': 'Illegal characters in request'}
+                myJson = json.dumps(results)
+                return HttpResponse(myJson)
+            else:
+                firstDir = curFile.split('/')[0]
+                if firstDir == username or firstDir in UserProfile.objects.get(user=request.user).hasPermsFrom.split(';'):
+                    curPath = os.path.join(path, curFile)
+                    try:
+                        os.remove(curPath)
+                    except Exception as e:
+                        print "Error while deleting file:", curFile, ":", e
+                else:
+                    print "Security!!! Files outside of given permissions,", username, "did it!"
+                    results = {'error': 'Illegal access attempt'}
+                    myJson = json.dumps(results)
+                    return HttpResponse(myJson)
 
         results = {'error': 'none'}
         myJson = json.dumps(results)
@@ -1740,7 +1982,19 @@ def userTableJSON(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def select(request):
+def select(request):    # TODO add support for location data
+    # send Locations to page, should be based on visible samples and projects
+    # loop through all visible samples and store locations via dictionary
+    # key off each location, save the samples and the projects they are from
+    # on page, display a marker at each unique location, with related projects on mouseover, and samples on select
+    # populate a tree with samples from selected marker, checkbox links to actual sample list, mirrors clicks
+    # data format: locationDict, keys are lat-lon combo (+- not NSEW, rounded to tenths or hundredths)
+    # values are project titles, in a semi-colon separated string
+    # project titles are appended by a list of sample ids which have approximately this key's coordinates
+
+    # need to send both project names and sample ids up to page, associated with coordinates, need parent-child nodes up
+    # locationDict['lat-lon'] = projectName[0]+':'+P0sample[1]+':'+P0sample[4]+';'+projectName[2]+':'+P2sample[3]
+
     functions.log(request, "PAGE", "SELECT")
     if request.method == 'POST':
         uploaded = request.FILES["normFile"]
@@ -1864,19 +2118,51 @@ def select(request):
         )
 
     else:
+        # insert map population logic here
+        visibleProjects = functions.getViewProjects(request)
+        # get all samples for visibleProjects, put into dictionary keyed by rounded coordinates, link projectname?
+        sampleSetList = []
+        locationBasedSampleDict = {}
+        for proj in visibleProjects:
+            projSamples = Sample.objects.filter(projectid=proj.projectid)
+            sampleSetList.append(projSamples)
+            # print "proj:", proj.project_name
+            for samp in projSamples:
+                try:
+                    # .00001 ~ 1 meter
+                    # .01  ~ 1 km
+                    # round to hundredths place for the sake of grouping, make rounded val a constant for fine tuning
+                    roundOff = 100  # bigger numbers here mean more precise coordinates, smaller for cleaner grouping
+                    myLat = samp.latitude
+                    myLon = samp.longitude
+                    if myLat is not None and myLon is not None:
+                        # print "Samp:", samp.sample_name, "lat:lon ~~~", myLat, ":", myLon
+                        # round and concatenate into colon separable string
+                        coordKey = str(math.floor(myLat*roundOff)/roundOff)+":"+str(math.floor(myLon*roundOff)/roundOff)
+                        # store in dictionary with key of coordKey, value should be sample id, name, and project name
+                        myValues = str(samp.sampleid)+":"+str(samp.sample_name)+":"+str(proj.project_name)
+                        if coordKey in locationBasedSampleDict.keys():
+                            locationBasedSampleDict[coordKey] += ";"+myValues
+                        else:
+                            locationBasedSampleDict[coordKey] = myValues
+                except Exception as e:
+                    print "Error with samp:", e
+        # group by location data, key search?
         return render(
             request,
             'select.html',
             {'form9': UploadForm9,
              'selList': '',
              'normpost': '',
-             'method': 'GET'}
+             'method': 'GET',
+             'locationBasedSampleDict': locationBasedSampleDict
+             }
         )
 
 
 def taxaJSON(request):
     results = {}
-    qs1 = OTU_99.objects.values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
+    qs1 = OTU_99.objects.values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName', 'otuSeq')
     results['data'] = list(qs1)
     myJson = ujson.dumps(results, ensure_ascii=False)
     return HttpResponse(myJson)
@@ -1898,6 +2184,221 @@ def pathJSON(request):
     return HttpResponse(myJson)
 
 
+def printKoList(koList):
+    print "Printing koList: ", koList, " (L: ", len(koList), " )"
+    allthenames = []
+    fullOtuList = koOtuList.objects.all()
+    for thing in fullOtuList:
+        allthenames.append(thing.koID)
+    print "Printing koOtuList: ", allthenames
+
+    # how many koList entries are in koOtuList
+    found = 0
+    lastFound = ""
+    for ko in koList:
+        if ko in allthenames:
+            found += 1
+            lastFound = ko
+    print "Found ", found, " matches"
+    if found > 0:
+        print "Checking last match, ", lastFound
+        testOtuList = koOtuList.objects.get(koID=lastFound)#.otuList.split(";")
+        print "Here it is: ", testOtuList, " koID: ", testOtuList.koID, " list: ", testOtuList.otuList
+
+
+def getOtuFromKoList(koList):   # new qsFunc for speed sake, requires KoOtuLists to be fully populated
+    #printKoList(koList)
+    finalotuList = []
+    otuDict = {}
+    for ko in koList:
+        try:
+            curOtuList = koOtuList.objects.get(koID=ko).otuList.split(";")
+            for otu in curOtuList:
+                otuDict[otu] = otu
+                # \/-could help, could slow-\/
+                # if otu not in finalotuList:
+                    # finalotuList.append(otu)
+        except:
+            pass
+    for entry in otuDict:
+        if entry != "":
+            finalotuList.append(entry)
+    return finalotuList
+
+
+def populateKoOtuList():    # for initial population, similar to old qsFunc. currently no UI hook (runtime is absurd)
+
+    print "PopulateKoOtuList"
+
+    from django.db import connection
+
+    print "Connection imported"
+
+    # print connections.databases
+    with connection.cursor() as cursor:
+        print "Altering connection settings. Cursor ", cursor
+        cursor.execute("PRAGMA synchronous = OFF")
+        cursor.execute("PRAGMA temp_store = MEMORY")
+        #cursor.execute("PRAGMA default_cache_size = 10000")
+        cursor.execute("PRAGMA journal_mode = WAL")
+        cursor.execute("PRAGMA synchronous")
+        print "S: ", cursor.fetchall()
+        cursor.execute("PRAGMA temp_store")
+        print "T: ", cursor.fetchall()
+        #cursor.execute("PRAGMA default_cache_size")
+        #print "C: ", cursor.fetchall()
+        cursor.execute("PRAGMA journal_mode")
+        print "J: ", cursor.fetchall()
+        # print "Changed SQLite settings"  # not convinced any changes occurred
+    # print connections.databases
+
+    try:
+        print "Recreating full koOtuList... this will take some time"
+
+        # wipe old records
+        # missed ko entry levels, should fix output volume problem
+        koOtuList.objects.all().delete()
+        print "Old records wiped, here we go"
+        #print "Not wiping old database for time and testing. Actually should wipe for final run"
+
+        koList = []
+        records = ko_lvl1.objects.using('picrust').all()
+        for record in records:
+            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+        print "ko1:", len(koList)
+
+        records = ko_lvl2.objects.using('picrust').all()
+        for record in records:
+            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+        print "ko2:", len(koList)
+
+        records = ko_lvl3.objects.using('picrust').all()
+        for record in records:
+            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+        print "ko3:", len(koList)
+
+        koList.extend(ko_entry.objects.using('picrust').all())
+        koLen = len(koList)
+        print "KoList length:", koLen
+
+        otuList = OTU_99.objects.all().values_list('otuid', flat=True)
+        otuLen = len(otuList)
+        print "OtuList length:", otuLen
+        curOtu = 0
+        totalKos = 0
+        if koList:
+            koDict = {}
+            for ko in koList:
+                koDict[ko] = ko
+            outputFreq = 50
+            iterTime = 0
+            totalTime = 0
+            iter = 0
+            for otu in otuList:
+                startTime = time.time()
+                curTotal = 0
+                creTotal = 0
+                missTotal = 0
+                try:
+                    qs = PICRUSt.objects.using('picrust').filter(otuid=otu)
+                    geneList = qs[0].geneList
+                    geneList = geneList.replace("[", "")
+                    geneList = geneList.replace("]", "")
+                    geneList = geneList.replace("'", "")
+                    geneList = geneList.replace(" ", "")
+                    genes = geneList.split(",")
+                    # setup list of genes which need new koOtuList objects
+                    newKoGenes = []
+                    # setup list of genes whose koOtuLists should have this otu added
+                    allKoGenes = []
+                    checkTime = 0
+                    existsTime = 0
+                    appendTime = 0
+                    otherAppTime = 0
+                    for gene in genes:
+                        prevTime = time.time()
+                        try:
+                            if koDict[gene] == gene:  # check if gene is in koDict
+                                checkTime += time.time()-prevTime
+                                prevTime = time.time()
+                                # get or make koOtuList object for this ko
+                                if not koOtuList.objects.filter(koID=gene).exists():
+                                    existsTime += time.time()-prevTime
+                                    prevTime = time.time()
+                                    newKoGenes.append(gene)
+                                    appendTime += time.time()-prevTime
+                                    prevTime = time.time()
+                                    creTotal += 1
+                                    totalKos += 1
+                                else:
+                                    existsTime += time.time()-prevTime
+                                    prevTime = time.time()
+                                allKoGenes.append(gene)
+                                otherAppTime += time.time()-prevTime
+                                curTotal += 1
+                        except:
+                            missTotal += 1
+                            pass  # can be a keyerror from gene not being in koDict
+                    # create new koOtuList objects based on list made in memory (bulk_create (need to set otuList so mass_create))
+                    mass_create(newKoGenes)
+                    # update all koOtuList objects which match this otu (add this otu to their lists then bulk save(?))
+                    #print "Pre"
+                    try:
+                        koOtuList.objects.filter(koID__in=allKoGenes).update(otuList=Concat("otuList", Value(str(otu)+";")))
+                        # TODO this is the current bottleneck, saving scales linearly with saved entry count
+                    except Exception as upderr:
+                        print "Update error: ", upderr
+                    #print "Post"
+                    #mass_add(myOtuLists, otu)
+
+                except Exception as e:
+                    pass
+                curOtu += 1
+                if iter < outputFreq:   # because exit step also includes an iteration
+                    thisTime = time.time()-startTime
+                    iterTime += thisTime
+                    totalTime += thisTime
+                    iter += 1
+                if iter >= outputFreq:
+                    print "Past", outputFreq, " ", iterTime/outputFreq, " vs Total ", totalTime/curOtu, " \tOtu: ", curOtu, " / ", otuLen
+                    iterTime = 0
+                    iter = 0
+        # get all ko genelists and search for matching otus (out of entire set)
+        # add matching otus to related koOtuList entries
+    except Exception as er:
+        print "Problem with popKOL (M) ", er
+    return
+
+
+# create koOtuList objects from a gene list
+@transaction.atomic
+def mass_create(koGenes):
+    for newGene in koGenes:
+        newList = koOtuList.objects.create(koID=newGene)
+        newList.otuList = ""
+        newList.save()
+
+'''
+# add otu argument to koOtuLists
+@transaction.atomic  # average 4-5 seconds commit time with atomic. Takes many minutes to complete mass_add without atomic
+def mass_add(dbObjects, otu):
+    #first = 0
+    dbObjects.update(otuList=Concat("otuList", Value(str(otu)+";")))
+    dbObjects.save()
+    for dbObj in dbObjects:
+        try:
+            dbObj.otuList += str(otu)+";"
+            dbObj.save()
+            if first == 0:
+                print "List: ", dbObj.otuList
+                first = 1
+        except Exception as saverror:
+            print "Error with save: ", saverror'''
+
+
 def qsFunc(koList):  # works, but is still slow, still leaks (although only maybe 100 MB at a time vs 10 GB)
     finalotuList = []
     otuList = OTU_99.objects.all().values_list('otuid', flat=True)
@@ -1912,8 +2413,87 @@ def qsFunc(koList):  # works, but is still slow, still leaks (although only mayb
     return finalotuList
 
 
-def pathTaxaJSON(request):
+def compareMethods(ko):
+
+    koList = []
+    koList.append(ko)
+    newOtu = getOtuFromKoList(koList)
+    print "New:", len(newOtu)
+
+    oldOtu = qsFunc(koList)
+    print "Old:", len(oldOtu)
+
+    shared = []
+    uniqueNew = []
+    uniqueOld = []
+
+    for otu in oldOtu:
+        if otu in newOtu:
+            shared.append(otu)
+        else:
+            uniqueOld.append(otu)
+    for otu in newOtu:
+        if otu in oldOtu:
+            pass
+        else:
+            uniqueNew.append(otu)
+
+    print "Finished comparison"
+    print len(shared), ";", len(uniqueNew), ";", len(uniqueOld)
+
+    # new otu is missing some objects, picrust database bigger than otu_99?
+    '''print "Checking genes of uniqueOld:"
+    checkRes = checkGenes(uniqueOld, ko)
+    print checkRes'''
+
+
+def checkGenes(otuList, ko):
+    ret = "Valid"
+    errco = 0
+    for otu in otuList:
+        genes = PICRUSt.objects.using('picrust').filter(otuid=otu)[0].geneList
+        if ko in genes:
+            pass
+        else:
+            ret = "Invalid"
+            errco += 1
+    return ret+str(errco)
+
+
+def checkOtuListIntegrity():
+    otuLists = koOtuList.objects.all()
+    print "KoOtuListList length:", len(otuLists)
+    koList = []
+    records = ko_lvl1.objects.using('picrust').all()
+    for record in records:
+        koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+    print "ko1:", len(koList)
+
+    records = ko_lvl2.objects.using('picrust').all()
+    for record in records:
+        koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+    print "ko2:", len(koList)
+
+    records = ko_lvl3.objects.using('picrust').all()
+    for record in records:
+        koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+
+    print "ko3:", len(koList)
+
+    koList.extend(ko_entry.objects.using('picrust').all())
+
+    print "KoList length:", len(koList)
+
+
+def pathTaxaJSON(request):  # NOT AT ALL FINISHED AS POPKOLIST HAS NOT RUN TO COMPLETION
     try:
+        #checkOtuListIntegrity()
+        #populateKoOtuList()
+        #checkOtuListIntegrity()
+        #compareMethods("K03635")    # test method, to be moved to unit testing (and converted into a proper unit test)
+
         if request.is_ajax():
             wanted = request.GET['key']
             wanted = wanted.replace('"', '')
@@ -1928,10 +2508,13 @@ def pathTaxaJSON(request):
             elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=wanted).exists():
                 record = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=wanted)
                 koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
-            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():
+            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():  # this working or ever used?
                 koList = ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).values_list('ko_orthology', flat=True)
 
-            finalotuList = qsFunc(koList)
+            #finalotuList = qsFunc(koList)
+            startTime = time.time()
+            finalotuList = getOtuFromKoList(koList)
+            print "Finished kegg_path query:", time.time()-startTime, "seconds elapsed.", len(finalotuList), "entries found"
 
             results = {}
             qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuName', 'otuid')
@@ -1939,6 +2522,10 @@ def pathTaxaJSON(request):
             myJson = ujson.dumps(results, ensure_ascii=False)
 
             return HttpResponse(myJson)
+        else:
+            print "Request was not ajax!"
+            # TODO could improve feedback here, although a non ajax request means something went terribly wrong OR
+            # they are trying (hopefully failing) to break the server
     except Exception as e:
         print "Error during kegg path: ", e
 
@@ -1960,6 +2547,7 @@ def nzJSON(request):
 
 
 def nzTaxaJSON(request):
+    print "Starting nz query"
     try:
         if request.is_ajax():
             wanted = request.GET['key']
@@ -1981,21 +2569,24 @@ def nzTaxaJSON(request):
             elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).exists():
                 koList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).values_list('nz_orthology', flat=True)
 
-            finalotuList = qsFunc(koList)
-            '''finalotuList = []
-            if koList:
-                qs = PICRUSt.objects.using('picrust')
-                for item in qs:
-                    if any(i in item.geneList for i in koList):
-                        finalotuList.append(item.otuid_id)'''
+
+            startTime = time.time()
+            finalotuList = getOtuFromKoList(koList)
+            print "Finished kegg_enzyme query (new):", time.time()-startTime, "seconds elapsed"
+
+            # new method is faster (by far) but missing 3/4 of otus???? full calc didn't run?
+
+            '''# testing comparison
+            startTime = time.time()
+            oldfinalotuList = qsFunc(koList)
+            print "Finished kegg_enzyme query (old):", time.time()-startTime, "seconds elapsed"
+
+            print "Size comp:", len(finalotuList), ";", len(oldfinalotuList)'''
 
             results = {}
             qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
             results['data'] = list(qs1)
             myJson = ujson.dumps(results, ensure_ascii=False)
-            finalotuList = None
-            qs1 = None
-            results = None
             return HttpResponse(myJson)
     except Exception as e:
         print "Error during kegg enzyme: ", e
@@ -2043,7 +2634,7 @@ def CORR(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def rich(request):  # actually SPAC, should change name TODO
+def spac(request):  # refactored from rich to spac, not a typo
     functions.log(request, "PAGE", "SpAC")
     functions.cleanup('myPhyloDB/media/temp/spac')
 
@@ -2269,10 +2860,10 @@ def updateFunc(request, stopList):
 
             if os.path.exists(batPath):
                 with open(batPath, 'rb') as batFile:
-                    functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+                    functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID)
             else:
                 batFile = 'you do not really need me'
-                functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, batFile, raw, source, userID)
+                functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID)
 
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
@@ -2307,24 +2898,6 @@ def updateFunc(request, stopList):
 @user_passes_test(lambda u: u.is_superuser)
 def pybake(request):
     functions.log(request, "PAGE", "PYBAKE")
-    # split up for queue
-    form6 = UploadForm6(request.POST, request.FILES)
-    form7 = UploadForm7(request.POST, request.FILES)
-    form8 = UploadForm8(request.POST, request.FILES)
-
-    if form6.is_valid():
-        file1 = request.FILES['taxonomy']
-        file2 = request.FILES['precalc_16S']
-        file3 = request.FILES['precalc_KEGG']
-        functions.geneParse(file1, file2, file3)
-
-    if form7.is_valid():
-        file4 = request.FILES['ko_htext']
-        functions.koParse(file4)
-
-    if form8.is_valid():
-        file5 = request.FILES['nz_htext']
-        functions.nzParse(file5)
 
     return render(
         request,
@@ -2450,10 +3023,10 @@ def login_usr_callback(sender, user, request, **kwargs):
         os.makedirs('myPhyloDB/media/usr_temp/'+str(user))
     functions.cleanup('myPhyloDB/media/usr_temp/'+str(user))
 
-user_logged_in.connect(login_usr_callback)  # does this belong in a function?
+user_logged_in.connect(login_usr_callback)
 
 
-# Function has been added to context processor in setting file
+# Function has been added to context processor in settings file
 def usrFiles(request):
     selFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/usr_sel_samples.pkl')
     normFiles = os.path.exists('myPhyloDB/media/usr_temp/' + str(request.user) + '/myphylodb.biom')
@@ -2513,6 +3086,7 @@ def updateInfo(request):
             user.last_name = stuff['lastName']
             user.email = stuff['email']
 
+            # kept out of loop to avoid changing things which aren't meant to change so easily (ie whitelist perms)
             up = request.user.profile
             up.firstName = stuff['firstName']
             up.lastName = stuff['lastName']
@@ -2540,7 +3114,159 @@ def updateInfo(request):
     )
 
 
-def addPerms(request):
+def updateFilePerms(request):
+    # gets called from ajax, given list of names to remove or add
+    functions.log(request, "FUNCTION", "FILEPERMS")
+    if request.is_ajax():
+        allJson = json.loads(request.GET["all"])
+        # get selected names from list, to be removed
+        remList = allJson['keys']
+        # get list of names to add
+        nameList = allJson['names']
+        nameList = nameList.split(';')
+        # get permission mode (view vs edit)  * view is redundant if project is public
+        # permLevel 0 means view only
+        # permLevel 1 means editing as well
+
+        thisUser = User.objects.get(username=request.user.username)  # username uniqueness is case incensitive
+        # (as in no accounts named ADMIN since admin exists, etc) So we can run everything in .lower for equality checks
+        # Scratch that, query users by username= is faster than linear search and lower check
+        # Speed says make the whole thing case sensitive
+
+        giveFilePerms(thisUser, nameList)
+        removeFilePerms(thisUser, remList)
+        syncFilePerms(thisUser)  # get related user lists updated, for query speed
+        # note: MUST call sync after either additions or removals
+        # not calling it inside either function since both are called at the same time for now
+
+    retDict = {"error": "none"}
+    res = json.dumps(retDict)
+    return HttpResponse(res, content_type='application/json')
+
+
+def syncFilePerms(owner):
+    # given user object, verify each member of the 'gavePermsTo' list's 'hasPermsFrom' attribute contains this username
+    # go through each user who is NOT on that list and remove username from any 'hasPermsFrom' lists which contain it
+
+    # query for each name in currentList
+    # with queried user list, update their "hasPermsFrom" profile variable
+
+    try:
+
+        ownProfile = owner.profile  # owner is a user object, ie request.user
+        currentList = ownProfile.gavePermsTo.split(';')
+
+        actualUsers = []
+        for name in currentList:
+            try:
+                curUser = User.objects.get(username=name)   # if user doesn't exist, just ignore it during sync
+                # would be a potential security hole to let users know if they gave perms to a non-existent user
+                # inference attacks/leaks are a thing
+                actualUsers.append(curUser)
+            except:
+                pass
+
+        for prof in actualUsers:
+            if prof.username in currentList:
+                # check if this user has owner on their list, if not add
+                thisProf = UserProfile.objects.get(user=prof)
+                thisPermsList = thisProf.hasPermsFrom.split(';')
+                if owner.username not in thisPermsList:
+                    thisPermsList.append(owner.username)
+                reStringPerms = ""
+                first = True
+                for perm in thisPermsList:
+                    if perm != "":
+                        if first:
+                            reStringPerms += perm
+                            first = False
+                        else:
+                            reStringPerms += ";" + perm
+                thisProf.hasPermsFrom = reStringPerms
+                thisProf.save()
+                # is this section inefficient? could append directly, check if empty first for semicolon?
+
+        # loop through ALL user profiles and remove owner if not on currentList
+        allUsers = User.objects.all()
+        for curUser in allUsers:
+            if curUser.username not in currentList:
+                curProf = UserProfile.objects.get(user=curUser)
+                curHasPerms = curProf.hasPermsFrom.split(';')
+                if owner.username in curHasPerms:
+                    # remove it!, save it again after
+                    first = True
+                    newCurHasPerms = ""
+                    for curName in curHasPerms:
+                        if curName != "":
+                            if curName != owner.username:
+                                if first:
+                                    newCurHasPerms += curName
+                                    first = False
+                                else:
+                                    newCurHasPerms += ";" + curName
+                    curProf.hasPermsFrom = newCurHasPerms
+                    curProf.save()
+
+    except Exception as e:
+        print "Error during sync:", e
+
+    # this function is very important as we use the 'hasPermsFrom' list for faster queries
+    return
+
+
+# call this from a third func? or directly, since remove and add use different UI and inputs
+# in the second case, switch owner out for request and parse out request.user data and stuff from the trees
+# in the first case, call the same main function from either use case
+# split based on sent data (use one submission button?)
+def giveFilePerms(owner, addList):
+    # given a user and a list of usernames, add username list to user's whitelist
+    ownProfile = owner.profile  # owner is a user object, ie request.user
+    currentList = ownProfile.gavePermsTo.split(';')
+    for addName in addList:
+        if addName not in currentList and addName != "":
+            currentList.append(addName)
+    # now reformat currentList to save onto profile again
+    finalListAsText = ""
+    firstIter = True
+    for name in currentList:
+        if name != "":
+            if firstIter:
+                finalListAsText += name
+                firstIter = False
+            else:
+                finalListAsText += ";" + name
+
+    # save changes
+    ownProfile.gavePermsTo = finalListAsText
+    ownProfile.save()
+    return
+
+
+def removeFilePerms(owner, remList):
+    # use .lower on everything, remove users in remList from owner's whitelist (if they are there already)
+    # also, go to each user on remList and remove owner from their "added by" list (again, check if its there already)
+    ownProfile = owner.profile  # owner is a user object, ie request.user
+    currentList = ownProfile.gavePermsTo.split(';')
+    updatedNameList = ""
+    first = True
+    for curName in currentList:
+        if curName != "":
+            if curName not in remList:
+                if first:
+                    updatedNameList += str(curName)
+                    first = False
+                else:
+                    updatedNameList += ";" + str(curName)
+
+    # save changes
+    ownProfile.gavePermsTo = updatedNameList
+    ownProfile.save()
+    return
+
+
+def addPerms(request):  # this is the project whitelisting version, could bundle file perms in here
+    # auto filter out <username> ?
+    # double up support in this func for file perms? No, make a similar but separate function
     functions.log(request, "FUNCTION", "ADDPERMS")
     if request.is_ajax():
         allJson = json.loads(request.GET["all"])
@@ -2554,7 +3280,8 @@ def addPerms(request):
         # permLevel 0 means view only
         # permLevel 1 means editing as well
 
-        thisUser = User.objects.get(username=request.user.username)
+        thisUser = User.objects.get(username=request.user.username)  # username uniqueness is case incensitive
+        # (as in no accounts named ADMIN since admin exists, etc) So we can run everything in .lower for equality checks
 
         # loop through nameList, verify each exists
         errorList = []
@@ -2563,7 +3290,7 @@ def addPerms(request):
             if not User.objects.filter(username=name).exists():
                 errorList.append(name)
                 finalNameList.remove(name)
-                # remove name from nameList
+                # remove name from nameList if user does not exist
 
         # get project by id from selList
         for pid in selList:
@@ -2601,9 +3328,9 @@ def addPerms(request):
             iter = 1
             for name in errorList:
                 if iter == len(errorList):
-                    text += name
+                    text += str(name)
                 else:
-                    text += name + ", "
+                    text += str(name) + ", "
                 iter += 1
         else:
             text = 'Users have been added to selected project(s)'
@@ -2620,7 +3347,7 @@ def remPerms(request):
 
 def checkSamples(metaFile, source, fileName):
     wb = openpyxl.load_workbook(metaFile, data_only=True, read_only=True)
-    ws = wb.get_sheet_by_name('MIMARKs')
+    ws = wb['MIMARKs']
     metaList = []
     for row in xrange(7, ws.max_row+1):
         val = ws.cell(row=row, column=3).value
@@ -2695,7 +3422,7 @@ def checkSamples(metaFile, source, fileName):
     return errorString
 
 
-def getAdminLog():      # TODO add admin button to run this remotely
+def getAdminLog():      # TODO could add a UI button for this, atm just run manually
     logs = LogEntry.objects.all()
     for log in logs:
         logFile = open('admin_log.txt', 'a')

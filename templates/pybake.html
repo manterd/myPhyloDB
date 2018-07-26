@@ -15,6 +15,19 @@
         $(function () {
 
             $("#Upload1").click(function () {
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'RID',
+                    value: makeGUID()
+                }).appendTo('form');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'funcName',
+                    value: 'geneParse'
+                }).appendTo('form');
+
                 var index = prompt("This will replace the current PICRUSt reference data in your database, proceed?", 'yes');
                 if (index == 'yes') {
                     $("#stage1").show();
@@ -25,6 +38,19 @@
             });
 
             $("#Upload2").click(function () {
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'RID',
+                    value: makeGUID()
+                }).appendTo('form');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'funcName',
+                    value: 'koParse'
+                }).appendTo('form');
+
                 var index = prompt("This will replace the current KEGG Orthology reference data in your database, proceed?", 'yes');
                 if (index == 'yes') {
                     $("#stage2").show();
@@ -34,6 +60,19 @@
                 }
             });
             $("#Upload3").click(function () {
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'RID',
+                    value: makeGUID()
+                }).appendTo('form');
+
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'funcName',
+                    value: 'nzParse'
+                }).appendTo('form');
+
                 var index = prompt("This will replace the current KEGG Enzyme reference data in your database, proceed?", 'yes');
                 if (index == 'yes') {
                     $("#stage3").show();
@@ -104,7 +143,7 @@
 {% block my_content %}
 
     <h2>Upload new PICRUSt Files:</h2>
-    <form action="{% url 'pybake' %}" method="post" enctype="multipart/form-data">
+    <form id="form1" action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <label><textarea id="ids" name="refid" style="display:none"></textarea></label>
@@ -163,7 +202,7 @@
     <div id="stage1" style="display: none"></div>
     <br>
     <h2>Upload new KEGG Orthology File:</h2>
-    <form action="{% url 'pybake' %}" method="post" enctype="multipart/form-data">
+    <form id="form2" action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <label><textarea id="ids" name="refid" style="display:none"></textarea></label>
@@ -191,7 +230,7 @@
     <div id="stage2" style="display: none"></div>
     <br>
     <h2>Upload new KEGG Enzyme File:</h2>
-    <form action="{% url 'pybake' %}" method="post" enctype="multipart/form-data">
+    <form id="form3" action="{% url 'datfuncCall' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <label><textarea id="ids" name="refid" style="display:none"></textarea></label>

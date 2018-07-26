@@ -15,25 +15,39 @@
 
 {% block javascript %}
     <script type="text/javascript">
-        var num = 0;
+        var namenum1 = 0, namenum2 = 0;
         function addMoreNamesFunc() {
             var namebox = document.getElementById("addNamesList");
             namebox.appendChild(document.createTextNode("  "));
             var input = document.createElement("input");
             input.type = "text";
-            input.id = "name_" + num;
-            input.value = "<username>";
+            input.id = "name_" + namenum1;
+            input.value = "";
+            input.placeholder = "<username>";
             input.style = "font-style:italic;";
             namebox.appendChild(input);
             namebox.appendChild(document.createElement("br"));
-            num++;
+            namenum1++;
+        }
+        function addMoreFileNamesFunc() {
+            var namebox = document.getElementById("addFileNamesList");
+            namebox.appendChild(document.createTextNode("  "));
+            var input = document.createElement("input");
+            input.type = "text";
+            input.id = "filesname_" + namenum2;
+            input.value = "";
+            input.placeholder = "<username>";
+            input.style = "font-style:italic;";
+            namebox.appendChild(input);
+            namebox.appendChild(document.createElement("br"));
+            namenum2++;
         }
 
         function submitNames() {
             var nameList = "";
             var curID;
             var curName;
-            for (var c=0; c<num; c++) {
+            for (var c=0; c<namenum1; c++) {
                 curID = "name_" + c;
                 curName = document.getElementById(curID).value;
                 nameList += curName + ";";
@@ -64,6 +78,48 @@
                         alert(error);
                         $("#run").css("background-color", "red");
                     }
+                    $("#nametree").dynatree("getTree").reload();
+                }
+            });
+        }
+
+        function submitFilePerms() {
+            var nameList = "";
+            var curID;
+            var curName;
+            for (var c=0; c<namenum2; c++) {
+                curID = "filesname_" + c;
+                curName = document.getElementById(curID).value;
+                nameList += curName + ";";
+            }
+            nameList = nameList.slice(0, -1);
+            // Send list back through ajax to views, add names to list for selected projects
+
+            var selKeys = $.map($("#nametree").dynatree("getSelectedNodes"), function(node) {
+                if (node.getLevel() == 2) {
+                    return node.data.id;
+                }
+                $("#submit").css("background-color", "yellow").val("Running!");
+            });
+            var dataDict = {};
+            dataDict['keys'] = selKeys;
+            dataDict['names'] = nameList;
+            var jsonDict = JSON.stringify(dataDict);
+
+            $.ajax({
+                type: 'GET',
+                url: '/myPhyloDB/updateFilePerms/',
+                dataType: 'json',
+                data: {
+                    all: jsonDict
+                },
+                success: function (data) {
+                    var error = data['error'];
+                    if (error != "none") {
+                        alert(error);
+                        $("#run").css("background-color", "red");
+                    }
+                    location.reload();
                 }
             });
         }
@@ -88,7 +144,50 @@
                     $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
                 }
             });
+            $("#nametree").dynatree({
+                checkbox: true,
+                selectMode: 2,
+                initAjax: {
+                    url: "/myPhyloDB/getFilePermTree/",
+                    dataType: "jsonp",
+                    data: {
+                        given: true
+                    }
+                },
+                onRender: function(){
+                    $("#nametree").dynatree("getRoot").visit(function (node){
+                        if (node.data.wip) {
+                            node.data.addClass = "dynatree-highlight";
+                        }
+                  });
+                },
+                onclick: function () {
+                    $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
+                }
+            });
+            $("#visibletree").dynatree({
+                checkbox: true,
+                selectMode: 0,
+                initAjax: {
+                    url: "/myPhyloDB/getFilePermTree/",
+                    dataType: "jsonp",
+                    data: {
+                        given: false
+                    }
+                },
+                onRender: function(){
+                    $("#nametree").dynatree("getRoot").visit(function (node){
+                        if (node.data.wip) {
+                            node.data.addClass = "dynatree-highlight";
+                        }
+                  });
+                },
+                onclick: function () {
+                    $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
+                }
+            });
             addMoreNamesFunc();
+            addMoreFileNamesFunc();
         });
     </script>
 {% endblock javascript %}
@@ -103,21 +202,47 @@
     </ul>
     <br>
     <h2>Project Management:</h2>
+    <div style="float: left;">
+        <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+            <tr>
+                <th>Select projects to update permissions<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            </tr>
+            <tr>
+                <td style="padding-right: 10px; vertical-align: top">
+                    <div id="tree"></div>
+                </td>
+            </tr>
+        </table>
+        <h3>Add users to selected project(s):     <input type="button" id="addMoreNames" onclick="addMoreNamesFunc()" value="Add another user" title="Click to add an additional user to list."></h3>
+        <div id="addNamesList"></div>
+        <br>
+        <input type="checkbox" id="permLevel" value="false"> <span title="Applies to all users listed">Grant editing permission</span>
+        <br>
+        <input type="submit" id="addNames" value="Submit changes" onclick="submitNames()">
+        <br><br>
+        <br><br>
+    </div>
+    <div style="float: right;">
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
-            <th>Select projects to update permissions<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            <th>Granted permissions by</th>
         </tr>
         <tr>
-            <td style="padding-right: 10px; vertical-align: top">
-                <div id="tree"></div>
-            </td>
+            <td><div id="visibletree"></div></td>
+        </tr>
+        <tr>
+            <th>Select users to revoke permissions</th>
+        </tr>
+        <tr>
+            <td><div id="nametree"></div></td>
         </tr>
     </table>
+    <h3>Give users permission to use your files:     <input type="button" id="addMoreFileNames" onclick="addMoreFileNamesFunc()" value="Add another user" title="Click to add an additional user to list."></h3>
+    <div id="addFileNamesList"></div>
     <br>
-    <h2>Add users to selected project(s):     <input type="button" id="addMoreNames" onclick="addMoreNamesFunc()" value="Add another user" title="Click to add an additional user to list."></h2>
-    <div id="addNamesList"></div>
-    <input type="checkbox" id="permLevel" value="false"> <span title="Applies to all users listed">Grant editing permission</span>
+    <input type="submit" id="addFileNames" value="Submit changes" onclick="submitFilePerms()">
+    </div>
+    <div style="width: 100px; float: right;"></div>
     <br><br>
-    <input type="submit" id="addNames" value="Submit changes" onclick="submitNames()">
     <br><br>
 {% endblock my_content %}

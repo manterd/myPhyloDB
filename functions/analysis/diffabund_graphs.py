@@ -211,7 +211,7 @@ def getDiffAbund(request, stops, RID, PID):
                     metaDF[i] = metaDF[i].str.replace('(', '.')
                     metaDF[i] = metaDF[i].str.replace(')', '.')
 
-                metaDF.sort(columns='sampleid', inplace=True)
+                metaDF.sort_values('sampleid', inplace=True)
                 r.assign("metaDF", metaDF)
                 r("trt <- factor(metaDF$merge)")
 

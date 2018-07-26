@@ -285,7 +285,7 @@ def getPCoA(request, stops, RID, PID):
                 r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
                 mat = r.get("mat")
 
-                metaDF.sort('sampleid', inplace=True)
+                metaDF.sort_values('sampleid', inplace=True)
                 rowList = metaDF.sampleid.values.tolist()
                 distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 

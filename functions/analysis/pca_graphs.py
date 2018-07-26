@@ -201,7 +201,7 @@ def getPCA(request, stops, RID, PID):
                 r.assign("cols", count_rDF.columns.values.tolist())
                 r("colnames(data) <- unlist(cols)")
 
-                metaDF.sort('sampleid', inplace=True)
+                metaDF.sort_values('sampleid', inplace=True)
                 r.assign("meta", metaDF)
                 r.assign("rows", metaDF.index.values.tolist())
                 r("rownames(meta) <- unlist(rows)")
@@ -345,7 +345,7 @@ def getPCA(request, stops, RID, PID):
                 ")
 
                 # get taxa rank names
-                rankNameDF = finalDF.drop_duplicates(subset='rank_id', take_last=True)
+                rankNameDF = finalDF.drop_duplicates(subset='rank_id', keep='last')
                 rankNameDF.set_index('rank_id', inplace=True)
                 rankNameDF['rank_name'] = rankNameDF['rank_name'].str.split('|').str[-1]
                 r.assign('rankNameDF', rankNameDF['rank_name'])
@@ -497,7 +497,7 @@ def getPCA(request, stops, RID, PID):
                 finalDict['text'] = result
 
                 ## variables
-                nameDF = finalDF[['rank_id']].drop_duplicates(subset='rank_id', take_last=True)
+                nameDF = finalDF[['rank_id']].drop_duplicates(subset='rank_id', keep='last')
                 nameDF.set_index('rank_id', inplace=True)
 
                 r("df <- data.frame(species)")

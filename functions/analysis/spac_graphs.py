@@ -145,7 +145,7 @@ def getSpAC(request, stops, RID, PID):
                 print r('source("R/myFunctions/myFunctions.R")')
 
                 r.assign('data', count_rDF)
-                metaDF.sort('sampleid', axis=0, inplace=True)
+                metaDF.sort_values('sampleid', axis=0, inplace=True)
 
                 if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
@@ -210,9 +210,10 @@ def getSpAC(request, stops, RID, PID):
                             res = json.dumps(finalDict)
                             return HttpResponse(res, content_type='application/json')
 
-                    result += "\n"+str(len(skipped))+" groups ignored: \n\t- "
-                    for thing in skipped:
-                        result += thing + " - "
+                    if len(skipped) > 0:
+                        result += "\n"+str(len(skipped)) + " groups ignored: \n\t- "
+                        for thing in skipped:
+                            result += thing + " - "
                     result += "\n\n"
 
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'

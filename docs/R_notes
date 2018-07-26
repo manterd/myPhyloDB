@@ -11,13 +11,13 @@ Step 1: Download R source file
 Step 2: Make sure the following R dependencies are installed
 
     sudo su
-    echo "deb http://01.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse " >> /etc/apt/sources.list
-    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse " >> /etc/apt/sources.list
-    echo "deb http://01.archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse " >> /etc/apt/sources.list
-    echo "deb http://01.archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse " >> /etc/apt/sources.list
-    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse " >> /etc/apt/sources.list
-    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse " >> /etc/apt/sources.list
-    echo "deb http://stat.ethz.ch/CRAN/bin/linux/ubuntu trusty/ " >> /etc/apt/sources.list
+    echo "deb http://01.archive.ubuntu.com/ubuntu/ xenial main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ xenial main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb http://01.archive.ubuntu.com/ubuntu/ xenial-security main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb http://01.archive.ubuntu.com/ubuntu/ xenial-updates main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ xenial-security main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb-src http://01.archive.ubuntu.com/ubuntu/ xenial-updates main restricted universe multiverse " >> /etc/apt/sources.list
+    echo "deb http://stat.ethz.ch/CRAN/bin/linux/ubuntu xenial/ " >> /etc/apt/sources.list
     exit
 
     sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
