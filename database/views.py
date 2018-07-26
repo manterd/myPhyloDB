@@ -59,22 +59,28 @@ def home(request):
 def files(request):
     functions.log(request, "PAGE", "FILES")
 
-    # TODO do not send script upload section to page if not admin
-    # just send a flag if admin, default to not displaying script files uploader
-    # script files are unusable unless uploaded by admin for security purposes
+    # script files are unusable unless uploaded by admin (literal account name, not role) for security purposes
+    # scriptVis flag doesn't prevent user from uploading scripts, just makes it harder
+    # supers can see it, but only the ones uploaded by admin can be used
+
+    scriptVis = "false"
+
+    if request.user.is_superuser:
+        scriptVis = "true"
 
     return render(
         request,
         'files.html',
         {'BulkForm': BulkForm,
          'form2': UploadForm2,
+         'scriptVis': scriptVis,
          'error': ""}
     )
 
 
 def fileUpFunc(request, stopList):
     errorText = ""
-    RID = ''    # TODO stopList and RID NYI
+    RID = ''    # TODO stopList and RID NYI, Progress bar? This part is hard to test locally, local uploads are too fast
     try:
         RID = request.POST['RID']
     except:
@@ -111,10 +117,16 @@ def fileUpFunc(request, stopList):
     else:
         errorText = "Error: invalid form"
 
+    scriptVis = "false"
+
+    if request.user.is_superuser:
+        scriptVis = "true"
+
     return render(
         request,
         'files.html',
         {'BulkForm': BulkForm,
+         'scriptVis': scriptVis,
          'error': errorText}
     )
 
@@ -381,20 +393,14 @@ def checkCompsGetNames(compList, user, key):
     for comp in selcomps:
         if curComp == 0:
             if key == 'script':
-                if comp != 'admin':
+                if comp != 'admin' and comp != "None":
                     return "Illegal file access", "error"
             else:
                 # can bypass with superuser, or by whitelist from permissions/user_profile system
                 if comp != user.username and comp != "None":
                     # print user.username, "attempted to access files outside of their permissions"
-                    if user.is_superuser or comp in myPerms:    # myPerms being the list of UserProfile perms granted
-                        # print "Passed permissions check though, moving on"
-                        pass    # TODO invert this, remember !OR -> AND
-                    # elif permission check
-                    else:
+                    if not user.is_superuser and comp not in myPerms:
                         return "Illegal file access", "error"
-                        # check comp, should be current user or a user current has permissions for
-                        # should return an error and log hacking attempt if otherwise
 
         if curComp == lastComp:
             selpart += key + "/" + comp
@@ -482,7 +488,7 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
     while True:
         line = pro.stdout.readline()    # does this work?
         print "Line:", line
-        if line != '':
+        if line != "":  # changed '' to ""
             print line  # actually printing this? TODO send to user instead of spamming console. ALSO this doesn't work?
         else:
             break
@@ -882,7 +888,6 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
 
         for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
             line.replace("processors=X", actual_proc)
-            # TODO 3rd time this line shows up, consider moving to its own function
 
         if stopList[PID] == RID:
             return "Stop"
@@ -912,7 +917,7 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
             return "Stop"
 
         for line in fileinput.input('mothur/temp/dada2.R', inplace=1):
-            line.replace("multithread=TRUE", actual_proc)   # TODO make that 4 times, granted inputs vary
+            line.replace("multithread=TRUE", actual_proc)
 
         # functions.handle_uploaded_file(file7, dest, batch)
         copyFromUpload(file7, dest, batch)
@@ -953,9 +958,8 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
 
 
 def uploadFunc(request, stopList):
-    # TODO change permissions check for script files: only allow user_upload directory to be admin
-    # regardless of normal admin visibility. Also, consider making an account called myPhyloDB for this role instead
-    # having admin as the account looks less professional for some reason
+    # consider making an account called myPhyloDB for Script role instead of admin
+    # having admin as the account looks less professional in my opinion
     allTheThings = request.POST
 
     curData = json.loads(allTheThings['data'])
@@ -1025,11 +1029,9 @@ def uploadFunc(request, stopList):
         # should probably make a separate potential hackers log
         # could inform user which file and which characters, in case they just misnamed a file
 
-    # should probably include extra check steps on script if present TODO screen script files
-    # TODO scratch that, only display mothur and r script files from the admin (maybe call it myPhyloDB)
+    # should probably include extra check steps on script if present
     # point being, only scripts the host of a particular server have approved or personally uploaded will be usable
     # thus we can skip screening scripts as only the highest permissions of users will be able to add them
-    # TODO block script uploading to non supers (non admins even? like 3 tiered perms)
     # can R or mothur be used for traversal? or other attacks? probably, need safeguards for these incoming scripts
 
     # verify all needed files are present based on source value
@@ -1260,6 +1262,9 @@ def remProjectFiles(request):
         results = {'error': 'none'}
         myJson = json.dumps(results)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "REM_FILES")
 
 
 def removeUploads(request):  # removes files from user_upload directory based on request from upload page
@@ -1280,7 +1285,6 @@ def removeUploads(request):  # removes files from user_upload directory based on
         # Verify that path given is part of natural tree?
         # could just screen all incoming strings for the .. substring, flag em and drop em
 
-        # use to verify permissions ??? TODO permissions security
         # tree gets populated by permissions, should verify when using though
         # need to get user profile permissions as well as screen each top level for being correct
         # AFTER erroring the heck out when someone sends a .. or any other sensitive character combinations
@@ -1296,7 +1300,8 @@ def removeUploads(request):  # removes files from user_upload directory based on
                 return HttpResponse(myJson)
             else:
                 firstDir = curFolder.split('/')[0]
-                if firstDir == username or firstDir in UserProfile.objects.get(user=request.user).hasPermsFrom.split(';'):
+                if firstDir == username or request.user.is_superuser:
+                    # firstDir in UserProfile.objects.get(user=request.user).hasPermsFrom.split(';'): # deletion by perm
                     curPath = os.path.join(path, curFolder)
                     try:
                         shutil.rmtree(curPath)
@@ -1331,6 +1336,9 @@ def removeUploads(request):  # removes files from user_upload directory based on
         results = {'error': 'none'}
         myJson = json.dumps(results)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "REM_UPLOADS")
 
 
 def projectTableJSON(request):
@@ -1369,6 +1377,9 @@ def projectTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "PROJ_TABLE")
 
 
 def sampleTableJSON(request):
@@ -1421,6 +1432,9 @@ def sampleTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "SAMP_TABLE")
 
 
 def referenceTableJSON(request):
@@ -1453,6 +1467,9 @@ def referenceTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "REF_TABLE")
 
 
 def airTableJSON(request):
@@ -1515,6 +1532,9 @@ def airTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "AIR_TABLE")
 
 
 def associatedTableJSON(request):
@@ -1592,6 +1612,9 @@ def associatedTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "ASSOC_TABLE")
 
 
 def microbialTableJSON(request):
@@ -1691,6 +1714,9 @@ def microbialTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "MICRO_TABLE")
 
 
 def soilTableJSON(request):
@@ -1824,6 +1850,9 @@ def soilTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "SOIL_TABLE")
 
 
 def waterTableJSON(request):
@@ -1939,6 +1968,9 @@ def waterTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "WATER_TABLE")
 
 
 def userTableJSON(request):
@@ -1979,10 +2011,13 @@ def userTableJSON(request):
         results['data'] = list(qs1)
         myJson = ujson.dumps(results, ensure_ascii=False)
         return HttpResponse(myJson)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "USER_TABLE")
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def select(request):    # TODO add support for location data
+def select(request):
     # send Locations to page, should be based on visible samples and projects
     # loop through all visible samples and store locations via dictionary
     # key off each location, save the samples and the projects they are from
@@ -2523,9 +2558,9 @@ def pathTaxaJSON(request):  # NOT AT ALL FINISHED AS POPKOLIST HAS NOT RUN TO CO
 
             return HttpResponse(myJson)
         else:
+            # this is a slightly concerning state to get to, so we're logging it
             print "Request was not ajax!"
-            # TODO could improve feedback here, although a non ajax request means something went terribly wrong OR
-            # they are trying (hopefully failing) to break the server
+            functions.log(request, "NON_AJAX", "PATH_TAXA")
     except Exception as e:
         print "Error during kegg path: ", e
 
@@ -2588,6 +2623,9 @@ def nzTaxaJSON(request):
             results['data'] = list(qs1)
             myJson = ujson.dumps(results, ensure_ascii=False)
             return HttpResponse(myJson)
+        else:
+            print "Request was not ajax!"
+            functions.log(request, "NON_AJAX", "NZ_TAXA")
     except Exception as e:
         print "Error during kegg enzyme: ", e
 
@@ -2760,6 +2798,9 @@ def saveSampleList(request):
 
         text = 'Selected sample(s) have been recorded!\nYou may proceed directly to data normalization.'
         return HttpResponse(text)
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "SAVE_SAMPLE")
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
@@ -3138,6 +3179,9 @@ def updateFilePerms(request):
         syncFilePerms(thisUser)  # get related user lists updated, for query speed
         # note: MUST call sync after either additions or removals
         # not calling it inside either function since both are called at the same time for now
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "FILE_PERMS")
 
     retDict = {"error": "none"}
     res = json.dumps(retDict)
@@ -3338,6 +3382,9 @@ def addPerms(request):  # this is the project whitelisting version, could bundle
         retDict = {"error": text}
         res = json.dumps(retDict)
         return HttpResponse(res, content_type='application/json')
+    else:
+        print "Request was not ajax!"
+        functions.log(request, "NON_AJAX", "ADD_PERMS")
 
 
 def remPerms(request):

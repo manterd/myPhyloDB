@@ -89,7 +89,7 @@ def dataprocess(pid):
         #graphOut = GephiOutput(output_file='datFuncCall'+str(count)+'.gdf')
         #count += 1
         #with PyCallGraph(output=graphOut, config=graphConfig):  # when not debugging, tab back under here
-        data = datQ.get(block=True, timeout=None)
+        data = datQ.get(block=True, timeout=None)   # removed sleep statement as it serves no purpose when .get is used
         decremQ()
         RID = data['RID']
         if RID in datStopDict:
@@ -129,7 +129,6 @@ def dataprocess(pid):
             datThreadDict.pop(RID, 0)
             datStopDict.pop(RID, 0)  # clean this up when done or stopped, needs to be here since funcCall can end early
             functions.log(request, "QFINISH", funcName)
-            sleep(1)    # TODO dos vuln? moved to after longer processes
 
 
 def datfuncCall(request):

@@ -39,6 +39,12 @@
             if (test != "") {
                 alert(test);
             }
+            var scriptVis = '{{ scriptVis }}';
+            if (scriptVis == "true"){
+                $("#scriptRow1").show();
+                $("#scriptRow2").show();
+                $("#scriptRow3").show();
+            }
 
             $("#treeRem").dynatree({
                 checkbox: true,
@@ -260,7 +266,7 @@
                 <td>Files</td>
                 <td><input type="file" name="filesfiles" multiple></td>
             </tr>
-            <tr>
+            <tr style="display: none" id="scriptRow1">
                 <td>Script</td>
                 <td><input type="file" name="scriptfiles" multiple></td>
             </tr>
@@ -278,7 +284,7 @@
                 <td>Oligos</td>
                 <td><input type="file" name="oligosfiles" multiple></td>
             </tr>
-            <tr>
+            <tr style="display: none" id="scriptRow2">
                 <td>Script</td>
                 <td><input type="file" name="scriptfiles" multiple></td>
             </tr>
@@ -292,7 +298,7 @@
                 <td>Fastq</td>
                 <td><input type="file" name="fastqfiles" multiple></td>
             </tr>
-            <tr>
+            <tr style="display: none" id="scriptRow3">
                 <td>Script</td>
                 <td><input type="file" name="scriptfiles" multiple></td>
             </tr>

@@ -699,7 +699,7 @@ class koOtuList(models.Model):
     otuList = models.TextField(blank=True)  # ';' separated list of otu names associated with this ko
 
 
-class UserProfile(models.Model):    # TODO add file viewing permission, user to user
+class UserProfile(models.Model):
     # should be a list of usernames, I don't like this though
     # you could wind up with a LOT of users in a database, and having to search each one for if they have added them
     # is incredibly inefficient

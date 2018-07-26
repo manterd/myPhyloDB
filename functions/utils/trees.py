@@ -26,7 +26,7 @@ def getProjectTree(request):
     for project in projects:
         myNode = {
             'title': project.project_name,
-            'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
+            'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation + "\nOwner: " + project.owner.username,
             'id': project.projectid,
             'isFolder': True,
             'isLazy': True,
@@ -1697,6 +1697,9 @@ def getLocationSamplesTree(request):
     # use sampleids to build tree of sample names, parent node is projectname (selectable but not sent if selected)
     # tree should link sampleids of itself to ids in main select tree, mirror select/unselect
     # actual select code should be unaffected, just want grouped sample data
+
+    # permissions currently only allow for check via project, so samples must be from projects with perms
+
     sampString = request.GET['sampleIDs']
     myTree = {'title': 'Samples at Location', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
     sampIDs = sampString.split(":")
@@ -1714,30 +1717,33 @@ def getLocationSamplesTree(request):
             except Exception as e:
                 print "Error during query for location tree:", e
 
+    myProjects = functions.getViewProjects(request)
+
     for projID in projectDict:
         thisProject = Project.objects.get(projectid=projID)
-        myProjNode = {
-            'title': thisProject.project_name,
-            'tooltip': "Project type: " + thisProject.projectType + "\nDescription: " + thisProject.project_desc + "\nID: " + thisProject.projectid + "\nPI: " + thisProject.pi_first + " " + thisProject.pi_last + "\nAffiliation: " + thisProject.pi_affiliation,
-            'id': thisProject.projectid,
-            'isFolder': True,
-            'wip': thisProject.wip,
-            'children': [],
-            # 'expend': True # use this for auto expanded projects, currently inactive for compactness sake
-        }
-        for samp in projectDict[projID]:
-            try:
-                mySampNode = {
-                    'title': 'Name: ' + str(samp.sample_name) + '; Reads: ' + str(samp.reads),
-                    'tooltip': 'ID: ' + str(samp.sampleid),
-                    'id': str(samp.sampleid),
-                    'isFolder': False
-                }
-                myProjNode['children'].append(mySampNode)
-            except Exception as e:
-                print "Error during sample selection for location tree:", e
+        if thisProject in myProjects:   # simple enough security check, since samples are looped by project already
+            myProjNode = {
+                'title': thisProject.project_name,
+                'tooltip': "Project type: " + thisProject.projectType + "\nDescription: " + thisProject.project_desc + "\nID: " + thisProject.projectid + "\nPI: " + thisProject.pi_first + " " + thisProject.pi_last + "\nAffiliation: " + thisProject.pi_affiliation + "\nOwner: " + thisProject.owner.username,
+                'id': thisProject.projectid,
+                'isFolder': True,
+                'wip': thisProject.wip,
+                'children': [],
+                # 'expend': True # use this for auto expanded projects, currently inactive for compactness sake
+            }
+            for samp in projectDict[projID]:
+                try:
+                    mySampNode = {
+                        'title': 'Name: ' + str(samp.sample_name) + '; Reads: ' + str(samp.reads),
+                        'tooltip': 'ID: ' + str(samp.sampleid),
+                        'id': str(samp.sampleid),
+                        'isFolder': False
+                    }
+                    myProjNode['children'].append(mySampNode)
+                except Exception as e:
+                    print "Error during sample selection for location tree:", e
 
-        myTree['children'].append(myProjNode)
+            myTree['children'].append(myProjNode)
 
 
     res = json.dumps(myTree)

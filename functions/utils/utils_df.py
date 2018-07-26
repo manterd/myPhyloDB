@@ -568,7 +568,10 @@ def transformDF(transform, DepVar, finalDF):
     return finalDF
 
 
-def getViewProjects(request):
+def getViewProjects(request):   # use this function as often as possible for project queries, put all perms stuff here
+    # TODO update permissions to new system files uses (user based instead of project based)
+    # if we want to do only user to user that is, project based perms can have its use cases if you collab with multiple groups
+    # also group permissions? should look into that, work group objects or something
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.order_by('project_name')
