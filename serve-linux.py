@@ -85,6 +85,7 @@ if __name__ == '__main__':
     #execute_from_command_line(sys.argv)
 
     import functions
+    from django.db import connection
 
     signal.signal(signal.SIGINT, signal_handler)
     num_threads = functions.analysisThreads()
@@ -101,6 +102,24 @@ if __name__ == '__main__':
     logThread = stoppableThread(target=functions.startLogger)  # new dedicated logging thread
     logThread.setDaemon(True)
     logThread.start()
+
+    # database setting verification
+    with connection.cursor() as cursor:
+        print "Verifying connection settings. Cursor ", cursor
+        #cursor.execute("PRAGMA synchronous = OFF")
+        #cursor.execute("PRAGMA temp_store = MEMORY")
+        #cursor.execute("PRAGMA default_cache_size = 10000")
+        #cursor.execute("PRAGMA journal_mode = WAL")
+        cursor.execute("PRAGMA synchronous")
+        print "S: ", cursor.fetchall()
+        cursor.execute("PRAGMA temp_store")
+        print "T: ", cursor.fetchall()
+        cursor.execute("PRAGMA default_cache_size")
+        print "C: ", cursor.fetchall()
+        cursor.execute("PRAGMA journal_mode")
+        print "J: ", cursor.fetchall()
+        print "Tables:", connection.introspection.table_names()
+
 
     mp.freeze_support()
     Server().run()

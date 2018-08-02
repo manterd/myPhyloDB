@@ -490,6 +490,7 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
         print "Line:", line
         if line != "":  # changed '' to ""
             print line  # actually printing this? TODO send to user instead of spamming console. ALSO this doesn't work?
+            # have not found an example of this working fully, probably because of this step being blank each time I try
         else:
             break
     print "Read lines"
@@ -751,7 +752,9 @@ def uploadWithFastq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     if stopList[PID] == RID:
         return "Stop"
 
-    # TODO split single and multi oligos formats
+    # TODO split single and multi oligos formats (single doesn't work for multi and visa versa)
+    # can't just go oligo and oligos, the 'in' checks get confused (could redo those to fix this?)
+    # could try oligos and 0ligos or some mispelling, variant name, etc
     copyFromUpload(file6, dest, nameDict['oligos'][0])
     # function to check if mothur and metafiles samples match
     error = checkSamples(selDict['meta'], "454_fastq", 'mothur/temp/temp.oligos')
@@ -1306,7 +1309,7 @@ def removeUploads(request):  # removes files from user_upload directory based on
                     try:
                         shutil.rmtree(curPath)
                     except Exception as e:
-                        pass  # print "Error while deleting path:", curFolder, ":", e
+                        print "Error while deleting path:", curFolder, ":", e
                 else:
                     print "Security!!! Folders outside of given permissions,", username, "did it!"
                     results = {'error': 'Illegal access attempt'}
@@ -2241,35 +2244,46 @@ def printKoList(koList):
         print "Here it is: ", testOtuList, " koID: ", testOtuList.koID, " list: ", testOtuList.otuList
 
 
+def printKoOtuList():
+    print "Printing koOtuLists..."
+    fullOtuList = koOtuList.objects.all()
+    for thing in fullOtuList:
+        print thing.koID, ":", thing.otuList
+
+
 def getOtuFromKoList(koList):   # new qsFunc for speed sake, requires KoOtuLists to be fully populated
+    # TODO add popList equivalent for when new uploads complete
     #printKoList(koList)
     finalotuList = []
     otuDict = {}
     for ko in koList:
         try:
-            curOtuList = koOtuList.objects.get(koID=ko).otuList.split(";")
+            curOtuList = koOtuList.objects.get(koID=ko).otuList.split(",")
             for otu in curOtuList:
                 otuDict[otu] = otu
-                # \/-could help, could slow-\/
-                # if otu not in finalotuList:
-                    # finalotuList.append(otu)
         except:
             pass
     for entry in otuDict:
         if entry != "":
-            finalotuList.append(entry)
+            finalotuList.append(str(entry.replace(" u\'", "").replace("\'", "")))
+    # need to strip the " u'" and "'" off the string, because unicode into exact string match
+
     return finalotuList
 
 
+# if you actually need to call this for some reason, remove the return comment
 def populateKoOtuList():    # for initial population, similar to old qsFunc. currently no UI hook (runtime is absurd)
-
-    print "PopulateKoOtuList"
+    print "PopulateKoOtuList, currently disabled"
+    return
 
     from django.db import connection
 
     print "Connection imported"
 
-    # print connections.databases
+    # used for debugging, for the most part this whole function should NOT be called outside of specific maintenance
+    # printKoOtuList()
+    # return
+
     with connection.cursor() as cursor:
         print "Altering connection settings. Cursor ", cursor
         cursor.execute("PRAGMA synchronous = OFF")
@@ -2284,128 +2298,157 @@ def populateKoOtuList():    # for initial population, similar to old qsFunc. cur
         #print "C: ", cursor.fetchall()
         cursor.execute("PRAGMA journal_mode")
         print "J: ", cursor.fetchall()
-        # print "Changed SQLite settings"  # not convinced any changes occurred
-    # print connections.databases
+        print "Changed SQLite settings"  # verify these are temporary
+        print "Tables:", connection.introspection.table_names()
+        try:
+            print "Recreating full koOtuList... this will take some time"
 
-    try:
-        print "Recreating full koOtuList... this will take some time"
+            koList = []
+            records = ko_lvl1.objects.using('picrust').all()
+            for record in records:
+                koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
 
-        # wipe old records
-        # missed ko entry levels, should fix output volume problem
-        koOtuList.objects.all().delete()
-        print "Old records wiped, here we go"
-        #print "Not wiping old database for time and testing. Actually should wipe for final run"
+            print "ko1:", len(koList)
 
-        koList = []
-        records = ko_lvl1.objects.using('picrust').all()
-        for record in records:
-            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+            records = ko_lvl2.objects.using('picrust').all()
+            for record in records:
+                koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
 
-        print "ko1:", len(koList)
+            print "ko2:", len(koList)
 
-        records = ko_lvl2.objects.using('picrust').all()
-        for record in records:
-            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+            records = ko_lvl3.objects.using('picrust').all()
+            for record in records:
+                koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
 
-        print "ko2:", len(koList)
+            print "ko3:", len(koList)
 
-        records = ko_lvl3.objects.using('picrust').all()
-        for record in records:
-            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+            koList.extend(ko_entry.objects.using('picrust').all())
+            koLen = len(koList)
+            print "KoList length:", koLen
 
-        print "ko3:", len(koList)
-
-        koList.extend(ko_entry.objects.using('picrust').all())
-        koLen = len(koList)
-        print "KoList length:", koLen
-
-        otuList = OTU_99.objects.all().values_list('otuid', flat=True)
-        otuLen = len(otuList)
-        print "OtuList length:", otuLen
-        curOtu = 0
-        totalKos = 0
-        if koList:
-            koDict = {}
-            for ko in koList:
-                koDict[ko] = ko
-            outputFreq = 50
-            iterTime = 0
-            totalTime = 0
-            iter = 0
-            for otu in otuList:
-                startTime = time.time()
-                curTotal = 0
-                creTotal = 0
-                missTotal = 0
+            delIter = 0
+            missed = 0
+            delStart = time.time()
+            # slower delete function, grants feedback
+            for delKo in koList:
                 try:
-                    qs = PICRUSt.objects.using('picrust').filter(otuid=otu)
-                    geneList = qs[0].geneList
-                    geneList = geneList.replace("[", "")
-                    geneList = geneList.replace("]", "")
-                    geneList = geneList.replace("'", "")
-                    geneList = geneList.replace(" ", "")
-                    genes = geneList.split(",")
-                    # setup list of genes which need new koOtuList objects
-                    newKoGenes = []
-                    # setup list of genes whose koOtuLists should have this otu added
-                    allKoGenes = []
-                    checkTime = 0
-                    existsTime = 0
-                    appendTime = 0
-                    otherAppTime = 0
-                    for gene in genes:
-                        prevTime = time.time()
-                        try:
-                            if koDict[gene] == gene:  # check if gene is in koDict
-                                checkTime += time.time()-prevTime
-                                prevTime = time.time()
-                                # get or make koOtuList object for this ko
-                                if not koOtuList.objects.filter(koID=gene).exists():
-                                    existsTime += time.time()-prevTime
-                                    prevTime = time.time()
-                                    newKoGenes.append(gene)
-                                    appendTime += time.time()-prevTime
-                                    prevTime = time.time()
-                                    creTotal += 1
-                                    totalKos += 1
-                                else:
-                                    existsTime += time.time()-prevTime
-                                    prevTime = time.time()
-                                allKoGenes.append(gene)
-                                otherAppTime += time.time()-prevTime
-                                curTotal += 1
-                        except:
-                            missTotal += 1
-                            pass  # can be a keyerror from gene not being in koDict
-                    # create new koOtuList objects based on list made in memory (bulk_create (need to set otuList so mass_create))
-                    mass_create(newKoGenes)
-                    # update all koOtuList objects which match this otu (add this otu to their lists then bulk save(?))
-                    #print "Pre"
-                    try:
-                        koOtuList.objects.filter(koID__in=allKoGenes).update(otuList=Concat("otuList", Value(str(otu)+";")))
-                        # TODO this is the current bottleneck, saving scales linearly with saved entry count
-                    except Exception as upderr:
-                        print "Update error: ", upderr
-                    #print "Post"
-                    #mass_add(myOtuLists, otu)
+                    koOtuList.objects.get(koID=delKo).delete()
+                except Exception:
+                    missed += 1
+                delIter += 1
+                if delIter % 50 == 0:
+                    print "Deleted", delIter, "missed", missed
+                    print "Total time for deletion:", time.time()-delStart, "at", (delIter*100.0)/(1.0*koLen), "% complete"
+                    missed = 0
 
-                except Exception as e:
-                    pass
-                curOtu += 1
-                if iter < outputFreq:   # because exit step also includes an iteration
+            print "Deleting remaining entries"
+            koOtuList.objects.all().delete()
+            print "Old records wiped, here we go"
+
+            otuList = OTU_99.objects.all().values_list('otuid', flat=True)
+            otuLen = len(otuList)
+            print "OtuList length:", otuLen
+            curOtu = 0
+            totalKos = 0
+            if koList:
+                koDict = {}
+                koOtuDict = {}
+                for ko in koList:
+                    koDict[ko] = ko
+                outputFreq = 50
+                iterTime = 0
+                totalTime = 0
+                iter = 0
+                for otu in otuList:
+                    startTime = time.time()
+                    curTotal = 0
+                    creTotal = 0
+                    missTotal = 0
+                    try:
+                        qs = PICRUSt.objects.using('picrust').filter(otuid=otu)
+                        geneList = qs[0].geneList
+                        geneList = geneList.replace("[", "")
+                        geneList = geneList.replace("]", "")
+                        geneList = geneList.replace("'", "")
+                        geneList = geneList.replace(" ", "")
+                        genes = geneList.split(",")
+                        checkTime = 0
+                        existsTime = 0
+                        appendTime = 0
+                        otherAppTime = 0
+                        for gene in genes:
+                            prevTime = time.time()
+                            try:
+                                if koDict[gene] == gene:  # check if gene is in koDict
+                                    checkTime += time.time()-prevTime
+                                    prevTime = time.time()
+                                    # get or make koOtuList object for this ko
+                                    if gene not in koOtuDict.keys():
+                                        existsTime += time.time()-prevTime
+                                        prevTime = time.time()
+
+                                        koOtuDict[gene] = []
+
+                                        appendTime += time.time()-prevTime
+                                        prevTime = time.time()
+                                        creTotal += 1
+                                        totalKos += 1
+                                    else:
+                                        existsTime += time.time()-prevTime
+                                        prevTime = time.time()
+
+                                    koOtuDict[gene].append(otu)
+
+                                    otherAppTime += time.time()-prevTime
+                                    curTotal += 1
+                                else:
+                                    missTotal += 1
+                            except:
+                                missTotal += 1
+                                pass  # can be a keyerror from gene not being in koDict
+
+                    except Exception as e:
+                        pass
+                    curOtu += 1
                     thisTime = time.time()-startTime
                     iterTime += thisTime
                     totalTime += thisTime
                     iter += 1
-                if iter >= outputFreq:
-                    print "Past", outputFreq, " ", iterTime/outputFreq, " vs Total ", totalTime/curOtu, " \tOtu: ", curOtu, " / ", otuLen
-                    iterTime = 0
-                    iter = 0
-        # get all ko genelists and search for matching otus (out of entire set)
-        # add matching otus to related koOtuList entries
-    except Exception as er:
-        print "Problem with popKOL (M) ", er
-    return
+                    if iter % outputFreq == 0:
+                        print "Past", outputFreq, " ", iterTime/outputFreq, " vs Total ", totalTime/curOtu, " \tOtu: ", curOtu, " / ", otuLen
+                        iterTime = 0
+
+                    # early break statement for testing
+                    #if iter == 50:
+                    #    break
+
+                # save to database from koOtuDict
+                print "Completed main processing loop, saving to database"
+                koSet = koOtuDict.keys()
+                mass_create(koSet)
+                print "Created new objects, saving values"
+                iter = 0
+                upTime = time.time()
+                fiftyTime = time.time()
+                for ko in koSet:
+                    try:
+                        thisKoOtuList = koOtuList.objects.get(koID=ko)
+                        thisKoOtuList.otuList = koOtuDict[ko]   # save as list, ie comma delimiter with u'' encaps
+                        # saving like this takes all of 5 minutes, changing reader code won't make a significant impact
+                        thisKoOtuList.save()
+                        iter += 1
+                        if iter % 50 == 0:
+                            print "Saved 50, took", time.time()-fiftyTime, "seconds. Total save time is", time.time()-upTime
+                            fiftyTime = time.time()
+                            connection.commit()
+                            print "Committed"
+                    except Exception as ex:
+                        print "Error during save:", ex
+
+            # get all ko genelists and search for matching otus (out of entire set)
+            # add matching otus to related koOtuList entries
+        except Exception as er:
+            print "Problem with popKOL (M) ", er
 
 
 # create koOtuList objects from a gene list
@@ -2416,22 +2459,9 @@ def mass_create(koGenes):
         newList.otuList = ""
         newList.save()
 
-'''
-# add otu argument to koOtuLists
-@transaction.atomic  # average 4-5 seconds commit time with atomic. Takes many minutes to complete mass_add without atomic
-def mass_add(dbObjects, otu):
-    #first = 0
-    dbObjects.update(otuList=Concat("otuList", Value(str(otu)+";")))
-    dbObjects.save()
-    for dbObj in dbObjects:
-        try:
-            dbObj.otuList += str(otu)+";"
-            dbObj.save()
-            if first == 0:
-                print "List: ", dbObj.otuList
-                first = 1
-        except Exception as saverror:
-            print "Error with save: ", saverror'''
+
+def mass_update(allKoGenes, otu):
+    koOtuList.objects.filter(koID__in=allKoGenes).update(otuList=Concat("otuList", Value(str(otu) + ";")))
 
 
 def qsFunc(koList):  # works, but is still slow, still leaks (although only maybe 100 MB at a time vs 10 GB)
@@ -2522,12 +2552,8 @@ def checkOtuListIntegrity():
     print "KoList length:", len(koList)
 
 
-def pathTaxaJSON(request):  # NOT AT ALL FINISHED AS POPKOLIST HAS NOT RUN TO COMPLETION
+def pathTaxaJSON(request):
     try:
-        #checkOtuListIntegrity()
-        #populateKoOtuList()
-        #checkOtuListIntegrity()
-        #compareMethods("K03635")    # test method, to be moved to unit testing (and converted into a proper unit test)
 
         if request.is_ajax():
             wanted = request.GET['key']
@@ -2543,10 +2569,9 @@ def pathTaxaJSON(request):  # NOT AT ALL FINISHED AS POPKOLIST HAS NOT RUN TO CO
             elif ko_lvl3.objects.using('picrust').filter(ko_lvl3_id=wanted).exists():
                 record = ko_lvl3.objects.using('picrust').get(ko_lvl3_id=wanted)
                 koList = record.ko_entry_set.values_list('ko_orthology', flat=True)
-            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():  # this working or ever used?
+            elif ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).exists():
                 koList = ko_entry.objects.using('picrust').filter(ko_lvl4_id=wanted).values_list('ko_orthology', flat=True)
 
-            #finalotuList = qsFunc(koList)
             startTime = time.time()
             finalotuList = getOtuFromKoList(koList)
             print "Finished kegg_path query:", time.time()-startTime, "seconds elapsed.", len(finalotuList), "entries found"
@@ -2582,7 +2607,6 @@ def nzJSON(request):
 
 
 def nzTaxaJSON(request):
-    print "Starting nz query"
     try:
         if request.is_ajax():
             wanted = request.GET['key']
@@ -2604,24 +2628,15 @@ def nzTaxaJSON(request):
             elif nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).exists():
                 koList = nz_entry.objects.using('picrust').filter(nz_lvl5_id=wanted).values_list('nz_orthology', flat=True)
 
-
             startTime = time.time()
             finalotuList = getOtuFromKoList(koList)
-            print "Finished kegg_enzyme query (new):", time.time()-startTime, "seconds elapsed"
-
-            # new method is faster (by far) but missing 3/4 of otus???? full calc didn't run?
-
-            '''# testing comparison
-            startTime = time.time()
-            oldfinalotuList = qsFunc(koList)
-            print "Finished kegg_enzyme query (old):", time.time()-startTime, "seconds elapsed"
-
-            print "Size comp:", len(finalotuList), ";", len(oldfinalotuList)'''
-
+            print "Finished kegg_enzyme query:", time.time()-startTime, "seconds elapsed. Starting data filter"
+            filterTime = time.time()
             results = {}
             qs1 = OTU_99.objects.filter(otuid__in=finalotuList).values_list('kingdomid', 'kingdomid__kingdomName', 'phylaid', 'phylaid__phylaName', 'classid', 'classid__className', 'orderid', 'orderid__orderName', 'familyid', 'familyid__familyName', 'genusid', 'genusid__genusName', 'speciesid', 'speciesid__speciesName', 'otuid', 'otuName')
             results['data'] = list(qs1)
             myJson = ujson.dumps(results, ensure_ascii=False)
+            print "Finished kegg_enzyme formatting:", time.time()-filterTime, "seconds elapsed. Returning"
             return HttpResponse(myJson)
         else:
             print "Request was not ajax!"
@@ -2780,7 +2795,7 @@ def saveSampleList(request):
             dirpath = 'myPhyloDB/media/usr_temp/' + str(request.user)
             shutil.rmtree(dirpath, ignore_errors=True)
         except Exception as e:
-            print e
+            print "Error during sample save, rmtree:", e
 
         # save file
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
@@ -3387,7 +3402,7 @@ def addPerms(request):  # this is the project whitelisting version, could bundle
         functions.log(request, "NON_AJAX", "ADD_PERMS")
 
 
-def remPerms(request):
+def remPerms(request):  # TODO new system vs finish old system and run both?
     print "NYI"
     return
 

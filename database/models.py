@@ -695,7 +695,7 @@ class PICRUSt(models.Model):
 
 
 class koOtuList(models.Model):
-    koID = models.TextField(primary_key=True)   # used as index for fast retrieval; write time increases w/ object count
+    koID = models.TextField(primary_key=True, db_index=True)   # used as index for fast retrieval; write time increases w/ object count
     otuList = models.TextField(blank=True)  # ';' separated list of otu names associated with this ko
 
 
