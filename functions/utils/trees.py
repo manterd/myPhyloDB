@@ -1729,7 +1729,7 @@ def getLocationSamplesTree(request):
                 'isFolder': True,
                 'wip': thisProject.wip,
                 'children': [],
-                # 'expend': True # use this for auto expanded projects, currently inactive for compactness sake
+                # 'expand': True # use this for auto expanded projects, currently inactive for compactness sake
             }
             for samp in projectDict[projID]:
                 try:
@@ -1739,6 +1739,105 @@ def getLocationSamplesTree(request):
                         'id': str(samp.sampleid),
                         'isFolder': False
                     }
+                    myProjNode['children'].append(mySampNode)
+                except Exception as e:
+                    print "Error during sample selection for location tree:", e
+
+            myTree['children'].append(myProjNode)
+
+
+    res = json.dumps(myTree)
+    if 'callback' in request.GET:
+        response_dict = request.GET['callback'] + "(" + res + ")"
+        return HttpResponse(response_dict, content_type='application/json')
+
+
+def getFilterSamplesTree(request):
+    # request should contain marker data (aka lat lon pair, sampleids, projectnames)
+    # use sampleids to build tree of sample names, parent node is projectname (selectable but not sent if selected)
+    # tree should link sampleids of itself to ids in main select tree, mirror select/unselect
+    # actual select code should be unaffected, just want grouped sample data
+
+    # permissions currently only allow for check via project, so samples must be from projects with perms
+
+    pType = request.GET['ptype']
+    fName = request.GET['fname']
+    myTree = {'title': 'Filtered Data', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
+    # print "PTYPE:", pType
+    # print "FNAME:", fName
+    if pType != "" and pType is not None and fName != "" and fName is not None:
+        projectSet = []
+        myProjects = functions.getViewProjects(request)
+
+        for proj in myProjects:
+            if proj.projectType == pType or pType == "mimarks" or pType == "user_defined":
+                projectSet.append(proj)
+        # print "Found", len(projectSet), "projects of correct type"
+
+        sampleDict = {}
+
+        for proj in projectSet:
+            samplesFromThisProject = Sample.objects.filter(projectid=proj)
+            sampleDict[proj.projectid] = []
+            for samp in samplesFromThisProject:
+                try:
+                    workSamp = None
+                    if pType.lower() == "mimarks":
+                        workSamp = samp
+                    if pType.lower() == "soil":
+                        workSamp = Soil.objects.get(sampleid=samp)
+                    if pType.lower() == "human_associated":
+                        workSamp = Human_Associated.objects.get(sampleid=samp)
+                    if pType.lower() == "air":
+                        workSamp = Air.objects.get(sampleid=samp)
+                    if pType.lower() == "water":
+                        workSamp = Water.objects.get(sampleid=samp)
+                    if pType.lower() == "microbial":
+                        workSamp = Microbial.objects.get(sampleid=samp)
+                    if pType.lower() == "user_defined":
+                        workSamp = UserDefined.objects.get(sampleid=samp)
+                    workVal = getattr(workSamp, fName)
+                    if workVal is not None and workVal != "" and workVal != "nan":
+                        sampleDict[proj.projectid].append(workSamp)
+                except Exception as e:
+                    print "Error with workSamp:", e
+                    pass
+        # print "Found", len(sampleDict), "projects with correct sample vals"
+        # print "SampleDict:", sampleDict
+
+        projectSet = []
+        for projid in sampleDict.keys():
+            if len(sampleDict[projid]) > 0:
+                projectSet.append(Project.objects.get(projectid=projid))
+        # print "Found", len(projectSet), "projects after cleanup"
+
+        for proj in projectSet:
+            myProjNode = {
+                'title': proj.project_name,
+                'tooltip': "Project type: " + proj.projectType + "\nDescription: " + proj.project_desc + "\nID: " + proj.projectid + "\nPI: " + proj.pi_first + " " + proj.pi_last + "\nAffiliation: " + proj.pi_affiliation + "\nOwner: " + proj.owner.username,
+                'id': proj.projectid,
+                'isFolder': True,
+                'wip': proj.wip,
+                'children': [],
+                # 'expand': True # use this for auto expanded projects, currently inactive for compactness sake
+            }
+            # print proj.project_name, "has", len(sampleDict[proj.projectid]), "matching samples"
+            for samp in sampleDict[proj.projectid]:
+                try:
+                    if pType == "mimarks":
+                        mySampNode = {
+                            'title': "Value: " + str(getattr(samp, fName)) + '; Name: ' + str(samp.sample_name) + '; Reads: ' + str(samp.reads),
+                            'tooltip': 'ID: ' + str(samp.sampleid),
+                            'id': str(samp.sampleid),
+                            'isFolder': False
+                        }
+                    else:
+                        mySampNode = {
+                            'title': "Value: " + str(getattr(samp, fName)) + '; Name: ' + str(samp.sampleid.sample_name) + '; Reads: ' + str(samp.sampleid.reads),
+                            'tooltip': 'ID: ' + str(samp.sampleid.sampleid),
+                            'id': str(samp.sampleid.sampleid),
+                            'isFolder': False
+                        }
                     myProjNode['children'].append(mySampNode)
                 except Exception as e:
                     print "Error during sample selection for location tree:", e

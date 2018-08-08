@@ -780,6 +780,7 @@ def updateKoOtuList(otuList, stopList, PID, RID):  # for during a new upload
 
         curOtu = 0
         if koList:
+            koOtuDict = {}
             for otu in otuList:
                 curTotal = 0
                 creTotal = 0
@@ -794,20 +795,32 @@ def updateKoOtuList(otuList, stopList, PID, RID):  # for during a new upload
                     for gene in genes:
                         if gene in koList:
                             # get or make koOtuList object for this ko
-                            if not koOtuList.objects.filter(koID=gene).exists():
-                                newList = koOtuList.objects.create(koID=gene)
-                                newList.otuList = ""
-                                newList.save()
+                            if gene not in koOtuDict.keys():
+                                koOtuDict[gene] = []
                                 creTotal += 1
-                            thisList = koOtuList.objects.get(koID=gene)
-                            thisList.otuList += str(otu)+";"
-                            thisList.save()
+                            koOtuDict[gene].append(otu)
                             curTotal += 1
 
                     # print "Otu "+str(curOtu)+" done. Found "+str(curTotal)+" ko matches. Created "+str(creTotal)+" new entries"
                     curOtu += 1
                     if stopList[PID] == RID:
                         return
+
+            for ko in koOtuDict.keys():
+                if not koOtuList.objects.filter(koID=ko).exists():
+                    # koOtuList did not exist from main pop function, can just save list on new entry
+                    newKo = koOtuList.objects.create(koID=ko)
+                    newKo.otuList = koOtuDict[ko]
+                    newKo.save()
+                else:
+                    myKo = koOtuList.objects.get(koID=ko)
+                    # slightly trickier, as existing entry likely has a unicode comma split string, add comma then list
+                    oldList = myKo.otuList  # other thing to consider is duplicate entries, need to rebuild entirely
+                    # need to convert oldList from full string
+                    newList = koOtuDict[ko]
+                    myKo.otuList = oldList + "," + str(newList)  # TODO Verify
+                    myKo.save()
+
 
     except Exception as er:
         print "Problem with updateKOL (M) ", er

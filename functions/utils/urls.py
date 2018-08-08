@@ -29,6 +29,7 @@ urlpatterns = [
     url(r'^getPermissionTree/$', functions.getPermissionTree, name='getPermissionTree'),
     url(r'^getFilePermTree/$', functions.getFilePermTree, name='getFilePermTree'),
     url(r'^getLocationSamplesTree/$', functions.getLocationSamplesTree, name='getLocationSamplesTree'),
+    url(r'^getFilterSamplesTree/$', functions.getFilterSamplesTree, name='getFilterSamplesTree'),
 
     ### urls from utils page
     url(r'^getRawDataTab/$', functions.getRawDataTab, name='getRawDataTab'),

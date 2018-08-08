@@ -2056,7 +2056,8 @@ def select(request):
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                 'method': 'POST'}
+                 'method': 'POST',
+                 'locationBasedSampleDict': {}}
             )
 
         selList = list(set(savedDF['sampleid']))
@@ -2076,7 +2077,9 @@ def select(request):
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                 'method': 'POST'}
+                 'method': 'POST',
+                 'locationBasedSampleDict': {}}
+
             )
 
         if not Reference.objects.filter(projectid__in=projectList).exists():
@@ -2086,7 +2089,8 @@ def select(request):
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                 'method': 'POST'}
+                 'method': 'POST',
+                 'locationBasedSampleDict': {}}
             )
 
         if not Sample.objects.filter(sampleid__in=selList).exists():
@@ -2096,11 +2100,12 @@ def select(request):
                 {'form9': UploadForm9,
                  'selList': '',
                  'normpost': 'error',
-                 'method': 'POST'}
+                 'method': 'POST',
+                 'locationBasedSampleDict': {}}
             )
 
         biome = {}
-        tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+        tempDF = savedDF.drop_duplicates(subset='sampleid', keep='last')
         tempDF.set_index('sampleid', drop=True, inplace=True)
 
         metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
@@ -2152,7 +2157,8 @@ def select(request):
             {'form9': UploadForm9,
              'selList': selList,
              'normpost': 'Success',
-             'method': 'POST'}
+             'method': 'POST',
+             'locationBasedSampleDict': {}}
         )
 
     else:
@@ -2169,7 +2175,8 @@ def select(request):
                 try:
                     # .00001 ~ 1 meter
                     # .01  ~ 1 km
-                    # round to hundredths place for the sake of grouping, make rounded val a constant for fine tuning
+                    # round to hundredths place for the sake of grouping, made roundOff val a constant for fine tuning
+                    # 1/roundOff = decimal place to floor (always rounded down for simplicity/speed)
                     roundOff = 100  # bigger numbers here mean more precise coordinates, smaller for cleaner grouping
                     myLat = samp.latitude
                     myLon = samp.longitude
@@ -2230,18 +2237,16 @@ def printKoList(koList):
         allthenames.append(thing.koID)
     print "Printing koOtuList: ", allthenames
 
-    # how many koList entries are in koOtuList
-    found = 0
-    lastFound = ""
-    for ko in koList:
-        if ko in allthenames:
-            found += 1
-            lastFound = ko
-    print "Found ", found, " matches"
-    if found > 0:
-        print "Checking last match, ", lastFound
-        testOtuList = koOtuList.objects.get(koID=lastFound)#.otuList.split(";")
-        print "Here it is: ", testOtuList, " koID: ", testOtuList.koID, " list: ", testOtuList.otuList
+    print "First entry list:"
+    first = True
+    for otuList in fullOtuList:
+        if first:
+            first = False
+            myList = otuList.otuList
+            print myList
+            print "Entries in list:"
+            for entry in myList:
+                print entry
 
 
 def printKoOtuList():
@@ -2252,8 +2257,7 @@ def printKoOtuList():
 
 
 def getOtuFromKoList(koList):   # new qsFunc for speed sake, requires KoOtuLists to be fully populated
-    # TODO add popList equivalent for when new uploads complete
-    #printKoList(koList)
+    # printKoList(koList)
     finalotuList = []
     otuDict = {}
     for ko in koList:
@@ -2458,10 +2462,6 @@ def mass_create(koGenes):
         newList = koOtuList.objects.create(koID=newGene)
         newList.otuList = ""
         newList.save()
-
-
-def mass_update(allKoGenes, otu):
-    koOtuList.objects.filter(koID__in=allKoGenes).update(otuList=Concat("otuList", Value(str(otu) + ";")))
 
 
 def qsFunc(koList):  # works, but is still slow, still leaks (although only maybe 100 MB at a time vs 10 GB)
@@ -3018,7 +3018,7 @@ def uploadNorm(request):
         )
 
     biome = {}
-    tempDF = savedDF.drop_duplicates(subset='sampleid', take_last=True)
+    tempDF = savedDF.drop_duplicates(subset='sampleid', keep='last')
     tempDF.set_index('sampleid', drop=True, inplace=True)
 
     metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
