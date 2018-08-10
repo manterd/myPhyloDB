@@ -28,6 +28,7 @@
         var sampIDs = "";
         var ptype = "mimarks";
         var fname = "organism";
+        var fval = "";
 
 
         $(function () {
@@ -430,7 +431,8 @@
                     dataType: "jsonp",
                     data: {
                         'ptype': ptype,
-                        'fname': fname
+                        'fname': fname,
+                        'fval': fval
                     }
                 },
                 onSelect: function (select, node) {
@@ -608,7 +610,24 @@
             // get value of selection menu, use to hide and display other datasets
             var filterType = document.getElementById("filterType").value;
             ptype = filterType;
+            if (filterType == "projects"){
+                $("#tree").show();
+                $("#filterTree").hide();
+                $("#filter").hide();
+                $("#filterValue").hide();
+                $("#mimarkFilter").hide();
+                $("#soilFilter").hide();
+                $("#human_associatedFilter").hide();
+                $("#airFilter").hide();
+                $("#waterFilter").hide();
+                $("#microbialFilter").hide();
+                $("#user_definedFilter").hide();
+            }
             if (filterType == "mimarks"){
+                $("#tree").hide();
+                $("#filterTree").show();
+                $("#filter").show();
+                $("#filterValue").show();
                 $("#mimarkFilter").show();
                 $("#soilFilter").hide();
                 $("#human_associatedFilter").hide();
@@ -618,6 +637,10 @@
                 $("#user_definedFilter").hide();
             }
             if (filterType == "soil"){
+                $("#tree").hide();
+                $("#filterTree").show();
+                $("#filter").show();
+                $("#filterValue").show();
                 $("#mimarkFilter").hide();
                 $("#soilFilter").show();
                 $("#human_associatedFilter").hide();
@@ -627,6 +650,10 @@
                 $("#user_definedFilter").hide();
             }
             if (filterType == "human_associated"){
+                $("#tree").hide();
+                $("#filterTree").show();
+                $("#filter").show();
+                $("#filterValue").show();
                 $("#mimarkFilter").hide();
                 $("#soilFilter").hide();
                 $("#human_associatedFilter").show();
@@ -636,6 +663,10 @@
                 $("#user_definedFilter").hide();
             }
             if (filterType == "air"){
+                $("#tree").hide();
+                $("#filterTree").show();
+                $("#filter").show();
+                $("#filterValue").show();
                 $("#mimarkFilter").hide();
                 $("#soilFilter").hide();
                 $("#human_associatedFilter").hide();
@@ -645,6 +676,10 @@
                 $("#user_definedFilter").hide();
             }
             if (filterType == "water"){
+                $("#tree").hide();
+                $("#filterTree").show();
+                $("#filter").show();
+                $("#filterValue").show();
                 $("#mimarkFilter").hide();
                 $("#soilFilter").hide();
                 $("#human_associatedFilter").hide();
@@ -654,6 +689,10 @@
                 $("#user_definedFilter").hide();
             }
             if (filterType == "microbial"){
+                $("#tree").hide();
+                $("#filterTree").show();
+                $("#filter").show();
+                $("#filterValue").show();
                 $("#mimarkFilter").hide();
                 $("#soilFilter").hide();
                 $("#human_associatedFilter").hide();
@@ -663,6 +702,10 @@
                 $("#user_definedFilter").hide();
             }
             if (filterType == "user_defined"){
+                $("#tree").hide();
+                $("#filterTree").show();
+                $("#filter").show();
+                $("#filterValue").show();
                 $("#mimarkFilter").hide();
                 $("#soilFilter").hide();
                 $("#human_associatedFilter").hide();
@@ -682,10 +725,12 @@
                             dataType: "jsonp",
                              data: {
                                 'ptype': ptype,
-                                'fname': fname
+                                'fname': fname,
+                                 'fval': fval
                             }
                         });
             $("#filterTree").dynatree("getTree").reload();
+
         }
 
         function updateFilter() {
@@ -710,6 +755,45 @@
             if (ptype == "user_defined"){
                 fname = document.getElementById("user_definedFilter").value;
             }
+            fval = "";
+            getFilterData();
+            setTimeout(popFilterList, 1000);
+        }
+        function updateFilterVal() {
+            fval = document.getElementById("filterValue").value;
+            getFilterData();
+        }
+
+        function popFilterList() {
+            var valDict = {};
+            var found = 0;
+            $("#filterTree").dynatree("getRoot").visit(function (node) {
+                if (node.getLevel() == 3){
+                    var myValue = node.data.title.split(";")[0].split(":")[1];
+                    valDict[myValue] = myValue;
+                    found++;
+                }
+            });
+            var filterVal = document.getElementById("filterValue");
+            var i;
+            for(i = filterVal.options.length - 1 ; i >= 0 ; i--)
+            {
+                filterVal.remove(i);
+            }
+            var newFilters = Object.keys(valDict);
+            for (var iter=0; iter<newFilters.length; iter++) {
+                var option = document.createElement("option");
+                var myVal = newFilters[iter];
+                myVal = $.trim(myVal);
+                option.value = myVal;
+                option.text = myVal;
+                filterVal.add(option);
+            }
+            var blankOption = document.createElement("option");
+            var blankVal = "";
+            blankOption.value = blankVal;
+            blankOption.text = blankVal;
+            filterVal.add(blankOption);
         }
 
     </script>
@@ -723,10 +807,440 @@
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
             <th>Select any combination of data for analysis:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
+            <th>Find samples based on data:</th>
         </tr>
         <tr>
             <td style="padding-right: 10px; vertical-align: top">
                 <div id="tree"></div>
+                <div id="filterTree" style="display:none;"></div>
+            </td>
+            <td>
+                <table>
+                    <tr>
+                        <td>
+                            <select id="filterType" onChange="selectFilter()">
+                                <option value="projects" selected>Projects</option>
+                                <option value="mimarks">Mimarks</option>
+                                <option value="soil">Soil</option>
+                                <option value="human_associated">Human Associated</option>
+                                <option value="air">Air</option>
+                                <option value="water">Water</option>
+                                <option value="microbial">Microbial</option>
+                                <option value="user_defined">User Defined</option>
+                            </select>
+                            <br>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select id="mimarkFilter" onclick="updateFilter();" style="display:none;">
+                    <option value="refid">myPhyloDB generated upload UUID</option>
+                    <option value="organism" selected>NCBI organism</option>
+                    <option value="collection_date">Collection Date</option>
+                    <option value="depth">Depth below soil surface</option>
+                    <option value="elev">Elevation</option>
+                    <option value="seq_platform">Sequencing platform</option>
+                    <option value="seq_gene">Gene targeted for sequencing</option>
+                    <option value="seq_gene_region">Gene region targeted for sequencing</option>
+                    <option value="seq_barcode">Sequencing barcoder</option>
+                    <option value="seq_for_primer">Sequencing forward primer</option>
+                    <option value="seq_rev_primer">Sequencing reverse primer</option>
+                    <option value="env_biome">Environment: biome</option>
+                    <option value="env_feature">Environment: feature</option>
+                    <option value="env_material">Environment: material</option>
+                    <option value="geo_loc_country">Geographic location: country</option>
+                    <option value="geo_loc_state">Geographic location: state</option>
+                    <option value="geo_loc_city">Geographic location: city</option>
+                    <option value="geo_loc_farm">Geographic location: farm</option>
+                    <option value="geo_loc_plot">Geographic location: plot</option>
+                    <option value="latitude">Latitude</option>
+                    <option value="longitude">Longitude</option>
+                    <option value="annual_season_precpt">Mean annual precipitation</option>
+                    <option value="annual_season_temp">Mean annual temperature</option>
+                </select>
+                            <select id="soilFilter" style="display: none;" onclick="updateFilter();">
+                                <option value="samp_collection_device" selected>Sample: collection device</option>
+                                <option value="samp_size">Sample: size</option>
+                                <option value="samp_depth">Sample: depth range</option>
+                                <option value="samp_prep">Sample: preparation</option>
+                                <option value="samp_sieve_size">Sample: sieve size</option>
+                                <option value="samp_store_dur">Sample: storage duration</option>
+                                <option value="samp_store_loc">Sample: storage location</option>
+                                <option value="samp_store_temp">Sample: storage temperature</option>
+                                <option value="samp_weight_dna_ext">Sample: weight used for DNA extractions</option>
+                                <option value="pool_dna_extracts">Sample: number of pooled DNA extracts</option>
+                                <option value="fao_class">Soil: FAO classification</option>
+                                <option value="local_class">Soil: USDA soil taxonomy</option>
+                                <option value="texture_class">Soil: texture class</option>
+                                <option value="porosity">Soil: porosity</option>
+                                <option value="profile_position">Soil: profile position</option>
+                                <option value="slope_aspect">Soil: slope aspect</option>
+                                <option value="slope_gradient">Soil: slope gradient</option>
+                                <option value="bulk_density">Soil: bulk density</option>
+                                <option value="drainage_class">Soil: drainage class</option>
+                                <option value="water_content_soil">Soil: water content</option>
+                                <option value="cur_land_use">Crop: current land use</option>
+                                <option value="cur_vegetation">Crop: current vegetation</option>
+                                <option value="cur_crop">Crop: current crop</option>
+                                <option value="cur_cultivar">Crop: current cultivar</option>
+                                <option value="crop_rotation">Crop: crop rotation</option>
+                                <option value="cover_crop">Crop: cover crop</option>
+                                <option value="fert_amendment_class">Fertilizer: amendment class</option>
+                                <option value="fert_placement">Fertilizer: placement</option>
+                                <option value="fert_type">Fertilizer: type</option>
+                                <option value="fert_tot_amount">Fertilizer: total amount</option>
+                                <option value="fert_N_tot_amount">Fertilizer: total N amount</option>
+                                <option value="fert_P_tot_amount">Fertilizer: total P amount</option>
+                                <option value="fert_K_tot_amount">Fertilizer: total K amount</option>
+                                <option value="irrigation_type">Irrigation: type</option>
+                                <option value="irrigation_tot_amount">Irrigation: total amount</option>
+                                <option value="residue_removal">Residue: type</option>
+                                <option value="residue_growth_stage">Residue: growth stage at removal</option>
+                                <option value="residue_removal_percent">Residue: amount removed</option>
+                                <option value="tillage_event">Tillage: type</option>
+                                <option value="tillage_event_depth">Tillage: depth</option>
+                                <option value="amend1_class">Amendments: type</option>
+                                <option value="amend1_active_ingredient">Amendments: active ingredient</option>
+                                <option value="amend1_tot_amount">Amendments: total amount</option>
+                                <option value="amend2_class">Amendments: type</option>
+                                <option value="amend2_active_ingredient">Amendments: active ingredient</option>
+                                <option value="amend2_tot_amount">Amendments: total amount</option>
+                                <option value="amend3_class">Amendments: type</option>
+                                <option value="amend3_active_ingredient">Amendments: active ingredient</option>
+                                <option value="amend3_tot_amount">Amendments: total amount</option>
+                                <option value="rRNA_copies">Microbial Biomass: rRNA copies</option>
+                                <option value="microbial_biomass_C">Microbial Biomass: microbial biomass Carbon</option>
+                                <option value="microbial_biomass_N">Microbial Biomass: microbial biomass Nitrogen</option>
+                                <option value="microbial_respiration">Microbial Biomass: microbial respiration</option>
+                                <option value="soil_pH">Soil nutrients: pH</option>
+                                <option value="soil_EC">Soil nutrients: Electrical conductivity</option>
+                                <option value="soil_C">Soil nutrients: Carbon</option>
+                                <option value="soil_OM">Soil nutrients: Organic matter</option>
+                                <option value="soil_N">Soil nutrients: Nitrogen</option>
+                                <option value="soil_NO3_N">Soil nutrients: Nitrate Nitrogen</option>
+                                <option value="soil_NH4_N">Soil nutrients: Ammonium Nitrogen</option>
+                                <option value="soil_P">Soil nutrients: Phosphorous</option>
+                                <option value="soil_K">Soil nutrients: Potassium</option>
+                                <option value="soil_S">Soil nutrients: Sulfur</option>
+                                <option value="soil_Zn">Soil nutrients: Zinc</option>
+                                <option value="soil_Fe">Soil nutrients: Iron</option>
+                                <option value="soil_Cu">Soil nutrients: Copper</option>
+                                <option value="soil_Mn">Soil nutrients: Manganese</option>
+                                <option value="soil_Ca">Soil nutrients: Calcium</option>
+                                <option value="soil_Mg">Soil nutrients: Magnesium</option>
+                                <option value="soil_Na">Soil nutrients: Sodium</option>
+                                <option value="soil_B">Soil nutrients: Boron</option>
+                                <option value="plant_C">Plant nutrients: Carbon</option>
+                                <option value="plant_N">Plant nutrients: Nitrogen</option>
+                                <option value="plant_P">Plant nutrients: Phosphorous</option>
+                                <option value="plant_K">Plant nutrients: Potassium</option>
+                                <option value="plant_Ca">Plant nutrients: Calcium</option>
+                                <option value="plant_Mg">Plant nutrients: Magnesium</option>
+                                <option value="plant_S">Plant nutrients: Sulfur</option>
+                                <option value="plant_Na">Plant nutrients: Sodium</option>
+                                <option value="plant_Cl">Plant nutrients: Choride</option>
+                                <option value="plant_Al">Plant nutrients: Aluminum</option>
+                                <option value="plant_B">Plant nutrients: Boron</option>
+                                <option value="plant_Cu">Plant nutrients: Copper</option>
+                                <option value="plant_Fe">Plant nutrients: Iron</option>
+                                <option value="plant_Mn">Plant nutrients: Manganese</option>
+                                <option value="plant_Zn">Plant nutrients: Zinc</option>
+                                <option value="crop_tot_biomass_fw">Crop biomass: total fresh weight</option>
+                                <option value="crop_tot_biomass_dw">Crop biomass: total dry weight</option>
+                                <option value="crop_tot_above_biomass_fw">Crop biomass: total aboveground biomass fresh weight</option>
+                                <option value="crop_tot_above_biomass_dw">Crop biomass: total aboveground biomass dry weight</option>
+                                <option value="crop_tot_below_biomass_fw">Crop biomass: total belowground biomass fresh weight</option>
+                                <option value="crop_tot_below_biomass_dw">Crop biomass: total belowground biomass dry weight</option>
+                                <option value="harv_fraction">Crop biomass: harvested fraction</option>
+                                <option value="harv_fresh_weight">Crop biomass: harvested fresh weight</option>
+                                <option value="harv_dry_weight">Crop biomass: harvested dry weight</option>
+                                <option value="ghg_chamber_placement">Greenhouse gas emissions: chamber placement</option>
+                                <option value="ghg_N2O">Greenhouse gas emissions: N2O</option>
+                                <option value="ghg_CO2">Greenhouse gas emission: CO2</option>
+                                <option value="ghg_NH4">Greenhouse gas emission: NH4</option>
+                                <option value="soil_water_cap">Soil Health: water capacity</option>
+                                <option value="soil_surf_hard">Soil Health: surface hardness</option>
+                                <option value="soil_subsurf_hard">Soil Health: subsurface hardness</option>
+                                <option value="soil_agg_stability">Soil Health: aggregate stability</option>
+                                <option value="soil_ACE_protein">Soil Health: ACE protein index</option>
+                                <option value="soil_active_C">Soil Health: active Carbon</option>
+                            </select>
+                            <select id="human_associatedFilter" style="display: none;" onclick="updateFilter();">
+                                <option value="samp_collect_device" selected>Sample: collection device</option>
+                                <option value="samp_mat_process">Sample: material processing</option>
+                                <option value="samp_size">Sample: size</option>
+                                <option value="samp_store_temp">Sample: storage temperature</option>
+                                <option value="samp_store_dur">Sample: storage duration</option>
+                                <option value="samp_type">Sample: type</option>
+                                <option value="samp_location">Sample: location (body part)</option>
+                                <option value="samp_temp">Sample: temperature</option>
+                                <option value="samp_ph">Sample: pH</option>
+                                <option value="samp_oxy_stat">Sample: oxygen status</option>
+                                <option value="samp_salinity">Sample: salinity</option>
+                                <option value="host_subject_id">Host: unique ID</option>
+                                <option value="host_age">Host: age</option>
+                                <option value="host_pulse">Host: pulse</option>
+                                <option value="host_gender">Host: gender</option>
+                                <option value="host_ethnicity">Host: ethnicity</option>
+                                <option value="host_height">Host: height</option>
+                                <option value="host_weight">Host: weight</option>
+                                <option value="host_bmi">Host: body mass index</option>
+                                <option value="host_weight_loss_3_month">Host: weight loss in the last 3 months</option>
+                                <option value="host_body_temp">Host: body temperature</option>
+                                <option value="host_occupation">Host: occupation</option>
+                                <option value="pet_farm_animal">Host: pets owned</option>
+                                <option value="smoker">Host: smoker</option>
+                                <option value="diet_type">Diet: type</option>
+                                <option value="diet_duration">Diet: duration</option>
+                                <option value="diet_frequency">Diet: frequency</option>
+                                <option value="diet_last_six_month">Diet: last six months</option>
+                                <option value="last_meal">Diet: last meal</option>
+                                <option value="medic_hist_perform">Disease: medical history performed</option>
+                                <option value="disease_type">Disease: type</option>
+                                <option value="disease_location">Disease: location (body part)</option>
+                                <option value="disease_duration">Disease: duration</option>
+                                <option value="organism_count">Disease: organism count</option>
+                                <option value="tumor_location">Disease: tumor location</option>
+                                <option value="tumor_mass">Disease: tumor mass</option>
+                                <option value="tumor_stage">Disease: tumor stage</option>
+                                <option value="drug_usage">Drugs: usage</option>
+                                <option value="drug_type">Drugs: type</option>
+                                <option value="drug_duration">Drugs: duration</option>
+                                <option value="drug_frequency">Drugs: Frequency</option>
+                                <option value="perturbation">Intervention: type</option>
+                                <option value="pert_type">Intervention: chemical compound</option>
+                                <option value="pert_duration">Intervention: duration</option>
+                                <option value="pert_frequency">Intervention: frequency</option>
+                                <option value="fetal_health_stat">Fetal: health status</option>
+                                <option value="amniotic_fluid_color">Fetal: amniotic fluid color</option>
+                                <option value="gestation_stat">Fetal: gestation state</option>
+                                <option value="maternal_health_stat">Fetal: maternal health status</option>
+                            </select>
+                            <select id="airFilter" style="display: none;" onclick="updateFilter();">
+                                <option value="barometric_press" selected>barometric_press</option>
+                                <option value="carb_dioxide">carb_dioxide</option>
+                                <option value="carb_monoxide">carb_monoxide</option>
+                                <option value="chem_admin_term">chem_admin_term</option>
+                                <option value="chem_admin_time">chem_admin_time</option>
+                                <option value="elev">elev</option>
+                                <option value="humidity">humidity</option>
+                                <option value="methane">methane</option>
+                                <option value="organism_type">organism_type</option>
+                                <option value="organism_count">organism_count</option>
+                                <option value="oxy_stat_samp">oxy_stat_samp</option>
+                                <option value="oxygen">oxygen</option>
+                                <option value="perturbation_type">perturbation_type</option>
+                                <option value="perturbation_interval">perturbation_interval</option>
+                                <option value="pollutants_type">pollutants_type</option>
+                                <option value="pollutants_concentration">pollutants_concentration</option>
+                                <option value="rel_to_oxygen">rel_to_oxygen</option>
+                                <option value="resp_part_matter_substance">resp_part_matter_substance</option>
+                                <option value="resp_part_matter_concentration">resp_part_matter_concentration</option>
+                                <option value="samp_collect_device">samp_collect_device</option>
+                                <option value="samp_mat_process">samp_mat_process</option>
+                                <option value="samp_salinity">samp_salinity</option>
+                                <option value="samp_size">samp_size</option>
+                                <option value="samp_store_dur">samp_store_dur</option>
+                                <option value="samp_store_loc">samp_store_loc</option>
+                                <option value="samp_store_temp">samp_store_temp</option>
+                                <option value="solar_irradiance">solar_irradiance</option>
+                                <option value="temp">temp</option>
+                                <option value="ventilation_rate">ventilation_rate</option>
+                                <option value="ventilation_type">ventilation_type</option>
+                                <option value="volatile_org_comp_name">volatile_org_comp_name</option>
+                                <option value="volatile_org_comp_concentration">volatile_org_comp_concentration</option>
+                                <option value="wind_direction">wind_direction</option>
+                                <option value="wind_speed">wind_speed</option>
+                            </select>
+                            <select id="waterFilter" style="display: none;" onclick="updateFilter();">
+                                <option value="alkalinity" selected>alkalinity</option>
+                                <option value="alkyl_diethers">alkyl_diethers</option>
+                                <option value="altitude">altitude</option>
+                                <option value="aminopept_act">aminopept_act</option>
+                                <option value="aminopept_act">aminopept_act</option>
+                                <option value="atmospheric_data">atmospheric_data</option>
+                                <option value="bac_prod">bac_prod</option>
+                                <option value="bac_resp">bac_resp</option>
+                                <option value="bacteria_carb_prod">bacteria_carb_prod</option>
+                                <option value="biomass_part_name">biomass_part_name</option>
+                                <option value="biomass_amount">biomass_amount</option>
+                                <option value="bishomohopanol">bishomohopanol</option>
+                                <option value="bromide">bromide</option>
+                                <option value="calcium">calcium</option>
+                                <option value="carb_nitro_ratio">carb_nitro_ratio</option>
+                                <option value="chem_administration_name">chem_administration_name</option>
+                                <option value="chem_administration_time">chem_administration_time</option>
+                                <option value="chloride">chloride</option>
+                                <option value="chlorophyll">chlorophyll</option>
+                                <option value="conduc">conduc</option>
+                                <option value="density">density</option>
+                                <option value="diether_lipids">diether_lipids</option>
+                                <option value="diss_carb_dioxide">diss_carb_dioxide</option>
+                                <option value="diss_hydrogen">diss_hydrogen</option>
+                                <option value="diss_inorg_carb">diss_inorg_carb</option>
+                                <option value="diss_inorg_nitro">diss_inorg_nitro</option>
+                                <option value="diss_inorg_phosp">diss_inorg_phosp</option>
+                                <option value="diss_org_carb">diss_org_carb</option>
+                                <option value="diss_org_nitro">diss_org_nitro</option>
+                                <option value="diss_oxygen">diss_oxygen</option>
+                                <option value="down_par">down_par</option>
+                                <option value="elev">elev</option>
+                                <option value="fluor">fluor</option>
+                                <option value="glucosidase_act">glucosidase_act</option>
+                                <option value="light_intensity">light_intensity</option>
+                                <option value="magnesium">magnesium</option>
+                                <option value="mean_frict_vel">mean_frict_vel</option>
+                                <option value="mean_peak_frict_vel">mean_peak_frict_vel</option>
+                                <option value="n_alkanes">n_alkanes</option>
+                                <option value="nitrate">nitrate</option>
+                                <option value="nitrite">nitrite</option>
+                                <option value="nitro">nitro</option>
+                                <option value="org_carb">org_carb</option>
+                                <option value="org_matter">org_matter</option>
+                                <option value="org_nitro">org_nitro</option>
+                                <option value="organism_name">organism_name</option>
+                                <option value="organism_count">organism_count</option>
+                                <option value="oxy_stat_samp">oxy_stat_samp</option>
+                                <option value="part_org_carb">part_org_carb</option>
+                                <option value="part_org_nitro">part_org_nitro</option>
+                                <option value="perturbation_type">perturbation_type</option>
+                                <option value="perturbation_interval">perturbation_interval</option>
+                                <option value="pretroleum_hydrocarb">pretroleum_hydrocarb</option>
+                                <option value="ph">ph</option>
+                                <option value="phaeopigments">phaeopigments</option>
+                                <option value="phosphate">phosphate</option>
+                                <option value="phosplipid_fatt_acid">phosplipid_fatt_acid</option>
+                                <option value="photon_flux">photon_flux</option>
+                                <option value="potassium">potassium</option>
+                                <option value="pressure">pressure</option>
+                                <option value="primary_prod">primary_prod</option>
+                                <option value="redox_potential">redox_potential</option>
+                                <option value="rel_to_oxygen">rel_to_oxygen</option>
+                                <option value="samp_mat_process">samp_mat_process</option>
+                                <option value="samp_salinity">samp_salinity</option>
+                                <option value="samp_size">samp_size</option>
+                                <option value="samp_store_dur">samp_store_dur</option>
+                                <option value="samp_store_loc">samp_store_loc</option>
+                                <option value="samp_store_temp">samp_store_temp</option>
+                                <option value="samp_vol_we_dna_ext">samp_vol_we_dna_ext</option>
+                                <option value="silicate">silicate</option>
+                                <option value="sodium">sodium</option>
+                                <option value="soluble_react_phosp">soluble_react_phosp</option>
+                                <option value="source_material_id">source_material_id</option>
+                                <option value="sulfate">sulfate</option>
+                                <option value="sulfide">sulfide</option>
+                                <option value="suspen_part_matter">suspen_part_matter</option>
+                                <option value="temp">temp</option>
+                                <option value="tidal_stage">tidal_stage</option>
+                                <option value="tot_depth_water_col">tot_depth_water_col</option>
+                                <option value="tot_diss_nitro">tot_diss_nitro</option>
+                                <option value="tot_inorg_nitro">tot_inorg_nitro</option>
+                                <option value="tot_nitro">tot_nitro</option>
+                                <option value="tot_part_carb">tot_part_carb</option>
+                                <option value="tot_phosp">tot_phosp</option>
+                                <option value="water_current_direction">water_current_direction</option>
+                                <option value="water_current_magnitude">water_current_magnitude</option>
+                            </select>
+                            <select id="microbialFilter" style="display: none;" onclick="updateFilter();">
+                                <option value="alkalinity" selected>alkalinity</option>
+                                <option value="alkyl_diethers">alkyl_diethers</option>
+                                <option value="altitude">altitude</option>
+                                <option value="aminopept_act">aminopept_act</option>
+                                <option value="ammonium">ammonium</option>
+                                <option value="bacteria_carb_prod">bacteria_carb_prod</option>
+                                <option value="biomass_part_name">biomass_part_name</option>
+                                <option value="biomass_amount">biomass_amount</option>
+                                <option value="bishomohopanol">bishomohopanol</option>
+                                <option value="bromide">bromide</option>
+                                <option value="calcium">calcium</option>
+                                <option value="carb_nitro_ratio">carb_nitro_ratio</option>
+                                <option value="chem_administration_term">chem_administration_term</option>
+                                <option value="chem_administration_time">chem_administration_time</option>
+                                <option value="chloride">chloride</option>
+                                <option value="chlorophyll">chlorophyll</option>
+                                <option value="diether_lipids_name">diether_lipids_name</option>
+                                <option value="diether_lipids_concentration">diether_lipids_concentration</option>
+                                <option value="diss_carb_dioxide">diss_carb_dioxide</option>
+                                <option value="diss_hydrogen">diss_hydrogen</option>
+                                <option value="diss_inorg_carb">diss_inorg_carb</option>
+                                <option value="diss_org_carb">diss_org_carb</option>
+                                <option value="diss_org_nitro">diss_org_nitro</option>
+                                <option value="diss_oxygen">diss_oxygen</option>
+                                <option value="glucosidase_act">glucosidase_act</option>
+                                <option value="magnesium">magnesium</option>
+                                <option value="mean_frict_vel">mean_frict_vel</option>
+                                <option value="mean_peak_frict_vel">mean_peak_frict_vel</option>
+                                <option value="methane">methane</option>
+                                <option value="n_alkanes_name">n_alkanes_name</option>
+                                <option value="n_alkanes_concentration">n_alkanes_concentration</option>
+                                <option value="nitrate">nitrate</option>
+                                <option value="nitrite">nitrite</option>
+                                <option value="nitro">nitro</option>
+                                <option value="org_carb">org_carb</option>
+                                <option value="org_matter">org_matter</option>
+                                <option value="org_nitro">org_nitro</option>
+                                <option value="organism_name">organism_name</option>
+                                <option value="organism_count">organism_count</option>
+                                <option value="oxy_stat_samp">oxy_stat_samp</option>
+                                <option value="part_org_carb">part_org_carb</option>
+                                <option value="perturbation_type">perturbation_type</option>
+                                <option value="perturbation_interval">perturbation_interval</option>
+                                <option value="petroleum_hydrocarb">petroleum_hydrocarb</option>
+                                <option value="ph">ph</option>
+                                <option value="phaeopigments_type">phaeopigments_type</option>
+                                <option value="phaeopigments_concentration">phaeopigments_concentration</option>
+                                <option value="phosphate">phosphate</option>
+                                <option value="phosplipid_fatt_acid_name">phosplipid_fatt_acid_name</option>
+                                <option value="phosplipid_fatt_acid_conc">phosplipid_fatt_acid_conc</option>
+                                <option value="potassium">potassium</option>
+                                <option value="pressure">pressure</option>
+                                <option value="redox_potential">redox_potential</option>
+                                <option value="rel_to_oxygen">rel_to_oxygen</option>
+                                <option value="salinity">salinity</option>
+                                <option value="samp_collect_device">samp_collect_device</option>
+                                <option value="samp_mat_process">samp_mat_process</option>
+                                <option value="samp_size">samp_size</option>
+                                <option value="samp_store_dur">samp_store_dur</option>
+                                <option value="samp_store_loc">samp_store_loc</option>
+                                <option value="samp_store_temp">samp_store_temp</option>
+                                <option value="silicate">silicate</option>
+                                <option value="sodium">sodium</option>
+                                <option value="sulfate">sulfate</option>
+                                <option value="sulfide">sulfide</option>
+                                <option value="temp">temp</option>
+                                <option value="tot_carb">tot_carb</option>
+                                <option value="tot_nitro">tot_nitro</option>
+                                <option value="tot_org_carb">tot_org_carb</option>
+                                <option value="turbidity">turbidity</option>
+                                <option value="water_content">water_content</option>
+                            </select>
+                            <select id="user_definedFilter" style="display: none;" onclick="updateFilter();">
+                                <option value="usr_cat1" selected>User-defined: categorical variable #1</option>
+                                <option value="usr_cat2">User-defined: categorical variable #2</option>
+                                <option value="usr_cat3">User-defined: categorical variable #3</option>
+                                <option value="usr_cat4">User-defined: categorical variable #4</option>
+                                <option value="usr_cat5">User-defined: categorical variable #5</option>
+                                <option value="usr_cat6">User-defined: categorical variable #6</option>
+                                <option value="usr_quant1">User-defined: quantitative variable #1</option>
+                                <option value="usr_quant2">User-defined: quantitative variable #2</option>
+                                <option value="usr_quant3">User-defined: quantitative variable #3</option>
+                                <option value="usr_quant4">User-defined: quantitative variable #4</option>
+                                <option value="usr_quant5">User-defined: quantitative variable #5</option>
+                                <option value="usr_quant6">User-defined: quantitative variable #6</option>
+                            </select>
+                            <br>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select id="filterValue" name="FilterValue" onclick="updateFilterVal();" style="display:none;">
+                            </select>
+                            <br>
+                        </td>
+                    </tr>
+                </table>
+
+
             </td>
         </tr>
     </table>
@@ -1276,434 +1790,9 @@
     </table>
 
     <br><br>
-
-    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
-
-        <tr>
-            <td>
-                <th>Find samples based on data:</th>
-            </td>
-            <td>
-                <input id='filter' name='Filter' type="submit" onclick="getFilterData();" value="Apply Filter"/>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <select id="filterType" onChange="selectFilter()">
-                    <option value="mimarks" selected>Mimarks</option>
-                    <option value="soil">Soil</option>
-                    <option value="human_associated">Human Associated</option>
-                    <option value="air">Air</option>
-                    <option value="water">Water</option>
-                    <option value="microbial">Microbial</option>
-                    <option value="user_defined">User Defined</option>
-                </select>
-            </td>
-            <td>
-                <select id="mimarkFilter" onclick="updateFilter();">
-                    <option value="refid">myPhyloDB generated upload UUID</option>
-                    <option value="organism" selected>NCBI organism</option>
-                    <option value="collection_date">Collection Date</option>
-                    <option value="depth">Depth below soil surface</option>
-                    <option value="elev">Elevation</option>
-                    <option value="seq_platform">Sequencing platform</option>
-                    <option value="seq_gene">Gene targeted for sequencing</option>
-                    <option value="seq_gene_region">Gene region targeted for sequencing</option>
-                    <option value="seq_barcode">Sequencing barcoder</option>
-                    <option value="seq_for_primer">Sequencing forward primer</option>
-                    <option value="seq_rev_primer">Sequencing reverse primer</option>
-                    <option value="env_biome">Environment: biome</option>
-                    <option value="env_feature">Environment: feature</option>
-                    <option value="env_material">Environment: material</option>
-                    <option value="geo_loc_country">Geographic location: country</option>
-                    <option value="geo_loc_state">Geographic location: state</option>
-                    <option value="geo_loc_city">Geographic location: city</option>
-                    <option value="geo_loc_farm">Geographic location: farm</option>
-                    <option value="geo_loc_plot">Geographic location: plot</option>
-                    <option value="latitude">Latitude</option>
-                    <option value="longitude">Longitude</option>
-                    <option value="annual_season_precpt">Mean annual precipitation</option>
-                    <option value="annual_season_temp">Mean annual temperature</option>
-                </select>
-                <select id="soilFilter" style="display: none;" onclick="updateFilter();">
-                    <option value="samp_collection_device" selected>Sample: collection device</option>
-                    <option value="samp_size">Sample: size</option>
-                    <option value="samp_depth">Sample: depth range</option>
-                    <option value="samp_prep">Sample: preparation</option>
-                    <option value="samp_sieve_size">Sample: sieve size</option>
-                    <option value="samp_store_dur">Sample: storage duration</option>
-                    <option value="samp_store_loc">Sample: storage location</option>
-                    <option value="samp_store_temp">Sample: storage temperature</option>
-                    <option value="samp_weight_dna_ext">Sample: weight used for DNA extractions</option>
-                    <option value="pool_dna_extracts">Sample: number of pooled DNA extracts</option>
-                    <option value="fao_class">Soil: FAO classification</option>
-                    <option value="local_class">Soil: USDA soil taxonomy</option>
-                    <option value="texture_class">Soil: texture class</option>
-                    <option value="porosity">Soil: porosity</option>
-                    <option value="profile_position">Soil: profile position</option>
-                    <option value="slope_aspect">Soil: slope aspect</option>
-                    <option value="slope_gradient">Soil: slope gradient</option>
-                    <option value="bulk_density">Soil: bulk density</option>
-                    <option value="drainage_class">Soil: drainage class</option>
-                    <option value="water_content_soil">Soil: water content</option>
-                    <option value="cur_land_use">Crop: current land use</option>
-                    <option value="cur_vegetation">Crop: current vegetation</option>
-                    <option value="cur_crop">Crop: current crop</option>
-                    <option value="cur_cultivar">Crop: current cultivar</option>
-                    <option value="crop_rotation">Crop: crop rotation</option>
-                    <option value="cover_crop">Crop: cover crop</option>
-                    <option value="fert_amendment_class">Fertilizer: amendment class</option>
-                    <option value="fert_placement">Fertilizer: placement</option>
-                    <option value="fert_type">Fertilizer: type</option>
-                    <option value="fert_tot_amount">Fertilizer: total amount</option>
-                    <option value="fert_N_tot_amount">Fertilizer: total N amount</option>
-                    <option value="fert_P_tot_amount">Fertilizer: total P amount</option>
-                    <option value="fert_K_tot_amount">Fertilizer: total K amount</option>
-                    <option value="irrigation_type">Irrigation: type</option>
-                    <option value="irrigation_tot_amount">Irrigation: total amount</option>
-                    <option value="residue_removal">Residue: type</option>
-                    <option value="residue_growth_stage">Residue: growth stage at removal</option>
-                    <option value="residue_removal_percent">Residue: amount removed</option>
-                    <option value="tillage_event">Tillage: type</option>
-                    <option value="tillage_event_depth">Tillage: depth</option>
-                    <option value="amend1_class">Amendments: type</option>
-                    <option value="amend1_active_ingredient">Amendments: active ingredient</option>
-                    <option value="amend1_tot_amount">Amendments: total amount</option>
-                    <option value="amend2_class">Amendments: type</option>
-                    <option value="amend2_active_ingredient">Amendments: active ingredient</option>
-                    <option value="amend2_tot_amount">Amendments: total amount</option>
-                    <option value="amend3_class">Amendments: type</option>
-                    <option value="amend3_active_ingredient">Amendments: active ingredient</option>
-                    <option value="amend3_tot_amount">Amendments: total amount</option>
-                    <option value="rRNA_copies">Microbial Biomass: rRNA copies</option>
-                    <option value="microbial_biomass_C">Microbial Biomass: microbial biomass Carbon</option>
-                    <option value="microbial_biomass_N">Microbial Biomass: microbial biomass Nitrogen</option>
-                    <option value="microbial_respiration">Microbial Biomass: microbial respiration</option>
-                    <option value="soil_pH">Soil nutrients: pH</option>
-                    <option value="soil_EC">Soil nutrients: Electrical conductivity</option>
-                    <option value="soil_C">Soil nutrients: Carbon</option>
-                    <option value="soil_OM">Soil nutrients: Organic matter</option>
-                    <option value="soil_N">Soil nutrients: Nitrogen</option>
-                    <option value="soil_NO3_N">Soil nutrients: Nitrate Nitrogen</option>
-                    <option value="soil_NH4_N">Soil nutrients: Ammonium Nitrogen</option>
-                    <option value="soil_P">Soil nutrients: Phosphorous</option>
-                    <option value="soil_K">Soil nutrients: Potassium</option>
-                    <option value="soil_S">Soil nutrients: Sulfur</option>
-                    <option value="soil_Zn">Soil nutrients: Zinc</option>
-                    <option value="soil_Fe">Soil nutrients: Iron</option>
-                    <option value="soil_Cu">Soil nutrients: Copper</option>
-                    <option value="soil_Mn">Soil nutrients: Manganese</option>
-                    <option value="soil_Ca">Soil nutrients: Calcium</option>
-                    <option value="soil_Mg">Soil nutrients: Magnesium</option>
-                    <option value="soil_Na">Soil nutrients: Sodium</option>
-                    <option value="soil_B">Soil nutrients: Boron</option>
-                    <option value="plant_C">Plant nutrients: Carbon</option>
-                    <option value="plant_N">Plant nutrients: Nitrogen</option>
-                    <option value="plant_P">Plant nutrients: Phosphorous</option>
-                    <option value="plant_K">Plant nutrients: Potassium</option>
-                    <option value="plant_Ca">Plant nutrients: Calcium</option>
-                    <option value="plant_Mg">Plant nutrients: Magnesium</option>
-                    <option value="plant_S">Plant nutrients: Sulfur</option>
-                    <option value="plant_Na">Plant nutrients: Sodium</option>
-                    <option value="plant_Cl">Plant nutrients: Choride</option>
-                    <option value="plant_Al">Plant nutrients: Aluminum</option>
-                    <option value="plant_B">Plant nutrients: Boron</option>
-                    <option value="plant_Cu">Plant nutrients: Copper</option>
-                    <option value="plant_Fe">Plant nutrients: Iron</option>
-                    <option value="plant_Mn">Plant nutrients: Manganese</option>
-                    <option value="plant_Zn">Plant nutrients: Zinc</option>
-                    <option value="crop_tot_biomass_fw">Crop biomass: total fresh weight</option>
-                    <option value="crop_tot_biomass_dw">Crop biomass: total dry weight</option>
-                    <option value="crop_tot_above_biomass_fw">Crop biomass: total aboveground biomass fresh weight</option>
-                    <option value="crop_tot_above_biomass_dw">Crop biomass: total aboveground biomass dry weight</option>
-                    <option value="crop_tot_below_biomass_fw">Crop biomass: total belowground biomass fresh weight</option>
-                    <option value="crop_tot_below_biomass_dw">Crop biomass: total belowground biomass dry weight</option>
-                    <option value="harv_fraction">Crop biomass: harvested fraction</option>
-                    <option value="harv_fresh_weight">Crop biomass: harvested fresh weight</option>
-                    <option value="harv_dry_weight">Crop biomass: harvested dry weight</option>
-                    <option value="ghg_chamber_placement">Greenhouse gas emissions: chamber placement</option>
-                    <option value="ghg_N2O">Greenhouse gas emissions: N2O</option>
-                    <option value="ghg_CO2">Greenhouse gas emission: CO2</option>
-                    <option value="ghg_NH4">Greenhouse gas emission: NH4</option>
-                    <option value="soil_water_cap">Soil Health: water capacity</option>
-                    <option value="soil_surf_hard">Soil Health: surface hardness</option>
-                    <option value="soil_subsurf_hard">Soil Health: subsurface hardness</option>
-                    <option value="soil_agg_stability">Soil Health: aggregate stability</option>
-                    <option value="soil_ACE_protein">Soil Health: ACE protein index</option>
-                    <option value="soil_active_C">Soil Health: active Carbon</option>
-                </select>
-                <select id="human_associatedFilter" style="display: none;" onclick="updateFilter();">
-                    <option value="samp_collect_device" selected>Sample: collection device</option>
-                    <option value="samp_mat_process">Sample: material processing</option>
-                    <option value="samp_size">Sample: size</option>
-                    <option value="samp_store_temp">Sample: storage temperature</option>
-                    <option value="samp_store_dur">Sample: storage duration</option>
-                    <option value="samp_type">Sample: type</option>
-                    <option value="samp_location">Sample: location (body part)</option>
-                    <option value="samp_temp">Sample: temperature</option>
-                    <option value="samp_ph">Sample: pH</option>
-                    <option value="samp_oxy_stat">Sample: oxygen status</option>
-                    <option value="samp_salinity">Sample: salinity</option>
-                    <option value="host_subject_id">Host: unique ID</option>
-                    <option value="host_age">Host: age</option>
-                    <option value="host_pulse">Host: pulse</option>
-                    <option value="host_gender">Host: gender</option>
-                    <option value="host_ethnicity">Host: ethnicity</option>
-                    <option value="host_height">Host: height</option>
-                    <option value="host_weight">Host: weight</option>
-                    <option value="host_bmi">Host: body mass index</option>
-                    <option value="host_weight_loss_3_month">Host: weight loss in the last 3 months</option>
-                    <option value="host_body_temp">Host: body temperature</option>
-                    <option value="host_occupation">Host: occupation</option>
-                    <option value="pet_farm_animal">Host: pets owned</option>
-                    <option value="smoker">Host: smoker</option>
-                    <option value="diet_type">Diet: type</option>
-                    <option value="diet_duration">Diet: duration</option>
-                    <option value="diet_frequency">Diet: frequency</option>
-                    <option value="diet_last_six_month">Diet: last six months</option>
-                    <option value="last_meal">Diet: last meal</option>
-                    <option value="medic_hist_perform">Disease: medical history performed</option>
-                    <option value="disease_type">Disease: type</option>
-                    <option value="disease_location">Disease: location (body part)</option>
-                    <option value="disease_duration">Disease: duration</option>
-                    <option value="organism_count">Disease: organism count</option>
-                    <option value="tumor_location">Disease: tumor location</option>
-                    <option value="tumor_mass">Disease: tumor mass</option>
-                    <option value="tumor_stage">Disease: tumor stage</option>
-                    <option value="drug_usage">Drugs: usage</option>
-                    <option value="drug_type">Drugs: type</option>
-                    <option value="drug_duration">Drugs: duration</option>
-                    <option value="drug_frequency">Drugs: Frequency</option>
-                    <option value="perturbation">Intervention: type</option>
-                    <option value="pert_type">Intervention: chemical compound</option>
-                    <option value="pert_duration">Intervention: duration</option>
-                    <option value="pert_frequency">Intervention: frequency</option>
-                    <option value="fetal_health_stat">Fetal: health status</option>
-                    <option value="amniotic_fluid_color">Fetal: amniotic fluid color</option>
-                    <option value="gestation_stat">Fetal: gestation state</option>
-                    <option value="maternal_health_stat">Fetal: maternal health status</option>
-                </select>
-                <select id="airFilter" style="display: none;" onclick="updateFilter();">
-                    <option value="barometric_press" selected>barometric_press</option>
-                    <option value="carb_dioxide">carb_dioxide</option>
-                    <option value="carb_monoxide">carb_monoxide</option>
-                    <option value="chem_admin_term">chem_admin_term</option>
-                    <option value="chem_admin_time">chem_admin_time</option>
-                    <option value="elev">elev</option>
-                    <option value="humidity">humidity</option>
-                    <option value="methane">methane</option>
-                    <option value="organism_type">organism_type</option>
-                    <option value="organism_count">organism_count</option>
-                    <option value="oxy_stat_samp">oxy_stat_samp</option>
-                    <option value="oxygen">oxygen</option>
-                    <option value="perturbation_type">perturbation_type</option>
-                    <option value="perturbation_interval">perturbation_interval</option>
-                    <option value="pollutants_type">pollutants_type</option>
-                    <option value="pollutants_concentration">pollutants_concentration</option>
-                    <option value="rel_to_oxygen">rel_to_oxygen</option>
-                    <option value="resp_part_matter_substance">resp_part_matter_substance</option>
-                    <option value="resp_part_matter_concentration">resp_part_matter_concentration</option>
-                    <option value="samp_collect_device">samp_collect_device</option>
-                    <option value="samp_mat_process">samp_mat_process</option>
-                    <option value="samp_salinity">samp_salinity</option>
-                    <option value="samp_size">samp_size</option>
-                    <option value="samp_store_dur">samp_store_dur</option>
-                    <option value="samp_store_loc">samp_store_loc</option>
-                    <option value="samp_store_temp">samp_store_temp</option>
-                    <option value="solar_irradiance">solar_irradiance</option>
-                    <option value="temp">temp</option>
-                    <option value="ventilation_rate">ventilation_rate</option>
-                    <option value="ventilation_type">ventilation_type</option>
-                    <option value="volatile_org_comp_name">volatile_org_comp_name</option>
-                    <option value="volatile_org_comp_concentration">volatile_org_comp_concentration</option>
-                    <option value="wind_direction">wind_direction</option>
-                    <option value="wind_speed">wind_speed</option>
-                </select>
-                <select id="waterFilter" style="display: none;" onclick="updateFilter();">
-                    <option value="alkalinity" selected>alkalinity</option>
-                    <option value="alkyl_diethers">alkyl_diethers</option>
-                    <option value="altitude">altitude</option>
-                    <option value="aminopept_act">aminopept_act</option>
-                    <option value="aminopept_act">aminopept_act</option>
-                    <option value="atmospheric_data">atmospheric_data</option>
-                    <option value="bac_prod">bac_prod</option>
-                    <option value="bac_resp">bac_resp</option>
-                    <option value="bacteria_carb_prod">bacteria_carb_prod</option>
-                    <option value="biomass_part_name">biomass_part_name</option>
-                    <option value="biomass_amount">biomass_amount</option>
-                    <option value="bishomohopanol">bishomohopanol</option>
-                    <option value="bromide">bromide</option>
-                    <option value="calcium">calcium</option>
-                    <option value="carb_nitro_ratio">carb_nitro_ratio</option>
-                    <option value="chem_administration_name">chem_administration_name</option>
-                    <option value="chem_administration_time">chem_administration_time</option>
-                    <option value="chloride">chloride</option>
-                    <option value="chlorophyll">chlorophyll</option>
-                    <option value="conduc">conduc</option>
-                    <option value="density">density</option>
-                    <option value="diether_lipids">diether_lipids</option>
-                    <option value="diss_carb_dioxide">diss_carb_dioxide</option>
-                    <option value="diss_hydrogen">diss_hydrogen</option>
-                    <option value="diss_inorg_carb">diss_inorg_carb</option>
-                    <option value="diss_inorg_nitro">diss_inorg_nitro</option>
-                    <option value="diss_inorg_phosp">diss_inorg_phosp</option>
-                    <option value="diss_org_carb">diss_org_carb</option>
-                    <option value="diss_org_nitro">diss_org_nitro</option>
-                    <option value="diss_oxygen">diss_oxygen</option>
-                    <option value="down_par">down_par</option>
-                    <option value="elev">elev</option>
-                    <option value="fluor">fluor</option>
-                    <option value="glucosidase_act">glucosidase_act</option>
-                    <option value="light_intensity">light_intensity</option>
-                    <option value="magnesium">magnesium</option>
-                    <option value="mean_frict_vel">mean_frict_vel</option>
-                    <option value="mean_peak_frict_vel">mean_peak_frict_vel</option>
-                    <option value="n_alkanes">n_alkanes</option>
-                    <option value="nitrate">nitrate</option>
-                    <option value="nitrite">nitrite</option>
-                    <option value="nitro">nitro</option>
-                    <option value="org_carb">org_carb</option>
-                    <option value="org_matter">org_matter</option>
-                    <option value="org_nitro">org_nitro</option>
-                    <option value="organism_name">organism_name</option>
-                    <option value="organism_count">organism_count</option>
-                    <option value="oxy_stat_samp">oxy_stat_samp</option>
-                    <option value="part_org_carb">part_org_carb</option>
-                    <option value="part_org_nitro">part_org_nitro</option>
-                    <option value="perturbation_type">perturbation_type</option>
-                    <option value="perturbation_interval">perturbation_interval</option>
-                    <option value="pretroleum_hydrocarb">pretroleum_hydrocarb</option>
-                    <option value="ph">ph</option>
-                    <option value="phaeopigments">phaeopigments</option>
-                    <option value="phosphate">phosphate</option>
-                    <option value="phosplipid_fatt_acid">phosplipid_fatt_acid</option>
-                    <option value="photon_flux">photon_flux</option>
-                    <option value="potassium">potassium</option>
-                    <option value="pressure">pressure</option>
-                    <option value="primary_prod">primary_prod</option>
-                    <option value="redox_potential">redox_potential</option>
-                    <option value="rel_to_oxygen">rel_to_oxygen</option>
-                    <option value="samp_mat_process">samp_mat_process</option>
-                    <option value="samp_salinity">samp_salinity</option>
-                    <option value="samp_size">samp_size</option>
-                    <option value="samp_store_dur">samp_store_dur</option>
-                    <option value="samp_store_loc">samp_store_loc</option>
-                    <option value="samp_store_temp">samp_store_temp</option>
-                    <option value="samp_vol_we_dna_ext">samp_vol_we_dna_ext</option>
-                    <option value="silicate">silicate</option>
-                    <option value="sodium">sodium</option>
-                    <option value="soluble_react_phosp">soluble_react_phosp</option>
-                    <option value="source_material_id">source_material_id</option>
-                    <option value="sulfate">sulfate</option>
-                    <option value="sulfide">sulfide</option>
-                    <option value="suspen_part_matter">suspen_part_matter</option>
-                    <option value="temp">temp</option>
-                    <option value="tidal_stage">tidal_stage</option>
-                    <option value="tot_depth_water_col">tot_depth_water_col</option>
-                    <option value="tot_diss_nitro">tot_diss_nitro</option>
-                    <option value="tot_inorg_nitro">tot_inorg_nitro</option>
-                    <option value="tot_nitro">tot_nitro</option>
-                    <option value="tot_part_carb">tot_part_carb</option>
-                    <option value="tot_phosp">tot_phosp</option>
-                    <option value="water_current_direction">water_current_direction</option>
-                    <option value="water_current_magnitude">water_current_magnitude</option>
-                </select>
-                <select id="microbialFilter" style="display: none;" onclick="updateFilter();">
-                    <option value="alkalinity" selected>alkalinity</option>
-                    <option value="alkyl_diethers">alkyl_diethers</option>
-                    <option value="altitude">altitude</option>
-                    <option value="aminopept_act">aminopept_act</option>
-                    <option value="ammonium">ammonium</option>
-                    <option value="bacteria_carb_prod">bacteria_carb_prod</option>
-                    <option value="biomass_part_name">biomass_part_name</option>
-                    <option value="biomass_amount">biomass_amount</option>
-                    <option value="bishomohopanol">bishomohopanol</option>
-                    <option value="bromide">bromide</option>
-                    <option value="calcium">calcium</option>
-                    <option value="carb_nitro_ratio">carb_nitro_ratio</option>
-                    <option value="chem_administration_term">chem_administration_term</option>
-                    <option value="chem_administration_time">chem_administration_time</option>
-                    <option value="chloride">chloride</option>
-                    <option value="chlorophyll">chlorophyll</option>
-                    <option value="diether_lipids_name">diether_lipids_name</option>
-                    <option value="diether_lipids_concentration">diether_lipids_concentration</option>
-                    <option value="diss_carb_dioxide">diss_carb_dioxide</option>
-                    <option value="diss_hydrogen">diss_hydrogen</option>
-                    <option value="diss_inorg_carb">diss_inorg_carb</option>
-                    <option value="diss_org_carb">diss_org_carb</option>
-                    <option value="diss_org_nitro">diss_org_nitro</option>
-                    <option value="diss_oxygen">diss_oxygen</option>
-                    <option value="glucosidase_act">glucosidase_act</option>
-                    <option value="magnesium">magnesium</option>
-                    <option value="mean_frict_vel">mean_frict_vel</option>
-                    <option value="mean_peak_frict_vel">mean_peak_frict_vel</option>
-                    <option value="methane">methane</option>
-                    <option value="n_alkanes_name">n_alkanes_name</option>
-                    <option value="n_alkanes_concentration">n_alkanes_concentration</option>
-                    <option value="nitrate">nitrate</option>
-                    <option value="nitrite">nitrite</option>
-                    <option value="nitro">nitro</option>
-                    <option value="org_carb">org_carb</option>
-                    <option value="org_matter">org_matter</option>
-                    <option value="org_nitro">org_nitro</option>
-                    <option value="organism_name">organism_name</option>
-                    <option value="organism_count">organism_count</option>
-                    <option value="oxy_stat_samp">oxy_stat_samp</option>
-                    <option value="part_org_carb">part_org_carb</option>
-                    <option value="perturbation_type">perturbation_type</option>
-                    <option value="perturbation_interval">perturbation_interval</option>
-                    <option value="petroleum_hydrocarb">petroleum_hydrocarb</option>
-                    <option value="ph">ph</option>
-                    <option value="phaeopigments_type">phaeopigments_type</option>
-                    <option value="phaeopigments_concentration">phaeopigments_concentration</option>
-                    <option value="phosphate">phosphate</option>
-                    <option value="phosplipid_fatt_acid_name">phosplipid_fatt_acid_name</option>
-                    <option value="phosplipid_fatt_acid_conc">phosplipid_fatt_acid_conc</option>
-                    <option value="potassium">potassium</option>
-                    <option value="pressure">pressure</option>
-                    <option value="redox_potential">redox_potential</option>
-                    <option value="rel_to_oxygen">rel_to_oxygen</option>
-                    <option value="salinity">salinity</option>
-                    <option value="samp_collect_device">samp_collect_device</option>
-                    <option value="samp_mat_process">samp_mat_process</option>
-                    <option value="samp_size">samp_size</option>
-                    <option value="samp_store_dur">samp_store_dur</option>
-                    <option value="samp_store_loc">samp_store_loc</option>
-                    <option value="samp_store_temp">samp_store_temp</option>
-                    <option value="silicate">silicate</option>
-                    <option value="sodium">sodium</option>
-                    <option value="sulfate">sulfate</option>
-                    <option value="sulfide">sulfide</option>
-                    <option value="temp">temp</option>
-                    <option value="tot_carb">tot_carb</option>
-                    <option value="tot_nitro">tot_nitro</option>
-                    <option value="tot_org_carb">tot_org_carb</option>
-                    <option value="turbidity">turbidity</option>
-                    <option value="water_content">water_content</option>
-                </select>
-                <select id="user_definedFilter" style="display: none;" onclick="updateFilter();">
-                    <option value="usr_cat1" selected>User-defined: categorical variable #1</option>
-                    <option value="usr_cat2">User-defined: categorical variable #2</option>
-                    <option value="usr_cat3">User-defined: categorical variable #3</option>
-                    <option value="usr_cat4">User-defined: categorical variable #4</option>
-                    <option value="usr_cat5">User-defined: categorical variable #5</option>
-                    <option value="usr_cat6">User-defined: categorical variable #6</option>
-                    <option value="usr_quant1">User-defined: quantitative variable #1</option>
-                    <option value="usr_quant2">User-defined: quantitative variable #2</option>
-                    <option value="usr_quant3">User-defined: quantitative variable #3</option>
-                    <option value="usr_quant4">User-defined: quantitative variable #4</option>
-                    <option value="usr_quant5">User-defined: quantitative variable #5</option>
-                    <option value="usr_quant6">User-defined: quantitative variable #6</option>
-                </select>
-            </td>
-        </tr>
-    <tr>
-        <td>
-            <div id="filterTree" style="float:right"></div>
-        </td>
-    </tr>
-
-    </table>
-
     <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+
 {% endblock my_content %}

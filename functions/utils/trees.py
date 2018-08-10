@@ -1762,9 +1762,11 @@ def getFilterSamplesTree(request):
 
     pType = request.GET['ptype']
     fName = request.GET['fname']
+    fVal = request.GET['fval']
     myTree = {'title': 'Filtered Data', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
-    # print "PTYPE:", pType
-    # print "FNAME:", fName
+    print "PTYPE:", pType
+    print "FNAME:", fName
+    print "FVAL:", fVal
     if pType != "" and pType is not None and fName != "" and fName is not None:
         projectSet = []
         myProjects = functions.getViewProjects(request)
@@ -1796,9 +1798,17 @@ def getFilterSamplesTree(request):
                         workSamp = Microbial.objects.get(sampleid=samp)
                     if pType.lower() == "user_defined":
                         workSamp = UserDefined.objects.get(sampleid=samp)
-                    workVal = getattr(workSamp, fName)
-                    if workVal is not None and workVal != "" and workVal != "nan":
+
+                    workVal = str(getattr(workSamp, fName))
+                    thisValPasses = False
+                    if fVal == "":
+                        if workVal is not None and workVal != "" and workVal != "nan" and workVal != "None":
+                            thisValPasses = True
+                    elif workVal == fVal:
+                        thisValPasses = True
+                    if thisValPasses:
                         sampleDict[proj.projectid].append(workSamp)
+
                 except Exception as e:
                     print "Error with workSamp:", e
                     pass
@@ -1824,16 +1834,17 @@ def getFilterSamplesTree(request):
             # print proj.project_name, "has", len(sampleDict[proj.projectid]), "matching samples"
             for samp in sampleDict[proj.projectid]:
                 try:
+                    myVal = str(getattr(samp, fName))
                     if pType == "mimarks":
                         mySampNode = {
-                            'title': "Value: " + str(getattr(samp, fName)) + '; Name: ' + str(samp.sample_name) + '; Reads: ' + str(samp.reads),
+                            'title': "Value: " + myVal + '; Name: ' + str(samp.sample_name) + '; Reads: ' + str(samp.reads),
                             'tooltip': 'ID: ' + str(samp.sampleid),
                             'id': str(samp.sampleid),
                             'isFolder': False
                         }
                     else:
                         mySampNode = {
-                            'title': "Value: " + str(getattr(samp, fName)) + '; Name: ' + str(samp.sampleid.sample_name) + '; Reads: ' + str(samp.sampleid.reads),
+                            'title': "Value: " + myVal + '; Name: ' + str(samp.sampleid.sample_name) + '; Reads: ' + str(samp.sampleid.reads),
                             'tooltip': 'ID: ' + str(samp.sampleid.sampleid),
                             'id': str(samp.sampleid.sampleid),
                             'isFolder': False
