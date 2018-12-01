@@ -37,6 +37,7 @@
         var remove = 0, minsize = 0;
         var res_table = null;
         var running = false, refresh = 0, RID = 0;
+        var jan = true, feb = true, mar = true, apr = true, may = true, jun = true, jul = true, aug = true, sep = true, oct = true, nov = true, dec = true;
 
         $(function () {
             $(window).load(function() {
@@ -117,7 +118,7 @@
                 running = false;
                 return;
             }
-            getCatGraphData();
+            getNormData();
         }
         function exportData() {
             var format = $('input[name="exportB"]:checked').val();
@@ -128,7 +129,7 @@
                 getBiom();
             }
         }
-        function getCatGraphData() {
+        function getNormData() {
             RID = makeGUID();
             startTimer(RID);
             var myDict = {};
@@ -144,6 +145,21 @@
             myDict['funcName'] = "getNorm";
             myDict['reqType'] = "call";
             myDict['dataID'] = dataID;
+            myDict['daymet'] = document.getElementById("daymet").checked;
+            myDict['minYear'] = document.getElementById("minYear").value;
+            myDict['maxYear'] = document.getElementById("maxYear").value;
+            myDict['month_jan'] = jan;
+            myDict['month_feb'] = feb;
+            myDict['month_mar'] = mar;
+            myDict['month_apr'] = apr;
+            myDict['month_may'] = may;
+            myDict['month_jun'] = jun;
+            myDict['month_jul'] = jul;
+            myDict['month_aug'] = aug;
+            myDict['month_sep'] = sep;
+            myDict['month_oct'] = oct;
+            myDict['month_nov'] = nov;
+            myDict['month_dec'] = dec;
             var jsonDict = JSON.stringify(myDict);
 
             $.ajax({
@@ -203,6 +219,23 @@
             request('/echo/json/', 'request.txt');
         }
         function runAnalysis() {
+            // verify daymet boxes have values within the 1980 to 2017 range (set them if not, or maybe alert user and cancel?)
+            var minYear = document.getElementById("minYear").value;
+            if (minYear < 1980) minYear = 1980;
+            if (minYear > 2017) minYear = 2017;
+            var maxYear = document.getElementById("maxYear").value;
+            if (maxYear < 1980) maxYear = 1980;
+            if (maxYear > 2017) maxYear = 2017;
+
+            if (minYear > maxYear) {
+                alert("Error: minimum daymet year is greater than maximum!");
+                return;
+            }
+            // could do something but you'd have to do this on purpose
+
+            document.getElementById("minYear").value = minYear;
+            document.getElementById("maxYear").value = maxYear;
+
             if(running == true) {
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
@@ -276,6 +309,29 @@
                 }
             });
         }
+        function daymetBox(){
+            if (document.getElementById("daymet").checked){
+                $("#date_range").show();
+            } else {
+                $("#date_range").hide();
+            }
+        }
+
+        function daymetMonths(){
+            jan = document.getElementById("jan").checked;
+            feb = document.getElementById("feb").checked;
+            mar = document.getElementById("mar").checked;
+            apr = document.getElementById("apr").checked;
+            may = document.getElementById("may").checked;
+            jun = document.getElementById("jun").checked;
+            jul = document.getElementById("jul").checked;
+            aug = document.getElementById("aug").checked;
+            sep = document.getElementById("sep").checked;
+            oct = document.getElementById("oct").checked;
+            nov = document.getElementById("nov").checked;
+            dec = document.getElementById("dec").checked;
+        }
+
     </script>
 
 {% endblock javascript %}
@@ -365,7 +421,15 @@
         <a id="download" download href="" style="display:none">download</a>
 
     </div>
-    <br><br>
+
+    <br>
+    <input type="checkbox" id="daymet" onchange="daymetBox();">Add Daymet data from samples to results
+    <br>
+    <div id="date_range" style="display:none">
+    From <input style="background-color: white"  type="text" id="minYear" value="1980" maxlength="4" size="4"/> to <input style="background-color: white"  type="text" id="maxYear" value="2017" maxlength="4" size="4"/>
+    <br><input type="checkbox" id="jan" onchange="daymetMonths();" checked>January <input type="checkbox" id="feb" onchange="daymetMonths();" checked>February <input type="checkbox" id="mar" onchange="daymetMonths();" checked>March <input type="checkbox" id="apr" onchange="daymetMonths();" checked>April <input type="checkbox" id="may" onchange="daymetMonths();" checked>May <input type="checkbox" id="jun" onchange="daymetMonths();" checked>June <input type="checkbox" id="jul" onchange="daymetMonths();" checked>July <input type="checkbox" id="aug" onchange="daymetMonths();" checked>August <input type="checkbox" id="sep" onchange="daymetMonths();" checked>September <input type="checkbox" id="oct" onchange="daymetMonths();" checked>October <input type="checkbox" id="nov" onchange="daymetMonths();" checked>November <input type="checkbox" id="dec" onchange="daymetMonths();" checked>December
+    </div>
+    <br>
 
     <hr class="style8">
     <h2>Normalization Results:</h2>

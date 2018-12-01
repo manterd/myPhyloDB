@@ -1591,7 +1591,10 @@
                     if (resType == "status") {
                         var stage = obj['stage'];
                         if (running) {
-                            if (stage != "Downloading results") {
+                            if (stage != "Downloading results") {   // this was a temp fix made permanent
+                                // the idea being that the downloading results screen can overwrite the actual results
+                                // if requests are returned out of sequence
+                                // could set a global flag when actual results are acquired, preventing this step (?)
                                 if (dataType == 1) {
                                     $('#container-1').empty().append(stage);
                                 } else if (dataType == 2) {

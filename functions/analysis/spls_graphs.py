@@ -310,12 +310,15 @@ def getSPLS(request, stops, RID, PID):
                     r("pred.f.rows <- row.names(pred.f)")
                     pred = r.get("pred.f")
                     rows = r.get("pred.f.rows")
+                    #print "SPLS quantfields:", quantFields
                     predList = ['pred_' + s for s in quantFields]
                     predDF = pd.DataFrame(pred,  columns=[predList], index=rows)
 
                     meta_scaled = r.get("Y_scaled")
                     metaDF_scaled = pd.DataFrame(data=meta_scaled, columns=quantFields, index=rows)
                     resultDF = pd.merge(metaDF_scaled, predDF, left_index=True, right_index=True)
+                    #print "SPLS resultDF:", resultDF  # getting key error on pred_ daymet stuff, not sure why yet
+                    # pred -> predicted/prediction
                     result += 'sPLS Model Fit (y = mx + b):\n'
                     result += 'y = predicted\n'
                     result += 'x = observed\n\n'

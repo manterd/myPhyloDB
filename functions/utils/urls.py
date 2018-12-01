@@ -32,6 +32,8 @@ urlpatterns = [
     url(r'^getFilterSamplesTree/$', functions.getFilterSamplesTree, name='getFilterSamplesTree'),
 
     ### urls from utils page
+    url(r'^getConsoleLog/$', functions.getConsoleLog, name='getConsoleLog'),
+    url(r'^getServerMetrics/$', functions.getServerMetrics, name='getServerMetrics'),
     url(r'^getRawDataTab/$', functions.getRawDataTab, name='getRawDataTab'),
     url(r'^getRawDataBiom/$', functions.getRawDataBiom, name='getRawDataBiom'),
     url(r'^removeFiles/$', functions.removeFiles, name='removeFiles'),

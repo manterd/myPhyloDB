@@ -56,6 +56,25 @@ def home(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
+def admin_console(request):
+    functions.log(request, "PAGE", "CONSOLE")
+    if request.user.is_superuser:
+        return render(
+            request,
+            'console.html'
+        )
+    else:
+        # this is an odd case of someone trying to get to a page they shouldn't know about and/or be able to see
+        # flagging it in console log for crime and punishment reasons (can we ban people? ips?)
+        functions.log(request, "ILLEGAL", "ILL_CONSOLE")
+        # this error message is not displayed to user, they are simply sent the home page instead
+        return render(
+            request,
+            'home.html'
+        )
+
+
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def files(request):
     functions.log(request, "PAGE", "FILES")
 
@@ -198,13 +217,15 @@ def upStop(request):  # upStop is not cleaning up uploaded files (directory, sel
     # cleanup mid upload project!
     functions.log(request, "STOP", "UPLOAD")
 
-    # print "Cleaning up upload!"
+    #print "Cleaning up upload!"
 
     projects = Reference.objects.none()
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
     elif request.user.is_authenticated():
         projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
+
+    #print "Got projects, returning"
     return render(
         request,
         'upload.html',
@@ -217,6 +238,7 @@ def upStop(request):  # upStop is not cleaning up uploaded files (directory, sel
 
 
 def upErr(msg, request, dest, sid):
+    #print "UpError!"
     logException()
     functions.log(request, "ERROR", "UPLOAD")
     try:
@@ -236,6 +258,8 @@ def upErr(msg, request, dest, sid):
 
     except:
         projects = None
+    # need to strip msg of newline and single quotes so javascript doesn't throw a fit (since django direct inserts)
+    msg = msg.translate(None, "\n\'")
 
     return render(
         request,
@@ -247,11 +271,9 @@ def upErr(msg, request, dest, sid):
          }
     )
 
-
 # need to clean this up, make like 6 helper functions, I don't want to add another 1k line function to the codebase
 # needs dynamic input support, ie make it as simple as possible to add another data type to the upload chain
 def cleanInput(key, data, text, has, good):
-
     curText = str(data[key])
     found = False
     if curText != "None":
@@ -463,7 +485,7 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
         # copy file to working project directory
         shutil.copy2(selDict['sequence'], trueDest)
     except Exception as er:
-        return "Error during reference handling: " + str(er)
+        return "-reference handling: " + str(er)
 
     copyFromUpload(selDict['meta'], dest, nameDict['meta'])
     cmd = ''
@@ -650,7 +672,7 @@ def uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, P
     error = checkSamples(selDict['meta'], '454_sff', 'mothur/temp/temp.txt')
 
     if error != "":
-        return "Error during checkSamples: " + str(error)
+        return "-checkSamples: " + str(error)
 
     batch = 'mothur.batch'
     batchPath = selDict['script']
@@ -662,7 +684,9 @@ def uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, P
     copyFromUpload(batchPath, mothurdest, batch)
 
     for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
-        line.replace("processors=X", actual_proc)
+        line = line.rstrip('\r\n')
+        line = line.replace("processors=X", actual_proc)
+        print line
 
     copyFromUpload(batchPath, dest, batch)  # copy into project dest for archive/download purposes
 
@@ -760,7 +784,7 @@ def uploadWithFastq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     error = checkSamples(selDict['meta'], "454_fastq", 'mothur/temp/temp.oligos')
 
     if error != "":
-        return "Error during sample check: " + str(error)
+        return "-sample check: " + str(error)
 
     if stopList[PID] == RID:
         return "Stop"
@@ -778,8 +802,10 @@ def uploadWithFastq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     if stopList[PID] == RID:
         return "Stop"
 
-    for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
-        line.replace("processors=X", actual_proc)
+    for line in fileinput.input('mothur/temp/mothur.batch', inplace=True):
+        line = line.rstrip('\r\n')
+        line = line.replace("processors=X", actual_proc)
+        print line
 
     if stopList[PID] == RID:
         return "Stop"
@@ -795,7 +821,8 @@ def uploadWithFastq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
         return "Stop"
 
     try:
-        with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
+        # final.fasta isn't being made before this step?
+        with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:  # crashing on open, why isn't the file here?
             functions.parse_taxonomy(file3, stopList, PID, RID)
     except Exception as er:
         logException()
@@ -835,7 +862,7 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     error = checkSamples(selDict['meta'], "miseq", 'mothur/temp/temp.files')
 
     if error != "":
-        return "Error during sample check: " + str(error)
+        return "-sample check: " + str(error)
 
     if stopList[PID] == RID:
         return "Stop"
@@ -890,7 +917,9 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
             return "Stop"
 
         for line in fileinput.input('mothur/temp/mothur.batch', inplace=1):
-            line.replace("processors=X", actual_proc)
+            line = line.rstrip('\r\n')
+            line = line.replace("processors=X", actual_proc)
+            print line
 
         if stopList[PID] == RID:
             return "Stop"
@@ -920,7 +949,9 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
             return "Stop"
 
         for line in fileinput.input('mothur/temp/dada2.R', inplace=1):
+            line = line.rstrip('\r\n')
             line.replace("multithread=TRUE", actual_proc)
+            print line
 
         # functions.handle_uploaded_file(file7, dest, batch)
         copyFromUpload(file7, dest, batch)
@@ -962,16 +993,26 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
 
 def uploadFunc(request, stopList):
     # consider making an account called myPhyloDB for Script role instead of admin
-    # having admin as the account looks less professional in my opinion
-    allTheThings = request.POST
-
-    curData = json.loads(allTheThings['data'])
+    # having admin as the account looks slightly less professional in my opinion
 
     # validation process involves checking settings paired with actual files sent
 
     projects = Reference.objects.none()
 
     start = datetime.datetime.now()
+
+    RID = ''
+    try:
+        RID = request.POST['RID']
+    except Exception as ers:
+        print "Error with RID:", ers
+        pass
+
+    userID = str(request.user.id)
+    PID = 0  # change if adding additional data threads
+
+    if stopList[PID] == RID:
+        return upStop(request)
 
     source = ''
     try:
@@ -994,18 +1035,6 @@ def uploadFunc(request, stopList):
         print "Error with processors:", ers
         pass
 
-    RID = ''
-    try:
-        RID = request.POST['RID']
-    except Exception as ers:
-        print "Error with RID:", ers
-        pass
-
-    userID = str(request.user.id)
-    PID = 0  # change if adding additional data threads
-
-    if stopList[PID] == RID:
-        return upStop(request)
 
     good = True   # verification flag, if ANYTHING goes wrong in security checks or we're missing data, make this False
 
@@ -1022,6 +1051,10 @@ def uploadFunc(request, stopList):
     subDirList = 'meta', 'shared', 'taxa', 'sequence', 'script', \
                  'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq'
     # sff, oligos, and a couple others need multi select support
+
+    allTheThings = request.POST
+
+    curData = json.loads(allTheThings['data'])
 
     for subDir in subDirList:
         textDict, hasDict, good = cleanInput(subDir, curData, textDict, hasDict, good)
@@ -1072,6 +1105,7 @@ def uploadFunc(request, stopList):
 
     except Exception:
         return uploadException(None, None, request, "There was an error parsing your meta file:" + str(selDict['meta']))
+        # uploadException used instead of upErr here because of available data differences (TODO consolidate)
 
     sid = transaction.savepoint()
     # got puuid by here, next?
@@ -1132,8 +1166,10 @@ def uploadFunc(request, stopList):
         functions.remove_proj(dest)
         transaction.savepoint_rollback(sid)
         return upStop(request)
+
     if errorText != "None":
-        return upErr("Error during " + str(source) + ":" + errorText, request, dest, sid)
+        return upErr("Error during " + str(source) + ":" + str(errorText), request, dest, sid)
+
 
     # need an else case catch, if no source ran or it crashed somehow
 
@@ -2157,12 +2193,22 @@ def select(request):
             {'form9': UploadForm9,
              'selList': selList,
              'normpost': 'Success',
-             'method': 'POST',
-             'locationBasedSampleDict': {}}
+             'method': 'POST'
+             }
+             #'locationBasedSampleDict': {}}
         )
 
     else:
-        # insert map population logic here
+        return render(
+            request,
+            'select.html',
+            {'form9': UploadForm9,
+             'selList': '',
+             'normpost': '',
+             'method': 'GET'
+             }
+        )
+        ''''# insert map population logic here
         visibleProjects = functions.getViewProjects(request)
         # get all samples for visibleProjects, put into dictionary keyed by rounded coordinates, link projectname?
         sampleSetList = []
@@ -2177,6 +2223,10 @@ def select(request):
                     # .01  ~ 1 km
                     # round to hundredths place for the sake of grouping, made roundOff val a constant for fine tuning
                     # 1/roundOff = decimal place to floor (always rounded down for simplicity/speed)
+                    # need to get roundOff val based on 10^input from slider, somehow push request back to page?
+
+                    # disabled map code for now browser-side
+
                     roundOff = 100  # bigger numbers here mean more precise coordinates, smaller for cleaner grouping
                     myLat = samp.latitude
                     myLon = samp.longitude
@@ -2202,7 +2252,7 @@ def select(request):
              'method': 'GET',
              'locationBasedSampleDict': locationBasedSampleDict
              }
-        )
+        )'''
 
 
 def taxaJSON(request):
@@ -3403,6 +3453,7 @@ def addPerms(request):  # this is the project whitelisting version, could bundle
 
 
 def remPerms(request):  # TODO new system vs finish old system and run both?
+    # project to project permissions have use, keep system and implement perms options for viewing and removing
     print "NYI"
     return
 
@@ -3462,23 +3513,42 @@ def checkSamples(metaFile, source, fileName):
                         mothurList.append(str(segments[0]))
 
     # match two lists and return result
+    foundMothurDict = {}
+    foundMetaDict = {}
+    duplicateMothurList = []
+    duplicateMetaList = []
     problemMothurList = []
     problemMetaList = []
     for thing in mothurList:
+        if thing in foundMothurDict.keys():
+            duplicateMothurList.append(thing)
+        else:
+            foundMothurDict[thing] = thing
         if thing not in metaList:
             problemMothurList.append(thing)
     for thing in metaList:
+        if thing in foundMetaDict.keys():
+            duplicateMetaList.append(thing)
+        else:
+            foundMetaDict[thing] = thing
         if thing not in mothurList:
             problemMetaList.append(thing)
 
     errorString = ""
 
+    if len(duplicateMothurList) > 0:
+        errorString += "The following samples were found more than once in your contig file:\n"
+        errorString += str(duplicateMothurList) + "\n"
+    if len(duplicateMetaList) > 0:
+        errorString += "The following samples were found more than once in your meta file:\n"
+        errorString += str(duplicateMetaList) + "\n"
+
     if len(problemMothurList) > 0:
-        errorString += "The following samples are in your mothur files but not in your meta file:\n"
+        errorString += "The following samples are in your contig file but not in your meta file:\n"
         errorString += str(problemMothurList) + "\n"
 
     if len(problemMetaList) > 0:
-        errorString += "The following samples are in your meta file but not in your mothur files:\n"
+        errorString += "The following samples are in your meta file but not in your contig file:\n"
         errorString += str(problemMetaList) + "\n"
 
     return errorString

@@ -39,6 +39,7 @@ pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
 pro = None
 
+
 def dada2(dest, source):
     global pro
     try:
@@ -192,7 +193,7 @@ def dada2(dest, source):
 def mothur(dest, source):
     global pro
     try:
-        print "Starting mothur: dest", dest, "source", source
+        #print "Starting mothur: dest", dest, "source", source
         global stage, perc, mothurStat
         stage = "Step 3 of 5: Running mothur..."
         perc = 0
@@ -277,7 +278,7 @@ def mothur(dest, source):
 
 
 def termP():    # relies on global of pro because only one dataprocess should ever be running at a single time
-    global pro
+    global pro  # pro as in process to be terminated
     try:
         if pro is not None:
             parent = psutil.Process(pro.pid)
@@ -626,7 +627,7 @@ def parse_taxonomy(Document, stopList, PID, RID):
         stage = "Step 4 of 5: Parsing taxonomy file..."
         perc = 0
 
-        print "Reading taxa:", Document
+        #print "Reading taxa:", Document
 
         f = csv.reader(Document, delimiter='\t')
         f.next()
@@ -642,7 +643,7 @@ def parse_taxonomy(Document, stopList, PID, RID):
         for row in f:
 
             if stopList[PID] == RID:
-                print "Stopping taxonomy!!!"
+                #print "Stopping taxonomy!!!"
                 return
 
             if row:
@@ -751,7 +752,7 @@ def parse_taxonomy(Document, stopList, PID, RID):
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
 
-    print "End of taxa parsing"
+    #print "End of taxa parsing"
 
 
 def updateKoOtuList(otuList, stopList, PID, RID):  # for during a new upload
@@ -818,7 +819,7 @@ def updateKoOtuList(otuList, stopList, PID, RID):  # for during a new upload
                     oldList = myKo.otuList  # other thing to consider is duplicate entries, need to rebuild entirely
                     # need to convert oldList from full string
                     newList = koOtuDict[ko]
-                    myKo.otuList = oldList + "," + str(newList)  # TODO Verify
+                    myKo.otuList = oldList + "," + str(newList)
                     myKo.save()
 
 
@@ -828,7 +829,7 @@ def updateKoOtuList(otuList, stopList, PID, RID):  # for during a new upload
 
 
 def parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID):
-    print "Parsing profile!"
+    #print "Parsing profile!"
     try:
         global stage, perc
         stage = "Step 5 of 5: Parsing shared file..."
@@ -1007,7 +1008,7 @@ def parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID):
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
 
-    print "Done parsing profile"
+    #print "Done parsing profile"
 
 
 def repStop(request):

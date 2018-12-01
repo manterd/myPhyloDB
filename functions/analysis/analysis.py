@@ -35,6 +35,14 @@ from scipy import stats
 from database.models import Sample
 
 
+# stop function for creating proper return message
+def getStopDict():
+    stopFinal = {}
+    stopFinal['resType'] = 'res'
+    stopFinal['error'] = 'Your request was stopped'
+    return json.dumps(stopFinal)
+
+
 # analysis class is a base for other analyses to overwrite (not intended for direct use)
 # TODO create R based alternative functions, which accept data querysets and R scripts to produce PDF format graphs
 class Analysis:  # abstract parent class, not to be run on its own. Instead, should be used as a template
@@ -212,8 +220,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         if self.debug:
@@ -295,6 +304,13 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         if self.debug:
             print "Third!"
 
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
         path = str(myDir) + str(self.RID) + '.biom'
         functions.imploding_panda(path, self.treeType, self.DepVar, self.finalSampleIDs, self.metaDF, self.finalDF)
         functions.setBase(self.RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
@@ -304,8 +320,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         return 0
 
@@ -547,8 +564,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    if self.debug:
+                        print "Stopping!"
+                    return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 D += "\nLSmeans & Tukey's HSD post-hoc test:\n\n"
@@ -579,8 +597,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    if self.debug:
+                        print "Stopping!"
+                    return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             else:
@@ -613,8 +632,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...done!')
@@ -753,8 +773,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             '''
@@ -787,8 +808,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 self.xAxisDict['categories'] = labelTree['categories']
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         if self.debug:
@@ -837,8 +859,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # datatable of taxa mapped to selected kegg orthologies
@@ -1147,19 +1170,24 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
             functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...taxa ' + str(counter) + ' of ' + str(taxa_no) + ' is complete!')
             counter += 1
 
+            # stop check per loop iteration
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
             if self.stopList[self.PID] == self.RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...done!')
 
+        # stop check after step completion
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
+
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
 
         self.finalDF['sample_name'] = ''
@@ -1560,8 +1588,9 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
             if self.stopList[self.PID] == self.RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
         xAxisDict = {}
@@ -1610,8 +1639,9 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # datatable of taxa mapped to selected kegg orthologies
@@ -1650,9 +1680,11 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
             # experimental R substitution
             #return self.fullRAnalysis("functions/analysis/R_scripts/anova.r")
 
-
         if self.debug:
-            print "Something went wrong with Anova"
+            if self.stopList[self.PID] == self.RID:
+                print "Stopped Anova"
+            else:
+                print "Something went wrong with Anova"
         return ret
 
 
@@ -1773,8 +1805,9 @@ class Corr(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
@@ -1804,8 +1837,9 @@ class Corr(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         finalDict['error'] = 'none'
@@ -2006,14 +2040,16 @@ class diffAbund(Analysis):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == self.RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
+                        if self.debug:
+                            print "Stopping!"
+                        return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         if self.debug:
@@ -2080,8 +2116,9 @@ class diffAbund(Analysis):
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         if self.debug:
@@ -2112,8 +2149,9 @@ class diffAbund(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         nbinom_res.replace(to_replace='N/A', value=np.nan, inplace=True)
@@ -2128,8 +2166,9 @@ class diffAbund(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         self.finalDict['error'] = 'none'
@@ -2180,8 +2219,9 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
@@ -2216,8 +2256,9 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         r.assign("PC1", PC1)
@@ -2494,8 +2535,9 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data...')
@@ -2535,8 +2577,9 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         if ellipseVal == 'k-means' or colorVal == 'k-means' or shapeVal == 'k-means':
@@ -2560,8 +2603,9 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         finalDict['error'] = 'none'
@@ -2610,8 +2654,9 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 3 of 9: Calculating distance matrix...')
@@ -2683,8 +2728,9 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 4 of 9: Principal coordinates analysis...')
@@ -2915,8 +2961,9 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 5 of 9: Performing perMANOVA...')
@@ -2934,8 +2981,9 @@ class PCoA(Analysis):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == self.RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
+                        if self.debug:
+                            print "Stopping!"
+                        return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 r.assign("perms", perms)
@@ -2963,8 +3011,9 @@ class PCoA(Analysis):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == self.RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
+                        if self.debug:
+                            print "Stopping!"
+                        return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 r.assign("perms", perms)
@@ -2988,16 +3037,18 @@ class PCoA(Analysis):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == self.RID:
-                        res = ''
-                        return HttpResponse(res, content_type='application/json')
+                        if self.debug:
+                            print "Stopping!"
+                        return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                     functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 7 of 9: Formatting graph data for display...')
@@ -3032,8 +3083,9 @@ class PCoA(Analysis):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    if self.debug:
+                        print "Stopping!"
+                    return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         xTitle = {}
@@ -3079,8 +3131,9 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 8 of 9: Formatting PCoA table...')
@@ -3093,8 +3146,9 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         functions.setBase(self.RID, 'Step 9 of 9: Formatting distance score table...')
@@ -3109,8 +3163,9 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            if self.debug:
+                print "Stopping!"
+            return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         finalDict['error'] = 'none'

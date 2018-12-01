@@ -11,7 +11,7 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
     Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile, \
     ko_lvl1, ko_entry, \
     nz_lvl1, nz_entry, \
-    UserProfile
+    UserProfile, DaymetData
 
 import functions
 
@@ -737,6 +737,21 @@ def getSampleQuantTree(request):
         myTree['children'].append(soil)
     myTree['children'].append(user)
 
+    # daymetData, should only be visible if user has a DaymetData object (atm keyed on username)
+    try:
+        # myDaymet line is to check if object exists
+        if DaymetData.objects.filter(user=request.user).exists():
+            daymet = {'title': 'Daymet Data', 'id': 'user', 'isFolder': True, 'hideCheckbox': True, 'children': []}
+            # "year" "yday" "dayl" "prcp" "srad"  "swe"  "tmax"  "tmin"  "vp"
+            list = ['year', 'yday', 'dayl', 'prcp', 'srad', 'swe', 'tmax', 'tmin', 'vp']
+            for i in range(len(list)):
+                myNode = {'title': list[i], 'id': 'user', 'isFolder': True, 'pType': 'user', 'isLazy': True, 'children': []}
+                daymet['children'].append(myNode)
+            myTree['children'].append(daymet)
+    except Exception as ofcoursetheresanexceptionhere:
+        print "Hit the exception on daymetdata:", ofcoursetheresanexceptionhere
+        pass
+
     # Convert result list to a JSON string
     res = json.dumps(myTree)
 
@@ -781,6 +796,9 @@ def getSampleQuantTreeChildren(request):
 
         your_fields = Water._meta.local_fields
         water = [f.name for f in your_fields]
+
+        your_fields = DaymetData._meta.local_fields
+        daymet = [f.name for f in your_fields]
 
         myNode = []
         if field in mimark:
@@ -979,6 +997,93 @@ def getSampleQuantTreeChildren(request):
                             'value': values[j],
                             'table': 'user',
                             'tooltip': 'Project: ' + item.projectid.project_name + ' (ID: ' + item.projectid.projectid + ')',
+                            'hideCheckbox': False,
+                            'isFolder': False
+                        }
+                        myNode1['children'].append(myNode2)
+                    myNode.append(myNode1)
+
+        elif field in daymet:
+            # the trick with daymet tree children is that a single daymet object contains all info needed, buried in strings
+            # need to get the correct strings (sampleid and whatever node is being expanded upon) and pair values together
+            # in theory just need to query object by user, then run through correct strings, format for tree, done
+            #values = DaymetData.objects.values_list(field, flat='True').filter(sampleid__in=filtered).distinct().order_by(field)
+            # populate values list from paired strings
+            myDaymetData = DaymetData.objects.get(user=request.user)
+            daySamps = myDaymetData.sampleIDs.split(";")[:-1]
+            # "year" "yday" "dayl" "prcp" "srad"  "swe"  "tmax"  "tmin"  "vp"
+            # for clarity and security, values list is selected based on a series of if/elifs
+            # check which daymet data is being queried for, pull up corresponding list
+            # then iterate through in order to make sampID key with value as queried val, use dictionary to make nodes
+            valueString = ""
+            #print "daymet tree children, looking for:", field
+            if field == "year":
+                valueString = myDaymetData.year
+            elif field == "yday":
+                valueString = myDaymetData.yday
+            elif field == "dayl":
+                valueString = myDaymetData.dayl
+                field = "dayl..s."
+            elif field == "prcp":
+                valueString = myDaymetData.prcp
+                field = "prcp..mm.day."
+            elif field == "srad":
+                valueString = myDaymetData.srad
+                field = "srad..W.m.2."
+            elif field == "swe":
+                valueString = myDaymetData.swe
+                field = "swe..kg.m.2."
+            elif field == "tmax":
+                valueString = myDaymetData.tmax
+                field = "tmax..deg.c."
+            elif field == "tmin":
+                valueString = myDaymetData.tmin
+                field = "tmin..deg.c."
+            elif field == "vp":
+                valueString = myDaymetData.vp
+                field = "vp..Pa."
+            else:
+                print "User requested a non existent daymet field!!"
+
+            # "year" "yday" "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c."  "vp..Pa."
+            values = valueString.split(';')[:-1]
+            #print "Daymet for tree:", len(daySamps), ":", len(values)
+            #print "Values:", values
+            # group identical values (and their corresponding sampleids)
+            valDict = {}
+            sampIter = 0
+            for val in values:
+                if val not in valDict.keys():
+                    valDict[val] = []
+
+                valDict[val].append(Sample.objects.get(sampleid=daySamps[sampIter]))
+                sampIter += 1
+            # now just sync iterating through daySamps and values
+            for keyVal in valDict.keys():
+                if pd.notnull(val) and not val == 'nan':
+                    myNode1 = {
+                        'title': keyVal,
+                        'id': field,
+                        'isFolder': True,
+                        'hideCheckbox': False,
+                        'children': []
+                    }
+                    # folder is value, put all sampleids paired with this value in tree (no duplicates)
+
+                    #args_list = []
+                    #args_list.append(Q(**{field: val}))
+                    #items = DaymetData.objects.filter(reduce(operator.or_, args_list)).filter(sampleid__in=filtered).order_by('sample_name')
+                    # item object needs samplename (from id) and sampleid (easy) plus projectid and projectname (from sample)
+                    # value is still from list
+                    for curSamp in valDict[keyVal]:
+                        myNode2 = {
+                            'title': str(curSamp.sample_name) + ' (ID: ' + str(curSamp.sampleid) + '; Reads: ' + str(
+                                curSamp.reads) + ')',
+                            'id': curSamp.sampleid,
+                            'field': field,
+                            'value': val,
+                            'table': 'mimark',
+                            'tooltip': 'Project: ' + curSamp.projectid.project_name + ' (ID: ' + curSamp.projectid.projectid + ')',
                             'hideCheckbox': False,
                             'isFolder': False
                         }
@@ -1489,7 +1594,7 @@ def fileTreeChildren(path, name, filter, filterName):
                                 'isFolder': True,
                                 'children': []
                             }
-                            for moreroot, moredirs, morefiles in os.walk(os.path.join(nextpath,tempdir)):
+                            for moreroot, moredirs, morefiles in os.walk(os.path.join(nextpath, tempdir)):
                                 for morefile in morefiles:
                                     #print "Adding file", morefile
                                     myNode2 = {
@@ -1764,9 +1869,9 @@ def getFilterSamplesTree(request):
     fName = request.GET['fname']
     fVal = request.GET['fval']
     myTree = {'title': 'Filtered Data', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
-    print "PTYPE:", pType
-    print "FNAME:", fName
-    print "FVAL:", fVal
+    # print "PTYPE:", pType
+    # print "FNAME:", fName
+    # print "FVAL:", fVal
     if pType != "" and pType is not None and fName != "" and fName is not None:
         projectSet = []
         myProjects = functions.getViewProjects(request)
@@ -1799,14 +1904,17 @@ def getFilterSamplesTree(request):
                     if pType.lower() == "user_defined":
                         workSamp = UserDefined.objects.get(sampleid=samp)
 
-                    workVal = str(getattr(workSamp, fName))
-                    thisValPasses = False
-                    if fVal == "":
-                        if workVal is not None and workVal != "" and workVal != "nan" and workVal != "None":
+                    if fName != 'nofilterselected':
+                        workVal = str(getattr(workSamp, fName))
+                        thisValPasses = False
+                        if fVal == "":
+                            if workVal is not None and workVal != "" and workVal != "nan" and workVal != "None":
+                                thisValPasses = True
+                        elif workVal == fVal:
                             thisValPasses = True
-                    elif workVal == fVal:
-                        thisValPasses = True
-                    if thisValPasses:
+                        if thisValPasses:
+                            sampleDict[proj.projectid].append(workSamp)
+                    else:
                         sampleDict[proj.projectid].append(workSamp)
 
                 except Exception as e:
@@ -1821,6 +1929,8 @@ def getFilterSamplesTree(request):
                 projectSet.append(Project.objects.get(projectid=projid))
         # print "Found", len(projectSet), "projects after cleanup"
 
+        projectSet.sort(key=lambda x: x.project_name)
+
         for proj in projectSet:
             myProjNode = {
                 'title': proj.project_name,
@@ -1834,21 +1944,39 @@ def getFilterSamplesTree(request):
             # print proj.project_name, "has", len(sampleDict[proj.projectid]), "matching samples"
             for samp in sampleDict[proj.projectid]:
                 try:
-                    myVal = str(getattr(samp, fName))
-                    if pType == "mimarks":
-                        mySampNode = {
-                            'title': "Value: " + myVal + '; Name: ' + str(samp.sample_name) + '; Reads: ' + str(samp.reads),
-                            'tooltip': 'ID: ' + str(samp.sampleid),
-                            'id': str(samp.sampleid),
-                            'isFolder': False
-                        }
+                    if fName == "nofilterselected":
+                        if pType == "mimarks":
+                            mySampNode = {
+                                'title': 'Name: ' + str(samp.sample_name) + '; Reads: ' + str(
+                                    samp.reads),
+                                'tooltip': 'ID: ' + str(samp.sampleid),
+                                'id': str(samp.sampleid),
+                                'isFolder': False
+                            }
+                        else:
+                            mySampNode = {
+                                'title': 'Name: ' + str(
+                                    samp.sampleid.sample_name) + '; Reads: ' + str(samp.sampleid.reads),
+                                'tooltip': 'ID: ' + str(samp.sampleid.sampleid),
+                                'id': str(samp.sampleid.sampleid),
+                                'isFolder': False
+                            }
                     else:
-                        mySampNode = {
-                            'title': "Value: " + myVal + '; Name: ' + str(samp.sampleid.sample_name) + '; Reads: ' + str(samp.sampleid.reads),
-                            'tooltip': 'ID: ' + str(samp.sampleid.sampleid),
-                            'id': str(samp.sampleid.sampleid),
-                            'isFolder': False
-                        }
+                        myVal = str(getattr(samp, fName))
+                        if pType == "mimarks":
+                            mySampNode = {
+                                'title': "Value: " + myVal + '; Name: ' + str(samp.sample_name) + '; Reads: ' + str(samp.reads),
+                                'tooltip': 'ID: ' + str(samp.sampleid),
+                                'id': str(samp.sampleid),
+                                'isFolder': False
+                            }
+                        else:
+                            mySampNode = {
+                                'title': "Value: " + myVal + '; Name: ' + str(samp.sampleid.sample_name) + '; Reads: ' + str(samp.sampleid.reads),
+                                'tooltip': 'ID: ' + str(samp.sampleid.sampleid),
+                                'id': str(samp.sampleid.sampleid),
+                                'isFolder': False
+                            }
                     myProjNode['children'].append(mySampNode)
                 except Exception as e:
                     print "Error during sample selection for location tree:", e

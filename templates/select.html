@@ -12,13 +12,61 @@
 {% endblock user %}
 
 {% block javascript %}
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.8/esri/css/main.css">
+    <script src="https://js.arcgis.com/4.8/"></script>
+
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/GraphicsLayer",
+            "dojo/domReady!"
+            ], function(Map, MapView) {
+                var map = new Map({
+                    basemap: "topo-vector"
+                });
+                var view = new MapView({
+                    container: "viewDiv",
+                    map: map,
+                    center: [-118.71511,34.09042],
+                    zoom: 10
+                });
+                view.on("load", onMapLoad);
+
+        });
+        function onMapLoad(){
+            alert("Loaded!");
+        }
+    </script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <style>
+      html, body, #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 400px;
+        width: 400px;
+      }
+    </style>
+
     <style>
         .inlineTable {
             display: inline-block;
             vertical-align: top;
         }
+        input[type=range][orient=vertical]
+        {
+            writing-mode: vertical-lr; /* IE */
+            -webkit-appearance: slider-vertical; /* WebKit */
+            width: 8px;
+            height: 175px;
+            padding: 0 5px;
+        }
     </style>
+
     <script type="text/javascript">
+
         var selKeys = "";
         var table1, table2, table3, table4, table5, table6, table7, table8, table9;
         var RID = 0;
@@ -29,6 +77,8 @@
         var ptype = "mimarks";
         var fname = "organism";
         var fval = "";
+        var clusterLevel = 50;
+        var mainFilterChange = false;
 
 
         $(function () {
@@ -41,12 +91,13 @@
             // populate temptree on select based on sample ids with projectname on top <- this seems cluttered
             // markers only display projectnames, use sample ids for populating tree
             // as in, when selecting a marker, get its sampleids
+            /*
             var map = new google.maps.Map(
                 document.getElementById('map'), {zoom: 3, center: {lat: 37.09024, lng: -95.712891}});
 
             var markers = [];
 
-            var locationBasedSampleDict = {{ locationBasedSampleDict | safe }};
+            var locationBasedSampleDict = {'{ locationBasedSampleDict | safe }'};
             var locationKeys = Object.keys(locationBasedSampleDict);
             for (var c=0; c<locationKeys.length; c++){
                 var myKey = locationKeys[c];
@@ -102,7 +153,7 @@
                     }
                 })(myMarker));
 
-            }
+            }*/
 
             table1 = $('#projectTable').DataTable({
                 "dom": 'B<"toolbar">lfrtip',
@@ -385,13 +436,15 @@
                 }
             });
 
-            $("#markTree").dynatree({
+            /*$("#markTree").dynatree({
                 checkbox: true,
                 selectMode: 3,
                 initAjax: {
                     url: "/myPhyloDB/getLocationSamplesTree/",
                     dataType: "jsonp",
-                    data: {'sampleIDs': sampIDs}
+                    data: {
+                        'sampleIDs': sampIDs
+                    }
                 },
                 onSelect: function (select, node) {
                     // insert select mirroring logic here
@@ -421,7 +474,7 @@
                         }
                     });
                 }
-            });
+            });*/
 
             $("#filterTree").dynatree({
                 checkbox: true,
@@ -433,6 +486,12 @@
                         'ptype': ptype,
                         'fname': fname,
                         'fval': fval
+                    }
+                },
+                onPostInit: function(isReloading, isError){
+                    if (mainFilterChange) {
+                        setTimeout(popFilterList(), 100);
+                        mainFilterChange = false;
                     }
                 },
                 onSelect: function (select, node) {
@@ -472,11 +531,11 @@
                 updateTables();
             });
 
-            $("#clearMarks").click(function () {
+            /*$("#clearMarks").click(function () {
                 $("#markTree").dynatree("getRoot").visit(function (node) {
                     node.select(false);
                 });
-            });
+            });*/
 
             $("#upload").click(function () {
                 $("#submit").css("background-color", "lightgray").val("Save Selection(s)!");
@@ -608,9 +667,8 @@
 
         function selectFilter() {
             // get value of selection menu, use to hide and display other datasets
-            var filterType = document.getElementById("filterType").value;
-            ptype = filterType;
-            if (filterType == "projects"){
+            ptype = document.getElementById("filterType").value;
+            if (ptype == "projects"){
                 $("#tree").show();
                 $("#filterTree").hide();
                 $("#filter").hide();
@@ -623,7 +681,7 @@
                 $("#microbialFilter").hide();
                 $("#user_definedFilter").hide();
             }
-            if (filterType == "mimarks"){
+            if (ptype == "mimarks"){
                 $("#tree").hide();
                 $("#filterTree").show();
                 $("#filter").show();
@@ -636,7 +694,7 @@
                 $("#microbialFilter").hide();
                 $("#user_definedFilter").hide();
             }
-            if (filterType == "soil"){
+            if (ptype == "soil"){
                 $("#tree").hide();
                 $("#filterTree").show();
                 $("#filter").show();
@@ -649,7 +707,7 @@
                 $("#microbialFilter").hide();
                 $("#user_definedFilter").hide();
             }
-            if (filterType == "human_associated"){
+            if (ptype == "human_associated"){
                 $("#tree").hide();
                 $("#filterTree").show();
                 $("#filter").show();
@@ -662,7 +720,7 @@
                 $("#microbialFilter").hide();
                 $("#user_definedFilter").hide();
             }
-            if (filterType == "air"){
+            if (ptype == "air"){
                 $("#tree").hide();
                 $("#filterTree").show();
                 $("#filter").show();
@@ -675,7 +733,7 @@
                 $("#microbialFilter").hide();
                 $("#user_definedFilter").hide();
             }
-            if (filterType == "water"){
+            if (ptype == "water"){
                 $("#tree").hide();
                 $("#filterTree").show();
                 $("#filter").show();
@@ -688,7 +746,7 @@
                 $("#microbialFilter").hide();
                 $("#user_definedFilter").hide();
             }
-            if (filterType == "microbial"){
+            if (ptype == "microbial"){
                 $("#tree").hide();
                 $("#filterTree").show();
                 $("#filter").show();
@@ -701,7 +759,7 @@
                 $("#microbialFilter").show();
                 $("#user_definedFilter").hide();
             }
-            if (filterType == "user_defined"){
+            if (ptype == "user_defined"){
                 $("#tree").hide();
                 $("#filterTree").show();
                 $("#filter").show();
@@ -755,9 +813,15 @@
             if (ptype == "user_defined"){
                 fname = document.getElementById("user_definedFilter").value;
             }
+            if (fname == "nofilterselected" || ptype == "projects"){
+                $("#filterValue").hide();
+            }
+            else {
+                $("#filterValue").show();
+            }
             fval = "";
+            mainFilterChange = true;
             getFilterData();
-            setTimeout(popFilterList, 1000);
         }
         function updateFilterVal() {
             fval = document.getElementById("filterValue").value;
@@ -776,10 +840,15 @@
             });
             var filterVal = document.getElementById("filterValue");
             var i;
+            // wipe out old filter options before creating new ones
             for(i = filterVal.options.length - 1 ; i >= 0 ; i--)
             {
                 filterVal.remove(i);
             }
+            var blankOption = document.createElement("option");
+            blankOption.value = "";
+            blankOption.text = "No filter";
+            filterVal.add(blankOption);
             var newFilters = Object.keys(valDict);
             for (var iter=0; iter<newFilters.length; iter++) {
                 var option = document.createElement("option");
@@ -789,15 +858,15 @@
                 option.text = myVal;
                 filterVal.add(option);
             }
-            var blankOption = document.createElement("option");
-            var blankVal = "";
-            blankOption.value = blankVal;
-            blankOption.text = blankVal;
-            filterVal.add(blankOption);
         }
 
+        function updateMapZoom() {
+            clusterLevel = document.getElementById("mapZoom").value;
+            // change clustering in javascript, data is available, just move rounding to JS side instead of python
+
+        }
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?callback=myMap"></script>
+    <script src="https://maps.googleapis.com/maps/api/js"></script>
 {% endblock javascript %}
 
 {% block my_content %}
@@ -814,7 +883,7 @@
                 <div id="tree"></div>
                 <div id="filterTree" style="display:none;"></div>
             </td>
-            <td>
+            <td valign="top">
                 <table>
                     <tr>
                         <td>
@@ -833,33 +902,35 @@
                     </tr>
                     <tr>
                         <td>
-                            <select id="mimarkFilter" onclick="updateFilter();" style="display:none;">
-                    <option value="refid">myPhyloDB generated upload UUID</option>
-                    <option value="organism" selected>NCBI organism</option>
-                    <option value="collection_date">Collection Date</option>
-                    <option value="depth">Depth below soil surface</option>
-                    <option value="elev">Elevation</option>
-                    <option value="seq_platform">Sequencing platform</option>
-                    <option value="seq_gene">Gene targeted for sequencing</option>
-                    <option value="seq_gene_region">Gene region targeted for sequencing</option>
-                    <option value="seq_barcode">Sequencing barcoder</option>
-                    <option value="seq_for_primer">Sequencing forward primer</option>
-                    <option value="seq_rev_primer">Sequencing reverse primer</option>
-                    <option value="env_biome">Environment: biome</option>
-                    <option value="env_feature">Environment: feature</option>
-                    <option value="env_material">Environment: material</option>
-                    <option value="geo_loc_country">Geographic location: country</option>
-                    <option value="geo_loc_state">Geographic location: state</option>
-                    <option value="geo_loc_city">Geographic location: city</option>
-                    <option value="geo_loc_farm">Geographic location: farm</option>
-                    <option value="geo_loc_plot">Geographic location: plot</option>
-                    <option value="latitude">Latitude</option>
-                    <option value="longitude">Longitude</option>
-                    <option value="annual_season_precpt">Mean annual precipitation</option>
-                    <option value="annual_season_temp">Mean annual temperature</option>
-                </select>
-                            <select id="soilFilter" style="display: none;" onclick="updateFilter();">
-                                <option value="samp_collection_device" selected>Sample: collection device</option>
+                            <select id="mimarkFilter" onchange="updateFilter();" style="display:none;">
+                                <option value="nofilterselected" selected>No filter</option>
+                                <option value="refid">myPhyloDB generated upload UUID</option>
+                                <option value="organism">NCBI organism</option>
+                                <option value="collection_date">Collection Date</option>
+                                <option value="depth">Depth below soil surface</option>
+                                <option value="elev">Elevation</option>
+                                <option value="seq_platform">Sequencing platform</option>
+                                <option value="seq_gene">Gene targeted for sequencing</option>
+                                <option value="seq_gene_region">Gene region targeted for sequencing</option>
+                                <option value="seq_barcode">Sequencing barcoder</option>
+                                <option value="seq_for_primer">Sequencing forward primer</option>
+                                <option value="seq_rev_primer">Sequencing reverse primer</option>
+                                <option value="env_biome">Environment: biome</option>
+                                <option value="env_feature">Environment: feature</option>
+                                <option value="env_material">Environment: material</option>
+                                <option value="geo_loc_country">Geographic location: country</option>
+                                <option value="geo_loc_state">Geographic location: state</option>
+                                <option value="geo_loc_city">Geographic location: city</option>
+                                <option value="geo_loc_farm">Geographic location: farm</option>
+                                <option value="geo_loc_plot">Geographic location: plot</option>
+                                <option value="latitude">Latitude</option>
+                                <option value="longitude">Longitude</option>
+                                <option value="annual_season_precpt">Mean annual precipitation</option>
+                                <option value="annual_season_temp">Mean annual temperature</option>
+                            </select>
+                            <select id="soilFilter" style="display: none;" onchange="updateFilter();">
+                                <option value="nofilterselected" selected>No filter</option>
+                                <option value="samp_collection_device">Sample: collection device</option>
                                 <option value="samp_size">Sample: size</option>
                                 <option value="samp_depth">Sample: depth range</option>
                                 <option value="samp_prep">Sample: preparation</option>
@@ -965,8 +1036,9 @@
                                 <option value="soil_ACE_protein">Soil Health: ACE protein index</option>
                                 <option value="soil_active_C">Soil Health: active Carbon</option>
                             </select>
-                            <select id="human_associatedFilter" style="display: none;" onclick="updateFilter();">
-                                <option value="samp_collect_device" selected>Sample: collection device</option>
+                            <select id="human_associatedFilter" style="display: none;" onchange="updateFilter();">
+                                <option value="nofilterselected" selected>No filter</option>
+                                <option value="samp_collect_device">Sample: collection device</option>
                                 <option value="samp_mat_process">Sample: material processing</option>
                                 <option value="samp_size">Sample: size</option>
                                 <option value="samp_store_temp">Sample: storage temperature</option>
@@ -1016,8 +1088,9 @@
                                 <option value="gestation_stat">Fetal: gestation state</option>
                                 <option value="maternal_health_stat">Fetal: maternal health status</option>
                             </select>
-                            <select id="airFilter" style="display: none;" onclick="updateFilter();">
-                                <option value="barometric_press" selected>barometric_press</option>
+                            <select id="airFilter" style="display: none;" onchange="updateFilter();">
+                                <option value="nofilterselected" selected>No filter</option>
+                                <option value="barometric_press">barometric_press</option>
                                 <option value="carb_dioxide">carb_dioxide</option>
                                 <option value="carb_monoxide">carb_monoxide</option>
                                 <option value="chem_admin_term">chem_admin_term</option>
@@ -1052,8 +1125,9 @@
                                 <option value="wind_direction">wind_direction</option>
                                 <option value="wind_speed">wind_speed</option>
                             </select>
-                            <select id="waterFilter" style="display: none;" onclick="updateFilter();">
-                                <option value="alkalinity" selected>alkalinity</option>
+                            <select id="waterFilter" style="display: none;" onchange="updateFilter();">
+                                <option value="nofilterselected" selected>No filter</option>
+                                <option value="alkalinity">alkalinity</option>
                                 <option value="alkyl_diethers">alkyl_diethers</option>
                                 <option value="altitude">altitude</option>
                                 <option value="aminopept_act">aminopept_act</option>
@@ -1141,8 +1215,9 @@
                                 <option value="water_current_direction">water_current_direction</option>
                                 <option value="water_current_magnitude">water_current_magnitude</option>
                             </select>
-                            <select id="microbialFilter" style="display: none;" onclick="updateFilter();">
-                                <option value="alkalinity" selected>alkalinity</option>
+                            <select id="microbialFilter" style="display: none;" onchange="updateFilter();">
+                                <option value="nofilterselected" selected>No filter</option>
+                                <option value="alkalinity">alkalinity</option>
                                 <option value="alkyl_diethers">alkyl_diethers</option>
                                 <option value="altitude">altitude</option>
                                 <option value="aminopept_act">aminopept_act</option>
@@ -1214,8 +1289,9 @@
                                 <option value="turbidity">turbidity</option>
                                 <option value="water_content">water_content</option>
                             </select>
-                            <select id="user_definedFilter" style="display: none;" onclick="updateFilter();">
-                                <option value="usr_cat1" selected>User-defined: categorical variable #1</option>
+                            <select id="user_definedFilter" style="display: none;" onchange="updateFilter();">
+                                <option value="nofilterselected" selected>No filter</option>
+                                <option value="usr_cat1">User-defined: categorical variable #1</option>
                                 <option value="usr_cat2">User-defined: categorical variable #2</option>
                                 <option value="usr_cat3">User-defined: categorical variable #3</option>
                                 <option value="usr_cat4">User-defined: categorical variable #4</option>
@@ -1233,7 +1309,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <select id="filterValue" name="FilterValue" onclick="updateFilterVal();" style="display:none;">
+                            <select id="filterValue" name="FilterValue" onchange="updateFilterVal();" style="display:none;">
                             </select>
                             <br>
                         </td>
@@ -1775,8 +1851,11 @@
             </table>
         </div>
     </div>
-    <br><br>
-    <div id="map" style="width:400px;height:400px;float:left"></div>
+    <br>
+    <!--<br>
+    <div id="map" style="width:400px;height:400px;float:left;display:none"></div>
+    <br>
+    <div id="viewDiv"></div>
 
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
@@ -1788,6 +1867,15 @@
             </td>
         </tr>
     </table>
+    <br>
+    <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
+        <tr>
+            <th>Map Clustering Slider</th>
+        </tr>
+        <tr>
+            <td><input type="range" min="1" max="100" value="50" class="slider" id="mapZoom" onchange="updateMapZoom();"></td>
+        </tr>
+    </table>-->
 
     <br><br>
     <br><br>

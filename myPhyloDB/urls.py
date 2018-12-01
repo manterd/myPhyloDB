@@ -13,12 +13,13 @@ urlpatterns = [
     # Admin Urls
     url(r'^myPhyloDB/admin/', admin.site.urls),
 
+    # other url files (for functions and such)
     url(r'^myPhyloDB/', include('database.urls')),
     url(r'^myPhyloDB/', include('functions.analysis.urls')),
     url(r'^myPhyloDB/', include('functions.queues.urls')),
     url(r'^myPhyloDB/', include('functions.utils.urls')),
 
-    ### urls from views page
+    ### urls from views page (ie actual page requests)
     url(r'^myPhyloDB/saveSampleList/$', views.saveSampleList, name='saveSampleList'),
     url(r'^myPhyloDB/taxaJSON/$', views.taxaJSON, name='taxaJSON'),
     url(r'^myPhyloDB/nzJSON/$', views.nzJSON, name='nzJSON'),

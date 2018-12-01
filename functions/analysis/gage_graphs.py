@@ -76,20 +76,21 @@ def getGAGE(request, stops, RID, PID):
                 r("list.of.packages <- c('gage', 'edgeR', 'pathview')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
                 r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-                print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
+                r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
                 # R packages from cran
-                r("list.of.packages <- c('png', 'grid')")
+                r("list.of.packages <- c('png', 'grid', 'plyr')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+                r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
                 functions.setBase(RID, 'Step 3 of 6: Mapping phylotypes to KEGG pathways...')
 
-                print r("library(gage)")
-                print r("library(edgeR)")
-                print r("library(pathview)")
-                print r("library(png)")
-                print r("library(grid)")
+                r("library(gage)")
+                r("library(edgeR)")
+                r("library(pathview)")
+                r("library(png)")
+                r("library(grid)")
+                r("library(plyr)")
 
                 keggString = all["kegg"]
                 keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
@@ -172,6 +173,13 @@ def getGAGE(request, stops, RID, PID):
                 count_rDF.drop_duplicates(keep='last', inplace=True)  # remove dups - KOs mapped to multiple pathways
                 count_rDF.set_index('ko', drop=True, inplace=True)
 
+                # make metaDF R compatible, remove offending characters in categorical variables
+                for cat in catFields:
+                    metaDF[cat] = metaDF[cat].str.replace('-', '_')
+                    metaDF[cat] = metaDF[cat].str.replace(' ', '_')
+                    metaDF[cat] = metaDF[cat].str.replace('(', '_')
+                    metaDF[cat] = metaDF[cat].str.replace(')', '_')
+
                 # Create combined metadata column
                 if len(catFields) > 1:
                     for index, row in metaDF.iterrows():
@@ -248,11 +256,18 @@ def getGAGE(request, stops, RID, PID):
                         r.assign("trt1", trt1)
                         r.assign("trt2", trt2)
 
+                        '''
+                        Error in makeContrasts(contVec, levels = design) :
+                        The levels must by syntactically valid names in R, see help(make.names).  Non-valid names: A-pinene,B-caryophyllene
+                        # potential fix on line 177
+                        '''
+
                         r('contVec <- sprintf("%s-%s", trt1, trt2)')
                         r('cont.matrix= makeContrasts(contVec, levels=design)')
                         r('lrt <- glmLRT(fit, contrast=cont.matrix)')
                         r("res <- as.data.frame(topTags(lrt, n=nrow(lrt$table)))")
                         r('res <- res[ order(row.names(res)), ]')
+                        r('res')
                         taxaIDs = r.get("row.names(res)")
 
                         r("change <- -res$logFC")

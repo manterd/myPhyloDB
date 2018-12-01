@@ -15,6 +15,7 @@ import json
 import threading
 import time
 import zipfile
+import math
 
 from database.models import Project, Reference, Profile
 
@@ -28,7 +29,17 @@ pd.set_option('display.max_colwidth', -1)
 
 # logging code
 loggerRunning = 0
-preLogBackLog = Queue(maxsize=0)    # queue containing entries to add write to log file
+preLogBackLog = Queue(maxsize=0)    # queue containing entries to write to log file
+# second log for console page, should store most recent N entries, so make a queue and pop it when we reach N
+consoleLog = []  # using array for full access without popping
+# can't use queue because we want to keep the entries after reading them, will have to maintain order manually
+oldestLogEntry = 0  # integer marking the index in consoleLog containing the first entry
+# when we hit N entries, the next addition will overwrite oldestLogEntry and increment it by one
+# when oldestLogEntry reaches N, reset it to 0
+# this ensures we have a list of N log entries we can always read in correct order
+maximumLogEntryCount = 50   # change this to influence logging history size (N)
+
+server_start_time = -1
 
 
 def log(request, reqType, name):
@@ -42,7 +53,62 @@ def log(request, reqType, name):
     text += "  User: " + str(request.user.username) + "  \tType: " + str(reqType) + " \tName: " + str(name)
     # formatting subject to change
     preLogBackLog.put(text, True)
-    print text  # keep this for console output?
+    # actual console output
+    print text
+    # add to secondary log for console page, this stores the N most recent log functions
+    addToConsoleLog(text)
+
+
+def addToConsoleLog(text):
+    # check if list is full, if not just add. If full, overwrite oldest entry and move iterator for oldest by one
+    global consoleLog, oldestLogEntry
+    if len(consoleLog) >= maximumLogEntryCount:
+        consoleLog[oldestLogEntry] = text
+        oldestLogEntry += 1
+        if oldestLogEntry >= maximumLogEntryCount:
+            oldestLogEntry = 0
+    else:
+        consoleLog.append(text)
+
+
+def getConsoleLog(request):
+    if request.is_ajax():
+        if not request.user.is_superuser or not request.user.is_authenticated:
+            output = json.dumps("Invalid Permissions")
+            return HttpResponse(output, content_type='application/json')
+        # get console log for page, use oldestLogEntry to track the oldest value, loop if passing maximum count
+        output = ""
+        try:
+            for iter in range(0, min(maximumLogEntryCount, len(consoleLog))):
+                if oldestLogEntry + iter < maximumLogEntryCount:
+                    output += str(consoleLog[oldestLogEntry+iter]) + "\n"
+                else:
+                    output += str(consoleLog[oldestLogEntry+iter-maximumLogEntryCount]) + "\n"
+        except Exception as e:
+            print "Exception during console log:", e
+        res = json.dumps(output)
+        return HttpResponse(res, content_type='application/json')
+
+
+def setServerStartTime():
+    global server_start_time
+    server_start_time = time.time()
+
+
+def getServerMetrics(request):
+    # at present this only gets server run time, can add whatever is needed here and it'll get displayed on the page
+    if request.is_ajax():
+        if not request.user.is_superuser or not request.user.is_authenticated:
+            output = json.dumps("Invalid Permissions")
+            return HttpResponse(output, content_type='application/json')
+        days = math.trunc((time.time() - server_start_time) / 86400)
+        hours = math.trunc(((time.time() - server_start_time) % 86400) / 3600)
+        minutes = math.trunc((((time.time() - server_start_time) % 86400) % 3600) / 60)
+        seconds = math.trunc((((time.time() - server_start_time) % 86400) % 3600) % 60)
+        output = "Server has been running for: " + str(days) + " days, " + str(hours) + " hours, " + str(minutes) + \
+                 " minutes, " + str(seconds) + " seconds"
+        res = json.dumps(output)
+        return HttpResponse(res, content_type='application/json')
 
 
 def startLogger():
@@ -438,11 +504,9 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
         idDictCat = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
         for key in sorted(idDictCat):
             catSampleLists.append(idDictCat[key])
-
     catSampleIDs = []
     if catSampleLists:
         catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
-
     quantFields = []
     quantValues = []
     if metaValsQuant:
@@ -450,17 +514,14 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
         for key in sorted(metaDictQuant):
             quantFields.append(key)
             quantValues.extend(metaDictQuant[key])
-
     quantSampleLists = []
     if metaIDsQuant:
         idDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
         for key in sorted(idDictQuant):
             quantSampleLists.append(idDictQuant[key])
-
     quantSampleIDs = []
     if quantSampleLists:
         quantSampleIDs = list(set.intersection(*map(set, quantSampleLists)))
-
     if catSampleIDs and not quantSampleIDs:
         finalSampleIDs = list(set(catSampleIDs))
     elif quantSampleIDs and not catSampleIDs:
@@ -470,9 +531,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
 
     myDir = 'myPhyloDB/media/usr_temp/' + str(username) + '/'
     path = str(myDir) + 'myphylodb.biom'
-
     savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields, levelDep=levelDep)
-
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
 
 
@@ -569,7 +628,7 @@ def transformDF(transform, DepVar, finalDF):
 
 
 def getViewProjects(request):   # use this function as often as possible for project queries, put all perms stuff here
-    # TODO update permissions to new system files uses (user based instead of project based)
+    # TODO update permissions to new system files uses (user based instead of project based) --> ATM KEEPING BOTH
     # if we want to do only user to user that is, project based perms can have its use cases if you collab with multiple groups
     # also group permissions? should look into that, work group objects or something
     projects = Project.objects.none()
@@ -634,7 +693,6 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     file = open(path)
     data = json.load(file)
     file.close()
-
     # Get metadata
     d = data['columns']
     metaDict = {}
@@ -788,7 +846,6 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     # make sure column types are correct
     metaDF[catFields] = metaDF[catFields].astype(str)
     metaDF[quantFields] = metaDF[quantFields].astype(float)
-
     savedDF.reset_index(drop=True, inplace=True)
 
     return savedDF, metaDF, remCatFields

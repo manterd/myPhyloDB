@@ -3,18 +3,13 @@ from Queue import Queue
 import json
 import multiprocessing as mp
 from time import sleep, time
-import threading
 import gc
-
+import datetime
 import config.local_cfg
 from database.models import UserProfile
 
 import functions
 from functions.analysis import analysis
-
-#from pycallgraph import PyCallGraph
-#from pycallgraph.output import GephiOutput
-#from pycallgraph import Config
 
 
 def analysisThreads():
@@ -35,11 +30,14 @@ def analysisThreads():
 q = Queue(maxsize=0)
 activeList = [0] * analysisThreads()
 stopList = [0] * analysisThreads()
+
 queueList = {}
 queueFuncs = {}
+queueTimes = {}
+queueUsers = {}
+
 recent = {}
 qList = []
-threadDict = {}
 statDict = {}
 stopDict = {}
 stopped = 0
@@ -76,32 +74,75 @@ def removeRID(RID):
         return False
 
 
+def getAnalysisQueue(request):  # main queue equivalent of working dataqueue tracker
+    if not request.user.is_superuser or not request.user.is_authenticated:
+        output = json.dumps({'display': "Invalid Permissions"})
+        return HttpResponse(output, content_type='application/json')
+    stringDict = {}
+    queueString = ""
+
+    # Dictionaries, all keyed by RID. We get these from the global list, not declared here since we aren't mutating
+    '''
+    queueList = {}       rid
+    queueFuncs = {}      function called
+    queueTimes = {}      when did they call it
+    queueUsers = {}      who made the call
+    '''
+
+    # Get queued processes, format string for display
+    #print "Queued"
+    for dataReq in queueList:
+        stringDict[str(queueTimes[dataReq])] = str(dataReq) + ";" + str(queueTimes[dataReq]) + ";" + \
+                       str(queueFuncs[dataReq]) + ";" + str(queueUsers[dataReq]) + ";QUEUED\n"
+
+    # Get active processes
+    #print "Active"
+    try:
+        for dataProc in activeList:
+            if len(str(dataProc)) > 1:
+                stringDict[str(queueTimes[dataProc])] = str(dataProc) + ";" + str(queueTimes[dataProc]) + ";" + \
+                               str(queueFuncs[dataProc]) + ";" + str(queueUsers[dataProc]) + ";ACTIVE\n"
+    except Exception as ex:
+        print "Problem with dataqueue console:", ex
+    # sort by timestamp, reversed order so the "biggest" (newest) times are first
+    # the idea being to display the queue in a sequence that "falls" (both more intuitive and follows the pattern set
+    # by the rest of our output texts thus far)
+    #print "Sort"
+    for key in sorted(stringDict.keys(), reverse=True):
+        queueString += stringDict[key]
+
+    # debug string, could put these under a flag. Actually, TODO make global debug flag for print spam / verbose output
+    #print "Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString
+
+    #print "Display"
+    queueDict = {'display': queueString}
+    output = json.dumps(queueDict)
+    return HttpResponse(output, content_type='application/json')
+
+
 def stop(request):
-    global activeList, stopList, threadDict, stopDict, queueList, queueFuncs   # needs queuelist (maybe queuefuncs) from dataqueue, currently not at the same level
+    global activeList, stopList, stopped, stopDict, queueList, queueFuncs, queueTimes, queueUsers
     RID = str(request.GET['all'])
     stopDict[RID] = RID
     try:
+        try:
+            # this section will error if request is being processed already, ie its for removing queued requests only
+            # the section below should handle active processes
+            qid = queueList[RID]
+            thisFunc = queueFuncs[qid]
+            functions.log(request, "QSTOP", thisFunc)
+            queueList.pop(RID, 0)   # try to remove from queuelist before processing
+        except:
+            # if we are here then most likely the process was ongoing when stop came through
+            pass
+
         pid = activeList.index(RID)
         stopList[pid] = RID
         activeList[pid] = 0
-        try:
-            pid = queueList[RID]
-            thisFunc = queueFuncs[pid]
-            functions.log(request, "QSTOP", thisFunc)
-            queueList.pop(RID, 0)   # try to remove from queuelist
-        except:
-            pass
-
-        threadName = threadDict[RID]
-        threads = threading.enumerate()
-        for thread in threads:
-            if thread.name == threadName:
-                thread.terminate()
-                stopList[pid] = RID
-                functions.log(request, "QSTOP", request.user)
-                myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
-                stop = json.dumps(myDict)
-                return HttpResponse(stop, content_type='application/json')
+        functions.log(request, "QSTOP", request.user)
+        myDict = {'error': 'none', 'message': 'Your analysis has been stopped!'}
+        stop = json.dumps(myDict)
+        return HttpResponse(stop, content_type='application/json')
     except Exception as e:
         myDict = {'error': 'Analysis not running'}
         stop = json.dumps(myDict)
@@ -114,14 +155,14 @@ def decremQ():
 
 
 def process(pid):
-    #count = 0   # counts number of functions cycled through
-    #graphConfig = Config(max_depth=3)
     while True:
         try:
-            global activeList, threadDict, stopped, stopList, stopDict
-            #graphOut = GephiOutput(output_file='funcCall'+str(count)+'.gdf')
-            #count += 1
-            #with PyCallGraph(output=graphOut, config=graphConfig):  # when not debugging, tab back under here
+            global activeList, stopList, stopDict
+
+            # TODO debug flag as a setting? like across py files so its only set once
+            DEBUG = False
+
+            # get next entry from queue
             data = q.get(block=True, timeout=None)
             decremQ()
             RID = data['RID']
@@ -132,31 +173,31 @@ def process(pid):
                 funcName = data['funcName']
                 request = data['request']
                 activeList[pid] = RID
-                thread = threading.current_thread()
-                threadDict[RID] = thread.name
                 functions.log(request, "QSTART", funcName)
                 if activeList[pid] == RID:
                     if funcName == "getNorm":
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
                     if funcName == "getCatUnivData":
-                        myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=False)
+                        myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
+                        if DEBUG:
+                            print "Returned from anova!"
                     if funcName == "getQuantUnivData":
-                        myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=False)
+                        myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run(quant=True)
                     if funcName == "getCorr":
-                        myAnalysis = analysis.Corr(request, RID, stopList, pid, debug=False)
+                        myAnalysis = analysis.Corr(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getPCA":
-                        myAnalysis = analysis.PCA(request, RID, stopList, pid, debug=False)
+                        myAnalysis = analysis.PCA(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getPCoA":
-                        myAnalysis = analysis.PCoA(request, RID, stopList, pid, debug=False)
+                        myAnalysis = analysis.PCoA(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getRF":
                         recent[RID] = functions.getRF(request, stopList, RID, pid)
                     if funcName == "getDiffAbund":
-                        myAnalysis = analysis.diffAbund(request, RID, stopList, pid, debug=False)
+                        myAnalysis = analysis.diffAbund(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
                     if funcName == "getGAGE":
                         recent[RID] = functions.getGAGE(request, stopList, RID, pid)
@@ -168,13 +209,35 @@ def process(pid):
                         recent[RID] = functions.getSpAC(request, stopList, RID, pid)
                     if funcName == "getsoil_index":
                         recent[RID] = functions.getsoil_index(request, stopList, RID, pid)
+                if DEBUG:
+                    print "Finished an analysis iteration"
                 activeList[pid] = 0
-                threadDict.pop(RID, 0)
                 stopDict.pop(RID, 0)
                 functions.log(request, "QFINISH", funcName)
-            sleep(1)
+            cleanup(RID)
         except Exception as e:
             print "Error during primary queue:", e
+
+
+def cleanup(RID):
+    global queueFuncs, queueTimes, queueUsers, queueList
+    # could potentially have some gone before others, for now just putting all in try's
+    try:
+        queueList.pop(RID, 0)
+    except:
+        pass
+    try:
+        queueFuncs.pop(RID, 0)
+    except:
+        pass
+    try:
+        queueTimes.pop(RID, 0)
+    except:
+        pass
+    try:
+        queueUsers.pop(RID, 0)
+    except:
+        pass
 
 
 def funcCall(request):
@@ -184,8 +247,8 @@ def funcCall(request):
     data = json.loads(allJson)
     reqType = data['reqType']
     RID = data['RID']
-    funcName = data['funcName']
     if reqType == "call":
+        funcName = data['funcName']
         try:
             dataID = data['dataID']
         except Exception:
@@ -201,11 +264,12 @@ def funcCall(request):
             # add to queue
             queueList[RID] = RID
             queueFuncs[RID] = funcName
+            queueTimes[RID] = str(datetime.datetime.now())
+            queueUsers[RID] = request.user.username
             q.put(qDict, True)
             statDict[RID] = int(q.qsize())
             complete[RID] = False
 
-            # print log info, need to write this to a file somewhere
             functions.log(request, "QADD", funcName)
 
             myDict = {}
@@ -221,14 +285,13 @@ def funcCall(request):
 
     if reqType == "status":
         try:
-            results = recent[RID]
+            results = recent[RID]   # recent[RID] is only initialized if function has returned with data
             recent.pop(RID, 0)
             statDict.pop(RID, 0)
             removeRID(RID)
             gc.collect()  # attempting to cleanup memory leaks since processes technically are still there
             # results on anova quant not working occasionally, depends on categorical selection
-            # return results to client, verify timing?
-            #print "Returning a thing!"
+            # return results to client
             return results
         except KeyError:
             time2[RID] = time()

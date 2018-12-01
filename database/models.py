@@ -539,6 +539,28 @@ class UserDefined(models.Model):
         return self.sampleid.sample_name
 
 
+class DaymetData(models.Model):
+    user = models.ForeignKey(Users, primary_key=True)   # at most one per user (most recent norm or none)
+
+    # delete the old daymet data at start of norm
+    # then just check if daymet data exists, since it won't in most cases already
+
+    # have ";" delimited strings for sampleID and all daymet columns
+    # sync these strings on position, so sampleID[0][dayl..s] = dayl[0], etc
+    sampleIDs = models.TextField(blank=True)
+    # "year" "yday" "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c."  "vp..Pa."
+    # TODO remove year and yday, add tmean/tavg something like that
+    year = models.TextField(blank=True)
+    yday = models.TextField(blank=True)
+    dayl = models.TextField(blank=True)
+    prcp = models.TextField(blank=True)
+    srad = models.TextField(blank=True)
+    swe = models.TextField(blank=True)
+    tmax = models.TextField(blank=True)
+    tmin = models.TextField(blank=True)
+    vp = models.TextField(blank=True)
+
+
 class Kingdom(models.Model):
     kingdomid = models.TextField(primary_key=True)
     kingdomName = models.CharField(max_length=90, blank=True)

@@ -86,6 +86,9 @@ if __name__ == '__main__':
 
     import functions
     from django.db import connection
+    from functions.utils.utils_df import setServerStartTime
+
+    setServerStartTime()
 
     signal.signal(signal.SIGINT, signal_handler)
     num_threads = functions.analysisThreads()
@@ -105,20 +108,20 @@ if __name__ == '__main__':
 
     # database setting verification
     with connection.cursor() as cursor:
-        print "Verifying connection settings. Cursor ", cursor
+        #print "Verifying connection settings. Cursor ", cursor
         #cursor.execute("PRAGMA synchronous = OFF")
         #cursor.execute("PRAGMA temp_store = MEMORY")
         #cursor.execute("PRAGMA default_cache_size = 10000")
         #cursor.execute("PRAGMA journal_mode = WAL")
         cursor.execute("PRAGMA synchronous")
-        print "S: ", cursor.fetchall()
+        #print "S: ", cursor.fetchall()
         cursor.execute("PRAGMA temp_store")
-        print "T: ", cursor.fetchall()
+        #print "T: ", cursor.fetchall()
         cursor.execute("PRAGMA default_cache_size")
-        print "C: ", cursor.fetchall()
+        #print "C: ", cursor.fetchall()
         cursor.execute("PRAGMA journal_mode")
-        print "J: ", cursor.fetchall()
-        print "Tables:", connection.introspection.table_names()
+        #print "J: ", cursor.fetchall()
+        #print "Tables:", connection.introspection.table_names()
 
 
     mp.freeze_support()

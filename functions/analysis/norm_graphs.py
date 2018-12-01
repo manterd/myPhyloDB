@@ -12,7 +12,7 @@ from pyper import *
 import zipfile
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
-    OTU_99, Profile
+    OTU_99, Profile, DaymetData
 
 import functions
 
@@ -222,13 +222,249 @@ def getNorm(request, RID, stopList, PID):
 
             functions.setBase(RID, 'Step 6 of 6: Formatting biom data...')
 
+            # regardless of daymet flag, delete old daymetData object for this user (or try to)
+            try:
+                DaymetData.objects.get(user=request.user).delete()   # isn't request.user a username?
+            except Exception as daydelerr:
+                print "Daymet Deletion Error:", daydelerr
+                pass
+            # TODO turn daymet gathering section into a function in utils or somesuch in case the feature is moved
+            # get data from dictionaries before saving to biom
+            # check if daymet checkbox is selected
+            daymetSuccess = False
+            daymetData = None
+            sampIDs = []
+            daymetKeys = []
+            if all['daymet']:
+                # do daymet stuff
+                minYear = all['minYear']
+                maxYear = all['maxYear']
+                # get month selection filters
+                month_jan = all['month_jan']
+                month_feb = all['month_feb']
+                month_mar = all['month_mar']
+                month_apr = all['month_apr']
+                month_may = all['month_may']
+                month_jun = all['month_jun']
+                month_jul = all['month_jul']
+                month_aug = all['month_aug']
+                month_sep = all['month_sep']
+                month_oct = all['month_oct']
+                month_nov = all['month_nov']
+                month_dec = all['month_dec']
+                # print "User chose daymet, with range", minYear, "to", maxYear
+                # use coordinate data to query daymet database AFTER checking 'daymet' flag is set
+                coords = {}
+                for samp in counts:
+                    #print "Samp:", samp.latitude, ":", samp.longitude
+                    coords[samp.sampleid] = str(samp.latitude)+":"+str(samp.longitude)
+                # given coords dict now, pull up R and query daymet
+                # get date range from input? should be from samples somewhere actually
+
+                # get R ready, load daymetR package
+                # pass coords and date range into R
+                # run daymetR query with dataset provided
+                # pull resulting data back into python
+                # add section to biom file creation that uses python side data
+                # add way to display daymet on norm page? too much data, just add to biom data
+                # set up analyses to use daymet data from biom file
+
+                # TODO need support for month selection via checkboxes in page, filter for selected months only DONE
+                # we have the months now via 'month_jan' var set
+                # need to figure out how to query more specifically
+                # query like normal, results have rows by day, count out the months? (183 days per year iirc)
+
+                if os.name == 'nt':
+                    r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+                else:
+                    r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+                installed = r('installed.packages()')
+                if 'daymetr' not in installed:
+                    print r("install.packages('daymetr', repos='http://cran.us.r-project.org', dependencies=T)")
+                r("library(daymetr)")
+                r.assign("coords", coords)
+                r.assign("minYear", minYear)
+                r.assign("maxYear", maxYear)
+                # actual r code start
+                '''
+                R starts at 1, so Jan 1st is day 1, Feb 1st is 32, etc
+                Daymet includes february 29th on leap years, but removed december 31st to keep the 365 total (WHY!!)
+                Table of start and end dates for each month (ranges for days, parentheses are for leap years):
+                January 1-31
+                February 32-59(60)
+                March 60(61)-90(91)
+                April 91(92)-120(121)
+                May 121(122)-151(152)
+                June 152(153)-181(182)
+                July 182(183)-212(213)
+                August 213(214)-243(244)
+                September 244(245)-273(274)
+                October 274(275)-304(305)
+                November 305(306)-334(335)
+                December 335(336)-365(365)
+
+                Leap years between 1980 and 2017: 1980, 1984, 1988, 1992, 1996, 2000, 2004, 2008, 2012, 2016
+                '''
+                r("daymetData <- list()")
+                # making list of valid days in python, handing it to R to subset data with
+                month_subset = []
+                num_years = int(maxYear) - int(minYear)+1
+                currentYear = int(minYear)
+                leap = (currentYear % 4 == 0)
+                for dayNum in range(1, num_years*365+1):
+                    # going from 1 to end+1 instead of 0 to end because
+                    # this list is for R, which starts index at 1 instead of 0
+                    # and python ranges exclude the listed end element
+                    curDay = dayNum % 365
+
+                    if 1 <= curDay <= 31 and month_jan:
+                        month_subset.append(dayNum)
+                    elif leap:
+                        if 32 <= curDay <= 60 and month_feb:
+                            month_subset.append(dayNum)
+                        elif 61 <= curDay <= 91 and month_mar:
+                            month_subset.append(dayNum)
+                        elif 92 <= curDay <= 121 and month_apr:
+                            month_subset.append(dayNum)
+                        elif 122 <= curDay <= 152 and month_may:
+                            month_subset.append(dayNum)
+                        elif 153 <= curDay <= 182 and month_jun:
+                            month_subset.append(dayNum)
+                        elif 183 <= curDay <= 213 and month_jul:
+                            month_subset.append(dayNum)
+                        elif 214 <= curDay <= 244 and month_aug:
+                            month_subset.append(dayNum)
+                        elif 245 <= curDay <= 274 and month_sep:
+                            month_subset.append(dayNum)
+                        elif 275 <= curDay <= 305 and month_oct:
+                            month_subset.append(dayNum)
+                        elif 306 <= curDay <= 335 and month_nov:
+                            month_subset.append(dayNum)
+                        elif (336 <= curDay <= 364 or curDay == 0) and month_dec:
+                            month_subset.append(dayNum)
+                    else:
+                        if 32 <= curDay <= 59 and month_feb:
+                            month_subset.append(dayNum)
+                        elif 60 <= curDay <= 90 and month_mar:
+                            month_subset.append(dayNum)
+                        elif 91 <= curDay <= 120 and month_apr:
+                            month_subset.append(dayNum)
+                        elif 121 <= curDay <= 151 and month_may:
+                            month_subset.append(dayNum)
+                        elif 152 <= curDay <= 181 and month_jun:
+                            month_subset.append(dayNum)
+                        elif 182 <= curDay <= 212 and month_jul:
+                            month_subset.append(dayNum)
+                        elif 213 <= curDay <= 243 and month_aug:
+                            month_subset.append(dayNum)
+                        elif 244 <= curDay <= 273 and month_sep:
+                            month_subset.append(dayNum)
+                        elif 274 <= curDay <= 304 and month_oct:
+                            month_subset.append(dayNum)
+                        elif 305 <= curDay <= 334 and month_nov:
+                            month_subset.append(dayNum)
+                        elif (335 <= curDay <= 364 or curDay == 0) and month_dec:
+                            month_subset.append(dayNum)
+                    if curDay == 0:
+                        currentYear += 1
+                        leap = (currentYear % 4 == 0)
+                r.assign("month_subset", month_subset)
+                r('for (sampID in names(coords)){\n'
+                    'thisSampData <- list()\n'
+                    'lat <- strsplit(coords[[sampID]], ":")[[1]][1]\n'
+                    'lon <- strsplit(coords[[sampID]], ":")[[1]][2]\n'
+                    'try({data <- download_daymet(lat = lat, lon = lon, start = minYear, end = maxYear, silent = FALSE)})\n'
+                    # before sum and mean, remove rows whose days are not in selected months (get specific months figured out)
+                    'data <- data[["data"]][month_subset, ]\n'
+                    #'data <- subset(data, select=-c("year","yday"))\n'
+                    # sum and mean reduce our row count to one per sample, so subsetting must occur beforehand to work
+
+                    # sum and mean of each data based on sample, do while in loop
+                    # Sum precip and snow, mean otherwise
+                    'dataCols <- names(x=data)\n'
+                    'for (col in dataCols){\n'
+                    'if (col == "prcp..mm.day." || col == "swe..kg.m.2."){\n'
+                    'thisSampData[[col]] <- sum(data[[col]])\n'
+                    '} else {\n'
+                    'thisSampData[[col]] <- mean(data[[col]])\n'
+                    '}\n'
+                    '}\n'
+                    # update final data with sum/mean of column
+                    'daymetData[[sampID]] <- thisSampData\n'
+                    '}')
+                #print r('warnings()')
+                daymetData = r.get("daymetData")
+                first = True
+                for sampID in daymetData:
+                    sampIDs.append(sampID)
+                    if first:
+                        for dayKey in daymetData[sampID]:
+                            daymetKeys.append(dayKey)
+                        first = False
+
+
+                # can confirm, data is good to here, system doesn't break if data fails (catch other errors though?)
+                # now take data and get it into biom format (? vs database ?)
+                # end goal is to have daymet data selectable in meta quant tree, some data is from biom, some from DB
+                # BUT this stuff changes per normalization, so its database entries are inconsistent
+                # The key is that the data must be visible from trees.py, ie when tree and its children are created
+                # could make a "daymet" object that uses userID to key, data is most recent daymet set
+                # would also need a flag to tell if daymet data SHOULD be used, ie if new norm happens without Daymet
+                # Biom file hijack could work still, but it seems clunky since we aren't using biom for this step yet
+                # so pulling up a file for only one section might be strange
+                # make model for users most recent daymet data, its a nested dictionary so could be tricky
+                # have ";" delimited strings for sampleID and all daymet columns
+                # sync these strings on position, so sampleID[0][dayl..s] = dayl[0], etc
+
+                #print "ALL THE DATA"
+                sampID_str = ""
+                year_str = ""
+                yday_str = ""
+                dayl_str = ""
+                prcp_str = ""
+                srad_str = ""
+                swe_str = ""
+                tmax_str = ""
+                tmin_str = ""
+                vp_str = ""
+                # TODO drop year and yday columns
+    # "year" "yday" "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c."  "vp..Pa."
+                for sampID in sampIDs:
+                    sampID_str += str(sampID) + ";"
+                    year_str += str(daymetData[sampID]["year"]) + ";"
+                    yday_str += str(daymetData[sampID]["yday"]) + ";"
+                    dayl_str += str(daymetData[sampID]["dayl..s."]) + ";"
+                    prcp_str += str(daymetData[sampID]["prcp..mm.day."]) + ";"
+                    srad_str += str(daymetData[sampID]["srad..W.m.2."]) + ";"
+                    swe_str += str(daymetData[sampID]["swe..kg.m.2."]) + ";"
+                    tmax_str += str(daymetData[sampID]["tmax..deg.c."]) + ";"
+                    tmin_str += str(daymetData[sampID]["tmin..deg.c."]) + ";"
+                    vp_str += str(daymetData[sampID]["vp..Pa."]) + ";"
+
+                myData = DaymetData.objects.create(user=request.user, sampleIDs=sampID_str, year=year_str,
+                                                   yday=yday_str, dayl=dayl_str, prcp=prcp_str, srad=srad_str,
+                                                   swe=swe_str, tmax=tmax_str, tmin=tmin_str, vp=vp_str)
+                myData.save()
+                daymetSuccess = True
+                #print "Done with daymet data saving"
+
+
             myBiom = {}
             nameList = []
             myList.sort()
             for i in myList:
+                # sampleID
                 nameDict = metaDF.loc[i].to_dict()
+                # meta var name as key, value is actual value
+                # note: nameDict is a mix of cat and quant vars; the biome file follows this idea
                 for key in nameDict:
                     nameDict[key] = str(nameDict[key])
+                    # metadata is where daymet should go, so append nameDict? er, add to metaDF.loc?
+                if daymetSuccess:
+                    if i in sampIDs:
+                        for dayKey in daymetKeys:
+                            nameDict[dayKey] = str(daymetData[i][dayKey])
                 nameList.append({"id": str(i), "metadata": nameDict})
 
             # get list of lists with abundances

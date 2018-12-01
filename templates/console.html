@@ -1,0 +1,387 @@
+{% extends 'site_base.html' %}
+
+{% block pagetitle %}
+    <title>Console</title>
+{% endblock %}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
+{% block javascript %}
+
+    <script type="text/javascript">
+        var RID = makeGUID();
+        var selectedRID = 0;
+        var selectedType = 0; // 0 for none, 1 for dataqueue, 2 for analysis
+
+        $(function () {
+            var test = '{{ error }}';
+            if (test != "") {
+                alert(test);
+            }
+
+            // calling each function once before timer sets for snappier page loads
+            updateMainConsole();
+            updateMetrics();
+            updateDataQueue();
+            updateAnalysisQueue();
+            checkGenericStatus();
+
+            // set timers going, change delay (which is in milliseconds) to change response time averages
+            var delay = 5000;
+            setInterval(updateMainConsole, delay);
+            setInterval(updateMetrics, delay);
+            setInterval(updateDataQueue, delay);
+            setInterval(updateAnalysisQueue, delay);
+            setInterval(checkGenericStatus, delay);
+
+        });
+        function makeGUID(){
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            })
+        }
+
+        function stop() {
+            $.ajax({
+                url: '/myPhyloDB/datstop/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var mstage = obj['message'];
+                    $('#stage').empty().append(mstage);
+                }
+            });
+        }
+
+        function updateStatus() {   // check mothur upload status / display console output
+            $.ajax({
+                url: '/myPhyloDB/status/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var stage = obj['stage'];
+                    var perc = obj['perc'];
+                    updateStage(stage);
+                    progressBar(perc, $("#progressBar"));
+                    // get text box
+                    var out = document.getElementById("mothurStat");
+                    // calculate difference between scroll position, box height, and max height (check if scroll to bottom)
+                    var isScrolledToBottom = out.scrollHeight - out.clientHeight <= out.scrollTop + 1;
+                    // append box text with new text
+                    out.value = out.value + obj['mothurStat'];
+                    // if already scrolled to bottom, scroll to new bottom automatically
+                    if(isScrolledToBottom) {
+                        out.scrollTop = out.scrollHeight - out.clientHeight;    // on stop, old stuff stayed but mothur log wiped
+                    }
+                    localStorage.setItem("moStatSave", $('#mothurStat').val());
+                }
+            });
+        }
+
+        function updateMainConsole(){
+            // need to call getConsoleLog from utils_df.py
+            // will return a string of text to display (should be formatted correctly already)
+            // this function gets called on a timer, so just get the text and set the display box value to it. Simple
+            // for some reason this generates internal server errors
+            $.ajax({
+                url: '/myPhyloDB/getConsoleLog/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    document.getElementById("mainLog").value = obj;
+                }
+            });
+        }
+
+        function updateMetrics(){
+            // for now this just gets server uptime
+            $.ajax({
+                url: '/myPhyloDB/getServerMetrics/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    document.getElementById("metricsLog").value = obj;
+                }
+            });
+        }
+
+        function updateDataQueue(){
+            // for now this just gets server uptime
+            $.ajax({
+                url: '/myPhyloDB/getDataQueue/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var displayData = obj['display'];
+                    var actualData = displayData.split("\n");
+                    // get div element for displaying dataqueue
+                    var div = document.getElementById("dqQ");
+                    // wipe out old queue elements before creating new ones
+                    while (div.firstChild){
+                        div.removeChild(div.firstChild);
+                    }
+
+                    // TODO: atm this works great but the formatting needs work, put entries in rows, label columns, etc
+
+
+
+                    // loop through data to add text areas to div
+                    // length -1 because blank entry at the end of split
+                    for (var i=0; i<actualData.length-1; i++){
+                        // parse out good data
+                        var goodData = actualData[i].split(";");
+                        // RID TIME FUNCTION USER BLANK
+                        var myRID = goodData[0];
+                        var myTime = goodData[1];
+                        var myFunction = goodData[2];
+                        var myUser = goodData[3];
+                        var myStatus = goodData[4];
+                        // make selectable text area elements based on data
+                        var blankText = document.createElement("textarea");
+                        blankText.id = myRID.toString();
+                        blankText.value = myTime + "\t" + myFunction + "\t" + myUser + "\t" + myStatus;
+                        blankText.rows = 1;
+                        blankText.cols = 80;
+                        blankText.readOnly = true;
+                        blankText.onclick = function(){
+                            this.focus();
+                            this.select();
+                            selectedRID = this.id;
+                            selectedType = 1;
+                            checkGenericStatus();
+                        };
+                        div.appendChild(blankText);
+                        div.appendChild(document.createElement("br"));
+                    }
+                    // if selectedRID == 0, nothing is selected
+                    if (selectedRID != 0) {
+                        // reselect target RID if available (what happens if its not there? exception is caused)
+                        try{
+                            document.getElementById(selectedRID).click();
+                        } catch(err){
+                            selectedRID = 0;
+                            selectedType = 0;
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateAnalysisQueue(){
+            // for now this just gets server uptime
+            $.ajax({
+                url: '/myPhyloDB/getAnalysisQueue/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {  // need to configure this for main queue, atm expecting dataqueue outputs
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var displayData = obj['display'];
+                    var actualData = displayData.split("\n");
+                    // get div element for displaying dataqueue
+                    var div = document.getElementById("aqQ");
+                    // wipe out old queue elements before creating new ones
+                    while (div.firstChild){
+                        div.removeChild(div.firstChild);
+                    }
+
+                    // TODO: atm this works great but the formatting needs work, put entries in rows, label columns, etc
+
+                    // loop through data to add text areas to div
+                    // length -1 because blank entry at the end of split
+                    for (var i=0; i<actualData.length-1; i++){
+                        // parse out good data
+                        var goodData = actualData[i].split(";");
+                        // RID TIME FUNCTION USER BLANK
+                        var myRID = goodData[0];
+                        var myTime = goodData[1];
+                        var myFunction = goodData[2];
+                        var myUser = goodData[3];
+                        var myStatus = goodData[4];
+                        // make selectable text area elements based on data
+                        var blankText = document.createElement("textarea");
+                        blankText.id = myRID.toString();
+                        blankText.value = myTime + "\t" + myFunction + "\t" + myUser + "\t" + myStatus;
+                        blankText.rows = 1;
+                        blankText.cols = 80;
+                        blankText.readOnly = true;
+                        blankText.onclick = function(){
+                            this.focus();
+                            this.select();
+                            selectedRID = this.id;
+                            selectedType = 2;
+                            checkGenericStatus();
+                        };
+                        div.appendChild(blankText);
+                        div.appendChild(document.createElement("br"));
+                    }
+                    // if selectedRID == 0, nothing is selected
+                    if (selectedRID != 0) {
+                        // reselect target RID if available (what happens if its not there? exception is caused)
+                        try{
+                            document.getElementById(selectedRID).click();
+                        } catch(err){
+                            selectedRID = 0;
+                            selectedType = 0;
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStage(stage) {
+            $("#stage").empty().append(stage);
+        }
+
+        function checkGenericStatus(){  // this must take into account if the selectedRID is DQ or AQ, as it changes which function call to make
+            if (selectedRID!=0){
+                if (selectedType == 1) {
+                    $.ajax({
+                        url: '/myPhyloDB/status/',
+                        type: 'GET',
+                        dataType: 'json',
+                        data: {
+                            all: selectedRID
+                        },
+                        success: function (data) {
+                            // calling this here because the ajax call makes this section run out of sequence
+                            document.getElementById("genericStat").value = $.parseJSON(JSON.stringify(data))['stage'];
+                        }
+                    });
+                }
+                if (selectedType == 2) {
+                    var myDict = {};
+                    myDict['reqType'] = "status";
+                    myDict['RID'] = selectedRID;
+                    var jsonDict = JSON.stringify(myDict);
+                    $.ajax({
+                        url: '/myPhyloDB/funcCall/',
+                        type: 'POST',
+                        data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                        success: function (data) {
+                            var result = JSON.stringify(data);
+                            var obj = $.parseJSON(result);
+                            var resType = obj['resType'];
+                            if (resType == "status") {
+                                // currently getting <br> in this statement, should filter out / replace with '\n'
+                                document.getElementById("genericStat").value = obj['stage'];
+                            }
+                        }
+                    });
+                }
+            } else {
+                document.getElementById("genericStat").value = "Select request to display status";
+            }
+        }
+
+        function genericStop(){
+            if (selectedType==1){
+                $.ajax({
+                    url: '/myPhyloDB/datstop/',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        all: selectedRID
+                    },
+                    success: function (data) {
+                        document.getElementById("genericStat").value = "Stopped!";
+                    }
+                });
+            }
+            if (selectedType==2){
+                $.ajax({
+                    url: '/myPhyloDB/stop/',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        all: selectedRID
+                    },
+                    success: function (data) {
+                        document.getElementById("genericStat").value = "Stopped!";
+                    }
+                });
+            }
+
+        }
+
+    </script>
+{% endblock %}
+{% block my_content %}
+
+    <h2>Server console:</h2>
+    <table>
+    <tr>
+        <td>
+            <textarea id="mainLog" rows=25 cols=55 style="width: 700px;" readonly="readonly"></textarea>
+        </td>
+        <td>
+            <textarea id="metricsLog" rows=5 cols=40 style="width: 600px;" readonly="readonly"></textarea>
+        </td>
+    </tr>
+    </table>
+    <br>
+    <h2>Data queue:</h2>
+    <table>
+    <tr>
+        <td>
+            <div id="dqQ"></div>
+        </td>
+    </tr>
+    </table>
+    <br>
+    <h2>Analysis queue:</h2>
+    <table>
+    <tr>
+        <td>
+            <div id="aqQ"></div>
+        </td>
+    </tr>
+    </table>
+    <br>
+    <h2>Status: </h2>
+    <table>
+        <tr>
+            <td>
+                <textarea id="genericStat" rows=5 cols=55 style="width: 700px"></textarea>
+            </td>
+            <td>
+                <input id="stop" type="submit" value="Stop Request" style="background-color: lightgray" onclick="genericStop()">
+            </td>
+        </tr>
+    </table>
+
+    <br><br>
+{% endblock my_content %}

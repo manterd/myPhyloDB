@@ -86,6 +86,9 @@ if __name__ == '__main__':
 
     import functions
 
+    from functions.utils.utils_df import setServerStartTime
+    setServerStartTime()
+
     signal.signal(signal.SIGINT, signal_handler)
     num_threads = functions.analysisThreads()
 
