@@ -21,14 +21,10 @@ datRecent = {}
 datQList = []
 datStatDict = {}
 datStopDict = {}
-datStopped = 0
 
 
 def datstop(request):
-    global datActiveList, datQueueList, datStopList, datStopDict, datStopped, datRecent
-    # datStopped is number of queued requests which have been stopped in advance. Was intended for progress tracking
-    # BUT datStopped fails to account for queue removals which occur AFTER a request (ie can make it look like your
-    # request is earlier in the queue because someone after you cancelled. Need to make datStopped into a dictionary
+    global datActiveList, datQueueList, datStopList, datStopDict, datRecent
     # basically everything in this request manager needs a dictionary in order to be practical
     RID = str(request.GET['all'])
     datStopDict[RID] = RID  # this is for queue skipping
@@ -42,7 +38,6 @@ def datstop(request):
             # check queuelist, if its there flag its RID so the main process skips it, return stop msg to user page
             # wait for status, then cleanup
             # get function from funccall, return correct page rendering
-            print "Stopping queued request"
             pid = datQueueList[RID]
             thisFunc = datQueueFuncs[pid]
 
@@ -50,7 +45,6 @@ def datstop(request):
             # log the stop request
             functions.log(request, "QSTOP", thisFunc)
 
-            print "Getting page returns"
             retStuff = None
 
             if thisFunc == "uploadFunc":    # just directly rendering page because request chaining is clunky
@@ -87,7 +81,7 @@ def datstop(request):
             elif thisFunc == "pybake":
                 retStuff = database.views.pybake(request)
 
-            print "Ret!"
+
             if retStuff is None:
                 print "This is a problem. Hacked?"  # or someone added a new dataqueue function without updating here
                 # TODO more modular code, make it easier to add new dataqueue functions (fewer sections to update)
@@ -151,52 +145,82 @@ def getDataQueue(request):
     return HttpResponse(output, content_type='application/json')
 
 
-def decremQ():
+def decremQ(start=0):  # Reduce the waitlist stat for each index after and including given index
+    # this is used when a request is cancelled before entering processing, since we will skip it once its turn arrives
+    curIndex = 0
     for thing in datStatDict:
-        datStatDict[thing] -= 1
+        if curIndex >= start:
+            datStatDict[thing] -= 1
+        curIndex += 1
 
 
 def dataprocess(pid):
     global datActiveList, datQueueList, datQueueFuncs, datRecent
+    RID = "NULL_RID"  # only if exception occurs before first process
+    request = None
     while True:
-        data = datQ.get(block=True, timeout=None)   # .get will block until there's something in the queue (thread-safe)
-        decremQ()
-        RID = data['RID']
-        if RID in datStopDict:
-            datStopDict.pop(RID, 0)
-        else:
-            funcName = data['funcName']
-            request = data['request']
-            stopList = data['stop']  # not sure what this is for, this whole file has a lot of cleaning up to be done
-            datQueueList.pop(RID, 0)
-            datActiveList[pid] = RID
-            functions.log(request, "QSTART", funcName)
-            if datActiveList[pid] == RID:
-                if funcName == "uploadFunc":
-                    datRecent[RID] = database.views.uploadFunc(request, datStopList)
-                if funcName == "fileUpFunc":
-                    datRecent[RID] = database.views.fileUpFunc(request, datStopList)
-                if funcName == "reanalyze":
-                    resp = functions.reanalyze(request, datStopList)
-                    if resp is None:
-                        resp = database.views.reprocess(request)
-                    if resp == "Stopped":
-                        # why does this get a normal call first?
-                        resp = database.views.reprocess(request)
-                        resp['error'] = "Reprocessing stopped"
-                    datRecent[RID] = resp
-                if funcName == "updateFunc":
-                    datRecent[RID] = database.views.updateFunc(request, datStopList)
-                if funcName == "geneParse":
-                    #print 'starting'
-                    datRecent[RID] = functions.geneParse(request)
-                if funcName == "koParse":
-                    datRecent[RID] = functions.koParse(request)
-                if funcName == "nzParse":
-                    datRecent[RID] = functions.nzParse(request)
-            datActiveList[pid] = ''
-            functions.log(request, "QFINISH", funcName)
-        cleanup(RID)
+        try:
+            data = datQ.get(block=True, timeout=None)   # .get will block until there's something in the queue (thread-safe)
+            decremQ()
+            RID = data['RID']
+            if RID in datStopDict:
+                datStopDict.pop(RID, 0)
+            else:
+                funcName = data['funcName']
+                request = data['request']
+                stopList = data['stop']  # not sure what this is for, this whole file has a lot of cleaning up to be done
+                datQueueList.pop(RID, 0)
+                datActiveList[pid] = RID
+                functions.log(request, "QSTART", funcName)
+                if datActiveList[pid] == RID:
+                    if funcName == "uploadFunc":
+                        datRecent[RID] = database.views.uploadFunc(request, datStopList)
+                    elif funcName == "fileUpFunc":
+                        datRecent[RID] = database.views.fileUpFunc(request, datStopList)
+                    elif funcName == "reanalyze":
+                        resp = functions.reanalyze(request, datStopList)
+                        if resp is None:
+                            resp = database.views.reprocess(request)
+                        if resp == "Stopped":
+                            # why does this get a normal call first?
+                            resp = database.views.reprocess(request)
+                            resp['error'] = "Reprocessing stopped"
+                        datRecent[RID] = resp
+                    elif funcName == "updateFunc":
+                        datRecent[RID] = database.views.updateFunc(request, datStopList)
+                    elif funcName == "geneParse":
+                        #print 'starting'
+                        datRecent[RID] = functions.geneParse(request)
+                    elif funcName == "koParse":
+                        datRecent[RID] = functions.koParse(request)
+                    elif funcName == "nzParse":
+                        datRecent[RID] = functions.nzParse(request)
+
+                    else:
+                        # received a function name that we don't support
+                        # either a developer typo exists (here or on a web page) OR someone is trying to break things
+                        # either way, this is a notable event, so we print to console and log
+                        print "Security check:", request.user.username, "attempting to call function", funcName, "in DQ"
+                        functions.log(request, "INVALID_FUNCTION_NAME_DQ", funcName)
+                        # should probably return something to the user page so they don't get stuck
+                        # return is awkward here since the page is implied by funcName, which is currently invalid
+                        # so we'll just send 'em to the home page
+                        datRecent[RID] = render(
+                            request,
+                            'home.html',
+                            {'error': "Invalid function name"}
+                        )
+                datActiveList[pid] = ''
+                functions.log(request, "QFINISH", funcName)
+            cleanup(RID)
+        except Exception as e:
+            print "Error during data queue:", e
+            if request is not None:
+                functions.log(request, "ERROR_DQ", str(e)+"\n")
+            myDict = {'error': "Exception: "+str(e.message)}    # TODO this doesn't always display to user FIX
+            stop = json.dumps(myDict)
+            datRecent[RID] = HttpResponse(stop, content_type='application/json')
+
 
 
 def cleanup(RID):
@@ -233,6 +257,7 @@ def datfuncCall(request):
     datQList.append(qDict)
     datQ.put(qDict, True)
     datStatDict[RID] = int(datQ.qsize())
+    #print "Added statDict for RID", RID
 
     # print log info, need to write this to a file somewhere
     functions.log(request, "QADD", funcName)
@@ -260,7 +285,10 @@ def datstat(RID):
             return -1024
     except Exception:
         # if not in stopDict (ie not called to stop) queuepos is current (minus number of pre stops)
-        return datStatDict[RID] - datStopped
+        try:
+            return datStatDict[RID]  # TODO some way to track preemptive stops, decremQ with arg?
+        except Exception as ex:
+            print ex
 
 
 def getStops():

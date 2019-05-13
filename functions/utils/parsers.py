@@ -145,8 +145,13 @@ def dada2(dest, source):
                         f.write('\t')
                         f.write(seq)
                         f.write('\t')
-                        f.write('k__unclassified;p__unclassified;c__unclassified;o__unclassified;f__unclassified;g__unclassified;s__unclassified;otu__unclassified;')
-                        f.write('\n')
+                        if OTU_99.objects.filter(otuSeq=seq).exists():
+                            otuName = OTU_99.objects.get(otuSeq=seq).otuName
+                            f.write('k__unclassified;p__unclassified;c__unclassified;o__unclassified;f__unclassified;g__unclassified;s__unclassified;' + str(otuName) + ';')
+                            f.write('\n')
+                        else:
+                            f.write('k__unclassified;p__unclassified;c__unclassified;o__unclassified;f__unclassified;g__unclassified;s__unclassified;otu__unclassified;')
+                            f.write('\n')
                     counter = 0
                 counter += 1
 
@@ -390,8 +395,11 @@ def projectid(Document):
         return None
 
 
-def parse_project(Document, p_uuid, curUser):   # no stoplist support because of how fast this is
-    # parse meta file (xlxs file?) improve output for users when error occurs
+def parse_project(Document, p_uuid, curUser):   # no stoplist support because of how fast this is, and cleanup varies
+    # based on at which point in this function the stop is called
+
+    # parse meta file (xlxs file) to create new project (or update an existing one)
+
     # check formatting and such, boxes have ranges of valid responses, check project type and permissions for now
     try:
         global stage, perc
@@ -460,6 +468,7 @@ def parse_reference(p_uuid, refid, path, raw, source, userid):
 
 
 def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID):
+    # same meta file parsing as earlier, but now we go for the actual sample data instead of project info
     try:
         global stage, perc
         stage = "Step 2 of 5: Parsing sample file..."
@@ -504,7 +513,10 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, s
 
             s_uuid = row['sampleid']
             if s_uuid is np.nan:
-                s_uuid = uuid4().hex
+                s_uuid = uuid4().hex    # incredibly unlikely to produce an already existing ID
+                # but going to check anyways to be absolutely certain
+                while Sample.objects.filter(sampleid=s_uuid).exists():  # keep making a new ID until we get a unique ID
+                    s_uuid = uuid4().hex
                 row['sampleid'] = s_uuid
 
             # to be used in parse_profile()
@@ -524,6 +536,11 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, s
             row.pop('lat_lon')
 
             # print "Parsing sample: ", str(row['sample_name'])
+            try:
+                badChars = set('&')  # add to this whenever a problematic character shows up
+                row['sample_name'] = ".".join([c for c in row['sample_name'] if c not in badChars])  # TODO TEST
+            except:
+                pass
 
             idList.append(s_uuid)
             if Sample.objects.filter(sampleid=s_uuid).exists():
@@ -561,13 +578,15 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, s
             # TODO: remove extras once they are added to the excel metafile
             elif pType == "soil":
                 if not Soil.objects.filter(sampleid=s_uuid).exists():
-                    Soil.objects.create(projectid=project, refid=reference, sampleid=sample, soil_water_cap=None,
-                        soil_surf_hard=None, soil_subsurf_hard=None, soil_agg_stability=None, soil_ACE_protein=None,
-                        soil_active_C=None, **row)
+                    #Soil.objects.create(projectid=project, refid=reference, sampleid=sample, soil_water_cap=None,
+                    #    soil_surf_hard=None, soil_subsurf_hard=None, soil_agg_stability=None, soil_ACE_protein=None,
+                    #    soil_active_C=None, **row)
+                    Soil.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
                 else:
-                    Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample,
-                        soil_water_cap=None, soil_surf_hard=None, soil_subsurf_hard=None, soil_agg_stability=None,
-                        soil_ACE_protein=None, soil_active_C=None, **row)
+                    #Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample,
+                    #    soil_water_cap=None, soil_surf_hard=None, soil_subsurf_hard=None, soil_agg_stability=None,
+                    #    soil_ACE_protein=None, soil_active_C=None, **row)
+                    Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
             elif pType == "water":
                 if not Water.objects.filter(sampleid=s_uuid).exists():
@@ -617,10 +636,13 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, s
 
 
 def parse_taxonomy(Document, stopList, PID, RID):
+    # does this function assume use of sequence or count values for column 1 (id, ?, taxa)
     try:
         global stage, perc
         # get current number of unclassified seqs
-        numUnclass = OTU_99.objects.filter(otuName__startswith='isv_').count()
+        numUnclass = OTU_99.objects.filter(otuName__startswith='isv_').count()  # assert no gaps exist
+        # although its fine if a gap does exist, just an isv number we won't ever use
+        # the other problem being collisions if gaps exist, but we detect those now
         newOtuList = []
 
         # read files
@@ -638,19 +660,49 @@ def parse_taxonomy(Document, stopList, PID, RID):
 
         Document.seek(0)
         f = csv.reader(Document, delimiter='\t')
-        f.next()
+        docLines = list(f)  # convert to list
+        firstRow = docLines.pop(0)  # remove first row, save for later when rewriting file
+
+        # do we have Sequences column?
+        haveSeq = "Seq" in firstRow
+
+        # which columns are at which indices?
+        colLabels = {}
+        colIndex = 0
+        for label in firstRow:
+            colLabels[label] = colIndex
+            colIndex += 1
+
         step = 0.0
-        for row in f:
-
+        curLine = 0
+        editedLinesDict = {}
+        print "Parse taxonomy:"
+        for row in docLines:
+            # before parsing another row, check if stop command has been sent
             if stopList[PID] == RID:
-                #print "Stopping taxonomy!!!"
                 return
+            if row:     # can confirm row object exists, necessary?
+                if len(row) == 0:    # skip if row is an empty line
+                    continue
+                if len(row) < len(firstRow):       # in some cases, the tab between certain elements is read as a space
+                    badIndex = 0
+                    for col in row:
+                        if len(col.split(" ")) > 1:  # Asserting 'space' is absent in all actual values of the file
+                            subRow = col.split(" ")  # take the problematic element and split
+                            row.pop(badIndex)  # remove old bad element
+                            row.insert(badIndex, subRow[0])   # add its components back in
+                            row.insert(badIndex+1, subRow[1])
+                            # debug print
+                            print "Fixed a row:", row
 
-            if row:
+                        badIndex += 1
+
                 step += 1.0
                 perc = int(step / total * 100)
-                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[2])  # out of index?
+                # prep taxonomy line by cleaning up tags and percentages (we don't use either here)
+                subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[colLabels["Taxonomy"]])
                 subbed = subbed[:-1]
+
                 taxon = subbed.split(';')
 
                 if len(taxon) < 6:  # missing genus
@@ -660,13 +712,27 @@ def parse_taxonomy(Document, stopList, PID, RID):
                     taxon.append("unclassified")
 
                 if len(taxon) < 8:  # missing otu, unclassified the best thing to fill here?
-                    taxon.append("unclassified")
+                    taxon.append("unclassified")    # in case sequence is true but otu is not
 
-                if OTU_99.objects.filter(otuSeq=row[1]).exists():   # these statements behave like assertions (was this intentional?)
-                    continue
+                # skip this row if the named otu already exists
+                # TODO verify this is valid, can otu name be duplicated? also should check for isv_ prefix while here
+                if taxon[7] is not "unclassified":  # unclassified check is important
+                    if OTU_99.objects.filter(otuName=taxon[7]).exists():
+                        # if OTU with this name exists, move to next row
+                        # print "Otu name exists"
+                        continue
 
-                if OTU_99.objects.filter(otuName=taxon[7]).exists():
-                    continue
+                # this is a bad skip, because a sequence can show up in more than one otu
+                '''if haveSeq:
+                    if OTU_99.objects.filter(otuSeq=row[colLabels["Seq"]]).exists():
+                        # if OTU with this sequence exists, move to next row    BUT does this otu name match?
+                        # CAN this sequence exist within multiple taxonomies? Could be a small part of a gene
+                        # print "Sequence exists"
+                        continue'''
+
+                #print "\t", taxon   # got this far means either no sequence data or it matches existing sequence data
+                # we know that this OTU is new, in that its name and sequence are both absent from the database
+                # with this in mind, we create at least a new OTU, potentially a whole taxa tree
 
                 if not Kingdom.objects.filter(kingdomName=taxon[0]).exists():
                     kid = uuid4().hex
@@ -711,37 +777,146 @@ def parse_taxonomy(Document, stopList, PID, RID):
                     Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
                                            genusid_id=g, speciesid=sid, speciesName=taxon[6])
 
-                if taxon[7].startswith('gg'):
-                    if taxon[7].startswith('gg_'):
-                        pass
-                    else:
-                        taxon[7].replace('gg', 'gg_')
+                haveKing = True  # if we don't have a kingdom, jump to unclassified handling with sequence
+                # if we have no kingdom AND no sequence, forget about this entry, we have no means of creating a key
+                if taxon[0] is "unclassified" or taxon[0] is "unknown":  # mothur puts unknown for unclassified kingdoms
+                    haveKing = False
+                    #print "Unclassified kingdom"
+                # row must contain a sequence for otu mapping to be worthwhile
+                if haveSeq:
+                    if taxon[7].startswith('gg'):
+                        if taxon[7].startswith('gg_'):
+                            pass
+                        else:
+                            taxon[7].replace('gg', 'gg_')
 
-                if taxon[0] == 'unclassified':
-                    otuName = 'isv_' + str(numUnclass)
-                    numUnclass += 1
-                    s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
-                                            genusid_id=g, speciesName=taxon[6]).speciesid
-                    if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
-                                                 familyid_id=f, genusid_id=g, speciesid_id=s, otuSeq=row[1],
-                                                 otuName=otuName).exists():
-                        oid = uuid4().hex
-                        OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
-                                              familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuSeq=row[1],
-                                              otuName=otuName)
-                        newOtuList.append(oid)
-                else:
                     otuName = taxon[7]
                     s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
                                             genusid_id=g, speciesName=taxon[6]).speciesid
+
+                    # check if sequence is already in use, if not, make a new otu
                     if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
                                                  familyid_id=f, genusid_id=g, speciesid_id=s,
-                                                 otuName=otuName).exists():
+                                                 otuSeq=row[colLabels["Seq"]]).exists():
+                        # can assume this file has sequence data, so we check that first
+                        # sequence-taxa combo does not exist yet, verify we have a valid otu name then make otu
+                        print "\tOTU does not exist"
+                        if otuName is "unclassified":
+                            print "Unclassified otu!"
+                            otuName = 'isv_' + str(numUnclass)
+                            numUnclass += 1
+                            while OTU_99.objects.filter(otuName=otuName).exists():  # guarantee no duplicate names
+                                otuName = 'isv_' + str(numUnclass)
+                                numUnclass += 1
                         oid = uuid4().hex
+                        while OTU_99.objects.filter(otuid=oid).exists():  # guarantee no duplicate ids
+                            oid = uuid4().hex
                         OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
                                               familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid,
-                                              otuSeq='', otuName=otuName)
+                                              otuSeq=row[colLabels["Seq"]], otuName=otuName)
                         newOtuList.append(oid)
+                    else:
+                        print "\tOTU exists"
+                        # otu using this sequence-taxa combo exists, lets make sure our name matches
+                        foundOtu = OTU_99.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                                      familyid_id=f, genusid_id=g, speciesid_id=s,
+                                                      otuSeq=row[colLabels["Seq"]])
+                        if otuName != foundOtu.otuName:
+                            if foundOtu.otuName is "unclassified":
+                                # update database otuname with name from file
+                                foundOtu.otuName = otuName
+                                foundOtu.save()
+                            else:
+                                # update name in file to match database
+                                newRowList = []
+                                # make and save line changes in dictionary value
+                                for ind in range(
+                                        colLabels["Taxonomy"]):  # range from 0 -> N-1  (does not include taxa)
+                                    newRowList.append(row[ind])
+                                rawTaxonList = row[colLabels["Taxonomy"]].split(";")
+                                rawOtuName = rawTaxonList[7]
+                                otuSplit = rawOtuName.split("(")
+                                otuSplit.pop(0)
+                                newOtuName = "" + otuName
+                                for remaining in otuSplit:
+                                    newOtuName += "(" + remaining
+                                rawTaxonList[7] = newOtuName
+                                newRow = ""
+                                for rawTaxon in rawTaxonList:
+                                    newRow += rawTaxon + ";"
+                                newRowList.append(newRow)
+                                editedLinesDict[curLine] = newRowList
+                                print "Editied line based on missing otu sequence and kingdom name"
+                        '''s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                                genusid_id=g, speciesName=taxon[6]).speciesid
+                        if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                                     familyid_id=f, genusid_id=g, speciesid_id=s, otuSeq=row[colLabels["Seq"]]).exists():
+                            # no entry with this sequence and taxa tree
+                            otuName = 'isv_' + str(numUnclass)
+                            numUnclass += 1
+                            oid = uuid4().hex
+                            OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                                  familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuSeq=row[colLabels["Seq"]],    # TODO remove sequence assumption
+                                                  otuName=otuName)
+
+                            # remember to update koOtuList after this
+                            newOtuList.append(oid)
+
+
+
+                        else:
+                            print "Unclassified kingdom BUT known sequence"  # the heck?
+                            ## write taxonomy to cons.taxonomy file
+                            # this is the case where the sequence matches but the file has no otu name
+                            # so we update the taxonomy file to include the name we have in the database vs unclassified
+
+                    else:
+                        # kingdom is known, check otu
+                        print "Known kingdom for", taxon[7]'''
+                else:
+                    # we do not have sequence data to work with
+                    if not haveKing:
+                        # no sequence, unknown kingdom. This is not a useful line
+                        pass
+                    else:
+                        # we at least have a kingdom, no sequence though
+                        # without sequence data, otu name is not particularly helpful
+                        # just species check? TODO verify this is the correct procedure
+                        if not Species.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                                genusid_id=g, speciesName=taxon[6]).exists():
+                            # species with this taxonomy does not currently exist in database, add it
+                            s = Species.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
+                                                genusid_id=g, speciesName=taxon[6])
+                            s.save()
+                        else:
+                            # species already exists, nothing to do here
+                            pass
+
+                        # check if sequence is already in use, if not, make a new otu
+                        #if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
+                                                     #familyid_id=f, genusid_id=g, speciesid_id=s,
+                                                     #otuSeq=row[colLabels["Seq"]]).exists():
+
+                # index for use with writing file back later
+                curLine += 1
+
+
+        ## write taxonomy to cons.taxonomy file
+        # finished looping through csv, write it again so we can update unclassified otu's
+        # print "Finished taxa loop, writing"
+        with open(Document.name, 'w') as writeFile:
+            writer = csv.writer(writeFile, delimiter='\t')    # overwrite old file with updated names and such
+            writer.writerow(firstRow)
+            #print docLines
+            rowNum = 0
+            for docRow in docLines:
+                if rowNum in editedLinesDict.keys():
+                    print "Writing edited:", editedLinesDict[rowNum]
+                    writer.writerow(editedLinesDict[rowNum])
+                else:
+                    writer.writerow(docRow)  # we kept lines in memory, could potentially have changed them
+                rowNum += 1
+            # writer.writerow(["Hey look we made it"])
 
         if newOtuList:
             updateKoOtuList(newOtuList, stopList, PID, RID)
@@ -751,8 +926,6 @@ def parse_taxonomy(Document, stopList, PID, RID):
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
-
-    #print "End of taxa parsing"
 
 
 def updateKoOtuList(otuList, stopList, PID, RID):  # for during a new upload
@@ -927,7 +1100,8 @@ def parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID):
                 t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
                                                 familyid=t_family, genusid=t_genus, speciesName=s)
             except Exception as e:
-                print "Error finding taxa: ", e
+                print "Error finding taxa: ", e     # currently getting here via "unknown" kingdom, what TODO...
+                print taxaList
 
             t_otu = ''
             try:
@@ -1096,6 +1270,7 @@ def reanalyze(request, stopList):
             rep_project = 'myPhyloDB is currently reprocessing project: ' + str(ref.projectid.project_name)
             dest = ref.path
             source = ref.source
+            origAuthor = ref.author
 
             try:
                 if platform == 'mothur':
@@ -1256,7 +1431,7 @@ def reanalyze(request, stopList):
             with open(metaFile, 'rb') as f:
                 p_uuid, pType, num_samp = projectid(f)
 
-            curUser = User.objects.get(username=request.user.username)
+            curUser = origAuthor.username
             parse_project(metaFile, p_uuid, curUser)
 
             if stopList[PID] == RID:
@@ -1264,17 +1439,9 @@ def reanalyze(request, stopList):
                 transaction.savepoint_rollback(sid)
                 return repStop(request)
 
-            if platform == 'mothur':
-                with open('% smothur.batch' % mothurdest, 'rb') as file7:
-                    raw = True
-                    userID = str(request.user.id)
-                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID, stopList, RID)
-            else:
-                with open('% sdada2.R' % mothurdest, 'rb') as file7:
-                    raw = True
-                    userID = str(request.user.id)
-                    # "print parsing sample"
-                    refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, file7, raw, source, userID, stopList, RID)
+            raw = True
+            userID = str(origAuthor.id)
+            refDict = parse_sample(metaFile, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID)
 
             if stopList[PID] == RID:
                 mothurRestore(dest)
@@ -1310,7 +1477,7 @@ def reanalyze(request, stopList):
 
             with open('% s/final.cons.taxonomy' % dest, 'rb') as file3:
                 with open('% s/final.tx.shared' % dest, 'rb') as file4:
-                    parse_profile(file3, file4, p_uuid, refDict, stopList, RID)
+                    parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID)
 
             if stopList[PID] == RID:
                 mothurRestore(dest)

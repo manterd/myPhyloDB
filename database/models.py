@@ -56,9 +56,10 @@ class Project(models.Model):
 
 
 class Reference(models.Model):
-    refid = models.CharField(max_length=50, primary_key=True)   # WHAT IS THIS???
+    # save the location and data associated with a reference file (for finding names and such)
+    refid = models.CharField(max_length=50, primary_key=True)
     raw = models.BooleanField()
-    projectid = models.ForeignKey(Project)  # PID reference was used with?
+    projectid = models.ForeignKey(Project)
     path = models.CharField(max_length=90)
     source = models.CharField(max_length=90)
     author = models.ForeignKey(Users, related_name='entries')
@@ -68,6 +69,8 @@ class Reference(models.Model):
 
 
 class Sample(models.Model):
+    # core sample model, this stores most general information about a sample within a project
+    # gets referenced by subtypes such as Soil, Air, Water, etc
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
     sampleid = models.TextField(primary_key=True)
@@ -106,6 +109,7 @@ class Sample(models.Model):
 
 
 class Human_Associated(models.Model):
+    # data from a sample specifically for human_associated projects, following the fields described by mothur
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
@@ -173,6 +177,7 @@ class Human_Associated(models.Model):
 
 
 class Soil(models.Model):
+    # data from a sample specifically for soil related projects, following the fields described by mothur
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
@@ -265,6 +270,7 @@ class Soil(models.Model):
     soil_agg_stability = models.FloatField(blank=True, null=True)
     soil_ACE_protein = models.FloatField(blank=True, null=True)
     soil_active_C = models.FloatField(blank=True, null=True)
+    # TODO put these in the meta file /\ /\ /\ 6
 
     plant_C = models.FloatField(blank=True, null=True)
     plant_N = models.FloatField(blank=True, null=True)
@@ -297,11 +303,43 @@ class Soil(models.Model):
     ghg_CO2 = models.FloatField(blank=True, null=True)
     ghg_NH4 = models.FloatField(blank=True, null=True)
 
+    # entries added for Cornell's C.A.S.H.  (not duplicating values already stored)
+
+    # potential id fields from cornell meta files (if we end up parsing those)
+    #seriesletter
+    #quar_y_n
+    #samplenumber
+    #fieldID
+    # TODO put all these in the meta file \/ \/ \/ 20
+    # these should be added to the standard myphylodb meta file, all are quantitative and some depend on existing soil vals
+    # soil vals which appear in cornell's set and the base myphylodb set should have a redirect from cornell to main
+    soil_texture_sand = models.FloatField(blank=True, null=True)
+    soil_texture_silt = models.FloatField(blank=True, null=True)
+    soil_texture_clay = models.FloatField(blank=True, null=True)
+    water_capacity_rating = models.FloatField(blank=True, null=True)
+    surface_hardness_rating = models.FloatField(blank=True, null=True)
+    subsurface_hardness_rating = models.FloatField(blank=True, null=True)
+    aggregate_stability_rating = models.FloatField(blank=True, null=True)
+    organic_matter = models.FloatField(blank=True, null=True)
+    organic_matter_rating = models.FloatField(blank=True, null=True)
+    ace_soil_protein_index_rating = models.FloatField(blank=True, null=True)
+    root_pathogen_pressure = models.FloatField(blank=True, null=True)
+    root_pathogen_pressure_rating = models.FloatField(blank=True, null=True)
+    respiration_four_day = models.FloatField(blank=True, null=True)
+    repisration_four_day_rating = models.FloatField(blank=True, null=True)
+    active_carbon_rating = models.FloatField(blank=True, null=True)
+    ph_rating = models.FloatField(blank=True, null=True)
+    p_rating = models.FloatField(blank=True, null=True)
+    k_rating = models.FloatField(blank=True, null=True)
+    minor_elements_rating = models.FloatField(blank=True, null=True)
+    overall_rating = models.FloatField(blank=True, null=True)
+
     def __unicode__(self):
         return self.sampleid.sample_name
 
 
 class Air(models.Model):
+    # data from a sample specifically for air projects, following the fields described by mothur
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
@@ -343,6 +381,7 @@ class Air(models.Model):
 
 
 class Microbial(models.Model):
+    # data from a sample specifically for microbial projects, following the fields described by mothur
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
@@ -421,6 +460,7 @@ class Microbial(models.Model):
 
 
 class Water(models.Model):
+    # data from a sample specifically for water projects, following the fields described by mothur
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
@@ -515,6 +555,7 @@ class Water(models.Model):
 
 
 class UserDefined(models.Model):
+    # data from a sample with fields likely specific to the project, up to the user to remember which fields are comparable
     sampleid = models.ForeignKey(Sample)
     projectid = models.ForeignKey(Project)
     refid = models.ForeignKey(Reference)
@@ -540,7 +581,8 @@ class UserDefined(models.Model):
 
 
 class DaymetData(models.Model):
-    user = models.ForeignKey(Users, primary_key=True)   # at most one per user (most recent norm or none)
+    # data from the daymet database, specific to regions and months the user has selected (to add to meta variables)
+    user = models.ForeignKey(Users, unique=True)   # at most one per user (most recent norm or none)
 
     # delete the old daymet data at start of norm
     # then just check if daymet data exists, since it won't in most cases already
@@ -631,6 +673,7 @@ class OTU_99(models.Model):
 
 
 class Profile(models.Model):
+    # taxonomic profile, not to be confused with UserProfile
     projectid = models.ForeignKey(Project)
     sampleid = models.ForeignKey(Sample)
 
@@ -717,18 +760,18 @@ class PICRUSt(models.Model):
 
 
 class koOtuList(models.Model):
-    koID = models.TextField(primary_key=True, db_index=True)   # used as index for fast retrieval; write time increases w/ object count
+    # used as a means of storing kegg data per gene, for significantly faster querying on path pages
+    # TODO verify this gets updated with each new koID in the database
+    koID = models.TextField(primary_key=True, db_index=True)
     otuList = models.TextField(blank=True)  # ';' separated list of otu names associated with this ko
 
 
 class UserProfile(models.Model):
-    # should be a list of usernames, I don't like this though
-    # you could wind up with a LOT of users in a database, and having to search each one for if they have added them
-    # is incredibly inefficient
-    # meanwhile, having each user keep a list of which users have whitelisted THEM, simplifies query
-    # but we have to be EXTREMELY careful when implementing this such that no user can edit their own list
-    # NEEDS TO GO BOTH WAYS FOR WHEN YOU REVOKE PERMS / VIEW ALREADY GIVEN PERMISSIONS
+    # Profile of extra data for each user, such as permissions and personal info
+
+    # actual user object from Django account manager
     user = models.OneToOneField(Users, related_name='profile')
+    # personal data
     firstName = models.CharField(blank=True, max_length=200)
     lastName = models.CharField(blank=True, max_length=200)
     affiliation = models.CharField(blank=True, max_length=200)
@@ -739,10 +782,25 @@ class UserProfile(models.Model):
     phone = models.CharField(blank=True, max_length=100)
     reference = models.CharField(blank=True, max_length=100)
     purpose = models.CharField(blank=True, max_length=100)
+    # a unique string attached to the user, changed whenever a new selection is made
+    # sent from the browser to verify against, if they do not match, the user's browser is not using the correct dataset
     dataID = models.CharField(blank=True, max_length=200, default="TEMPID")
 
+    # recent analysis rid storage field
+    recentRIDs = models.CharField(blank=True, default="", max_length=32)   # semi-colon delimited list of RIDs, stored oldest to newest
+
+    # permissions fields and methods
     hasPermsFrom = models.TextField(blank=True)  # acts as a list via split with ';' delimiter
+    # do these get updated at proper times? TODO verify
+    # (everything related to these fields should always call the appropriate functions)
     gavePermsTo = models.TextField(blank=True)
+
+    # TODO add visible_projects list, alongside a method to call which updates said list !DONE
+    # how to ensure update method gets called enough...
+    # need to update visible list whenever this user uploads or deletes a project
+    # and whenever another user gives or removes permission, which is stored per project? per user? Could do both
+    # this list should NEVER be editable by the user, only updated by server, and user sees RESULT of list (projects)
+    privateProjectList = models.TextField(blank=True)
 
     @receiver(post_save, sender=Users)
     def create_user_profile(sender, instance, created, **kwargs):
@@ -753,4 +811,71 @@ class UserProfile(models.Model):
     def save_user_profile(sender, instance, **kwargs):
         instance.profile.save()
 
+    def update_list(self, remove=None, add=None):
+        # slightly more complicated than public list for main creation
+        # during normal runtime use, only call remove and add
+        # need to run the generic creation section once for each user
+        if remove is None and add is None:
+            # generic list creation function (makes private project list from scratch)
+            projString = ""
+            whitelist = self.hasPermsFrom.split(';')
+            for proj in Project.objects.all():
+                # get list of permitted users for this project
+                checkList = proj.whitelist_view.split(';')
+                # check if this user is in the list
+                if self.user.username in checkList:
+                    # user has permission, add to list
+                    projString += proj.projectid + ","
+                # check for whitelisted user list, if they gave perms to use raw files, full projects should work too
+                elif proj.owner.username in whitelist:
+                    # user has permission
+                    projString += proj.projectid + ","
 
+            self.privateProjectList = projString
+        elif remove is not None:
+            idList = self.privateProjectList.split(",")
+            idList.remove(remove)
+            newString = ""
+            for id in idList:
+                newString += id + ","
+            self.privateProjectList = newString
+
+        elif add is not None:
+            self.privateProjectList += add + ","
+
+
+class PublicProjects(models.Model):
+    List = models.TextField(blank=True)  # CSV formatted string which contains the project ID's of all public projects
+    # need only one of these to exist, must be updated whenever a public project is added, removed
+    # or switched to private, also private projects switched to public
+    # so this should get called by something in the end of an upload, project delete, and meta file update (if needed)
+    # this does not need to be sorted, since this list gets used right before sorting by project name anyways
+
+    def update_list(self, remove=None, add=None):
+        # will recreate list if no individual ID is given
+        # if both remove and add are given (don't do that), only remove will be respected
+
+        if remove is None and add is None:
+            # this is the generic one, technically works for updating a single project BUT
+            # a more specific implementation would be significantly more efficient
+            # make a list of all public projects
+            projString = ""
+            for proj in Project.objects.all():
+                if proj.status == 'public':
+                    projString += proj.projectid + ","
+            self.List = projString
+        elif remove is not None:
+            # removing some specific ID. Find given ID and remove it from the list
+            # comma delimited string contains ids, split then extract given ID
+            idList = self.List.split(",")
+            idList.remove(remove)
+            newString = ""
+            for id in idList:
+                newString += id + ","
+            self.List = newString
+
+        elif add is not None:
+            # just adding, can append for simplicity. Or insert at sorted position
+            # its an id list, sorting alphabetically would be a pain, and sort by ID serves no real purpose
+            # so, just appending
+            self.List += add + ","  # ez

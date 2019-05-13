@@ -239,22 +239,22 @@ def getWGCNA(request, stops, RID, PID):
                 # R packages from cran
                 r("list.of.packages <- c('devtools', 'ggplot2', 'reshape2', 'WGCNA', 'cluster', 'igraph')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-                print r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+                r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
                 # R packages from github
                 r("list.of.packages <- c('ggplus')")
                 r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-                print r("if (length(new.packages)) devtools::install_github('guiastrennec/ggplus')")
+                r("if (length(new.packages)) devtools::install_github('guiastrennec/ggplus')")
 
                 functions.setBase(RID, 'Step 4 of 7: WGCNA analysis...')
 
                 # Load R libraries
-                print r("library(ggplot2)")
-                print r("library(reshape2)")
-                print r("library(WGCNA)")
-                print r("library(cluster)")
-                print r("library(ggplus)")
-                print r("library(igraph)")
+                r("library(ggplot2)")
+                r("library(reshape2)")
+                r("library(WGCNA)")
+                r("library(cluster)")
+                r("library(ggplus)")
+                r("library(igraph)")
 
                 r("allowWGCNAThreads()")
                 r("options(stringAsFactors=FALSE)")

@@ -7,6 +7,8 @@ import gc
 import datetime
 import config.local_cfg
 from database.models import UserProfile
+import os
+import shutil
 
 import functions
 from functions.analysis import analysis
@@ -42,6 +44,8 @@ statDict = {}
 stopDict = {}
 stopped = 0
 
+cleanupQueue = Queue(maxsize=0)
+
 # merged status:
 base = {}
 stage = {}
@@ -58,20 +62,6 @@ def setBase(RID, val):
 
 def getBase(RID):
     return base[RID]
-
-
-def removeRID(RID):
-    global base, stage, time1, time2, TimeDiff
-    try:
-        base.pop(RID, None)
-        stage.pop(RID, None)
-        time1.pop(RID, None)
-        time2.pop(RID, None)
-        TimeDiff.pop(RID, None)
-        complete.pop(RID, None)
-        return True
-    except Exception:
-        return False
 
 
 def getAnalysisQueue(request):  # main queue equivalent of working dataqueue tracker
@@ -155,11 +145,13 @@ def decremQ():
 
 
 def process(pid):
+    RID = "NULL_RID"    # this should only come up if the queue errors BEFORE reading request RID
+    request = None
     while True:
         try:
             global activeList, stopList, stopDict
 
-            # TODO debug flag as a setting? like across py files so its only set once
+            # Debug flag for analyses, set to True if you want prints for nearly every step of analysis
             DEBUG = False
 
             # get next entry from queue
@@ -175,40 +167,51 @@ def process(pid):
                 activeList[pid] = RID
                 functions.log(request, "QSTART", funcName)
                 if activeList[pid] == RID:
-                    if funcName == "getNorm":
+                    if funcName == "getNorm":   # at present likely not worthwhile to port norm to analysis class
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
-                    if funcName == "getCatUnivData":
+                    elif funcName == "getCatUnivData":
                         myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
-                        if DEBUG:
-                            print "Returned from anova!"
-                    if funcName == "getQuantUnivData":
+                    elif funcName == "getQuantUnivData":
                         myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run(quant=True)
-                    if funcName == "getCorr":
+                    elif funcName == "getCorr":
                         myAnalysis = analysis.Corr(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
-                    if funcName == "getPCA":
+                    elif funcName == "getPCA":
                         myAnalysis = analysis.PCA(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
-                    if funcName == "getPCoA":
+                    elif funcName == "getPCoA":
                         myAnalysis = analysis.PCoA(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
-                    if funcName == "getRF":
-                        recent[RID] = functions.getRF(request, stopList, RID, pid)
-                    if funcName == "getDiffAbund":
+                    elif funcName == "getRF":
+                        myAnalysis = analysis.Caret(request, RID, stopList, pid, debug=DEBUG)
+                        recent[RID] = myAnalysis.run()
+                    elif funcName == "getDiffAbund":
                         myAnalysis = analysis.diffAbund(request, RID, stopList, pid, debug=DEBUG)
                         recent[RID] = myAnalysis.run()
-                    if funcName == "getGAGE":
-                        recent[RID] = functions.getGAGE(request, stopList, RID, pid)
-                    if funcName == "getSPLS":
+                    elif funcName == "getGAGE":
+                        myAnalysis = analysis.Gage(request, RID, stopList, pid, debug=DEBUG)
+                        recent[RID] = myAnalysis.run()
+                    elif funcName == "getSPLS":
                         recent[RID] = functions.getSPLS(request, stopList, RID, pid)
-                    if funcName == "getWGCNA":
+                    elif funcName == "getWGCNA":
                         recent[RID] = functions.getWGCNA(request, stopList, RID, pid)
-                    if funcName == "getSpAC":
+                    elif funcName == "getSpAC":
                         recent[RID] = functions.getSpAC(request, stopList, RID, pid)
-                    if funcName == "getsoil_index":
+                    elif funcName == "getsoil_index":
                         recent[RID] = functions.getsoil_index(request, stopList, RID, pid)
+
+                    else:
+                        # received a function name that we don't support
+                        # either a developer typo exists (here or on a web page) OR someone is trying to break things
+                        # either way, this is a notable event, so we print to console and log
+                        print "Security check:", request.user.username, "attempting to call function", funcName, "in AQ"
+                        functions.log(request, "INVALID_FUNCTION_NAME_AQ", funcName)
+                        # should probably return something to the user page so they don't get stuck
+                        myDict = {'error': 'Invalid function name'}
+                        stop = json.dumps(myDict)
+                        recent[RID] = HttpResponse(stop, content_type='application/json')
                 if DEBUG:
                     print "Finished an analysis iteration"
                 activeList[pid] = 0
@@ -216,33 +219,115 @@ def process(pid):
                 functions.log(request, "QFINISH", funcName)
             cleanup(RID)
         except Exception as e:
-            print "Error during primary queue:", e
+            print "Error during analysis queue:", e
+            if request is not None:
+                functions.log(request, "ERROR_AQ", str(e)+"\n")
+            myDict = {'error': "Exception: "+str(e.message)}    # TODO this doesn't always display to user FIX
+            stop = json.dumps(myDict)
+            recent[RID] = HttpResponse(stop, content_type='application/json')
 
 
-def cleanup(RID):
-    global queueFuncs, queueTimes, queueUsers, queueList
+def cleanup(RID):   # cleanup and removeRID two parts of the same concept, group and add recent and such cleanup TODO DONE
+    # TODO need to cleanup temp files for given RID !DONE!
+    # TODO put given RID into user's history, cleanup the oldest RID if at capacity (3 for now). Not a loop
+    global queueFuncs, queueTimes, queueUsers, queueList, cleanupQueue, base, stage, time1, time2, TimeDiff
     # could potentially have some gone before others, for now just putting all in try's
+
+    # cleanupQueue.put(RID, True)  # problem with this is its timing based: we only have a delay for results
+    #                            # if the next analysis completion is significantly later than this one
+    # TODO cleanup should be handled by a sequence for each user:
+    # if a user completes a 4th analysis, cleanup the oldest one
+    # we want status to be able to call up recent[RID] (rename to results?) for as long as needed
+    # until that same user has run a third analysis since the RID in question
+    # SO, todo this, check user's recent rid model BEFORE putting into cleanupQueue
+    '''myRIDList = user_profile.objects.get(user=user).recentRIDs.split(";")
+    cleanRID = myRIDList[0]'''
+    cleanRID = cleanupQueue.pop()
+
     try:
-        queueList.pop(RID, 0)
+        queueList.pop(cleanRID, 0)
     except:
         pass
     try:
-        queueFuncs.pop(RID, 0)
+        queueFuncs.pop(cleanRID, 0)
     except:
         pass
     try:
-        queueTimes.pop(RID, 0)
+        # cleaning up old files
+        delPath = "myPhyloDB/media/temp"
+        for fname in os.walk(delPath):
+            for sub in fname[2]:
+                try:
+                    if sub.split('.')[0] == str(cleanRID):
+                        fullFname = str(fname[0]) + "/" + str(sub)
+                        #print "Removing file:", fullFname
+                        os.remove(fullFname)
+                except Exception as fileEx:
+                    print "Error during tempfile deletion:", fileEx
+                    pass
+            for sub in fname[1]:
+                try:
+                    if sub.split('.')[0] == str(cleanRID):
+                        fullFname = str(fname[0]) + "/" + str(sub)
+                        #print "Removing directory:", fullFname
+                        shutil.rmtree(fullFname)
+                except Exception as fileEx:
+                    print "Error during tempfile deletion:", fileEx
+                    pass
+
+    except Exception as ex:
+        print "Error during file cleanup:", ex
+        pass
+    try:
+        queueTimes.pop(cleanRID, 0)
     except:
         pass
     try:
-        queueUsers.pop(RID, 0)
+        queueUsers.pop(cleanRID, 0)
     except:
         pass
+
+    try:
+        recent.pop(cleanRID, 0)
+    except:
+        pass
+    try:
+        statDict.pop(cleanRID, 0)
+    except:
+        pass
+
+    try:
+        base.pop(cleanRID, None)
+    except:
+        pass
+    try:
+        stage.pop(cleanRID, None)
+    except:
+        pass
+    try:
+        time1.pop(cleanRID, None)
+    except:
+        pass
+    try:
+        time2.pop(cleanRID, None)
+    except:
+        pass
+    try:
+        TimeDiff.pop(cleanRID, None)
+    except:
+        pass
+    try:
+        complete.pop(cleanRID, None)
+    except:
+        pass
+
+    gc.collect()  # attempting to cleanup memory leaks since processes technically are still there
+    cleanupQueue.put(RID, True)
 
 
 def funcCall(request):
     # new hybrid call
-    global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff, complete
+    global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff, complete, cleanupQueue
     allJson = request.body.split('&')[0]
     data = json.loads(allJson)
     reqType = data['reqType']
@@ -285,12 +370,9 @@ def funcCall(request):
 
     if reqType == "status":
         try:
+            # TODO fix race condition with having multiple status query sources! FIXED WITH CLEANUPQUEUE !DONE!
             results = recent[RID]   # recent[RID] is only initialized if function has returned with data
-            recent.pop(RID, 0)
-            statDict.pop(RID, 0)
-            removeRID(RID)
-            gc.collect()  # attempting to cleanup memory leaks since processes technically are still there
-            # results on anova quant not working occasionally, depends on categorical selection
+            cleanupQueue.put(RID, True)
             # return results to client
             return results
         except KeyError:
@@ -314,9 +396,7 @@ def funcCall(request):
                             stage[RID] = 'Analysis complete, preparing results'  # stuck on one of these occasionally
                             #print "Finished"
                     except Exception:   # complete is not valid, implying variables have been cleaned up (or not created yet?)
-                        stage[RID] = 'Downloading results'  # bug with timing if this sticks ?
-                        # bug is more likely on the page side
-                        #print "Done?"
+                        stage[RID] = 'Request already completed'  # really shouldn't see this, if so BUG!!
                 else:   # timediff not zero, so analysis has started to run despite data not valid (?)
                     stage[RID] = 'Analysis starting'    # getting this when queued
                     #print "Start"

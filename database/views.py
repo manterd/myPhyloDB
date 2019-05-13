@@ -629,7 +629,7 @@ def uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, P
         copyFromUpload(filepath, mothurdest, name)
         try:
             tar = tarfile.open(os.path.join(mothurdest, name))
-            tar.extractall(path=mothurdest)
+            tar.extractall(path=mothurdest)  # TODO security check the paths in this archive, verify nothing leaves mothurdest
             tar.close()
         except Exception:
             try:
@@ -3296,6 +3296,7 @@ def syncFilePerms(owner):
                 # is this section inefficient? could append directly, check if empty first for semicolon?
 
         # loop through ALL user profiles and remove owner if not on currentList
+        # TODO could do this more efficiently by remembering who was removed
         allUsers = User.objects.all()
         for curUser in allUsers:
             if curUser.username not in currentList:

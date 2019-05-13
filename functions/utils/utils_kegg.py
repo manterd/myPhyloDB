@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import pandas as pd
 import json
+import time
 
 from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, \
     PICRUSt, \
@@ -361,7 +362,9 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         total = len(sampleList)
         counter = 1
         for i in sampleList:
+            sampStartTime = time.time()
             tempDF = pd.DataFrame(index=profileDF.index)
+            loopStartTime = time.time()
             for j in levelList:
                 tempDF[j] = profileDF[i] * picrustDF[j]
 
@@ -370,7 +373,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
                     res = ''
                     return HttpResponse(res, content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
+            loopRunTime = time.time() - loopStartTime
             tempDF = tempDF[levelList].sum()
             tempDF['sampleid'] = i
             taxaDF = taxaDF.append(tempDF, ignore_index=True)
@@ -382,6 +385,9 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             functions.setBase(RID, 'Calculating KEGG pathway abundances...sample ' + str(counter) + ' out of ' + str(total) + ' is finished!')
+            sampRunTime = time.time() - sampStartTime
+            percentTime = loopRunTime / sampRunTime
+            print "GAGE tracker: this sample took", sampRunTime, "and", percentTime, "was spent in for loop"
             counter += 1
 
         functions.setBase(RID, curStep)

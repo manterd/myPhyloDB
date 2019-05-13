@@ -6,7 +6,6 @@ urlpatterns = [
     ### urls from analysis queue
     url(r'^funcCall/$', functions.funcCall, name='funcCall'),
     url(r'^stop/$', functions.stop, name='stop'),
-    url(r'^removeRID/$', functions.removeRID, name='removeRID'),
     url(r'^getAnalysisQueue/$', functions.getAnalysisQueue, name='getAnalysisQueue'),
 
     ### data from upload/reprocessing queue

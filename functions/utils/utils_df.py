@@ -17,7 +17,7 @@ import time
 import zipfile
 import math
 
-from database.models import Project, Reference, Profile
+from database.models import Project, Reference, Profile, PublicProjects, UserProfile
 
 import config.local_cfg
 import functions
@@ -628,9 +628,12 @@ def transformDF(transform, DepVar, finalDF):
 
 
 def getViewProjects(request):   # use this function as often as possible for project queries, put all perms stuff here
-    # TODO update permissions to new system files uses (user based instead of project based) --> ATM KEEPING BOTH
-    # if we want to do only user to user that is, project based perms can have its use cases if you collab with multiple groups
-    # also group permissions? should look into that, work group objects or something
+    # permissions are both project and account based, for improved usability
+
+    # give account perms to co-workers and common collaborators
+    # give project based permissions to uncommon joint project groups
+
+    # TODO group permissions? common work groups defined by a user? social networking? hrm
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.order_by('project_name')
@@ -639,21 +642,17 @@ def getViewProjects(request):   # use this function as often as possible for pro
     elif request.user.is_authenticated():
         # run through list of projects, when valid project is found, append filterIDS with ID
         # projects will be a queryset set to all projects, then filtered by ids in filterIDS
-        filterIDS = []
-        for proj in Project.objects.all():
-            good = False  # good to add to list
-            if proj.owner == request.user:
-                good = True
-            if proj.status == 'public':
-                good = True
-            checkList = proj.whitelist_view.split(';')
-            for name in checkList:
-                if name == request.user.username:
-                    good = True
-            if proj.wip:
-                good = False
-            if good:
-                filterIDS.append(proj.projectid)
+        # queryStartTime = time.time()
+
+        publicIDs = PublicProjects.objects.all().first().List.split(",")    # got the public
+        # print "publicIDs:", publicIDs
+        # get private IDs here
+        privateIDs = UserProfile.objects.get(user=request.user).privateProjectList.split(",")
+        # print "privateIDs:", privateIDs
+        filterIDS = np.unique(privateIDs+publicIDs)
+
+        # queryTime = time.time() - queryStartTime
+        # print "Select query time:", queryTime
         projects = Project.objects.filter(projectid__in=filterIDS).order_by('project_name')
 
     if not request.user.is_superuser and not request.user.is_authenticated():
@@ -744,7 +743,10 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
     richDF.set_index('sampleid', inplace=True)
 
-    diversityDF = -df.div(df.sum(axis=1), axis=0) * np.log(df.div(df.sum(axis=1), axis=0))
+    # what conditions lead to df.sum == 0 ? should div by zero work? if so what result? TODO figure this out / ask about
+    # so some value in the df.sum(axis=1) results must be zero, I guess just leave it be and supress the warning?
+    diversityDF = -df.div(df.sum(axis=1), axis=0) * np.log(df.div(df.sum(axis=1), axis=0))  # RuntimeWarning: divide by zero encountered
+    # logically, is DF/DF.sum * log(DF/DF.sum)); so if DF.sum is 0 or equivalent, divide by zero occurs
     diversityDF[np.isinf(diversityDF)] = np.nan
     diversityDF.fillna(0.0, inplace=True)
     diversityDF.reset_index(drop=False, inplace=True)

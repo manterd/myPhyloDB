@@ -33,6 +33,8 @@ import collections
 import numpy as np
 from scipy import stats
 from database.models import Sample
+from natsort import natsorted
+from PyPDF2 import PdfFileReader, PdfFileMerger
 
 
 # stop function for creating proper return message
@@ -71,7 +73,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         pass
 
     # verify request was formatted correctly and all variables are accounted for, as well as configure future steps
-    def validate(self, sig=True, metaCat=True, metaQuant=True, reqMultiLevel=True, dist=False):  # supports flags for sig_only, metaValsCat
+    def validate(self, sig=True, metaCat=True, metaQuant=True, reqMultiLevel=True, dist=False, selAll=True, taxTree=True):  # supports flags for sig_only, metaValsCat
         if self.debug:
             print "Validate!"
         # Get variables from web page
@@ -83,9 +85,10 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         functions.setBase(self.RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
 
-        self.selectAll = int(self.all["selectAll"])
-        self.keggAll = int(self.all["keggAll"])
-        self.nzAll = int(self.all["nzAll"])
+        if selAll:
+            self.selectAll = int(self.all["selectAll"])
+            self.keggAll = int(self.all["keggAll"])
+            self.nzAll = int(self.all["nzAll"])
 
         if sig:  # check for sig_only support, use value if yes, treat as false if not
             self.sig_only = int(self.all["sig_only"])
@@ -111,7 +114,9 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             metaValsQuant = []
             metaIDsQuant = []
 
-        self.treeType = int(self.all['treeType'])
+        if taxTree:
+            self.treeType = int(self.all['treeType'])
+
         self.DepVar = int(self.all["DepVar"])
 
         if self.debug:
@@ -231,17 +236,18 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         return 0
 
     # get actual data from database and format it for actual analysis step based on settings
-    def query(self, taxmap=True, usetransform=True):
+    def query(self, taxmap=True, usetransform=True, filterable=True):
         if self.debug:
             print "Query!"
         functions.setBase(self.RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
-        # filter otus based on user settings
-        remUnclass = self.all['remUnclass']
-        remZeroes = self.all['remZeroes']
-        perZeroes = int(self.all['perZeroes'])
-        filterData = self.all['filterData']
-        filterPer = int(self.all['filterPer'])
-        filterMeth = int(self.all['filterMeth'])
+        if filterable:
+            # filter otus based on user settings
+            remUnclass = self.all['remUnclass']
+            remZeroes = self.all['remZeroes']
+            perZeroes = int(self.all['perZeroes'])
+            filterData = self.all['filterData']
+            filterPer = int(self.all['filterPer'])
+            filterMeth = int(self.all['filterMeth'])
 
         if self.debug:
             print "First!"
@@ -255,10 +261,13 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.allDF = pd.DataFrame()
         if self.treeType == 1:
             if self.selectAll == 0 or self.selectAll == 8:
-                taxaString = self.all["taxa"]
-                taxaDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(taxaString)
+                try:
+                    taxaString = self.all["taxa"]
+                    taxaDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(taxaString)
+                except:
+                    taxaDict = {}
                 filteredDF = self.savedDF.copy()
-            else:
+            else:   # Filter lists being sent, need default values for unfiltered for gage? TODO More readable code
                 taxaDict = ''
                 filteredDF = functions.filterDF(self.savedDF, self.DepVar, self.selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
             self.finalDF, missingList = functions.getTaxaDF(self.selectAll, taxaDict, filteredDF, self.metaDF, self.allFields, self.DepVar, self.RID, self.stopList, self.PID)
@@ -866,7 +875,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         # datatable of taxa mapped to selected kegg orthologies
         if not self.treeType == 1 and self.mapTaxa == 'yes':
-            myDir = 'myPhyloDB/media/temp/anova/'
+            myDir = 'myPhyloDB/media/temp/anova/'  # TODO this is anova specific in what should be general analysis
             fileName = str(myDir) + 'Mapped_Taxa.csv'
             self.allDF.to_csv(fileName)
 
@@ -933,6 +942,10 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             return output
         else:
             print "Validate failed"
+
+    def deprint(self, text):
+        if self.debug:
+            print text
 
 
 
@@ -1692,6 +1705,7 @@ class Corr(Analysis):
 
     # overwrite stats and graph
     def statsGraph(self):
+        print 'statsGraph'
         if self.debug:
             print ("statsgraph! (corr)")
         functions.setBase(self.RID, 'Step 3 of 4: Calculating Correlations Matrix...')
@@ -1741,7 +1755,7 @@ class Corr(Analysis):
         namesList = []
         if self.treeType == 1:
             namesDict = functions.getFullTaxonomy(idList)
-            od = collections.OrderedDict(sorted(namesDict.items()))
+            od = collections.OrderedDict(sorted(namesDict.items()))  # unexpected argument warning TODO resolve
             namesList = od.values()
             namesList = [i.split('|')[-1] for i in namesList]
         elif self.treeType == 2:
@@ -1759,7 +1773,7 @@ class Corr(Analysis):
                 namesList = [i.split(':', 1)[0] for i in idList]
 
         count_rDF.sort_index(axis=0, inplace=True)
-        self.metaDF.sort_values('sampleid', inplace=True)
+        self.metaDF.sort_values('sampleid', inplace=True)   # apparently inplace is considered bad practice
 
         r.assign("X", count_rDF)
         r('X <- X * 1.0')
@@ -1849,13 +1863,17 @@ class Corr(Analysis):
     def run(self):
         if self.debug:
             print "Running Corr"
+
         ret = self.validate(sig=False, metaCat=False, metaQuant=True, reqMultiLevel=False)
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
                 return self.statsGraph()
         if self.debug:
-            print "Something went wrong with Corr"
+            if self.stopList[self.PID] == self.RID:
+                print "Stopped Corr"
+            else:
+                print "Something went wrong with Corr"
         return ret
 
 
@@ -2720,6 +2738,12 @@ class PCoA(Analysis):
         r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
         mat = r.get("mat")
 
+        if len(self.catFields) > 1:
+            for index, row in self.metaDF.iterrows():
+                self.metaDF.loc[index, 'merge'] = ".".join(row[self.catFields])
+        else:
+            self.metaDF.loc[:, 'merge'] = self.metaDF.loc[:, self.catFields[0]]
+
         self.metaDF.sort_values('sampleid', inplace=True)
         rowList = self.metaDF.sampleid.values.tolist()
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
@@ -2974,10 +2998,15 @@ class PCoA(Analysis):
             bigf = 'No categorical variables are available for perMANOVA/betaDisper analysis'
         elif perms >= 10 and len(self.catFields) > 0:
             if test == 1:
-                for i in self.catFields:
-                    factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                if len(self.catFields) == 1:
+                    trtString = str(self.catFields[0])
+                    factor_string = trtString + " <- factor(meta$" + trtString + ")"
                     r.assign("cmd", factor_string)
                     r("eval(parse(text=cmd))")
+                    amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
+                else:
+                    r("trt <- factor(meta$merge)")
+                    amova_string = "res <- adonis(dist ~ trt, perms=perms)"
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == self.RID:
@@ -2987,8 +3016,6 @@ class PCoA(Analysis):
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 r.assign("perms", perms)
-                trtString = " * ".join(self.catFields)
-                amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
                 r.assign("cmd", amova_string)
                 r("eval(parse(text=cmd))")
 
@@ -3004,45 +3031,38 @@ class PCoA(Analysis):
                 functions.setBase(self.RID, 'Step 5 of 9: Principal coordinates analysis...done!')
                 functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...')
 
-                for i in self.catFields:
-                    factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
-                    r.assign("cmd", factor_string)
-                    r("eval(parse(text=cmd))")
-
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if self.stopList[self.PID] == self.RID:
-                        if self.debug:
-                            print "Stopping!"
-                        return HttpResponse(getStopDict(), content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
                 r.assign("perms", perms)
-                for i in self.catFields:
-                    beta_string = "res <- betadisper(dist, " + str(i) + ")"
-                    r.assign("cmd", beta_string)
-                    r("eval(parse(text=cmd))")
 
-                    r("something <- anova(res)")
-                    beta = r("something")
-                    tempStuff = beta.split('\n')
-                    bigf += 'group: ' + str(i) + '\n'
-                    for part in tempStuff:
-                        if part != tempStuff[0]:
-                            bigf += part + '\n'
+                r("res <- betadisper(dist, meta$merge)")
 
-                    betaString = str(r('res'))
-                    lines = betaString.split('\n')
-                    for line in lines[1:]:
-                        bigf += str(line) + '\n'
+                r("something <- anova(res)")
+                beta = r("something")
+                tempStuff = beta.split('\n')
+                for part in tempStuff:
+                    if part != tempStuff[0]:
+                        bigf += part + '\n'
 
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                    if self.stopList[self.PID] == self.RID:
-                        if self.debug:
-                            print "Stopping!"
-                        return HttpResponse(getStopDict(), content_type='application/json')
-                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                betaString = str(r('res'))
+                lines = betaString.split('\n')
+                for line in lines[1:]:
+                    bigf += str(line) + '\n'
 
-                    functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...done!')
+                # get centroids
+                bigf += 'Treatment centroids for first 6 PC axes:\n'
+                r('centroids <- data.frame(res$centroids[,1:6])')
+                centroids = str(r('centroids'))
+                lines = centroids.split('\n')
+                for line in lines[1:]:
+                    bigf += str(line) + '\n'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stopList[self.PID] == self.RID:
+                    if self.debug:
+                        print "Stopping!"
+                    return HttpResponse(getStopDict(), content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
@@ -3057,8 +3077,8 @@ class PCoA(Analysis):
         xAxisDict = {}
         yAxisDict = {}
 
-        CAP1 = PC1 + len(self.catFields) + len(self.quantFields) + 1
-        CAP2 = PC2 + len(self.catFields) + len(self.quantFields) + 1
+        CAP1 = PC1 + len(self.catFields) + len(self.quantFields) + 2
+        CAP2 = PC2 + len(self.catFields) + len(self.quantFields) + 2
 
         if self.catFields:
             grouped = pcoaDF.groupby(self.catFields)
@@ -3185,3 +3205,944 @@ class PCoA(Analysis):
             print "Something went wrong with PCoA"
         return ret
 
+
+class Caret(Analysis):
+
+    def statsGraph(self):
+        try:
+            count_rDF = pd.DataFrame()
+            if self.DepVar == 0:
+                count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='abund')
+            elif self.DepVar == 1:
+                count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
+            elif self.DepVar == 2:
+                count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rich')
+            elif self.DepVar == 3:
+                count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='diversity')
+            elif self.DepVar == 4:
+                count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='abund_16S')
+
+            count_rDF.fillna(0, inplace=True)
+            r = self.initializeR()
+            functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
+
+            # R packages from cran
+            r("list.of.packages <- c('caret', 'randomForest', 'NeuralNetTools', 'e1071', 'stargazer', 'stringr', 'ROCR')")
+            r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+            r(
+                "if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+            functions.setBase(self.RID, 'Step 4 of 5: Performing statistical test...')
+
+            r('library(caret)')
+            r('library(reshape2)')
+            r('library(RColorBrewer)')
+            r('library(ROCR)')
+            r("library(plyr)")
+            r('library(stargazer)')
+            r('library(stringr)')
+            r('source("R/myFunctions/myFunctions.R")')
+
+            method = self.all['Method']
+            if method == 'rf':
+                r('library(randomForest)')
+            elif method == 'nnet':
+                r('library(NeuralNetTools)')
+            elif method == 'svm':
+                r('library(e1071)')
+
+            # Wrangle data into R
+            rankNameDF = self.finalDF.drop_duplicates(subset='rank_id', keep='last')
+            rankNameDF = rankNameDF.sort_values('rank_id')  # SettingWithCopyWarning when using inplace, fixed by manually setting
+            if self.treeType == 3 and self.nzAll >= 5:
+                rankNameDF.loc[:, 'name_id'] = rankNameDF['rank_name'].str.split(': ').str[0]
+            else:
+                rankNameDF.loc[:, 'name_id'] = rankNameDF[['rank_name', 'rank_id']].apply(lambda x: ' id: '.join(x), axis=1)
+            r.assign('rankNames', rankNameDF.name_id.values)
+
+            count_rDF.sort_index(axis=0, inplace=True)
+            r.assign("treeType", self.treeType)
+            r.assign("data", count_rDF)
+            r("names(data) <- rankNames")
+
+            myList = list(self.metaDF.select_dtypes(include=['object']).columns)
+            for i in myList:
+                self.metaDF[i] = self.metaDF[i].str.replace(' ', '_')
+                self.metaDF[i] = self.metaDF[i].str.replace('-', '.')
+                self.metaDF[i] = self.metaDF[i].str.replace('(', '.')
+                self.metaDF[i] = self.metaDF[i].str.replace(')', '.')
+
+            self.metaDF.sort_values('sampleid', inplace=True)
+            self.metaDF.set_index('sampleid', inplace=True)
+            r.assign("meta_full", self.metaDF)
+            r.assign("rows", self.metaDF.index.values.tolist())
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stopList[self.PID] == self.RID:
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            # Predictors
+            r("X_full = data")
+            r("nzv_cols <- nearZeroVar(X_full)")
+            r("if(length(nzv_cols > 0)) X_full <- X_full[,-nzv_cols]")
+            r("n.vars <- ncol(data)")
+
+            # Response
+            r.assign("allFields", self.allFields)
+            r("Y_full = meta_full")
+
+            # Subset train data
+            trainIDs = self.all['trainArray']
+            r.assign("trainIDs", trainIDs)
+
+            r("X <- X_full[row.names(X_full) %in% trainIDs,]")
+            r("meta <- meta_full[row.names(meta_full) %in% trainIDs,]")
+            r("Y <- Y_full[row.names(Y_full) %in% trainIDs,]")
+            r("Y <- Y[,paste(allFields)]")
+            r("myData <- data.frame(Y, X)")
+
+            # Subset test data
+            testIDs = list(self.all['testArray'])
+            if testIDs:
+                r.assign("testIDs", testIDs)
+                r("X_test <- X_full[row.names(X_full) %in% testIDs,]")
+                r("meta_test <- meta_full[row.names(meta_full) %in% testIDs,]")
+                r("Y_test <- Y_full[row.names(Y_full) %in% testIDs,]")
+                r("Y_test <- Y_test[,paste(allFields)]")
+                r("myData_test <- data.frame(Y_test, X_test)")
+                r("nameVec <- c('Y_test', names(X_test))")
+                r("nameVec <- make.names(nameVec)")
+                r("names(myData_test) <- nameVec")
+
+            # Initialize R output to pdf
+            path = 'myPhyloDB/media/temp/rf/Rplots/%s' % self.RID
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            r.assign("path", path)
+            r.assign("RID", self.RID)
+            r("pdf_counter <- 1")
+
+            finalDict = {}
+
+            # set up tuneGrid
+            if method == 'rf':
+                r("method <- 'rf' ")
+                r("title <- 'Random Forest' ")
+                r("grid <- expand.grid(.mtry=seq(1, nrow(myData), by=ceiling(nrow(myData)/50) ))")
+            elif method == 'nnet':
+                r("method <- 'nnet' ")
+                r("grid <- expand.grid(.size=seq(1:5), .decay=seq(0, 2, 0.5))")
+                r("title <- 'Neural Network' ")
+            elif method == 'svm':
+                r("method <- 'svmLinear2' ")
+                r("grid <- expand.grid(.cost=seq(1:10))")
+                r("title <- 'Support Vector Machine' ")
+
+            trainMethod = self.all['trainMethod']
+            r.assign("trainMethod", trainMethod)
+
+            number1 = int(self.all['number1'])
+            r.assign("number1", number1)
+            number2 = int(self.all['number2'])
+            r.assign("number2", number2)
+            repeats = int(self.all['repeats'])
+            r.assign("repeats", repeats)
+            proportion = float(self.all['proportion'])
+            r.assign("proportion", proportion)
+
+            if trainMethod == 'boot':
+                if self.catFields:
+                    r("ctrl <- trainControl(method='boot', number=number2, \
+                                    classProbs=T, savePredictions=T)")
+                if self.quantFields:
+                    r("ctrl <- trainControl(method='boot', number=number2, \
+                                    classProbs=F, savePredictions=T)")
+            elif trainMethod == 'cv':
+                if self.catFields:
+                    r("ctrl <- trainControl(method='cv', number=number1, \
+                                    classProbs=T, savePredictions=T)")
+                if self.quantFields:
+                    r("ctrl <- trainControl(method='cv', number=number1, \
+                                    classProbs=F, savePredictions=T)")
+            elif trainMethod == 'repeatedcv':
+                if self.catFields:
+                    r("ctrl <- trainControl(method='repeatedcv', number=number1, \
+                                    repeats=repeats, classProbs=T, savePredictions=T)")
+                if self.quantFields:
+                    r("ctrl <- trainControl(method='repeatedcv', number=number1, \
+                                    repeats=repeats, classProbs=F, savePredictions=T)")
+            elif trainMethod == 'LOOCV':
+                if self.catFields:
+                    r("ctrl <- trainControl(method='LOOCV', number=number1, \
+                                    classProbs=T, savePredictions=T)")
+                if self.quantFields:
+                    r("ctrl <- trainControl(method='LOOCV', number=number1, \
+                                    classProbs=F, savePredictions=T)")
+            elif trainMethod == 'LGOCV':
+                if self.catFields:
+                    r("ctrl <- trainControl(method='LGOCV', number=number1, \
+                                    p=proportion, classProbs=T, savePredictions=T)")
+                if self.quantFields:
+                    r("ctrl <- trainControl(method='LGOCV', number=number1, \
+                                    p=proportion, classProbs=F, savePredictions=T)")
+
+            if self.catFields:
+                r("fit <- train(Y ~ ., data=myData, method=method, linout=F, trace=F, trControl=ctrl, \
+                                tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
+            if self.quantFields:
+                r("fit <- train(Y ~ ., data=myData, method=method, linout=T, trace=F, trControl=ctrl, \
+                                tuneGrid=grid, importance=T, preProcess=c('center', 'scale'))")
+
+            r("predY <- predict(fit)")
+
+            r("if (exists('predY')) {fitError <- FALSE} else {fitError <- TRUE}")
+            fitError = r.get("fitError")
+            if fitError:
+                myDict = {'error': "Model could not be fit:\nPlease try a different model"}
+                res = json.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
+            else:
+                self.result += str(r('print(fit)')) + '\n'
+                self.result += '===============================================\n'
+
+            if self.catFields:
+                r("vi <- varImp(fit, scale=F)")
+                r("varDF = as.data.frame(vi[[1]])")
+                r("goodNameVec <- names(X)")
+                r("badNameVec <- names(myData)[2:length(names(myData))]")
+                r("row.names(varDF) <- mapvalues(row.names(varDF), from=badNameVec, to=goodNameVec)")
+
+                r("rankDF <- apply(-abs(varDF), 2, rank, ties.method='random')")
+                r("rankDF <- (rankDF <= 6)")
+                r("rankDF <- rankDF * 1")
+                r("myFilter <- as.vector(rowSums(rankDF) > 0)")
+                r("fVarDF <- varDF[myFilter,]")
+                r("fVarDF['rank_id'] <- row.names(fVarDF)")
+                r("graphDF <- melt(fVarDF, id='rank_id')")
+                r("graphDF$rank_id <- gsub(' ', '.', graphDF$rank_id)")
+                r("graphDF$rank_id <- gsub(':', '.', graphDF$rank_id)")
+                r("myVec <- unlist(str_split_fixed(as.character(graphDF$rank_id), '\\.id\\.\\.', 2))")
+                r("graphDF$taxa <- myVec[,1]")
+                r("graphDF$id <- myVec[,2]")
+                r("graphDF <- graphDF[with(graphDF, order(taxa, id)),] ")
+
+                r("pdf_counter <- pdf_counter + 1")
+                r("p <- ggplot(graphDF, aes(x=variable, y=value, fill=rank_id))")
+                r("parse_labels <- function(value) { \
+                                myVec <- unlist(str_split_fixed(value, '\\.id\\.\\.', 2)); \
+                                myVec[,1]; \
+                            }")
+                r("p <- p + facet_wrap(~rank_id, nc=4, labeller=as_labeller(parse_labels))")
+                r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
+                r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
+                r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
+                r("p <- p + theme(legend.position='none')")
+                r("p <- p + theme(axis.title.y=element_text(size=10))")
+                r("p <- p + theme(axis.text.x=element_text(size=7, angle=90, hjust=1, vjust=0.5))")
+                r("p <- p + theme(axis.text.y=element_text(size=6))")
+                r("p <- p + theme(plot.title=element_text(size=12))")
+                r("p <- p + theme(plot.subtitle=element_text(size=9))")
+                r("p <- p + labs(y='Importance', x='', \
+                                title=title, \
+                                subtitle='Importance (top 6 for each factor)')")
+
+                r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                r("char.width <- max(nchar(as.character(graphDF$rank_id)))/35")
+                r("bar.width <- 0.2+(nlevels(as.factor(graphDF$rank_id))*0.05)")
+                r("panel.width <- max(char.width, bar.width)")
+                r("n_wrap <- ceiling(nlevels(as.factor(graphDF$rank_id))/4)")
+                r("p <- set_panel_size(p, height=unit(1.25, 'in'), width=unit(panel.width, 'in'))")
+                r("char.width <- max(nchar(as.character(graphDF$variable)))/35")
+                r("ggsave(filename=file, plot=p, units='in', height=2+(1.5*n_wrap)+char.width, width=2+(4*panel.width))")
+
+                # graph probabilites for each training sample
+                r("probY <- predict(fit, type='prob')")
+                r("myFactors <- levels(Y)")
+                r("nFactors <- nlevels(Y)")
+                r("tempDF <- cbind(meta, probY)")
+                r("tempDF['sampleid'] = row.names(meta)")
+                r("graphDF <- melt(tempDF, id.vars=c('sampleid', 'sample_name', allFields), measure.vars=myFactors)")
+                r("names(graphDF) <- c('sampleid', 'sample_name', 'obs', 'variable', 'value')")
+
+                r("pdf_counter <- pdf_counter + 1")
+                r("p <- ggplot(graphDF, aes(x=sampleid, y=value, fill=variable))")
+                r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
+                r("p <- p + facet_wrap(~ obs, scales='free_x', nc=3)")
+                r("p <- p + scale_x_discrete(labels=element_blank())")
+                r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
+                r("p <- p + theme(axis.ticks.x=element_blank())")
+                r("p <- p + theme(axis.ticks.y=element_line(size = 0.2))")
+                r("p <- p + theme(legend.title=element_blank())")
+                r("p <- p + theme(legend.text=element_text(size=6))")
+                r("p <- p + theme(axis.title.y=element_text(size=10))")
+                r("p <- p + theme(axis.text.y=element_text(size=6))")
+                r("p <- p + theme(plot.title=element_text(size=12))")
+                r("p <- p + theme(plot.subtitle=element_text(size=9))")
+                r("p <- p + labs(y='Probability', x='', \
+                                title=title, \
+                                subtitle='Training Dataset: probabilities')")
+
+                r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                r("p <- set_panel_size(p, height=unit(1, 'in'), width=unit(1.5, 'in'))")
+                r("n_wrap <- ceiling(nlevels(graphDF$obs)/3)")
+                r("ggsave(filename=file, plot=p, units='in', height=2+(1.25*n_wrap), width=2+6)")
+
+                # graph probabilities for each test sample
+                if testIDs:
+                    r("probY_test <- predict(fit, myData_test, type='prob')")
+                    r("myFactors <- levels(Y_test)")
+                    r("nFactors <- nlevels(Y_test)")
+                    r("tempDF <- cbind(meta_test, probY_test)")
+                    r("tempDF['sampleid'] = row.names(meta_test)")
+                    r("graphDF <- melt(tempDF, id.vars=c('sampleid', 'sample_name', allFields), measure.vars=myFactors)")
+                    r("names(graphDF) <- c('sampleid', 'sample_name', 'obs', 'variable', 'value')")
+
+                    r("pdf_counter <- pdf_counter + 1")
+                    r("p <- ggplot(graphDF, aes(x=sampleid, y=value, fill=variable))")
+                    r("p <- p + geom_bar(stat='identity', alpha=0.9, colour='black', size=0.1)")
+                    r("p <- p + facet_wrap(~ obs, scales='free_x', nc=3)")
+                    r("p <- p + scale_x_discrete(labels=element_blank())")
+                    r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
+                    r("p <- p + theme(axis.ticks.x=element_blank())")
+                    r("p <- p + theme(axis.ticks.y=element_line(size = 0.2))")
+                    r("p <- p + theme(legend.title=element_blank())")
+                    r("p <- p + theme(legend.text=element_text(size=6))")
+                    r("p <- p + theme(axis.title.y=element_text(size=10))")
+                    r("p <- p + theme(axis.text.y=element_text(size=6))")
+                    r("p <- p + theme(plot.title=element_text(size=12))")
+                    r("p <- p + theme(plot.subtitle=element_text(size=9))")
+                    r("p <- p + labs(y='Probability', x='', \
+                                    title=title, \
+                                    subtitle='Test dataset: assignment probabilities')")
+
+                    r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                    r("p <- set_panel_size(p, height=unit(1, 'in'), width=unit(1.5, 'in'))")
+                    r("n_wrap <- ceiling(nlevels(obs)/3)")
+                    r("ggsave(filename=file, plot=p, units='in', height=2+(1.25*n_wrap), width=2+6)")
+
+                # graph probabilities by taxa
+                r("probY <- predict(fit, type='prob')")
+                r("newX <- X[,myFilter]")
+                r("tempDF <- cbind(newX, Y, probY)")
+                r("tempDF['sampleid'] <- row.names(tempDF)")
+                r("myFactors <- levels(Y)")
+                r("myTaxa <- names(newX)")
+
+                r("df1 <- melt(tempDF, id.vars=c('sampleid', 'Y', myTaxa), measure.vars=myFactors)")
+                r("names(df1) <- c('sampleid', 'Y', myTaxa, 'variable', 'prob')")
+                r("dfeq <- df1[df1$Y==df1$variable,]")
+
+                r("graphDF <- melt(dfeq, id.vars=c('variable', 'prob'), measure.vars=myTaxa)")
+                r("names(graphDF) <- c('trt', 'prob', 'rank_id', 'count')")
+                r("graphDF$rank_id <- gsub(' ', '.', graphDF$rank_id)")
+                r("graphDF$rank_id <- gsub(':', '.', graphDF$rank_id)")
+                r("myVec <- unlist(str_split_fixed(as.character(graphDF$rank_id), '\\.id\\.\\.', 2))")
+                r("graphDF$taxa <- myVec[,1]")
+                r("graphDF$id <- myVec[,2]")
+                r("graphDF <- graphDF[with(graphDF, order(taxa, id)),] ")
+
+                r("pdf_counter <- pdf_counter + 1")
+                r("par(mar=c(2,2,1,1),family='serif')")
+                r("p <- ggplot(graphDF, aes(x=count, y=prob, colour=trt))")
+                r("parse_labels <- function(value) { \
+                                myVec <- unlist(str_split_fixed(value, '\\.id\\.\\.', 2)); \
+                                myVec[,1]; \
+                            }")
+                r("p <- p + facet_wrap(~rank_id, nc=4, labeller=as_labeller(parse_labels))")
+                r("p <- p + geom_point(size=0.5)")
+                r("p <- p + scale_x_log10()")
+                r("p <- p + theme(strip.text.x=element_text(size=7, colour='blue', angle=0))")
+                r("p <- p + theme(legend.title=element_blank())")
+                r("p <- p + theme(legend.text=element_text(size=6))")
+                r("p <- p + theme(axis.title=element_text(size=10))")
+                r("p <- p + theme(axis.text.x=element_text(size=7, angle=0))")
+                r("p <- p + theme(axis.text.y=element_text(size=6))")
+                r("p <- p + theme(plot.title=element_text(size=12))")
+                r("p <- p + theme(plot.subtitle=element_text(size=9))")
+                r("p <- p + labs(y='Probability', x='Abundance', \
+                                title=title, \
+                                subtitle='Probability of correct sample assignment vs taxa abundance')")
+
+                r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                r("char.width <- max(nchar(as.character(graphDF$rank_id)))/35")
+                r("bar.width <- 1.5")
+                r("panel.width <- max(char.width, bar.width)")
+                r("n_wrap <- ceiling(nlevels(as.factor(graphDF$rank_id))/4)")
+                r("p <- set_panel_size(p, height=unit(1.25, 'in'), width=unit(panel.width, 'in'))")
+                r("char.width <- max(nchar(as.character(graphDF$count)))/35")
+                r("ggsave(filename=file, plot=p, units='in', height=2+(1.5*n_wrap)+char.width, width=2+(4*panel.width))")
+
+                # confusion matrix - train
+                r("tab <- table(Observed=Y, Predicted=predY)")
+                r("cm <- confusionMatrix(tab)")
+
+                self.result += '\nTraining Dataset\n'
+                self.result += str(r('print(cm)')) + '\n'
+                self.result += '===============================================\n'
+
+                # confusion matrix - test
+                if testIDs:
+                    r("predY_test <- predict(fit, myData_test)")
+                    r("tab <- table(Observed=Y_test, Predicted=predY_test)")
+                    r("cm <- confusionMatrix(tab)")
+
+                    self.result += '\nTest Dataset\n'
+                    self.result += str(r('print(cm)')) + '\n'
+                    self.result += '===============================================\n'
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stopList[self.PID] == self.RID:
+                    if self.debug:
+                        print "Stopping!"
+                    return HttpResponse(getStopDict(), content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            if self.quantFields:
+                r("vi <- varImp(fit, scale=F)")
+                r("varDF = as.data.frame(vi[[1]])")
+                r("goodNameVec <- names(X)")
+                r("badNameVec <- names(myData)[2:length(names(myData))]")
+                r("row.names(varDF) <- mapvalues(row.names(varDF), from=badNameVec, to=goodNameVec)")
+
+                r("rankDF <- apply(-varDF, 2, rank, ties.method='random')")
+                r("rankDF <- (rankDF <= 10)")
+                r("rankDF <- rankDF * 1")
+                r("myFilter <- as.vector((rowSums(rankDF) > 0))")
+                r("Overall <- varDF[myFilter,]")
+                r("rank_id <- row.names(varDF)[myFilter]")
+                r("graphDF <- data.frame(rank_id, Overall)")
+                r("myVec <- unlist(str_split_fixed(as.character(graphDF$rank_id), '\\.id\\.\\.', 2))")
+                r("graphDF$taxa <- myVec[,1]")
+                r("graphDF$id <- myVec[,2]")
+                r("unique <- make.unique(as.vector(graphDF$taxa))")
+                r("graphDF['taxa2'] <- unique")
+
+                r("pdf_counter <- pdf_counter + 1")
+                r("par(mar=c(2,2,1,1),family='serif')")
+                r("p <- ggplot(graphDF, aes(x=taxa2, y=Overall))")
+                r("p <- p + geom_bar(stat='identity', alpha=0.9, , fill='blue', colour='black', size=0.1)")
+                r("p <- p + theme(axis.ticks=element_line(size = 0.2))")
+                r("p <- p + theme(strip.text.y=element_text(size=7, colour='blue', angle=0))")
+                r("p <- p + theme(legend.position='none')")
+                r("p <- p + theme(axis.title.y=element_text(size=10))")
+                r("p <- p + theme(axis.text.x = element_text(size=7, angle = 90))")
+                r("p <- p + theme(axis.text.y = element_text(size=6))")
+                r("p <- p + theme(plot.title = element_text(size=12))")
+                r("p <- p + theme(plot.subtitle = element_text(size=9))")
+                r("p <- p + labs(y='Importance', x='', \
+                                title=title, \
+                                subtitle='Overall importance (top 10)')")
+
+                r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                r("panel.width <- nlevels(as.factor(graphDF$rank_id))*0.2")
+                r("p <- set_panel_size(p, height=unit(2, 'in'), width=unit(panel.width, 'in'))")
+                r("charWidth <- max(nchar(graphDF$taxa2))/12")
+                r("ggsave(filename=file, plot=p, units='in', height=1+(2)+charWidth, width=1+panel.width)")
+
+                r("pdf_counter <- pdf_counter + 1")
+                r("graphDF <- data.frame(x=Y, y=predY)")
+                r("p <- ggplot(graphDF, aes(x=x, y=y, color='blue'))")
+                r("p <- p + geom_abline(yintercept=0, slope=1, color='gray')")
+                r("p <- p + geom_point()")
+                r("p <- p + geom_smooth(method='lm', colour='black', se=F)")
+                r("p <- p + xlim(range(Y, predY))")
+                r("p <- p + ylim(range(Y, predY))")
+                r("p <- p + labs(y='Predicted', x='Observed', \
+                                title=title, \
+                                subtitle='Predicted vs Observed')")
+
+                # Add test data if available
+                if testIDs:
+                    r("probY_test <- predict(fit, myData_test, type='prob')")
+                    r("predY_test <- predict(fit, myData_test)")
+                    r("graphDF2 <- data.frame(x=Y_test, y=predY_test)")
+                    r("p <- p + geom_point(data=graphDF2, aes(x=x, y=y, color='red'))")
+                    r("p <- p + geom_smooth(data=graphDF2, method='lm', colour='black', se=F)")
+
+                r("p <- p + theme(legend.position='right')")
+                r("p <- p + scale_color_manual(name='Dataset', values=c('blue', 'red'), labels=c('Train', 'Test'))")
+                r("file <- paste(path, '/rf_temp', pdf_counter, '.pdf', sep='')")
+                r("ggsave(filename=file, plot=p, units='in', height=4, width=4)")
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stopList[self.PID] == self.RID:
+                    if self.debug:
+                        print "Stopping!"
+                    return HttpResponse(getStopDict(), content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+
+            r("myTable <- stargazer(varDF, type='text', summary=F, rownames=T)")
+            self.result += 'Variable Importance\n'
+            myString = r.get("myTable")
+            self.result += str(myString)
+            self.result += '\n===============================================\n'
+
+            if self.catFields:
+                r("mergeDF <- cbind(meta, probY)")
+                r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                self.result += 'Train Dataset: Probabilities\n'
+                myString = r.get("myTable")
+                self.result += str(myString)
+                self.result += '\n===============================================\n'
+
+                r("mergeDF <- cbind(meta_test, probY_test)")
+                r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                self.result += 'Test Dataset: Probabilities\n'
+                myString = r.get("myTable")
+                self.result += str(myString)
+                self.result += '\n===============================================\n'
+
+            if self.quantFields:
+                r("mergeDF <- cbind(meta, predY)")
+                r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                self.result += 'Train Dataset: Observed vs. Predicted\n'
+                myString = r.get("myTable")
+                self.result += str(myString)
+                self.result += '\n===============================================\n'
+
+                r("mergeDF <- cbind(meta_test, predY_test)")
+                r("myTable <- stargazer(mergeDF, type='text', summary=F, rownames=T)")
+                self.result += 'Test Dataset: Observed vs. Predicted\n'
+                myString = r.get("myTable")
+                self.result += str(myString)
+                self.result += '\n===============================================\n'
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stopList[self.PID] == self.RID:
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            # Combining Pdf files
+            finalFile = 'myPhyloDB/media/temp/rf/Rplots/' + str(self.RID) + '/rf_final.pdf'
+
+            pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
+            pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
+
+            merger = PdfFileMerger()
+            for filename in pdf_files:
+                merger.append(PdfFileReader(file(os.path.join(path, filename), 'rb')))
+
+            merger.write(finalFile)
+
+            functions.setBase(self.RID, 'Step 4 of 5: Performing statistical test...done')
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stopList[self.PID] == self.RID:
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            functions.setBase(self.RID, 'Step 5 of 5: Formatting graph data...')
+            r("options(width=5000)")
+            finalDict['text'] = self.result
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stopList[self.PID] == self.RID:
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            self.deprint("Returning Caret results")
+
+            finalDict['error'] = 'none'
+            res = json.dumps(finalDict)
+            return HttpResponse(res, content_type='application/json')
+
+        except Exception as e:
+            print "Error during Caret:", e.message
+            print e
+            if not self.stopList[self.PID] == self.RID:
+                myDict = {}
+                myDict['error'] = "There was an error during your analysis:\nError: " + str(
+                    e.message) + "\n"
+                res = json.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
+
+        return 0
+
+    def run(self):
+        if self.debug:
+            print "Running Caret"
+        ret = self.validate(sig=False, reqMultiLevel=False)
+        if ret == 0:
+            ret = self.query(taxmap=False)
+            if ret == 0:
+                return self.statsGraph()
+
+        if self.debug:
+            print "Something went wrong with Caret"
+        return ret
+
+
+class Gage(Analysis):
+
+    def statsGraph(self):
+        try:
+            RID = self.RID
+            all = self.all
+            r = self.initializeR()
+            functions.setBase(RID, 'Verifying R packages...missing packages are being installed')
+
+            # R packages from biocLite
+            r("list.of.packages <- c('gage', 'edgeR', 'pathview')")
+            r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+            r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+            r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
+
+            # R packages from cran
+            r("list.of.packages <- c('png', 'grid', 'plyr')")
+            r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+            r(
+                "if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+            functions.setBase(RID, 'Step 3 of 6: Mapping phylotypes to KEGG pathways...')
+
+            r("library(gage)")
+            r("library(edgeR)")
+            r("library(pathview)")
+            r("library(png)")
+            r("library(grid)")
+            r("library(plyr)")
+
+            keggString = all["kegg"]
+            keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
+            nameList = []
+            for value in keggDict.itervalues():
+                if isinstance(value, list):
+                    nameList.extend(value)
+                else:
+                    nameList.append(value)
+
+            # Enable this only if you want to update gage data and pathways
+            '''
+            r("list.of.packages <- c('gageData')")
+            r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+            r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+            print r("if (length(new.packages)) biocLite(new.packages)")
+
+            r('library(gageData)')
+            r("data(kegg.sets.ko)")
+            r("save(kegg.sets.ko, file='myPhyloDB/media/kegg/kegg.sets.ko.RData')")
+            r("for (name in names(kegg.sets.ko)) { \
+                id = substr(name, 3, 7); \
+                download.kegg(pathway.id=id, species='ko', kegg.dir='myPhyloDB/media/kegg/pathways', file.type=c('xml', 'png')) \
+                } \
+            ")
+            '''
+
+            r("load('myPhyloDB/media/kegg/kegg.sets.ko.RData')")
+
+            keggDict = {}
+            r("selPaths <- vector()")
+            for i in nameList:
+                pathStr = i.split('[PATH:')[1].split(']')[0]
+                r.assign("pathStr", pathStr)
+                r("selPath <- kegg.sets.ko[grepl(paste(pathStr), names(kegg.sets.ko))]")
+                key = r.get("names(selPath)")
+                value = r.get("selPath$ko")
+                keggDict[key] = value.tolist()
+                r("selPaths <- append(selPaths, names(selPath))")
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stopList[self.PID] == RID:
+                    if self.debug:
+                        print "Stopping!"
+                    return HttpResponse(getStopDict(), content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            keggAll = 4
+            mapTaxa = 'no'
+            finalDF, junk = functions.getKeggDF(keggAll, '', self.savedDF, self.metaDF, self.DepVar, mapTaxa, RID, self.stopList, self.PID)
+
+            # make sure column types are correct
+            finalDF[self.catFields] = finalDF[self.catFields].astype(str)
+
+            functions.setBase(RID, 'Step 4 of 6: Performing GAGE analysis...')
+
+            # save location info to session
+            myDir = 'myPhyloDB/media/temp/gage/'
+            if not os.path.exists(myDir):
+                os.makedirs(myDir)
+
+            path = str(myDir) + str(RID) + '.biom'
+            functions.imploding_panda(path, 2, self.DepVar, self.finalSampleIDs, self.metaDF, finalDF)
+
+            count_rDF = pd.DataFrame()
+            if self.DepVar == 0:
+                count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
+            elif self.DepVar == 4:
+                count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
+
+            # need to change rank_id to kegg orthologies for gage analysis
+            count_rDF.reset_index(drop=False, inplace=True)
+            count_rDF.rename(columns={'index': 'rank_id'}, inplace=True)
+            idList = count_rDF.rank_id.tolist()
+            idDict = {}
+            for id in idList:
+                entry = self.ko_entry.objects.using('picrust').get(ko_lvl4_id=id).ko_orthology
+                idDict[id] = entry
+            count_rDF['ko'] = count_rDF['rank_id'].map(idDict)
+            count_rDF.drop('rank_id', axis=1, inplace=True)
+            count_rDF.drop_duplicates(keep='last', inplace=True)  # remove dups - KOs mapped to multiple pathways
+            count_rDF.set_index('ko', drop=True, inplace=True)
+
+            # make metaDF R compatible, remove offending characters in categorical variables
+            for cat in self.catFields:
+                self.metaDF[cat] = self.metaDF[cat].str.replace('-', '_')
+                self.metaDF[cat] = self.metaDF[cat].str.replace(' ', '_')
+                self.metaDF[cat] = self.metaDF[cat].str.replace('(', '_')
+                self.metaDF[cat] = self.metaDF[cat].str.replace(')', '_')
+
+            # Create combined metadata column
+            if len(self.catFields) > 1:
+                for index, row in self.metaDF.iterrows():
+                    self.metaDF.loc[index, 'merge'] = ".".join(row[self.catFields])
+            else:
+                self.metaDF.loc[:, 'merge'] = self.metaDF.loc[:, self.catFields[0]]
+
+            wantedList = ['merge', 'sampleid', 'sample_name']
+            metaDF = self.metaDF.loc[:, wantedList]
+
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if self.stopList[self.PID] == RID:
+                if self.debug:
+                    print "Stopping!"
+                return HttpResponse(getStopDict(), content_type='application/json')
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            finalDict = {}
+            metaDF.sort_values('sampleid', inplace=True)
+            r.assign("metaDF", metaDF)
+            r("trt <- factor(metaDF$merge)")
+
+            r.assign("count", count_rDF)
+            r.assign("sampleIDs", count_rDF.columns.values.tolist())
+            r("names(count) <- sampleIDs")
+
+            r('e <- DGEList(counts=count)')
+            r('e <- calcNormFactors(e, method="none")')
+
+            r('design <- model.matrix(~ 0 + trt)')
+            r('trtLevels <- levels(trt)')
+            r('colnames(design) <- trtLevels')
+
+            r('e <- estimateGLMCommonDisp(e, design)')
+            r('e <- estimateGLMTrendedDisp(e, design)')
+            r('e <- estimateGLMTagwiseDisp(e, design)')
+            r('fit <- glmFit(e, design)')
+            fit = r.get('fit')
+
+            if not fit:
+                error = "edgeR failed!\nUsually this is caused by one or more taxa having a negative disperion.\nTry filtering your data to remove problematic taxa (e.g. remove phylotypes with 50% or more zeros)."
+                myDict = {'error': error}
+                res = json.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
+
+            if self.DepVar == 0:
+                self.result += 'Dependent Variable: Abundance' + '\n'
+            elif self.DepVar == 4:
+                self.result += 'Dependent Variable: Total Abundance' + '\n'
+            self.result += '\n===============================================\n\n\n'
+
+            levels = list(set(metaDF['merge'].tolist()))
+            levels = natsorted(levels, key=lambda y: y.lower())
+
+            r("pdf_counter <- 1")
+
+            path = os.path.join('myPhyloDB', 'media', 'temp', 'gage', 'Rplots', RID)
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            r.assign("path", path)
+            r("setwd(path)")
+            r("options(width=5000)")
+            r.assign("RID", RID)
+
+            gageDF = pd.DataFrame(
+                columns=['comparison', 'pathway', ' p.geomean ', ' stat.mean ', ' p.val ', ' q.val ', ' set.size '])
+            diffDF = pd.DataFrame(
+                columns=['comparison', 'kegg', ' baseMean ', ' baseMeanA ', ' baseMeanB ', ' logFC ', ' logCPM ', ' LR ',
+                         ' pval ', ' FDR '])
+
+            mergeList = metaDF['merge'].tolist()
+            mergeSet = list(set(mergeList))
+            for i in xrange(len(levels) - 1):
+                for j in xrange(i + 1, len(levels)):
+                    trt1 = levels[i]
+                    trt2 = levels[j]
+                    r.assign("trt1", trt1)
+                    r.assign("trt2", trt2)
+
+                    '''
+                    Error in makeContrasts(contVec, levels = design) :
+                    The levels must by syntactically valid names in R, see help(make.names).  Non-valid names: A-pinene,B-caryophyllene
+                    # potential fix on line 177
+                    '''
+
+                    r('contVec <- sprintf("%s-%s", trt1, trt2)')
+                    r('cont.matrix= makeContrasts(contVec, levels=design)')
+                    r('lrt <- glmLRT(fit, contrast=cont.matrix)')
+                    r("res <- as.data.frame(topTags(lrt, n=nrow(lrt$table)))")
+                    r('res <- res[ order(row.names(res)), ]')
+                    r('res')
+                    taxaIDs = r.get("row.names(res)")
+
+                    r("change <- -res$logFC")
+                    r("names(change) <- row.names(res)")
+
+                    baseMean = count_rDF.mean(axis=1)
+                    baseMean = baseMean.loc[baseMean.index.isin(taxaIDs)]
+
+                    listA = metaDF[metaDF['merge'] == mergeSet[i]].sampleid.tolist()
+                    baseMeanA = count_rDF[listA].mean(axis=1)
+                    baseMeanA = baseMeanA.loc[baseMeanA.index.isin(taxaIDs)]
+
+                    listB = metaDF[metaDF['merge'] == mergeSet[j]].sampleid.tolist()
+                    baseMeanB = count_rDF[listB].mean(axis=1)
+                    baseMeanB = baseMeanB.loc[baseMeanB.index.isin(taxaIDs)]
+
+                    r.assign("baseMean", baseMean)
+                    r.assign("baseMeanA", baseMeanA)
+                    r.assign("baseMeanB", baseMeanB)
+
+                    r('baseMean <- baseMean[ order(as.numeric(row.names(baseMean))), ]')
+                    r('baseMeanA <- baseMeanA[ order(as.numeric(row.names(baseMeanA))), ]')
+                    r('baseMeanB <- baseMeanB[ order(as.numeric(row.names(baseMeanB))), ]')
+
+                    # output DiffAbund to DataTable
+                    r("df <- data.frame(kegg=row.names(res), baseMean=baseMean, baseMeanA=baseMeanA, \
+                                   baseMeanB=baseMeanB, logFC=-res$logFC, logCPM=res$logCPM, \
+                                   LR=res$LR, pval=res$PValue, FDR=res$FDR) \
+                               ")
+
+                    nbinom_res = r.get("df")
+                    nbinom_res.fillna(value=1.0, inplace=True)
+
+                    if nbinom_res is None:
+                        myDict = {'error': "edgeR failed!\nPlease try a different data combination."}
+                        res = json.dumps(myDict)
+                        return HttpResponse(res, content_type='application/json')
+
+                    comparison = str(trt1) + ' vs. ' + str(trt2)
+                    nbinom_res.insert(0, 'comparison', comparison)
+                    diffDF = diffDF.append(nbinom_res, ignore_index=True)
+
+                    ### GAGE analysis on all pathways...
+                    r("gage.res <- gage(change, gsets=kegg.sets.ko, species='ko', same.dir=FALSE)")
+                    r("df2 <- data.frame(pathway=row.names(gage.res$greater), p.geomean=gage.res$greater[, 1], stat.mean=gage.res$greater[, 2], \
+                                   p.val=gage.res$greater[, 3], q.val=gage.res$greater[, 4], \
+                                   set.size=gage.res$greater[, 5])")
+
+                    compDF = r.get("df2")
+                    compDF.insert(0, 'comparison', comparison)
+                    gageDF = gageDF.append(compDF, ignore_index=True)
+
+                    ### Get data way for pathview
+                    # merge sign and sig to get vector (1=sig. positive, 0=not sig., -1=sig. negative)
+                    r("binary <- change / abs(change)")
+                    r("sig <- as.vector((res$PValue <= 0.05))")
+                    r("sig <- sig * 1")
+
+                    r("sig <- sig * binary")
+                    r("names(sig) <- row.names(res)")
+
+                    for key in keggDict.iterkeys():
+                        r.assign("pathway", key)
+                        r("pid <- substr(pathway, start=1, stop=7)")
+                        r("pv <- pathview(gene.data=sig, pathway.id=pid, species='ko', kegg.dir='../../../../kegg/pathways', \
+                                       kegg.native=T,  multi.state=F, same.layer=T, low='red', mid='gray', high='green')")
+
+                        # convert to pdf
+                        r("pdf(paste('gage_temp', pdf_counter, '.pdf', sep=''))")
+                        r("plot.new()")
+                        r("pngRaster <- readPNG(paste(pid, 'pathview.png', sep='.'))")
+                        r("grid.raster(pngRaster)")
+                        r("mtext(paste(trt1, ' vs ', trt2, sep=''), side=3, line=3, col='blue')")
+                        r("dev.off()")
+                        r("pdf_counter <- pdf_counter + 1")
+
+                    functions.setBase(RID,
+                                      'Step 4 of 6: Performing GAGE Analysis...\nComparison: ' + str(trt1) + ' vs ' + str(
+                                          trt2) + ' is done!')
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if self.stopList[self.PID] == RID:
+                        if self.debug:
+                            print "Stopping!"
+                        return HttpResponse(getStopDict(), content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                if self.stopList[self.PID] == RID:
+                    if self.debug:
+                        print "Stopping!"
+                    return HttpResponse(getStopDict(), content_type='application/json')
+                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+            functions.setBase(RID, 'Step 5 of 6: Pooling pdf files for display...')
+
+            # Combining Pdf files
+            finalFile = 'myPhyloDB/media/temp/gage/Rplots/' + str(RID) + '/gage_final.pdf'
+            pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
+            if pdf_files:
+                pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
+
+                merger = PdfFileMerger()
+                for filename in pdf_files:
+                    merger.append(PdfFileReader(os.path.join(path, filename), 'rb'))
+
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+                    if self.stopList[self.PID] == RID:
+                        if self.debug:
+                            print "Stopping!"
+                        return HttpResponse(getStopDict(), content_type='application/json')
+                    # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+                merger.write(finalFile)
+
+            functions.setBase(RID, 'Step 6 of 6: Formatting result tables...this may take several minutes')
+            # Export tables to html
+            gage_table = gageDF.to_html(classes="table display")
+            gage_table = gage_table.replace('border="1"', 'border="0"')
+            finalDict['gage_table'] = str(gage_table)
+
+            diff_table = diffDF.to_html(classes="table display")
+            diff_table = diff_table.replace('border="1"', 'border="0"')
+            finalDict['diff_table'] = str(diff_table)
+
+            finalDict['text'] = self.result
+            finalDict['error'] = 'none'
+            res = json.dumps(finalDict)
+            return HttpResponse(res, content_type='application/json')
+
+        except Exception as e:
+            print "Error during Gage:", e.message
+            print e
+            if not self.stopList[self.PID] == self.RID:
+                myDict = {}
+                myDict['error'] = "There was an error during your analysis:\nError: " + str(
+                    e.message) + "\n"
+                res = json.dumps(myDict)
+                return HttpResponse(res, content_type='application/json')
+
+    def run(self):
+        if self.debug:
+            print "Running Gage"
+        ret = self.validate(sig=False, reqMultiLevel=False, selAll=False, metaQuant=False, taxTree=False)
+        if ret == 0:
+            ret = self.query(taxmap=False, filterable=False)
+            if ret == 0:
+                return self.statsGraph()
+
+        if self.debug:
+            print "Something went wrong with Gage"
+        return ret

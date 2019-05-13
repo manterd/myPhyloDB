@@ -226,7 +226,7 @@ def getNorm(request, RID, stopList, PID):
             try:
                 DaymetData.objects.get(user=request.user).delete()   # isn't request.user a username?
             except Exception as daydelerr:
-                print "Daymet Deletion Error:", daydelerr
+                #print "Daymet Deletion Error:", daydelerr
                 pass
             # TODO turn daymet gathering section into a function in utils or somesuch in case the feature is moved
             # get data from dictionaries before saving to biom

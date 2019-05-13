@@ -15,6 +15,8 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
 
 import functions
 
+import traceback
+
 
 pd.set_option('display.max_colwidth', -1)
 
@@ -237,12 +239,12 @@ def getSampleCatTree(request):
             ghg['children'].append(myNode)
         soil['children'].append(ghg)
 
-        health = {'title': 'Soil Health', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-        list = ['soil_water_cap', 'soil_surf_hard', 'soil_subsurf_hard', 'soil_agg_stability', 'soil_ACE_protein', 'soil_active_C']
-        for i in range(len(list)):
-            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
-            health['children'].append(myNode)
-        soil['children'].append(health)
+        #health = {'title': 'Soil Health', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+        #list = ['soil_water_cap', 'soil_surf_hard', 'soil_subsurf_hard', 'soil_agg_stability', 'soil_ACE_protein', 'soil_active_C']
+        #for i in range(len(list)):
+        #    myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
+        #    health['children'].append(myNode)
+        #soil['children'].append(health)
 
     list = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6']
     for i in range(len(list)):
@@ -1524,9 +1526,9 @@ def makeFilesTree(request):
                 userList.append(user.username)
         else:
             # unfiltered mode is for file deletion tree, should only be this user unless super? disregard perms?
-            # get usernames which this user has permissions for, currently just adds current user
+            # get usernames which this user has permissions for, start by adding this user
             userList.append(username)
-            # add usernames based on hasPermsFrom attribute
+            # now we add usernames based on hasPermsFrom attribute  (assuming list is kept up to date properly)
             myPerms = UserProfile.objects.get(user=request.user).hasPermsFrom.split(';')
             for permname in myPerms:
                 if permname != "":
@@ -1875,36 +1877,37 @@ def getFilterSamplesTree(request):
     if pType != "" and pType is not None and fName != "" and fName is not None:
         projectSet = []
         myProjects = functions.getViewProjects(request)
-
+        sampleDict = {}
         for proj in myProjects:
             if proj.projectType == pType or pType == "mimarks" or pType == "user_defined":
                 projectSet.append(proj)
+                sampleDict[proj.projectid] = []
         # print "Found", len(projectSet), "projects of correct type"
+        # writing new queries here, should grab all sample objects with 1-2 queries (no loops necessary)
+        #newTime = time.time()
+        try:
 
-        sampleDict = {}
-
-        for proj in projectSet:
-            samplesFromThisProject = Sample.objects.filter(projectid=proj)
-            sampleDict[proj.projectid] = []
-            for samp in samplesFromThisProject:
-                try:
-                    workSamp = None
-                    if pType.lower() == "mimarks":
-                        workSamp = samp
-                    if pType.lower() == "soil":
-                        workSamp = Soil.objects.get(sampleid=samp)
-                    if pType.lower() == "human_associated":
-                        workSamp = Human_Associated.objects.get(sampleid=samp)
-                    if pType.lower() == "air":
-                        workSamp = Air.objects.get(sampleid=samp)
-                    if pType.lower() == "water":
-                        workSamp = Water.objects.get(sampleid=samp)
-                    if pType.lower() == "microbial":
-                        workSamp = Microbial.objects.get(sampleid=samp)
-                    if pType.lower() == "user_defined":
-                        workSamp = UserDefined.objects.get(sampleid=samp)
-
-                    if fName != 'nofilterselected':
+            workSamps = None
+            if pType.lower() == "mimarks":
+                workSamps = Sample.objects.filter(projectid__in=projectSet)
+            if pType.lower() == "soil":
+                workSamps = Soil.objects.filter(projectid__in=projectSet)
+            if pType.lower() == "human_associated":
+                workSamps = Human_Associated.objects.filter(projectid__in=projectSet)
+            if pType.lower() == "air":
+                workSamps = Air.objects.filter(projectid__in=projectSet)
+            if pType.lower() == "water":
+                workSamps = Water.objects.filter(projectid__in=projectSet)
+            if pType.lower() == "microbial":
+                workSamps = Microbial.objects.filter(projectid__in=projectSet)
+            if pType.lower() == "user_defined":
+                workSamps = UserDefined.objects.filter(projectid__in=projectSet)
+            # now check workSamps before checking values
+            if workSamps is not None:
+                # workSamps actually has data, time to filter by value
+                if fName != "nofilterselected":
+                    # a filter has actually been set
+                    for workSamp in workSamps:
                         workVal = str(getattr(workSamp, fName))
                         thisValPasses = False
                         if fVal == "":
@@ -1913,15 +1916,16 @@ def getFilterSamplesTree(request):
                         elif workVal == fVal:
                             thisValPasses = True
                         if thisValPasses:
-                            sampleDict[proj.projectid].append(workSamp)
-                    else:
-                        sampleDict[proj.projectid].append(workSamp)
+                            sampleDict[workSamp.projectid.projectid].append(workSamp)  # projectid still foreign project
+                else:
+                    #nofilter
+                    # just return mySamples
+                    for workSamp in workSamps:
+                        sampleDict[workSamp.projectid.projectid].append(workSamp)
 
-                except Exception as e:
-                    print "Error with workSamp:", e
-                    pass
-        # print "Found", len(sampleDict), "projects with correct sample vals"
-        # print "SampleDict:", sampleDict
+        except Exception as e:
+            print "Error with filter subquerying", e
+            traceback.print_exc()
 
         projectSet = []
         for projid in sampleDict.keys():
@@ -1929,9 +1933,21 @@ def getFilterSamplesTree(request):
                 projectSet.append(Project.objects.get(projectid=projid))
         # print "Found", len(projectSet), "projects after cleanup"
 
-        projectSet.sort(key=lambda x: x.project_name)
+        projectSet.sort(key=lambda x: x.project_name)   # this is actually quite fast
+
+        # TODO could probably speed up this process (maybe move ifs outside of loops)
+        # this section's performance scales with number of projects & samples decently, but a 2x speedup would be nice
+        #projTime = time.time()
+
+        #projSetTime = 0.0
+        #sampSetTime = 0.0
+        #noFilterSetTime = 0.0
+        #filterSetTime = 0.0
+        #mimarksTime = 0.0
+        #notMimarksTime = 0.0
 
         for proj in projectSet:
+            #lastCheckTime = time.time()
             myProjNode = {
                 'title': proj.project_name,
                 'tooltip': "Project type: " + proj.projectType + "\nDescription: " + proj.project_desc + "\nID: " + proj.projectid + "\nPI: " + proj.pi_first + " " + proj.pi_last + "\nAffiliation: " + proj.pi_affiliation + "\nOwner: " + proj.owner.username,
@@ -1941,8 +1957,10 @@ def getFilterSamplesTree(request):
                 'children': [],
                 # 'expand': True # use this for auto expanded projects, currently inactive for compactness sake
             }
+            #projSetTime += time.time()-lastCheckTime
             # print proj.project_name, "has", len(sampleDict[proj.projectid]), "matching samples"
             for samp in sampleDict[proj.projectid]:
+                #lastCheckTime = time.time()
                 try:
                     if fName == "nofilterselected":
                         if pType == "mimarks":
@@ -1953,6 +1971,7 @@ def getFilterSamplesTree(request):
                                 'id': str(samp.sampleid),
                                 'isFolder': False
                             }
+                            #mimarksTime += time.time()-lastCheckTime
                         else:
                             mySampNode = {
                                 'title': 'Name: ' + str(
@@ -1961,6 +1980,8 @@ def getFilterSamplesTree(request):
                                 'id': str(samp.sampleid.sampleid),
                                 'isFolder': False
                             }
+                            #notMimarksTime += time.time()-lastCheckTime
+                        #noFilterSetTime += time.time()-lastCheckTime
                     else:
                         myVal = str(getattr(samp, fName))
                         if pType == "mimarks":
@@ -1970,6 +1991,7 @@ def getFilterSamplesTree(request):
                                 'id': str(samp.sampleid),
                                 'isFolder': False
                             }
+                            #mimarksTime += time.time()-lastCheckTime
                         else:
                             mySampNode = {
                                 'title': "Value: " + myVal + '; Name: ' + str(samp.sampleid.sample_name) + '; Reads: ' + str(samp.sampleid.reads),
@@ -1977,12 +1999,18 @@ def getFilterSamplesTree(request):
                                 'id': str(samp.sampleid.sampleid),
                                 'isFolder': False
                             }
+                            #notMimarksTime += time.time()-lastCheckTime
+                        #filterSetTime += time.time()-lastCheckTime
                     myProjNode['children'].append(mySampNode)
+                    #sampSetTime += time.time()-lastCheckTime
                 except Exception as e:
                     print "Error during sample selection for location tree:", e
 
             myTree['children'].append(myProjNode)
 
+        #projTime = time.time()-projTime
+        #print "Project time:", projTime  # scales with total number of projects past filter (makes sense)
+        #print "Time spent breakdown: P-", projSetTime/projTime*100, "S-", sampSetTime/projTime*100, "NF-", noFilterSetTime/projTime*100, "F-", filterSetTime/projTime*100, "M-", mimarksTime/projTime*100, "NM-", notMimarksTime/projTime*100
 
     res = json.dumps(myTree)
     if 'callback' in request.GET:
