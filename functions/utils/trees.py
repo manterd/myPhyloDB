@@ -15,6 +15,8 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
 
 import functions
 
+from database import perms
+
 import traceback
 
 
@@ -24,7 +26,7 @@ pd.set_option('display.max_colwidth', -1)
 def getProjectTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = functions.getViewProjects(request)
+    projects = perms.getViewProjects(request)
     for project in projects:
         myNode = {
             'title': project.project_name,
@@ -1469,7 +1471,7 @@ def getNZTreeChildren(request):
 def makeUpdateTree(request):
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = functions.getEditProjects(request)
+    projects = perms.getEditProjects(request)
     for project in projects:
         myNode = {
             'title': project.project_name,
@@ -1635,7 +1637,7 @@ def fileTreeChildren(path, name, filter, filterName):
 def makeReproTree(request):
     myTree = {'title': 'All Uploads', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = functions.getEditProjects(request)
+    projects = perms.getEditProjects(request)
     for project in projects:
         myNode = {
             'title': "Project: " + str(project.project_name),
@@ -1737,19 +1739,32 @@ def getPermissionTree(request):
     if request.user.is_superuser:
         projects = Project.objects.all()
     elif request.user.is_authenticated():
+        # why is this using reference instead of projects? TODO investigate
         path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-
         projects = Project.objects.all().filter(Q(projectid__in=path_list))
-
+    # TODO incorporate editing permissions somehow
     for project in projects:
         if Sample.objects.filter(projectid=project.projectid).exists():
+            viewList = project.whitelist_view.split(";")
+            projPerms = []
+            for uname in viewList:
+                if uname != "":
+                    myPerm = {
+                        'title': uname,
+                        'tooltip': "Select to revoke viewing permission for this project",
+                        'id': uname+";"+project.projectid,
+                        'isFolder': False,
+                        'wip': project.wip
+                    }
+                    projPerms.append(myPerm)
             myNode = {
                 'title': project.project_name,
                 'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
                 'id': project.projectid,
-                'isFolder': False,
+                'isFolder': True,
                 'isLazy': False,
-                'wip': project.wip
+                'wip': project.wip,
+                'children': projPerms
             }
             if project.status == "public":  # should only be private and public, defaulting to private just in case
                 publicTree['children'].append(myNode)
@@ -1824,7 +1839,7 @@ def getLocationSamplesTree(request):
             except Exception as e:
                 print "Error during query for location tree:", e
 
-    myProjects = functions.getViewProjects(request)
+    myProjects = perms.getViewProjects(request)
 
     for projID in projectDict:
         thisProject = Project.objects.get(projectid=projID)
@@ -1876,7 +1891,7 @@ def getFilterSamplesTree(request):
     # print "FVAL:", fVal
     if pType != "" and pType is not None and fName != "" and fName is not None:
         projectSet = []
-        myProjects = functions.getViewProjects(request)
+        myProjects = perms.getViewProjects(request)
         sampleDict = {}
         for proj in myProjects:
             if proj.projectType == pType or pType == "mimarks" or pType == "user_defined":

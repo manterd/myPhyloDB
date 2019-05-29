@@ -23,7 +23,7 @@
                 alert(test);
             }
 
-            // calling each function once before timer sets for snappier page loads
+            // calling each function once before timers are set, for snappier page loads
             updateMainConsole();
             updateMetrics();
             updateDataQueue();
@@ -131,7 +131,6 @@
         }
 
         function updateDataQueue(){
-            // for now this just gets server uptime
             $.ajax({
                 url: '/myPhyloDB/getDataQueue/',
                 type: 'GET',
@@ -150,11 +149,6 @@
                     while (div.firstChild){
                         div.removeChild(div.firstChild);
                     }
-
-                    // TODO: atm this works great but the formatting needs work, put entries in rows, label columns, etc
-
-
-
                     // loop through data to add text areas to div
                     // length -1 because blank entry at the end of split
                     for (var i=0; i<actualData.length-1; i++){
@@ -198,7 +192,6 @@
         }
 
         function updateAnalysisQueue(){
-            // for now this just gets server uptime
             $.ajax({
                 url: '/myPhyloDB/getAnalysisQueue/',
                 type: 'GET',
@@ -206,20 +199,17 @@
                 data: {
                     all: RID
                 },
-                success: function (data) {  // need to configure this for main queue, atm expecting dataqueue outputs
+                success: function (data) {
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var displayData = obj['display'];
                     var actualData = displayData.split("\n");
-                    // get div element for displaying dataqueue
+                    // get div element for displaying analysis queue
                     var div = document.getElementById("aqQ");
                     // wipe out old queue elements before creating new ones
                     while (div.firstChild){
                         div.removeChild(div.firstChild);
                     }
-
-                    // TODO: atm this works great but the formatting needs work, put entries in rows, label columns, etc
-
                     // loop through data to add text areas to div
                     // length -1 because blank entry at the end of split
                     for (var i=0; i<actualData.length-1; i++){

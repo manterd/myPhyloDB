@@ -306,7 +306,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             self.finalDF = functions.transformDF(self.transform, self.DepVar, self.finalDF)
 
         # save location info to session
-        myDir = 'myPhyloDB/media/temp/anova/'
+        myDir = 'myPhyloDB/media/temp/analysis/'   # TODO this gets called by more than ANOVA, path should match caller
         if not os.path.exists(myDir):
             os.makedirs(myDir)
 
@@ -3005,8 +3005,12 @@ class PCoA(Analysis):
                     r("eval(parse(text=cmd))")
                     amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms)"
                 else:
-                    r("trt <- factor(meta$merge)")
-                    amova_string = "res <- adonis(dist ~ trt, perms=perms)"
+                    for i in self.catFields:
+                        factor_string = str(i) + " <- factor(meta$" + str(i) + ")"
+                        r.assign("cmd", factor_string)
+                        r("eval(parse(text=cmd))")
+                    trtString = " * ".join(self.catFields)
+                    amova_string = "res <- adonis(dist ~ " + str(trtString) + ", perms=perms, data)"
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == self.RID:

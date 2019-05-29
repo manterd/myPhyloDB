@@ -27,6 +27,8 @@ from database.models import Project, Reference, \
     Kingdom, Phyla, Class, Order, Family, Genus, Species, OTU_99, Profile, \
     koOtuList, ko_entry, ko_lvl1, ko_lvl2, ko_lvl3, PICRUSt
 
+from database import perms
+
 import functions
 
 
@@ -395,9 +397,11 @@ def projectid(Document):
         return None
 
 
-def parse_project(Document, p_uuid, curUser):   # no stoplist support because of how fast this is, and cleanup varies
-    # based on at which point in this function the stop is called
+def parse_project(Document, p_uuid, curUser):
+    # no stoplist support because of how fast this is, and
+    # cleanup varies based on at which point in this function the stop would be called (so just check before and after)
 
+    # FUNCTION DESCRIPTION:
     # parse meta file (xlxs file) to create new project (or update an existing one)
 
     # check formatting and such, boxes have ranges of valid responses, check project type and permissions for now
@@ -422,7 +426,10 @@ def parse_project(Document, p_uuid, curUser):   # no stoplist support because of
             return "projectType options are air, human gut, human associated," \
                 " microbial, soil, and water"
 
+        newProjectStatus = rowDict['status']
+
         if not Project.objects.filter(projectid=p_uuid).exists():
+            # if this project does not exist already, make a new one
             for key in rowDict.keys():
                 if key == 'projectid':
                     rowDict[key] = p_uuid
@@ -431,9 +438,28 @@ def parse_project(Document, p_uuid, curUser):   # no stoplist support because of
             myProj.owner = curUser  # might break if different user adds files later
             myProj.wip = True
             myProj.save()
+            if newProjectStatus == "public":
+                perms.newPub(p_uuid)
+            elif newProjectStatus == "private":
+                perms.newPriv(p_uuid)
         else:
             rowDict.pop('projectid')
+            # if this project exists, update its values
+            # since it exists already, lets check if the status (public or private) is changing with this update
+            # if its changing, we need to update some permissions lists
+            oldProject = Project.objects.get(projectid=p_uuid)
+            oldProjectStatus = oldProject.status
+
+            # actually update the project data
             Project.objects.filter(projectid=p_uuid).update(projectid=p_uuid, wip=True, **rowDict)
+
+            # check if permissions change occurred, run updater if so
+            if oldProjectStatus != newProjectStatus:
+                # permissions are changing, get ready to check some lists
+                if oldProjectStatus == "public" and newProjectStatus == "private":
+                    perms.pubToPriv(p_uuid)
+                if oldProjectStatus == "private" and newProjectStatus == "public":
+                    perms.privToPub(p_uuid)
 
         stage = "Step 1 of 5: Parsing project file..."
         return "none"
@@ -704,6 +730,17 @@ def parse_taxonomy(Document, stopList, PID, RID):
                 subbed = subbed[:-1]
 
                 taxon = subbed.split(';')
+
+                if len(taxon) < 1:  # missing kingdom
+                    taxon.append("unclassified")
+                if len(taxon) < 2:  # missing phyla
+                    taxon.append("unclassified")
+                if len(taxon) < 3:  # missing class
+                    taxon.append("unclassified")
+                if len(taxon) < 4:  # missing order
+                    taxon.append("unclassified")
+                if len(taxon) < 5:  # missing family
+                    taxon.append("unclassified")
 
                 if len(taxon) < 6:  # missing genus
                     taxon.append("unclassified")

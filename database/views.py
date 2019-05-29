@@ -25,7 +25,6 @@ import ujson
 from uuid import uuid4
 import zipfile
 import fnmatch
-import math
 
 from forms import UploadForm1, UploadForm2, UploadForm4, UploadForm5, \
     UploadForm6, UploadForm7, UploadForm8, UploadForm9, UploadForm10, UserUpdateForm, BulkForm
@@ -37,6 +36,8 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
     addQueue, getQueue, subQueue, koOtuList
 
 import functions
+
+from database import perms
 
 from django.contrib.admin.models import LogEntry
 
@@ -75,6 +76,15 @@ def admin_console(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
+def history(request):
+    # page for viewing previous analyses (can add ongoing and shared results next)
+    # todo implement
+    return render(
+        request,
+        'history.html'
+    )
+
+@login_required(login_url='/myPhyloDB/accounts/login/')
 def files(request):
     functions.log(request, "PAGE", "FILES")
 
@@ -100,6 +110,12 @@ def files(request):
 def fileUpFunc(request, stopList):
     errorText = ""
     RID = ''    # TODO stopList and RID NYI, Progress bar? This part is hard to test locally, local uploads are too fast
+    # RID not particularly necessary for a one-way operation such as this. May be handy for logging of some description
+    # Stoplist is the main reason to use RID, assuming stop function is implemented on the front end
+    # Stopping a file upload is awkward since this is coded with only a single line technically performing the download
+    # Need to interrupt the upload somehow if stop will be relevant
+    # Further, progress bar AND stop both involve having a tighter control over this upload process, not sure if Django
+    # supports accessing upload percentages and executing commands on operations I believe it assumes are done by now
     try:
         RID = request.POST['RID']
     except:
@@ -238,9 +254,9 @@ def upStop(request):  # upStop is not cleaning up uploaded files (directory, sel
 
 
 def upErr(msg, request, dest, sid):
-    #print "UpError!"
     logException()
     functions.log(request, "ERROR", "UPLOAD")
+    projects = Reference.objects.none()
     try:
         functions.remove_proj(dest)
         transaction.savepoint_rollback(sid)
@@ -248,16 +264,12 @@ def upErr(msg, request, dest, sid):
         print "Error during upload: ", e
 
     try:
-
         if request.user.is_superuser:
             projects = Reference.objects.all().order_by('projectid__project_name', 'path')
         elif request.user.is_authenticated():
             projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-        else:
-            projects = None
-
     except:
-        projects = None
+        pass
     # need to strip msg of newline and single quotes so javascript doesn't throw a fit (since django direct inserts)
     msg = msg.translate(None, "\n\'")
 
@@ -270,6 +282,7 @@ def upErr(msg, request, dest, sid):
          'error': msg
          }
     )
+
 
 # need to clean this up, make like 6 helper functions, I don't want to add another 1k line function to the codebase
 # needs dynamic input support, ie make it as simple as possible to add another data type to the upload chain
@@ -511,7 +524,7 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
         line = pro.stdout.readline()    # does this work?
         print "Line:", line
         if line != "":  # changed '' to ""
-            print line  # actually printing this? TODO send to user instead of spamming console. ALSO this doesn't work?
+            print line
             # have not found an example of this working fully, probably because of this step being blank each time I try
         else:
             break
@@ -629,7 +642,9 @@ def uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, P
         copyFromUpload(filepath, mothurdest, name)
         try:
             tar = tarfile.open(os.path.join(mothurdest, name))
-            tar.extractall(path=mothurdest)  # TODO security check the paths in this archive, verify nothing leaves mothurdest
+            tar.extractall(path=mothurdest)  # TODO security check the paths in this archive
+                                             # verify nothing leaves mothurdest
+                                             # no symbolic links, hard coded paths, etc
             tar.close()
         except Exception:
             try:
@@ -1104,8 +1119,7 @@ def uploadFunc(request, stopList):
             # past this point, use upErr because we're making a project
 
     except Exception:
-        return uploadException(None, None, request, "There was an error parsing your meta file:" + str(selDict['meta']))
-        # uploadException used instead of upErr here because of available data differences (TODO consolidate)
+        return uploadException("There was an error parsing your meta file:" + str(selDict['meta']), request, None, None)
 
     sid = transaction.savepoint()
     # got puuid by here, next?
@@ -1193,30 +1207,6 @@ def uploadFunc(request, stopList):
          'form1': UploadForm1,
          'form2': UploadForm2,
          'error': "Upload complete"}
-    )
-
-
-def uploadException(dest, sid, request, error):
-    projects = Reference.objects.none()
-    logException()
-    if dest is not None:
-        functions.remove_proj(dest)
-    if sid is not None:
-        transaction.savepoint_rollback(sid)
-
-    if request.user.is_superuser:
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-    elif request.user.is_authenticated():
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(
-            author=request.user)
-    return render(
-        request,
-        'upload.html',
-        {'projects': projects,
-         'form1': UploadForm1,
-         'form2': UploadForm2,
-         'error': error
-         }
     )
 
 
@@ -2056,6 +2046,7 @@ def userTableJSON(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
+# TODO verify selections only work on projects user has permission to view
 def select(request):
     # send Locations to page, should be based on visible samples and projects
     # loop through all visible samples and store locations via dictionary
@@ -2208,8 +2199,9 @@ def select(request):
              'method': 'GET'
              }
         )
+        # TODO re-implement the map, properly, as a 1.4 feature
         ''''# insert map population logic here
-        visibleProjects = functions.getViewProjects(request)
+        visibleProjects = perms.getViewProjects(request)
         # get all samples for visibleProjects, put into dictionary keyed by rounded coordinates, link projectname?
         sampleSetList = []
         locationBasedSampleDict = {}
@@ -2957,20 +2949,11 @@ def updateFunc(request, stopList):
             return updaStop(request)
 
         try:
-            bat = 'mothur.batch'
-            batPath = '/'.join([dest, bat])
             reference = Reference.objects.get(refid=refid)
             raw = reference.raw
             source = reference.source
             userID = str(request.user.id)
-
-            if os.path.exists(batPath):
-                with open(batPath, 'rb') as batFile:
-                    functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID)
-            else:
-                batFile = 'you do not really need me'
-                functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID)
-
+            functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID)
         except Exception as e:
             state = "There was an error parsing your metafile: " + str(file1.name) + "\nError info: "+str(e)
             return render(
@@ -3220,245 +3203,6 @@ def updateInfo(request):
     )
 
 
-def updateFilePerms(request):
-    # gets called from ajax, given list of names to remove or add
-    functions.log(request, "FUNCTION", "FILEPERMS")
-    if request.is_ajax():
-        allJson = json.loads(request.GET["all"])
-        # get selected names from list, to be removed
-        remList = allJson['keys']
-        # get list of names to add
-        nameList = allJson['names']
-        nameList = nameList.split(';')
-        # get permission mode (view vs edit)  * view is redundant if project is public
-        # permLevel 0 means view only
-        # permLevel 1 means editing as well
-
-        thisUser = User.objects.get(username=request.user.username)  # username uniqueness is case incensitive
-        # (as in no accounts named ADMIN since admin exists, etc) So we can run everything in .lower for equality checks
-        # Scratch that, query users by username= is faster than linear search and lower check
-        # Speed says make the whole thing case sensitive
-
-        giveFilePerms(thisUser, nameList)
-        removeFilePerms(thisUser, remList)
-        syncFilePerms(thisUser)  # get related user lists updated, for query speed
-        # note: MUST call sync after either additions or removals
-        # not calling it inside either function since both are called at the same time for now
-    else:
-        print "Request was not ajax!"
-        functions.log(request, "NON_AJAX", "FILE_PERMS")
-
-    retDict = {"error": "none"}
-    res = json.dumps(retDict)
-    return HttpResponse(res, content_type='application/json')
-
-
-def syncFilePerms(owner):
-    # given user object, verify each member of the 'gavePermsTo' list's 'hasPermsFrom' attribute contains this username
-    # go through each user who is NOT on that list and remove username from any 'hasPermsFrom' lists which contain it
-
-    # query for each name in currentList
-    # with queried user list, update their "hasPermsFrom" profile variable
-
-    try:
-
-        ownProfile = owner.profile  # owner is a user object, ie request.user
-        currentList = ownProfile.gavePermsTo.split(';')
-
-        actualUsers = []
-        for name in currentList:
-            try:
-                curUser = User.objects.get(username=name)   # if user doesn't exist, just ignore it during sync
-                # would be a potential security hole to let users know if they gave perms to a non-existent user
-                # inference attacks/leaks are a thing
-                actualUsers.append(curUser)
-            except:
-                pass
-
-        for prof in actualUsers:
-            if prof.username in currentList:
-                # check if this user has owner on their list, if not add
-                thisProf = UserProfile.objects.get(user=prof)
-                thisPermsList = thisProf.hasPermsFrom.split(';')
-                if owner.username not in thisPermsList:
-                    thisPermsList.append(owner.username)
-                reStringPerms = ""
-                first = True
-                for perm in thisPermsList:
-                    if perm != "":
-                        if first:
-                            reStringPerms += perm
-                            first = False
-                        else:
-                            reStringPerms += ";" + perm
-                thisProf.hasPermsFrom = reStringPerms
-                thisProf.save()
-                # is this section inefficient? could append directly, check if empty first for semicolon?
-
-        # loop through ALL user profiles and remove owner if not on currentList
-        # TODO could do this more efficiently by remembering who was removed
-        allUsers = User.objects.all()
-        for curUser in allUsers:
-            if curUser.username not in currentList:
-                curProf = UserProfile.objects.get(user=curUser)
-                curHasPerms = curProf.hasPermsFrom.split(';')
-                if owner.username in curHasPerms:
-                    # remove it!, save it again after
-                    first = True
-                    newCurHasPerms = ""
-                    for curName in curHasPerms:
-                        if curName != "":
-                            if curName != owner.username:
-                                if first:
-                                    newCurHasPerms += curName
-                                    first = False
-                                else:
-                                    newCurHasPerms += ";" + curName
-                    curProf.hasPermsFrom = newCurHasPerms
-                    curProf.save()
-
-    except Exception as e:
-        print "Error during sync:", e
-
-    # this function is very important as we use the 'hasPermsFrom' list for faster queries
-    return
-
-
-# call this from a third func? or directly, since remove and add use different UI and inputs
-# in the second case, switch owner out for request and parse out request.user data and stuff from the trees
-# in the first case, call the same main function from either use case
-# split based on sent data (use one submission button?)
-def giveFilePerms(owner, addList):
-    # given a user and a list of usernames, add username list to user's whitelist
-    ownProfile = owner.profile  # owner is a user object, ie request.user
-    currentList = ownProfile.gavePermsTo.split(';')
-    for addName in addList:
-        if addName not in currentList and addName != "":
-            currentList.append(addName)
-    # now reformat currentList to save onto profile again
-    finalListAsText = ""
-    firstIter = True
-    for name in currentList:
-        if name != "":
-            if firstIter:
-                finalListAsText += name
-                firstIter = False
-            else:
-                finalListAsText += ";" + name
-
-    # save changes
-    ownProfile.gavePermsTo = finalListAsText
-    ownProfile.save()
-    return
-
-
-def removeFilePerms(owner, remList):
-    # use .lower on everything, remove users in remList from owner's whitelist (if they are there already)
-    # also, go to each user on remList and remove owner from their "added by" list (again, check if its there already)
-    ownProfile = owner.profile  # owner is a user object, ie request.user
-    currentList = ownProfile.gavePermsTo.split(';')
-    updatedNameList = ""
-    first = True
-    for curName in currentList:
-        if curName != "":
-            if curName not in remList:
-                if first:
-                    updatedNameList += str(curName)
-                    first = False
-                else:
-                    updatedNameList += ";" + str(curName)
-
-    # save changes
-    ownProfile.gavePermsTo = updatedNameList
-    ownProfile.save()
-    return
-
-
-def addPerms(request):  # this is the project whitelisting version, could bundle file perms in here
-    # auto filter out <username> ?
-    # double up support in this func for file perms? No, make a similar but separate function
-    functions.log(request, "FUNCTION", "ADDPERMS")
-    if request.is_ajax():
-        allJson = json.loads(request.GET["all"])
-        # get selected projects list (files? not samples as subsets though)
-        selList = allJson['keys']
-        # get list of names to add
-        nameList = allJson['names']
-        nameList = nameList.split(';')
-        # get permission mode (view vs edit)  * view is redundant if project is public
-        permLevel = allJson['mode']
-        # permLevel 0 means view only
-        # permLevel 1 means editing as well
-
-        thisUser = User.objects.get(username=request.user.username)  # username uniqueness is case incensitive
-        # (as in no accounts named ADMIN since admin exists, etc) So we can run everything in .lower for equality checks
-
-        # loop through nameList, verify each exists
-        errorList = []
-        finalNameList = nameList[:]
-        for name in nameList:
-            if not User.objects.filter(username=name).exists():
-                errorList.append(name)
-                finalNameList.remove(name)
-                # remove name from nameList if user does not exist
-
-        # get project by id from selList
-        for pid in selList:
-            curProj = Project.objects.get(projectid=pid)
-            # check if thisUser is owner of project (or super, check old edit perms basically)
-            if thisUser == curProj.owner:
-                # loop through nameList, check if name is present on permList already
-                for curName in finalNameList:
-                    viewList = curProj.whitelist_view.split(';')
-                    found = False
-                    for name in viewList:
-                        if name == curName:
-                            found = True
-                    if not found:
-                        # add current name to current project's viewPerms
-                        curProj.whitelist_view += curName+";"
-                    # check if mode grants edit perm as well
-                    if permLevel:
-                        editList = curProj.whitelist_edit.split(';')
-                        found = False
-                        for name in editList:
-                            if name == curName:
-                                found = True
-                        if not found:
-                            # add current name to current project's editPerms
-                            curProj.whitelist_edit += curName+";"
-            # save changes
-            curProj.save()
-        # return new profile page (boxes cleared, perhaps success alert message)
-
-        # check if errorList has entries
-        if len(errorList) > 0:
-            # set return text to be an error reporting failed names
-            text = "Name(s) not found: "
-            iter = 1
-            for name in errorList:
-                if iter == len(errorList):
-                    text += str(name)
-                else:
-                    text += str(name) + ", "
-                iter += 1
-        else:
-            text = 'Users have been added to selected project(s)'
-
-        retDict = {"error": text}
-        res = json.dumps(retDict)
-        return HttpResponse(res, content_type='application/json')
-    else:
-        print "Request was not ajax!"
-        functions.log(request, "NON_AJAX", "ADD_PERMS")
-
-
-def remPerms(request):  # TODO new system vs finish old system and run both?
-    # project to project permissions have use, keep system and implement perms options for viewing and removing
-    print "NYI"
-    return
-
-
 def checkSamples(metaFile, source, fileName):
     wb = openpyxl.load_workbook(metaFile, data_only=True, read_only=True)
     ws = wb['MIMARKs']
@@ -3555,7 +3299,7 @@ def checkSamples(metaFile, source, fileName):
     return errorString
 
 
-def getAdminLog():      # TODO could add a UI button for this, atm just run manually
+def getAdminLog():      # this gets called by server_utils with a specific command, could probably just move the code
     logs = LogEntry.objects.all()
     for log in logs:
         logFile = open('admin_log.txt', 'a')

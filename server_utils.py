@@ -2,6 +2,7 @@ import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'myPhyloDB.settings'
 import django
 django.setup()
+import sys
 
 # this py script is for running functions outside the normal code which require django to be active
 
@@ -35,7 +36,6 @@ def adminLog():
     print "Complete, check admin_log.txt"
 
 
-
 def fixISV():
     from database.models import OTU_99
     # need to go through existing database for OTU's with isv__ names, ensure sequential numbers and no duplicates
@@ -45,10 +45,26 @@ def fixISV():
     print("Cleaning up", countISV, "ISVs")
     curISV = 0
     for isv in oldISV:
-        myName = isv.otuName
-        myISV = int(myName.split("_")[1])
-        if myISV != curISV:
-            # we skipped! OR we ran through a duplicate
-            isv.otuName = "isv_"+str(curISV)    # does it matter if we just write over it? is this referenced somewhere?
+        oldName = isv.otuName
+        isv.otuName = "isv_"+str(curISV)    # strictly used as an ID with no references in the database, so overwrite
+        #print(oldName, "-->", isv.otuName)
         curISV += 1
-    pass
+        isv.save()
+    print("Overwrote old ISV names, saving")
+
+
+# this is main, check arg[1] for command and run it
+if len(sys.argv) != 2:
+    print("Incorrect number of arguments")
+else:
+    myCommand = sys.argv[1]
+    if myCommand == "adminLog":
+        adminLog()
+    elif myCommand == "fixISV":
+        fixISV()
+    elif myCommand == "createPublicList":
+        createPublicList()
+    elif myCommand == "createPrivateLists":
+        createPrivateLists()
+    else:
+        print("Incorrect command: Options are adminLog fixISV createPublicList createPrivateLists")

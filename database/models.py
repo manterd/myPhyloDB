@@ -4,7 +4,6 @@ from django.contrib.auth.models import User as Users
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-
 queue = 0
 
 
@@ -20,6 +19,37 @@ def getQueue():
 def subQueue():
     global queue
     queue -= 1
+
+
+# given a "list" in string form using given delimiter, add new element if it doesn't exist
+def appendTextList(text, delimiter, addMe):
+    if addMe in text.split(delimiter):
+        return text
+    if text == "":
+        return text + addMe
+    return text + delimiter + addMe
+
+
+# given a "list" as a string using given delimiter, remove element removeMe if it exists
+def redactTextList(text, delimiter, removeMe):
+    mySplitText = text.split(delimiter)
+    if removeMe in mySplitText:
+        text = ""
+        for part in mySplitText:
+            if str(part) != str(removeMe) and str(part) != "":
+                if text is not "":
+                    text += delimiter
+                text += part
+    return text
+
+
+def updateList(myList, delimiter, remove=None, add=None):
+    # this helper function cannot deal with the double none case
+    if remove is not None:
+        myList = redactTextList(myList, delimiter, remove)
+    if add is not None:
+        myList = appendTextList(myList, delimiter, add)
+    return myList
 
 
 class Project(models.Model):
@@ -41,15 +71,24 @@ class Project(models.Model):
     # note that future additions to the project will require edit permissions to be granted
     # by the owner of the project. Retroactive solution is to fill this slot manually
 
-    whitelist_view = models.TextField(blank=True)  # default empty, contains list of users
+    whitelist_view = models.TextField(blank=True)  # default empty, contains list of user ids
     # who can view the project if it is private
-    # if project is public, this field is ignored
-    # field is text, usernames separated by ;
-
-    whitelist_edit = models.TextField(blank=True)  # default empty, contains list of users
+    # if project is public, this field is ignored (and gets reset if a private project is changed to public)
+    # field is text, user ids separated by ;
+    whitelist_edit = models.TextField(blank=True)  # default empty, contains list of user ids
     # who can edit the project (update, reprocess, or upload extra/new references)
     # edit perm does NOT grant removal or permissions management perms
-    # field is text, usernames separated by ;
+    # field is text, user ids separated by ;
+
+    def update_viewPerms(self, remove=None, add=None):
+        if remove is None and add is None:
+            self.whitelist_view = ""
+        self.whitelist_view = updateList(self.whitelist_view, ";", remove, add)
+
+    def update_editPerms(self, remove=None, add=None):
+        if remove is None and add is None:
+            self.whitelist_edit = ""
+        self.whitelist_edit = updateList(self.whitelist_edit, ";", remove, add)
 
     def __unicode__(self):
         return self.project_name
@@ -789,15 +828,49 @@ class UserProfile(models.Model):
     # recent analysis rid storage field
     recentRIDs = models.CharField(blank=True, default="", max_length=32)   # semi-colon delimited list of RIDs, stored oldest to newest
 
-    # permissions fields and methods
+    def popRecentRID(self):
+        # get the oldest RID from the list and return it, removing it in the process
+        splitRIDs = self.recentRIDs.split(";")
+        if len(splitRIDs) > 0:
+            oldestRID = splitRIDs[0]
+            self.recentRIDs = redactTextList(self.recentRIDs, ";", oldestRID)
+            return oldestRID
+        return None
+
+    def addRecentRID(self, RID):
+        # given an RID, add to recentRIDs such that <= 3 RIDs remain afterwards (oldest gets returned if removed)
+        # call popRecentRID for the oldest removal if len recentRIDs >= N
+        oldRID = None
+        if len(self.recentRIDs.split(";")) >= 3:    # currently limiting history to 3
+            # but if the limit is to be changed, simply adjust the 3 here
+            oldRID = self.popRecentRID()
+        self.recentRIDs = appendTextList(self.recentRIDs, ";", RID)
+        return oldRID
+
+    # permissions fields and methods, using usernames (functionally interchangeable with ids, but names are readable)
     hasPermsFrom = models.TextField(blank=True)  # acts as a list via split with ';' delimiter
     # do these get updated at proper times? TODO verify
     # (everything related to these fields should always call the appropriate functions)
     gavePermsTo = models.TextField(blank=True)
 
-    # TODO add visible_projects list, alongside a method to call which updates said list !DONE
-    # how to ensure update method gets called enough...
-    # need to update visible list whenever this user uploads or deletes a project
+    def update_hasPerms(self, remove=None, add=None):
+        if remove is None and add is None:
+            # really needed one of those, can only do this with mode = "has"
+            # recalc hasPermsFrom via all gavePermsTo fields
+            allProfs = UserProfile.objects.all()
+            wipHas = ""
+            for prof in allProfs:
+                if self.user.username in prof.gavePermsTo.split(";"):
+                    wipHas = appendTextList(wipHas, ";", prof.user.username)
+            self.hasPermsFrom = wipHas
+        self.hasPermsFrom = updateList(self.hasPermsFrom, ";", remove, add)
+        return
+
+    def update_gavePerms(self, remove=None, add=None):
+        self.gavePermsTo = updateList(self.gavePermsTo, ";", remove, add)
+
+
+    # need to update visible list whenever this user uploads or deletes a project   TODO verify
     # and whenever another user gives or removes permission, which is stored per project? per user? Could do both
     # this list should NEVER be editable by the user, only updated by server, and user sees RESULT of list (projects)
     privateProjectList = models.TextField(blank=True)
@@ -823,25 +896,11 @@ class UserProfile(models.Model):
                 # get list of permitted users for this project
                 checkList = proj.whitelist_view.split(';')
                 # check if this user is in the list
-                if self.user.username in checkList:
+                if self.user.id in checkList or proj.owner.id in whitelist:
                     # user has permission, add to list
-                    projString += proj.projectid + ","
-                # check for whitelisted user list, if they gave perms to use raw files, full projects should work too
-                elif proj.owner.username in whitelist:
-                    # user has permission
-                    projString += proj.projectid + ","
-
+                    projString = appendTextList(projString, ",", proj.projectid)
             self.privateProjectList = projString
-        elif remove is not None:
-            idList = self.privateProjectList.split(",")
-            idList.remove(remove)
-            newString = ""
-            for id in idList:
-                newString += id + ","
-            self.privateProjectList = newString
-
-        elif add is not None:
-            self.privateProjectList += add + ","
+        self.privateProjectList = updateList(self.privateProjectList, ",", remove, add)
 
 
 class PublicProjects(models.Model):
@@ -862,20 +921,7 @@ class PublicProjects(models.Model):
             projString = ""
             for proj in Project.objects.all():
                 if proj.status == 'public':
-                    projString += proj.projectid + ","
+                    projString = appendTextList(projString, ",", proj.projectid)
             self.List = projString
-        elif remove is not None:
-            # removing some specific ID. Find given ID and remove it from the list
-            # comma delimited string contains ids, split then extract given ID
-            idList = self.List.split(",")
-            idList.remove(remove)
-            newString = ""
-            for id in idList:
-                newString += id + ","
-            self.List = newString
-
-        elif add is not None:
-            # just adding, can append for simplicity. Or insert at sorted position
-            # its an id list, sorting alphabetically would be a pain, and sort by ID serves no real purpose
-            # so, just appending
-            self.List += add + ","  # ez
+        # helper function call
+        self.List = updateList(self.List, ",", remove, add)

@@ -54,22 +54,31 @@
             }
             nameList = nameList.slice(0, -1);
             // Send list back through ajax to views, add names to list for selected projects
-
-            var selKeys = $.map($("#tree").dynatree("getSelectedNodes"), function(node) {
+            $("#submit").css("background-color", "yellow").val("Running!");
+            // get selected nodes
+            var selNodes = $("#tree").dynatree("getSelectedNodes");
+            // filter for projects (selection mode for distinguishing add or revoke?)
+            var selKeys = $.map(selNodes, function(node) {
                 if (node.getLevel() == 3) {
                     return node.data.id;
                 }
-                $("#submit").css("background-color", "yellow").val("Running!");
+            });
+            // filter for users (to have perms revoked)
+            var remKeys = $.map(selNodes, function(node) {
+                if (node.getLevel() == 4) {
+                    return node.data.id;
+                }
             });
             var dataDict = {};
             dataDict['keys'] = selKeys;
             dataDict['names'] = nameList;
+            dataDict['remKeys'] = remKeys;
             dataDict['mode'] = document.getElementById("permLevel").checked;
             var jsonDict = JSON.stringify(dataDict);
 
             $.ajax({
                 type: 'GET',
-                url: '/myPhyloDB/addPerms/',
+                url: '/myPhyloDB/updateProjPerms/',
                 dataType: 'json',
                 data: {all: jsonDict},
                 success: function (data) {
@@ -78,7 +87,7 @@
                         alert(error);
                         $("#run").css("background-color", "red");
                     }
-                    $("#nametree").dynatree("getTree").reload();
+                    location.reload();
                 }
             });
         }
@@ -108,7 +117,7 @@
 
             $.ajax({
                 type: 'GET',
-                url: '/myPhyloDB/updateFilePerms/',
+                url: '/myPhyloDB/updateAccPerms/',
                 dataType: 'json',
                 data: {
                     all: jsonDict
@@ -127,7 +136,7 @@
         $(function () {
             $("#tree").dynatree({
                 checkbox: true,
-                selectMode: 3,
+                selectMode: 2,
                 initAjax: {
                     url: "/myPhyloDB/getPermissionTree/",
                     dataType: "jsonp",

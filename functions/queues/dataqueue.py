@@ -222,7 +222,6 @@ def dataprocess(pid):
             datRecent[RID] = HttpResponse(stop, content_type='application/json')
 
 
-
 def cleanup(RID):
     global datQueueFuncs, datQueueTimes, datQueueUsers, datQueueList
     # could potentially have some gone before others, for now just putting all in try's

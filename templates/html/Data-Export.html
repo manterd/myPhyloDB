@@ -73,8 +73,8 @@
         });
     }
     function getBiom() {
-        var func;
-        if (document.title == 'ANcOVA') {
+        var func = "analysis";
+        /*if (document.title == 'ANcOVA') {
             func = 'anova';
         } else if (document.title == 'CorrPlot') {
             func = 'corr';
@@ -96,7 +96,7 @@
             func = 'rf';
         } else {
             func = 'unknown';
-        }
+        }*/
 
         $("#Export").css("background-color", "yellow").val("Running!");
             $.ajax({

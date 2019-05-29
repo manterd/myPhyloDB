@@ -28,17 +28,6 @@
             $(window).load(function() {
                 checkButtons();
             });
-            $(window).bind('unload', function() {
-                $.ajax({
-                    url: '/myPhyloDB/removeFiles/',
-                    async: false,
-                    dataType: 'json',
-                    data: {
-                        all: RID,
-                        func: 'corr'
-                    }
-                });
-            });
             $(".input tr:not(.accordion)").hide();
             $(".input tr.accordion").click(function () {
                 var $arrow = $(this).find(".arrow:first");
@@ -49,7 +38,6 @@
             $(".input tr.accordion:eq(2)").trigger('click');
         });
 
-        {% include "js/commonFunctions.js" %}
         function checkButtons() {
             treeType = document.getElementById("selectTree").value;
             $("#run").css("background-color", "lightgray");

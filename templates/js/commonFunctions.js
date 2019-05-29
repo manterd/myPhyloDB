@@ -102,3 +102,24 @@ function menu () {
         $("#link6").hide();
     }
 }
+
+window.onload = function() {
+    try {
+        var ref = document.referrer.split("/");
+        if (ref.length>2){
+            var prevPage = ref[ref.length-2];
+            if (prevPage=="history"){
+                RID = localStorage.getItem("prevRID");  // this is neat in theory but presents an issue
+                // when history has been loaded before, this loads old RID automatically on a new page
+                if (RID != null && localStorage.getItem("fromHistory")=="true") {
+                    localStorage.setItem("fromHistory", "false");
+                    updateStatus();
+                }
+            }
+
+        }
+
+    } catch(err) {
+            // guess that didn't work, likely not here from history then
+    }
+};

@@ -1,0 +1,150 @@
+{% extends 'site_base.html' %}
+{% load static %}
+
+{% block pagetitle %}
+    <title>History</title>
+{% endblock pagetitle %}
+
+{% block user %}
+    {% if user.is_authenticated %}
+        <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
+    {% endif %}
+{% endblock user %}
+
+{% block menu_item %}{% endblock menu_item %}
+
+{% block javascript %}
+    <script>
+    var selectedRID = 0;
+    var functionDict = {};
+        function getAnalysisHistory(){
+            $.ajax({
+                url: '/myPhyloDB/getAnalysisHistory/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var displayData = obj['display'];
+                    var actualData = displayData.split("\n");
+                    // get div element for displaying analysis history
+                    var div = document.getElementById("ah");
+                    // wipe out old queue elements before creating new ones
+                    while (div.firstChild){
+                        div.removeChild(div.firstChild);
+                    }
+                    // loop through data to add text areas to div
+                    // length -1 because blank entry at the end of split
+                    functionDict = {};
+                    for (var i=0; i<actualData.length-1; i++){
+                        // parse out good data
+                        var goodData = actualData[i].split(";");
+                        // RID TIME FUNCTION USER BLANK
+                        var myRID = goodData[0];
+                        var myTime = goodData[1];
+                        var myFunction = goodData[2];
+                        //var myUser = goodData[3]; // not particularly useful atm (only this user's stuff is displayed)
+                        //var myStatus = goodData[4];
+                        // make selectable text area elements based on data
+                        var blankText = document.createElement("textarea");
+                        blankText.id = myRID.toString();
+                        blankText.value = myTime + "\t" + myFunction + "\t" + myRID;//myStatus + "\t" + myRID;
+                        blankText.rows = 1;
+                        blankText.cols = 100;
+                        blankText.readOnly = true;
+                        blankText.onclick = function(){
+                            this.focus();
+                            this.select();
+                            selectedRID = this.id;
+                        };
+                        functionDict[myRID] = myFunction;
+                        div.appendChild(blankText);
+                        div.appendChild(document.createElement("br"));
+                    }
+                    // if selectedRID == 0, nothing is selected
+                    if (selectedRID != 0) {
+                        // reselect target RID if available (what happens if its not there? exception is caused)
+                        try{
+                            // we don't need to reselect on this page //document.getElementById(selectedRID).click();
+                            document.getElementById(selectedRID); // we do still want to catch if this one isn't valid
+                        } catch(err){
+                            selectedRID = 0;
+                        }
+                    }
+                }
+            });
+        }
+        function goToResults(){
+            // functionDict[selectedRID] should give the function name (aka the page we need to go to)
+            // load given page, then set RID to selectedRID
+            // then run the updateStatus function (on that page somehow)
+            // at present, no intention of staying on this page beyond pushing the button
+
+            // would be neat to somehow reload original analysis settings, though selected data may have changed
+
+            // TODO populate with all 'if's from analysis pages, direct the function to its corresponding page
+            // ALSO TODO add RID loader func to all analysis pages, either one copy on each page or a
+            // shared func somewhere, just needs to run on page load
+            var myFunc = functionDict[selectedRID];
+            localStorage.setItem("prevRID", selectedRID);
+            localStorage.setItem("fromHistory", "true");
+            var myURL = "{% url "history" %}";
+            if (myFunc=="getCatUnivData" || myFunc=="getQuantUnivData"){
+                // can't just throw it into the url section, as those are completely done from page generation onward
+                myURL = "{% url "anova" %}";
+            }
+            if (myFunc=="getCorr"){
+                myURL = "{% url "corr" %}";
+            }
+            if (myFunc=="getPCA"){
+                myURL = "{% url "pca" %}";
+            }
+            if (myFunc=="getPCoA"){
+                myURL = "{% url "pcoa" %}";
+            }
+            if (myFunc=="getRF"){
+                myURL = "{% url "rf" %}";
+            }
+            if (myFunc=="getDiffAbund"){
+                myURL = "{% url "diffabund" %}";
+            }
+            if (myFunc=="getGAGE"){
+                myURL = "{% url "gage" %}";
+            }
+            if (myFunc=="getSPLS"){
+                myURL = "{% url "spls" %}";
+            }
+            if (myFunc=="getWGCNA"){
+                myURL = "{% url "wgcna" %}";
+            }
+            if (myFunc=="getSpAC"){
+                myURL = "{% url "spac" %}";
+            }
+            if (myFunc=="getsoil_index"){
+                myURL = "{% url "soil_index" %}";
+            }
+            window.open(myURL);
+        }
+        $(function(){
+            var test = '{{ error }}';
+            if (test != "") {
+                alert(test);
+            }
+            getAnalysisHistory();
+            var delay = 5000;
+            setInterval(getAnalysisHistory, delay);
+        });
+    </script>
+{% endblock javascript %}
+
+{% block my_content %}
+    <h2>Analysis history:</h2>
+    <table>
+    <tr>
+        <td>
+            <div id="ah"></div>
+        </td>
+    </tr>
+    </table>
+    <input id="viewAnalysis" type="button" onclick="goToResults();" value="View selected analysis results"/>
+{% endblock my_content %}

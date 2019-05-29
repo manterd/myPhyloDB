@@ -17,7 +17,7 @@ import time
 import zipfile
 import math
 
-from database.models import Project, Reference, Profile, PublicProjects, UserProfile
+from database.models import Project, Reference, Profile
 
 import config.local_cfg
 import functions
@@ -216,9 +216,9 @@ def taxaProfileDF(mySet):
 
 def PCoA(dm):
     E_matrix = make_E_matrix(dm)
-    F_matrix = make_F_matrix(E_matrix)
+    F_matrix = make_F_matrix(E_matrix)  # TODO fix
     eigvals, eigvecs = np.linalg.eigh(F_matrix)
-    negative_close_to_zero = np.isclose(eigvals, 0)
+    negative_close_to_zero = np.isclose(eigvals, 0)  # TODO fix
     eigvals[negative_close_to_zero] = 0
     idxs_descending = eigvals.argsort()[::-1]
     eigvals = eigvals[idxs_descending]
@@ -239,7 +239,7 @@ def make_F_matrix(E_matrix):
 
 
 def scores(eigvals, eigvecs):
-    num_positive = (eigvals >= 0).sum()
+    num_positive = (eigvals >= 0).sum()  # TODO fix
     eigvecs[:, num_positive:] = np.zeros(eigvecs[:, num_positive:].shape)
     eigvals[num_positive:] = np.zeros(eigvals[num_positive:].shape)
     coordinates = eigvecs * np.core.umath.sqrt(eigvals)
@@ -254,7 +254,7 @@ def purge(dir, pattern):
 
 
 class MultiFileInput(forms.FileInput):
-    def render(self, name, value, attrs={}):
+    def render(self, name, value, attrs={}):    # TODO fix
         attrs['multiple'] = 'multiple'
         return super(MultiFileInput, self).render(name, None, attrs=attrs)
 
@@ -450,7 +450,7 @@ def getRawDataBiom(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def removeFiles(request):
+def removeFiles(request):   # DEPRECATED, see cleanup function in queue
     if request.is_ajax():
         RID = request.GET["all"]
         func = request.GET["func"]
@@ -625,66 +625,6 @@ def transformDF(transform, DepVar, finalDF):
             finalDF['abund_16S'] = np.arcsin(finalDF.abund_16S)
 
     return finalDF
-
-
-def getViewProjects(request):   # use this function as often as possible for project queries, put all perms stuff here
-    # permissions are both project and account based, for improved usability
-
-    # give account perms to co-workers and common collaborators
-    # give project based permissions to uncommon joint project groups
-
-    # TODO group permissions? common work groups defined by a user? social networking? hrm
-    projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.order_by('project_name')
-        # check if project is WIP, flag for dynatree highlighting?
-
-    elif request.user.is_authenticated():
-        # run through list of projects, when valid project is found, append filterIDS with ID
-        # projects will be a queryset set to all projects, then filtered by ids in filterIDS
-        # queryStartTime = time.time()
-
-        publicIDs = PublicProjects.objects.all().first().List.split(",")    # got the public
-        # print "publicIDs:", publicIDs
-        # get private IDs here
-        privateIDs = UserProfile.objects.get(user=request.user).privateProjectList.split(",")
-        # print "privateIDs:", privateIDs
-        filterIDS = np.unique(privateIDs+publicIDs)
-
-        # queryTime = time.time() - queryStartTime
-        # print "Select query time:", queryTime
-        projects = Project.objects.filter(projectid__in=filterIDS).order_by('project_name')
-
-    if not request.user.is_superuser and not request.user.is_authenticated():
-        # impossible to have guest user be on whitelist (hopefully), so public only check
-        projects = Project.objects.filter(status='public').order_by('project_name')
-
-    return projects
-
-
-def getEditProjects(request):
-
-    projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.order_by('project_name')
-
-    elif request.user.is_authenticated():
-        # run through list of projects, when valid project is found, append filterIDS with ID
-        # projects will be a queryset set to all projects, then filtered by ids in filterIDS
-        filterIDS = []
-        for proj in Project.objects.all():
-            good = False  # good to add to list
-            if proj.owner == request.user:
-                good = True
-            checkList = proj.whitelist_edit.split(';')
-            for name in checkList:
-                if name == request.user.username:
-                    good = True
-            if good:
-                filterIDS.append(proj.projectid)
-        projects = Project.objects.filter(projectid__in=filterIDS).order_by('project_name')
-
-    return projects
 
 
 def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False):

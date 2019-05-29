@@ -1,7 +1,7 @@
 from django.conf.urls import include, url
 from django.contrib import admin
 
-from database import views
+from database import views, perms
 
 admin.site.site_url = '/myPhyloDB/'
 admin.autodiscover()
@@ -39,9 +39,8 @@ urlpatterns = [
     url(r'^myPhyloDB/getProjectFiles/$', views.getProjectFiles, name='getProjectFiles'),
     url(r'^myPhyloDB/remProjectFiles/$', views.remProjectFiles, name='remProjectFiles'),
     url(r'^myPhyloDB/removeUploads/$', views.removeUploads, name='removeUploads'),
-    url(r'^myPhyloDB/addPerms/$', views.addPerms, name='addPerms'),
-    url(r'^myPhyloDB/remPerms/$', views.remPerms, name='remPerms'),
-    url(r'^myPhyloDB/updateFilePerms/$', views.updateFilePerms, name='updateFilePerms'),
+    url(r'^myPhyloDB/updateProjPerms/$', perms.updateProjPerms, name='updateProjPerms'),
+    url(r'^myPhyloDB/updateAccPerms/$', perms.updateAccPerms, name='updateAccPerms'),
 
 
     url(r'^myPhyloDB/accounts/profile/$', views.profile, name='profile'),

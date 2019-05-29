@@ -33,17 +33,6 @@
             $(window).load(function() {
                 checkButtons();
             });
-            $(window).bind('unload', function() {
-                $.ajax({
-                    url: '/myPhyloDB/removeFiles/',
-                    async: false,
-                    dataType: 'json',
-                    data: {
-                        all: RID,
-                        func: 'anova'
-                    }
-                });
-            });
             $(".input tr:not(.accordion)").hide();
             $(".input tr.accordion").click(function () {
                 var $arrow = $(this).find(".arrow:first");
@@ -54,7 +43,6 @@
             $(".input tr.accordion:eq(5)").trigger('click');
         });
 
-        {% include "js/commonFunctions.js" %}
         function barChart(xAxis, yAxis, series) {
             var categories = series[0].data.length;
             var width = categories*100+600;

@@ -6,6 +6,7 @@ from time import sleep, time
 import gc
 import datetime
 import config.local_cfg
+from django.contrib.auth.models import User
 from database.models import UserProfile
 import os
 import shutil
@@ -82,6 +83,7 @@ def getAnalysisQueue(request):  # main queue equivalent of working dataqueue tra
     # Get queued processes, format string for display
     #print "Queued"
     for dataReq in queueList:
+        print dataReq
         stringDict[str(queueTimes[dataReq])] = str(dataReq) + ";" + str(queueTimes[dataReq]) + ";" + \
                        str(queueFuncs[dataReq]) + ";" + str(queueUsers[dataReq]) + ";QUEUED\n"
 
@@ -105,6 +107,40 @@ def getAnalysisQueue(request):  # main queue equivalent of working dataqueue tra
     #print "Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString
 
     #print "Display"
+    queueDict = {'display': queueString}
+    output = json.dumps(queueDict)
+    return HttpResponse(output, content_type='application/json')
+
+
+def getAnalysisHistory(request):
+    if not request.user.is_authenticated:
+        output = json.dumps({'display': "Invalid Permissions"})
+        return HttpResponse(output, content_type='application/json')
+    stringDict = {}
+    queueString = ""
+    recentList = UserProfile.objects.get(user=request.user).recentRIDs.split(";")
+    for rid in recentList:
+        myRid = str(rid)
+        try:
+            if myRid != "":
+                stringDict[str(queueTimes[myRid])] = str(myRid) + ";" + str(queueTimes[myRid]) + ";" + \
+                           str(queueFuncs[myRid]) + ";" + str(queueUsers[myRid]) + "\n"
+                # TODO change funcs to page names
+        except:
+            pass  # probably restarted the server since this particular analysis, the RID is not available
+    # Get active processes
+    '''
+    try:
+        for dataProc in activeList:
+            if len(str(dataProc)) > 1:
+                if queueUsers[dataProc] == request.user.username:
+                    stringDict[dataProc] = str(dataProc) + ";" + str(queueTimes[dataProc]) + ";" + \
+                                            str(queueFuncs[dataProc]) + ";" + str(queueUsers[dataProc]) + ";ACTIVE\n"
+    except Exception as ex:
+        print "Problem with dataqueue console:", ex'''
+
+    for key in sorted(stringDict.keys()):
+        queueString += stringDict[key]
     queueDict = {'display': queueString}
     output = json.dumps(queueDict)
     return HttpResponse(output, content_type='application/json')
@@ -217,7 +253,7 @@ def process(pid):
                 activeList[pid] = 0
                 stopDict.pop(RID, 0)
                 functions.log(request, "QFINISH", funcName)
-            cleanup(RID)
+            cleanup(RID, queueUsers[RID])
         except Exception as e:
             print "Error during analysis queue:", e
             if request is not None:
@@ -227,31 +263,31 @@ def process(pid):
             recent[RID] = HttpResponse(stop, content_type='application/json')
 
 
-def cleanup(RID):   # cleanup and removeRID two parts of the same concept, group and add recent and such cleanup TODO DONE
-    # TODO need to cleanup temp files for given RID !DONE!
-    # TODO put given RID into user's history, cleanup the oldest RID if at capacity (3 for now). Not a loop
+def cleanup(RID, username):   # cleanup and removeRID two parts of the same concept, group and add recent and such cleanup
     global queueFuncs, queueTimes, queueUsers, queueList, cleanupQueue, base, stage, time1, time2, TimeDiff
-    # could potentially have some gone before others, for now just putting all in try's
-
-    # cleanupQueue.put(RID, True)  # problem with this is its timing based: we only have a delay for results
-    #                            # if the next analysis completion is significantly later than this one
-    # TODO cleanup should be handled by a sequence for each user:
-    # if a user completes a 4th analysis, cleanup the oldest one
-    # we want status to be able to call up recent[RID] (rename to results?) for as long as needed
-    # until that same user has run a third analysis since the RID in question
-    # SO, todo this, check user's recent rid model BEFORE putting into cleanupQueue
-    '''myRIDList = user_profile.objects.get(user=user).recentRIDs.split(";")
-    cleanRID = myRIDList[0]'''
-    cleanRID = cleanupQueue.pop()
-
+    # get the user's recent RID list, add the new RID, and potentially receive an older RID to add to the queue
+    myProf = UserProfile.objects.get(user=User.objects.get(username=username))
+    toClean = myProf.addRecentRID(RID)
+    if toClean is not None:
+        cleanupQueue.put(toClean, True)
+    myProf.save()
+    #print "CLEANUP CALL FROM", RID, ", QUEUEING", toClean, "FOR CLEANUP
+    cleanRID = ''
+    try:
+        # from here, see if something's in the queue, try to clean it up
+        cleanRID = cleanupQueue.get(block=False, timeout=1)
+    except:
+        pass
     try:
         queueList.pop(cleanRID, 0)
     except:
         pass
+
     try:
         queueFuncs.pop(cleanRID, 0)
     except:
         pass
+
     try:
         # cleaning up old files
         delPath = "myPhyloDB/media/temp"
@@ -278,10 +314,12 @@ def cleanup(RID):   # cleanup and removeRID two parts of the same concept, group
     except Exception as ex:
         print "Error during file cleanup:", ex
         pass
+
     try:
         queueTimes.pop(cleanRID, 0)
     except:
         pass
+
     try:
         queueUsers.pop(cleanRID, 0)
     except:
@@ -291,6 +329,7 @@ def cleanup(RID):   # cleanup and removeRID two parts of the same concept, group
         recent.pop(cleanRID, 0)
     except:
         pass
+
     try:
         statDict.pop(cleanRID, 0)
     except:
@@ -300,34 +339,38 @@ def cleanup(RID):   # cleanup and removeRID two parts of the same concept, group
         base.pop(cleanRID, None)
     except:
         pass
+
     try:
         stage.pop(cleanRID, None)
     except:
         pass
+
     try:
         time1.pop(cleanRID, None)
     except:
         pass
+
     try:
         time2.pop(cleanRID, None)
     except:
         pass
+
     try:
         TimeDiff.pop(cleanRID, None)
     except:
         pass
+
     try:
         complete.pop(cleanRID, None)
     except:
         pass
 
     gc.collect()  # attempting to cleanup memory leaks since processes technically are still there
-    cleanupQueue.put(RID, True)
 
 
 def funcCall(request):
     # new hybrid call
-    global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff, complete, cleanupQueue
+    global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff, complete
     allJson = request.body.split('&')[0]
     data = json.loads(allJson)
     reqType = data['reqType']
@@ -370,11 +413,10 @@ def funcCall(request):
 
     if reqType == "status":
         try:
-            # TODO fix race condition with having multiple status query sources! FIXED WITH CLEANUPQUEUE !DONE!
             results = recent[RID]   # recent[RID] is only initialized if function has returned with data
-            cleanupQueue.put(RID, True)
             # return results to client
-            return results
+            #print "Returning to client for RID", RID
+            return results  # WE DID IT
         except KeyError:
             time2[RID] = time()
             try:

@@ -29,17 +29,6 @@
             $(window).load(function() {
                 checkButtons();
             });
-            $(window).bind('unload', function(){
-                $.ajax({
-                    url: '/myPhyloDB/removeFiles/',
-                    async: false,
-                    dataType: 'json',
-                    data: {
-                        all: RID,
-                        func: 'gage'
-                    }
-                });
-            });
             $(".input tr:not(.accordion)").hide();
             $(".input tr.accordion").click(function () {
                 var $arrow = $(this).find(".arrow:first");
@@ -63,7 +52,6 @@
             });
         });
 
-        {% include "js/commonFunctions.js" %}
         function checkButtons() {
             //set all buttons to their proper states given the current state of the independent buttons
             $("#run").css("background-color", "lightgray");
