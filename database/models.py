@@ -302,15 +302,6 @@ class Soil(models.Model):
     soil_Na = models.FloatField(blank=True, null=True)
     soil_B = models.FloatField(blank=True, null=True)
 
-    # new stuff from health assessment
-    soil_water_cap = models.FloatField(blank=True, null=True)
-    soil_surf_hard = models.FloatField(blank=True, null=True)
-    soil_subsurf_hard = models.FloatField(blank=True, null=True)
-    soil_agg_stability = models.FloatField(blank=True, null=True)
-    soil_ACE_protein = models.FloatField(blank=True, null=True)
-    soil_active_C = models.FloatField(blank=True, null=True)
-    # TODO put these in the meta file /\ /\ /\ 6
-
     plant_C = models.FloatField(blank=True, null=True)
     plant_N = models.FloatField(blank=True, null=True)
     plant_P = models.FloatField(blank=True, null=True)
@@ -343,35 +334,34 @@ class Soil(models.Model):
     ghg_NH4 = models.FloatField(blank=True, null=True)
 
     # entries added for Cornell's C.A.S.H.  (not duplicating values already stored)
-
-    # potential id fields from cornell meta files (if we end up parsing those)
-    #seriesletter
-    #quar_y_n
-    #samplenumber
-    #fieldID
-    # TODO put all these in the meta file \/ \/ \/ 20
     # these should be added to the standard myphylodb meta file, all are quantitative and some depend on existing soil vals
     # soil vals which appear in cornell's set and the base myphylodb set should have a redirect from cornell to main
     soil_texture_sand = models.FloatField(blank=True, null=True)
     soil_texture_silt = models.FloatField(blank=True, null=True)
     soil_texture_clay = models.FloatField(blank=True, null=True)
-    water_capacity_rating = models.FloatField(blank=True, null=True)
-    surface_hardness_rating = models.FloatField(blank=True, null=True)
-    subsurface_hardness_rating = models.FloatField(blank=True, null=True)
-    aggregate_stability_rating = models.FloatField(blank=True, null=True)
-    organic_matter = models.FloatField(blank=True, null=True)
-    organic_matter_rating = models.FloatField(blank=True, null=True)
-    ace_soil_protein_index_rating = models.FloatField(blank=True, null=True)
-    root_pathogen_pressure = models.FloatField(blank=True, null=True)
-    root_pathogen_pressure_rating = models.FloatField(blank=True, null=True)
-    respiration_four_day = models.FloatField(blank=True, null=True)
-    repisration_four_day_rating = models.FloatField(blank=True, null=True)
-    active_carbon_rating = models.FloatField(blank=True, null=True)
-    ph_rating = models.FloatField(blank=True, null=True)
-    p_rating = models.FloatField(blank=True, null=True)
-    k_rating = models.FloatField(blank=True, null=True)
-    minor_elements_rating = models.FloatField(blank=True, null=True)
-    overall_rating = models.FloatField(blank=True, null=True)
+    soil_water_cap = models.FloatField(blank=True, null=True)
+    soil_water_cap_rating = models.FloatField(blank=True, null=True)
+    soil_surf_hardness = models.FloatField(blank=True, null=True)
+    soil_surf_hardness_rating = models.FloatField(blank=True, null=True)
+    soil_subsurf_hardness = models.FloatField(blank=True, null=True)
+    soil_subsurf_hardness_rating = models.FloatField(blank=True, null=True)
+    soil_agg_stability = models.FloatField(blank=True, null=True)
+    soil_agg_stability_rating = models.FloatField(blank=True, null=True)
+    soil_organic_matter = models.FloatField(blank=True, null=True)
+    soil_organic_matter_rating = models.FloatField(blank=True, null=True)
+    soil_ACE_protein_index = models.FloatField(blank=True, null=True)
+    soil_ACE_protein_index_rating = models.FloatField(blank=True, null=True)
+    soil_root_pathogen_pressure = models.FloatField(blank=True, null=True)
+    soil_root_pathogen_pressure_rating = models.FloatField(blank=True, null=True)
+    soil_respiration_four_day = models.FloatField(blank=True, null=True)
+    soil_respiration_four_day_rating = models.FloatField(blank=True, null=True)
+    soil_active_C = models.FloatField(blank=True, null=True)
+    soil_active_C_rating = models.FloatField(blank=True, null=True)
+    soil_pH_rating = models.FloatField(blank=True, null=True)
+    soil_p_rating = models.FloatField(blank=True, null=True)
+    soil_k_rating = models.FloatField(blank=True, null=True)
+    soil_minor_elements_rating = models.FloatField(blank=True, null=True)
+    CASH_SHI_rating = models.FloatField(blank=True, null=True)
 
     def __unicode__(self):
         return self.sampleid.sample_name
@@ -849,7 +839,7 @@ class UserProfile(models.Model):
 
     # permissions fields and methods, using usernames (functionally interchangeable with ids, but names are readable)
     hasPermsFrom = models.TextField(blank=True)  # acts as a list via split with ';' delimiter
-    # do these get updated at proper times? TODO verify
+    # Note: all changes to these lists should occur within perms.py (anything using them as well)
     # (everything related to these fields should always call the appropriate functions)
     gavePermsTo = models.TextField(blank=True)
 
@@ -870,7 +860,7 @@ class UserProfile(models.Model):
         self.gavePermsTo = updateList(self.gavePermsTo, ";", remove, add)
 
 
-    # need to update visible list whenever this user uploads or deletes a project   TODO verify
+    # need to update visible list whenever this user uploads or deletes a project
     # and whenever another user gives or removes permission, which is stored per project? per user? Could do both
     # this list should NEVER be editable by the user, only updated by server, and user sees RESULT of list (projects)
     privateProjectList = models.TextField(blank=True)

@@ -78,11 +78,12 @@ def admin_console(request):
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def history(request):
     # page for viewing previous analyses (can add ongoing and shared results next)
-    # todo implement
+    # the page itself makes all needed calls, so just render the template and go
     return render(
         request,
         'history.html'
     )
+
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def files(request):
@@ -641,16 +642,16 @@ def uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, P
     for filepath, name in map(None, file_list, name_list):
         copyFromUpload(filepath, mothurdest, name)
         try:
-            tar = tarfile.open(os.path.join(mothurdest, name))
-            tar.extractall(path=mothurdest)  # TODO security check the paths in this archive
-                                             # verify nothing leaves mothurdest
-                                             # no symbolic links, hard coded paths, etc
-            tar.close()
+            zip = zipfile.ZipFile(os.path.join(mothurdest, name))
+            zip.extractall(mothurdest)
+            zip.close()
         except Exception:
             try:
-                zip = zipfile.ZipFile(os.path.join(mothurdest, name))
-                zip.extractall(mothurdest)
-                zip.close()
+                tar = tarfile.open(os.path.join(mothurdest, name))
+                tar.extractall(path=mothurdest)  # TODO security check the paths in this archive: SAFETARFILE vs TARFILE
+                                             # verify nothing leaves mothurdest
+                                             # no symbolic links, hard coded paths, etc
+                tar.close()
             except Exception:
                 pass
                 # file is unlikely to be an archive, as unzip and untar both failed
@@ -1007,7 +1008,7 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
 
 
 def uploadFunc(request, stopList):
-    # consider making an account called myPhyloDB for Script role instead of admin
+    # consider making an account called myPhyloDB for Script role instead of admin TODO
     # having admin as the account looks slightly less professional in my opinion
 
     # validation process involves checking settings paired with actual files sent
@@ -1051,7 +1052,7 @@ def uploadFunc(request, stopList):
         pass
 
 
-    good = True   # verification flag, if ANYTHING goes wrong in security checks or we're missing data, make this False
+    good = True   # verification flag, if anything goes wrong in security checks or we're missing data, make this False
 
     # do this process of checking for files via helper function in loop?
     # cleanInput function?
@@ -1194,6 +1195,13 @@ def uploadFunc(request, stopList):
     myProject.wip = False
     myProject.save()
 
+    # completely finished the upload!
+    # update permissions lists, parse_project only handles this on status change during update (in case of reset)
+    if myProject.status == "private":
+        perms.newPriv(p_uuid)
+    if myProject.status == "public":
+        perms.newPub(p_uuid)
+
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
     elif request.user.is_authenticated():
@@ -1287,7 +1295,6 @@ def remProjectFiles(request):
         data = json.loads(allJson)
         refList = data['paths']
         functions.remove_list(refList)
-
         results = {'error': 'none'}
         myJson = json.dumps(results)
         return HttpResponse(myJson)
@@ -1867,12 +1874,32 @@ def soilTableJSON(request):
             "ghg_N2O",
             "ghg_CO2",
             "ghg_NH4",
+            "soil_texture_sand",
+            "soil_texture_silt",
+            "soil_texture_clay",
             "soil_water_cap",
-            "soil_surf_hard",
-            "soil_subsurf_hard",
+            "soil_water_cap_rating",
+            "soil_surf_hardness",
+            "soil_surf_hardness_rating",
+            "soil_subsurf_hardness",
+            "soil_subsurf_hardness_rating",
             "soil_agg_stability",
-            "soil_ACE_protein",
-            "soil_active_C"
+            "soil_agg_stability_rating",
+            "soil_organic_matter",
+            "soil_organic_matter_rating",
+            "soil_ACE_protein_index",
+            "soil_ACE_protein_index_rating",
+            "soil_root_pathogen_pressure",
+            "soil_root_pathogen_pressure_rating",
+            "soil_respiration_four_day",
+            "soil_respiration_four_day_rating",
+            "soil_active_C",
+            "soil_active_C_rating",
+            "soil_pH_rating",
+            "soil_p_rating",
+            "soil_k_rating",
+            "soil_minor_elements_rating",
+            "CASH_SHI_rating"
         )
 
         qs1 = [[u'nan' if x is None else x for x in c] for c in qs1]

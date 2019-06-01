@@ -48,84 +48,55 @@
 
         var treeType = 3, dataType = 1;
         var nodesCat = "";
-        var hiding = 1, table, locMax = true;
+        var hiding = 1, table, locMax = false;
         var running = false, refresh = 0, RID = 0;
 
-        // Forest values
         var dataSet =  [
             //GIBBS
-            ["1", "GIBBS", "C decomposition", "bglX", "beta-glucosidase", "1e9"],
-            ["2", "GIBBS", "C decomposition", "bglB", "beta-glucosidase", "1e9"],
-            ["3", "GIBBS", "C decomposition", "3.2.1.21", "beta-glucosidase", "1e9"],
-            ["4", "GIBBS", "P decomposition", "phoA", "alkaline phosphatase", "1e9"],
-            ["5", "GIBBS", "P decomposition", "phoD", "alkaline phosphatase", "1e9"],
-            ["6", "GIBBS", "P decomposition", "E3.1.3.2", "acid phosphatase", "1e9"],
-            ["7", "GIBBS", "P decomposition", "appA", "acid phosphatase", "1e9"],
-            ["8", "GIBBS", "P decomposition", "phoN", "acid phosphatase", "1e9"],
-            ["9", "GIBBS", "S decomposition", "aslA", "arylsulfatase", "1e9"],
-            ["10", "GIBBS", "P-solubility", "pqqC", "pyrroloquinoline-quinone synthase", "1e9"],
-            ["11", "GIBBS", "Biocontrol", "hcnA", "glycine dehydrogenase (cyanide-forming)", "1e9"],
-            ["12", "GIBBs", "Biocontrol", "budA", "acetolactate decarboxylase", "1e9"],
-            ["13", "GIBBs", "Biocontrol", "budC", "(S,S)-butanediol dehydrogenase", "1e9"],
-            ["14", "GIBBs", "Biocontrol", "E3.2.1.6", "endo-1,3(4)-beta-glucanase", "1e9"],
-            ["15", "GIBBS", "Biocontrol", "E3.2.1.14", "chitinase", "1e9"],
-            ["16", "GIBBS", "Biocontrol", "prnD", "aminopyrrolnitrin oxygenase", "1e9"],
-            ["17", "GIBBS", "Biocontrol", "phlD", "phloroglucinol synthase", "1e9"],
-            ["18", "GIBBS", "Biocontrol", "ituA", "iturin family lipopeptide synthetase A", "1e9"],
-            ["20", "GIBBS", "Biocontrol", "fenA", "fengycin family lipopeptide synthetase D", "1e9"],
-            ["21", "GIBBS", "Biocontrol", "srfAA", "surfactin family lipopeptide synthetase A", "1e9"],
-            ["24", "GIBBS", "Biocontrol", "rifM", "AHBA synthesis associated protein", "1e9"],
-            ["27", "GIBBS", "Biocontrol", "phzE", "2-amino-4-deoxychorismate synthase", "1e9"],
-            ["28", "GIBBS", "Root-growth", "ipdC", "indolepyruvate decarboxylase", "1e9"],
-            ["29", "GIBBS", "Root-growth", "acdS", "1-aminocyclopropane-1-carboxylate deaminase", "1e9"],
-            ["30", "GIBBS", "Siderophore", "mbtI", "salicylate synthetase", "1e9"],
-            ["31", "GIBBS", "Siderophore", "entA", "2,3-dihydro-2,3-dihydroxybenzoate dehydrogenase", "1e9"],
-            ["32", "GIBBS", "Siderophore", "pchB", "isochorismate pyruvate lysase", "1e9"],
-
-            //Biological
-            ["35", "Biological", "", "", "Abundance", "1e9"],
-            ["36", "Biological", "", "", "Richness", "10000"],
-            ["37", "Biological", "", "", "Diversity", "6"],
-            ["38", "Biological", "", "", "ACE Soil Protein Index", "10"],
-            ["39", "Biological", "", "", "Active Carbon", "500"],
-            ["40", "Biological", "", "", "Respiration", "10"],
-
-            //Chemical
-            ["41", "Chemical", "", "", "Organic Matter", "40"],
-            ["42", "Chemical", "", "", "Carbon", "20"],
-            ["43", "Chemical", "", "", "pH", "14"],
-            ["44", "Chemical", "", "", "Phosphorus", "10"],
-            ["45", "Chemical", "", "", "Potassium", "100"],
-            ["46", "Chemical", "", "", "Nitrogen", "100"],
-
-            //Physical
-            ["47", "Physical", "", "", "Porosity", "1"],
-            ["48", "Physical", "", "", "Bulk Density", "2.65"],
-            ["49", "Physical", "", "", "Water Content", "100"],
-            ["50", "Physical", "", "", "Electric Conductivity", "10"],
-            ["51", "Physical", "", "", "Microbial Biomass C", "100"],
-            ["52", "Physical", "", "", "Microbial Biomass N", "100"],
-            ["53", "Physical", "", "", "Available Water Capacity", "1.0"],
-            ["54", "Physical", "", "", "Surface Hardness", "500"],
-            ["55", "Physical", "", "", "Subsurface Hardness", "500"],
-            ["56", "Physical", "", "", "Aggregate Stability", "100"],
+            ["1", "GIBBS", "C decomposition", "bglX", "beta-glucosidase", "0.5696", "0.0135"],
+            ["2", "GIBBS", "C decomposition", "bglB", "beta-glucosidase", "0.6694", "0.0293"],
+            ["3", "GIBBS", "C decomposition", "E3.2.1.21", "beta-glucosidase", "0.2094", "0.0354"],
+            ["4", "GIBBS", "P decomposition", "phoA", "alkaline phosphatase", "0.2914", "0.0243"],
+            ["5", "GIBBS", "P decomposition", "phoD", "alkaline phosphatase", "0.6758", "0.0416"],
+            ["6", "GIBBS", "P decomposition", "E3.1.3.2", "acid phosphatase", "0.1242", "0.0129"],
+            ["7", "GIBBS", "P decomposition", "appA", "acid phosphatase", "0.1057", "0.0134"],
+            ["8", "GIBBS", "P decomposition", "phoN", "acid phosphatase", "0.0549", "0.0065"],
+            ["9", "GIBBS", "S decomposition", "aslA", "arylsulfatase", "0.327", "0.0486"],
+            ["10", "GIBBS", "P-solubility", "pqqC", "pyrroloquinoline-quinone synthase", "0.2009", "0.0301"],
+            ["11", "GIBBS", "Biocontrol", "hcnA", "glycine dehydrogenase (cyanide-forming)", "0.0031", "0.0045"],
+            ["12", "GIBBs", "Biocontrol", "budA", "acetolactate decarboxylase", "0.0229", "0.0088"],
+            ["13", "GIBBs", "Biocontrol", "budC", "(S,S)-butanediol dehydrogenase", "0", "0"],
+            ["14", "GIBBs", "Biocontrol", "E3.2.1.6", "endo-1,3(4)-beta-glucanase", "0.0006", "0.0008"],
+            ["15", "GIBBS", "Biocontrol", "E3.2.1.14", "chitinase", "0.4933", "0.0284"],
+            ["16", "GIBBS", "Biocontrol", "prnD", "aminopyrrolnitrin oxygenase", "0", "0"],
+            ["17", "GIBBS", "Biocontrol", "phlD", "phloroglucinol synthase", "0", "0"],
+            ["18", "GIBBS", "Biocontrol", "ituA", "iturin family lipopeptide synthetase A", "0", "0"],
+            ["20", "GIBBS", "Biocontrol", "fenA", "fengycin family lipopeptide synthetase D", "0", "0"],
+            ["21", "GIBBS", "Biocontrol", "srfAA", "surfactin family lipopeptide synthetase A", "0", "0"],
+            ["24", "GIBBS", "Biocontrol", "rifM", "AHBA synthesis associated protein", "0", "0"],
+            ["27", "GIBBS", "Biocontrol", "phzE", "2-amino-4-deoxychorismate synthase", "0.0864", "0.0396"],
+            ["28", "GIBBS", "Root-growth", "ipdC", "indolepyruvate decarboxylase", "0.0651", "0.0038"],
+            ["29", "GIBBS", "Root-growth", "acdS", "1-aminocyclopropane-1-carboxylate deaminase", "0.1239", "0.0193"],
+            ["30", "GIBBS", "Siderophore", "mbtI", "salicylate synthetase", "0.0197", "0.0095"],
+            ["31", "GIBBS", "Siderophore", "entA", "2,3-dihydro-2,3-dihydroxybenzoate dehydrogenase", "0.1287", "0.0515"],
+            ["32", "GIBBS", "Siderophore", "pchB", "isochorismate pyruvate lysase", "0.0244", "0.0045"],
 
             //N cycle
-            ["57", "N cycle", "N-fixation", "nifH", "nitrogenase Fe protein", "1e9"],
-            ["58", "N cycle", "N-fixation", "nifDK", "nitrogenase Mo-Fe protein", "1e9"],
-            ["59", "GIBBS", "Ammonification", "amiE", "amidase", "1e9"],
-            ["60", "GIBBS", "Ammonification", "ureC", "urease", "1e9"],
-            ["61", "N cycle", "Nitrification", "pmoA-amoA", "methane/ammonia monooxygenase", "1e9"],
-            ["62", "N cycle", "Nitrification", "hao", "hydroxylamine dehydrogenase", "1e9"],
-            ["63", "N cycle", "Nitrification", "narGH", "nitrate reductase", "1e9"],
-            ["64", "N cycle", "DNRA", "nirBD", "nitrite reductase (NADH)", "1e9"],
-            ["65", "N cycle", "DNRA", "nrfA", "nitrite reductase (cytochrome c-552)", "1e9"],
-            ["66", "N cycle", "ANRA", "nirA", "ferrodoxin-nitrite reductase", "1e9"],
-            ["67", "N cycle", "ANRA", "NIT-6", "nitrite reductase (NAD(P)H)", "1e9"],
-            ["68", "N cycle", "Denitrification", "nirK", "nitrite reductase (NO forming)", "1e9"],
-            ["69", "N cycle", "Denitrification", "nirS", "nitrite reductase (NO forming)", "1e9"],
-            ["70", "N cycle", "Denitrification", "norBC", "nitric oxide reductase", "1e9"],
-            ["71", "N cycle", "Denitrification", "nosZ", "nitrous-oxide reductase", "1e9"]
+            ["59", "N cycle", "N-fixation", "nifH", "nitrogenase Fe protein", "0.1412", "0.0037"],
+            ["60", "N cycle", "N-fixation", "nifDK", "nitrogenase Mo-Fe protein", "0.1521", "0.0093"],
+            ["61", "GIBBS", "Ammonification", "amiE", "amidase", "0.7972", "0.025"],
+            ["62", "GIBBS", "Ammonification", "ureC", "urease", "0.333", "0.0588"],
+            ["63", "N cycle", "Nitrification", "pmoA-amoA", "methane/ammonia monooxygenase", "0.0009", "0.0015"],
+            ["64", "N cycle", "Nitrification", "hao", "hydroxylamine dehydrogenase", "0.0098", "0.003"],
+            ["65", "N cycle", "Nitrification", "narGH", "nitrate reductase", "0.3384", "0.0291"],
+            ["66", "N cycle", "DNRA", "nirBD", "nitrite reductase (NADH)", "0.4449", "0.0622"],
+            ["67", "N cycle", "DNRA", "nrfA", "nitrite reductase (cytochrome c-552)", "0.0201", "0.0025"],
+            ["68", "N cycle", "ANRA", "nirA", "ferrodoxin-nitrite reductase", "0.4948", "0.0375"],
+            ["69", "N cycle", "ANRA", "NIT-6", "nitrite reductase (NAD(P)H)", "0", "0"],
+            ["70", "N cycle", "Denitrification", "nirK", "nitrite reductase (NO forming)", "0.1555", "0.0393"],
+            ["71", "N cycle", "Denitrification", "nirS", "nitrite reductase (NO forming)", "0", "0"],
+            ["72", "N cycle", "Denitrification", "norBC", "nitric oxide reductase", "0.0299", "0.0147"],
+            ["73", "N cycle", "Denitrification", "nosZ", "nitrous-oxide reductase", "0.0232", "0.018"]
         ];
 
         $(function () {
@@ -147,7 +118,8 @@
                     { title: "Sub-Category" },
                     { title: "EC ID" },
                     { title: "Name" },
-                    { title: "Value" }
+                    { title: "Mean" },
+                    { title: "SD" }
                 ]
             } );
         });
@@ -234,12 +206,17 @@
                 metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
             }
 
-            var maxVals = {};
+            var meanVals = {};
+            var sdVals = {};
             if (!locMax) {
-                var names = table.column(4).data();
+                var names = table.column(3).data();
                 var colvals = table.column(5).data();
                 for (var c=0; c<names.length; c++) {
-                    maxVals[names[c]] = colvals[c];
+                    meanVals[names[c]] = colvals[c];
+                }
+                colvals = table.column(6).data();
+                for (var d=0; d<names.length; d++) {
+                    sdVals[names[d]] = colvals[d];
                 }
 
                 var stop = false;
@@ -251,7 +228,8 @@
 
             var myDict = {};
             myDict['locMax'] = locMax;
-            myDict['maxVals'] = maxVals;
+            myDict['meanVals'] = meanVals;
+            myDict['sdVals'] = sdVals;
             myDict['metaValsCat'] = metaValsCat;
             myDict['metaIDsCat'] = metaIDsCat;
             myDict['RID'] = RID;
@@ -275,7 +253,8 @@
             });
         }
         function presetFunc(val) {
-            var maxValDict = {};
+            var meanValDict = {};
+            var sdValDict = {};
             table.order([0, 'asc']).draw(); //reset sorting because these tables are buggy as heck
             var names = table.column(4).data();
             if (val == 1) {
@@ -285,216 +264,102 @@
             else if (val == 2) {
                 //Agriculture
                 locMax = false;
-                //initialize maxValDict with agriculture pairs
-                maxValDict = {
-                    //GIBBs
-                    // C decomposition
-                    'bglX': 1e9,
-                    'bglB': 1e9,
-                    'E3.2.1.21': 1e9,
-
-                    // N decomposition
-                    'amiE': 1e9,
-                    'ureC': 1e9,
-
-                    // P decomposition
-                    'phoA': 1e9,
-                    'phoD': 1e9,
-                    'E3.1.3.2': 1e9,
-                    'appA': 1e9,
-                    'phoN': 1e9,
-
-                    // S decomposition
-                    'aslA': 1e9,
-
-                    // N-fixation
-                    'nifH': 1e9,
-                    'nifDK': 1e9,
-
-                    // P solubility
-                    'pqqC': 1e9,
-
-                    // Biocontrol
-                    'hcnABC': 1e9,
-                    'budA': 1e9,
-                    'budC': 1e9,
-                    'E3.2.1.6': 1e9,
-                    'E3.2.1.14': 1e9,
-
-                    // Root growth
-                    'ipdC': 1e9,
-                    'acdS': 1e9,
-
-                    // Siderophore
-                    'iucC': 1e9,
-                    'entDF': 1e9,
-                    'mbtA': 1e9,
-                    'ybtE': 1e9,
-
-                    // N cycle
-                    // N-fixation
-                    // nitrogenase -- already in list
-
-                    // Ammonification
-                    // amidase -- already in list
-                    // urease -- already in list
-
-                    // Nitrificiation
-                    'pmoA-amoA': 1e9,
-                    'hao': 1e9,
-                    'narGH': 1e9,
-
-                    // DNRA
-                    'nirBD': 1e9,
-                    'nrfA': 1e9,
-
-                    // ANRA
-                    'nirA': 1e9,
-                    'NIT-6': 1e9,
-
-                    // Denitrification
-                    'nirK': 1e9,
-                    'nirS': 1e9,
-                    'norBC': 1e9,
-                    'nosZ': 1e9,
-
-                    //Biological
-                    'Abundance': "1e9",
-                    'Richness': "10000",
-                    'Diversity': "6",
-                    'ACE Soil Protein Index': "10",
-                    'Respiration': "10",
-                    'Active Carbon': "500",
-
-                    //Chemical
-                    'Organic Matter': "40",
-                    'Carbon': "20",
-                    'pH': "14",
-                    'Phosphorus': "10",
-                    'Potassium': "100",
-
-                    //Physical
-                    'Porosity': "1",
-                    'Bulk Density': "2.65",
-                    'Electric Conductivity': "10",
-                    'Water Content': "100",
-                    'Available Water Capacity': "1",
-                    'Aggregate Stability': "100",
-                    'Surface Hardness': "500",
-                    'Subsurface Hardness': "500"
+                //initialize meanValDict with agriculture pairs
+                meanValDict = {
+                    'bglX': 0.5696,
+                    'bglB': 0.6694,
+                    'E3.2.1.21': 0.2094,
+                    'phoA': 0.2914,
+                    'phoD': 0.6758,
+                    'E3.1.3.2': 0.1242,
+                    'appA': 0.1057,
+                    'phoN': 0.0549,
+                    'aslA': 0.327,
+                    'pqqC': 0.2009,
+                    'hcnA': 0.0031,
+                    'budA': 0.0229,
+                    'budC': 0,
+                    'E3.2.1.6': 0.0006,
+                    'E3.2.1.14': 0.4933,
+                    'prnD': 0,
+                    'phlD': 0,
+                    'ituA': 0,
+                    'fenA': 0,
+                    'srfAA': 0,
+                    'rifM': 0,
+                    'phzE': 0.0864,
+                    'ipdC': 0.0651,
+                    'acdS': 0.1239,
+                    'mbtI': 0.0197,
+                    'entA': 0.1287,
+                    'pchB': 0.0244,
+                    'nifH': 0.1412,
+                    'nifDK': 0.1521,
+                    'amiE': 0.7972,
+                    'ureC': 0.333,
+                    'pmoA-amoA': 0.0009,
+                    'hao': 0.0098,
+                    'narGH': 0.3384,
+                    'nirBD': 0.4449,
+                    'nrfA': 0.0201,
+                    'nirA': 0.4948,
+                    'NIT-6': 0,
+                    'nirK': 0.1555,
+                    'nirS': 0,
+                    'norBC': 0.0299,
+                    'nosZ': 0.0232
                 };
-                //set column 4 value at row c to value of maxValDict with entry names[c]
+                meanValDict = {
+                    'bglX': 0.0135,
+                    'bglB': 0.0293,
+                    'E3.2.1.21': 0.0354,
+                    'phoA': 0.0243,
+                    'phoD': 0.0416,
+                    'E3.1.3.2': 0.0129,
+                    'appA': 0.0134,
+                    'phoN': 0.0065,
+                    'aslA': 0.0486,
+                    'pqqC': 0.0301,
+                    'hcnA': 0.0045,
+                    'budA': 0.0088,
+                    'budC': 0,
+                    'E3.2.1.6': 0.0008,
+                    'E3.2.1.14': 0.0284,
+                    'prnD': 0,
+                    'phlD': 0,
+                    'ituA': 0,
+                    'fenA': 0,
+                    'srfAA': 0,
+                    'rifM': 0,
+                    'phzE': 0.0396,
+                    'ipdC': 0.0038,
+                    'acdS': 0.0193,
+                    'mbtI': 0.0095,
+                    'entA': 0.0515,
+                    'pchB': 0.0045,
+                    'nifH': 0.0037,
+                    'nifDK': 0.0093,
+                    'amiE': 0.025,
+                    'ureC': 0.0588,
+                    'pmoA-amoA': 0.0015,
+                    'hao': 0.003,
+                    'narGH': 0.0291,
+                    'nirBD': 0.0622,
+                    'nrfA': 0.0025,
+                    'nirA': 0.0375,
+                    'NIT-6': 0,
+                    'nirK': 0.0393,
+                    'nirS': 0,
+                    'norBC': 0.0147,
+                    'nosZ': 0.018
+                };
+                //set column 4 value at row c to value of meanValDict with entry names[c]
                 for (var c=0; c<names.length; c++) {
-                    if (maxValDict[names[c]]!=null) {
-                        table.cell(c, 5).data(maxValDict[names[c]]);
+                    if (meanValDict[names[c]]!=null) {
+                        table.cell(c, 5).data(meanValDict[names[c]]);
                     }
-                }
-            }
-            else if (val == 3) {
-                //Forest
-                locMax = false;
-                //initialize maxValDict with forest pairs
-                maxValDict = {
-                    //GIBBs
-                    // C decomposition
-                    'bglX': 1e9,
-                    'bglB': 1e9,
-                    'E3.2.1.21': 1e9,
-
-                    // N decomposition
-                    'amiE': 1e9,
-                    'ureC': 1e9,
-
-                    // P decomposition
-                    'phoA': 1e9,
-                    'phoD': 1e9,
-                    'E3.1.3.2': 1e9,
-                    'appA': 1e9,
-                    'phoN': 1e9,
-
-                    // S decomposition
-                    'aslA': 1e9,
-
-                    // N-fixation
-                    'nifH': 1e9,
-                    'nifDK': 1e9,
-
-                    // P solubility
-                    'pqqC': 1e9,
-
-                    // Biocontrol
-                    'hcnABC': 1e9,
-                    'budA': 1e9,
-                    'budC': 1e9,
-                    'E3.2.1.6': 1e9,
-                    'E3.2.1.14': 1e9,
-
-                    // Root growth
-                    'ipdC': 1e9,
-                    'acdS': 1e9,
-
-                    // Siderophore
-                    'iucC': 1e9,
-                    'entDF': 1e9,
-                    'mbtA': 1e9,
-                    'ybtE': 1e9,
-
-                    // N cycle
-                    // N-fixation
-                    // nitrogenase -- already in list
-
-                    // Ammonification
-                    // amidase -- already in list
-                    // urease -- already in list
-
-                    // Nitrificiation
-                    'pmoA-amoA': 1e9,
-                    'hao': 1e9,
-                    'narGH': 1e9,
-
-                    // DNRA
-                    'nirBD': 1e9,
-                    'nrfA': 1e9,
-
-                    // ANRA
-                    'nirA': 1e9,
-                    'NIT-6': 1e9,
-
-                    // Denitrification
-                    'nirK': 1e9,
-                    'nirS': 1e9,
-                    'norBC': 1e9,
-                    'nosZ': 1e9,
-
-                    //Biological
-                    'Abundance': "1e9",
-                    'Richness': "10000",
-                    'Diversity': "6",
-                    'ACE Soil Protein Index': "10",
-                    'Respiration': "10",
-                    'Active Carbon': "500",
-
-                    //Chemical
-                    'Organic Matter': "40",
-                    'Carbon': "20",
-                    'pH': "14",
-                    'Phosphorus': "10",
-                    'Potassium': "100",
-
-                    //Physical
-                    'Porosity': "1",
-                    'Bulk Density': "2.65",
-                    'Electric Conductivity': "10",
-                    'Water Content': "100",
-                    'Available Water Capacity': "1",
-                    'Aggregate Stability': "100",
-                    'Surface Hardness': "500",
-                    'Subsurface Hardness': "500"
-                };
-                //set column 4 value at row d to value of maxValDict with entry names[d]
-                for (var d=0; d<names.length; d++) {
-                    if (maxValDict[names[d]]!=null) {
-                        table.cell(d, 5).data(maxValDict[names[d]]);
+                    if (sdValDict[names[c]]!=null) {
+                        table.cell(c, 6).data(sdValDict[names[c]]);
                     }
                 }
             }
@@ -591,6 +456,28 @@
                             buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                         }).draw();
 
+                        var mean_table = obj['mean_table'];
+                        $('#mean_table').empty().append(mean_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
+                        var scale_mean_table = obj['mean_table'];
+                        $('#scale_mean_table').empty().append(mean_table).find('.table').DataTable({
+                            dom: 'B<"toolbar">lfrtip',
+                            deferRender: true,
+                            scrollX: true,
+                            bSort: true,
+                            bPaginate: true,
+                            sPaginationType: 'full_numbers',
+                            buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
+                        }).draw();
+
                         chooseDisplay();
                     }
                 }
@@ -629,10 +516,9 @@
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="theme" onchange="presetFunc(this.value);" title="Maximum values derived from either (i) the current dataset (i.e., selected samples), (ii) a reference set of agricultural sites, or (iii) a reference set of forest sites.">
-                    <option value="1" selected="selected" >Current Dataset</option>
-                    <option value="2">Agriculture</option>
-                    <option value="3">Forest</option>
+                <select id="theme" onchange="presetFunc(this.value);" title="Maximum values derived from either (i) the current dataset (i.e., selected samples), (ii) a reference set of agricultural sites.">
+                    <option value="1">Current Dataset</option>
+                    <option value="2" selected="selected">Reference Dataset</option>
                 </select>
                 &nbsp&nbsp<-- Reference set
             </td>
@@ -703,12 +589,20 @@
         <br>
     </div>
     <br>
-    <h2>Soil Health Data (Raw):</h2>
+    <h2>Raw Data:</h2>
     <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br>
     <br>
-    <h2>Soil Health Data (Scaled Means):</h2>
+    <h2>Scaled Data:</h2>
     <div id="scale_table" style="width: 950px; overflow-x: auto;"></div>
+    <br>
+    <br>
+    <h2>Raw Data (Means):</h2>
+    <div id="mean_table" style="width: 950px; overflow-x: auto;"></div>
+    <br>
+    <br>
+    <h2>Scaled Data (Means):</h2>
+    <div id="scale_mean_table" style="width: 950px; overflow-x: auto;"></div>
 
     <br>
     <br><br><br>

@@ -39,7 +39,6 @@
                     for (var i=0; i<actualData.length-1; i++){
                         // parse out good data
                         var goodData = actualData[i].split(";");
-                        // RID TIME FUNCTION USER BLANK
                         var myRID = goodData[0];
                         var myTime = goodData[1];
                         var myFunction = goodData[2];
@@ -63,10 +62,8 @@
                     }
                     // if selectedRID == 0, nothing is selected
                     if (selectedRID != 0) {
-                        // reselect target RID if available (what happens if its not there? exception is caused)
                         try{
-                            // we don't need to reselect on this page //document.getElementById(selectedRID).click();
-                            document.getElementById(selectedRID); // we do still want to catch if this one isn't valid
+                            document.getElementById(selectedRID); // catch if this RID isn't valid (expired)
                         } catch(err){
                             selectedRID = 0;
                         }
@@ -75,16 +72,9 @@
             });
         }
         function goToResults(){
-            // functionDict[selectedRID] should give the function name (aka the page we need to go to)
-            // load given page, then set RID to selectedRID
-            // then run the updateStatus function (on that page somehow)
-            // at present, no intention of staying on this page beyond pushing the button
 
             // would be neat to somehow reload original analysis settings, though selected data may have changed
 
-            // TODO populate with all 'if's from analysis pages, direct the function to its corresponding page
-            // ALSO TODO add RID loader func to all analysis pages, either one copy on each page or a
-            // shared func somewhere, just needs to run on page load
             var myFunc = functionDict[selectedRID];
             localStorage.setItem("prevRID", selectedRID);
             localStorage.setItem("fromHistory", "true");

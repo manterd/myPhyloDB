@@ -187,19 +187,36 @@ def getNorm(request, RID, stopList, PID):
             finalDict['text'] = result
 
             normDF.set_index('sampleid', inplace=True)
+            # TODO split this into chunks when dealing with larger selections
+            # current idea is to check the number of elements in each DF (via .size)
+            # inner join size estimate is interesting, can potentially be as big as meta*norm but that's quite unlikely
+            # normDF seems to grow faster than metaDF, and is consistently much bigger than meta anyways
+            # from ardec to 5 proj, metaDF * 10, normDF * 30, finalDF * 100
+            # we could put the limit on normDF around 10,000,000 elements, split to chunks from there
+            # BUT IF THE RESULTING FINALDF IS TOO BIG, what can we actually do? Making a too-big df in chunks only helps with memory during generation
+            # could toss the handling of the data to file somehow, including all future uses of the df (not sure how)
+            # if this size is above a certain threshold, run the merge_in_chunks code (helper function to be implemented?)
+            #print "About to merge: metaDF", metaDF.size, "* normDF", normDF.size, "=? finalDF", metaDF.size*normDF.size
             finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True, how='inner')
+            #print "Actual finalDF", finalDF.size
             finalDF.reset_index(drop=False, inplace=True)
             finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
 
             #re-order finalDF
             metaDFList = list(metaDF.columns.values)
             removeList = ['projectid', 'refid', 'sample_name']
-            for x in removeList:
+            for x in removeList:    # TODO could maybe fix the memory issue by running this step BEFORE merge somehow
                 if x in metaDFList:
                     metaDFList.remove(x)
             metaDFList = ['projectid', 'refid', 'sampleid', 'sample_name'] + metaDFList
+            # since the merge earlier is an inner join, we know all things by this point existed in both dataframes
+            # so in theory we could run each of them through this subsetting process first, THEN merge the now small DFs
+            # by the end we have only the columns from metaDF plus these ID and taxonomy sets
             metaDFList = metaDFList + ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu', 'otuid', 'abund']
+            preSize = finalDF.size
             finalDF = finalDF[metaDFList]
+            # this whole process does not change the dataframe size???
+            #print "DF size moved from", preSize, "to", finalDF.size
 
             # save location info to session and save in temp/norm
             myDir = 'myPhyloDB/media/temp/norm/'
@@ -269,7 +286,6 @@ def getNorm(request, RID, stopList, PID):
                 # add way to display daymet on norm page? too much data, just add to biom data
                 # set up analyses to use daymet data from biom file
 
-                # TODO need support for month selection via checkboxes in page, filter for selected months only DONE
                 # we have the months now via 'month_jan' var set
                 # need to figure out how to query more specifically
                 # query like normal, results have rows by day, count out the months? (183 days per year iirc)
@@ -281,7 +297,7 @@ def getNorm(request, RID, stopList, PID):
 
                 installed = r('installed.packages()')
                 if 'daymetr' not in installed:
-                    print r("install.packages('daymetr', repos='http://cran.us.r-project.org', dependencies=T)")
+                    r("install.packages('daymetr', repos='http://cran.us.r-project.org', dependencies=T)")
                 r("library(daymetr)")
                 r.assign("coords", coords)
                 r.assign("minYear", minYear)
@@ -428,7 +444,7 @@ def getNorm(request, RID, stopList, PID):
                 tmax_str = ""
                 tmin_str = ""
                 vp_str = ""
-                # TODO drop year and yday columns
+                # TODO drop year and yday columns, add mean temp
     # "year" "yday" "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c."  "vp..Pa."
                 for sampID in sampIDs:
                     sampID_str += str(sampID) + ";"
@@ -449,7 +465,8 @@ def getNorm(request, RID, stopList, PID):
                 daymetSuccess = True
                 #print "Done with daymet data saving"
 
-
+            # TODO biom file creation is also memory intensive, and scales with finalDF size
+            # the true memory bottleneck is when both are still stored as variables
             myBiom = {}
             nameList = []
             myList.sort()
@@ -787,11 +804,11 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         r("list.of.packages <- c('DESeq2')")
         r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
-        print r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
+        r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
         functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
 
-        print r("library(DESeq2)")
+        r("library(DESeq2)")
 
         df3 = df2.drop(taxaID, axis=1)
 

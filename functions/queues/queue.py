@@ -125,7 +125,6 @@ def getAnalysisHistory(request):
             if myRid != "":
                 stringDict[str(queueTimes[myRid])] = str(myRid) + ";" + str(queueTimes[myRid]) + ";" + \
                            str(queueFuncs[myRid]) + ";" + str(queueUsers[myRid]) + "\n"
-                # TODO change funcs to page names
         except:
             pass  # probably restarted the server since this particular analysis, the RID is not available
     # Get active processes
@@ -259,6 +258,7 @@ def process(pid):
             if request is not None:
                 functions.log(request, "ERROR_AQ", str(e)+"\n")
             myDict = {'error': "Exception: "+str(e.message)}    # TODO this doesn't always display to user FIX
+            # this depends on the page in question directly, as each is responsible for handling 'error' in response
             stop = json.dumps(myDict)
             recent[RID] = HttpResponse(stop, content_type='application/json')
 
@@ -391,7 +391,7 @@ def funcCall(request):
             qList.append(qDict)  # what on earth does this do?
             # add to queue
             queueList[RID] = RID
-            queueFuncs[RID] = funcName
+            queueFuncs[RID] = funcName  # could change funcName here to match page name, for readability
             queueTimes[RID] = str(datetime.datetime.now())
             queueUsers[RID] = request.user.username
             q.put(qDict, True)

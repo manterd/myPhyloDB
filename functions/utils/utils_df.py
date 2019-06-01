@@ -21,6 +21,7 @@ from database.models import Project, Reference, Profile
 
 import config.local_cfg
 import functions
+from database import perms
 
 from Queue import Queue
 
@@ -157,7 +158,6 @@ def handle_uploaded_file(f, path, name):  # move file from memory to disc
 
 def remove_list(refList):
     p_uuid = list(Reference.objects.filter(path__in=refList).values_list('projectid', flat=True))
-
     # Remove record from reference table
     for path in refList:
         Reference.objects.filter(path=path).delete()
@@ -170,6 +170,11 @@ def remove_list(refList):
         for item in qs:
             refLength = len(item.reference_set.values_list('refid', flat=True))
             if refLength == 0:
+                # update perms before deleting project
+                if Project.objects.get(projectid=pid).status == "private":
+                    perms.remPriv(pid)
+                else:
+                    perms.remPub(pid)
                 Project.objects.filter(projectid=pid).delete()
                 path = os.path.join("uploads", str(pid))
                 if os.path.exists(path):
@@ -510,10 +515,13 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     quantFields = []
     quantValues = []
     if metaValsQuant:
-        metaDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
-        for key in sorted(metaDictQuant):
-            quantFields.append(key)
-            quantValues.extend(metaDictQuant[key])
+        if isinstance(metaValsQuant, dict):
+            metaDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
+            for key in sorted(metaDictQuant):
+                quantFields.append(key)
+                quantValues.extend(metaDictQuant[key])
+        else:
+            quantFields = metaValsQuant
     quantSampleLists = []
     if metaIDsQuant:
         idDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
@@ -743,7 +751,9 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
         allFields = catFields + quantFields
         if 'sample_name' not in allFields:
             allFields.append('sample_name')
-        metaDF = metaDF[allFields]
+        avail = metaDF.columns.values
+        common = list(set(avail) & set(allFields))
+        metaDF = metaDF[common]
 
     savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
     savedDF.reset_index(drop=False, inplace=True)
@@ -787,7 +797,10 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
 
     # make sure column types are correct
     metaDF[catFields] = metaDF[catFields].astype(str)
-    metaDF[quantFields] = metaDF[quantFields].astype(float)
+    try:
+        metaDF[quantFields] = metaDF[quantFields].astype(float)
+    except:
+        pass
     savedDF.reset_index(drop=True, inplace=True)
 
     return savedDF, metaDF, remCatFields

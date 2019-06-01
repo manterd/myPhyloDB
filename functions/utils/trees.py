@@ -241,12 +241,18 @@ def getSampleCatTree(request):
             ghg['children'].append(myNode)
         soil['children'].append(ghg)
 
-        #health = {'title': 'Soil Health', 'isFolder': True,  'hideCheckbox': True, 'children': []}
-        #list = ['soil_water_cap', 'soil_surf_hard', 'soil_subsurf_hard', 'soil_agg_stability', 'soil_ACE_protein', 'soil_active_C']
-        #for i in range(len(list)):
-        #    myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
-        #    health['children'].append(myNode)
-        #soil['children'].append(health)
+        health = {'title': 'Soil Health', 'isFolder': True,  'hideCheckbox': True, 'children': []}
+        list = ['soil_texture_sand', 'soil_texture_silt', 'soil_texture_clay', 'soil_water_cap', 'soil_water_cap_rating'
+            , 'soil_surf_hardness', 'soil_surf_hardness_rating', 'soil_subsurf_hardness', 'soil_subsurf_hardness_rating'
+            , 'soil_agg_stability', 'soil_agg_stability_rating', 'soil_organic_matter', 'soil_organic_matter_rating'
+            , 'soil_ACE_protein_index', 'soil_ACE_protein_index_rating', 'soil_root_pathogen_pressure'
+            , 'soil_root_pathogen_pressure_rating', 'soil_respiration_four_day', 'soil_soil_respiration_four_day_rating'
+            , 'soil_active_C', 'soil_active_C_rating', 'soil_pH_rating', 'soil_p_rating', 'soil_k_rating'
+            , 'soil_minor_elements_rating', 'CASH_SHI_rating']
+        for i in range(len(list)):
+            myNode = {'title': list[i], 'id': 'soil', 'isFolder': True, 'pType': 'soil', 'isLazy': True, 'children': []}
+            health['children'].append(myNode)
+        soil['children'].append(health)
 
     list = ['usr_cat1', 'usr_cat2', 'usr_cat3', 'usr_cat4', 'usr_cat5', 'usr_cat6']
     for i in range(len(list)):
@@ -302,7 +308,9 @@ def getSampleCatTreeChildren(request):
 
         your_fields = Human_Associated._meta.local_fields
         human_associated = [f.name for f in your_fields]
-
+        # TODO use this code on lists for database models
+        # so adding or changing the database in the future
+        # is much more straightforward
         your_fields = Microbial._meta.local_fields
         microbial = [f.name for f in your_fields]
 

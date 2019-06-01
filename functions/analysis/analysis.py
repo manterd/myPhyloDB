@@ -875,7 +875,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         # datatable of taxa mapped to selected kegg orthologies
         if not self.treeType == 1 and self.mapTaxa == 'yes':
-            myDir = 'myPhyloDB/media/temp/anova/'  # TODO this is anova specific in what should be general analysis
+            myDir = 'myPhyloDB/media/temp/anova/'  # anova specific in graph function because its used by anova only
             fileName = str(myDir) + 'Mapped_Taxa.csv'
             self.allDF.to_csv(fileName)
 
@@ -949,7 +949,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
 
 
-# TODO trim these down and/or split them up further
+# TODO trim these down and/or split them up further (more helper functions!)
 class Anova(Analysis):  # base template, is essentially getCatUnivData
 
     # so quant Univ is huge... like >700 lines long.... implementing is one thing, but this could easily be split 6 ways

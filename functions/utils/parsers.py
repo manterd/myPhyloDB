@@ -438,10 +438,6 @@ def parse_project(Document, p_uuid, curUser):
             myProj.owner = curUser  # might break if different user adds files later
             myProj.wip = True
             myProj.save()
-            if newProjectStatus == "public":
-                perms.newPub(p_uuid)
-            elif newProjectStatus == "private":
-                perms.newPriv(p_uuid)
         else:
             rowDict.pop('projectid')
             # if this project exists, update its values
@@ -564,7 +560,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, s
             # print "Parsing sample: ", str(row['sample_name'])
             try:
                 badChars = set('&')  # add to this whenever a problematic character shows up
-                row['sample_name'] = ".".join([c for c in row['sample_name'] if c not in badChars])  # TODO TEST
+                row['sample_name'] = "".join([c for c in row['sample_name'] if c not in badChars])  # TODO TEST
             except:
                 pass
 
@@ -884,32 +880,7 @@ def parse_taxonomy(Document, stopList, PID, RID):
                                 newRowList.append(newRow)
                                 editedLinesDict[curLine] = newRowList
                                 print "Editied line based on missing otu sequence and kingdom name"
-                        '''s = Species.objects.get(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o, familyid_id=f,
-                                                genusid_id=g, speciesName=taxon[6]).speciesid
-                        if not OTU_99.objects.filter(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
-                                                     familyid_id=f, genusid_id=g, speciesid_id=s, otuSeq=row[colLabels["Seq"]]).exists():
-                            # no entry with this sequence and taxa tree
-                            otuName = 'isv_' + str(numUnclass)
-                            numUnclass += 1
-                            oid = uuid4().hex
-                            OTU_99.objects.create(kingdomid_id=k, phylaid_id=p, classid_id=c, orderid_id=o,
-                                                  familyid_id=f, genusid_id=g, speciesid_id=s, otuid=oid, otuSeq=row[colLabels["Seq"]],    # TODO remove sequence assumption
-                                                  otuName=otuName)
 
-                            # remember to update koOtuList after this
-                            newOtuList.append(oid)
-
-
-
-                        else:
-                            print "Unclassified kingdom BUT known sequence"  # the heck?
-                            ## write taxonomy to cons.taxonomy file
-                            # this is the case where the sequence matches but the file has no otu name
-                            # so we update the taxonomy file to include the name we have in the database vs unclassified
-
-                    else:
-                        # kingdom is known, check otu
-                        print "Known kingdom for", taxon[7]'''
                 else:
                     # we do not have sequence data to work with
                     if not haveKing:
