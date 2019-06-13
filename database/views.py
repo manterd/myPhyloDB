@@ -2090,16 +2090,19 @@ def select(request):
     functions.log(request, "PAGE", "SELECT")
     if request.method == 'POST':
         uploaded = request.FILES["normFile"]
+        # TODO this is normalized data being uploaded instead of selecting data, verify file type and that norm is considered complete afterwards
 
+        # derive directory from user and make certain it exists
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-
         if not os.path.exists(myDir):
             os.makedirs(myDir)
         else:
             shutil.rmtree(myDir)
 
+        # save file user handed us to disc, was just in memory before
         functions.handle_uploaded_file(uploaded, myDir, uploaded.name)
 
+        # parse given file for data via exploding panda
         filename = str(myDir) + 'myphylodb.biom'
         try:
             savedDF, metaDF, remCatFields = functions.exploding_panda(filename, finalSampleIDs=[], catFields=[], quantFields=[])

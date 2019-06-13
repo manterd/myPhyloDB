@@ -35,7 +35,9 @@ from scipy import stats
 from database.models import Sample
 from natsort import natsorted
 from PyPDF2 import PdfFileReader, PdfFileMerger
+import psutil
 
+process = psutil.Process(os.getpid())
 
 # stop function for creating proper return message
 def getStopDict():
@@ -121,8 +123,8 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         if self.debug:
             print "First!"
-
         # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
+        # getMetaDF is pretty much the only memory spike in this pipeline, courtesy of exploding panda
         self.savedDF, self.metaDF, self.finalSampleIDs, self.catFields, remCatFields, self.quantFields, self.catValues, self.quantValues = functions.getMetaDF(self.request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, self.DepVar, levelDep=True)
         self.allFields = self.catFields + self.quantFields
         if reqMultiLevel:
@@ -137,7 +139,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 myDict = {'error': error}
                 res = json.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
-
         if self.debug:
             print "Second!"
 
@@ -179,7 +180,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 self.result += 'KEGG Enzyme level: GIBBs' + '\n'
             elif self.keggAll == 6:
                 self.result += 'KEGG Enzyme level: Nitrogen cycle' + '\n'
-
         if self.distance == 1:
             self.result += 'Distance score: Manhattan' + '\n'
         elif self.distance == 2:
@@ -214,13 +214,11 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         if self.debug:
             print "Third!"
-
         self.result += 'Categorical variables selected by user: ' + ", ".join(self.catFields + remCatFields) + '\n'
         self.result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
         if metaQuant:
             self.result += 'Quantitative variables selected by user: ' + ", ".join(self.quantFields) + '\n'
         self.result += '===============================================\n\n'
-
         functions.setBase(self.RID, 'Step 1 of 4: Selecting your chosen meta-variables...done')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -248,6 +246,13 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             filterData = self.all['filterData']
             filterPer = int(self.all['filterPer'])
             filterMeth = int(self.all['filterMeth'])
+        else:
+            remUnclass = None
+            remZeroes = None
+            perZeroes = None
+            filterData = None
+            filterPer = None
+            filterMeth = None
 
         if self.debug:
             print "First!"
@@ -306,7 +311,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             self.finalDF = functions.transformDF(self.transform, self.DepVar, self.finalDF)
 
         # save location info to session
-        myDir = 'myPhyloDB/media/temp/analysis/'   # TODO this gets called by more than ANOVA, path should match caller
+        myDir = 'myPhyloDB/media/temp/analysis/'
         if not os.path.exists(myDir):
             os.makedirs(myDir)
 
@@ -339,7 +344,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
     def stats(self):
         if self.debug:
             print "Stats!"
-
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
         self.finalDict = {}
         self.seriesList = []
@@ -916,6 +920,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         return r
 
     def fullRAnalysis(self, script):    # script is string for filename in R Scripts folder, R should do the most work
+        # TODO this function is not finished, its definitely not been tested well yet (also need to be doubly sure R file is safe before running)
         if self.validate() == 0:
             if self.debug:
                 print "Here we go"

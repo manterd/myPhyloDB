@@ -148,7 +148,9 @@ def getAnalysisHistory(request):
 def stop(request):
     global activeList, stopList, stopped, stopDict, queueList, queueFuncs, queueTimes, queueUsers
     RID = str(request.GET['all'])
-    stopDict[RID] = RID
+    # put RID in stopDict and the request will not run (RID:True key value pair, we just check if the key exists so a
+    # small value makes this a smaller structure if it gets upscaled for some reason (unlikely outside of DoS attempts)
+    stopDict[RID] = True
     try:
         try:
             # this section will error if request is being processed already, ie its for removing queued requests only
@@ -160,7 +162,7 @@ def stop(request):
         except:
             # if we are here then most likely the process was ongoing when stop came through
             pass
-
+        # find request in activeList, if its there we can tell the function to stop it ASAP and return user success msg
         pid = activeList.index(RID)
         stopList[pid] = RID
         activeList[pid] = 0
@@ -194,7 +196,7 @@ def process(pid):
             decremQ()
             RID = data['RID']
             queueList.pop(RID, 0)   # remove from queue position tracker
-            if RID in stopDict:
+            if RID in stopDict.keys():
                 stopDict.pop(RID, 0)
             else:
                 funcName = data['funcName']
@@ -202,6 +204,8 @@ def process(pid):
                 activeList[pid] = RID
                 functions.log(request, "QSTART", funcName)
                 if activeList[pid] == RID:
+                    # TODO finish moving analyses into analysis.py classes
+                    # TODO cleanup and history are treating getNorm like a proper analysis (no point in norm history view)
                     if funcName == "getNorm":   # at present likely not worthwhile to port norm to analysis class
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
                     elif funcName == "getCatUnivData":
@@ -251,6 +255,7 @@ def process(pid):
                     print "Finished an analysis iteration"
                 activeList[pid] = 0
                 stopDict.pop(RID, 0)
+                # TODO check if there is an error message in results, so we can log errors to console more reliably
                 functions.log(request, "QFINISH", funcName)
             cleanup(RID, queueUsers[RID])
         except Exception as e:
@@ -370,7 +375,7 @@ def cleanup(RID, username):   # cleanup and removeRID two parts of the same conc
 
 def funcCall(request):
     # new hybrid call
-    global activeList, stopList, stopDict, statDict, qList, base, stage, time1, time2, TimeDiff, complete
+    global activeList, stopList, statDict, qList, base, stage, time1, time2, TimeDiff, complete
     allJson = request.body.split('&')[0]
     data = json.loads(allJson)
     reqType = data['reqType']

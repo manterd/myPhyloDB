@@ -10,6 +10,7 @@ import pandas as pd
 import pickle
 from pyper import *
 import zipfile
+import psutil
 
 from database.models import Sample, Air, Human_Associated, Microbial, Soil, Water, UserDefined, \
     OTU_99, Profile, DaymetData
@@ -21,7 +22,7 @@ curSamples = {}
 totSamples = {}
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
-
+process = psutil.Process(os.getpid())
 
 def getNorm(request, RID, stopList, PID):
     try:
@@ -30,7 +31,6 @@ def getNorm(request, RID, stopList, PID):
             allJson = request.body.split('&')[0]
             all = json.loads(allJson)
             functions.setBase(RID, 'Step 1 of 6: Querying database...')
-
             NormMeth = int(all["NormMeth"])
 
             remove = int(all["Remove"])
@@ -146,11 +146,9 @@ def getNorm(request, RID, stopList, PID):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
-
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
-
+            # Hey where's step 3? In normalizeUniv
             functions.setBase(RID, 'Step 4 of 6: Calculating indices...')
-
             if remove == 1:
                 grouped = normDF.groupby('otuid')
                 goodIDs = []
@@ -187,37 +185,38 @@ def getNorm(request, RID, stopList, PID):
             finalDict['text'] = result
 
             normDF.set_index('sampleid', inplace=True)
-            # TODO split this into chunks when dealing with larger selections
-            # current idea is to check the number of elements in each DF (via .size)
-            # inner join size estimate is interesting, can potentially be as big as meta*norm but that's quite unlikely
-            # normDF seems to grow faster than metaDF, and is consistently much bigger than meta anyways
-            # from ardec to 5 proj, metaDF * 10, normDF * 30, finalDF * 100
-            # we could put the limit on normDF around 10,000,000 elements, split to chunks from there
-            # BUT IF THE RESULTING FINALDF IS TOO BIG, what can we actually do? Making a too-big df in chunks only helps with memory during generation
-            # could toss the handling of the data to file somehow, including all future uses of the df (not sure how)
-            # if this size is above a certain threshold, run the merge_in_chunks code (helper function to be implemented?)
-            #print "About to merge: metaDF", metaDF.size, "* normDF", normDF.size, "=? finalDF", metaDF.size*normDF.size
+            # Convert columns data types to Category for dataframe size scalability
+            for col in metaDF:
+                if float(100.0*len(metaDF[col].unique())/len(metaDF[col])) < 50.0:
+                    metaDF[col] = metaDF[col].astype("category")
+                    # Because we fill values with NaN later, we need to add NaN as a category now (we don't know which columns are categorical after here)
+                    metaDF[col] = metaDF[col].cat.add_categories("NaN")
+            for col in normDF:
+                if float(100.0 * len(normDF[col].unique()) / len(normDF[col])) < 50.0:
+                    normDF[col] = normDF[col].astype("category")
+            # Merge metaDF and normDF data into a much larger dataframe (the size of which is a bottleneck for project selection scaling)
             finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True, how='inner')
-            #print "Actual finalDF", finalDF.size
             finalDF.reset_index(drop=False, inplace=True)
             finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
+            # Same categorical swap as before, to further reduce finalDF size
+            for col in finalDF:
+                if float(100.0*len(finalDF[col].unique())/len(finalDF[col])) < 50.0:
+                    finalDF[col] = finalDF[col].astype("category")
+            # New catogized DF takes roughly 85% less space in memory than the old code
+            # This is at a cost of ~0.5 seconds additional computation time, which seems very much within reason
+
+            # This should allow much larger selections to be normalized without crashing the machine, though we should
+            # still look into limiting selection counts, and also performing similar optimizations on analyses
 
             #re-order finalDF
             metaDFList = list(metaDF.columns.values)
             removeList = ['projectid', 'refid', 'sample_name']
-            for x in removeList:    # TODO could maybe fix the memory issue by running this step BEFORE merge somehow
+            for x in removeList:
                 if x in metaDFList:
                     metaDFList.remove(x)
             metaDFList = ['projectid', 'refid', 'sampleid', 'sample_name'] + metaDFList
-            # since the merge earlier is an inner join, we know all things by this point existed in both dataframes
-            # so in theory we could run each of them through this subsetting process first, THEN merge the now small DFs
-            # by the end we have only the columns from metaDF plus these ID and taxonomy sets
             metaDFList = metaDFList + ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu', 'otuid', 'abund']
-            preSize = finalDF.size
             finalDF = finalDF[metaDFList]
-            # this whole process does not change the dataframe size???
-            #print "DF size moved from", preSize, "to", finalDF.size
-
             # save location info to session and save in temp/norm
             myDir = 'myPhyloDB/media/temp/norm/'
             path = str(myDir) + str(RID) + '.pkl'
@@ -225,10 +224,9 @@ def getNorm(request, RID, stopList, PID):
             request.session['NormMeth'] = NormMeth
 
             functions.setBase(RID, 'Step 5 of 6: Writing data to disk...')
-
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
-
+            # this is just making a directory, we didn't actually write anything down here TODO Why?
             functions.setBase(RID, 'Step 5 of 6: Writing data to disk...done')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
@@ -241,11 +239,13 @@ def getNorm(request, RID, stopList, PID):
 
             # regardless of daymet flag, delete old daymetData object for this user (or try to)
             try:
-                DaymetData.objects.get(user=request.user).delete()   # isn't request.user a username?
-            except Exception as daydelerr:
+                DaymetData.objects.get(user=request.user).delete()
+            except Exception as daydelerr:  # this exception primarily occurs when daymetdata object does not exist
                 #print "Daymet Deletion Error:", daydelerr
                 pass
-            # TODO turn daymet gathering section into a function in utils or somesuch in case the feature is moved
+            # TODO turn daymet gathering section into a function for code readability. Actually, do that for norm_graphs as a whole
+            # like on the whole, we need to split this behemoth codebase into smaller pieces
+
             # get data from dictionaries before saving to biom
             # check if daymet checkbox is selected
             daymetSuccess = False
@@ -465,14 +465,19 @@ def getNorm(request, RID, stopList, PID):
                 daymetSuccess = True
                 #print "Done with daymet data saving"
 
+
             # TODO biom file creation is also memory intensive, and scales with finalDF size
+            # finalDF is much smaller now, but biom in memory should still end up as big as before
+            # THIS STILL RUNS OUT OF MEMORY WITH 4 projects, we get down to here (a step up from before) BUT need fixes!
             # the true memory bottleneck is when both are still stored as variables
             myBiom = {}
             nameList = []
             myList.sort()
             for i in myList:
                 # sampleID
-                nameDict = metaDF.loc[i].to_dict()
+                # only change to first biom file from this pass is that metaDF gets fillna'd beforehand, instead of only for part 2
+                tempPanda = metaDF.fillna("NaN")    # TEMP PANDA IS THE ONLY NEW LINE, which just fillna's metaDF
+                nameDict = tempPanda.loc[i].to_dict()
                 # meta var name as key, value is actual value
                 # note: nameDict is a mix of cat and quant vars; the biome file follows this idea
                 for key in nameDict:
@@ -483,23 +488,32 @@ def getNorm(request, RID, stopList, PID):
                         for dayKey in daymetKeys:
                             nameDict[dayKey] = str(daymetData[i][dayKey])
                 nameList.append({"id": str(i), "metadata": nameDict})
-
             # get list of lists with abundances
             taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]
             abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
             abundDF.sort_index(axis=0, inplace=True)
             abundList = abundDF.values.tolist()
 
-            # get list of taxa
-            namesDF = finalDF.loc[:, ['sampleid', 'otuid']]
-            namesDF['taxa'] = finalDF.loc[:, ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].values.tolist()
-            namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
-            namesDF.sort_index(axis=0, inplace=True)
+            # get list of taxa based on otuid (in theory this new approach is much faster, its definitely smaller in memory)
+            namesDF = finalDF.loc[:, ['otuid', 'kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].drop_duplicates()
 
             taxaList = []
-            for index, row in namesDF.iterrows():
-                metaDict = {'taxonomy':  row[0]}
-                taxaList.append({"id": index, "metadata": metaDict})
+            filteredTaxaList = []
+            for index, row in namesDF.iterrows():   # since this is what namesDF gets used for, we only need to tweak this if namesDF is changed
+                rowVals = []
+                for ele in row[1:]:
+                    rowVals.append(ele)
+                metaDict = {'taxonomy':  rowVals}
+                # id is sampleID, metadata is full taxonomic path, kingdom to otu, includes unclassified values
+                taxaList.append({"id": row[0], "metadata": metaDict})
+                taxonomy = rowVals[:-1]  # all but the last element (otu name)
+                taxonomy = [i.split(': ', 1)[1] for i in taxonomy]
+                # filter out unclassified
+                taxonomy = filter(lambda a: a != 'unclassified', taxonomy)
+                # id is otu name, metadata is other taxonomy info that isn't unclassified
+                filteredTaxaList.append({"id": row[-1].split(': ')[1], "metadata": {'taxonomy': taxonomy}})
+            # the lists being populated here are significantly smaller than the namesDF we generated to make them
+            # could we not just filter namesDF more strictly to produce exactly these two lists?
 
             shape = [len(taxaList), len(nameList)]
             myBiom['id'] = 'None'
@@ -518,56 +532,20 @@ def getNorm(request, RID, stopList, PID):
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'myphylodb.biom'
             with open(path, 'w') as outfile:
-                json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
+                json.dump(myBiom, outfile, ensure_ascii=True, indent=4)     # JSON dump itself is not a memory issue
+                # json.dump takes myBiom and splits it into small chunks, encoding each, writing to file, repeat
 
-            myBiom = {}
-            nameList = []
-            myList.sort()
-            for i in myList:
-                tempPanda = metaDF.fillna("NaN")
-                nameDict = tempPanda.loc[i].to_dict()
-                for key in nameDict:
-                    nameDict[key] = str(nameDict[key])
-                nameList.append({"id": str(i), "metadata": nameDict})
-
-            # get list of lists with abundances
-            taxaOnlyDF = finalDF.loc[:, ['sampleid', 'otuid', 'abund']]
-            abundDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
-            abundDF.sort_index(axis=0, inplace=True)
-            abundList = abundDF.values.tolist()
-
-            # get list of taxa
-            namesDF = finalDF.loc[:, ['sampleid', 'otuid']]
-            namesDF['taxa'] = finalDF.loc[:, ['kingdom', 'phyla', 'class', 'order', 'family', 'genus', 'species', 'otu']].values.tolist()
-            namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
-            namesDF.sort_index(axis=0, inplace=True)
-
-            taxaList = []
-            for index, row in namesDF.iterrows():
-                taxonomy = row[0][:-1]
-                taxonomy = [i.split(': ', 1)[1] for i in taxonomy]
-                taxonomy = filter(lambda a: a != 'unclassified', taxonomy)
-                metaDict = {'taxonomy': taxonomy}
-                taxaList.append({"id": row[0][-1].split(': ')[1], "metadata": metaDict})
-
-            shape = [len(taxaList), len(nameList)]
-            myBiom['id'] = 'None'
+            # Only need to update values which are different for this file (we were making the whole dict a second time)
+            shape = [len(filteredTaxaList), len(nameList)]
             myBiom['format'] = 'Biological Observation Matrix 1.0.0'
-            myBiom['format_url'] = 'http://biom-format.org'
-            myBiom['generated_by'] = 'myPhyloDB'
-            myBiom['type'] = 'OTU table'
-            myBiom['date'] = str(datetime.datetime.now())
-            myBiom['matrix_type'] = 'dense'
-            myBiom['matrix_element_type'] = 'float'
             myBiom["shape"] = shape
-            myBiom['rows'] = taxaList
-            myBiom['columns'] = nameList
-            myBiom['data'] = abundList
+            myBiom['rows'] = filteredTaxaList
 
             myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
             path = str(myDir) + 'phyloseq.biom'
             with open(path, 'w') as outfile:
                 json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
+            # very little change in RAM usage between 3-4
 
             functions.setBase(RID, 'Step 6 of 6: Formatting biome data...done!')
 
@@ -850,7 +828,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             countDF = df2.reset_index(drop=True)
 
     functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...done!')
-    functions.setBase(RID, 'Step 3 of 6: Tabulating data...')
+    functions.setBase(RID, 'Step 3 of 6: Tabulating data...')   # TODO awkward double staging, and stage splitting, the double stage listing is a widespread issue
+    # can mitigate weird staging sequence by splitting up functions even further, and calling setBase before each part
 
     field = 'otuid'
     taxaList = taxaDict['OTU_99']
@@ -875,7 +854,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     namesDF['otu'] = namesDF['otuid'].astype(str) + ': ' + namesDF['otuName']
     namesDF.drop(['otuName'], axis=1, inplace=True)
     namesDF.replace('unclassified unclassified', 'unclassified', regex=True, inplace=True)
-
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
     if stopList[PID] == RID:
         res = ''
@@ -889,7 +867,6 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
     ser2 = ser1.stack()
     abundDF = pd.Series.to_frame(ser2, name='abund')
     abundDF.reset_index(drop=False, inplace=True)
-
     normDF = pd.merge(abundDF, namesDF, left_on='otuid', right_on='otuid', how='inner')
 
     return normDF, DESeq_error

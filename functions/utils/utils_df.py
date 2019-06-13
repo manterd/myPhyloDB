@@ -24,6 +24,9 @@ import functions
 from database import perms
 
 from Queue import Queue
+import psutil
+
+process = psutil.Process(os.getpid())
 
 
 pd.set_option('display.max_colwidth', -1)
@@ -190,6 +193,7 @@ def remove_proj(path):
     Reference.objects.get(path=path).delete()
     if not Reference.objects.filter(projectid_id=pid).exists():
         # actually remove project from database
+        # TODO When is this called? Are permissions being checked? (both to perform this action and the list associated with this project)
         # print "Removing full project" # debating having this print in just in case its popping up when it shouldn't
         Project.objects.get(projectid=pid).delete()
         path = "/".join(["uploads", str(pid)])
@@ -495,7 +499,8 @@ def excel_to_dict(wb, headerRow=1, nRows=1, sheet='Sheet1'):
 
 
 def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar, levelDep=False):
-
+    # we now use categorical data type to compress pandas (yes now we explode, implode, AND compress the poor fellas)
+    # as well as filtering which data is necessary for exploding
     catFields = []
     catValues = []
     if metaValsCat:
@@ -503,7 +508,6 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
         for key in sorted(metaDictCat):
             catFields.append(key)
             catValues.extend(metaDictCat[key])
-
     catSampleLists = []
     if metaIDsCat:
         idDictCat = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
@@ -515,13 +519,10 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     quantFields = []
     quantValues = []
     if metaValsQuant:
-        if isinstance(metaValsQuant, dict):
-            metaDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
-            for key in sorted(metaDictQuant):
-                quantFields.append(key)
-                quantValues.extend(metaDictQuant[key])
-        else:
-            quantFields = metaValsQuant
+        metaDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
+        for key in sorted(metaDictQuant):
+            quantFields.append(key)
+            quantValues.extend(metaDictQuant[key])
     quantSampleLists = []
     if metaIDsQuant:
         idDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
@@ -536,10 +537,10 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
         finalSampleIDs = list(set(quantSampleIDs))
     else:
         finalSampleIDs = list(set(catSampleIDs) & set(quantSampleIDs))
-
     myDir = 'myPhyloDB/media/usr_temp/' + str(username) + '/'
     path = str(myDir) + 'myphylodb.biom'
-    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields, levelDep=levelDep)
+    # if there are memory issues in analysis, blame the exploding panda
+    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields, levelDep=levelDep, depVar=DepVar)
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
 
 
@@ -635,132 +636,57 @@ def transformDF(transform, DepVar, finalDF):
     return finalDF
 
 
-def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False):
+def categorize(dataFrame):
+    colTotal = 0
+    colCat = 0
+    #print "Precat:", dataFrame.memory_usage().sum() / 1024.0 ** 2
+    for col in dataFrame:
+        if float(100.0 * len(dataFrame[col].unique()) / len(dataFrame[col])) < 50.0:
+            dataFrame[col] = dataFrame[col].astype("category")
+            colCat += 1
+        #else:
+            #print ">=50% uniques:", col
+        colTotal += 1
+    #print "Postcat:", dataFrame.memory_usage().sum() / 1024.0 ** 2
+    #print "Categorized:", colCat, "/", colTotal, "->", colCat*100.0/colTotal, "%"
+
+
+prevMem = 0.0
+memTally = 0
+enableMemDiff = False   # set this back to true for memory analysis during exploding_panda
+
+def memDiff():
+    if enableMemDiff:
+        global prevMem, memTally
+        curMem = process.memory_info().rss / 1024.0 ** 2
+        print memTally, ":", curMem - prevMem, "MB"
+        prevMem = curMem
+        memTally += 1
+    # else just skip this function entirely
+
+
+def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False, depVar="ALL"):
+    # this function is the primary memory hog for analysis, and the largest chunk of normalize too
+    global prevMem, memTally
+    memTally = 0
+    prevMem = process.memory_info().rss / 1024.0 ** 2
     # Load file
     file = open(path)
-    data = json.load(file)
+    data = json.load(file)      # assuming data is the main spike for this area, ideally be done with it ASAP (before peak), for cleanup sake
     file.close()
+
+    memDiff()   # 139.8
+
     # Get metadata
-    d = data['columns']
+    datCols = data['columns']
+    datRows = data['rows']
+    # get metadata into dicionary keyed by id
     metaDict = {}
-    for i in d:
+    for i in datCols:
         metaDict[str(i['id'])] = i['metadata']
-    metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
-    metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    metaDF.set_index('sampleid', inplace=True)
-
-    projectIDs = metaDF['projectid'].unique()
-    projects = Project.objects.filter(projectid__in=projectIDs)
-    projectDict = {}
-    for project in projects:
-        projectDict[project.projectid] = project.project_name
-    metaDF['project_name'] = metaDF['projectid'].map(projectDict)
-
-    if finalSampleIDs:
-        metaDF = metaDF.loc[finalSampleIDs]
-
-    metaDF.dropna(axis=1, how='all', inplace=True)
-    metaDF.dropna(axis=0, how='all', inplace=True)
-
-    # Get count data and calculate various dependent variables
-    sampleids = [col['id'] for col in data['columns']]
-    taxaids = [col['id'] for col in data['rows']]
-
-    mat = data['data']
-    mat = np.asarray(mat).T.tolist()
-    df = pd.DataFrame(mat, index=sampleids, columns=taxaids)
-    if finalSampleIDs:
-        df = df.loc[finalSampleIDs]
-        df.dropna(axis=1, how='all', inplace=True)
-        df.dropna(axis=0, how='all', inplace=True)
-    abundDF = df.reset_index(drop=False)
-    abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
-    abundDF.set_index('sampleid', inplace=True)
-
-    rel_abundDF = df.div(df.sum(axis=1), axis=0)
-    rel_abundDF.reset_index(drop=False, inplace=True)
-    rel_abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    rel_abundDF = pd.melt(rel_abundDF, id_vars='sampleid', value_vars=taxaids)
-    rel_abundDF.set_index('sampleid', inplace=True)
-
-    richDF = df / df
-    richDF.fillna(0, inplace=True)
-    richDF.reset_index(drop=False, inplace=True)
-    richDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
-    richDF.set_index('sampleid', inplace=True)
-
-    # what conditions lead to df.sum == 0 ? should div by zero work? if so what result? TODO figure this out / ask about
-    # so some value in the df.sum(axis=1) results must be zero, I guess just leave it be and supress the warning?
-    diversityDF = -df.div(df.sum(axis=1), axis=0) * np.log(df.div(df.sum(axis=1), axis=0))  # RuntimeWarning: divide by zero encountered
-    # logically, is DF/DF.sum * log(DF/DF.sum)); so if DF.sum is 0 or equivalent, divide by zero occurs
-    diversityDF[np.isinf(diversityDF)] = np.nan
-    diversityDF.fillna(0.0, inplace=True)
-    diversityDF.reset_index(drop=False, inplace=True)
-    diversityDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    diversityDF = pd.melt(diversityDF, id_vars='sampleid', value_vars=taxaids)
-    diversityDF.set_index('sampleid', inplace=True)
-
-    if 'rRNA_copies' in metaDF.columns:
-        metaDF.replace(to_replace='nan', value=0.0, inplace=True)
-        metaDF['rRNA_copies'] = metaDF['rRNA_copies'].astype(float)
-        abund_16SDF = df.div(df.sum(axis=1), axis=0).multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
-        abund_16SDF.fillna(0.0, inplace=True)
-        abund_16SDF.reset_index(drop=False, inplace=True)
-        abund_16SDF.rename(columns={'index': 'sampleid'}, inplace=True)
-        abund_16SDF = pd.melt(abund_16SDF, id_vars='sampleid', value_vars=taxaids)
-        abund_16SDF.set_index('sampleid', inplace=True)
-
-        countDF = pd.DataFrame({
-            'taxaid': abundDF['variable'],
-            'abund': abundDF['value'],
-            'rel_abund': rel_abundDF['value'],
-            'rich': richDF['value'],
-            'diversity': diversityDF['value'],
-            'abund_16S': abund_16SDF['value']
-        }, index=abundDF.index)
-
-    else:
-        rows, cols = abundDF.shape
-        abund_16SDF = np.zeros(rows)
-
-        countDF = pd.DataFrame({
-            'taxaid': abundDF['variable'],
-            'abund': abundDF['value'],
-            'rel_abund': rel_abundDF['value'],
-            'rich': richDF['value'],
-            'diversity': diversityDF['value'],
-            'abund_16S': abund_16SDF
-        }, index=abundDF.index)
-
-    # Check if there is at least one categorical variable with multiple levels
-    # Remove fields with only 1 level
-    remCatFields = []
-
-    if levelDep:
-        if catFields:
-            tempList = catFields[:]
-            for i in tempList:
-                noLevels = len(list(pd.unique(metaDF[i])))
-                if noLevels < 2:
-                    catFields.remove(i)
-                    remCatFields.append(i)
-
-    if catFields or quantFields:
-        allFields = catFields + quantFields
-        if 'sample_name' not in allFields:
-            allFields.append('sample_name')
-        avail = metaDF.columns.values
-        common = list(set(avail) & set(allFields))
-        metaDF = metaDF[common]
-
-    savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
-    savedDF.reset_index(drop=False, inplace=True)
-
-    d = data['rows']
+    # get taxa data into dictionary
     taxaDict = {}
-    for i in d:
+    for i in datRows:
         tempDict = {}
         taxon = i['metadata']['taxonomy']
         if taxon[0]:
@@ -788,12 +714,191 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
             tempDict['otuid'] = taxon[7].split(': ')[0]
             tempDict['otuName'] = taxon[7].split(': ')[1]
         taxaDict[str(i['id'])] = tempDict
+    # Get count data and calculate various dependent variables
+    sampleids = [col['id'] for col in datCols]
+    taxaids = [col['id'] for col in datRows]
+
+    memDiff()   # 70.38
+    mat = np.asarray(data['data']).T.tolist()
+    memDiff()   # 72.13
+
+    # cleanup memory
+    del(datCols[:])
+    del(datRows[:])
+    data.clear()
+
+    memDiff()   # -0.996
+
+    metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
+    # can cleanup metaDict now? yes, it is unused after this point
+    metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    metaDF.set_index('sampleid', inplace=True)
+
+    memDiff()   # 0.465
+    categorize(metaDF)
+    memDiff()   # 0.438
+
+    projectIDs = metaDF['projectid'].unique()
+    projects = Project.objects.filter(projectid__in=projectIDs)
+    projectDict = {}
+    for project in projects:
+        projectDict[project.projectid] = project.project_name
+    metaDF['project_name'] = metaDF['projectid'].map(projectDict)
+
+    memDiff()   # 0.0
+
+    if finalSampleIDs:
+        metaDF = metaDF.loc[finalSampleIDs]
+
+    metaDF.dropna(axis=1, how='all', inplace=True)
+    metaDF.dropna(axis=0, how='all', inplace=True)
+
+    memDiff()   # 0.574
+    df = pd.DataFrame(mat, index=sampleids, columns=taxaids)
+    memDiff()   # 20.56
+
+    if finalSampleIDs:
+        df = df.loc[finalSampleIDs]
+        df.dropna(axis=1, how='all', inplace=True)
+        df.dropna(axis=0, how='all', inplace=True)
+
+    memDiff()   # 22.04
+
+    # check depVar, 0 for abundDF, 1 for rel_abundDF, 2 for richDF, 3 for diversityDF, 4 for abund_16SDF, ALL for all
+    abundDF = df.reset_index(drop=False)    # abundDF is always needed it seems
+    abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
+    abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
+    abundDF.set_index('sampleid', inplace=True)
+    categorize(abundDF)
+    if depVar == 0:
+        countDF = pd.DataFrame({
+            'taxaid': abundDF['variable'],
+            'abund': abundDF['value']
+        }, index=abundDF.index)
+    memDiff()   # 35.65
+    if depVar == 1 or depVar == "ALL":
+        rel_abundDF = df.div(df.sum(axis=1), axis=0)
+        rel_abundDF.reset_index(drop=False, inplace=True)
+        rel_abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
+        rel_abundDF = pd.melt(rel_abundDF, id_vars='sampleid', value_vars=taxaids)
+        rel_abundDF.set_index('sampleid', inplace=True)
+        if depVar == 1:
+            countDF = pd.DataFrame({
+                'taxaid': abundDF['variable'],
+                'abund': abundDF['value'],
+                'rel_abund': rel_abundDF['value']
+            }, index=abundDF.index)
+    memDiff()   # 123.5
+    if depVar == 2 or depVar == "ALL":
+        richDF = df / df
+        richDF.fillna(0, inplace=True)
+        richDF.reset_index(drop=False, inplace=True)
+        richDF.rename(columns={'index': 'sampleid'}, inplace=True)
+        richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
+        richDF.set_index('sampleid', inplace=True)
+        if depVar == 2:
+            countDF = pd.DataFrame({
+                'taxaid': abundDF['variable'],
+                'abund': abundDF['value'],
+                'rich': richDF['value']
+            }, index=abundDF.index)
+    memDiff()   # 70.69
+
+    if depVar == 3 or depVar == "ALL":
+        # what conditions lead to df.sum == 0 ? should div by zero work? if so what result? TODO resolve
+        # so some value in the df.sum(axis=1) results must be zero, I guess just leave it be and supress the warning?
+        diversityDF = -df.div(df.sum(axis=1), axis=0) * np.log(df.div(df.sum(axis=1), axis=0))  # RuntimeWarning: divide by zero encountered
+        # logically, is DF/DF.sum * log(DF/DF.sum)); so if DF.sum is 0 or equivalent, divide by zero occurs
+        diversityDF[np.isinf(diversityDF)] = np.nan
+        diversityDF.fillna(0.0, inplace=True)
+        diversityDF.reset_index(drop=False, inplace=True)
+        diversityDF.rename(columns={'index': 'sampleid'}, inplace=True)
+        diversityDF = pd.melt(diversityDF, id_vars='sampleid', value_vars=taxaids)
+        diversityDF.set_index('sampleid', inplace=True)
+        if depVar == 3:
+            countDF = pd.DataFrame({
+                'taxaid': abundDF['variable'],
+                'abund': abundDF['value'],
+                'diversity': diversityDF['value']
+            }, index=abundDF.index)
+    memDiff()   # 141.5
+
+    if depVar == 4 or depVar == "ALL":
+        if 'rRNA_copies' in metaDF.columns:
+            metaDF.replace(to_replace='nan', value=0.0, inplace=True)
+            metaDF['rRNA_copies'] = metaDF['rRNA_copies'].astype(float)
+            abund_16SDF = df.div(df.sum(axis=1), axis=0).multiply(metaDF['rRNA_copies'] / 1000.0, axis=0)
+            abund_16SDF.fillna(0.0, inplace=True)
+            abund_16SDF.reset_index(drop=False, inplace=True)
+            abund_16SDF.rename(columns={'index': 'sampleid'}, inplace=True)
+            abund_16SDF = pd.melt(abund_16SDF, id_vars='sampleid', value_vars=taxaids)
+            abund_16SDF.set_index('sampleid', inplace=True)
+        else:
+            rows, cols = abundDF.shape
+            abund_16SDF = np.zeros(rows)
+        if depVar == 4:
+            countDF = pd.DataFrame({
+                'taxaid': abundDF['variable'],
+                'abund': abundDF['value'],
+                'abund_16S': abund_16SDF['value']
+            }, index=abundDF.index)
+
+    if depVar == "ALL":
+        countDF = pd.DataFrame({
+            'taxaid': abundDF['variable'],
+            'abund': abundDF['value'],
+            'rel_abund': rel_abundDF['value'],
+            'rich': richDF['value'],
+            'diversity': diversityDF['value'],
+            'abund_16S': abund_16SDF['value']
+        }, index=abundDF.index)
+
+    memDiff()   # 0.0
+
+    # Check if there is at least one categorical variable with multiple levels
+    # Remove fields with only 1 level
+    remCatFields = []
+    if levelDep:
+        if catFields:
+            tempList = catFields[:]
+            for i in tempList:
+                noLevels = len(list(pd.unique(metaDF[i])))
+                if noLevels < 2:
+                    catFields.remove(i)
+                    remCatFields.append(i)
+    if catFields or quantFields:
+        allFields = catFields + quantFields
+        if 'sample_name' not in allFields:
+            allFields.append('sample_name')
+        avail = metaDF.columns.values
+        common = list(set(avail) & set(allFields))
+        metaDF = metaDF[common]
+    memDiff()   # 0.003
+
+    # merging meta and counts into saved
+    categorize(metaDF)
+    categorize(countDF)
+    savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
+    categorize(savedDF)
+    memDiff()   # 14.76
+
+    savedDF.reset_index(drop=False, inplace=True)
+
+    memDiff()   # 0.004
+
     taxaDF = pd.DataFrame.from_dict(taxaDict, orient='index').reset_index()
     taxaDF.set_index('index', inplace=True)
     taxaDF.reset_index(drop=False, inplace=True)
     taxaDF.rename(columns={'index': 'taxaid'}, inplace=True)
+    memDiff()   # 0.0
+    #categorize(taxaDF)     # categorizing taxaDF breaks kegg search, also only saves a small amount of memory (< 1%)
+    # SPIKE HEREISH
+    savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')   # this merge is the biggest memory spike by far, seems necessary though
+    memDiff()   # 427.2
 
-    savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')
+    #categorize(savedDF)  # Cannot categorize this either, same kegg issue later (cuts savedDF to 1/3 size though, rouhly 5% overall savings)
+
+    memDiff()   # 0.0
 
     # make sure column types are correct
     metaDF[catFields] = metaDF[catFields].astype(str)
@@ -802,6 +907,8 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     except:
         pass
     savedDF.reset_index(drop=True, inplace=True)
+
+    memDiff()   # 0.0
 
     return savedDF, metaDF, remCatFields
 
@@ -893,13 +1000,24 @@ def exploding_panda2(path, treeType):
 
 
 def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
+    debug = False    # TODO make this global
+    if debug:
+        print "IMPLOSION"
     myBiom = {}
     nameList = []
     tempDF = metaDF.set_index('sampleid', inplace=False)
     myList.sort()
+    if debug:
+        print "SORT"
     for i in myList:
-        nameList.append({"id": str(i), "metadata": tempDF.loc[i].to_dict()})
+        try:
+            nameList.append({"id": str(i), "metadata": tempDF.loc[i].to_dict()})
+        except KeyError:
+            #print "IMPLODING KEY ERROR:", i
+            pass    # this exception occurs an alarming number of times (like 25% of myList)
 
+    if debug:
+        print "NAMELIST"
     # get list of lists with abundances
     abundDF = pd.DataFrame()
     if DepVar == 0:
@@ -916,6 +1034,8 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
     abundDF.sort_index(axis=0, inplace=True)
     abundList = abundDF.values.tolist()
 
+    if debug:
+        print "ABUND"
     # get list of taxa
     rank_id = abundDF.index.values.tolist()
     taxDict = {}
@@ -930,6 +1050,8 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
         if taxDict[i] == 'N|o|t| |f|o|u|n|d':
             taxDict[i] = 'N/A'
 
+    if debug:
+        print "FULL TAXA"
     namesDF = pd.DataFrame.from_dict(taxDict, orient='index')
     namesDF.sort_index(axis=0, inplace=True)
 
@@ -953,6 +1075,8 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
     myBiom['columns'] = nameList
     myBiom['data'] = abundList
 
+    if debug:
+        print "MYBIOM"
     with open(path, 'w') as outfile:
         json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
 
