@@ -48,7 +48,6 @@ def getStopDict():
 
 
 # analysis class is a base for other analyses to overwrite (not intended for direct use)
-# TODO create R based alternative functions, which accept data querysets and R scripts to produce PDF format graphs
 class Analysis:  # abstract parent class, not to be run on its own. Instead, should be used as a template
     __metaclass__ = ABCMeta
 
@@ -962,7 +961,6 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
 
         if self.debug:
             print "statsgraph! (AnovaQuant)"
-
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...!')
 

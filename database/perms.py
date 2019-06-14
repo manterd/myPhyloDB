@@ -348,7 +348,7 @@ def getViewProjects(request):   # use this function as often as possible for pro
     return projects
 
 
-def getEditProjects(request):   # TODO check all permissions required trees are verified on backend afterwards
+def getEditProjects(request):   # TODO check all permissions required trees are verified on backend afterwards (only allow selection of data which is permitted, in case of strange hacking)
     # TODO implement privateProjectList equivalent for editing permissions, to improve scalability
     projects = Project.objects.none()
     if request.user.is_superuser:

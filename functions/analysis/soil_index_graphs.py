@@ -48,7 +48,7 @@ def getsoil_index(request, stops, RID, PID):
                 locMax = all['locMax']
 
                 # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
-                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, '')
+                savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, 10, True)
                 avail = metaDF.columns.values
                 allFields = list(set(avail) & set(catFields)) + list(set(avail) & set(quantFields))
 
@@ -68,7 +68,7 @@ def getsoil_index(request, stops, RID, PID):
                 functions.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...\n')
 
                 selectAll = 9
-                DepVar = 10
+                DepVar = 1
                 finalDF, missingList = functions.getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
 
                 nzAll = 10
@@ -76,6 +76,7 @@ def getsoil_index(request, stops, RID, PID):
                 mapTaxa = 'no'
                 metaDF.set_index('sampleid', drop=True, inplace=True)  # getTaxaDF resets index of metaDF
                 keggDF, mtDF = functions.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
+                # todo check for empties and return http error msg or somesuch
 
                 # make sure column types are correct
                 #finalDF[catFields] = finalDF[catFields].astype(str)

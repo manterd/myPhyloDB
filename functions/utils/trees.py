@@ -23,7 +23,7 @@ import traceback
 pd.set_option('display.max_colwidth', -1)
 
 
-def getProjectTree(request):
+def getProjectTree(request):    # get all projects this user has permission to view (run analysis on)
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
     projects = perms.getViewProjects(request)
@@ -45,7 +45,7 @@ def getProjectTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getProjectTreeChildren(request):
+def getProjectTreeChildren(request):    # get the samples belonging to projects the user has permission for
     if request.is_ajax():
         projectid = request.GET["id"]
         samples = Sample.objects.filter(projectid=projectid).values_list('sampleid', flat=True)
@@ -65,11 +65,17 @@ def getProjectTreeChildren(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def getSampleCatTree(request):
+def getSampleCatTree(request):  # get categorical headers for projects user selected
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_norm_samples.pkl'
     with open(path, 'rb') as f:
         samples = pickle.load(f)
+
+    # There are lists for all fields associated with a project type, split into groups, here.
+    # When adding new attributes to the database (models), one must also add them here somewhere (and/or in quant equivalent later)
+    # The reason for the hard-coding of categories comes down to grouping: we don't want ALL soil fields to show up in the same folder
+    # so we split the full list into functional groups, which must be specified manually in order to exist (no way to measure group)
+    # The only way around this might be some sort of structure in the model itself for each group, like soilHealth as a model contained by soil
 
     # convert samples list into django queryset based on id's in current list
     projectList = Sample.objects.filter(sampleid__in=samples).values_list('projectid').distinct()
@@ -281,7 +287,7 @@ def getSampleCatTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getSampleCatTreeChildren(request):
+def getSampleCatTreeChildren(request):  # populate selected nodes of categorical data with values and sample info
     if request.is_ajax():
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_norm_samples.pkl'
@@ -308,9 +314,7 @@ def getSampleCatTreeChildren(request):
 
         your_fields = Human_Associated._meta.local_fields
         human_associated = [f.name for f in your_fields]
-        # TODO use this code on lists for database models
-        # so adding or changing the database in the future
-        # is much more straightforward
+
         your_fields = Microbial._meta.local_fields
         microbial = [f.name for f in your_fields]
 
@@ -548,7 +552,7 @@ def getSampleCatTreeChildren(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def getSampleQuantTree(request):
+def getSampleQuantTree(request):    # get variable names for quantitative data, grouped by type
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_norm_samples.pkl'
     with open(path, 'rb') as f:
@@ -772,7 +776,7 @@ def getSampleQuantTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getSampleQuantTreeChildren(request):
+def getSampleQuantTreeChildren(request):    # get actual values to populate parent tree with (for lazy loaded children)
     if request.is_ajax():
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_norm_samples.pkl'
@@ -1106,7 +1110,7 @@ def getSampleQuantTreeChildren(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def getTaxaTree(request):
+def getTaxaTree(request):   # Get main taxanomic datapoints (just kingdoms as folders really)
     myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
     path = str(myDir) + 'usr_norm_samples.pkl'
     with open(path, 'rb') as f:
@@ -1142,7 +1146,7 @@ def getTaxaTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getTaxaTreeChildren(request):
+def getTaxaTreeChildren(request):   # get deeper layers of the taxa tree upon request (based on selected parent node)
     if request.is_ajax():
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_norm_samples.pkl'
@@ -1251,7 +1255,7 @@ def getTaxaTreeChildren(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def getKEGGTree(request):
+def getKEGGTree(request):   # Create the first three layers of the kegg orthology tree (the static ones)
     myTree = {'title': 'KEGG Pathway', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
 
     level1 = ko_lvl1.objects.using('picrust').all().order_by('ko_lvl1_name').distinct()
@@ -1299,7 +1303,7 @@ def getKEGGTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getKEGGTreeChildren(request):
+def getKEGGTreeChildren(request):   # get lazy-loaded data for parent node in kegg orthology tree !UNUSED! see getKegg2
     if request.is_ajax():
         level = request.GET["tooltip"]
         id = request.GET["id"]
@@ -1325,7 +1329,7 @@ def getKEGGTreeChildren(request):
         return HttpResponse(res, content_type='application/json')
 
 
-def getKEGGTree2(request):
+def getKEGGTree2(request):  # get lazy-loaded data for parent node in kegg orthology tree
     myTree = {'title': 'KEGG Pathway', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
 
     if os.name == 'nt':
@@ -1389,7 +1393,7 @@ def getKEGGTree2(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getNZTree(request):
+def getNZTree(request):  # populate first three layers of kegg enzyme tree with lazy-loaded folders
     myTree = {'title': 'KEGG Enzyme', 'isFolder': False, 'hideCheckbox': True, 'expand': True, 'children': []}
 
     level1 = nz_lvl1.objects.using('picrust').all().order_by('nz_lvl1_name').distinct()
@@ -1450,7 +1454,7 @@ def getNZTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getNZTreeChildren(request):
+def getNZTreeChildren(request):  # get child nodes from lazy-loaded kegg enzyme tree
     if request.is_ajax():
         level = request.GET["tooltip"]
         id = request.GET["id"]
@@ -1676,7 +1680,7 @@ def makeReproTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getDownloadTree(request):
+def getDownloadTree(request):   # get list of available downloads for this user (project files they have perms for? TODO PERMS CHECK HERE
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
     projects = Project.objects.none()
@@ -1747,38 +1751,36 @@ def getPermissionTree(request):
     if request.user.is_superuser:
         projects = Project.objects.all()
     elif request.user.is_authenticated():
-        # why is this using reference instead of projects? TODO investigate
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter(Q(projectid__in=path_list))
-    # TODO incorporate editing permissions somehow
+        # get projects this user owns, we want to display them all (plus their whitelists)
+        projects = Project.objects.all().filter(owner=request.user)
+    # getPermissionTree is for viewing projects owned by this user and permissions which were granted for said projects
     for project in projects:
-        if Sample.objects.filter(projectid=project.projectid).exists():
-            viewList = project.whitelist_view.split(";")
-            projPerms = []
-            for uname in viewList:
-                if uname != "":
-                    myPerm = {
-                        'title': uname,
-                        'tooltip': "Select to revoke viewing permission for this project",
-                        'id': uname+";"+project.projectid,
-                        'isFolder': False,
-                        'wip': project.wip
-                    }
-                    projPerms.append(myPerm)
-            myNode = {
-                'title': project.project_name,
-                'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
-                'id': project.projectid,
-                'isFolder': True,
-                'isLazy': False,
-                'wip': project.wip,
-                'children': projPerms
-            }
-            if project.status == "public":  # should only be private and public, defaulting to private just in case
-                publicTree['children'].append(myNode)
-            else:
-                privateTree['children'].append(myNode)
-            # myTree['children'].append(myNode)
+        viewList = project.whitelist_view.split(";")
+        projPerms = []
+        for uname in viewList:
+            if uname != "":
+                myPerm = {
+                    'title': uname,
+                    'tooltip': "Select to revoke viewing permission for this project",
+                    'id': uname+";"+project.projectid,
+                    'isFolder': False,
+                    'wip': project.wip
+                }
+                projPerms.append(myPerm)
+        myNode = {
+            'title': project.project_name,
+            'tooltip': "Project type: " + project.projectType + "\nDescription: " + project.project_desc + "\nID: " + project.projectid + "\nPI: " + project.pi_first + " " + project.pi_last + "\nAffiliation: " + project.pi_affiliation,
+            'id': project.projectid,
+            'isFolder': True,
+            'isLazy': False,
+            'wip': project.wip,
+            'children': projPerms
+        }
+        if project.status == "public":  # should only be private and public, defaulting to private just in case
+            publicTree['children'].append(myNode)
+        else:
+            privateTree['children'].append(myNode)
+
     myTree['children'].append(publicTree)
     myTree['children'].append(privateTree)
     # Convert result list to a JSON string
@@ -1954,23 +1956,10 @@ def getFilterSamplesTree(request):
         for projid in sampleDict.keys():
             if len(sampleDict[projid]) > 0:
                 projectSet.append(Project.objects.get(projectid=projid))
-        # print "Found", len(projectSet), "projects after cleanup"
 
         projectSet.sort(key=lambda x: x.project_name)   # this is actually quite fast
 
-        # TODO could probably speed up this process (maybe move ifs outside of loops)
-        # this section's performance scales with number of projects & samples decently, but a 2x speedup would be nice
-        #projTime = time.time()
-
-        #projSetTime = 0.0
-        #sampSetTime = 0.0
-        #noFilterSetTime = 0.0
-        #filterSetTime = 0.0
-        #mimarksTime = 0.0
-        #notMimarksTime = 0.0
-
         for proj in projectSet:
-            #lastCheckTime = time.time()
             myProjNode = {
                 'title': proj.project_name,
                 'tooltip': "Project type: " + proj.projectType + "\nDescription: " + proj.project_desc + "\nID: " + proj.projectid + "\nPI: " + proj.pi_first + " " + proj.pi_last + "\nAffiliation: " + proj.pi_affiliation + "\nOwner: " + proj.owner.username,
@@ -1980,10 +1969,7 @@ def getFilterSamplesTree(request):
                 'children': [],
                 # 'expand': True # use this for auto expanded projects, currently inactive for compactness sake
             }
-            #projSetTime += time.time()-lastCheckTime
-            # print proj.project_name, "has", len(sampleDict[proj.projectid]), "matching samples"
             for samp in sampleDict[proj.projectid]:
-                #lastCheckTime = time.time()
                 try:
                     if fName == "nofilterselected":
                         if pType == "mimarks":
@@ -1994,7 +1980,6 @@ def getFilterSamplesTree(request):
                                 'id': str(samp.sampleid),
                                 'isFolder': False
                             }
-                            #mimarksTime += time.time()-lastCheckTime
                         else:
                             mySampNode = {
                                 'title': 'Name: ' + str(
@@ -2003,8 +1988,6 @@ def getFilterSamplesTree(request):
                                 'id': str(samp.sampleid.sampleid),
                                 'isFolder': False
                             }
-                            #notMimarksTime += time.time()-lastCheckTime
-                        #noFilterSetTime += time.time()-lastCheckTime
                     else:
                         myVal = str(getattr(samp, fName))
                         if pType == "mimarks":
@@ -2014,7 +1997,6 @@ def getFilterSamplesTree(request):
                                 'id': str(samp.sampleid),
                                 'isFolder': False
                             }
-                            #mimarksTime += time.time()-lastCheckTime
                         else:
                             mySampNode = {
                                 'title': "Value: " + myVal + '; Name: ' + str(samp.sampleid.sample_name) + '; Reads: ' + str(samp.sampleid.reads),
@@ -2022,18 +2004,11 @@ def getFilterSamplesTree(request):
                                 'id': str(samp.sampleid.sampleid),
                                 'isFolder': False
                             }
-                            #notMimarksTime += time.time()-lastCheckTime
-                        #filterSetTime += time.time()-lastCheckTime
                     myProjNode['children'].append(mySampNode)
-                    #sampSetTime += time.time()-lastCheckTime
                 except Exception as e:
                     print "Error during sample selection for location tree:", e
 
             myTree['children'].append(myProjNode)
-
-        #projTime = time.time()-projTime
-        #print "Project time:", projTime  # scales with total number of projects past filter (makes sense)
-        #print "Time spent breakdown: P-", projSetTime/projTime*100, "S-", sampSetTime/projTime*100, "NF-", noFilterSetTime/projTime*100, "F-", filterSetTime/projTime*100, "M-", mimarksTime/projTime*100, "NM-", notMimarksTime/projTime*100
 
     res = json.dumps(myTree)
     if 'callback' in request.GET:

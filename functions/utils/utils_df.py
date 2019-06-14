@@ -519,10 +519,13 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     quantFields = []
     quantValues = []
     if metaValsQuant:
-        metaDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
-        for key in sorted(metaDictQuant):
-            quantFields.append(key)
-            quantValues.extend(metaDictQuant[key])
+        if isinstance(metaValsQuant, list):
+            quantFields = metaValsQuant
+        else:
+            metaDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaValsQuant)
+            for key in sorted(metaDictQuant):
+                quantFields.append(key)
+                quantValues.extend(metaDictQuant[key])
     quantSampleLists = []
     if metaIDsQuant:
         idDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
@@ -643,6 +646,7 @@ def categorize(dataFrame):
     for col in dataFrame:
         if float(100.0 * len(dataFrame[col].unique()) / len(dataFrame[col])) < 50.0:
             dataFrame[col] = dataFrame[col].astype("category")
+            dataFrame[col].cat.add_categories("NaN")
             colCat += 1
         #else:
             #print ">=50% uniques:", col
@@ -665,7 +669,7 @@ def memDiff():
     # else just skip this function entirely
 
 
-def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False, depVar="ALL"):
+def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False, depVar=10):
     # this function is the primary memory hog for analysis, and the largest chunk of normalize too
     global prevMem, memTally
     memTally = 0
@@ -765,23 +769,31 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     memDiff()   # 22.04
 
     # check depVar, 0 for abundDF, 1 for rel_abundDF, 2 for richDF, 3 for diversityDF, 4 for abund_16SDF, ALL for all
-    abundDF = df.reset_index(drop=False)    # abundDF is always needed it seems
+    abundDF = df.reset_index(drop=False)
     abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
     abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
     abundDF.set_index('sampleid', inplace=True)
     categorize(abundDF)
+
+    countDF = pd.DataFrame()
+    rel_abundDF = pd.DataFrame()
+    richDF = pd.DataFrame()
+    diversityDF = pd.DataFrame()
+
     if depVar == 0:
         countDF = pd.DataFrame({
             'taxaid': abundDF['variable'],
             'abund': abundDF['value']
         }, index=abundDF.index)
     memDiff()   # 35.65
-    if depVar == 1 or depVar == "ALL":
+
+    if depVar == 1 or depVar == 10:
         rel_abundDF = df.div(df.sum(axis=1), axis=0)
         rel_abundDF.reset_index(drop=False, inplace=True)
         rel_abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
         rel_abundDF = pd.melt(rel_abundDF, id_vars='sampleid', value_vars=taxaids)
         rel_abundDF.set_index('sampleid', inplace=True)
+
         if depVar == 1:
             countDF = pd.DataFrame({
                 'taxaid': abundDF['variable'],
@@ -789,13 +801,15 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
                 'rel_abund': rel_abundDF['value']
             }, index=abundDF.index)
     memDiff()   # 123.5
-    if depVar == 2 or depVar == "ALL":
+
+    if depVar == 2 or depVar == 10:
         richDF = df / df
         richDF.fillna(0, inplace=True)
         richDF.reset_index(drop=False, inplace=True)
         richDF.rename(columns={'index': 'sampleid'}, inplace=True)
         richDF = pd.melt(richDF, id_vars='sampleid', value_vars=taxaids)
         richDF.set_index('sampleid', inplace=True)
+
         if depVar == 2:
             countDF = pd.DataFrame({
                 'taxaid': abundDF['variable'],
@@ -804,7 +818,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
             }, index=abundDF.index)
     memDiff()   # 70.69
 
-    if depVar == 3 or depVar == "ALL":
+    if depVar == 3 or depVar == 10:
         # what conditions lead to df.sum == 0 ? should div by zero work? if so what result? TODO resolve
         # so some value in the df.sum(axis=1) results must be zero, I guess just leave it be and supress the warning?
         diversityDF = -df.div(df.sum(axis=1), axis=0) * np.log(df.div(df.sum(axis=1), axis=0))  # RuntimeWarning: divide by zero encountered
@@ -815,6 +829,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
         diversityDF.rename(columns={'index': 'sampleid'}, inplace=True)
         diversityDF = pd.melt(diversityDF, id_vars='sampleid', value_vars=taxaids)
         diversityDF.set_index('sampleid', inplace=True)
+
         if depVar == 3:
             countDF = pd.DataFrame({
                 'taxaid': abundDF['variable'],
@@ -823,7 +838,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
             }, index=abundDF.index)
     memDiff()   # 141.5
 
-    if depVar == 4 or depVar == "ALL":
+    if depVar == 4 or depVar == 10:
         if 'rRNA_copies' in metaDF.columns:
             metaDF.replace(to_replace='nan', value=0.0, inplace=True)
             metaDF['rRNA_copies'] = metaDF['rRNA_copies'].astype(float)
@@ -836,6 +851,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
         else:
             rows, cols = abundDF.shape
             abund_16SDF = np.zeros(rows)
+
         if depVar == 4:
             countDF = pd.DataFrame({
                 'taxaid': abundDF['variable'],
@@ -843,16 +859,15 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
                 'abund_16S': abund_16SDF['value']
             }, index=abundDF.index)
 
-    if depVar == "ALL":
-        countDF = pd.DataFrame({
-            'taxaid': abundDF['variable'],
-            'abund': abundDF['value'],
-            'rel_abund': rel_abundDF['value'],
-            'rich': richDF['value'],
-            'diversity': diversityDF['value'],
-            'abund_16S': abund_16SDF['value']
-        }, index=abundDF.index)
-
+        if depVar == 10:
+            countDF = pd.DataFrame({
+                'taxaid': abundDF['variable'],
+                'abund': abundDF['value'],
+                'rel_abund': rel_abundDF['value'],
+                'rich': richDF['value'],
+                'diversity': diversityDF['value'],
+                'abund_16S': abund_16SDF['value']
+            }, index=abundDF.index)
     memDiff()   # 0.0
 
     # Check if there is at least one categorical variable with multiple levels
@@ -879,6 +894,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     categorize(metaDF)
     categorize(countDF)
     savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
+    memDiff()
     categorize(savedDF)
     memDiff()   # 14.76
 

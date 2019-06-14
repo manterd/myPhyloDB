@@ -24,6 +24,7 @@ LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 process = psutil.Process(os.getpid())
 
+
 def getNorm(request, RID, stopList, PID):
     try:
         if request.is_ajax():
@@ -147,6 +148,7 @@ def getNorm(request, RID, stopList, PID):
 
             functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
+
             # Hey where's step 3? In normalizeUniv
             functions.setBase(RID, 'Step 4 of 6: Calculating indices...')
             if remove == 1:
@@ -186,22 +188,14 @@ def getNorm(request, RID, stopList, PID):
 
             normDF.set_index('sampleid', inplace=True)
             # Convert columns data types to Category for dataframe size scalability
-            for col in metaDF:
-                if float(100.0*len(metaDF[col].unique())/len(metaDF[col])) < 50.0:
-                    metaDF[col] = metaDF[col].astype("category")
-                    # Because we fill values with NaN later, we need to add NaN as a category now (we don't know which columns are categorical after here)
-                    metaDF[col] = metaDF[col].cat.add_categories("NaN")
-            for col in normDF:
-                if float(100.0 * len(normDF[col].unique()) / len(normDF[col])) < 50.0:
-                    normDF[col] = normDF[col].astype("category")
+            functions.categorize(metaDF)
+            functions.categorize(normDF)
             # Merge metaDF and normDF data into a much larger dataframe (the size of which is a bottleneck for project selection scaling)
             finalDF = pd.merge(metaDF, normDF, left_index=True, right_index=True, how='inner')
             finalDF.reset_index(drop=False, inplace=True)
             finalDF.rename(columns={'index': 'sampleid'}, inplace=True)
             # Same categorical swap as before, to further reduce finalDF size
-            for col in finalDF:
-                if float(100.0*len(finalDF[col].unique())/len(finalDF[col])) < 50.0:
-                    finalDF[col] = finalDF[col].astype("category")
+            functions.categorize(finalDF)
             # New catogized DF takes roughly 85% less space in memory than the old code
             # This is at a cost of ~0.5 seconds additional computation time, which seems very much within reason
 
@@ -476,8 +470,8 @@ def getNorm(request, RID, stopList, PID):
             for i in myList:
                 # sampleID
                 # only change to first biom file from this pass is that metaDF gets fillna'd beforehand, instead of only for part 2
-                tempPanda = metaDF.fillna("NaN")    # TEMP PANDA IS THE ONLY NEW LINE, which just fillna's metaDF
-                nameDict = tempPanda.loc[i].to_dict()
+                #tempPanda = metaDF.fillna("NaN")    # TEMP PANDA IS THE ONLY NEW LINE, which just fillna's metaDF
+                nameDict = metaDF.loc[i].to_dict()
                 # meta var name as key, value is actual value
                 # note: nameDict is a mix of cat and quant vars; the biome file follows this idea
                 for key in nameDict:

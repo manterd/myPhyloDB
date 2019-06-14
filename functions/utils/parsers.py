@@ -560,7 +560,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, s
             # print "Parsing sample: ", str(row['sample_name'])
             try:
                 badChars = set('&')  # add to this whenever a problematic character shows up
-                row['sample_name'] = "".join([c for c in row['sample_name'] if c not in badChars])  # TODO TEST
+                row['sample_name'] = "".join([c for c in row['sample_name'] if c not in badChars])
             except:
                 pass
 
@@ -597,7 +597,7 @@ def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, s
                 else:
                     Microbial.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-            # TODO: remove extras once they are added to the excel metafile
+            # TODO: remove extras once they are added to the excel metafile ???
             elif pType == "soil":
                 if not Soil.objects.filter(sampleid=s_uuid).exists():
                     #Soil.objects.create(projectid=project, refid=reference, sampleid=sample, soil_water_cap=None,
@@ -747,21 +747,12 @@ def parse_taxonomy(Document, stopList, PID, RID):
                 if len(taxon) < 8:  # missing otu, unclassified the best thing to fill here?
                     taxon.append("unclassified")    # in case sequence is true but otu is not
 
-                # skip this row if the named otu already exists
-                # TODO verify this is valid, can otu name be duplicated? also should check for isv_ prefix while here
+                # skip this row if the named otu already exists (we handle unclassifieds into ISV's later)
                 if taxon[7] is not "unclassified":  # unclassified check is important
                     if OTU_99.objects.filter(otuName=taxon[7]).exists():
                         # if OTU with this name exists, move to next row
                         # print "Otu name exists"
                         continue
-
-                # this is a bad skip, because a sequence can show up in more than one otu
-                '''if haveSeq:
-                    if OTU_99.objects.filter(otuSeq=row[colLabels["Seq"]]).exists():
-                        # if OTU with this sequence exists, move to next row    BUT does this otu name match?
-                        # CAN this sequence exist within multiple taxonomies? Could be a small part of a gene
-                        # print "Sequence exists"
-                        continue'''
 
                 #print "\t", taxon   # got this far means either no sequence data or it matches existing sequence data
                 # we know that this OTU is new, in that its name and sequence are both absent from the database
@@ -1108,7 +1099,7 @@ def parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID):
                 t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
                                                 familyid=t_family, genusid=t_genus, speciesName=s)
             except Exception as e:
-                print "Error finding taxa: ", e     # currently getting here via "unknown" kingdom, what TODO...
+                print "Error finding taxa: ", e     # currently getting here via "unknown" kingdom
                 print taxaList
 
             t_otu = ''

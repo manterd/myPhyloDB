@@ -620,7 +620,8 @@ class DaymetData(models.Model):
     # sync these strings on position, so sampleID[0][dayl..s] = dayl[0], etc
     sampleIDs = models.TextField(blank=True)
     # "year" "yday" "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c."  "vp..Pa."
-    # TODO remove year and yday, add tmean/tavg something like that
+    # Could remove year and yday, add tmean/tavg something like that. We only have access to tmax and tmin so tmean wouldn't be accurate. tmedian or tmid maybe?
+    # what use is tmid? its not mean or median, though likely not far from either (weather usually has a smooth transition)
     year = models.TextField(blank=True)
     yday = models.TextField(blank=True)
     dayl = models.TextField(blank=True)
@@ -790,7 +791,6 @@ class PICRUSt(models.Model):
 
 class koOtuList(models.Model):
     # used as a means of storing kegg data per gene, for significantly faster querying on path pages
-    # TODO verify this gets updated with each new koID in the database
     koID = models.TextField(primary_key=True, db_index=True)
     otuList = models.TextField(blank=True)  # ';' separated list of otu names associated with this ko
 

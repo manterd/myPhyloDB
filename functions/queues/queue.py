@@ -206,6 +206,7 @@ def process(pid):
                 if activeList[pid] == RID:
                     # TODO finish moving analyses into analysis.py classes
                     # TODO cleanup and history are treating getNorm like a proper analysis (no point in norm history view)
+                    # TODO put a limit on how many requests can be queued from the same user at one time (queueUsers has the needed info)
                     if funcName == "getNorm":   # at present likely not worthwhile to port norm to analysis class
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
                     elif funcName == "getCatUnivData":
