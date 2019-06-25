@@ -93,11 +93,13 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     num_threads = functions.analysisThreads()
 
-    for pid in xrange(num_threads):     # num_threads normally, 1 for testing queue logic
+    for pid in xrange(num_threads):     # launch specified number of analysis handling threads
         thread = stoppableThread(target=functions.process, args=(pid, ))
         thread.setDaemon(True)
         thread.start()
 
+    # launch a single data handling thread (for uploads and such)
+    # TODO 1.4 alter data handling to allow for multiple dataThreads
     dataThread = stoppableThread(target=functions.dataprocess, args=(0, ))
     dataThread.setDaemon(True)
     dataThread.start()
@@ -107,23 +109,23 @@ if __name__ == '__main__':
     logThread.start()
 
     # database setting verification
-    with connection.cursor() as cursor:
+    #with connection.cursor() as cursor:
         #print "Verifying connection settings. Cursor ", cursor
         #cursor.execute("PRAGMA synchronous = OFF")
         #cursor.execute("PRAGMA temp_store = MEMORY")
         #cursor.execute("PRAGMA default_cache_size = 10000")
         #cursor.execute("PRAGMA journal_mode = WAL")
-        cursor.execute("PRAGMA synchronous")
+        #cursor.execute("PRAGMA synchronous")
         #print "S: ", cursor.fetchall()
-        cursor.execute("PRAGMA temp_store")
+        #cursor.execute("PRAGMA temp_store")
         #print "T: ", cursor.fetchall()
-        cursor.execute("PRAGMA default_cache_size")
+        #cursor.execute("PRAGMA default_cache_size")
         #print "C: ", cursor.fetchall()
-        cursor.execute("PRAGMA journal_mode")
+        #cursor.execute("PRAGMA journal_mode")
         #print "J: ", cursor.fetchall()
         #print "Tables:", connection.introspection.table_names()
 
-
     mp.freeze_support()
-    Server().run()
+    Server().run()  # actually start django server, this main thread will handle putting requests into queues and
+    # handing results and statuses back to user
 

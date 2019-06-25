@@ -17,12 +17,15 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # generate secret key on bootup, will break current session (ie log out all users)
 SECRET_KEY = "ALPHABETSOUPFORTESTINGONLY"   # FOR TESTING ONLY, USE BELOW LINE WHEN NOT DEBUGGING
 # TODO change this back for live build
+# TODO 1.3 TODO 1.4 TODO 1.5
 #SECRET_KEY = get_random_secret_key()   # the actually secure version, will reset logins on boot
 ALLOWED_HOSTS = []
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = False   # Keep django debug false unless something has gone wrong with page loading and/or request handling
+# Django's debug mode is a bit riskier than local debug flag (found in functions/utils/debug.py as flag)
+# Local flag just controls verbose mode basically, django's debug is a security risk
 
 
 # Application definition

@@ -31,7 +31,7 @@ def getNorm(request, RID, stopList, PID):
             # Get variables from web page
             allJson = request.body.split('&')[0]
             all = json.loads(allJson)
-            functions.setBase(RID, 'Step 1 of 6: Querying database...')
+            functions.setBase(RID, 'Step 1 of 5: Querying database...')
             NormMeth = int(all["NormMeth"])
 
             remove = int(all["Remove"])
@@ -138,7 +138,7 @@ def getNorm(request, RID, stopList, PID):
             qs3 = Profile.objects.filter(sampleid__in=myList).values_list('otuid', flat='True').distinct()
             taxaDict['OTU_99'] = qs3
 
-            functions.setBase(RID, 'Step 1 of 6: Querying database...done!')
+            functions.setBase(RID, 'Step 1 of 5: Querying database...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -146,11 +146,11 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
+            functions.setBase(RID, 'Step 2 of 5: Sub-sampling data...')
             normDF, DESeq_error = normalizeUniv(taxaDF, taxaDict, myList, NormMeth, NormReads, metaDF, Iters, Lambda, RID, stopList, PID)
 
             # Hey where's step 3? In normalizeUniv
-            functions.setBase(RID, 'Step 4 of 6: Calculating indices...')
+            functions.setBase(RID, 'Step 4 of 5: Calculating indices...')
             if remove == 1:
                 grouped = normDF.groupby('otuid')
                 goodIDs = []
@@ -217,11 +217,8 @@ def getNorm(request, RID, stopList, PID):
             request.session['savedDF'] = pickle.dumps(path)
             request.session['NormMeth'] = NormMeth
 
-            functions.setBase(RID, 'Step 5 of 6: Writing data to disk...')
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
-            # this is just making a directory, we didn't actually write anything down here TODO Why?
-            functions.setBase(RID, 'Step 5 of 6: Writing data to disk...done')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -229,15 +226,13 @@ def getNorm(request, RID, stopList, PID):
                 return HttpResponse(res, content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            functions.setBase(RID, 'Step 6 of 6: Formatting biom data...')
-
             # regardless of daymet flag, delete old daymetData object for this user (or try to)
             try:
                 DaymetData.objects.get(user=request.user).delete()
             except Exception as daydelerr:  # this exception primarily occurs when daymetdata object does not exist
                 #print "Daymet Deletion Error:", daydelerr
                 pass
-            # TODO turn daymet gathering section into a function for code readability. Actually, do that for norm_graphs as a whole
+            # TODO 1.4 turn daymet gathering section into a function for code readability. Actually, do that for norm_graphs as a whole
             # like on the whole, we need to split this behemoth codebase into smaller pieces
 
             # get data from dictionaries before saving to biom
@@ -247,6 +242,7 @@ def getNorm(request, RID, stopList, PID):
             sampIDs = []
             daymetKeys = []
             if all['daymet']:
+                functions.setBase(RID, 'Step 5 of 5: Fetching daymet data...')
                 # do daymet stuff
                 minYear = all['minYear']
                 maxYear = all['maxYear']
@@ -426,44 +422,48 @@ def getNorm(request, RID, stopList, PID):
                 # make model for users most recent daymet data, its a nested dictionary so could be tricky
                 # have ";" delimited strings for sampleID and all daymet columns
                 # sync these strings on position, so sampleID[0][dayl..s] = dayl[0], etc
-
                 #print "ALL THE DATA"
                 sampID_str = ""
-                year_str = ""
-                yday_str = ""
+                #year_str = ""
+                #yday_str = ""
                 dayl_str = ""
                 prcp_str = ""
                 srad_str = ""
                 swe_str = ""
                 tmax_str = ""
                 tmin_str = ""
+                tmean_str = ""
                 vp_str = ""
-                # TODO drop year and yday columns, add mean temp
-    # "year" "yday" "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c."  "vp..Pa."
+    # "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c." "tmean..deg.c." "vp..Pa."
                 for sampID in sampIDs:
                     sampID_str += str(sampID) + ";"
-                    year_str += str(daymetData[sampID]["year"]) + ";"
-                    yday_str += str(daymetData[sampID]["yday"]) + ";"
+                    #year_str += str(daymetData[sampID]["year"]) + ";"
+                    #yday_str += str(daymetData[sampID]["yday"]) + ";"
                     dayl_str += str(daymetData[sampID]["dayl..s."]) + ";"
                     prcp_str += str(daymetData[sampID]["prcp..mm.day."]) + ";"
                     srad_str += str(daymetData[sampID]["srad..W.m.2."]) + ";"
                     swe_str += str(daymetData[sampID]["swe..kg.m.2."]) + ";"
                     tmax_str += str(daymetData[sampID]["tmax..deg.c."]) + ";"
                     tmin_str += str(daymetData[sampID]["tmin..deg.c."]) + ";"
+                    # add tmean field: somewhat close to actual mean temperature, found by taking mean of max and min temps
+                    daymetData[sampID]["tmean..deg.c."] = (float(daymetData[sampID]["tmax..deg.c."])+float(daymetData[sampID]["tmin..deg.c."]))/2.0
+                    daymetKeys.append("tmean..deg.c.")
+                    tmean_str += str(daymetData[sampID]["tmean..deg.c."]) + ";"
                     vp_str += str(daymetData[sampID]["vp..Pa."]) + ";"
 
-                myData = DaymetData.objects.create(user=request.user, sampleIDs=sampID_str, year=year_str,
-                                                   yday=yday_str, dayl=dayl_str, prcp=prcp_str, srad=srad_str,
-                                                   swe=swe_str, tmax=tmax_str, tmin=tmin_str, vp=vp_str)
+                myData = DaymetData.objects.create(user=request.user, sampleIDs=sampID_str, dayl=dayl_str, prcp=prcp_str, srad=srad_str,
+                                                   swe=swe_str, tmax=tmax_str, tmin=tmin_str, tmean=tmean_str, vp=vp_str)
                 myData.save()
                 daymetSuccess = True
                 #print "Done with daymet data saving"
 
 
-            # TODO biom file creation is also memory intensive, and scales with finalDF size
+            # biom file creation is quite memory intensive, and scales with finalDF size
             # finalDF is much smaller now, but biom in memory should still end up as big as before
-            # THIS STILL RUNS OUT OF MEMORY WITH 4 projects, we get down to here (a step up from before) BUT need fixes!
             # the true memory bottleneck is when both are still stored as variables
+
+            functions.setBase(RID, 'Step 5 of 5: Formatting biom data...')
+
             myBiom = {}
             nameList = []
             myList.sort()
@@ -541,7 +541,7 @@ def getNorm(request, RID, stopList, PID):
                 json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
             # very little change in RAM usage between 3-4
 
-            functions.setBase(RID, 'Step 6 of 6: Formatting biome data...done!')
+            functions.setBase(RID, 'Step 5 of 5: Formatting biome data...done!')
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
@@ -778,7 +778,7 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
         r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
         r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
 
-        functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...')
+        functions.setBase(RID, 'Step 2 of 5: Sub-sampling data...')
 
         r("library(DESeq2)")
 
@@ -821,8 +821,8 @@ def normalizeUniv(df, taxaDict, mySet, meth, reads, metaDF, iters, Lambda, RID, 
             DESeq_error = 'yes'
             countDF = df2.reset_index(drop=True)
 
-    functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...done!')
-    functions.setBase(RID, 'Step 3 of 6: Tabulating data...')   # TODO awkward double staging, and stage splitting, the double stage listing is a widespread issue
+    functions.setBase(RID, 'Step 2 of 5: Sub-sampling data...done!')
+    functions.setBase(RID, 'Step 3 of 5: Tabulating data...')   # TODO 1.4 awkward double staging, and stage splitting, the double stage listing is a widespread issue
     # can mitigate weird staging sequence by splitting up functions even further, and calling setBase before each part
 
     field = 'otuid'
@@ -891,7 +891,7 @@ def rarefaction_remove(M, RID, reads=0, iters=0):
         else:
             Mrarefied[i] = myArr
         curSamples[RID] += 1
-        functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
+        functions.setBase(RID, 'Step 2 of 5: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
 
 
@@ -919,7 +919,7 @@ def rarefaction_keep(M, RID, reads=0, iters=0, myLambda=0.1):
         else:
             Mrarefied[i] = myArr
         curSamples[RID] += 1
-        functions.setBase(RID, 'Step 2 of 6: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
+        functions.setBase(RID, 'Step 2 of 5: Sub-sampling data...\nSub-sampling is complete for ' + str(curSamples[RID]) + ' out of ' + str(totSamples[RID]) + ' samples')
     return Mrarefied
 
 

@@ -12,6 +12,7 @@ from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
     nz_lvl1, nz_lvl2, nz_lvl3, nz_lvl4, nz_entry
 
 import functions
+from functions.utils.debug import debug
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -132,8 +133,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif selectAll == 1:
@@ -200,8 +200,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         metaDF.reset_index(drop=False, inplace=True)
@@ -240,7 +239,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             logging.exception(myDate)
             myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
             res = json.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
+            return res, None
 
 
 def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID):
@@ -287,8 +286,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 1:
@@ -300,8 +298,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 2:
@@ -313,8 +310,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 3:
@@ -326,8 +322,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif keggAll == 4:
@@ -339,14 +334,12 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         # create sample and otu lists based on meta data selection
@@ -383,16 +376,22 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         levelList = picrustDF.columns.values.tolist()
 
         # convert profile to index (sampleid) and columns (keggid) and values (depvar)
+
         profileDF.reset_index(drop=False, inplace=True)
         if DepVar == 0:
+            profileDF['abund'] = profileDF['abund'].astype("float64")
             profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='abund')
         elif DepVar == 1:
+            profileDF['rel_abund'] = profileDF['rel_abund'].astype("float64")
             profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='rel_abund')
         elif DepVar == 2:
+            profileDF['rich'] = profileDF['rich'].astype("float64")
             profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='rich')
         elif DepVar == 3:
+            profileDF['diversity'] = profileDF['diversity'].astype("float64")
             profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='diversity')
         elif DepVar == 4:
+            profileDF['abund_16S'] = profileDF['abund_16S'].astype("float64")
             profileDF = profileDF.pivot(index='otuid', columns='sampleid', values='abund_16S')
 
         sampleList = profileDF.columns.values.tolist()
@@ -405,27 +404,24 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             loopStartTime = time.time()
             for j in levelList:
                 tempDF[j] = profileDF[i] * picrustDF[j]
-
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-                if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
-                # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             loopRunTime = time.time() - loopStartTime
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+            if stops[PID] == RID:
+                return '', None
+            # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             tempDF = tempDF[levelList].sum()
             tempDF['sampleid'] = i
             taxaDF = taxaDF.append(tempDF, ignore_index=True)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                return '', None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             functions.setBase(RID, 'Calculating KEGG pathway abundances...sample ' + str(counter) + ' out of ' + str(total) + ' is finished!')
             sampRunTime = time.time() - sampStartTime
-            percentTime = loopRunTime / sampRunTime
-            print "GAGE tracker: this sample took", sampRunTime, "and", percentTime, "was spent in for loop"
+            percentTime = loopRunTime * 100.0 / sampRunTime
+            debug("GAGE tracker: this sample took", sampRunTime, "and", percentTime, "% was spent in for loop")
             counter += 1
 
         functions.setBase(RID, curStep)
@@ -449,8 +445,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             allDF = picrustDF.reset_index(drop=False, inplace=False)
@@ -481,8 +476,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         #taxaDF.reset_index(drop=False, inplace=True)
@@ -503,8 +497,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         idList = functions.getFullKO(list(finalDF.rank_id.unique()))
@@ -515,14 +508,14 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
         return finalDF, allDF
 
-    except Exception:
-        if not stops[PID] == RID:
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-            myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
-            res = json.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
+    except Exception as exc:
+        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+        logging.exception(myDate)
+        myDict = {'error': "There was an error with your analysis:" + str(exc)}
+        res = json.dumps(myDict)
+        print "Error in keggDF:", exc
+        return str(res), None
 
 
 def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
@@ -577,8 +570,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 1:
@@ -590,8 +582,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 2:
@@ -603,8 +594,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 3:
@@ -616,8 +606,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 4:
@@ -629,8 +618,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         elif nzAll == 5:
@@ -1076,8 +1064,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             tempDF = tempDF[levelList].sum()
@@ -1086,8 +1073,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stops[PID] == RID:
-                res = ''
-                return HttpResponse(res, content_type='application/json')
+                return '', None
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             functions.setBase(RID, 'Calculating KEGG pathway abundances...sample ' + str(counter) + ' out of ' + str(total) + ' is finished!')
@@ -1116,8 +1102,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if stops[PID] == RID:
-                    res = ''
-                    return HttpResponse(res, content_type='application/json')
+                    return '', None
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             allDF = picrustDF.reset_index(drop=False, inplace=False)
@@ -1149,8 +1134,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         #taxaDF.reset_index(drop=False, inplace=True)
@@ -1171,8 +1155,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
-            res = ''
-            return HttpResponse(res, content_type='application/json')
+            return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         if nzAll < 5:
@@ -1186,14 +1169,13 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         return finalDF, allDF
 
     except Exception as exc:
-        if not stops[PID] == RID:
-            print "NZDF EXC:", exc  # TODO this function returns the wrong type when erroring or stopping early
-            logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-            myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-            logging.exception(myDate)
-            myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
-            res = json.dumps(myDict)
-            return HttpResponse(res, content_type='application/json')
+        print "Error in NZDF:", exc
+        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+        logging.exception(myDate)
+        myDict = {'error': "There was an error with your analysis!\nMore info can be found in 'error_log.txt' located in your myPhyloDB dir."}
+        res = json.dumps(myDict)
+        return res, None
 
 
 def sumKEGG(picrustDF, keggDict, nzAll, RID, PID, stops):

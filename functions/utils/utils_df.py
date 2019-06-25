@@ -21,6 +21,7 @@ from database.models import Project, Reference, Profile
 
 import config.local_cfg
 import functions
+from functions.utils.debug import debug
 from database import perms
 
 from Queue import Queue
@@ -159,47 +160,48 @@ def handle_uploaded_file(f, path, name):  # move file from memory to disc
         print "Was moving", f, "to", path, "with name", name
 
 
-def remove_list(refList):
-    p_uuid = list(Reference.objects.filter(path__in=refList).values_list('projectid', flat=True))
+def remove_list(refList, user):
+    #p_uuid = list(Reference.objects.filter(path__in=refList).values_list('projectid', flat=True))
     # Remove record from reference table
     for path in refList:
-        Reference.objects.filter(path=path).delete()
-        if os.path.exists(path):
-            shutil.rmtree(path, ignore_errors=True)
-
-    # Remove record from project table and path (if necessary)
-    for pid in p_uuid:
-        qs = Project.objects.all().filter(projectid=pid)
-        for item in qs:
-            refLength = len(item.reference_set.values_list('refid', flat=True))
-            if refLength == 0:
-                # update perms before deleting project
-                if Project.objects.get(projectid=pid).status == "private":
-                    perms.remPriv(pid)
-                else:
-                    perms.remPub(pid)
-                Project.objects.filter(projectid=pid).delete()
-                path = os.path.join("uploads", str(pid))
-                if os.path.exists(path):
-                    shutil.rmtree(path, ignore_errors=True)
-            else:
-                pass
+        debug("Remove_list:", path, user.username)
+        ret = remove_proj(path, user)
+        if ret == 1:
+            debug("Encountered an issue while removing project")
+            return 1
+    return 0
 
 
-def remove_proj(path):
+def remove_proj(path, user):  # remove selected project path, after verifying user has correct permissions
+    # so a permissions check is not entirely necessary here, though if its called from another context, maybe add perms
     # remove project, files and database
+    # TODO 1.4 security alerts: some way to push security-related errors to current admins, no console babysitting required
     pid = Reference.objects.get(path=path).projectid.projectid
-    # remove current reference object, if its the last/only one, remove the project as a whole
-    Reference.objects.get(path=path).delete()
-    if not Reference.objects.filter(projectid_id=pid).exists():
+    # Verify user has correct permissions for this step (either the owner or a superuser, no exceptions for deletion)
+    myProj = Project.objects.get(projectid=pid)
+    debug("RemProj:", myProj.owner.username, user.username, user.is_superuser)    # TODO 1.3 error:Exception page
+    debug("ProjDetails:", pid, myProj.project_name, myProj)
+    if myProj.owner == user or user.is_superuser:
+        # remove current reference object, if its the last/only one, remove the project as a whole
         # actually remove project from database
-        # TODO When is this called? Are permissions being checked? (both to perform this action and the list associated with this project)
-        # print "Removing full project" # debating having this print in just in case its popping up when it shouldn't
-        Project.objects.get(projectid=pid).delete()
+        debug("Removing full project")
+        # update perms before deleting project
+        Reference.objects.get(path=path).delete()
+        if myProj.status == "private":
+            perms.remPriv(pid)
+        else:
+            perms.remPub(pid)
+        myProj.delete()
+
         path = "/".join(["uploads", str(pid)])
         if os.path.exists(path):
             shutil.rmtree(path)
 
+        return 0
+    else:
+        print "SECURITY: User lacks permission to remove this project!", Project.objects.get(projectid=pid).project_name, user
+        # TODO 1.3 put this into security alerts feed (another console stat?)
+        return 1
 
 def multidict(ordered_pairs):
     d = defaultdict(list)
@@ -225,9 +227,9 @@ def taxaProfileDF(mySet):
 
 def PCoA(dm):
     E_matrix = make_E_matrix(dm)
-    F_matrix = make_F_matrix(E_matrix)  # TODO fix
+    F_matrix = make_F_matrix(E_matrix)  # TODO 1.3 fix
     eigvals, eigvecs = np.linalg.eigh(F_matrix)
-    negative_close_to_zero = np.isclose(eigvals, 0)  # TODO fix
+    negative_close_to_zero = np.isclose(eigvals, 0)  # TODO 1.3 fix
     eigvals[negative_close_to_zero] = 0
     idxs_descending = eigvals.argsort()[::-1]
     eigvals = eigvals[idxs_descending]
@@ -248,7 +250,7 @@ def make_F_matrix(E_matrix):
 
 
 def scores(eigvals, eigvecs):
-    num_positive = (eigvals >= 0).sum()  # TODO fix
+    num_positive = (eigvals >= 0).sum()  # TODO 1.3 fix
     eigvecs[:, num_positive:] = np.zeros(eigvecs[:, num_positive:].shape)
     eigvals[num_positive:] = np.zeros(eigvals[num_positive:].shape)
     coordinates = eigvecs * np.core.umath.sqrt(eigvals)
@@ -263,7 +265,7 @@ def purge(dir, pattern):
 
 
 class MultiFileInput(forms.FileInput):
-    def render(self, name, value, attrs={}):    # TODO fix
+    def render(self, name, value, attrs={}):    # TODO 1.3 fix
         attrs['multiple'] = 'multiple'
         return super(MultiFileInput, self).render(name, None, attrs=attrs)
 
@@ -526,6 +528,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
             for key in sorted(metaDictQuant):
                 quantFields.append(key)
                 quantValues.extend(metaDictQuant[key])
+    debug("getMetaDF: quantFields:", quantFields)
     quantSampleLists = []
     if metaIDsQuant:
         idDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
@@ -819,7 +822,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     memDiff()   # 70.69
 
     if depVar == 3 or depVar == 10:
-        # what conditions lead to df.sum == 0 ? should div by zero work? if so what result? TODO resolve
+        # what conditions lead to df.sum == 0 ? should div by zero work? if so what result? TODO 1.3 resolve
         # so some value in the df.sum(axis=1) results must be zero, I guess just leave it be and supress the warning?
         diversityDF = -df.div(df.sum(axis=1), axis=0) * np.log(df.div(df.sum(axis=1), axis=0))  # RuntimeWarning: divide by zero encountered
         # logically, is DF/DF.sum * log(DF/DF.sum)); so if DF.sum is 0 or equivalent, divide by zero occurs
@@ -885,8 +888,11 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
         allFields = catFields + quantFields
         if 'sample_name' not in allFields:
             allFields.append('sample_name')
+        debug("Selected fields:", allFields)
         avail = metaDF.columns.values
+        debug("Available fields:", avail)
         common = list(set(avail) & set(allFields))
+        debug("Common fields:", common)
         metaDF = metaDF[common]
     memDiff()   # 0.003
 
@@ -1016,15 +1022,12 @@ def exploding_panda2(path, treeType):
 
 
 def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
-    debug = False    # TODO make this global
-    if debug:
-        print "IMPLOSION"
+    debug("IMPLOSION")
     myBiom = {}
     nameList = []
     tempDF = metaDF.set_index('sampleid', inplace=False)
     myList.sort()
-    if debug:
-        print "SORT"
+    debug("SORT")
     for i in myList:
         try:
             nameList.append({"id": str(i), "metadata": tempDF.loc[i].to_dict()})
@@ -1032,8 +1035,7 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
             #print "IMPLODING KEY ERROR:", i
             pass    # this exception occurs an alarming number of times (like 25% of myList)
 
-    if debug:
-        print "NAMELIST"
+    debug("NAMELIST")
     # get list of lists with abundances
     abundDF = pd.DataFrame()
     if DepVar == 0:
@@ -1050,8 +1052,7 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
     abundDF.sort_index(axis=0, inplace=True)
     abundList = abundDF.values.tolist()
 
-    if debug:
-        print "ABUND"
+    debug("ABUND")
     # get list of taxa
     rank_id = abundDF.index.values.tolist()
     taxDict = {}
@@ -1066,8 +1067,7 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
         if taxDict[i] == 'N|o|t| |f|o|u|n|d':
             taxDict[i] = 'N/A'
 
-    if debug:
-        print "FULL TAXA"
+    debug("FULL TAXA")
     namesDF = pd.DataFrame.from_dict(taxDict, orient='index')
     namesDF.sort_index(axis=0, inplace=True)
 
@@ -1091,8 +1091,7 @@ def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):
     myBiom['columns'] = nameList
     myBiom['data'] = abundList
 
-    if debug:
-        print "MYBIOM"
+    debug("MYBIOM")
     with open(path, 'w') as outfile:
         json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
 

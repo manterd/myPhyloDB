@@ -620,16 +620,15 @@ class DaymetData(models.Model):
     # sync these strings on position, so sampleID[0][dayl..s] = dayl[0], etc
     sampleIDs = models.TextField(blank=True)
     # "year" "yday" "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c."  "vp..Pa."
-    # Could remove year and yday, add tmean/tavg something like that. We only have access to tmax and tmin so tmean wouldn't be accurate. tmedian or tmid maybe?
-    # what use is tmid? its not mean or median, though likely not far from either (weather usually has a smooth transition)
-    year = models.TextField(blank=True)
-    yday = models.TextField(blank=True)
+    #year = models.TextField(blank=True)
+    #yday = models.TextField(blank=True)
     dayl = models.TextField(blank=True)
     prcp = models.TextField(blank=True)
     srad = models.TextField(blank=True)
     swe = models.TextField(blank=True)
     tmax = models.TextField(blank=True)
     tmin = models.TextField(blank=True)
+    tmean = models.TextField(blank=True)
     vp = models.TextField(blank=True)
 
 

@@ -83,6 +83,9 @@
                 // can't just throw it into the url section, as those are completely done from page generation onward
                 myURL = "{% url "anova" %}";
             }
+            if (myFunc=="getNorm"){
+                myURL = "{% url "norm" %}";
+            }
             if (myFunc=="getCorr"){
                 myURL = "{% url "corr" %}";
             }

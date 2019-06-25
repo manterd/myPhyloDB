@@ -76,7 +76,8 @@ def getsoil_index(request, stops, RID, PID):
                 mapTaxa = 'no'
                 metaDF.set_index('sampleid', drop=True, inplace=True)  # getTaxaDF resets index of metaDF
                 keggDF, mtDF = functions.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
-                # todo check for empties and return http error msg or somesuch
+                # TODO 1.3 check for empties and return http error msg or somesuch
+                # TODO 1.3 move soil_index to analysis
 
                 # make sure column types are correct
                 #finalDF[catFields] = finalDF[catFields].astype(str)

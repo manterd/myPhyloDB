@@ -13,7 +13,7 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
     nz_lvl1, nz_entry, \
     UserProfile, DaymetData
 
-import functions
+from functions.utils.debug import debug
 
 from database import perms
 
@@ -25,8 +25,9 @@ pd.set_option('display.max_colwidth', -1)
 
 def getProjectTree(request):    # get all projects this user has permission to view (run analysis on)
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
-
+    debug("Getting projects for", request.user.username)
     projects = perms.getViewProjects(request)
+    debug("User:", request.user.username, " can view", len(projects), "projects")
     for project in projects:
         myNode = {
             'title': project.project_name,
@@ -758,8 +759,8 @@ def getSampleQuantTree(request):    # get variable names for quantitative data, 
         # myDaymet line is to check if object exists
         if DaymetData.objects.filter(user=request.user).exists():
             daymet = {'title': 'Daymet Data', 'id': 'user', 'isFolder': True, 'hideCheckbox': True, 'children': []}
-            # "year" "yday" "dayl" "prcp" "srad"  "swe"  "tmax"  "tmin"  "vp"
-            list = ['year', 'yday', 'dayl', 'prcp', 'srad', 'swe', 'tmax', 'tmin', 'vp']
+            # "dayl" "prcp" "srad"  "swe"  "tmax"  "tmin"  "tmean" "vp"
+            list = ['dayl', 'prcp', 'srad', 'swe', 'tmax', 'tmin', 'tmean', 'vp']
             for i in range(len(list)):
                 myNode = {'title': list[i], 'id': 'user', 'isFolder': True, 'pType': 'user', 'isLazy': True, 'children': []}
                 daymet['children'].append(myNode)
@@ -1027,17 +1028,17 @@ def getSampleQuantTreeChildren(request):    # get actual values to populate pare
             # populate values list from paired strings
             myDaymetData = DaymetData.objects.get(user=request.user)
             daySamps = myDaymetData.sampleIDs.split(";")[:-1]
-            # "year" "yday" "dayl" "prcp" "srad"  "swe"  "tmax"  "tmin"  "vp"
+            # "dayl" "prcp" "srad"  "swe"  "tmax"  "tmin" "tmean" "vp"
             # for clarity and security, values list is selected based on a series of if/elifs
             # check which daymet data is being queried for, pull up corresponding list
             # then iterate through in order to make sampID key with value as queried val, use dictionary to make nodes
             valueString = ""
             #print "daymet tree children, looking for:", field
-            if field == "year":
-                valueString = myDaymetData.year
-            elif field == "yday":
-                valueString = myDaymetData.yday
-            elif field == "dayl":
+            #if field == "year":
+            #    valueString = myDaymetData.year
+            #elif field == "yday":
+            #    valueString = myDaymetData.yday
+            if field == "dayl":
                 valueString = myDaymetData.dayl
                 field = "dayl..s."
             elif field == "prcp":
@@ -1055,13 +1056,16 @@ def getSampleQuantTreeChildren(request):    # get actual values to populate pare
             elif field == "tmin":
                 valueString = myDaymetData.tmin
                 field = "tmin..deg.c."
+            elif field == "tmean":
+                valueString = myDaymetData.tmean
+                field = "tmean..deg.c."
             elif field == "vp":
                 valueString = myDaymetData.vp
                 field = "vp..Pa."
             else:
                 print "User requested a non existent daymet field!!"
 
-            # "year" "yday" "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c."  "vp..Pa."
+            # "dayl..s." "prcp..mm.day." "srad..W.m.2."  "swe..kg.m.2."  "tmax..deg.c."  "tmin..deg.c." "tmean..deg.c." "vp..Pa."
             values = valueString.split(';')[:-1]
             #print "Daymet for tree:", len(daySamps), ":", len(values)
             #print "Values:", values
@@ -1680,17 +1684,10 @@ def makeReproTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getDownloadTree(request):   # get list of available downloads for this user (project files they have perms for? TODO PERMS CHECK HERE
+def getDownloadTree(request):   # get list of available downloads for this user (project files they have perms for?
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
-    projects = Project.objects.none()
-    if request.user.is_superuser:
-        projects = Project.objects.all().order_by('project_name')
-    elif request.user.is_authenticated():
-        path_list = Reference.objects.filter(Q(author=request.user)).values_list('projectid_id')
-        projects = Project.objects.all().filter( Q(projectid__in=path_list) | Q(status='public') ).order_by('project_name')
-    if not request.user.is_superuser and not request.user.is_authenticated():
-        projects = Project.objects.all().filter( Q(status='public') ).order_by('project_name')
+    projects = perms.getViewProjects(request)
 
     for project in projects:
         if Sample.objects.filter(projectid=project.projectid).exists():

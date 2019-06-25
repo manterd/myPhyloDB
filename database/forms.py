@@ -25,8 +25,9 @@ class UploadForm2(forms.Form):
     docfile13 = forms.FileField(label='Select 3-column contig file:', required=False)
     platform = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'mothur'), ('dada2', 'dada2')))
     fastq_files = MultiFileField()
+    biom_file = forms.FileField(label='Select biom file:', required=False)
     # make HTML version for file upload page
-    source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed files'), ('454_sff', 'sff files'), ('454_fastq', 'fna/qual files'), ('miseq', 'fastq files')))
+    source = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'Pre-processed files'), ('454_sff', 'sff files'), ('454_fastq', 'fna/qual files'), ('miseq', 'fastq files'), ('biom', 'biom')))
     processors = forms.IntegerField(initial=2, min_value=1, max_value=100)
 
 

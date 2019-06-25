@@ -3,6 +3,7 @@ from database.models import UserProfile, Project, PublicProjects
 from django.http import HttpResponse
 import json
 import functions
+from functions.utils.debug import debug
 import numpy as np
 
 """
@@ -270,6 +271,8 @@ def updateProjPerms(request):  # this is the project whitelisting section, a tre
             else:
                 # user does not have permission to make these permissions changes
                 print(thisUser.username, "has invalid permissions for permissions change on project owned by", curProj.owner.username)
+                # this is a fairly significant breach attempt.
+                # If you see this in the log, be very concerned (though we do catch this particular trick)
                 functions.log(request, "PERM_ERROR", "PROJPERMS")
             # save changes
             curProj.save()
@@ -326,15 +329,24 @@ def getViewProjects(request):   # use this function as often as possible for pro
         # check if project is WIP, flag for dynatree highlighting?
 
     elif request.user.is_authenticated():
+        debug("Auth user:", request.user.username)
         # run through list of projects, when valid project is found, append filterIDS with ID
         # projects will be a queryset set to all projects, then filtered by ids in filterIDS
         # queryStartTime = time.time()
-
-        publicIDs = PublicProjects.objects.all().first().List.split(",")    # got the public
-        # print "publicIDs:", publicIDs
+        publicIDs = []
+        privateIDs = []
+        try:
+            publicIDs = PublicProjects.objects.all().first().List.split(",")    # got the public
+            debug("Found", len(publicIDs), "public projects")
+        except Exception as e:
+            print e
         # get private IDs here
-        privateIDs = UserProfile.objects.get(user=request.user).privateProjectList.split(",")
-        # print "privateIDs:", privateIDs
+        try:
+            privateIDs = UserProfile.objects.get(user=request.user).privateProjectList.split(",")
+            debug("Found", len(privateIDs), "private projects")
+        except Exception as e:
+            print e
+
         filterIDS = np.unique(privateIDs+publicIDs)
 
         # queryTime = time.time() - queryStartTime
@@ -348,8 +360,8 @@ def getViewProjects(request):   # use this function as often as possible for pro
     return projects
 
 
-def getEditProjects(request):   # TODO check all permissions required trees are verified on backend afterwards (only allow selection of data which is permitted, in case of strange hacking)
-    # TODO implement privateProjectList equivalent for editing permissions, to improve scalability
+def getEditProjects(request):
+    # TODO 1.3 implement privateProjectList equivalent for editing permissions, to improve scalability
     projects = Project.objects.none()
     if request.user.is_superuser:
         projects = Project.objects.order_by('project_name')

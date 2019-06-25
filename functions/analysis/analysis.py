@@ -1,13 +1,13 @@
 # goals: create extendable class for all analyses,
 # with functions covering duplicate sections (with arguments for variances)
 
-# class objects created within queue call, destroyed after returning from main (more likely called RUN)
+# class objects created within queue call, destroyed after returning from RUN method
 # almost all variables become local instance variables created in constructor
-# this way all variables are visible to all functions (pseudo-global)
+# this way all variables are visible to all functions within an analysis
 # PID and RID get passed in alongside Request as arguments for constructor
-# each analysis's RUN function calls the sequence of helper methods involved
+# each analysis's RUN function calls the sequence of helper methods involved in creating proper results
 
-# make each analysis its own class inheriting from main analysis template (abstract) class
+# each analysis is its own class inheriting from main analysis template (abstract) class
 # ie myAnalysis = new Analysis(request, rid, pid)
 # results = myAnalysis.runAnova(potential extra args)
 
@@ -29,13 +29,14 @@ import zipfile
 import pandas as pd
 from pyper import *
 import os
-import collections
+from collections import OrderedDict
 import numpy as np
 from scipy import stats
 from database.models import Sample
 from natsort import natsorted
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import psutil
+from functions.utils.debug import debug
 
 process = psutil.Process(os.getpid())
 
@@ -54,12 +55,11 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
     # Initializes the slightly obnoxious amount of instance variables
     # not all values are to be used at one time
     # if a value must cross multiple functions, declare and initialize it here (yes, 'self.' is required)
-    def __init__(self, iRequest, iRID, iStops, iPID, debug=False):
+    def __init__(self, iRequest, iRID, iStops, iPID):
         self.request = iRequest
         self.RID = iRID
         self.stopList = iStops
         self.PID = iPID
-        self.debug = debug
         self.result = ""
         # 'declare' all variables used in multiple steps here
         self.all, self.selectAll, self.treeType, self.savedDF, self.DepVar, self.metaDF, self.allFields = (None,)*7
@@ -75,14 +75,12 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
     # verify request was formatted correctly and all variables are accounted for, as well as configure future steps
     def validate(self, sig=True, metaCat=True, metaQuant=True, reqMultiLevel=True, dist=False, selAll=True, taxTree=True):  # supports flags for sig_only, metaValsCat
-        if self.debug:
-            print "Validate!"
+        debug("Validate!")
         # Get variables from web page
         allJson = self.request.body.split('&')[0]
         self.all = json.loads(allJson)
 
-        if self.debug:
-            print "Analysis data: ", self.all
+        debug("Analysis data: ", self.all)
 
         functions.setBase(self.RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
 
@@ -120,8 +118,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         self.DepVar = int(self.all["DepVar"])
 
-        if self.debug:
-            print "First!"
+        debug("First!")
         # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
         # getMetaDF is pretty much the only memory spike in this pipeline, courtesy of exploding panda
         self.savedDF, self.metaDF, self.finalSampleIDs, self.catFields, remCatFields, self.quantFields, self.catValues, self.quantValues = functions.getMetaDF(self.request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, self.DepVar, levelDep=True)
@@ -138,8 +135,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 myDict = {'error': error}
                 res = json.dumps(myDict)
                 return HttpResponse(res, content_type='application/json')
-        if self.debug:
-            print "Second!"
+        debug("Second!")
 
         self.result = ''
         if self.treeType == 1:
@@ -211,8 +207,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             self.result += 'Distance score: wOdum' + '\n'
             self.result += 'alpha: ' + str(self.alpha) + '\n'
 
-        if self.debug:
-            print "Third!"
+        debug("Third!")
         self.result += 'Categorical variables selected by user: ' + ", ".join(self.catFields + remCatFields) + '\n'
         self.result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
         if metaQuant:
@@ -222,20 +217,17 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        if self.debug:
-            print "Fourth!"
+        debug("Fourth!")
 
         return 0
 
     # get actual data from database and format it for actual analysis step based on settings
     def query(self, taxmap=True, usetransform=True, filterable=True):
-        if self.debug:
-            print "Query!"
+        debug("Query!")
         functions.setBase(self.RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...')
         if filterable:
             # filter otus based on user settings
@@ -253,8 +245,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             filterPer = None
             filterMeth = None
 
-        if self.debug:
-            print "First!"
+        debug("First!")
 
         if taxmap:
             self.mapTaxa = self.all['map_taxa']
@@ -271,11 +262,10 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 except:
                     taxaDict = {}
                 filteredDF = self.savedDF.copy()
-            else:   # Filter lists being sent, need default values for unfiltered for gage? TODO More readable code
+            else:   # Filter lists being sent, need default values for unfiltered for gage? TODO 1.4 More readable code / more comments
                 taxaDict = ''
                 filteredDF = functions.filterDF(self.savedDF, self.DepVar, self.selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
             self.finalDF, missingList = functions.getTaxaDF(self.selectAll, taxaDict, filteredDF, self.metaDF, self.allFields, self.DepVar, self.RID, self.stopList, self.PID)
-
             if self.selectAll == 8:
                 self.result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
                 self.result += '===============================================\n'
@@ -291,14 +281,16 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 keggString = self.all["nz"]
                 keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
             self.finalDF, self.allDF = functions.getNZDF(self.nzAll, keggDict, self.savedDF, self.metaDF, self.DepVar, self.mapTaxa, self.RID, self.stopList, self.PID)
+        # if finalDF is string type, we returned from an error or stop request, pass the message back up a level
+        if isinstance(self.finalDF, str):
+            return HttpResponse(self.finalDF, content_type='application/json')
         if self.finalDF.empty:
             error = "Selected taxa were not found in your selected samples."
             myDict = {'error': error}
             res = json.dumps(myDict)
             return HttpResponse(res, content_type='application/json')
 
-        if self.debug:
-            print "Second!"
+        debug("Second!")
 
         # make sure column types are correct
         self.finalDF[self.catFields] = self.finalDF[self.catFields].astype(str)
@@ -314,13 +306,11 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         if not os.path.exists(myDir):
             os.makedirs(myDir)
 
-        if self.debug:
-            print "Third!"
+        debug("Third!")
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -328,21 +318,18 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         functions.imploding_panda(path, self.treeType, self.DepVar, self.finalSampleIDs, self.metaDF, self.finalDF)
         functions.setBase(self.RID, 'Step 2 of 4: Selecting your chosen taxa or KEGG level...done')
 
-        if self.debug:
-            print "Fourth!"
+        debug("Fourth!")
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         return 0
 
     # do the actual statistics side of the analysis
     def stats(self):
-        if self.debug:
-            print "Stats!"
+        debug("Stats!")
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
         self.finalDict = {}
         self.seriesList = []
@@ -355,8 +342,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
         functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
 
-        if self.debug:
-            print "First!"
+        debug("First!")
 
         # R packages from cran
         r("list.of.packages <- c('lsmeans', 'ggplot2', 'RColorBrewer', 'ggthemes')")
@@ -576,8 +562,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    if self.debug:
-                        print "Stopping!"
+                    debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -609,8 +594,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    if self.debug:
-                        print "Stopping!"
+                    debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -644,8 +628,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -654,8 +637,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
     # format results from stats into desired output, typically the last step before returning request
     def graph(self):
-        if self.debug:
-            print "Graph!"
+        debug("Graph!")
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
         grouped1 = self.finalDF.groupby(['rank_name', 'rank_id'])
         for name1, group1 in grouped1:
@@ -785,8 +767,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -820,13 +801,11 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 self.xAxisDict['categories'] = labelTree['categories']
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        if self.debug:
-            print "First!"
+        debug("First!")
 
         yTitle = {}
         if self.DepVar == 0:
@@ -864,15 +843,13 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         else:
             self.finalDict['empty'] = 1
 
-        if self.debug:
-            print "Second!"
+        debug("Second!")
 
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -891,8 +868,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.finalDict['resType'] = 'res'
         self.finalDict['error'] = 'none'
 
-        if self.debug:
-            print "Third!"
+        debug("Third!")
 
         res = json.dumps(self.finalDict)
         return HttpResponse(res, content_type='application/json')
@@ -919,27 +895,23 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         return r
 
     def fullRAnalysis(self, script):    # script is string for filename in R Scripts folder, R should do the most work
-        # TODO this function is not finished, its definitely not been tested well yet (also need to be doubly sure R file is safe before running)
+        # TODO 1.4 this function is not finished, its definitely not been tested well yet (also need to be doubly sure R file is safe before running)
         if self.validate() == 0:
-            if self.debug:
-                print "Here we go"
+            debug("Here we go")
             curUser = self.request.user
             # query data vs read from phyloseq.biom
             # need metadata to be passed in regardless, query would involve formatting for pandas only to send to R
             # should send metadata to R but drop Query for phyloseq reading
             pathToBiom = "myPhyloDB/media/usr_temp/"+str(curUser)
             r = self.initializeR()  # need to see an example of a full script to plug it in correctly
-            if self.debug:
-                print "R initialized"
+            debug("R initialized")
             r.assign("pathToBiom", pathToBiom)
             # actually run R given script and data, not sure which is needed where
             r.assign("script", script)
             print r("getwd()")
-            if self.debug:
-                print "Assigned script"
+            debug("Assigned script")
             output = r("source(script)")
-            if self.debug:
-                print "Script run"
+            debug("Script run")
             print "Output: ", output
             print r("warnings()")
             # get output from R and send it back up
@@ -948,19 +920,17 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             print "Validate failed"
 
     def deprint(self, text):
-        if self.debug:
-            print text
+        debug(text)
 
 
 
-# TODO trim these down and/or split them up further (more helper functions!)
+# TODO 1.4 trim these down and/or split them up further (more helper functions!)
 class Anova(Analysis):  # base template, is essentially getCatUnivData
 
     # so quant Univ is huge... like >700 lines long.... implementing is one thing, but this could easily be split 6 ways
     def quantstats(self):       # for getQuantUnivData      WIP
 
-        if self.debug:
-            print "statsgraph! (AnovaQuant)"
+        debug("statsgraph! (AnovaQuant)")
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...!')
 
@@ -1189,8 +1159,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
             # stop check per loop iteration
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
@@ -1199,8 +1168,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
         # stop check after step completion
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
@@ -1604,8 +1572,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\ #
 
@@ -1655,8 +1622,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1676,8 +1642,7 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
     # ^ WHAT IS THIS MONSTER OF A FUNCTION ^
 
     def run(self, quant=False):
-        if self.debug:
-            print "Running Anova. Quant = ", quant
+        debug("Running Anova. Quant = ", quant)
 
         if quant:
             ret = self.validate(reqMultiLevel=False)
@@ -1696,11 +1661,10 @@ class Anova(Analysis):  # base template, is essentially getCatUnivData
             # experimental R substitution
             #return self.fullRAnalysis("functions/analysis/R_scripts/anova.r")
 
-        if self.debug:
-            if self.stopList[self.PID] == self.RID:
-                print "Stopped Anova"
-            else:
-                print "Something went wrong with Anova"
+        if self.stopList[self.PID] == self.RID:
+            debug("Stopped Anova")
+        else:
+            debug("Something went wrong with Anova")
         return ret
 
 
@@ -1709,8 +1673,7 @@ class Corr(Analysis):
     # overwrite stats and graph
     def statsGraph(self):
         print 'statsGraph'
-        if self.debug:
-            print ("statsgraph! (corr)")
+        debug("statsgraph! (corr)")
         functions.setBase(self.RID, 'Step 3 of 4: Calculating Correlations Matrix...')
         if self.DepVar == 0:
             self.result += 'Dependent Variable: Abundance' + '\n'
@@ -1758,18 +1721,18 @@ class Corr(Analysis):
         namesList = []
         if self.treeType == 1:
             namesDict = functions.getFullTaxonomy(idList)
-            od = collections.OrderedDict(sorted(namesDict.items()))  # unexpected argument warning TODO resolve
+            od = OrderedDict(sorted(namesDict.items()))
             namesList = od.values()
             namesList = [i.split('|')[-1] for i in namesList]
         elif self.treeType == 2:
             namesDict = functions.getFullKO(idList)
-            od = collections.OrderedDict(sorted(namesDict.items()))
+            od = OrderedDict(sorted(namesDict.items()))
             namesList = od.values()
             namesList = [i.split('|')[-1] for i in namesList]
         elif self.treeType == 3:
             if self.nzAll < 5:
                 namesDict = functions.getFullNZ(idList)
-                od = collections.OrderedDict(sorted(namesDict.items()))
+                od = OrderedDict(sorted(namesDict.items()))
                 namesList = od.values()
                 namesList = [i.split('|')[-1] for i in namesList]
             else:
@@ -1822,8 +1785,7 @@ class Corr(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1854,8 +1816,7 @@ class Corr(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -1864,27 +1825,25 @@ class Corr(Analysis):
         return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        if self.debug:
-            print "Running Corr"
+        debug("Running Corr")
 
         ret = self.validate(sig=False, metaCat=False, metaQuant=True, reqMultiLevel=False)
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
                 return self.statsGraph()
-        if self.debug:
-            if self.stopList[self.PID] == self.RID:
-                print "Stopped Corr"
-            else:
-                print "Something went wrong with Corr"
+
+        if self.stopList[self.PID] == self.RID:
+            debug("Stopped Corr")
+        else:
+            debug("Something went wrong with Corr")
         return ret
 
 
 class diffAbund(Analysis):
 
     def statsGraph(self):
-        if self.debug:
-            print "statsGraph! (diffabund)"
+        debug("statsGraph! (diffabund)")
 
         if len(self.catFields) > 1:
             for index, row in self.metaDF.iterrows():
@@ -1899,8 +1858,7 @@ class diffAbund(Analysis):
         elif self.DepVar == 4:
             count_rDF = self.finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         count_rDF.fillna(0, inplace=True)
 
@@ -1910,8 +1868,7 @@ class diffAbund(Analysis):
         else:
             r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
 
@@ -1922,8 +1879,7 @@ class diffAbund(Analysis):
 
         functions.setBase(self.RID, 'Step 4 of 6: Performing statistical test...')
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         r("library(edgeR)")
 
@@ -1933,8 +1889,7 @@ class diffAbund(Analysis):
             self.result += 'Dependent Variable: Total Abundance' + '\n'
         self.result += '\n===============================================\n\n\n'
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         myList = list(self.metaDF.select_dtypes(include=['object']).columns)
         for i in myList:
@@ -1961,8 +1916,7 @@ class diffAbund(Analysis):
         r('fit <- glmFit(e, design)')
         fit = r.get('fit')
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         if not fit:
             error = "edgeR failed!\nUsually this is caused by one or more taxa having a negative disperion.\nTry filtering your data to remove problematic taxa (e.g. remove phylotypes with 50% or more zeros)."
@@ -1973,8 +1927,7 @@ class diffAbund(Analysis):
         nTopTags = int(self.all['nTopTags'])
         r.assign('nTopTags', nTopTags)
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         mergeList = self.metaDF['merge'].tolist()
         mergeSet = list(set(mergeList))
@@ -2061,20 +2014,17 @@ class diffAbund(Analysis):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == self.RID:
-                        if self.debug:
-                            print "Stopping!"
+                        debug("Stopping!")
                         return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...done!')
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
@@ -2090,8 +2040,7 @@ class diffAbund(Analysis):
         listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
         shapeIterator = 0
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         FdrVal = float(self.all['FdrVal'])
         for name, group in grouped:
@@ -2137,13 +2086,11 @@ class diffAbund(Analysis):
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         xTitle = {}
         xTitle['text'] = "logCPM"
@@ -2161,8 +2108,7 @@ class diffAbund(Analysis):
         xAxisDict['labels'] = styleDict
         yAxisDict['labels'] = styleDict
 
-        if self.debug:
-            print "Check!"
+        debug("Check!")
 
         self.finalDict['series'] = seriesList
         self.finalDict['xAxis'] = xAxisDict
@@ -2170,8 +2116,7 @@ class diffAbund(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2187,8 +2132,7 @@ class diffAbund(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2198,16 +2142,14 @@ class diffAbund(Analysis):
         return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        if self.debug:
-            print "Running diffAbund"
+        debug("Running diffAbund")
         ret = self.validate(sig=False, metaQuant=False, reqMultiLevel=False)
         if ret == 0:
             ret = self.query(taxmap=False, usetransform=False)
             if ret == 0:
                 return self.statsGraph()
 
-        if self.debug:
-            print "Something went wrong with diffAbund"
+        debug("Something went wrong with diffAbund")
         return ret
 
 
@@ -2215,8 +2157,7 @@ class PCA(Analysis):
 
     def statsGraph(self):
 
-        if self.debug:
-            print "statsgraph! (PCA)"
+        debug("statsgraph! (PCA)")
 
         method = self.all["Method"]
         scale = self.all['scaled']
@@ -2240,8 +2181,7 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2277,8 +2217,7 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2556,8 +2495,7 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2598,8 +2536,7 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2624,8 +2561,7 @@ class PCA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2634,16 +2570,14 @@ class PCA(Analysis):
         return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        if self.debug:
-            print "Running PCA+"
+        debug("Running PCA+")
         ret = self.validate(sig=False)
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
                 return self.statsGraph()
 
-        if self.debug:
-            print "Something went wrong with PCA+"
+        debug("Something went wrong with PCA+")
         return ret
 
 
@@ -2651,8 +2585,7 @@ class PCoA(Analysis):
 
     def statsGraph(self):
 
-        if self.debug:
-            print "statsgraph! (PCoA)"
+        debug("statsgraph! (PCoA)")
 
         PC1 = int(self.all["PC1"])
         PC2 = int(self.all["PC2"])
@@ -2675,8 +2608,7 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2755,8 +2687,7 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -2988,8 +2919,7 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3017,8 +2947,7 @@ class PCoA(Analysis):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == self.RID:
-                        if self.debug:
-                            print "Stopping!"
+                        debug("Stopping!")
                         return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3064,8 +2993,7 @@ class PCoA(Analysis):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    if self.debug:
-                        print "Stopping!"
+                    debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3073,8 +3001,7 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3110,8 +3037,7 @@ class PCoA(Analysis):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    if self.debug:
-                        print "Stopping!"
+                    debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3158,8 +3084,7 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3173,8 +3098,7 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3190,8 +3114,7 @@ class PCoA(Analysis):
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
-            if self.debug:
-                print "Stopping!"
+            debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3200,16 +3123,14 @@ class PCoA(Analysis):
         return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        if self.debug:
-            print "Running PCoA"
+        debug("Running PCoA")
         ret = self.validate(sig=False, dist=True)
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
                 return self.statsGraph()
 
-        if self.debug:
-            print "Something went wrong with PCoA"
+        debug("Something went wrong with PCoA")
         return ret
 
 
@@ -3286,8 +3207,7 @@ class Caret(Analysis):
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3603,8 +3523,7 @@ class Caret(Analysis):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    if self.debug:
-                        print "Stopping!"
+                    debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3677,8 +3596,7 @@ class Caret(Analysis):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == self.RID:
-                    if self.debug:
-                        print "Stopping!"
+                    debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3721,8 +3639,7 @@ class Caret(Analysis):
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3742,8 +3659,7 @@ class Caret(Analysis):
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3753,8 +3669,7 @@ class Caret(Analysis):
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == self.RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3777,16 +3692,14 @@ class Caret(Analysis):
         return 0
 
     def run(self):
-        if self.debug:
-            print "Running Caret"
+        debug("Running Caret")
         ret = self.validate(sig=False, reqMultiLevel=False)
         if ret == 0:
             ret = self.query(taxmap=False)
             if ret == 0:
                 return self.statsGraph()
 
-        if self.debug:
-            print "Something went wrong with Caret"
+        debug("Something went wrong with Caret")
         return ret
 
 
@@ -3861,8 +3774,7 @@ class Gage(Analysis):
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == RID:
-                    if self.debug:
-                        print "Stopping!"
+                    debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -3921,8 +3833,7 @@ class Gage(Analysis):
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if self.stopList[self.PID] == RID:
-                if self.debug:
-                    print "Stopping!"
+                debug("Stopping!")
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -4083,15 +3994,13 @@ class Gage(Analysis):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == RID:
-                        if self.debug:
-                            print "Stopping!"
+                        debug("Stopping!")
                         return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                 if self.stopList[self.PID] == RID:
-                    if self.debug:
-                        print "Stopping!"
+                    debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -4109,8 +4018,7 @@ class Gage(Analysis):
 
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
                     if self.stopList[self.PID] == RID:
-                        if self.debug:
-                            print "Stopping!"
+                        debug("Stopping!")
                         return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
@@ -4142,14 +4050,12 @@ class Gage(Analysis):
                 return HttpResponse(res, content_type='application/json')
 
     def run(self):
-        if self.debug:
-            print "Running Gage"
+        debug("Running Gage")
         ret = self.validate(sig=False, reqMultiLevel=False, selAll=False, metaQuant=False, taxTree=False)
         if ret == 0:
             ret = self.query(taxmap=False, filterable=False)
             if ret == 0:
                 return self.statsGraph()
 
-        if self.debug:
-            print "Something went wrong with Gage"
+        debug("Something went wrong with Gage")
         return ret

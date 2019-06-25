@@ -5,6 +5,7 @@ from Queue import Queue
 from time import sleep
 import datetime
 import functions
+from functions.utils.debug import debug
 import database.views
 from database.forms import UploadForm1, UploadForm2, UploadForm5
 from database.models import Reference
@@ -84,7 +85,7 @@ def datstop(request):
 
             if retStuff is None:
                 print "This is a problem. Hacked?"  # or someone added a new dataqueue function without updating here
-                # TODO more modular code, make it easier to add new dataqueue functions (fewer sections to update)
+                # TODO 1.4 more modular code, make it easier to add new dataqueue functions (fewer sections to update)
             datRecent[pid] = retStuff
 
         except Exception as er:   # not in queuelist either. actual error
@@ -99,7 +100,7 @@ def datstop(request):
     return HttpResponse(stop, content_type='application/json')
 
 
-# TODO put general function description (going over parameters and usage) at the start of each function definition
+# TODO 1.4 put general function description (going over parameters and usage) at the start of each function definition
 def getDataQueue(request):
     if not request.user.is_superuser or not request.user.is_authenticated:
         output = json.dumps({'display': "Invalid Permissions"})
@@ -137,8 +138,7 @@ def getDataQueue(request):
     for key in sorted(stringDict.keys(), reverse=True):
         queueString += stringDict[key]
 
-    # debug string, could put these under a flag. Actually, TODO make global debug flag for print spam / verbose output
-    #print "Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString
+    debug("Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString)
 
     #print "Display"
     output = json.dumps({'display': queueString})
@@ -217,7 +217,7 @@ def dataprocess(pid):
             print "Error during data queue:", e
             if request is not None:
                 functions.log(request, "ERROR_DQ", str(e)+"\n")
-            myDict = {'error': "Exception: "+str(e.message)}    # TODO this doesn't always display to user FIX
+            myDict = {'error': "Exception: "+str(e.message)}    # TODO 1.3 this doesn't always display to user FIX
             stop = json.dumps(myDict)
             datRecent[RID] = HttpResponse(stop, content_type='application/json')
 
@@ -285,7 +285,7 @@ def datstat(RID):
     except Exception:
         # if not in stopDict (ie not called to stop) queuepos is current (minus number of pre stops)
         try:
-            return datStatDict[RID]  # TODO some way to track preemptive stops, decremQ with arg?
+            return datStatDict[RID]  # TODO 1.3 some way to track preemptive stops, decremQ with arg?
         except Exception as ex:
             print ex
 

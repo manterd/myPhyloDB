@@ -47,7 +47,7 @@ function makeGUID() {
 
 function startTimer() {
     refresh = setInterval(function() {
-        updateStatus(RID);
+        updateStatus();
     }, 1000);
     return refresh;
 }
@@ -113,7 +113,7 @@ window.onload = function() {
                 // when history has been loaded before, this loads old RID automatically on a new page
                 if (RID != null && localStorage.getItem("fromHistory")=="true") {
                     localStorage.setItem("fromHistory", "false");
-                    updateStatus();
+                    startTimer();
                 }
             }
 

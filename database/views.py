@@ -36,12 +36,13 @@ from database.models import Project, Reference, Sample, Air, Human_Associated, M
     addQueue, getQueue, subQueue, koOtuList
 
 import functions
+from functions.utils.debug import debug
 
 from database import perms
 
 from django.contrib.admin.models import LogEntry
 
-
+maxSamples = 500  # change this value for maximum sample count changes (more RAM available or somesuch)
 rep_project = ''
 pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
@@ -110,7 +111,8 @@ def files(request):
 
 def fileUpFunc(request, stopList):
     errorText = ""
-    RID = ''    # TODO stopList and RID NYI, Progress bar? This part is hard to test locally, local uploads are too fast
+    RID = ''    # TODO 1.4 stopList and RID NYI, can go in with progress bar (same recoding basically)
+    # TODO 1.4 Progress bar for uploading files. This part is hard to test locally, local uploads are too fast
     # RID not particularly necessary for a one-way operation such as this. May be handy for logging of some description
     # Stoplist is the main reason to use RID, assuming stop function is implemented on the front end
     # Stopping a file upload is awkward since this is coded with only a single line technically performing the download
@@ -213,13 +215,60 @@ def getProjectFiles(request):
 
     foundCount = 0
     errorMsg = "none"
+    debug("GET PROJECT", selKeys)
+    visibleProjects = perms.getViewProjects(request)
+    visibleIDs = []
+    # get list of project ID's we are okay with this user viewing / downloading from
+    for proj in visibleProjects:
+        visibleIDs.append(proj.projectid)
     for path in selKeys:
-        if os.path.exists(path):
-            foundCount += 1
-            try:
-                zf.write(path)
-            except Exception:
-                pass
+        debug("PATH:", path)
+
+        # Three main security requirements for user-submitted paths: (can be safe if these are followed)
+        # REQUIREMENT 1:
+        #   path must include 'uploads' as first directory (absolute paths start with / so first would be blank there)
+        #   this also makes certain our relative path starts in the right location for requirement 2
+        # REQUIREMENT 2:
+        #   path must include projectid as second directory, with projectid belonging to visibleProjects for this user
+        # REQUIREMENT 3:
+        #   path cannot include ".." anywhere, to prevent jumping back up the file tree
+
+        if path.split("/")[0] != "uploads":
+            print "Security error!", request.user.username, "attempted to download from a directory other than uploads!"
+            # TODO 1.3 security error log
+            zf.close()
+            results = {'error': "Invalid path"}
+            myJson = json.dumps(results, ensure_ascii=False)
+            return HttpResponse(myJson)
+        if ".." in path:
+            print "Security error!", request.user.username, "attempted use '..' to escape pathing!"
+            # TODO 1.3 security error log
+            zf.close()
+            results = {'error': "Invalid path"}
+            myJson = json.dumps(results, ensure_ascii=False)
+            return HttpResponse(myJson)
+        # verify this path is in the list of allowed paths
+        if path.split("/")[1] in visibleIDs: #or path.split("\\")[1] in visibleIDs:
+            # atm assuming linux style file paths (forward slashes)
+            # now we verify the path exists (like the actual file, in theory this always works, unless the user throws .. into the path or something...
+            if os.path.exists(path):
+                foundCount += 1
+                try:
+                    debug("Found")
+                    zf.write(path)
+                except Exception:
+                    debug("Exc")
+                    pass
+            else:
+                debug("Not found")
+        else:
+            # they aren't supposed to be able to see this project, the tree shouldn't even show it (HAX!!!)
+            print "Security error!", request.user.username, "attempted to download files without permission!"
+            # TODO 1.3 security error log
+            zf.close()
+            results = {'error': "Invalid permissions"}
+            myJson = json.dumps(results, ensure_ascii=False)
+            return HttpResponse(myJson)
     zf.close()
 
     if foundCount != len(selKeys):
@@ -259,7 +308,7 @@ def upErr(msg, request, dest, sid):
     functions.log(request, "ERROR", "UPLOAD")
     projects = Reference.objects.none()
     try:
-        functions.remove_proj(dest)
+        functions.remove_proj(dest, request.user)
         transaction.savepoint_rollback(sid)
     except Exception as e:
         print "Error during upload: ", e
@@ -377,6 +426,13 @@ def checkFilePresence(source, has, ref):
             missingFiles = True
             filesNeeded += "Script; "
 
+    elif source == 'biom':
+        raw = False
+        # shortcutting via taxa file type, since biom contains taxa here anyways
+        if not has['taxa']:
+            missingFiles = True
+            filesNeeded += "Taxa; "
+
     else:
         # they sent a value we weren't expecting, cancel!!!
         raw = False
@@ -472,7 +528,7 @@ def getSelectedPath(key, textDict, user):
 
 
 def logException():
-    # get debug/crash info and send it to error_log
+    # get crash info and send it to error_log
     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, )
     myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
     logging.exception(myDate)
@@ -583,6 +639,31 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
     return open('% s/final.cons.taxonomy' % dest)
 
 
+def handleArchive(dest, name):
+    try:
+        zip = zipfile.ZipFile(os.path.join(dest, name))
+        for member in zip.infolist():
+            abspath = os.path.abspath(os.path.join(dest, member.filename))
+            if abspath.startswith(os.path.abspath(dest)):
+                zip.extract(member, dest)
+            else:
+                print "Security error: absolute path does not match in ZIP"  # TODO 1.3 security error log
+        zip.close()
+    except Exception:
+        try:
+            tar = tarfile.open(os.path.join(dest, name))
+            for member in tar.getmembers():
+                abspath = os.path.abspath(os.path.join(dest, member.filename))
+                if abspath.startswith(os.path.abspath(dest)):
+                    tar.extract(member, dest)
+                else:
+                    print "Security error: absolute path does not match in TAR"  # TODO 1.3 log security error
+            tar.close()
+        except Exception:
+            return False  # file is unlikely to be an archive, as unzip and untar both failed
+    return True  # return true if file was successfully extracted as an archive, false otherwise
+
+# TODO 1.3 sid usage in uploads (for transaction rollbacks, variable goes unused)
 def uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID):
     try:
         if request.POST['ref_data'] == 'yes':  # sequence plus R script
@@ -641,20 +722,7 @@ def uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, P
     # entries from these two dicts are lists, order SHOULD be synced via map (their lists were populated simultaneously)
     for filepath, name in map(None, file_list, name_list):
         copyFromUpload(filepath, mothurdest, name)
-        try:
-            zip = zipfile.ZipFile(os.path.join(mothurdest, name))
-            zip.extractall(mothurdest)
-            zip.close()
-        except Exception:
-            try:
-                tar = tarfile.open(os.path.join(mothurdest, name))
-                tar.extractall(path=mothurdest)  # TODO security check the paths in this archive: SAFETARFILE vs TARFILE
-                                             # verify nothing leaves mothurdest
-                                             # no symbolic links, hard coded paths, etc
-                tar.close()
-            except Exception:
-                pass
-                # file is unlikely to be an archive, as unzip and untar both failed
+        handleArchive(mothurdest, name)
 
     if stopList[PID] == RID:
         return "Stop"
@@ -664,18 +732,7 @@ def uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, P
     # entries from these two dicts are lists, order SHOULD be synced, need to verify (so far works)
     for filepath, name in map(None, file_list, name_list):
         copyFromUpload(filepath, mothurdest, name)
-        try:
-            tar = tarfile.open(os.path.join(mothurdest, name))
-            tar.extractall(path=mothurdest)
-            tar.close()
-        except Exception:
-            try:
-                zip = zipfile.ZipFile(os.path.join(mothurdest, name))
-                zip.extractall(mothurdest)
-                zip.close()
-            except Exception:
-                pass
-                # file is unlikely to be an archive, as unzip and untar both failed
+        handleArchive(mothurdest, name)
 
     if stopList[PID] == RID:
         return "Stop"
@@ -792,7 +849,7 @@ def uploadWithFastq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     if stopList[PID] == RID:
         return "Stop"
 
-    # TODO split single and multi oligos formats (single doesn't work for multi and visa versa)
+    # TODO 1.4 split single and multi oligos formats (single doesn't work for multi and visa versa) (verify problem)
     # can't just go oligo and oligos, the 'in' checks get confused (could redo those to fix this?)
     # could try oligos and 0ligos or some mispelling, variant name, etc
     copyFromUpload(file6, dest, nameDict['oligos'][0])
@@ -894,23 +951,9 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     name_list = nameDict['fastq']
 
     for file, name in map(None, file_list, name_list):
-        try:
-            # functions.handle_uploaded_file(file, dest, file.name)
-            copyFromUpload(file, dest, name)
-            tar = tarfile.open(os.path.join(dest, name))
-            tar.extractall(path=mothurdest)
-            tar.close()
-        except Exception:
-            try:
-                # functions.handle_uploaded_file(file, dest, file.name) # redundant
-                zip = zipfile.ZipFile(os.path.join(dest, name))
-                zip.extractall(mothurdest)
-                zip.close()
-            except Exception:
-                # functions.handle_uploaded_file(file, mothurdest, file.name)
-                copyFromUpload(file, mothurdest, name)
-
-        # functions.handle_uploaded_file(file, dest, file.name) # redundant again
+        copyFromUpload(file, dest, name)
+        if not handleArchive(dest, name):
+            copyFromUpload(file, mothurdest, name)
 
         if stopList[PID] == RID:
             return "Stop"
@@ -1007,8 +1050,31 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     return "None"
 
 
+def uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors):
+    debug("UPLOAD WITH BIOM")
+    try:
+        # directly added taxa file (in biom format)
+        taxaname = nameDict['taxa']
+        copyFromUpload(selDict['taxa'], dest, taxaname)
+        file3 = os.path.join(dest, taxaname)#open(os.path.join(dest, taxaname), 'r')
+    except Exception as e:
+        return "Problem with taxa file: " + str(e)
+
+    try:
+        # TODO different parse function for biom, no other files involved (its just meta and biom)
+        functions.parse_biom(file3, stopList, PID, RID)
+        # something something parse_profile ?
+    except Exception:
+        return "Failed parsing your taxonomy file:" + nameDict['taxa']
+
+    if stopList[PID] == RID:
+        return "Stop"
+
+    return "None"
+
+
 def uploadFunc(request, stopList):
-    # consider making an account called myPhyloDB for Script role instead of admin TODO
+    # consider making an account called myPhyloDB for Script role instead of admin TODO 1.4
     # having admin as the account looks slightly less professional in my opinion
 
     # validation process involves checking settings paired with actual files sent
@@ -1120,7 +1186,7 @@ def uploadFunc(request, stopList):
             # past this point, use upErr because we're making a project
 
     except Exception:
-        return uploadException("There was an error parsing your meta file:" + str(selDict['meta']), request, None, None)
+        return upErr("There was an error parsing your meta file:" + str(selDict['meta']), request, None, None)
 
     sid = transaction.savepoint()
     # got puuid by here, next?
@@ -1147,7 +1213,7 @@ def uploadFunc(request, stopList):
     # end of meta parsing
 
     if stopList[PID] == RID:
-        functions.remove_proj(dest)
+        functions.remove_proj(dest, request.user)
         transaction.savepoint_rollback(sid)
         return upStop(request)
 
@@ -1159,14 +1225,15 @@ def uploadFunc(request, stopList):
         return upErr("There was an error parsing your meta file:" + str(selDict['meta']), request, dest, sid)
 
     if stopList[PID] == RID:
-        functions.remove_proj(dest)
+        functions.remove_proj(dest, request.user)
         transaction.savepoint_rollback(sid)
         return upStop(request)
 
     # if using shared+taxa or shared+sequence mothur combo
+    debug("Upload finished shared section")
     errorText = ""
     if source == 'mothur':
-        errorText = uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID)
+        errorText = uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID)  # TODO 1.3 sid on mothur upload
 
     if source == '454_sff':
         errorText = uploadWithSFF(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors)
@@ -1177,8 +1244,11 @@ def uploadFunc(request, stopList):
     if source == "miseq":
         errorText = uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors, platform)
 
+    if source == "biom":
+        errorText = uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors)
+
     if errorText == "Stop":  # upload subfuncs all return "Stop" when told to end early, saving cleanup for here
-        functions.remove_proj(dest)
+        functions.remove_proj(dest, request.user)
         transaction.savepoint_rollback(sid)
         return upStop(request)
 
@@ -1294,7 +1364,7 @@ def remProjectFiles(request):
         allJson = request.GET['all']
         data = json.loads(allJson)
         refList = data['paths']
-        functions.remove_list(refList)
+        functions.remove_list(refList, request.user)    # TODO 1.3 fetch errors from function calls
         results = {'error': 'none'}
         myJson = json.dumps(results)
         return HttpResponse(myJson)
@@ -2073,7 +2143,6 @@ def userTableJSON(request):
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-# TODO verify selections only work on projects user has permission to view
 def select(request):
     # send Locations to page, should be based on visible samples and projects
     # loop through all visible samples and store locations via dictionary
@@ -2090,8 +2159,19 @@ def select(request):
     functions.log(request, "PAGE", "SELECT")
     if request.method == 'POST':
         uploaded = request.FILES["normFile"]
-        # TODO this is normalized data being uploaded instead of selecting data, verify file type and that norm is considered complete afterwards
-
+        # we specifically want myphylodb.biom here
+        if uploaded.name != "myphylodb.biom":
+            print "Wrong filename for pre normalized data"
+            # TODO 1.3 security error log
+            return render(
+                request,
+                'select.html',
+                {'form9': UploadForm9,
+                 'selList': '',
+                 'normpost': 'error',
+                 'method': 'POST',
+                 'locationBasedSampleDict': {}}
+            )
         # derive directory from user and make certain it exists
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         if not os.path.exists(myDir):
@@ -2229,7 +2309,7 @@ def select(request):
              'method': 'GET'
              }
         )
-        # TODO re-implement the map, properly, as a 1.4 feature
+        # TODO 1.4 re-implement the map, properly, using esri instead of google maps (likely no changes on this end)
         ''''# insert map population logic here
         visibleProjects = perms.getViewProjects(request)
         # get all samples for visibleProjects, put into dictionary keyed by rounded coordinates, link projectname?
@@ -2861,30 +2941,54 @@ def saveSampleList(request):
     if request.is_ajax():
         allJson = request.GET["all"]
         selList = json.loads(allJson)
+        # selList has the list of selected sampleIDs, need to verify they all belong to projects in getViewProjects
+        debug("Selection:", selList)    # selList is just a list of sampleIDs
+        myProjects = perms.getViewProjects(request)
+        # sample object has projectid foreignkey field, which is actually a project (not a project id)
+        mySamples = Sample.objects.filter(sampleid__in=selList)
+        # TODO 1.4 tweak queue to only allow one high sample count analysis at a time, like a global max selected count?
+        # essentially just need a way to make sure none of the large normalizations occur simultaneously
+        allMatch = True
+        for samp in mySamples:
+            if samp.projectid in myProjects:
+                continue
+            else:
+                allMatch = False
+                break
+        if len(mySamples) > maxSamples:
+            text = "Maximum sample count exceeded: You selected ", len(mySamples), " while the maximum is ", maxSamples
+            return HttpResponse(text)   # TODO 1.3 this is not redboxing user page, and norm is still lit
+        if allMatch:
+            # remove old files
+            try:
+                dirpath = 'myPhyloDB/media/usr_temp/' + str(request.user)
+                shutil.rmtree(dirpath, ignore_errors=True)
+            except Exception as e:
+                print "Error during sample save, rmtree:", e
 
-        # remove old files
-        try:
-            dirpath = 'myPhyloDB/media/usr_temp/' + str(request.user)
-            shutil.rmtree(dirpath, ignore_errors=True)
-        except Exception as e:
-            print "Error during sample save, rmtree:", e
+            # save file
+            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+            path = str(myDir) + 'usr_sel_samples.pkl'
 
-        # save file
-        myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'usr_sel_samples.pkl'
+            if not os.path.exists(myDir):
+                os.makedirs(myDir)
 
-        if not os.path.exists(myDir):
-            os.makedirs(myDir)
+            with open(path, 'wb') as f:
+                pickle.dump(selList, f)
 
-        with open(path, 'wb') as f:
-            pickle.dump(selList, f)
+            thisUser = request.user.profile
+            thisUser.dataID = uuid4().hex
+            thisUser.save()
 
-        thisUser = request.user.profile
-        thisUser.dataID = uuid4().hex
-        thisUser.save()
-
-        text = 'Selected sample(s) have been recorded!\nYou may proceed directly to data normalization.'
-        return HttpResponse(text)
+            text = 'Selected sample(s) have been recorded!\nYou may proceed directly to data normalization.'
+            return HttpResponse(text)
+        else:
+            # samples in selList do not match permitted viewing samples
+            text = 'Error with selecting samples: Invalid Permissions'
+            # technically this can also occur when non-existent sampleIDs are given, but
+            # that also likely stems from a security breach attempt, as the tree only shows real samples
+            # TODO 1.3 log security error
+            return HttpResponse(text)  # TODO 1.3 this is not redboxing user page, and norm is still lit
     else:
         print "Request was not ajax!"
         functions.log(request, "NON_AJAX", "SAVE_SAMPLE")
@@ -3286,6 +3390,17 @@ def checkSamples(metaFile, source, fileName):
                 if len(segments) >= 1:
                     if '\n' not in segments[0] and '\r' not in segments[0] and str(segments[0]) != '':
                         mothurList.append(str(segments[0]))
+
+    # biom doesn't user mothur?
+    if source == "biom":
+        debug("Is this step important?")
+        # open temp.files, check column 0
+        '''with open(fileName, 'rb') as myFile:
+            for line in myFile:
+                segments = line.strip('\n').strip('\r').split("\t")
+                if len(segments) >= 1:
+                    if '\n' not in segments[0] and '\r' not in segments[0] and str(segments[0]) != '':
+                        mothurList.append(str(segments[0]))'''
 
     # match two lists and return result
     foundMothurDict = {}

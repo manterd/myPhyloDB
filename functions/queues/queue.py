@@ -13,6 +13,7 @@ import shutil
 
 import functions
 from functions.analysis import analysis
+from functions.utils.debug import debug
 
 
 def analysisThreads():
@@ -103,8 +104,7 @@ def getAnalysisQueue(request):  # main queue equivalent of working dataqueue tra
     for key in sorted(stringDict.keys(), reverse=True):
         queueString += stringDict[key]
 
-    # debug string, could put these under a flag. Actually, TODO make global debug flag for print spam / verbose output
-    #print "Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString
+    debug("Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString)
 
     #print "Display"
     queueDict = {'display': queueString}
@@ -182,14 +182,11 @@ def decremQ():
 
 
 def process(pid):
-    RID = "NULL_RID"    # this should only come up if the queue errors BEFORE reading request RID
+    RID = "NULL_RID"    # this should only come up if the queue errors BEFORE reading request RID, an odd occurrence
     request = None
     while True:
         try:
             global activeList, stopList, stopDict
-
-            # Debug flag for analyses, set to True if you want prints for nearly every step of analysis
-            DEBUG = False
 
             # get next entry from queue
             data = q.get(block=True, timeout=None)
@@ -204,34 +201,34 @@ def process(pid):
                 activeList[pid] = RID
                 functions.log(request, "QSTART", funcName)
                 if activeList[pid] == RID:
-                    # TODO finish moving analyses into analysis.py classes
-                    # TODO cleanup and history are treating getNorm like a proper analysis (no point in norm history view)
-                    # TODO put a limit on how many requests can be queued from the same user at one time (queueUsers has the needed info)
+                    # TODO 1.3 finish moving analyses into analysis.py classes
+                    # TODO 1.3 cleanup and history are treating getNorm like a proper analysis (no point in norm history view)
+                    # TODO 1.3 put a limit on how many requests can be queued from the same user at one time (queueUsers has the needed info)
                     if funcName == "getNorm":   # at present likely not worthwhile to port norm to analysis class
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
                     elif funcName == "getCatUnivData":
-                        myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=DEBUG)
+                        myAnalysis = analysis.Anova(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
                     elif funcName == "getQuantUnivData":
-                        myAnalysis = analysis.Anova(request, RID, stopList, pid, debug=DEBUG)
+                        myAnalysis = analysis.Anova(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run(quant=True)
                     elif funcName == "getCorr":
-                        myAnalysis = analysis.Corr(request, RID, stopList, pid, debug=DEBUG)
+                        myAnalysis = analysis.Corr(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
                     elif funcName == "getPCA":
-                        myAnalysis = analysis.PCA(request, RID, stopList, pid, debug=DEBUG)
+                        myAnalysis = analysis.PCA(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
                     elif funcName == "getPCoA":
-                        myAnalysis = analysis.PCoA(request, RID, stopList, pid, debug=DEBUG)
+                        myAnalysis = analysis.PCoA(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
                     elif funcName == "getRF":
-                        myAnalysis = analysis.Caret(request, RID, stopList, pid, debug=DEBUG)
+                        myAnalysis = analysis.Caret(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
                     elif funcName == "getDiffAbund":
-                        myAnalysis = analysis.diffAbund(request, RID, stopList, pid, debug=DEBUG)
+                        myAnalysis = analysis.diffAbund(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
                     elif funcName == "getGAGE":
-                        myAnalysis = analysis.Gage(request, RID, stopList, pid, debug=DEBUG)
+                        myAnalysis = analysis.Gage(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
                     elif funcName == "getSPLS":
                         recent[RID] = functions.getSPLS(request, stopList, RID, pid)
@@ -252,18 +249,20 @@ def process(pid):
                         myDict = {'error': 'Invalid function name'}
                         stop = json.dumps(myDict)
                         recent[RID] = HttpResponse(stop, content_type='application/json')
-                if DEBUG:
-                    print "Finished an analysis iteration"
+                debug("Finished an analysis iteration")
                 activeList[pid] = 0
                 stopDict.pop(RID, 0)
-                # TODO check if there is an error message in results, so we can log errors to console more reliably
-                functions.log(request, "QFINISH", funcName)
+                if "{\"error\"" in str(recent[RID]).split(":")[1]:  # This assumes error messages will always put error in front (its the ony section)
+                    # while a proper results set will have 'error: none' much later
+                    functions.log(request, "ERROR_AQ", funcName)
+                else:
+                    functions.log(request, "QFINISH", funcName)
             cleanup(RID, queueUsers[RID])
         except Exception as e:
             print "Error during analysis queue:", e
             if request is not None:
-                functions.log(request, "ERROR_AQ", str(e)+"\n")
-            myDict = {'error': "Exception: "+str(e.message)}    # TODO this doesn't always display to user FIX
+                functions.log(request, "ERROR_AQ", str(e)+"\n")  # atm this triggers when an UNHANDLED exception occurs. Handled check is the other ERROR_AQ line
+            myDict = {'error': "Exception: "+str(e.message)}
             # this depends on the page in question directly, as each is responsible for handling 'error' in response
             stop = json.dumps(myDict)
             recent[RID] = HttpResponse(stop, content_type='application/json')

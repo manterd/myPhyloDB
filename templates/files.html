@@ -90,24 +90,35 @@
                     $("#454_sff").hide();
                     $("#454_fastq").hide();
                     $("#miseq").hide();
+                    $("#biom").hide();
                 }
                 if (source == "454_sff") {
                     $("#mothur").hide();
                     $("#454_sff").show();
                     $("#454_fastq").hide();
                     $("#miseq").hide();
+                    $("#biom").hide();
                 }
                 if (source == "454_fastq") {
                     $("#mothur").hide();
                     $("#454_sff").hide();
                     $("#454_fastq").show();
                     $("#miseq").hide();
+                    $("#biom").hide();
                 }
                 if (source == "miseq") {
                     $("#mothur").hide();
                     $("#454_sff").hide();
                     $("#454_fastq").hide();
                     $("#miseq").show();
+                    $("#biom").hide();
+                }
+                if (source == "biom") {
+                    $("#mothur").hide();
+                    $("#454_sff").hide();
+                    $("#454_fastq").hide();
+                    $("#miseq").hide();
+                    $("#biom").show();
                 }
             });
 
@@ -301,6 +312,12 @@
             <tr style="display: none" id="scriptRow3">
                 <td>Script</td>
                 <td><input type="file" name="scriptfiles" multiple></td>
+            </tr>
+        </table>
+        <table width="100%" border="2" cellspacing="0" cellpadding="1" id="biom" style="display: none">
+            <tr>
+                <td>Taxa (.biom)</td>
+                <td><input type="file" name="taxafiles" multiple></td>
             </tr>
         </table>
         <br>

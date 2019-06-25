@@ -20,7 +20,7 @@ from queues.dataqueue import datstop, dataprocess, datfuncCall, datstat, getData
 
 
 ### utils folder
-from utils.parsers import parse_project, parse_reference, parse_sample, parse_taxonomy, parse_profile, \
+from utils.parsers import parse_project, parse_reference, parse_sample, parse_taxonomy, parse_biom, parse_profile, \
     mothur, dada2, reanalyze, status, termP, projectid
 from utils.trees import getProjectTree, getProjectTreeChildren, \
     getSampleCatTree, getSampleCatTreeChildren, \
@@ -38,3 +38,4 @@ from utils.utils_df import cleanup, handle_uploaded_file, multidict, remove_proj
     getConsoleLog, getServerMetrics, categorize
 from utils.utils_kegg import getFullKO, getFullNZ, getFullTaxonomy, \
     getTaxaDF, getKeggDF, getNZDF, filterDF
+from utils.debug import debug

@@ -8,7 +8,9 @@ usr_num_threads = 3
 
 
 ### Django settings
-DEBUG = False
+DEBUG = False   # not to be confused with utils debug, Django debug is for template and request error catching
+# Do not turn on Django debug unless necessary for fixing a 500+ error code on browser
+# Django debug introduces security vulnerabilities as clients can see full code and file directories
 
 # Whether the framework should propagate raw exceptions rather than catching
 # them. This is useful under some testing situations and should never be used
