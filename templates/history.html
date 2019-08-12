@@ -116,6 +116,9 @@
             if (myFunc=="getsoil_index"){
                 myURL = "{% url "soil_index" %}";
             }
+            if (myFunc=="getCore"){
+                myURL = "{% url "core" %}";
+            }
             window.open(myURL);
         }
         $(function(){

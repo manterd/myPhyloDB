@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block pagetitle %}
-    <title>SpAC</title>
+    <title>Core Microbiome</title>
 {% endblock pagetitle %}
 
 {% block user %}
@@ -16,6 +16,31 @@
         .inlineTable {
             display: inline-block;
             vertical-align: top;
+        }
+        .my-input-class {
+            padding: 3px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .my-confirm-class {
+            padding: 3px 6px;
+            font-size: 12px;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            border-radius: 4px;
+            background-color: #337ab7;
+            text-decoration: none;
+        }
+        .my-cancel-class {
+            padding: 3px 6px;
+            font-size: 12px;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            border-radius: 4px;
+            background-color: #a94442;
+            text-decoration: none;
         }
     </style>
 
@@ -35,58 +60,37 @@
                 $(this).nextUntil(".accordion").fadeToggle('fast');
             });
             $(".input tr.accordion:eq(0)").trigger('click');
-            $(".input tr.accordion:eq(3)").trigger('click');
+            $(".input tr.accordion:eq(1)").trigger('click');
+            $(".input tr.accordion:eq(2)").trigger('click');
         });
 
-        function checkButtons() {
+        function checkButtons(){
             //set all buttons to their proper states given the current state of the independent buttons
+            dataType = document.getElementById("dataType").value;
+            treeType = document.getElementById("selectTree").value;
+
             $("#run").css("background-color", "lightgray");
-            $("#Export").css("background-color", "lightgray").val('Export Data');
 
-            if (treeType == 1) {
-                $("#container-0").empty().show().append('Settings have been changed by the user!');
-                $("#container-2").hide();
-                $("#my_image").attr("src", "#");
-                $("#row_taxa").show();
-                $("#row_kegg").hide();
-                $("#row_nz").hide();
-            }
+            $("#container-0").empty().show().append('Settings have been changed by the user!');
+            $("#container-2").hide();
+            $("#my_image").attr("src", "#");
 
-            if (treeType == 2) {
-                $("#container-0").empty().show().append('Settings have been changed by the user!');
-                $("#container-2").hide();
-                $("#my_image").attr("src", "#");
-                $("#row_taxa").hide();
-                $("#row_kegg").show();
-                $("#row_nz").hide();
-            }
-
-            if (treeType == 3) {
-                $("#container-0").empty().show().append('Settings have been changed by the user!');
-                $("#container-2").hide();
-                $("#my_image").attr("src", "#");
-                $("#row_taxa").hide();
-                $("#row_kegg").hide();
-                $("#row_nz").show();
-            }
-
+        }
+        function chooseData() {
+            $("#run").css("background-color", "yellow");
+            $("#container-0").empty().append('Analysis is running...please be patient');
+            getGraphData();
         }
         function chooseDisplay() {
             if ( $("#run").css("background-color") == "rgb(0, 128, 0)" ) {
                 {% static "" as baseUrl %}
-                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/spac/Rplots/" + RID + ".spac.pdf");
+                $("#my_image").removeAttr("src").attr("src", "{{ baseUrl }}/temp/core/Rplots/"+ RID +"/core_final.pdf");
                 $("#container-2").show();
                 $("#container-0").hide();
             } else {
                 $("#container-0").show();
                 $("#container-2").hide();
             }
-        }
-        function chooseData() {
-            $("#TabButton");
-            $("#run").css("background-color", "yellow");
-            $("#container-0").empty().append('Analysis is running...please be patient');
-            getGraphData();
         }
         function getGraphData() {
             RID = makeGUID();
@@ -98,9 +102,6 @@
             var vals = '';
             var id = '';
             var ids = '';
-
-            updateNodesCat();
-
             for (var i = 0; i < nodesCat.length; i++) {
                 if (nodesCat[i].getLevel() == 5) {
                     if ((nodesCat[i].data.table == 'project') || (nodesCat[i].data.table == 'mimark') || (nodesCat[i].data.table == 'user')) {
@@ -125,139 +126,66 @@
                     }
                 }
             }
-
-            var metaValsCat = '';
-            if (nodesCat.length > 0) {
-                metaValsCat = "{" + arrayValsCat.join(",") + "}";
-            }
-
-            var metaIDsCat = '';
-            if (nodesCat.length > 0) {
-                metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
-            }
-
-            var myDict = {};
-            myDict['metaValsCat'] = metaValsCat;
-            myDict['metaIDsCat'] = metaIDsCat;
-            myDict['treeType'] = treeType;
-            myDict['RID'] = RID;
-            myDict['funcName'] = "getSpAC";
-            myDict['reqType'] = "call";
-            myDict['dataID'] = dataID;
-            myDict['selectAll'] = document.getElementById("selectall-taxa").value;
-            myDict['perZeroes'] = document.getElementById("perZeroes").value;
-            myDict['filterPer'] = document.getElementById("filterPer").value;
-            myDict['filterMeth'] = document.getElementById("filterMeth").value;
-            myDict['palette'] = document.getElementById("palette").value;
-            myDict['std_error'] = document.getElementById("std_error").checked;
-
-            if ($("#remUnclass").is(':checked')) {
-                myDict['remUnclass'] = 'yes'
+            if (!checkDupes(arrayValsCat)) {
+                clearInterval(refresh);
+                $("#run").css("background-color", "lightgray");
+                $("#container-1").empty().append('Analysis has been cancelled!');
+                alert("Selected meta data only has one level.\nPlease select a different variable.");
             } else {
-                myDict['remUnclass'] = 'no'
-            }
-
-            if ($("#remZeroes").is(':checked')) {
-                myDict['remZeroes'] = 'yes'
-            } else {
-                myDict['remZeroes'] = 'no'
-            }
-
-            if ($("#filterData").is(':checked')) {
-                myDict['filterData'] = 'yes'
-            } else {
-                myDict['filterData'] = 'no'
-            }
-
-            var jsonDict = JSON.stringify(myDict);
-
-            $.ajax({
-                url: '/myPhyloDB/funcCall/',
-                type: 'POST',
-                data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
-                success: function (data) {
-                    var error = data['error'];
-                    if (error != "none") {
-                        alert(error);
-                        $("#run").css("background-color", "red");
-                    }
+                updateNodesCat();
+                var metaValsCat = '';
+                if (nodesCat.length > 0) {
+                    metaValsCat = "{" + arrayValsCat.join(",") + "}";
                 }
-            });
+
+                var metaIDsCat = '';
+                if (nodesCat.length > 0) {
+                    metaIDsCat = "{" + arrayIDsCat.join(",") + "}";
+                }
+
+                var myDict = {};
+                myDict['metaValsCat'] = metaValsCat;
+                myDict['metaIDsCat'] = metaIDsCat;
+                myDict['RID'] = RID;
+                myDict['treeType'] = treeType;
+                myDict['funcName'] = "getCore";
+                myDict['reqType'] = "call";
+                myDict['dataID'] = dataID;
+                myDict['selectAll'] = document.getElementById("selectall-taxa").value;
+                myDict['keggAll'] = 1;
+                myDict['nzAll'] = 1;
+                myDict['DepVar'] = 1;
+                myDict['TopN'] = document.getElementById("TopN").value;
+                myDict['Detection'] =  document.getElementById("Detection").value;
+                myDict['Prevalence'] =  document.getElementById("Prevalence").value;
+
+                var jsonDict = JSON.stringify(myDict);
+
+                $.ajax({
+                    url: '/myPhyloDB/funcCall/',
+                    type: 'POST',
+                    data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                    success: function (data) {
+                        var error = data['error'];
+                        if (error != "none") {
+                            alert(error);
+                            $("#run").css("background-color", "red");
+                        }
+                    }
+                });
+            }
         }
         function runAnalysis() {
-            if (running == true) {
+            if(running == true) {
                 alert("myPhyloDB is currently running your previous analysis request!");
                 return false;
             }
-
-            if (nodesCat == "") {
-                $("#run").css("background-color", "red");
-                $("#container-0").empty().append('Please choose your categorical variable(s)!');
-                running = false;
-            } else {
-                checkButtons();
-                $("#my_image").attr("src", "#");
-                $("#Export").val('Export Data').css('background-color', 'lightgray');
-
-                $("#container-0").empty().show();
-                $("#container-2").hide();
-                $("#text-1").val('');
-                running = true;
-                chooseData();
-            }
-        }
-        function selectTree() {
-            checkButtons();
-            if (treeType == 1) {
-                $('#tree_taxa').show().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#tree_kegg').hide().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#tree_nz').hide().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#row_taxa').show();
-                $('#row_kegg').hide();
-                $('#row_nz').hide();
-                $('#text-1').val('');
-                $('#text-2').val('');
-            } else if (treeType == 2) {
-                $('#tree_taxa').hide().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#tree_kegg').show().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#tree_nz').hide().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#row_taxa').hide();
-                $('#row_kegg').show();
-                $('#row_nz').hide();
-                $('#text-1').val('');
-                $('#text-2').val('');
-            } else if (treeType == 3) {
-                $('#tree_taxa').hide().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#tree_kegg').hide().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#tree_nz').show().dynatree("getRoot").visit(function (node) {
-                    node.select(false);
-                });
-                $('#row_taxa').hide();
-                $('#row_kegg').hide();
-                $('#row_nz').show();
-                $('#text-1').val('');
-                $('#text-2').val('');
-            }
-        }
-        function startTimer() {
-            refresh = setInterval(function(){updateStatus(RID);}, 1000);
-            return refresh;
+            $("#my_image").attr("src", "#");
+            $("#container-0").empty().show();
+            $("#container-2").hide();
+            $("#text-1").val('');
+            running = true;
+            chooseData();
         }
         function stopAnalysis() {
             running = false;
@@ -281,9 +209,10 @@
         }
         function updateStatus() {
             var myDict = {};
-            myDict['RID'] = RID;
-            myDict['funcName'] = "getSpAC";
             myDict['reqType'] = "status";
+            myDict['RID'] = RID;
+            myDict['funcName'] = "getsoil_index";
+
             var jsonDict = JSON.stringify(myDict);
             $.ajax({
                 url: '/myPhyloDB/funcCall/',
@@ -303,10 +232,7 @@
                     } else {
                         running = false;
                         clearInterval(refresh);
-                        var xAxis = obj['xAxis'];
-                        var series = obj['series'];
-                        var yAxis = obj['yAxis'];
-                        var error = data['error'];
+                        var error = obj['error'];
                         if (error != "none") {
                             alert(error);
                             $("#run").css("background-color", "red");
@@ -317,22 +243,53 @@
                         var text = obj['text'];
                         $('#text-1').val(text);
 
-                        var res_table = obj['gDF'];
+                        var res_table = data['res_table'];
                         $('#res_table').empty().append(res_table).find('.table').DataTable({
                             dom: 'B<"toolbar">lfrtip',
                             deferRender: true,
                             scrollX: true,
-                            bSort: true,
                             bPaginate: true,
+                            lengthMenu: [10, 25, 50, 100],
                             sPaginationType: 'full_numbers',
                             buttons: [ 'copy', 'csv', 'excel', 'pdf', 'print' ]
                         }).draw();
+                        $("div.toolbar").html('<br><br><br>');
 
-                        $("div.toolbar").html('<br><br>');
 
                         chooseDisplay();
                     }
                 }
+            });
+        }
+        function startTimer() {
+            refresh = setInterval(function(){updateStatus(RID);}, 1000);
+            return refresh;
+        }
+        function selectTree() {
+            treeType = document.getElementById("selectTree").value;
+        }
+        function getBiom() {
+            var func = "analysis";
+
+            $("#Export").css("background-color", "yellow").val("Running!");
+            $.ajax({
+                url: '/myPhyloDB/getCoreBiom/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID,
+                },
+                success: function(data) {
+                    var result = JSON.stringify(data);
+                    var obj = $.parseJSON(result);
+                    var filename = obj['name'];
+                    $("a#download").attr({
+                        href: filename
+                    }).get(0).click();
+                    $("#Export").css("background-color", "green").val("Done!");
+                }
+            }).fail(function() {
+                $("#Export").css("background-color", "red").val("No data!");
             });
         }
     </script>
@@ -344,8 +301,8 @@
     <div>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
-            <th>Select Meta Data:<br>
-                <a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta()">-Deselect all-</a></th>
+            <th>Select Meta Data:
+                <br><a href="#" id="clearMeta" style="font-size: 12px;" onClick="clearMeta()">-Deselect all-</a></th>
         </tr>
         <tr>
             <td style="padding-right: 10px; vertical-align: top">
@@ -355,28 +312,27 @@
     </table>
 
     <table border="0" cellspacing="0" cellpadding="5" class="inlineTable input">
+        <tr><td colspan="3" bgcolor="white"></td></tr>
+
         <tr class="accordion">
             <td bgcolor="white"></td>
             <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> Data Selection:</strong></em></td>
         </tr>
-
         <tr>
             <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <select id="selectTree" onChange="checkButtons()">
+                <select id="selectTree" onChange="selectTree()">
                     <option value="1" selected="selected">Taxonomy</option>
-                    <!--<option value="2" >KEGG orthology</option>
-                    <option value="3" >KEGG enzyme</option>-->
                 </select>
-                &nbsp<-- Sequence mapping
+                &nbsp; <-- Sequence mapping
             </td>
             <td bgcolor="white"></td>
         </tr>
 
-        <tr id="row_taxa">
+        <tr>
             <td bgcolor="white" width="5px"></td>
-            <td bgcolor="white">
-                <select id="selectall-taxa" onChange="checkButtons()">
+            <td id="row_taxa" bgcolor="white">
+                <select id="selectall-taxa" onChange="selectTree()">
                     <option value="2">Phyla</option>
                     <option value="3">Classes</option>
                     <option value="4">Orders</option>
@@ -384,56 +340,69 @@
                     <option value="6">Genera</option>
                     <option value="7">Species</option>
                     <option value="9" selected="selected">OTU_99</option>
+                    <option value="8">PGPRs</option>
                 </select>
-                &nbsp<-- Taxa level
+                &nbsp; <-- Taxa level
             </td>
             <td bgcolor="white"></td>
         </tr>
 
-        <tr><td colspan="3" bgcolor="white"></td></tr>
-        {% include "html/Data-Filtering.html" %}
-
-        <tr><td colspan="3" bgcolor="white"></td></tr>
         <tr class="accordion">
+            <td bgcolor="white"></td>
+            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><em><strong><span class="arrow">►</span> R Settings:</strong></em></td>
+        </tr>
+        <tr>
             <td bgcolor="white" width="5px"></td>
-            <td colspan="2" bgcolor="lightgray" style="outline: thin solid"><strong><em><span class="arrow">►</span> Optimize R plot:</em></strong></td>
+            <td colspan="2" bgcolor="white"> Heatmap </td>
         </tr>
 
         <tr>
-            <td bgcolor="white"></td>
+            <td bgcolor="white" width="5px"></td>
             <td bgcolor="white">
-                <div style="background-color: white">
-                    <select id="palette" onChange="checkButtons()">
-                        <option value="Set1">Set1</option>
-                        <option value="Set2">Set2</option>
-                        <option value="Set3">Set3</option>
-                        <option value="Paired">Paired</option>
-                        <option value="Dark2">Dark2</option>
-                        <option value="Accent">Accent</option>
-                        <option value="gdocs">Google</option>
-                        <option value="hc">Highcharts</option>
-                    </select>
-                    &nbsp; <-- Color palette for symbol colors
-                </div>
+                <input type="text" id="TopN" style="background-color: white; width: 40px" value="50"/> &nbsp&nbsp<-- Number of taxa to display in heatmap
             </td>
             <td bgcolor="white"></td>
         </tr>
 
         <tr>
             <td bgcolor="white" width="5px"></td>
-            <td id="sig_text" bgcolor="white">
-                <input type="checkbox" id="std_error" checked onChange="checkButtons()">
-                &nbsp; <-- Display standard deviation error bars
+            <td colspan="2" bgcolor="white"> Final Core Microbiome Settings </td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="text" id="Detection" style="background-color: white; width: 40px" value="0.001"/> &nbsp&nbsp<-- Detection Threshold
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input type="text" id="Prevalence" style="background-color: white; width: 40px" value="0.5"/> &nbsp&nbsp<-- Prevalence
             </td>
             <td bgcolor="white"></td>
         </tr>
 
         <tr><td colspan="3" bgcolor="white"></td></tr>
         {% include "html/Data-RunButton.html" %}
-
         <tr><td colspan="3" bgcolor="white"></td></tr>
-        {% include "html/Data-Export.html" %}
+        <tr class="accordion">
+            <td bgcolor="white" width="5px"></td>
+            <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Export Data:</em></strong></td>
+        </tr>
 
+        <tr>
+            <td bgcolor="white" width="5px"></td>
+            <td bgcolor="white">
+                <input name="exportB" type="radio" checked value="Biom"/>Biom
+                <input id="Export" type="button" value="Export Data" onClick="getBiom()"/>
+                <span title="Includes only core data, for use AFTER analysis"><font class="info" color="red">[warning]</font></span>
+            </td>
+            <td bgcolor="white"></td>
+        </tr>
+        <a id="download" download href="" style="display:none">download</a>
     </table>
     </div>
     <br>
@@ -464,8 +433,8 @@
         </tr>
         <tr>
             <td colspan="20" style="text-align: left">
-                <div id="container-0" style="height: 425px; width: 950px;">No Data has been selected!</div>
-                <div id="container-2" style="height: 750px; width: 950px; display:none"><iframe id="my_image" src="#" height="100%" width="98%"></iframe></div>
+                <div id="container-0" style="height: 600px; width: 950px;">No Data has been selected!</div>
+                <div id="container-2" style="height: 600px; width: 950px; display:none"><iframe id="my_image" src="#" height="100%" width="98%"></iframe></div>
             </td>
         </tr>
         <tr id="highchartButtons">
@@ -480,10 +449,8 @@
         <textarea style="width: 950px;" wrap="off" id="text-1" rows="20">No data selected</textarea>
         <br>
     </div>
-    <br><br>
-    <h2>Species Accumulation Curve Data:</h2>
-    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br>
-
+    <h2>Members of Core Microbiome:</h2>
+    <div id="res_table" style="width: 950px; overflow-x: auto;"></div>
     <br><br><br>
 {% endblock my_content%}

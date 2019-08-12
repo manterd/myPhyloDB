@@ -168,11 +168,13 @@ def dataprocess(pid):
             else:
                 funcName = data['funcName']
                 request = data['request']
+                # TODO 1.4 cleanup
                 stopList = data['stop']  # not sure what this is for, this whole file has a lot of cleaning up to be done
                 datQueueList.pop(RID, 0)
                 datActiveList[pid] = RID
                 functions.log(request, "QSTART", funcName)
                 if datActiveList[pid] == RID:
+                    debug("About to run", funcName, "for", request.user.username)
                     if funcName == "uploadFunc":
                         datRecent[RID] = database.views.uploadFunc(request, datStopList)
                     elif funcName == "fileUpFunc":
@@ -245,6 +247,8 @@ def cleanup(RID):
 
 def datfuncCall(request):
     global datActiveList, datQueueList, datQueueFuncs, datStopList, datStopDict, datStatDict, datQList, datQueueTimes, datQueueUsers
+    debug("DatFuncCall called by", request.user.username)
+    # current issue seems to be that this function doesn't get called until after the file transfer is complete
     RID = request.POST['RID']
     funcName = request.POST['funcName']
     datQueueList[RID] = RID  # add to queuelist, remove when processed or stopped
@@ -256,7 +260,7 @@ def datfuncCall(request):
     datQList.append(qDict)
     datQ.put(qDict, True)
     datStatDict[RID] = int(datQ.qsize())
-    #print "Added statDict for RID", RID
+    debug("Added statDict for RID", RID)    # TODO 1.3 it seems to take a while to get here
 
     # print log info, need to write this to a file somewhere
     functions.log(request, "QADD", funcName)
@@ -287,9 +291,8 @@ def datstat(RID):
         try:
             return datStatDict[RID]  # TODO 1.3 some way to track preemptive stops, decremQ with arg?
         except Exception as ex:
-            print ex
+            print "Exception with datstat:", ex
 
 
 def getStops():
     return datStopList
-

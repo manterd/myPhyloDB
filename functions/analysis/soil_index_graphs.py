@@ -13,6 +13,7 @@ import json
 from database.models import PICRUSt
 
 import functions
+from functions.utils.debug import debug
 
 
 LOG_FILENAME = 'error_log.txt'
@@ -31,7 +32,6 @@ def getsoil_index(request, stops, RID, PID):
                 # Select samples and meta-variables from savedDF
                 functions.setBase(RID, 'Step 2 of 5: Selecting your chosen meta-variables...')
                 metaValsCat = all['metaValsCat']
-
                 metaIDsCat = all['metaIDsCat']
                 metaValsQuant = ['soil_texture_sand', 'soil_texture_silt', 'soil_texture_clay',
                         'soil_organic_matter_rating', 'soil_active_C_rating',
@@ -51,7 +51,6 @@ def getsoil_index(request, stops, RID, PID):
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, 10, True)
                 avail = metaDF.columns.values
                 allFields = list(set(avail) & set(catFields)) + list(set(avail) & set(quantFields))
-
                 result += 'Categorical variables selected by user: ' + ", ".join(catFields + remCatFields) + '\n'
                 result += 'Categorical variables not included in the statistical analysis (contains only 1 level): ' + ", ".join(remCatFields) + '\n'
                 result += 'Quantitative variables selected by user: ' + ", ".join(quantFields) + '\n'
@@ -69,12 +68,13 @@ def getsoil_index(request, stops, RID, PID):
 
                 selectAll = 9
                 DepVar = 1
-                finalDF, missingList = functions.getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID)
+                finalDF, missingList = functions.getTaxaDF(selectAll, '', savedDF, metaDF, allFields, DepVar, RID, stops, PID, soilHealth=True)
 
                 nzAll = 10
                 DepVar = 1
                 mapTaxa = 'no'
                 metaDF.set_index('sampleid', drop=True, inplace=True)  # getTaxaDF resets index of metaDF
+                debug("SoilHealth: NZDF")
                 keggDF, mtDF = functions.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
                 # TODO 1.3 check for empties and return http error msg or somesuch
                 # TODO 1.3 move soil_index to analysis
@@ -92,16 +92,22 @@ def getsoil_index(request, stops, RID, PID):
                 #bioDF = metaDF[want].copy()
                 #print 'bioDF:', bioDF.columns.values
 
+                debug("SoilHealth: CASH")
                 # get CASH data
                 cashDF = metaDF.sort_values('sampleid')
                 for name in metaValsQuant:
-                    if name not in cashDF.columns:
+                    if name not in cashDF.columns.values:
                         cashDF[name] = 0.0
-                cashDF.fillna(0, inplace=True)
+                for col in cashDF:
+                    if cashDF[col].dtype.name == "category":
+                        if '0.0' not in cashDF[col].cat.categories:
+                            cashDF[col] = cashDF[col].cat.add_categories('0.0')
+                cashDF.fillna('0.0', inplace=True)
                 cashDF.set_index('sampleid', drop=True, inplace=True)
 
+                debug("SoilHealth: RNA")
                 # get rRNA copy numbers data
-                otuList = finalDF['rank_id'].tolist()
+                otuList = finalDF['rank_id'].tolist()   # TODO 1.3 final error here, after taxaDF fails groupby sum()
                 otuList = list(set(otuList))
                 qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
                 rnaDF = read_frame(qs, fieldnames=['otuid__otuid', 'rRNACount'])
@@ -293,6 +299,7 @@ def getsoil_index(request, stops, RID, PID):
                     u'nosZ: nitrous-oxide reductase': 'nosZ'
                 }, inplace=True)
 
+                debug("SoilHealth: Merge")
                 cashDF = pd.merge(cashDF, keggDF, left_index=True, right_index=True, how='inner')
 
                 geneList = [
@@ -371,6 +378,12 @@ def getsoil_index(request, stops, RID, PID):
                     u'norBC',
                     u'nosZ'
                 ]
+                cashList = ['soil_active_C_rating', 'soil_organic_matter_rating', 'soil_texture_sand',
+                            'soil_k_rating', 'CASH_SHI_rating',
+                            'soil_pH_rating', 'soil_texture_clay', 'soil_agg_stability_rating',
+                            'soil_ACE_protein_index_rating', 'soil_texture_silt', 'soil_p_rating',
+                            'soil_minor_elements_rating', 'soil_water_cap_rating', 'soil_respiration_four_day_rating']
+                cashDF[cashList] = cashDF[cashList].astype(np.float64)
 
                 cashDF_scale = cashDF.copy()
                 for key in geneList:
@@ -387,15 +400,16 @@ def getsoil_index(request, stops, RID, PID):
                     else:
                         cashDF_scale[key] = norm.cdf(cashDF_scale[key], loc=meanVal, scale=sdVal)
 
+                debug("SoilHealth: CASH Groupby")
                 cashDF_means = cashDF.groupby(catFields).mean()
                 cashDF_means.reset_index(drop=False, inplace=True)
+
                 if len(catFields) > 1:
                     for index, row in cashDF_means.iterrows():
                         cashDF_means.loc[index, 'Treatment'] = " & ".join(row[catFields])
                 else:
                     cashDF_means.loc[:, 'Treatment'] = cashDF_means.loc[:, catFields[0]]
                     cashDF_means.set_index('Treatment', inplace=True)
-
                 cashDF_scale_means = cashDF_scale.groupby(catFields).mean()
                 cashDF_scale_means.reset_index(drop=False, inplace=True)
                 if len(catFields) > 1:

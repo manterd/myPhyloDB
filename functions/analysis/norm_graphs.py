@@ -114,7 +114,7 @@ def getNorm(request, RID, stopList, PID):
                 with open(path, 'wb') as f:
                     pickle.dump(newList, f)
 
-            metaDF = UnivMetaDF(newList, RID, stopList, PID)
+            metaDF = UnivMetaDF(newList, RID, stopList, PID)    # TODO 1.3 what is PID for in practice?
 
             # remove emptycols
             metaDF.replace('nan', np.nan, inplace=True)
@@ -124,7 +124,7 @@ def getNorm(request, RID, stopList, PID):
             normRem = len(selected) - lenB
 
             result += str(lenB) + ' selected sample(s) were included in the final analysis...\n'
-            result += str(normRem) + ' sample(s) did not met the desired normalization criteria...\n'
+            result += str(normRem) + ' sample(s) did not meet the desired normalization criteria...\n'
             result += '\n'
 
             # Create unique list of samples in meta dataframe (may be different than selected samples)
@@ -220,6 +220,7 @@ def getNorm(request, RID, stopList, PID):
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
 
+
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:
                 res = ''
@@ -278,7 +279,7 @@ def getNorm(request, RID, stopList, PID):
 
                 # we have the months now via 'month_jan' var set
                 # need to figure out how to query more specifically
-                # query like normal, results have rows by day, count out the months? (183 days per year iirc)
+                # query like normal, results have rows by day
 
                 if os.name == 'nt':
                     r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
@@ -535,13 +536,16 @@ def getNorm(request, RID, stopList, PID):
             myBiom["shape"] = shape
             myBiom['rows'] = filteredTaxaList
 
-            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
+            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'   # TODO 1.3 do we still want phyloseq.biom?
             path = str(myDir) + 'phyloseq.biom'
             with open(path, 'w') as outfile:
                 json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
             # very little change in RAM usage between 3-4
 
             functions.setBase(RID, 'Step 5 of 5: Formatting biome data...done!')
+
+            # TODO 1.3 call the taxa tree middleground file creator here
+            functions.write_taxa_summary(myDir+"available_taxa_summary.pkl", taxaList)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
             if stopList[PID] == RID:

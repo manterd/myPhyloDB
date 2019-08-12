@@ -37,8 +37,11 @@
 
         var selectedMeta = null;
         var selectedShared = null;
+        var selectedShared2 = null;
         var selectedSequence = null;
+        var selectedSequence2 = null;
         var selectedTaxa = null;
+        var selectedTaxa2 = null;
         var selectedScript = null;
         var selectedScript2 = null;
         var selectedScript3 = null;
@@ -126,6 +129,21 @@
                 }
             });
 
+            $("#pickSequence2").dynatree({  // Sequence 2 for biom upload (.fasta)
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Sequence', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedSequence2 = $.map($("#pickSequence2").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
             $("#pickTaxa").dynatree({
                 checkbox: true,
                 selectMode: 1,
@@ -141,7 +159,7 @@
                 }
             });
 
-            $("#pickBiom").dynatree({
+            $("#pickTaxa2").dynatree({  // Taxa2 for biom upload (.tsv)
                 checkbox: true,
                 selectMode: 1,
                 initAjax: {
@@ -150,7 +168,22 @@
                     data: {'name':'Taxa', 'filter': true}
                 },
                 onSelect: function (select, node) {
-                    selectedTaxa = $.map($("#pickBiom").dynatree("getSelectedNodes"), function(node) {
+                    selectedTaxa2 = $.map($("#pickTaxa2").dynatree("getSelectedNodes"), function(node) {
+                        return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
+                    });
+                }
+            });
+
+            $("#pickBiom").dynatree({   // Biom for biom upload, uses 'shared' tag (.biom file though)
+                checkbox: true,
+                selectMode: 1,
+                initAjax: {
+                    url: "/myPhyloDB/makeFilesTree/",
+                    dataType: "jsonp",
+                    data: {'name':'Shared', 'filter': true}
+                },
+                onSelect: function (select, node) {
+                    selectedShared2 = $.map($("#pickBiom").dynatree("getSelectedNodes"), function(node) {
                         return node.parent.parent.data.id + "/" + node.parent.data.id + "/" + node.data.id;
                     });
                 }
@@ -485,10 +518,7 @@
 
             var myDict = {};
 
-            myDict['meta'] = selectedMeta;
-            myDict['shared'] = selectedShared;
-            myDict['sequence'] = selectedSequence;
-            myDict['taxa'] = selectedTaxa;
+            myDict['meta'] = selectedMeta;  // this one is always the same selector
 
             myDict['sff'] = selectedSFF;
             myDict['files'] = selectedFiles;
@@ -497,8 +527,10 @@
             myDict['contig'] = selectedContig;
             myDict['fastq'] = selectedFastq;
 
-            // default
+
+            // default script selector
             myDict['script'] = selectedScript;
+            // alternative
             if (selectedScript2 != null){
                 myDict['script'] = selectedScript2;
             }
@@ -506,10 +538,32 @@
                 myDict['script'] = selectedScript3;
             }
 
-            // default
+            // default oligos selector
             myDict['oligos'] = selectedOligos;
+            // alternative
             if (selectedOligos2 != null){
                 myDict['oligos'] = selectedOligos2;
+            }
+
+            // default taxa selector
+            myDict['taxa'] = selectedTaxa;
+            // alternative for biom
+            if (selectedTaxa2 != null){
+                myDict['taxa'] = selectedTaxa2;
+            }
+
+            // default shared selector
+            myDict['shared'] = selectedShared;
+            // alternative for biom
+            if (selectedShared2 != null){
+                myDict['shared'] = selectedShared2;
+            }
+
+            // default sequence selector
+            myDict['sequence'] = selectedSequence;
+            // alternative for biom
+            if (selectedSequence2 != null){
+                myDict['sequence'] = selectedSequence2;
             }
 
             var jsonDict = JSON.stringify(myDict);
@@ -703,6 +757,14 @@
                         <tr>
                             <td>{{ form2.biom_file.label_tag }}</td>
                             <td><div id="pickBiom"></div></td>
+                        </tr>
+                        <tr>
+                            <td>{{ form2.tsv_file.label_tag }}</td>
+                            <td><div id="pickTaxa2"></div></td>
+                        </tr>
+                        <tr>
+                            <td>{{ form2.fasta_file.label_tag }}</td>
+                            <td><div id="pickSequence2"></div></td>
                         </tr>
                     </table>
                 </td>

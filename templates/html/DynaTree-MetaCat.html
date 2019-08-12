@@ -35,7 +35,7 @@
                 });
             }
             nodesCat = node.tree.getSelectedNodes();
-
+            //alert(nodesCat);  // this section only triggers when a folder is selected???
             if ((document.title == 'PCA') || (document.title == 'PCoA')) {
                 ellipseBox();
                 colorBox();
@@ -82,5 +82,11 @@
         }
 
     });
+
+    function updateNodesCat(){
+        nodesCat = $.map($("#tree_metaCat").dynatree("getSelectedNodes"), function(node) {
+                            return node;
+                        });
+    }
 
 </script>

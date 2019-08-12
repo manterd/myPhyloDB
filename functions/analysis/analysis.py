@@ -37,6 +37,8 @@ from natsort import natsorted
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import psutil
 from functions.utils.debug import debug
+import shutil
+import datetime
 
 process = psutil.Process(os.getpid())
 
@@ -3157,8 +3159,7 @@ class Caret(Analysis):
             # R packages from cran
             r("list.of.packages <- c('caret', 'randomForest', 'NeuralNetTools', 'e1071', 'stargazer', 'stringr', 'ROCR')")
             r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
-            r(
-                "if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+            r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
 
             functions.setBase(self.RID, 'Step 4 of 5: Performing statistical test...')
 
@@ -3644,6 +3645,9 @@ class Caret(Analysis):
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             # Combining Pdf files
+            functions.mergePDF(path, 'myPhyloDB/media/temp/rf/Rplots/' + str(self.RID) + '/rf_final.pdf')
+            # old merge code, was moved to functions.utils.utils_df
+            '''
             finalFile = 'myPhyloDB/media/temp/rf/Rplots/' + str(self.RID) + '/rf_final.pdf'
 
             pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
@@ -3654,6 +3658,7 @@ class Caret(Analysis):
                 merger.append(PdfFileReader(file(os.path.join(path, filename), 'rb')))
 
             merger.write(finalFile)
+            '''
 
             functions.setBase(self.RID, 'Step 4 of 5: Performing statistical test...done')
 
@@ -4058,4 +4063,215 @@ class Gage(Analysis):
                 return self.statsGraph()
 
         debug("Something went wrong with Gage")
+        return ret
+
+
+class Core(Analysis):
+
+    # overwrite stats and graph
+    def statsGraph(self):
+
+        debug("started statsGraph")
+
+        # merge meta columns if more than one var is selected
+        if len(self.catFields) > 1:
+            for index, row in self.metaDF.iterrows():
+                self.metaDF.loc[index, 'merge'] = ".".join(row[self.catFields])
+
+        count_rDF = self.finalDF.pivot(index='sampleid', columns='rank_id', values='rel_abund')
+        count_rDF.fillna(0, inplace=True)
+
+        if os.name == 'nt':
+            r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
+        else:
+            r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
+
+        functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
+
+        # R packages from cran
+        r("list.of.packages <- c('phyloseq')")
+        r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+        r("if (length(new.packages)) install.packages(new.packages, repos='http://cran.us.r-project.org', dependencies=T)")
+
+        r("library(phyloseq)")
+
+        # R packages from bioconductor
+        r("list.of.packages <- c('microbiome', 'biomformat', 'ggplot2', 'ggthemes', 'plyr')")
+        r("new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,'Package'])]")
+        r("if (length(new.packages)) source('http://bioconductor.org/biocLite.R')")
+        r("if (length(new.packages)) biocLite(new.packages, type='source', suppressUpdate=T, dependencies=T)")
+
+        r("library(ggplot2)")
+        r("library(ggthemes)")
+        r("library(microbiome)")
+        r("library(biomformat)")
+        r("library(plyr)")
+        r('source("R/myFunctions/myFunctions.R")')
+
+        idList = count_rDF.columns.values.tolist()
+
+        count_rDF.sort_index(axis=0, inplace=True)
+        self.metaDF.sort_values('sampleid', inplace=True)   # apparently inplace is considered bad practice
+
+        '''Make phyloseq object'''
+        r.assign("otumat", count_rDF)
+        r('otumat <- otumat * 1.0')
+        r.assign("otuNames", idList)
+        r("colnames(otumat) <- names")
+        r("OTU = otu_table(t(otumat), taxa_are_rows=T)")
+
+        namesDict = functions.getFullTaxonomy(idList)
+        od = OrderedDict(sorted(namesDict.items()))
+        fullNamesList = od.values()
+
+        taxaList = []
+        for i in fullNamesList:
+            taxaList.append(i.split('|'))
+        fullRank = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species', 'OTU99']
+        myRanks = fullRank[0:self.selectAll]
+        taxaDF = pd.DataFrame(taxaList, columns=myRanks)
+
+        r.assign("taxmat", taxaDF)
+        r("TAXA <- tax_table(as.matrix(taxmat))")
+        r("rownames(TAXA) <- otuNames")
+
+        r.assign("meta", self.metaDF)
+        r('SAMPLE <- sample_data(meta)')
+        r('rownames(SAMPLE) <- meta$sampleid')
+        r('P <- phyloseq(OTU, TAXA, SAMPLE)')
+        debug("Phyloseq object has been created")
+
+        ''' Create graph'''
+        path = "myPhyloDB/media/temp/core/Rplots/" + str(self.RID)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        biomPath = "myPhyloDB/media/temp/core/Biom/" + str(self.RID)
+        if not os.path.exists(biomPath+"/temp"):
+            os.makedirs(biomPath+"/temp")
+
+        if not os.path.exists('myPhyloDB/media/temp/core/Rplots'):
+            os.makedirs('myPhyloDB/media/temp/core/Rplots')
+
+        r.assign('myPath', path)
+        r.assign('biomPath', biomPath)
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            debug("Stopping!")
+            return HttpResponse(getStopDict(), content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        functions.setBase(self.RID, 'Step 4 of 5: Calculating Core Microbiome...')
+
+        debug("CORE GRAPH CODE")
+
+        ''' R Microbiome Heatmap '''
+        r('det <- 20')
+        r('prev <- seq(0, 1, 0.1)')
+        r.assign("tabDet", self.all['Detection'])
+        r.assign("tabPrev", self.all['Prevalence'])
+        r.assign("topN", self.all['TopN'])
+        r.assign('rank', myRanks[-1])
+
+        debug("Len cat:", len(self.catFields))
+        cols = ['Selection'] + myRanks
+        taxDF = pd.DataFrame(columns=cols)
+        # TODO 1.3 PGPRs fix
+        if len(self.catFields) == 0:
+            # make core plot
+            r('P.topN <- prune_taxa(names(sort(taxa_sums(P), TRUE)[1:topN]), P)')
+            r('taxa_names(P.topN) <- paste(row.names(tax_table(P.topN)), tax_table(P.topN)[, rank], sep=\' | \')')
+            r('p1 <- plot_core(P.topN, colours=c("red", "white", "green"), prevalences=prev, detection=det, plot.type=\'heatmap\', horizontal=T) + labs(title=NULL)')
+            r('p1 <- p1 + theme(axis.text.x = element_text(hjust=0))')
+            r('ggsave(filename=paste0(myPath, \'/core_final.pdf\'), device=\'pdf\', plot=p1)')
+            # get core members
+            # TODO 1.4 could also add support for not-core export (P - P.core)
+            r("P.core <- core(P, prevalence=tabPrev, detection=tabDet)")
+            r("biomDat <- make_biom(data=otu_table(P.core), sample_metadata=sample_data(P.core), observation_metadata=tax_table(P.core))")
+            r("write_biom(biomDat, paste0(biomPath, \'/temp/core.biom\'))")
+            mySamples = r.get("sample_metadata(biomDat)")
+            # rewrite biom file with correct formatting (write_biom is very close but has some space and type issues)
+            functions.rewrite_biom(mySamples, str(biomPath) + '/temp/core.biom', self.selectAll)
+
+            taxTable = r.get("tax_table(P.core)")
+            tempDF = pd.DataFrame(taxTable, columns=myRanks)
+            tempDF['Selection'] = "All"
+            taxDF = taxDF.append(tempDF)
+
+        else:
+            if len(self.catFields) > 1:
+                colName = "merge"
+            else:
+                colName = self.catFields[0]
+            uniqueCats = self.metaDF[colName].unique()
+            r.assign("catField", colName)
+            for j in uniqueCats:
+                r.assign("value", j)
+                myStr = 'P.sub <- subset_samples(P, ' + str(colName) + '==\"' + str(j) + '\")'
+                r.assign("cmd", myStr)
+                r("eval(parse(text=cmd))")
+                r('P.topN <- prune_taxa(names(sort(taxa_sums(P.sub), TRUE)[1:topN]), P.sub)')
+                r('taxa_names(P.topN) <- paste(row.names(tax_table(P.topN)), tax_table(P.topN)[, rank], sep=\' | \')')
+                r('p1 <- plot_core(P.topN, colours=c("red", "white", "green"), prevalences=prev, detection=det, plot.type=\'heatmap\', horizontal=T) + labs(title=value)')
+                r('p1 <- p1 + theme(axis.text.x = element_text(hjust=0))')
+                r('ggsave(filename=paste0(myPath, \'/\', value, \'.pdf\'), device=\'pdf\', plot=p1)')
+                # get core members
+                r("P.core <- core(P.sub, prevalence=tabPrev, detection=tabDet)")
+                r("biomDat <- make_biom(data=otu_table(P.core), sample_metadata=sample_data(P.core), observation_metadata=tax_table(P.core))")
+                # get columns into python somehow
+                mySamples = r.get("sample_metadata(biomDat)")
+                headers = []
+                for thing in mySamples:
+                    headers.append(thing)
+                # could manually add to the biom file with the columns after? like we write to file, then read, then write
+                # so when we go to write with better formatting, we can add metadata columns (?hopefully?)
+                r("write_biom(biomDat, paste0(biomPath, \'/temp/"+str(j)+".core.biom\'))")
+                mySamples = r.get("sample_metadata(biomDat)")
+                # rewrite biom file with correct formatting (write_biom is very close but has some space and type issues)
+                functions.rewrite_biom(mySamples, str(biomPath) + '/temp/'+str(j)+'.core.biom', self.selectAll)
+
+                taxTable = r.get("tax_table(P.core)")
+                tempDF = pd.DataFrame(taxTable, columns=myRanks)
+                tempDF['Selection'] = j
+                taxDF = taxDF.append(tempDF)
+            functions.mergePDF(path, path+'/core_final.pdf')
+
+        # bundle here with shutil
+        shutil.make_archive(biomPath+"/core.biom", 'zip', biomPath+"/temp")
+
+        functions.setBase(self.RID, 'Step 4 of 5: Calculating Core Microbiome...done!')
+        functions.setBase(self.RID, 'Step 5 of 5: Formatting graph data for display...!')
+
+        finalDict = {}
+        taxDF = taxDF[cols]
+        res_table = taxDF.to_html(classes="table display")
+        res_table = res_table.replace('border="1"', 'border="0"')
+        finalDict['res_table'] = str(res_table)
+        finalDict['text'] = self.result
+
+        functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...done!')
+
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+        if self.stopList[self.PID] == self.RID:
+            debug("Stopping!")
+            return HttpResponse(getStopDict(), content_type='application/json')
+        # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
+
+        finalDict['error'] = 'none'
+        res = json.dumps(finalDict)
+        return HttpResponse(res, content_type='application/json')
+
+    def run(self):
+        debug("Running Core")
+
+        ret = self.validate(sig=False, metaCat=True, metaQuant=False, reqMultiLevel=False)
+        if ret == 0:
+            ret = self.query(taxmap=False, filterable=False, usetransform=False)
+            if ret == 0:
+                return self.statsGraph()
+
+        if self.stopList[self.PID] == self.RID:
+            debug("Stopped Core")
+        else:
+            debug("Something went wrong with Core")
         return ret

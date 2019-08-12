@@ -90,7 +90,10 @@ def history(request):
 def files(request):
     functions.log(request, "PAGE", "FILES")
 
+    # TODO 1.3 file upload page doesn't reload template
+
     # script files are unusable unless uploaded by admin (literal account name, not role) for security purposes
+    # TODO 1.3 change script admin restriction to another account, un-super admin (too obvious)
     # scriptVis flag doesn't prevent user from uploading scripts, just makes it harder
     # supers can see it, but only the ones uploaded by admin can be used
 
@@ -112,13 +115,17 @@ def files(request):
 def fileUpFunc(request, stopList):
     errorText = ""
     RID = ''    # TODO 1.4 stopList and RID NYI, can go in with progress bar (same recoding basically)
-    # TODO 1.4 Progress bar for uploading files. This part is hard to test locally, local uploads are too fast
+    # There exists a django form plugin which can accomplish the progress tracking issue (as well as allow bigger file uploads overall)
+    # TODO 1.4 Progress bar for uploading files. This part is hard to test locally, local uploads are somewhat fast
     # RID not particularly necessary for a one-way operation such as this. May be handy for logging of some description
     # Stoplist is the main reason to use RID, assuming stop function is implemented on the front end
     # Stopping a file upload is awkward since this is coded with only a single line technically performing the download
     # Need to interrupt the upload somehow if stop will be relevant
     # Further, progress bar AND stop both involve having a tighter control over this upload process, not sure if Django
     # supports accessing upload percentages and executing commands on operations I believe it assumes are done by now
+
+    # TODO 1.3 global subdir list
+
     try:
         RID = request.POST['RID']
     except:
@@ -485,7 +492,7 @@ def checkCompsGetNames(compList, user, key):
     for comp in selcomps:
         if curComp == 0:
             if key == 'script':
-                if comp != 'admin' and comp != "None":
+                if comp != 'admin' and comp != "None":  # TODO 1.3 this is where the script admin is listed, revise
                     return "Illegal file access", "error"
             else:
                 # can bypass with superuser, or by whitelist from permissions/user_profile system
@@ -657,7 +664,7 @@ def handleArchive(dest, name):
                 if abspath.startswith(os.path.abspath(dest)):
                     tar.extract(member, dest)
                 else:
-                    print "Security error: absolute path does not match in TAR"  # TODO 1.3 log security error
+                    print "Security error: absolute path does not match in TAR"  # TODO 1.3 security error log
             tar.close()
         except Exception:
             return False  # file is unlikely to be an archive, as unzip and untar both failed
@@ -1054,16 +1061,38 @@ def uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, 
     debug("UPLOAD WITH BIOM")
     try:
         # directly added taxa file (in biom format)
-        taxaname = nameDict['taxa']
-        copyFromUpload(selDict['taxa'], dest, taxaname)
-        file3 = os.path.join(dest, taxaname)#open(os.path.join(dest, taxaname), 'r')
+        # for .tsv with taxonomies, and sequence for .fasta with sequences
+        biomName = nameDict['shared']
+        taxaName = nameDict['taxa']
+        sequenceName = nameDict['sequence']
+
+        copyFromUpload(selDict['shared'], dest, biomName)
+        copyFromUpload(selDict['taxa'], dest, taxaName)
+        copyFromUpload(selDict['sequence'], dest, sequenceName)
+        biomFile = os.path.join(dest, biomName)
+        taxaFile = os.path.join(dest, taxaName)
+        sequenceFile = os.path.join(dest, sequenceName)
     except Exception as e:
         return "Problem with taxa file: " + str(e)
 
     try:
-        # TODO different parse function for biom, no other files involved (its just meta and biom)
-        functions.parse_biom(file3, stopList, PID, RID)
-        # something something parse_profile ?
+        errSamp, errBiom = functions.parse_biom(biomFile, taxaFile, sequenceFile, p_uuid, refDict, stopList, PID, RID)
+        # check errSamp and errBiom for names of samples which were in one file but not the other
+        errText = ""
+        if len(errSamp) > 0:
+            # we had samples in meta but not in biom
+            errText += "Found samples in meta that were missing from biom:"
+            for err in errSamp:
+                errText += err + ", "
+            errText += "\n"
+        if len(errBiom) > 0:
+            # we had biom samples not in meta
+            errText += "Found samples in biom that were missing from meta:"
+            for err in errBiom:
+                errText += err + ", "
+            errText += "\n"
+        if errText != "":
+            return errText
     except Exception:
         return "Failed parsing your taxonomy file:" + nameDict['taxa']
 
@@ -1167,6 +1196,7 @@ def uploadFunc(request, stopList):
     nameDict = {}
     for subDir in subDirList:
         selPaths, selNames = getSelectedPath(subDir, textDict, request.user)
+        debug("For subDir:", subDir, "found paths", selPaths, "and names", selNames)
         if selNames == "error":
             return cancelUploadEarly(request, projects, selPaths)
         if subDir.lower() in "meta sequence taxa shared files script contig":
@@ -1432,7 +1462,7 @@ def removeUploads(request):  # removes files from user_upload directory based on
                     try:
                         os.remove(curPath)
                     except Exception as e:
-                        print "Error while deleting file:", curFile, ":", e
+                        print "Error while deleting file:", curFile, ":", e  # TODO 1.4 error often triggers due to parent directory being deleted first
                 else:
                     print "Security!!! Files outside of given permissions,", username, "did it!"
                     results = {'error': 'Illegal access attempt'}
@@ -2160,8 +2190,8 @@ def select(request):
     if request.method == 'POST':
         uploaded = request.FILES["normFile"]
         # we specifically want myphylodb.biom here
-        if uploaded.name != "myphylodb.biom":
-            print "Wrong filename for pre normalized data"
+        if uploaded.name.split('.')[-1] != "biom":
+            print "Wrong file type for pre normalized data"
             # TODO 1.3 security error log
             return render(
                 request,
@@ -2183,9 +2213,18 @@ def select(request):
         functions.handle_uploaded_file(uploaded, myDir, uploaded.name)
 
         # parse given file for data via exploding panda
-        filename = str(myDir) + 'myphylodb.biom'
+        filename = str(myDir) + uploaded.name
         try:
-            savedDF, metaDF, remCatFields = functions.exploding_panda(filename, finalSampleIDs=[], catFields=[], quantFields=[])
+            # get sampleIDs here, read the file, go to 'columns' then 'id' for each column entry. Metadata is there too but not needed now
+            # since this should have been built my phylodb, we can just double check samples exist and match perms, then
+            # save pkl file with selection in it, rename file in correct spot and skip to analyses
+            with open(filename) as f:
+                myJson = json.load(f)
+            selList = []
+            for col in myJson['columns']:
+                selList.append(col['id'])
+            functions.write_taxa_summary(myDir+"available_taxa_summary.pkl", myJson['rows'])
+
         except Exception:
             return render(
                 request,
@@ -2197,17 +2236,39 @@ def select(request):
                  'locationBasedSampleDict': {}}
             )
 
-        selList = list(set(savedDF['sampleid']))
-
         # save selected samples file to users temp/ folder
+        #selList = list(set(savedDF['sampleid']))
         path = str(myDir) + 'usr_sel_samples.pkl'
 
         with open(path, 'wb') as f:
             pickle.dump(selList, f)
 
-        projectList = list(set(savedDF['projectid']))
+        # save as norm samples because we are skipping normalization
+        path = str(myDir) + 'usr_norm_samples.pkl'
 
-        if not Project.objects.filter(projectid__in=projectList).exists():
+        with open(path, 'wb') as f:
+            pickle.dump(selList, f)
+
+        # Update dataID to prevent expired selection bugs
+        thisUser = request.user.profile
+        thisUser.dataID = uuid4().hex
+        thisUser.save()
+        # so now we have samples selected and dataID updated, now we functionally skip norm by creating a phyloseq.biom
+
+        #projectList = list(set(savedDF['projectid']))   # missing projectid in savedDF, can add based on samples
+        projectList = []
+        permList = perms.getViewProjects(request)
+        allValid = True
+        for samp in selList:
+            myProj = Sample.objects.get(sampleid=samp).projectid  # TODO 1.3 refactor ID chain, id is actually a project
+            if myProj not in projectList:   # avoid duplicates
+                if myProj in permList:  # verify user has permission to view this project
+                    projectList.append(myProj.projectid)
+                else:
+                    allValid = False    # invalid permissions TODO 1.3 security error log
+
+        #print "ProjectList:", projectList
+        if not allValid: #Project.objects.filter(projectid__in=projectList).exists():
             return render(
                 request,
                 'select.html',
@@ -2218,7 +2279,7 @@ def select(request):
                  'locationBasedSampleDict': {}}
 
             )
-
+        #print "Projects exist"
         if not Reference.objects.filter(projectid__in=projectList).exists():
             return render(
                 request,
@@ -2229,7 +2290,7 @@ def select(request):
                  'method': 'POST',
                  'locationBasedSampleDict': {}}
             )
-
+        #print "References exist"
         if not Sample.objects.filter(sampleid__in=selList).exists():
             return render(
                 request,
@@ -2241,52 +2302,44 @@ def select(request):
                  'locationBasedSampleDict': {}}
             )
 
-        biome = {}
-        tempDF = savedDF.drop_duplicates(subset='sampleid', keep='last')
-        tempDF.set_index('sampleid', drop=True, inplace=True)
-
-        metaDF = tempDF.drop(['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund', 'rel_abund', 'abund_16S', 'rich', 'diversity'], axis=1)
-        myList = list(tempDF.index.values)
-
-        nameList = []
-        for i in myList:
-            tempPanda = metaDF.fillna("NaN")
-            nameList.append({"id": str(i), "metadata": tempPanda.loc[i].to_dict()})
-
-        # get list of lists with abundances
-        taxaOnlyDF = savedDF.loc[:, ['sampleid', 'kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName', 'otuid', 'abund']]
-        taxaOnlyDF = taxaOnlyDF.pivot(index='otuid', columns='sampleid', values='abund')
-        dataList = taxaOnlyDF.values.tolist()
-
-        # get list of taxa
-        namesDF = savedDF.loc[:, ['sampleid', 'otuid']]
-        savedDF['otuName'] = savedDF['otuName'].str.replace('gg', '')
-        namesDF['taxa'] = savedDF.loc[:, ['kingdomName', 'phylaName', 'className', 'orderName', 'familyName', 'genusName', 'speciesName', 'otuName']].values.tolist()
-        namesDF = namesDF.pivot(index='otuid', columns='sampleid', values='taxa')
-
-        taxaList = []
-        for index, row in namesDF.iterrows():
-            metaDict = {'taxonomy':  row[0]}
-            taxaList.append({"id": row[0][-1], "metadata": metaDict})
-
-        shape = [len(taxaList), len(nameList)]
-        biome['id'] = 'None'
-        biome['format'] = 'Biological Observation Matrix 1.0.0'
-        biome['format_url'] = 'http://biom-format.org'
-        biome['generated_by'] = 'myPhyloDB'
-        biome['type'] = 'OTU table'
-        biome['date'] = str(datetime.datetime.now())
-        biome['matrix_type'] = 'dense'
-        biome['matrix_element_type'] = 'float'
-        biome["shape"] = shape
-        biome['rows'] = taxaList
-        biome['columns'] = nameList
-        biome['data'] = dataList
-
+        # at this point, we've done everything we need to based on the contents of the biom file
+        # so now we just make sure its saved in the right place via a file rename
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
-        path = str(myDir) + 'phyloseq.biom'
-        with open(path, 'w') as outfile:
-            json.dump(biome, outfile, ensure_ascii=True, indent=4)
+        path = str(myDir) + 'myphylodb.biom'
+        try:
+            os.remove(path)
+        except Exception as ex:
+            pass
+        os.rename(filename, path)
+
+        # TODO 1.3 either here or in JS, restrict taxaLevel select based on data (ON ALL ANALYSES ACTUALLY)
+        # some projects don't have otu or such, we should probably just check the biom file after norm to see what level we can go to
+        # set some sort of flag every time norm finishes (and here as an equivalent) for this user, which is loaded by all pages?
+        # how to load this in browser without adding to each page, would need to be part of the shared function
+        # which controls the taxa level selector in the first place
+
+
+        # just need myphylodb.biom to be present in usr_temp/usr/ for analyses to find
+        # the file they gave us is in this directory already, just need to rename it (is it phyloseq type? or myphylodb?)
+        #with open(path, 'w') as outfile:
+        #    json.dump(biom, outfile, ensure_ascii=True, indent=4)
+        # TODO 1.3 normalize gets skipped with this process, but the norm button is still visible. HIDE
+        # when does this phyloseq.biom get used? I can't find it. We use myphylodb.biom that norm makes using select pkl
+        # so in theory we just need to parse out the select pkl and go to norm with it, though that won't preserve taxa
+        # since the goal of this is to preserve CORE taxa filtering via biom format, we should skip the norm step by
+        # saving a myphylodb.biom with CORE, parsing it for selected samples here before going straight to analyses
+
+        # main difference between current CORE biom export and myphylodb.biom is the id:name pair, whereas phyloseq is
+        # exclusively names, and CORE export is currently only id.
+        # if we do just make CORE export a myphylodb.biom, we can dramatically simplify this pipeline by parsing samples
+        # and saving the biom file in the right location alongside usr_sel_samples.pkl, should contain all needed info
+        # between those two files
+
+        # We need to export phyloseq style and just read the samples, then save the file for later use
+        # If we put this in norm (ie don't allow normalization from a biom file), we can just export myphylodb.biom
+        # files from analysis pages and such for quick subsetting (CORE in particular)
+        # for page visibility reasons, this is select instead of norm
+        # but its functionally both select and normalize, so we need to show analyses afterwards instead of norm (norm shouldn't work)
 
         return render(
             request,
@@ -2294,7 +2347,7 @@ def select(request):
             {'form9': UploadForm9,
              'selList': selList,
              'normpost': 'Success',
-             'method': 'POST'
+             'method': 'GET'
              }
              #'locationBasedSampleDict': {}}
         )
@@ -2835,6 +2888,16 @@ def CORR(request):
     return render(
         request,
         'corr.html'
+    )
+
+
+@login_required(login_url='/myPhyloDB/accounts/login/')
+def core(request):
+    functions.log(request, "PAGE", "CORE")
+    functions.cleanup('myPhyloDB/media/temp/core')
+    return render(
+        request,
+        'core.html'
     )
 
 

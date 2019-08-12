@@ -74,29 +74,6 @@
     }
     function getBiom() {
         var func = "analysis";
-        /*if (document.title == 'ANcOVA') {
-            func = 'anova';
-        } else if (document.title == 'CorrPlot') {
-            func = 'corr';
-        } else if (document.title == 'DiffAbund') {
-            func = 'diffabund';
-        } else if (document.title == 'GAGE') {
-            func = 'gage';
-        } else if (document.title == 'PCA') {
-            func = 'pca';
-        } else if (document.title == 'PCoA') {
-            func = 'pcoa';
-        } else if (document.title == 'SpAC') {
-            func = 'spac';
-        } else if (document.title == 'sPLS-Regr') {
-            func = 'spls';
-        } else if (document.title == 'WGCNA') {
-            func = 'wgcna';
-        } else if (document.title == 'CARET') {
-            func = 'rf';
-        } else {
-            func = 'unknown';
-        }*/
 
         $("#Export").css("background-color", "yellow").val("Running!");
             $.ajax({

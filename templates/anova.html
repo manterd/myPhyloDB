@@ -542,6 +542,7 @@
             errorBars();
         }
         function getCatGraphData() {
+            // TODO 1.4 make more shared functions for web templates (shared UI concepts bundled with?)
             RID = makeGUID();
             startTimer(RID);
             var arrayValsCat = [];
@@ -608,6 +609,7 @@
                 $("#container-1").empty().append('Analysis has been cancelled!');
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
             } else {
+                updateNodesCat();
                 var metaValsCat = '';
                 if (nodesCat.length > 0) {
                     metaValsCat = "{" + arrayValsCat.join(",") + "}";
@@ -800,6 +802,7 @@
                 $("#container-1").empty().append('Analysis has been cancelled!');
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
             } else {
+                updateNodesCat();
                 var metaValsCat = '';
                 if (nodesCat.length > 0) {
                     metaValsCat = "{" + arrayValsCat.join(",") + "}";
@@ -1734,6 +1737,7 @@
                 <td bgcolor="white" width="5px"></td>
                 <td id="row_taxa" bgcolor="white">
                     <select id="selectall-taxa" onChange="selectTree()">
+                        <!-- how to move this to a shared setup, or implement a shared variable to send up for max level> </!-->
                         <option value="0">None</option>
                         <option value="2">Phyla</option>
                         <option value="3">Classes</option>
@@ -1764,6 +1768,7 @@
                         <option value="4">Level 4</option>
                         <option value="5">GIBBs</option>
                         <option value="6">N cycle</option>
+                        <option value="6">P cycle</option>
                     </select>
                     &nbsp; <-- KEGG enzyme level
                 </td>

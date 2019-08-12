@@ -19,7 +19,7 @@ LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
 
 
-def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID):
+def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID, soilHealth=False):
     try:
         Cols = ['sampleid', 'rank', 'rank_id', 'rank_name']
         Dep = []
@@ -204,8 +204,18 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         metaDF.reset_index(drop=False, inplace=True)
+        #print "Type meta:", type(metaDF), "Type taxa:", type(taxaDF)
         finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='inner')
+        #print "Type final:", type(finalDF)
         finalDF.reset_index(drop=False, inplace=True)
+        #print "Type final2:", type(finalDF)
+
+        if soilHealth:
+            cashList = ['sampleid', 'soil_active_C_rating', 'soil_organic_matter_rating', 'soil_texture_sand', 'soil_k_rating',
+                        'soil_pH_rating', 'soil_texture_clay', 'soil_agg_stability_rating',
+                        'soil_ACE_protein_index_rating', 'soil_texture_silt', 'soil_p_rating',
+                        'soil_minor_elements_rating', 'soil_water_cap_rating', 'soil_respiration_four_day_rating', 'CASH_SHI_rating']
+            allFields = list(set(allFields) - set(cashList))
 
         if 'sample_name' not in allFields:
             wantedList = allFields + ['sample_name', 'sampleid', 'rank', 'rank_name', 'rank_id']
@@ -217,7 +227,37 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             finalDF = finalDF.groupby(wantedList)[['abund']].sum()
         elif DepVar == 1:
             finalDF['rel_abund'] = finalDF['rel_abund'].astype("float64")
-            finalDF = finalDF.groupby(wantedList)[['rel_abund']].sum()
+            #print "Type final3:", type(finalDF)
+            #print "Type groupBy:", type(finalDF.groupby(wantedList))
+            #print "Type rel:", type(finalDF.groupby(wantedList)['rel_abund'])
+            #print "Type [rel]:", type(finalDF.groupby(wantedList)[['rel_abund']])
+            #print "Cols:", finalDF.columns
+            #print "Wanted:", wantedList
+            #print "rel_abund:", finalDF['rel_abund']
+            # this groupby has too much data to handle properly, like 26 thousand rows of data here (errors with 7k too)
+            # did not error with 1600 rows of data. Can we do this in chunks?
+            # how to even split this up, if we want a column of sums. We'd need to sum each chunk, then sum the sums
+            # "negative dimensions" has to deal with overflowing when performing the groupby, its fine with 1600 rows, but not 7k
+            #print "finalDF preHead:", finalDF.head
+
+            finalDF = finalDF.groupby(wantedList)[['rel_abund']].sum()      # TODO 1.3 error here: negative dimensions not allowed (?)
+
+            # its fine to sum this as a series but not a dataframe (memory issue it seems, but only on dev build)
+            # could try summing as a series, then updating the appropriate column in the dataframe
+            #finalDF = finalDF.groupby(wantedList)
+            # TODO 1.3 I cannot make sense of this bug, it doesn't occur using the same code on the same dataset on live
+            # going to switch to qiime biom upload for now
+            #finalDF['rel_abund'] = finalDF['rel_abund'].sum()
+            #print "finalDF postHead:", finalDF.head
+            #print "finalDF PostCols:", finalDF.columns  # so yeah this is only rel_abund left
+            '''try:
+                finalDF = finalDF.groupby(wantedList)[['rel_abund']]
+                print "Grouped and selected", finalDF
+                # /\ this broke: "Cannot access attribute 'columns' of 'DataFrameGroupBy' objects, try using the 'apply' method"
+                finalDF = finalDF.sum()
+                print "Summed", finalDF.columns
+            except Exception as ex:
+                print "Error during test:", ex'''
         elif DepVar == 4:
             finalDF['abund_16S'] = finalDF['abund_16S'].astype("float64")
             finalDF = finalDF.groupby(wantedList)[['abund_16S']].sum()
@@ -228,8 +268,8 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             finalDF['diversity'] = finalDF['diversity'].astype("float64")
             finalDF = finalDF.groupby(wantedList)[['diversity']].sum()
 
-        finalDF.reset_index(drop=False, inplace=True)
-
+        finalDF.reset_index(drop=False, inplace=True)   # cannot reset_index on a series, cast to dataframe? what is going on?
+        debug("TaxaDF: returning finalDF as", type(finalDF))
         return finalDF, missingList
 
     except Exception:
@@ -822,6 +862,185 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             idList = ['K00376']
             nzDict[id] = idList
 
+        elif nzAll == 7:
+            ### Phosphoesterase genes
+            id = 'PHO: acid phosphatase'
+            idList = ['K01078']
+            nzDict[id] = idList
+
+            id = 'phoN: acid phosphatase (class A)'
+            idList = ['K09474']
+            nzDict[id] = idList
+
+            id = 'aphA: acid phosphatase (class B)'
+            idList = ['K03788']
+            nzDict[id] = idList
+
+            id = 'phoA: E3.1.3.1, phoA, phoB'
+            idList = ['K01077']
+            nzDict[id] = idList
+
+            id = ''  # TODO 1.3 more kegg
+            # jump
+            idList = ['K01113']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K01126']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K07048']
+            nzDict[id] = idList
+
+            ### Phytase genes
+            id = ''
+            idList = ['K01083']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K01093']
+            nzDict[id] = idList
+
+            ### Phosphonate degradation genes
+            id = ''
+            idList = ['K02043']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K06166']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K06165']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K06164']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K06163']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K05781']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K05780']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K06162']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K05774']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K09994']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K06167']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K03430']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K05306']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K06193']
+            nzDict[id] = idList
+
+            #Inorganic phosphate solubilizing genes
+            id = ''
+            idList = ['K01507']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K01524']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K00937']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K00117']
+            nzDict[id] = idList
+
+            # Phosphorus transporter genes
+            id = ''
+            idList = ['K03306']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K16322']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K02038']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K02036']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K02037']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K02040']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K02041']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K02044']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K02042']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K05814']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K05813']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K05816']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K05815']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K07657']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K07636']
+            nzDict[id] = idList
+
+            id = ''
+            idList = ['K02039']
+            nzDict[id] = idList
+
         elif nzAll == 10:
             ### PO4 Solubility
             id = 'pqqC: pyrroloquinoline-quinone synthase'
@@ -1056,6 +1275,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         taxaDF = pd.DataFrame()
         total = len(sampleList)
         counter = 1
+        debug("NZDF: Path")
         for i in sampleList:
             profileDF[i] = profileDF[i].astype("float64")
             tempDF = pd.DataFrame(index=profileDF.index)
@@ -1080,7 +1300,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             counter += 1
 
         functions.setBase(RID, curStep)
-
+        debug("NZDF: Map")
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
             namesDict = {}
@@ -1130,7 +1350,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             if nzAll < 5:
                 allDF.rename(columns=namesDict, inplace=True)
         else:
-            allDF = ''
+            allDF = ''  # soil health uses this
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
@@ -1138,6 +1358,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
         #taxaDF.reset_index(drop=False, inplace=True)
+        debug("NZDF: Melt")
         if DepVar == 0:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund')
         elif DepVar == 1:
@@ -1149,7 +1370,9 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
         elif DepVar == 4:
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
 
+
         taxaDF.set_index('sampleid', drop=True, inplace=True)
+        debug("NZDF: Merge")
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
         finalDF.reset_index(drop=False, inplace=True)
 
@@ -1212,6 +1435,8 @@ def sumKEGG(picrustDF, keggDict, nzAll, RID, PID, stops):
 
 
 def getFullTaxonomy(idList):
+    # this makes no assumptions about the level of each id in list, each can have a different level
+    # returns a dictionary with key : value of id : list of names of parent taxa (and self)
     recordDict = {}
     for id in idList:
         if Kingdom.objects.all().filter(kingdomid=id).exists():
@@ -1243,6 +1468,66 @@ def getFullTaxonomy(idList):
         record = '|'.join(qs[0])
         recordDict[id] = record
     return recordDict
+
+
+# Can assert that all ids given as args belong to the given level, does not support PGR atm TODO 1.3 PGR support?
+def getFullTaxaFromID(id, level):
+    results = []    # TODO 1.4 change this to a dictionary where k:v = taxID:taxName
+    # given level (kingdom phyla class etc), and list of ids, return a dictionary with key:val of id:list_of_parent_ids (+ source id)
+    if level == 1:
+        # kingdom is a weird case since its the top, so an idlist of kingdoms will have no parent ids
+        pass
+    elif level == 2:
+        if Phyla.objects.all().filter(phylaid=id).exists():
+            myPhyla = Phyla.objects.get(phylaid=id)
+            results.append(myPhyla.kingdomid.kingdomid)
+    elif level == 3:
+        if Class.objects.all().filter(classid=id).exists():
+            myClass = Class.objects.get(classid=id)
+            results.append(myClass.kingdomid.kingdomid)
+            results.append(myClass.phylaid.phylaid)
+    elif level == 4:
+        if Order.objects.all().filter(orderid=id).exists():
+            myOrder = Order.objects.get(orderid=id)
+            results.append(myOrder.kingdomid.kingdomid)
+            results.append(myOrder.phylaid.phylaid)
+            results.append(myOrder.classid.classid)
+    elif level == 5:
+        if Family.objects.all().filter(familyid=id).exists():
+            myFamily = Family.objects.get(familyid=id)
+            results.append(myFamily.kingdomid.kingdomid)
+            results.append(myFamily.phylaid.phylaid)
+            results.append(myFamily.classid.classid)
+            results.append(myFamily.orderid.orderid)
+    elif level == 6:
+        if Genus.objects.all().filter(genusid=id).exists():
+            myGenus = Genus.objects.get(genusid=id)
+            results.append(myGenus.kingdomid.kingdomid)
+            results.append(myGenus.phylaid.phylaid)
+            results.append(myGenus.classid.classid)
+            results.append(myGenus.orderid.orderid)
+            results.append(myGenus.familyid.familyid)
+    elif level == 7:
+        if Species.objects.all().filter(species=id).exists():
+            mySpecies = Species.objects.get(species=id)
+            results.append(mySpecies.kingdomid.kingdomid)
+            results.append(mySpecies.phylaid.phylaid)
+            results.append(mySpecies.classid.classid)
+            results.append(mySpecies.orderid.orderid)
+            results.append(mySpecies.familyid.familyid)
+            results.append(mySpecies.genusid.genusid)
+    elif level == 9:
+        if OTU_99.objects.all().filter(otuid=id).exists():
+            myOTU = OTU_99.objects.get(otuid=id)
+            results.append(myOTU.kingdomid.kingdomid)
+            results.append(myOTU.phylaid.phylaid)
+            results.append(myOTU.classid.classid)
+            results.append(myOTU.orderid.orderid)
+            results.append(myOTU.familyid.familyid)
+            results.append(myOTU.genusid.genusid)
+            results.append(myOTU.speciesid.speciesid)
+    results.append(id)
+    return results
 
 
 def getFullKO(idList):

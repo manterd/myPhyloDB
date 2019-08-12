@@ -36,4 +36,5 @@ urlpatterns = [
     url(r'^getServerMetrics/$', functions.getServerMetrics, name='getServerMetrics'),
     url(r'^getRawDataTab/$', functions.getRawDataTab, name='getRawDataTab'),
     url(r'^getRawDataBiom/$', functions.getRawDataBiom, name='getRawDataBiom'),
+    url(r'^getCoreBiom/$', functions.getCoreBiom, name='getCoreBiom'),
 ]

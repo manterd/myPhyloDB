@@ -28,4 +28,5 @@ urlpatterns = [
     url(r'^upload/$', views.files, name='files'),
     url(r'^console/$', views.admin_console, name='console'),
     url(r'^history/$', views.history, name='history'),
+    url(r'^core/$', views.core, name='core'),
 ]

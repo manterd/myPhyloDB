@@ -52,8 +52,8 @@ def getProjectTreeChildren(request):    # get the samples belonging to projects 
         samples = Sample.objects.filter(projectid=projectid).values_list('sampleid', flat=True)
 
         nodes = []
-        reads = Sample.objects.filter(sampleid__in=samples).order_by('sample_name').values('sampleid', 'sample_name', 'reads')
-        for i in reads:
+        sampVals = Sample.objects.filter(sampleid__in=samples).order_by('sample_name').values('sampleid', 'sample_name', 'reads')
+        for i in sampVals:
             if int(i['reads'] > 0):
                 myNode = {
                     'title': 'Name: ' + str(i['sample_name']) + '; Reads: ' + str(i['reads']),
@@ -1168,89 +1168,113 @@ def getTaxaTreeChildren(request):   # get deeper layers of the taxa tree upon re
         taxa = request.GET["tooltip"]
         id = request.GET["id"]
 
+        # load pkl file containing unique taxa ids
+        path = str(myDir) + 'available_taxa_summary.pkl'
+        with open(path, 'rb') as f:
+            uniqueTaxaDict = pickle.load(f)
+
+
         nodes = []
         if taxa == 'Kingdom':
             qs = Phyla.objects.filter(phylaid__in=selected_taxa.values_list('phylaid')).filter(**{'kingdomid': id}).order_by('phylaName')
-            for item in qs:
-                myNode = {
-                    'title': item.phylaName,
-                    'id': item.phylaid,
-                    'tooltip': "Phyla",
-                    'isFolder': True,
-                    'isLazy': True
-                }
-                nodes.append(myNode)
+            # TODO 1.3 filter results by looping through unique kingdoms from middleground file, if file_taxa in qs: final_data.append(qs data)
+            # hrm, qs contains phyla that match selected samples
+            # uniqueTaxaDict['phyla'] should be a list of valid phyla
+            # len(uniqueTaxaDict['phyla']) <= len(qs), so we'll loop uniqueTaxa first
+            for phyla in uniqueTaxaDict['phyla']:
+                for item in qs:
+                    if phyla == item.phylaid:
+                        myNode = {
+                            'title': item.phylaName,
+                            'id': item.phylaid,
+                            'tooltip': "Phyla",
+                            'isFolder': True,
+                            'isLazy': True
+                        }
+                        nodes.append(myNode)
 
         if taxa == 'Phyla':
             qs = Class.objects.filter(classid__in=selected_taxa.values_list('classid')).filter(**{'phylaid': id}).order_by('className')
-            for item in qs:
-                myNode = {
-                    'title': item.className,
-                    'id': item.classid,
-                    'tooltip': "Class",
-                    'isFolder': True,
-                    'isLazy': True
-                }
-                nodes.append(myNode)
+            for tax_class in uniqueTaxaDict['class']:
+                for item in qs:
+                    if tax_class == item.classid:
+                        myNode = {
+                            'title': item.className,
+                            'id': item.classid,
+                            'tooltip': "Class",
+                            'isFolder': True,
+                            'isLazy': True
+                        }
+                        nodes.append(myNode)
 
         elif taxa == 'Class':
             qs = Order.objects.filter(orderid__in=selected_taxa.values_list('orderid')).filter(**{'classid': id}).order_by('orderName')
-            for item in qs:
-                myNode = {
-                    'title': item.orderName,
-                    'id': item.orderid,
-                    'tooltip': "Order",
-                    'isFolder': True,
-                    'isLazy': True
-                }
-                nodes.append(myNode)
+            for order in uniqueTaxaDict['order']:
+                for item in qs:
+                    if order == item.orderid:
+                        myNode = {
+                            'title': item.orderName,
+                            'id': item.orderid,
+                            'tooltip': "Order",
+                            'isFolder': True,
+                            'isLazy': True
+                        }
+                        nodes.append(myNode)
 
         elif taxa == 'Order':
             qs = Family.objects.filter(familyid__in=selected_taxa.values_list('familyid')).filter(**{'orderid': id}).order_by('familyName')
-            for item in qs:
-                myNode = {
-                    'title': item.familyName,
-                    'id': item.familyid,
-                    'tooltip': "Family",
-                    'isFolder': True,
-                    'isLazy': True
-                }
-                nodes.append(myNode)
+            for family in uniqueTaxaDict['family']:
+                for item in qs:
+                    if family == item.familyid:
+                        myNode = {
+                            'title': item.familyName,
+                            'id': item.familyid,
+                            'tooltip': "Family",
+                            'isFolder': True,
+                            'isLazy': True
+                        }
+                        nodes.append(myNode)
 
         elif taxa == 'Family':
             qs = Genus.objects.filter(genusid__in=selected_taxa.values_list('genusid')).filter(**{'familyid': id}).order_by('genusName')
-            for item in qs:
-                myNode = {
-                    'title': item.genusName,
-                    'id': item.genusid,
-                    'tooltip': "Genus",
-                    'isFolder': True,
-                    'isLazy': True
-                }
-                nodes.append(myNode)
+            for genus in uniqueTaxaDict['genus']:
+                for item in qs:
+                    if genus == item.genusid:
+                        myNode = {
+                            'title': item.genusName,
+                            'id': item.genusid,
+                            'tooltip': "Genus",
+                            'isFolder': True,
+                            'isLazy': True
+                        }
+                        nodes.append(myNode)
 
         elif taxa == 'Genus':
             qs = Species.objects.filter(speciesid__in=selected_taxa.values_list('speciesid')).filter(**{'genusid': id}).order_by('speciesName')
-            for item in qs:
-                myNode = {
-                    'title': item.speciesName,
-                    'id': item.speciesid,
-                    'tooltip': "Species",
-                    'isFolder': True,
-                    'isLazy': True
-                }
-                nodes.append(myNode)
+            for species in uniqueTaxaDict['species']:
+                for item in qs:
+                    if species == item.speciesid:
+                        myNode = {
+                            'title': item.speciesName,
+                            'id': item.speciesid,
+                            'tooltip': "Species",
+                            'isFolder': True,
+                            'isLazy': True
+                        }
+                        nodes.append(myNode)
 
         elif taxa == 'Species':
             qs = OTU_99.objects.filter(otuid__in=selected_taxa.values_list('otuid')).filter(**{'speciesid': id}).order_by('otuName')
-            for item in qs:
-                myNode = {
-                    'title': item.otuName,
-                    'id': item.otuid,
-                    'tooltip': "OTU_99",
-                    'isLazy': False
-                }
-                nodes.append(myNode)
+            for otu in uniqueTaxaDict['otu']:
+                for item in qs:
+                    if otu == item.otuid:
+                        myNode = {
+                            'title': item.otuName,
+                            'id': item.otuid,
+                            'tooltip': "OTU_99",
+                            'isLazy': False
+                        }
+                        nodes.append(myNode)
 
         elif taxa == 'OTU_99':
             pass
@@ -1881,7 +1905,8 @@ def getLocationSamplesTree(request):
         return HttpResponse(response_dict, content_type='application/json')
 
 
-def getFilterSamplesTree(request):
+def getFilterSamplesTree(request):  # TODO 1.4 improve performance here by lazy-loading samples
+                                    # (atm loads projects AND samples all at once)
     # request should contain marker data (aka lat lon pair, sampleids, projectnames)
     # use sampleids to build tree of sample names, parent node is projectname (selectable but not sent if selected)
     # tree should link sampleids of itself to ids in main select tree, mirror select/unselect

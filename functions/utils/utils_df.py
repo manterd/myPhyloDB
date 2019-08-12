@@ -16,6 +16,8 @@ import threading
 import time
 import zipfile
 import math
+from natsort import natsorted
+from PyPDF2 import PdfFileReader, PdfFileMerger
 
 from database.models import Project, Reference, Profile
 
@@ -26,6 +28,7 @@ from database import perms
 
 from Queue import Queue
 import psutil
+import pickle
 
 process = psutil.Process(os.getpid())
 
@@ -160,6 +163,17 @@ def handle_uploaded_file(f, path, name):  # move file from memory to disc
         print "Was moving", f, "to", path, "with name", name
 
 
+def mergePDF(path, finalFile):
+
+    # Combining Pdf files from path into single finalFile
+    pdf_files = [f for f in os.listdir(path) if f.endswith("pdf")]
+    pdf_files = natsorted(pdf_files, key=lambda y: y.lower())
+    merger = PdfFileMerger()
+    for filename in pdf_files:
+        merger.append(PdfFileReader(file(os.path.join(path, filename), 'rb')))
+    merger.write(finalFile)
+
+
 def remove_list(refList, user):
     #p_uuid = list(Reference.objects.filter(path__in=refList).values_list('projectid', flat=True))
     # Remove record from reference table
@@ -225,7 +239,7 @@ def taxaProfileDF(mySet):
     return taxaDF
 
 
-def PCoA(dm):
+def PCoA(dm):   # TODO 1.4 why is this in util_df?
     E_matrix = make_E_matrix(dm)
     F_matrix = make_F_matrix(E_matrix)  # TODO 1.3 fix
     eigvals, eigvecs = np.linalg.eigh(F_matrix)
@@ -428,7 +442,7 @@ def getRawDataTab(request):
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         path = str(myDir) + str(RID) + '.biom'
-        savedDF = exploding_panda2(path, treeType)
+        savedDF = exploding_panda2(path, treeType)  # TODO 1.3 this is probably broken now
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         fileName = str(myDir) + str(request.user.username) + '.' + str(func) + '.csv'
@@ -455,6 +469,20 @@ def getRawDataBiom(request):
 
         myDir = '../../myPhyloDB/media/temp/' + str(func) + '/'
         fileName = str(myDir) + str(RID) + '.biom'
+
+        myDict = {'name': str(fileName)}
+        res = json.dumps(myDict)
+        return HttpResponse(res, content_type='application/json')
+
+
+def getCoreBiom(request):
+    if request.is_ajax():
+        RID = request.GET["all"]
+
+        myDir = '../../myPhyloDB/media/temp/core/Biom/' + str(RID) + "/"
+        # all biom files for this RID are in biom/rid directory
+        # rid.biom.zip is the archive containing the biom files
+        fileName = str(myDir) + 'core.biom.zip'
 
         myDict = {'name': str(fileName)}
         res = json.dumps(myDict)
@@ -510,14 +538,18 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
         for key in sorted(metaDictCat):
             catFields.append(key)
             catValues.extend(metaDictCat[key])
-    catSampleLists = []
+    catSampleIDs = []
     if metaIDsCat:
         idDictCat = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
         for key in sorted(idDictCat):
-            catSampleLists.append(idDictCat[key])
-    catSampleIDs = []
-    if catSampleLists:
-        catSampleIDs = list(set.intersection(*map(set, catSampleLists)))
+            myIDs = idDictCat[key]
+            if type(myIDs) == list:
+                print "List!"
+                for ID in myIDs:
+                    catSampleIDs.append(ID)
+            else:
+                print "Not list!"
+                catSampleIDs.append(myIDs)
     quantFields = []
     quantValues = []
     if metaValsQuant:
@@ -546,6 +578,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     myDir = 'myPhyloDB/media/usr_temp/' + str(username) + '/'
     path = str(myDir) + 'myphylodb.biom'
     # if there are memory issues in analysis, blame the exploding panda
+    debug("getMetaDF: Exploding Panda")
     savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields, levelDep=levelDep, depVar=DepVar)
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
 
@@ -647,10 +680,15 @@ def categorize(dataFrame):
     colCat = 0
     #print "Precat:", dataFrame.memory_usage().sum() / 1024.0 ** 2
     for col in dataFrame:
-        if float(100.0 * len(dataFrame[col].unique()) / len(dataFrame[col])) < 50.0:
-            dataFrame[col] = dataFrame[col].astype("category")
-            dataFrame[col].cat.add_categories("NaN")
-            colCat += 1
+        try:
+            if float(100.0 * len(dataFrame[col].unique()) / len(dataFrame[col])) < 50.0:
+                dataFrame[col] = dataFrame[col].astype("category")
+                if "NaN" not in dataFrame[col].cat.categories:
+                    dataFrame[col] = dataFrame[col].cat.add_categories("NaN")
+                colCat += 1
+        except Exception as exc:
+            print "Exception with categorize:", exc
+            pass
         #else:
             #print ">=50% uniques:", col
         colTotal += 1
@@ -674,6 +712,7 @@ def memDiff():
 
 def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False, depVar=10):
     # this function is the primary memory hog for analysis, and the largest chunk of normalize too
+    # this uses the myphylodb.biom file normalization made
     global prevMem, memTally
     memTally = 0
     prevMem = process.memory_info().rss / 1024.0 ** 2
@@ -681,12 +720,13 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     file = open(path)
     data = json.load(file)      # assuming data is the main spike for this area, ideally be done with it ASAP (before peak), for cleanup sake
     file.close()
-
+    debug("Exploding panda loaded json", len(data))
     memDiff()   # 139.8
 
     # Get metadata
     datCols = data['columns']
     datRows = data['rows']
+    debug("Cols and Rows", len(datCols), len(datRows))
     # get metadata into dicionary keyed by id
     metaDict = {}
     for i in datCols:
@@ -696,35 +736,35 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     for i in datRows:
         tempDict = {}
         taxon = i['metadata']['taxonomy']
-        if taxon[0]:
+        taxLength = len(taxon)
+        if taxLength > 0:
             tempDict['kingdomid'] = taxon[0].split(': ')[0]
             tempDict['kingdomName'] = taxon[0].split(': ')[1]
-        if taxon[1]:
+        if taxLength > 1:
             tempDict['phylaid'] = taxon[1].split(': ')[0]
             tempDict['phylaName'] = taxon[1].split(': ')[1]
-        if taxon[2]:
+        if taxLength > 2:
             tempDict['classid'] = taxon[2].split(': ')[0]
             tempDict['className'] = taxon[2].split(': ')[1]
-        if taxon[3]:
+        if taxLength > 3:
             tempDict['orderid'] = taxon[3].split(': ')[0]
             tempDict['orderName'] = taxon[3].split(': ')[1]
-        if taxon[4]:
+        if taxLength > 4:
             tempDict['familyid'] = taxon[4].split(': ')[0]
             tempDict['familyName'] = taxon[4].split(': ')[1]
-        if taxon[5]:
+        if taxLength > 5:
             tempDict['genusid'] = taxon[5].split(': ')[0]
             tempDict['genusName'] = taxon[5].split(': ')[1]
-        if taxon[6]:
+        if taxLength > 6:
             tempDict['speciesid'] = taxon[6].split(': ')[0]
             tempDict['speciesName'] = taxon[6].split(': ')[1]
-        if taxon[7]:
+        if taxLength > 7:
             tempDict['otuid'] = taxon[7].split(': ')[0]
             tempDict['otuName'] = taxon[7].split(': ')[1]
         taxaDict[str(i['id'])] = tempDict
     # Get count data and calculate various dependent variables
     sampleids = [col['id'] for col in datCols]
     taxaids = [col['id'] for col in datRows]
-
     memDiff()   # 70.38
     mat = np.asarray(data['data']).T.tolist()
     memDiff()   # 72.13
@@ -737,9 +777,9 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     memDiff()   # -0.996
 
     metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
-    # can cleanup metaDict now? yes, it is unused after this point
     metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
     metaDF.set_index('sampleid', inplace=True)
+    # this /\ is duplicating the index somehow, and verify_integrity doesn't fix the issue
 
     memDiff()   # 0.465
     categorize(metaDF)
@@ -755,7 +795,8 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     memDiff()   # 0.0
 
     if finalSampleIDs:
-        metaDF = metaDF.loc[finalSampleIDs]
+        debug("Exploding_panda: finalSampleIDs:", finalSampleIDs)
+        metaDF = metaDF.loc[finalSampleIDs]     # TODO 1.3 error here when small sample count is run in soil health (?)
 
     metaDF.dropna(axis=1, how='all', inplace=True)
     metaDF.dropna(axis=0, how='all', inplace=True)
@@ -768,9 +809,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
         df = df.loc[finalSampleIDs]
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
-
     memDiff()   # 22.04
-
     # check depVar, 0 for abundDF, 1 for rel_abundDF, 2 for richDF, 3 for diversityDF, 4 for abund_16SDF, ALL for all
     abundDF = df.reset_index(drop=False)
     abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
@@ -884,16 +923,6 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
                 if noLevels < 2:
                     catFields.remove(i)
                     remCatFields.append(i)
-    if catFields or quantFields:
-        allFields = catFields + quantFields
-        if 'sample_name' not in allFields:
-            allFields.append('sample_name')
-        debug("Selected fields:", allFields)
-        avail = metaDF.columns.values
-        debug("Available fields:", avail)
-        common = list(set(avail) & set(allFields))
-        debug("Common fields:", common)
-        metaDF = metaDF[common]
     memDiff()   # 0.003
 
     # merging meta and counts into saved
@@ -936,49 +965,51 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
 
 
 def exploding_panda2(path, treeType):
-    # Load file
+    # Load file     # TODO 1.3 revert changes to this function based on getRawTabData's needs
     file = open(path)
     data = json.load(file)
     file.close()
-
     # Get metadata
     d = data['columns']
     metaDict = {}
     for i in d:
-        metaDict[str(i['id'])] = i['metadata']
+        print "i:", i
+        metaDict[str(i['id'][0])] = i['metadata']
     metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
     metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
     metaDF.set_index('sampleid', inplace=True)
-
     metaDF.dropna(axis=1, how='all', inplace=True)
     metaDF.dropna(axis=0, how='all', inplace=True)
-
+    print "Meta\n", metaDF
     # Get count data and calculate various dependent variables
-    sampleids = [col['id'] for col in data['columns']]
-    taxaids = [col['id'] for col in data['rows']]
+    sampleids = [col['id'][0] for col in data['columns']]
+    taxaids = [col['id'][0] for col in data['rows']]
 
     mat = data['data']
     mat = np.asarray(mat).T.tolist()
     df = pd.DataFrame(mat, index=sampleids, columns=taxaids)
-
-    abundDF = df.reset_index(drop=False)
+    print "DF\n", df    # sampleids are the row labels, for some reason turning to NaN in abundDF, but present here
+    abundDF = df.reset_index(drop=False)    # changed drop back to false, sampleid stays in abund now
     abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
     abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
+    # TODO sampleid is NaN, taxaid is correct though FIXED
     abundDF.set_index('sampleid', inplace=True)
-
+    print "Abund\n", abundDF
     countDF = pd.DataFrame({
         'taxaid': abundDF['variable'],
         'DepVar': abundDF['value']
     }, index=abundDF.index)
-
+    print "Count\n", countDF
     savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
     savedDF.reset_index(drop=False, inplace=True)
-
+    #savedDF.drop(['0', '1', '2'], axis=1)
+    print "Saved\n", savedDF  # this is empty with three index columns, depvar, and taxaid (no actual index)
+    print "SavedColumns:", savedDF.columns
     d = data['rows']
     taxaDict = {}
     for i in d:
         tempDict = {}
-        taxon = i['metadata']['taxonomy']
+        taxon = i['metadata'][0]
         length = len(taxon)
         if treeType == 1:
             if length > 0:
@@ -1009,15 +1040,22 @@ def exploding_panda2(path, treeType):
             if length > 4:
                 tempDict['Level 5'] = taxon[4]
 
-        taxaDict[str(i['id'])] = tempDict
+        taxaDict[str(i['id'][0])] = tempDict
     taxaDF = pd.DataFrame.from_dict(taxaDict, orient='index').reset_index()
     taxaDF.set_index('index', inplace=True)
     taxaDF.reset_index(drop=False, inplace=True)
     taxaDF.rename(columns={'index': 'taxaid'}, inplace=True)
-
-    savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')
-    savedDF.reset_index(drop=False, inplace=True)
-
+    print "Taxa\n", taxaDF   # TODO the merge is failing, taxa is missing taxaid column (kind of important)
+    print "TaxaColumns", taxaDF.columns
+    try:
+        savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')
+        print "Merged"
+        savedDF.reset_index(drop=True, inplace=True)
+    except Exception as ACK:
+        print "Exception with savedDF in explodingPanda2:", ACK
+    print "Final\n", savedDF
+    print "FinalColumns", savedDF.columns   # missing abundances? or does depvar cover that?
+    print "FinalDepVar", savedDF['DepVar']
     return savedDF
 
 
@@ -1113,6 +1151,7 @@ def recLabels(lists, level):
     return makeLabels(" ", splitset)
 
 
+# TODO 1.4 add documentation for old code like this
 def makeLabels(name, list):
     retDict = {}
     if list.__len__() == 1:
@@ -1155,3 +1194,118 @@ def remove_string_from_file_name(file_path, string_to_remove, dry_run=False):
         print "Would rename {} to {}".format(file_path, new_path)
     else:
         os.rename(file_path, new_path)
+
+
+def rewrite_biom(samples, biomPath, selected):
+    headers = []
+    for thing in samples:
+        headers.append(thing)
+    with open(biomPath) as f:
+        myJson = json.load(f)
+
+    for part in myJson['rows']:
+        # id is database id of lowest level of CORE taxa
+        # metadata is a list of names of taxa, going from kingdom down to lowest level
+        # need to take in ids and send them to function, can change function to run one at a time
+        myID = part['id'][0]
+        myParents = functions.getFullTaxaFromID(myID, selected)  # where is level from at this point
+        myMeta = part['metadata'][0]
+        newMeta = []
+        newIter = 0
+        # actually want k:v of metadata: {taxonomy:[list of strings]}
+        for parent in myMeta:
+            newMeta.append(str(myParents[newIter]) + ": " + str(parent))
+            newIter += 1
+        part['id'] = myID
+        part['metadata'] = {'taxonomy': newMeta}
+    for part in myJson['columns']:
+        # part[metadata] is a list of values, each one needs its column
+        iter = 0
+        newPart = {}
+        for subpart in part['metadata']:
+            if headers[iter] != "sampleid":
+                newPart[headers[iter]] = subpart
+            iter += 1
+        part['id'] = part['id'][0]
+        part['metadata'] = newPart
+    myJson['format'] = "myPhyloDB v.1.2.0"
+    myJson['generated_by'] = "myPhyloDB"
+    myJson['matrix_type'] = myJson['matrix_type'][0]
+    myJson['format_url'] = myJson['format_url'][0]
+    myJson['date'] = myJson['date'][0]
+    myJson['type'] = myJson['type'][0]
+    myJson['id'] = "None"
+    myJson['matrix_element_type'] = myJson['matrix_element_type'][0]
+    with open(biomPath, 'w') as outfile:
+        json.dump(myJson, outfile, ensure_ascii=True, indent=4)
+
+
+def write_taxa_summary(path, data):
+    # write lists of unique taxa for each level based on given data
+    # output file is exactly path (includes file name)
+    # should check that path is valid first, directory exists etc
+
+    # find each unique value among the levels of taxa
+    # final output should be one row per level of taxa available, each row contains a list of unique ids
+    # we are not necessarily given all levels, but each taxa will go to the SAME level for this call (not useful)
+    # data should be a list of dictionaries
+    # using dictionaries to store unique values we find as keys, since duplicate keys affect the same entry, and hashing
+    # should have much better performance than searching each list for each entry
+    uniqueKingdoms = {}
+    uniquePhyla = {}
+    uniqueClasses = {}
+    uniqueOrders = {}
+    uniqueFamilies = {}
+    uniqueGenera = {}
+    uniqueSpecies = {}
+    uniqueOTUs = {}
+
+    for taxonomy in data:
+        # taxonomy should be a dictionary, id:lowestid (not relevant) metadata:{taxonomy:[taxaLevelList]}
+        localIter = 0   # using this to track level
+        for id in taxonomy['metadata']['taxonomy']:
+            id = id.split(": ")[0]
+            if localIter == 0:
+                # kingdom
+                uniqueKingdoms[id] = 0
+            if localIter == 1:
+                # phyla
+                uniquePhyla[id] = 0
+            if localIter == 2:
+                # class
+                uniqueClasses[id] = 0
+            if localIter == 3:
+                # order
+                uniqueOrders[id] = 0
+            if localIter == 4:
+                # family
+                uniqueFamilies[id] = 0
+            if localIter == 5:
+                # genus
+                uniqueGenera[id] = 0
+            if localIter == 6:
+                # species
+                uniqueSpecies[id] = 0
+            if localIter == 7:
+                # otu
+                uniqueOTUs[id] = 0
+            localIter += 1
+            # TODO 1.3 PGPR?
+
+    uniqueKingdoms = uniqueKingdoms.keys()
+    uniquePhyla = uniquePhyla.keys()
+    uniqueClasses = uniqueClasses.keys()
+    uniqueOrders = uniqueOrders.keys()
+    uniqueFamilies = uniqueFamilies.keys()
+    uniqueGenera = uniqueGenera.keys()
+    uniqueSpecies = uniqueSpecies.keys()
+    uniqueOTUs = uniqueOTUs.keys()
+
+    # now we have lists of unique ids for each level, write to file one line per level
+    # alternatively, make a dictionary and just tell pickle to do it
+    taxa_summary_dict = {'kingdom': uniqueKingdoms, 'phyla': uniquePhyla, 'class': uniqueClasses, 'order': uniqueOrders,
+                         'family': uniqueFamilies, 'genus': uniqueGenera, 'species': uniqueSpecies, 'otu': uniqueOTUs}
+
+    with open(path, 'wb') as f:
+        pickle.dump(taxa_summary_dict, f)
+

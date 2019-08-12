@@ -316,8 +316,16 @@
         </table>
         <table width="100%" border="2" cellspacing="0" cellpadding="1" id="biom" style="display: none">
             <tr>
-                <td>Taxa (.biom)</td>
+                <td>feature-table.biom</td>
+                <td><input type="file" name="sharedfiles" multiple></td>
+            </tr>
+            <tr>
+                <td>taxonomy.tsv</td>
                 <td><input type="file" name="taxafiles" multiple></td>
+            </tr>
+            <tr>
+                <td>sequences.fasta</td>
+                <td><input type="file" name="sequencefiles" multiple></td>
             </tr>
         </table>
         <br>
@@ -348,6 +356,6 @@
             </td>
         </tr>
     </table>
-    <p><input id="clickMe" type="submit" value="Delete selected" onClick="removeUploads()"/></p>
+    <p><input id="clickMe" type="submit" value="Delete selected" onClick="removeUploads(); //TODO 1.3 add feature to download files (remove perms = edit, download perms = view)"/></p>
     <br><br>
 {% endblock my_content %}

@@ -638,7 +638,7 @@ class Kingdom(models.Model):
 
 
 class Phyla(models.Model):
-    kingdomid = models.ForeignKey(Kingdom)
+    kingdomid = models.ForeignKey(Kingdom)  # TODO 1.4 refactor id foreignkey fields to more appropriate names
     phylaid = models.TextField(primary_key=True)
     phylaName = models.CharField(max_length=90, blank=True)
 

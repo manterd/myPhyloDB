@@ -131,6 +131,7 @@
             }
 
             if (checkDupes(arrayValsCat)) {
+                updateNodesCat();
                 var metaValsCat = '';
                 if (nodesCat.length > 0) {
                     metaValsCat = "{" + arrayValsCat.join(",") + "}";

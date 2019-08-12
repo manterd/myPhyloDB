@@ -208,7 +208,7 @@ def process(pid):
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
                     elif funcName == "getCatUnivData":
                         myAnalysis = analysis.Anova(request, RID, stopList, pid)
-                        recent[RID] = myAnalysis.run()
+                        recent[RID] = myAnalysis.run()  # can make this line shared once all analyses are ported over
                     elif funcName == "getQuantUnivData":
                         myAnalysis = analysis.Anova(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run(quant=True)
@@ -230,6 +230,9 @@ def process(pid):
                     elif funcName == "getGAGE":
                         myAnalysis = analysis.Gage(request, RID, stopList, pid)
                         recent[RID] = myAnalysis.run()
+                    elif funcName == "getCore":
+                        myAnalysis = analysis.Core(request, RID, stopList, pid)
+                        recent[RID] = myAnalysis.run()
                     elif funcName == "getSPLS":
                         recent[RID] = functions.getSPLS(request, stopList, RID, pid)
                     elif funcName == "getWGCNA":
@@ -238,7 +241,6 @@ def process(pid):
                         recent[RID] = functions.getSpAC(request, stopList, RID, pid)
                     elif funcName == "getsoil_index":
                         recent[RID] = functions.getsoil_index(request, stopList, RID, pid)
-
                     else:
                         # received a function name that we don't support
                         # either a developer typo exists (here or on a web page) OR someone is trying to break things
@@ -270,6 +272,7 @@ def process(pid):
 
 def cleanup(RID, username):   # cleanup and removeRID two parts of the same concept, group and add recent and such cleanup
     global queueFuncs, queueTimes, queueUsers, queueList, cleanupQueue, base, stage, time1, time2, TimeDiff
+    # TODO 1.3 cleanup rplots and such (find directories named RID and remove them and their content)
     # get the user's recent RID list, add the new RID, and potentially receive an older RID to add to the queue
     myProf = UserProfile.objects.get(user=User.objects.get(username=username))
     toClean = myProf.addRecentRID(RID)
@@ -306,7 +309,7 @@ def cleanup(RID, username):   # cleanup and removeRID two parts of the same conc
                 except Exception as fileEx:
                     print "Error during tempfile deletion:", fileEx
                     pass
-            for sub in fname[1]:
+            for sub in fname[1]:        # atm these check filenames only, not directories
                 try:
                     if sub.split('.')[0] == str(cleanRID):
                         fullFname = str(fname[0]) + "/" + str(sub)
