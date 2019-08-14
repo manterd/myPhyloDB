@@ -57,7 +57,7 @@ def datstop(request):
                         author=request.user)
                 retStuff = render(
                     request,
-                    'upload.html',
+                    'process.html',
                     {'projects': projects,
                      'form1': UploadForm1,
                      'form2': UploadForm2,
@@ -260,7 +260,7 @@ def datfuncCall(request):
     datQList.append(qDict)
     datQ.put(qDict, True)
     datStatDict[RID] = int(datQ.qsize())
-    debug("Added statDict for RID", RID)    # TODO 1.3 it seems to take a while to get here
+    debug("Added statDict for RID", RID)    # TODO 1.3 chunk based uploader will get this going faster
 
     # print log info, need to write this to a file somewhere
     functions.log(request, "QADD", funcName)

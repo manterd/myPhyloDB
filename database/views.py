@@ -187,7 +187,7 @@ def upload(request):
 
     return render(
         request,
-        'upload.html',
+        'process.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
@@ -301,7 +301,7 @@ def upStop(request):  # upStop is not cleaning up uploaded files (directory, sel
     #print "Got projects, returning"
     return render(
         request,
-        'upload.html',
+        'process.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
@@ -332,7 +332,7 @@ def upErr(msg, request, dest, sid):
 
     return render(
         request,
-        'upload.html',
+        'process.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
@@ -469,7 +469,7 @@ def cancelUploadEarly(request, projects, reason):
     functions.log(request, "UP_FAIL", reason)
     return render(
         request,
-        'upload.html',
+        'process.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
@@ -1310,7 +1310,7 @@ def uploadFunc(request, stopList):
 
     return render(
         request,
-        'upload.html',
+        'process.html',
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,

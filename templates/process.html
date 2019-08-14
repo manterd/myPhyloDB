@@ -1,7 +1,7 @@
 {% extends 'site_base.html' %}
 
 {% block pagetitle %}
-    <title>Upload</title>
+    <title>Process</title>
 {% endblock %}
 
 {% block user %}
@@ -624,8 +624,6 @@
         function updateStage(stage) {
             $("#stage").empty().append(stage);
         }
-
-        // TODO 1.3 page title still shows as upload
 
         window.onbeforeunload = function() {
             localStorage.setItem("moStatSave", $('#mothurStat').val());

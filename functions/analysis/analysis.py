@@ -2613,7 +2613,7 @@ class PCoA(Analysis):
             debug("Stopping!")
             return HttpResponse(getStopDict(), content_type='application/json')
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
+        debug("PCoA: count_rDF")
         functions.setBase(self.RID, 'Step 3 of 9: Calculating distance matrix...')
 
         if os.name == 'nt':
@@ -2675,6 +2675,8 @@ class PCoA(Analysis):
         r("mat <- as.matrix(dist, diag=TRUE, upper=TRUE)")
         mat = r.get("mat")
 
+        debug("PCoA: R setup")
+
         if len(self.catFields) > 1:
             for index, row in self.metaDF.iterrows():
                 self.metaDF.loc[index, 'merge'] = ".".join(row[self.catFields])
@@ -2686,7 +2688,7 @@ class PCoA(Analysis):
         distDF = pd.DataFrame(mat, columns=[rowList], index=rowList)
 
         functions.setBase(self.RID, 'Step 3 of 9: Calculating distance matrix...done!')
-
+        debug("PCoA: metaDF")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
             debug("Stopping!")
@@ -2918,7 +2920,7 @@ class PCoA(Analysis):
         r("ggsave(filename=file, plot=p, units='in', height=myHeight, width=myWidth, limitsize=F)")
 
         functions.setBase(self.RID, 'Step 4 of 9: Principal coordinates analysis...done!')
-
+        debug("PCoA: plotted")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
             debug("Stopping!")
@@ -3000,7 +3002,7 @@ class PCoA(Analysis):
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
                 functions.setBase(self.RID, 'Step 6 of 9: Performing BetaDisper...done!')
-
+        debug("PCoA: perMANOVA")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
             debug("Stopping!")
@@ -3013,25 +3015,25 @@ class PCoA(Analysis):
         xAxisDict = {}
         yAxisDict = {}
 
-        CAP1 = PC1 + len(self.catFields) + len(self.quantFields) + 2
-        CAP2 = PC2 + len(self.catFields) + len(self.quantFields) + 2
+        CAP1 = PC1 + len(self.catFields) + len(self.quantFields) + 16   # TODO 1.4 these are hard-coded offsets
+        CAP2 = PC2 + len(self.catFields) + len(self.quantFields) + 16   # if the meta list changes, these need updated
 
         if self.catFields:
             grouped = pcoaDF.groupby(self.catFields)
+
             for name, group in grouped:
                 if len(self.catFields) > 1:
                     trt = "; ".join(name)
                 else:
                     trt = name
-
                 dataList = []
                 for index, row in group.iterrows():
                     dataDict = {}
+                    print index, ":", row
                     dataDict['name'] = row['Sample ID']
                     dataDict['x'] = float(row[CAP1])
                     dataDict['y'] = float(row[CAP2])
                     dataList.append(dataDict)
-
                 seriesDict = {}
                 seriesDict['name'] = str(trt)
                 seriesDict['data'] = dataList
@@ -3042,7 +3044,6 @@ class PCoA(Analysis):
                     debug("Stopping!")
                     return HttpResponse(getStopDict(), content_type='application/json')
                 # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
         xTitle = {}
         if method == 'capscale':
             xTitle['text'] = 'Axis' + str(PC1) + " (" + str(round(eigDF.iloc[1][PC1] * 100, 1)) + "%)"
@@ -3081,9 +3082,9 @@ class PCoA(Analysis):
         self.result += '===============================================\n\n\n'
 
         finalDict['text'] = self.result
-
+        print "results"
         functions.setBase(self.RID, 'Step 7 of 9: Formatting graph data for display...done!')
-
+        debug("PCoA: graphed")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
             debug("Stopping!")
@@ -3097,7 +3098,7 @@ class PCoA(Analysis):
         finalDict['res_table'] = str(res_table)
 
         functions.setBase(self.RID, 'Step 8 of 9: Formatting PCoA table...done!')
-
+        debug("PCoA: PCoA Table")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
             debug("Stopping!")
@@ -3113,7 +3114,7 @@ class PCoA(Analysis):
         finalDict['dist_table'] = str(dist_table)
 
         functions.setBase(self.RID, 'Step 9 of 9: Formatting distance score table...done!')
-
+        debug("PCoA: Distance Table")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
             debug("Stopping!")
