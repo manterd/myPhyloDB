@@ -21,6 +21,7 @@ pd.set_option('display.max_colwidth', -1)
 
 def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stops, PID, soilHealth=False):
     try:
+        debug("getTaxaDF")
         Cols = ['sampleid', 'rank', 'rank_id', 'rank_name']
         Dep = []
         if DepVar == 0:
@@ -36,7 +37,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         elif DepVar == 10:
             Dep = ['abund', 'rel_abund', 'abund_16S', 'rich', 'diversity']
         Cols.extend(Dep)
-
+        debug("getTaxaDF: missingList")
         missingList = []
         taxaDF = pd.DataFrame(columns=Cols)
         if selectAll == 0:
@@ -203,6 +204,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
+        debug("getTaxaDF: metaDF.reset_index")
         metaDF.reset_index(drop=False, inplace=True)
         #print "Type meta:", type(metaDF), "Type taxa:", type(taxaDF)
         finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='inner')
@@ -268,6 +270,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             finalDF['diversity'] = finalDF['diversity'].astype("float64")
             finalDF = finalDF.groupby(wantedList)[['diversity']].sum()
 
+        debug("getTaxaDF: finalDF.reset_index")
         finalDF.reset_index(drop=False, inplace=True)   # cannot reset_index on a series, cast to dataframe? what is going on?
         debug("TaxaDF: returning finalDF as", type(finalDF))
         return finalDF, missingList
@@ -1604,6 +1607,7 @@ def insertTaxaInfo(treeType, zipped, DF, pos=1):
 
 
 def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth):
+    debug("filterDF")
     numSamples = len(savedDF['sampleid'].unique())
     myVar = ''
     if DepVar == 0:
@@ -1616,7 +1620,7 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         myVar = 'diversity'
     elif DepVar == 4:
         myVar = 'abund_16S'
-
+    debug("filterDF: myLevel")
     myLevel = 'otuName'
     myID = ''
     if level == 1:
@@ -1643,7 +1647,7 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
     elif level == 9:
         myLevel = 'otuName'
         myID = 'otuid'
-
+    debug("filterDF: remUnclass")
     if remUnclass == 'yes':
         # check if selecting based on level first, create else statement for tree usage
         savedDF = savedDF[~savedDF[myLevel].str.contains('unclassified')]
@@ -1653,51 +1657,55 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         bytag = savedDF.groupby(myID).aggregate(np.count_nonzero)
         tags = bytag[bytag[myVar] >= threshold].index.tolist()
         savedDF = savedDF[savedDF[myID].isin(tags)]
-
+    debug("filterDF: filterData")
     if filterData == 'yes' and not level == 8:
         threshold = int(filterPer)
         if filterMeth == 1:
+            debug("filterDF: filterMeth == 1")
             pass
-        elif filterMeth == 2:
+        else:
+            savedDF[myVar] = savedDF[myVar].astype("float64")
             sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
-            sumDF = sum.reset_index(drop=False)
-            bytag_q3 = sumDF.groupby(myID)[myVar].quantile(0.75)
-            bytag_q1 = sumDF.groupby(myID)[myVar].quantile(0.25)
-            bytag = bytag_q3 - bytag_q1
-            bytag.sort_values(axis=0, ascending=False, inplace=True)
-            tags = bytag[:threshold].index.tolist()
-            savedDF = savedDF[savedDF[myID].isin(tags)]
-        elif filterMeth == 3:
-            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
-            sumDF = sum.reset_index(drop=False)
-            bytag_sd = sumDF.groupby(myID)[myVar].std()
-            bytag_mean = sumDF.groupby(myID)[myVar].mean()
-            bytag = bytag_sd / bytag_mean
-            bytag.sort_values(axis=0, ascending=False, inplace=True)
-            tags = bytag[:threshold].index.tolist()
-            savedDF = savedDF[savedDF[myID].isin(tags)]
-        elif filterMeth == 4:
-            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
-            sumDF = sum.reset_index(drop=False)
-            bytag = sumDF.groupby(myID)[myVar].std()
-            bytag.sort_values(axis=0, ascending=False, inplace=True)
-            tags = bytag[:threshold].index.tolist()
-            savedDF = savedDF[savedDF[myID].isin(tags)]
-        elif filterMeth == 5:
-            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
-            sumDF = sum.reset_index(drop=False)
-            bytag = sumDF.groupby(myID)[myVar].mean()
-            bytag.sort_values(axis=0, ascending=False, inplace=True)
-            tags = bytag[:threshold].index.tolist()
-            savedDF = savedDF[savedDF[myID].isin(tags)]
-        elif filterMeth == 6:
-            sum = savedDF.groupby([myID, 'sampleid'])[myVar].sum()
-            sumDF = sum.reset_index(drop=False)
-            bytag = sumDF.groupby(myID)[myVar].median()
-            bytag.sort_values(axis=0, ascending=False, inplace=True)
-            tags = bytag[:threshold].index.tolist()
-            savedDF = savedDF[savedDF[myID].isin(tags)]
-
+            if filterMeth == 2:
+                debug("filterDF: filterMeth == 2")
+                sumDF = sum.reset_index(drop=False)
+                bytag_q3 = sumDF.groupby(myID)[myVar].quantile(0.75)
+                bytag_q1 = sumDF.groupby(myID)[myVar].quantile(0.25)
+                bytag = bytag_q3 - bytag_q1
+                bytag.sort_values(axis=0, ascending=False, inplace=True)
+                tags = bytag[:threshold].index.tolist()
+                savedDF = savedDF[savedDF[myID].isin(tags)]
+            elif filterMeth == 3:
+                debug("filterDF: filterMeth == 3")
+                sumDF = sum.reset_index(drop=False)
+                bytag_sd = sumDF.groupby(myID)[myVar].std()
+                bytag_mean = sumDF.groupby(myID)[myVar].mean()
+                bytag = bytag_sd / bytag_mean
+                bytag.sort_values(axis=0, ascending=False, inplace=True)
+                tags = bytag[:threshold].index.tolist()
+                savedDF = savedDF[savedDF[myID].isin(tags)]
+            elif filterMeth == 4:
+                debug("filterDF: filterMeth == 4")
+                sumDF = sum.reset_index(drop=False)
+                bytag = sumDF.groupby(myID)[myVar].std()
+                bytag.sort_values(axis=0, ascending=False, inplace=True)
+                tags = bytag[:threshold].index.tolist()
+                savedDF = savedDF[savedDF[myID].isin(tags)]
+            elif filterMeth == 5:
+                debug("filterDF: filterMeth == 5")
+                sumDF = sum.reset_index(drop=False)
+                bytag = sumDF.groupby(myID)[myVar].mean()
+                bytag.sort_values(axis=0, ascending=False, inplace=True)
+                tags = bytag[:threshold].index.tolist()
+                savedDF = savedDF[savedDF[myID].isin(tags)]
+            elif filterMeth == 6:
+                debug("filterDF: filterMeth == 6")
+                sumDF = sum.reset_index(drop=False)
+                bytag = sumDF.groupby(myID)[myVar].median()
+                bytag.sort_values(axis=0, ascending=False, inplace=True)
+                tags = bytag[:threshold].index.tolist()
+                savedDF = savedDF[savedDF[myID].isin(tags)]
+    debug("filterDF: return")
     return savedDF
 
 

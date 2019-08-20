@@ -504,7 +504,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.pValDict = {}
         counter = 1
 
-        for name1, group1 in grouped1:
+        for name1, group1 in grouped1:  # TODO 1.4 parallelize this loop and its equivalents
             D = ''
             r.assign("df", group1)
             trtString = " * ".join(self.allFields)
@@ -1845,22 +1845,28 @@ class Corr(Analysis):
 class diffAbund(Analysis):
 
     def statsGraph(self):
-        debug("statsGraph! (diffabund)")
+
+        debug("diffAbund: statsGraph")
+
+        print self.catFields, len(self.catFields)
+
+        if len(self.catFields) == 0:    # if catFields is empty, let user know they need to select more data
+            errDict = {}
+            errDict['resType'] = 'res'
+            errDict['error'] = 'Analysis requires more metadata'
+            return HttpResponse(json.dumps(errDict), content_type='application/json')
 
         if len(self.catFields) > 1:
             for index, row in self.metaDF.iterrows():
                 self.metaDF.loc[index, 'merge'] = ".".join(row[self.catFields])
         else:
             self.metaDF.loc[:, 'merge'] = self.metaDF.loc[:, self.catFields[0]]
-
         functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...')
         count_rDF = pd.DataFrame()
         if self.DepVar == 0:
             count_rDF = self.finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
         elif self.DepVar == 4:
             count_rDF = self.finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
-
-        debug("Check!")
 
         count_rDF.fillna(0, inplace=True)
 
@@ -1869,8 +1875,6 @@ class diffAbund(Analysis):
             r = R(RCMD="R/R-Portable/App/R-Portable/bin/R.exe", use_pandas=True)
         else:
             r = R(RCMD="R/R-Linux/bin/R", use_pandas=True)
-
-        debug("Check!")
 
         functions.setBase(self.RID, 'Verifying R packages...missing packages are being installed')
 
@@ -1881,8 +1885,6 @@ class diffAbund(Analysis):
 
         functions.setBase(self.RID, 'Step 4 of 6: Performing statistical test...')
 
-        debug("Check!")
-
         r("library(edgeR)")
 
         if self.DepVar == 0:
@@ -1891,15 +1893,12 @@ class diffAbund(Analysis):
             self.result += 'Dependent Variable: Total Abundance' + '\n'
         self.result += '\n===============================================\n\n\n'
 
-        debug("Check!")
-
         myList = list(self.metaDF.select_dtypes(include=['object']).columns)
         for i in myList:
             self.metaDF[i] = self.metaDF[i].str.replace(' ', '_')
             self.metaDF[i] = self.metaDF[i].str.replace('-', '.')
             self.metaDF[i] = self.metaDF[i].str.replace('(', '.')
             self.metaDF[i] = self.metaDF[i].str.replace(')', '.')
-
         self.metaDF.sort_values('sampleid', inplace=True)
         r.assign("metaDF", self.metaDF)
         r("trt <- factor(metaDF$merge)")
@@ -1908,7 +1907,7 @@ class diffAbund(Analysis):
         r('e <- DGEList(counts=count)')
         r('e <- calcNormFactors(e, method="none")')
 
-        r('design <- model.matrix(~ 0 + trt)')    # here
+        r('design <- model.matrix(~ 0 + trt)')
         r('trtLevels <- levels(trt)')
         r('colnames(design) <- trtLevels')
 
@@ -1917,8 +1916,6 @@ class diffAbund(Analysis):
         r('e <- estimateGLMTagwiseDisp(e, design)')
         r('fit <- glmFit(e, design)')
         fit = r.get('fit')
-
-        debug("Check!")
 
         if not fit:
             error = "edgeR failed!\nUsually this is caused by one or more taxa having a negative disperion.\nTry filtering your data to remove problematic taxa (e.g. remove phylotypes with 50% or more zeros)."
@@ -1929,7 +1926,7 @@ class diffAbund(Analysis):
         nTopTags = int(self.all['nTopTags'])
         r.assign('nTopTags', nTopTags)
 
-        debug("Check!")
+        debug("diffAbund: merge")
 
         mergeList = self.metaDF['merge'].tolist()
         mergeSet = list(set(mergeList))
@@ -1943,7 +1940,8 @@ class diffAbund(Analysis):
                     r.assign("trt2", mergeSet[j])
 
                     r('contVec <- sprintf("%s-%s", trt1, trt2)')
-                    r('cont.matrix= makeContrasts(contVec, levels=design)')
+                    r('myLevels <- make.names(colnames(design))')   # fix for number-like labels
+                    r('cont.matrix= makeContrasts(contVec, levels=myLevels)')
                     r('lrt <- glmLRT(fit, contrast=cont.matrix)')
                     r("res <- as.data.frame(topTags(lrt, sort.by='PValue', n=min(nTopTags, nrow(fit$table))))")
                     r('res <- res[ order(row.names(res)), ]')
@@ -2026,9 +2024,6 @@ class diffAbund(Analysis):
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        debug("Check!")
-
-        functions.setBase(self.RID, 'Step 3 of 4: Performing statistical test...done!')
         functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...')
 
         seriesList = []
@@ -2042,7 +2037,7 @@ class diffAbund(Analysis):
         listOfShapes = ['circle', 'square', 'triangle', 'triangle-down', 'diamond']
         shapeIterator = 0
 
-        debug("Check!")
+        debug("diffAbund: graph")
 
         FdrVal = float(self.all['FdrVal'])
         for name, group in grouped:
@@ -2092,7 +2087,7 @@ class diffAbund(Analysis):
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-        debug("Check!")
+        debug("diffAbund: axes")
 
         xTitle = {}
         xTitle['text'] = "logCPM"
@@ -2109,8 +2104,6 @@ class diffAbund(Analysis):
         styleDict = {'style': {'fontSize': '14px'}}
         xAxisDict['labels'] = styleDict
         yAxisDict['labels'] = styleDict
-
-        debug("Check!")
 
         self.finalDict['series'] = seriesList
         self.finalDict['xAxis'] = xAxisDict
@@ -2131,6 +2124,8 @@ class diffAbund(Analysis):
         self.finalDict['text'] = self.result
 
         functions.setBase(self.RID, 'Step 4 of 4: Formatting results for display...done!')
+
+        debug("diffAbund: results")
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:
@@ -2583,7 +2578,7 @@ class PCA(Analysis):
         return ret
 
 
-class PCoA(Analysis):
+class PCoA(Analysis):   # TODO 1.4 move analysis classes into their own .py files
 
     def statsGraph(self):
 
@@ -3015,9 +3010,6 @@ class PCoA(Analysis):
         xAxisDict = {}
         yAxisDict = {}
 
-        CAP1 = PC1 + len(self.catFields) + len(self.quantFields) + 16   # TODO 1.4 these are hard-coded offsets
-        CAP2 = PC2 + len(self.catFields) + len(self.quantFields) + 16   # if the meta list changes, these need updated
-
         if self.catFields:
             grouped = pcoaDF.groupby(self.catFields)
 
@@ -3028,11 +3020,11 @@ class PCoA(Analysis):
                     trt = name
                 dataList = []
                 for index, row in group.iterrows():
+                    print "Row:", row
                     dataDict = {}
-                    print index, ":", row
                     dataDict['name'] = row['Sample ID']
-                    dataDict['x'] = float(row[CAP1])
-                    dataDict['y'] = float(row[CAP2])
+                    dataDict['x'] = float(row[-2])
+                    dataDict['y'] = float(row[-1])
                     dataList.append(dataDict)
                 seriesDict = {}
                 seriesDict['name'] = str(trt)
@@ -3082,7 +3074,6 @@ class PCoA(Analysis):
         self.result += '===============================================\n\n\n'
 
         finalDict['text'] = self.result
-        print "results"
         functions.setBase(self.RID, 'Step 7 of 9: Formatting graph data for display...done!')
         debug("PCoA: graphed")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

@@ -101,7 +101,7 @@ def datstop(request):
 
 
 # TODO 1.4 put general function description (going over parameters and usage) at the start of each function definition
-def getDataQueue(request):
+def getDataQueue(request):  # TODO 1.3 console display items getting stuck when errored
     if not request.user.is_superuser or not request.user.is_authenticated:
         output = json.dumps({'display': "Invalid Permissions"})
         return HttpResponse(output, content_type='application/json')
@@ -154,7 +154,8 @@ def decremQ(start=0):  # Reduce the waitlist stat for each index after and inclu
         curIndex += 1
 
 
-def dataprocess(pid):
+def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: invalid literal for int() with base 10: ''"}"
+    # error page (instead of process page), even when successful (not biom upload, fastq upload does this only?)
     global datActiveList, datQueueList, datQueueFuncs, datRecent
     RID = "NULL_RID"  # only if exception occurs before first process
     request = None

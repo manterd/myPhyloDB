@@ -112,7 +112,7 @@ def files(request):
     )
 
 
-def fileUpFunc(request, stopList):
+def fileUpFunc(request, stopList):  # TODO 1.3 this doesn't need to be synced with dataqueue, and status is wrong atm
     errorText = ""
     RID = ''    # TODO 1.4 stopList and RID NYI, can go in with progress bar (same recoding basically)
     # There exists a django form plugin which can accomplish the progress tracking issue (as well as allow bigger file uploads overall)
@@ -543,7 +543,7 @@ def logException():
 
 def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with this method, need different fasta?
     # make taxa file for upload1 style using fasta data
-    print "Handling mothur reference data"
+    debug("Handling mothur reference data")
     mothurdest = 'mothur/temp'
     # wipe old temp mothur files, recreate directory for new process
     if os.path.exists(mothurdest):
@@ -583,7 +583,7 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
 
     pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            bufsize=0)   # this should run mothur, does subprocess ever get started though?
-    print "Made subprocess, reading lines"
+    debug("Made subprocess, reading lines")
     while True:
         line = pro.stdout.readline()    # does this work?
         print "Line:", line
@@ -592,7 +592,7 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
             # have not found an example of this working fully, probably because of this step being blank each time I try
         else:
             break
-    print "Read lines"
+    debug("Read lines")
 
     f = open('mothur/temp/dada.cons.taxonomy', 'w')
     f.write("OTU\tSeq\tTaxonomy\n")
@@ -646,8 +646,10 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
     return open('% s/final.cons.taxonomy' % dest)
 
 
-def handleArchive(dest, name):
+def handleArchive(dest, name):  # TODO 1.3 this function needs to find all member files and bring them to surface level
     try:
+        unArchived = False
+        debug("Attempting to extract archive at:", dest, "named:", name)
         zip = zipfile.ZipFile(os.path.join(dest, name))
         for member in zip.infolist():
             abspath = os.path.abspath(os.path.join(dest, member.filename))
@@ -656,18 +658,31 @@ def handleArchive(dest, name):
             else:
                 print "Security error: absolute path does not match in ZIP"  # TODO 1.3 security error log
         zip.close()
-    except Exception:
+        unArchived = True
+    except Exception as e:
+        debug("handleArchive: exception during zip:", e)
         try:
             tar = tarfile.open(os.path.join(dest, name))
             for member in tar.getmembers():
-                abspath = os.path.abspath(os.path.join(dest, member.filename))
+                abspath = os.path.abspath(os.path.join(dest, member.name))
                 if abspath.startswith(os.path.abspath(dest)):
                     tar.extract(member, dest)
                 else:
                     print "Security error: absolute path does not match in TAR"  # TODO 1.3 security error log
             tar.close()
-        except Exception:
+            unArchived = True
+        except Exception as ex:
+            debug("handleArchive: exeption during tar:", ex)
             return False  # file is unlikely to be an archive, as unzip and untar both failed
+        if unArchived:
+            # walk through the newly unarchived files and make sure everything is on the same level
+            for maindir, subdirs, filenames in os.walk(dest):
+                for filename in filenames:
+                    # print "Moving ", filename
+                    try:
+                        shutil.move(os.path.join(maindir, filename), dest)
+                    except Exception as exc:
+                        debug("Error with move: ", exc)
     return True  # return true if file was successfully extracted as an archive, false otherwise
 
 # TODO 1.3 sid usage in uploads (for transaction rollbacks, variable goes unused)
@@ -957,10 +972,19 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     file_list = selDict['fastq']
     name_list = nameDict['fastq']
 
-    for file, name in map(None, file_list, name_list):
-        copyFromUpload(file, dest, name)
-        if not handleArchive(dest, name):
-            copyFromUpload(file, mothurdest, name)
+    for file, name in map(None, file_list, name_list):  # TODO 1.3 this step needs a progress bar and a performance pass
+        copyFromUpload(file, dest, name)    # copy for working with the files, then move to mothurdest (why)
+        handleArchive(dest, name)
+    for maindir, subdirs, filenames in os.walk(dest):
+        for filename in filenames:
+            # print "Moving ", filename
+            try:
+                shutil.move(os.path.join(maindir, filename), mothurdest)
+            except Exception as exc:
+                debug("Error with move: ", exc)
+        # need to move to mothurdest AFTER all handleArchive calls
+        # this prevents missing files from archives in the map
+        #copyFromUpload(file, mothurdest, name)
 
         if stopList[PID] == RID:
             return "Stop"
@@ -1102,7 +1126,7 @@ def uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, 
     return "None"
 
 
-def uploadFunc(request, stopList):
+def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
     # consider making an account called myPhyloDB for Script role instead of admin TODO 1.4
     # having admin as the account looks slightly less professional in my opinion
 

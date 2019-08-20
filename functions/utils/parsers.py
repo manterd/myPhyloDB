@@ -356,7 +356,7 @@ def status(request):
 
             dict['perc'] = 0    # TODO 1.4 could use this if given starting position from client (though jumps won't be accurate)
             dict['project'] = rep_project
-            dict['mothurStat'] = ''
+            dict['mothurStat'] = ''  # TODO 1.3 mothurStat being present causes 502 error through proxy (status is fine until we get to R)
 
         mothurStat = ""
         json_data = json.dumps(dict)

@@ -3,7 +3,8 @@
 
 flag = True    # only need to switch this one variable for the whole code to go into verbose mode
 # TODO 1.3 TODO 1.4 TODO 1.5 verify this is switched to False before updating main server
-
+# TODO 1.4 Admin account auto-debug, switch back to request-linked debug flags.
+# TODO 1.4 Error log saves original request for admin to rerun later (with admin auto debug)
 
 def debug(*msg):    # *msg allows any number of arguments to be passed in, since we just want to print everything
     # print msg if debug flag is set to true

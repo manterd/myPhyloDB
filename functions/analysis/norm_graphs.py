@@ -25,7 +25,7 @@ pd.set_option('display.max_colwidth', -1)
 process = psutil.Process(os.getpid())
 
 
-def getNorm(request, RID, stopList, PID):
+def getNorm(request, RID, stopList, PID):   # TODO 1.3 error: index out of bounds (after very long sub-sampling)
     try:
         if request.is_ajax():
             # Get variables from web page
