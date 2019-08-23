@@ -1508,33 +1508,34 @@ def getNZTreeChildren(request):  # get child nodes from lazy-loaded kegg enzyme 
         return HttpResponse(res, content_type='application/json')
 
 
-def makeUpdateTree(request):
+def makeUpdateTree(request):    # TODO 1.3 change this and other reference-based trees to project-based
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
     projects = perms.getEditProjects(request)
     for project in projects:
-        myNode = {
-            'title': project.project_name,
-            'tooltip': project.project_desc,
-            'isFolder': True,
-            'hideCheckbox': True,
-            'children': [],
-            'wip': project.wip
-        }
-
-        refids = project.reference_set.all().order_by('path')
-        for ref in refids:
-            myNode1={
-                'title': "Path: " + str(ref.path),
-                'tooltip': ref.projectid.project_desc,
-                'id': ref.refid,
+        if not project.wip:
+            myNode = {
+                'title': project.project_name,
+                'tooltip': project.project_desc,
                 'isFolder': True,
-                'children': []
+                'hideCheckbox': True,
+                'children': [],
+                'wip': project.wip
             }
 
-            myNode['children'].append(myNode1)
+            refids = project.reference_set.all().order_by('path')
+            for ref in refids:
+                myNode1={
+                    'title': "Path: " + str(ref.path),
+                    'tooltip': ref.projectid.project_desc,
+                    'id': ref.refid,
+                    'isFolder': True,
+                    'children': []
+                }
 
-        myTree['children'].append(myNode)
+                myNode['children'].append(myNode1)
+
+            myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
     res = json.dumps(myTree)

@@ -104,7 +104,7 @@ def getAnalysisQueue(request):  # main queue equivalent of working dataqueue tra
     for key in sorted(stringDict.keys(), reverse=True):
         queueString += stringDict[key]
 
-    debug("Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString)
+    #debug("Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString)
 
     #print "Display"
     queueDict = {'display': queueString}

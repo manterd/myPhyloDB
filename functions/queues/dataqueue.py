@@ -138,7 +138,7 @@ def getDataQueue(request):  # TODO 1.3 console display items getting stuck when 
     for key in sorted(stringDict.keys(), reverse=True):
         queueString += stringDict[key]
 
-    debug("Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString)
+    #debug("Strings:", stringDict, "Keys:", stringDict.keys(), "Sorted:", sorted(stringDict.keys()), "Queue:", queueString)
 
     #print "Display"
     output = json.dumps({'display': queueString})
@@ -181,11 +181,10 @@ def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: inval
                     elif funcName == "fileUpFunc":
                         datRecent[RID] = database.views.fileUpFunc(request, datStopList)
                     elif funcName == "reanalyze":
-                        resp = functions.reanalyze(request, datStopList)
-                        if resp is None:
+                        resp = functions.reanalyze(request, datStopList)    # run reanalyze, check results for errors
+                        if resp is None:    # if no errors, return a standard reprocess page
                             resp = database.views.reprocess(request)
-                        if resp == "Stopped":
-                            # why does this get a normal call first?
+                        if resp == "Stopped":   # if an error occurred, return a reprocess page with an error message
                             resp = database.views.reprocess(request)
                             resp['error'] = "Reprocessing stopped"
                         datRecent[RID] = resp
@@ -203,8 +202,8 @@ def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: inval
                         # received a function name that we don't support
                         # either a developer typo exists (here or on a web page) OR someone is trying to break things
                         # either way, this is a notable event, so we print to console and log
-                        print "Security check:", request.user.username, "attempting to call function", funcName, "in DQ"
-                        functions.log(request, "INVALID_FUNCTION_NAME_DQ", funcName)
+                        print "Security check:", request.user.username, "attempting to call function", str(funcName), "in DQ"
+                        functions.log(request, "INVALID_FUNCTION_NAME_DQ", str(funcName))
                         # should probably return something to the user page so they don't get stuck
                         # return is awkward here since the page is implied by funcName, which is currently invalid
                         # so we'll just send 'em to the home page

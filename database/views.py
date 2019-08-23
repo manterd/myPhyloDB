@@ -988,6 +988,7 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
 
         if stopList[PID] == RID:
             return "Stop"
+    # TODO 1.3 trying to track down the invalid literal error page, should be from in here somewhere, how to recreate...
 
     bubbleFiles(mothurdest)
 
@@ -1127,8 +1128,6 @@ def uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, 
 
 
 def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
-    # consider making an account called myPhyloDB for Script role instead of admin TODO 1.4
-    # having admin as the account looks slightly less professional in my opinion
 
     # validation process involves checking settings paired with actual files sent
 
@@ -1285,7 +1284,7 @@ def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
 
     # if using shared+taxa or shared+sequence mothur combo
     debug("Upload finished shared section")
-    errorText = ""
+    errorText = "Invalid source type for processing"
     if source == 'mothur':
         errorText = uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID)  # TODO 1.3 sid on mothur upload
 
@@ -1308,9 +1307,6 @@ def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
 
     if errorText != "None":
         return upErr("Error during " + str(source) + ":" + str(errorText), request, dest, sid)
-
-
-    # need an else case catch, if no source ran or it crashed somehow
 
     end = datetime.datetime.now()
     print 'Total time for ' + str(request.user.username) + '\'s upload:', end - start

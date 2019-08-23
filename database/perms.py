@@ -374,15 +374,9 @@ def getEditProjects(request):
         # projects will be a queryset set to all projects, then filtered by ids in filterIDS
         filterIDS = []
         for proj in Project.objects.all():
-            good = False  # good to add to list
-            if proj.owner == request.user:
-                good = True
-            checkList = proj.whitelist_edit.split(';')
-            for cid in checkList:
-                if cid == request.user.id:
-                    good = True
-            if good:
+            if proj.owner == request.user or request.user.username in proj.whitelist_edit.split(';'):
                 filterIDS.append(proj.projectid)
+        debug(request.user.username, "can edit", filterIDS)
         projects = Project.objects.filter(projectid__in=filterIDS).order_by('project_name')
 
     return projects
