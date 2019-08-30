@@ -229,37 +229,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
             finalDF = finalDF.groupby(wantedList)[['abund']].sum()
         elif DepVar == 1:
             finalDF['rel_abund'] = finalDF['rel_abund'].astype("float64")
-            #print "Type final3:", type(finalDF)
-            #print "Type groupBy:", type(finalDF.groupby(wantedList))
-            #print "Type rel:", type(finalDF.groupby(wantedList)['rel_abund'])
-            #print "Type [rel]:", type(finalDF.groupby(wantedList)[['rel_abund']])
-            #print "Cols:", finalDF.columns
-            #print "Wanted:", wantedList
-            #print "rel_abund:", finalDF['rel_abund']
-            # this groupby has too much data to handle properly, like 26 thousand rows of data here (errors with 7k too)
-            # did not error with 1600 rows of data. Can we do this in chunks?
-            # how to even split this up, if we want a column of sums. We'd need to sum each chunk, then sum the sums
-            # "negative dimensions" has to deal with overflowing when performing the groupby, its fine with 1600 rows, but not 7k
-            #print "finalDF preHead:", finalDF.head
-
-            finalDF = finalDF.groupby(wantedList)[['rel_abund']].sum()      # TODO 1.3 error here: negative dimensions not allowed (?)
-
-            # its fine to sum this as a series but not a dataframe (memory issue it seems, but only on dev build)
-            # could try summing as a series, then updating the appropriate column in the dataframe
-            #finalDF = finalDF.groupby(wantedList)
-            # TODO 1.3 I cannot make sense of this bug, it doesn't occur using the same code on the same dataset on live
-            # going to switch to qiime biom upload for now
-            #finalDF['rel_abund'] = finalDF['rel_abund'].sum()
-            #print "finalDF postHead:", finalDF.head
-            #print "finalDF PostCols:", finalDF.columns  # so yeah this is only rel_abund left
-            '''try:
-                finalDF = finalDF.groupby(wantedList)[['rel_abund']]
-                print "Grouped and selected", finalDF
-                # /\ this broke: "Cannot access attribute 'columns' of 'DataFrameGroupBy' objects, try using the 'apply' method"
-                finalDF = finalDF.sum()
-                print "Summed", finalDF.columns
-            except Exception as ex:
-                print "Error during test:", ex'''
+            finalDF = finalDF.groupby(wantedList)[['rel_abund']].sum()
         elif DepVar == 4:
             finalDF['abund_16S'] = finalDF['abund_16S'].astype("float64")
             finalDF = finalDF.groupby(wantedList)[['abund_16S']].sum()
@@ -883,7 +853,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             idList = ['K01077']
             nzDict[id] = idList
 
-            id = ''  # TODO 1.3 more kegg
+            id = ''  # TODO 1.4 add more kegg
             # jump
             idList = ['K01113']
             nzDict[id] = idList
@@ -1473,7 +1443,7 @@ def getFullTaxonomy(idList):
     return recordDict
 
 
-# Can assert that all ids given as args belong to the given level, does not support PGR atm TODO 1.3 PGR support?
+# Can assert that all ids given as args belong to the given level, does not support PGR atm TODO 1.3 PGPR support?
 def getFullTaxaFromID(id, level):
     results = []    # TODO 1.4 change this to a dictionary where k:v = taxID:taxName
     # given level (kingdom phyla class etc), and list of ids, return a dictionary with key:val of id:list_of_parent_ids (+ source id)

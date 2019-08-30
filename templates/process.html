@@ -454,7 +454,7 @@
             $('<input>').attr({
                 type: 'hidden',
                 name: 'funcName',
-                value: 'uploadFunc'
+                value: 'processFunc'
             }).appendTo('form');
 
         });
@@ -566,6 +566,7 @@
                 myDict['sequence'] = selectedSequence2;
             }
 
+            myDict['cutoff'] = document.getElementById("biomConfidence").value;
             var jsonDict = JSON.stringify(myDict);
 
             $('<input>').attr({
@@ -763,6 +764,10 @@
                         <tr>
                             <td>{{ form2.fasta_file.label_tag }}</td>
                             <td><div id="pickSequence2"></div></td>
+                        </tr>
+                        <tr>
+                            <td>Confidence cutoff:</td>
+                            <td><input type="number" id="biomConfidence" value="0.95" min="0" max="1" step="0.01" style="width: 80px"></td>
                         </tr>
                     </table>
                 </td>

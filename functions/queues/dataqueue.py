@@ -42,28 +42,14 @@ def datstop(request):
             pid = datQueueList[RID]
             thisFunc = datQueueFuncs[pid]
 
-            # available functions: uploadFunc reanalyze updateFunc pybake
+            # available functions: processFunc reanalyze updateFunc pybake
             # log the stop request
             functions.log(request, "QSTOP", thisFunc)
 
             retStuff = None
 
-            if thisFunc == "uploadFunc":    # just directly rendering page because request chaining is clunky
-                projects = Reference.objects.none()
-                if request.user.is_superuser:
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-                elif request.user.is_authenticated():
-                    projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(
-                        author=request.user)
-                retStuff = render(
-                    request,
-                    'process.html',
-                    {'projects': projects,
-                     'form1': UploadForm1,
-                     'form2': UploadForm2,
-                     'error': "Upload stopped"
-                     }
-                )
+            if thisFunc == "processFunc":    # just directly rendering page because request chaining is clunky
+                retStuff = database.views.process(request, errorText="Processing stopped")
 
             elif thisFunc == "reanalyze":
                 # reprocess and pybake are fine without stoplists since they are page requests
@@ -176,8 +162,8 @@ def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: inval
                 functions.log(request, "QSTART", funcName)
                 if datActiveList[pid] == RID:
                     debug("About to run", funcName, "for", request.user.username)
-                    if funcName == "uploadFunc":
-                        datRecent[RID] = database.views.uploadFunc(request, datStopList)
+                    if funcName == "processFunc":
+                        datRecent[RID] = database.views.processFunc(request, datStopList)
                     elif funcName == "fileUpFunc":
                         datRecent[RID] = database.views.fileUpFunc(request, datStopList)
                     elif funcName == "reanalyze":
@@ -207,11 +193,7 @@ def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: inval
                         # should probably return something to the user page so they don't get stuck
                         # return is awkward here since the page is implied by funcName, which is currently invalid
                         # so we'll just send 'em to the home page
-                        datRecent[RID] = render(
-                            request,
-                            'home.html',
-                            {'error': "Invalid function name"}
-                        )
+                        datRecent[RID] = database.views.home(request, errorText="Invalid function name")
                 datActiveList[pid] = ''
                 functions.log(request, "QFINISH", funcName)
             cleanup(RID)
@@ -220,7 +202,7 @@ def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: inval
             if request is not None:
                 functions.log(request, "ERROR_DQ", str(e)+"\n")
             myDict = {'error': "Exception: "+str(e.message)}    # TODO 1.3 this doesn't always display to user FIX
-            stop = json.dumps(myDict)
+            stop = json.dumps(myDict)   # {"error": "Exception: 'data'"} # TODO 1.3 the bug is that this response is being used as a page
             datRecent[RID] = HttpResponse(stop, content_type='application/json')
 
 

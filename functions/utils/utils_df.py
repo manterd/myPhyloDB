@@ -190,6 +190,7 @@ def remove_proj(path, user):  # remove selected project path, after verifying us
     # so a permissions check is not entirely necessary here, though if its called from another context, maybe add perms
     # remove project, files and database
     # TODO 1.4 security alerts: some way to push security-related errors to current admins, no console babysitting required
+    # TODO 1.3 for now, send security errors to a secondary log, which displays separately to the normal console
     pid = Reference.objects.get(path=path).projectid.projectid
     # Verify user has correct permissions for this step (either the owner or a superuser, no exceptions for deletion)
     myProj = Project.objects.get(projectid=pid)
@@ -239,11 +240,12 @@ def taxaProfileDF(mySet):
     return taxaDF
 
 
-def PCoA(dm):   # TODO 1.4 why is this in util_df?
+def PCoA(dm):   # TODO 1.3 is this used anywhere? It appears not, can probably remove. Ask
     E_matrix = make_E_matrix(dm)
-    F_matrix = make_F_matrix(E_matrix)  # TODO 1.3 fix
+    F_matrix = make_F_matrix(E_matrix)  # pycharm complains about this function call because it cannot be 100% sure
+    # about the variable type of E_matrix
     eigvals, eigvecs = np.linalg.eigh(F_matrix)
-    negative_close_to_zero = np.isclose(eigvals, 0)  # TODO 1.3 fix
+    negative_close_to_zero = np.isclose(eigvals, 0)  # another duck-typing related warning, in practice this is fine
     eigvals[negative_close_to_zero] = 0
     idxs_descending = eigvals.argsort()[::-1]
     eigvals = eigvals[idxs_descending]
@@ -435,22 +437,29 @@ def analysisThreads():
 
 
 def getRawDataTab(request):
+    debug("getRawDataTab")
     if request.is_ajax():
         RID = request.GET["all"]
         func = request.GET["func"]
         treeType = int(request.GET["treeType"])
-
-        myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
+        myDir = 'myPhyloDB/media/temp/analysis/'
         path = str(myDir) + str(RID) + '.biom'
-        savedDF = exploding_panda2(path, treeType)  # TODO 1.3 this is probably broken now
+
+        debug("getRawDataTab: savedDF")
+        savedDF = exploding_panda2(path, treeType)
+        debug("getRawDataTab: panda")
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         fileName = str(myDir) + str(request.user.username) + '.' + str(func) + '.csv'
+
+        debug("getRawDataTab: to_csv")
         savedDF.to_csv(fileName)
 
         myDir = 'myPhyloDB/media/temp/' + str(func) + '/'
         fileName2 = str(myDir) + str(request.user.username) + '.' + str(func) + '.gz'
         zf = zipfile.ZipFile(fileName2, "w", zipfile.ZIP_DEFLATED, allowZip64=True)
+
+        debug("getRawDataTab: write csv")
         zf.write(fileName, 'usr_data.csv')
         zf.close()
 
@@ -458,6 +467,7 @@ def getRawDataTab(request):
         fileName2 = str(myDir) + str(request.user.username) + '.' + str(func) + '.gz'
         myDict = {'name': str(fileName2)}
 
+        debug("getRawDataTab: return")
         res = json.dumps(myDict)
         return HttpResponse(res, content_type='application/json')
 
@@ -861,8 +871,6 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     memDiff()   # 70.69
 
     if depVar == 3 or depVar == 10:
-        # what conditions lead to df.sum == 0 ? should div by zero work? if so what result? TODO 1.3 resolve
-        # so some value in the df.sum(axis=1) results must be zero, I guess just leave it be and supress the warning?
         diversityDF = -df.div(df.sum(axis=1), axis=0) * np.log(df.div(df.sum(axis=1), axis=0))  # RuntimeWarning: divide by zero encountered
         # logically, is DF/DF.sum * log(DF/DF.sum)); so if DF.sum is 0 or equivalent, divide by zero occurs
         diversityDF[np.isinf(diversityDF)] = np.nan
@@ -965,98 +973,99 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
 
 
 def exploding_panda2(path, treeType):
-    # Load file     # TODO 1.3 revert changes to this function based on getRawTabData's needs
-    file = open(path)
-    data = json.load(file)
-    file.close()
-    # Get metadata
-    d = data['columns']
-    metaDict = {}
-    for i in d:
-        print "i:", i
-        metaDict[str(i['id'][0])] = i['metadata']
-    metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
-    metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    metaDF.set_index('sampleid', inplace=True)
-    metaDF.dropna(axis=1, how='all', inplace=True)
-    metaDF.dropna(axis=0, how='all', inplace=True)
-    print "Meta\n", metaDF
-    # Get count data and calculate various dependent variables
-    sampleids = [col['id'][0] for col in data['columns']]
-    taxaids = [col['id'][0] for col in data['rows']]
-
-    mat = data['data']
-    mat = np.asarray(mat).T.tolist()
-    df = pd.DataFrame(mat, index=sampleids, columns=taxaids)
-    print "DF\n", df    # sampleids are the row labels, for some reason turning to NaN in abundDF, but present here
-    abundDF = df.reset_index(drop=False)    # changed drop back to false, sampleid stays in abund now
-    abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
-    abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
-    # TODO sampleid is NaN, taxaid is correct though FIXED
-    abundDF.set_index('sampleid', inplace=True)
-    print "Abund\n", abundDF
-    countDF = pd.DataFrame({
-        'taxaid': abundDF['variable'],
-        'DepVar': abundDF['value']
-    }, index=abundDF.index)
-    print "Count\n", countDF
-    savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
-    savedDF.reset_index(drop=False, inplace=True)
-    #savedDF.drop(['0', '1', '2'], axis=1)
-    print "Saved\n", savedDF  # this is empty with three index columns, depvar, and taxaid (no actual index)
-    print "SavedColumns:", savedDF.columns
-    d = data['rows']
-    taxaDict = {}
-    for i in d:
-        tempDict = {}
-        taxon = i['metadata'][0]
-        length = len(taxon)
-        if treeType == 1:
-            if length > 0:
-                tempDict['Kingdom'] = taxon[0]
-            if length > 1:
-                tempDict['Phylum'] = taxon[1]
-            if length > 2:
-                tempDict['Class'] = taxon[2]
-            if length > 3:
-                tempDict['Order'] = taxon[3]
-            if length > 4:
-                tempDict['Family'] = taxon[4]
-            if length > 5:
-                tempDict['Genus'] = taxon[5]
-            if length > 6:
-                tempDict['Species'] = taxon[6]
-            if length > 7:
-                tempDict['OTU99'] = taxon[7]
-        elif treeType != 1:
-            if length > 0:
-                tempDict['Level 1'] = taxon[0]
-            if length > 1:
-                tempDict['Level 2'] = taxon[1]
-            if length > 2:
-                tempDict['Level 3'] = taxon[2]
-            if length > 3:
-                tempDict['Level 4'] = taxon[3]
-            if length > 4:
-                tempDict['Level 5'] = taxon[4]
-
-        taxaDict[str(i['id'][0])] = tempDict
-    taxaDF = pd.DataFrame.from_dict(taxaDict, orient='index').reset_index()
-    taxaDF.set_index('index', inplace=True)
-    taxaDF.reset_index(drop=False, inplace=True)
-    taxaDF.rename(columns={'index': 'taxaid'}, inplace=True)
-    print "Taxa\n", taxaDF   # TODO the merge is failing, taxa is missing taxaid column (kind of important)
-    print "TaxaColumns", taxaDF.columns
     try:
-        savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')
-        print "Merged"
-        savedDF.reset_index(drop=True, inplace=True)
-    except Exception as ACK:
-        print "Exception with savedDF in explodingPanda2:", ACK
-    print "Final\n", savedDF
-    print "FinalColumns", savedDF.columns   # missing abundances? or does depvar cover that?
-    print "FinalDepVar", savedDF['DepVar']
-    return savedDF
+        # Load file     # TODO 1.3 revert changes to this function based on getRawTabData's needs
+        debug("exploding_panda2")
+        file = open(path)
+        data = json.load(file)
+        file.close()
+        # Get metadata
+        d = data['columns']
+        metaDict = {}
+        for i in d:
+            metaDict[str(i['id'])] = i['metadata']
+        debug("exploding_panda2: metaDict")
+        metaDF = pd.DataFrame.from_dict(metaDict, orient='index').reset_index()
+        metaDF.rename(columns={'index': 'sampleid'}, inplace=True)
+        metaDF.set_index('sampleid', inplace=True)
+        metaDF.dropna(axis=1, how='all', inplace=True)
+        metaDF.dropna(axis=0, how='all', inplace=True)
+        debug("exploding_panda2: metaDF")
+        # Get count data and calculate various dependent variables
+        sampleids = [col['id'] for col in data['columns']]
+        taxaids = [col['id'] for col in data['rows']]
+
+        mat = data['data']
+        mat = np.asarray(mat).T.tolist()
+        df = pd.DataFrame(mat, index=sampleids, columns=taxaids)
+        debug("exploding_panda2: df")
+        # sampleids are the row labels, for some reason turning to NaN in abundDF, but present here
+        abundDF = df.reset_index(drop=False)    # changed drop back to false, sampleid stays in abund now
+        abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
+        abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
+        abundDF.set_index('sampleid', inplace=True)
+        debug("exploding_panda2: abundDF")
+        countDF = pd.DataFrame({
+            'taxaid': abundDF['variable'],
+            'DepVar': abundDF['value']
+        }, index=abundDF.index)
+        debug("exploding_panda2: countDF")
+        savedDF = pd.merge(metaDF, countDF, left_index=True, right_index=True, how='inner')
+        savedDF.reset_index(drop=False, inplace=True)
+        #savedDF.drop(['0', '1', '2'], axis=1)
+        # this is empty with three index columns, depvar, and taxaid (no actual index)
+        debug("exploding_panda2: savedDF")
+        d = data['rows']
+        taxaDict = {}
+        for i in d:
+            tempDict = {}
+            taxon = i['metadata']['taxonomy']
+            length = len(taxon)
+            if treeType == 1:
+                if length > 0:
+                    tempDict['Kingdom'] = taxon[0]
+                if length > 1:
+                    tempDict['Phylum'] = taxon[1]
+                if length > 2:
+                    tempDict['Class'] = taxon[2]
+                if length > 3:
+                    tempDict['Order'] = taxon[3]
+                if length > 4:
+                    tempDict['Family'] = taxon[4]
+                if length > 5:
+                    tempDict['Genus'] = taxon[5]
+                if length > 6:
+                    tempDict['Species'] = taxon[6]
+                if length > 7:
+                    tempDict['OTU99'] = taxon[7]
+            elif treeType != 1:
+                if length > 0:
+                    tempDict['Level 1'] = taxon[0]
+                if length > 1:
+                    tempDict['Level 2'] = taxon[1]
+                if length > 2:
+                    tempDict['Level 3'] = taxon[2]
+                if length > 3:
+                    tempDict['Level 4'] = taxon[3]
+                if length > 4:
+                    tempDict['Level 5'] = taxon[4]
+
+            taxaDict[str(i['id'])] = tempDict
+        taxaDF = pd.DataFrame.from_dict(taxaDict, orient='index').reset_index()
+        taxaDF.set_index('index', inplace=True)
+        taxaDF.reset_index(drop=False, inplace=True)
+        taxaDF.rename(columns={'index': 'taxaid'}, inplace=True)
+        debug("exploding_panda2: taxaDF")
+        try:
+            savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')
+            savedDF.reset_index(drop=True, inplace=True)
+        except Exception as ACK:
+            print "Exception with savedDF in explodingPanda2:", ACK
+        debug("exploding_panda2: savedDF")
+        # missing abundances? or does depvar cover that?
+        return savedDF
+    except Exception as exce:
+        print "Exploding panda 2 exception:" + str(exce)
 
 
 def imploding_panda(path, treeType, DepVar, myList, metaDF, finalDF):

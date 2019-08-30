@@ -494,163 +494,155 @@ def parse_reference(p_uuid, refid, path, raw, source, userid):
 
 def parse_sample(Document, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID):
     # same meta file parsing as earlier, but now we go for the actual sample data instead of project info
-    try:
-        global stage, perc
-        stage = "Step 2 of 5: Parsing sample file..."
-        perc = 0
+    global stage, perc
+    stage = "Step 2 of 5: Parsing sample file..."
+    perc = 0
 
-        project = Project.objects.get(projectid=p_uuid)
-        wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
-        perc = 25
+    project = Project.objects.get(projectid=p_uuid)
+    wb = openpyxl.load_workbook(Document, data_only=True, read_only=False)
+    perc = 25
 
-        dict1 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='MIMARKs')
-        perc = 50
+    dict1 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='MIMARKs')
+    perc = 50
 
-        if pType == 'air':
-            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Air')
+    if pType == 'air':
+        dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Air')
 
-        elif pType == 'human associated' or pType == 'human gut':
-            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Human Associated')
+    elif pType == 'human associated' or pType == 'human gut':
+        dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Human Associated')
 
-        elif pType == 'microbial':
-            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Microbial')
+    elif pType == 'microbial':
+        dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Microbial')
 
-        elif pType == 'soil':
-            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Soil')
+    elif pType == 'soil':
+        dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Soil')
 
-        elif pType == 'water':
-            dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Water')
+    elif pType == 'water':
+        dict2 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='Water')
 
+    else:
+        dict2 = list()
+
+    dict3 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='User')
+    perc = 75
+
+    tempid = uuid4().hex
+    refid = parse_reference(p_uuid, tempid, dest, raw, source, userID)
+    reference = Reference.objects.get(refid=refid)
+
+    idList = []
+    refDict = {}
+    for i in xrange(num_samp):
+        row = dict1[i]
+
+        s_uuid = row['sampleid']
+        if s_uuid is np.nan:
+            s_uuid = uuid4().hex    # incredibly unlikely to produce an already existing ID
+            # but going to check anyways to be absolutely certain
+            while Sample.objects.filter(sampleid=s_uuid).exists():  # keep making a new ID until we get a unique ID
+                s_uuid = uuid4().hex
+            row['sampleid'] = s_uuid
+
+        # to be used in parse_profile()
+        try:
+            type = row['sample_type']
+            row.pop('sample_type')
+        except:
+            type = np.nan
+
+        if type is not np.nan:
+            refDict[s_uuid] = type
         else:
-            dict2 = list()
+            refDict[s_uuid] = 'replace'
 
-        dict3 = functions.excel_to_dict(wb, headerRow=6, nRows=num_samp, sheet='User')
-        perc = 75
+        row.pop('seq_method')
+        row.pop('geo_loc_name')
+        row.pop('lat_lon')
 
-        tempid = uuid4().hex
-        refid = parse_reference(p_uuid, tempid, dest, raw, source, userID)
-        reference = Reference.objects.get(refid=refid)
+        debug("Parsing sample: ", str(row['sample_name']))
+        try:
+            badChars = set('&')  # add to this whenever a problematic character shows up
+            row['sample_name'] = "".join([c for c in row['sample_name'] if c not in badChars])
+        except:
+            pass
 
-        idList = []
-        refDict = {}
-        for i in xrange(num_samp):
-            row = dict1[i]
+        idList.append(s_uuid)
+        if Sample.objects.filter(sampleid=s_uuid).exists():
+            Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
+        else:
+            Sample.objects.create(projectid=project, refid=reference, **row)
+            # error: create() got multiple values for keyword argument 'refid'
 
-            s_uuid = row['sampleid']
-            if s_uuid is np.nan:
-                s_uuid = uuid4().hex    # incredibly unlikely to produce an already existing ID
-                # but going to check anyways to be absolutely certain
-                while Sample.objects.filter(sampleid=s_uuid).exists():  # keep making a new ID until we get a unique ID
-                    s_uuid = uuid4().hex
-                row['sampleid'] = s_uuid
+        sample = Sample.objects.get(sampleid=s_uuid)
 
-            # to be used in parse_profile()
-            try:
-                type = row['sample_type']
-                row.pop('sample_type')
-            except:
-                type = np.nan
+        row = dict2[i]
+        if 'sampleid' in row:
+            row.pop('sampleid')
+        if 'sample_name' in row:
+            row.pop('sample_name')
 
-            if type is not np.nan:
-                refDict[s_uuid] = type
+        if pType == "air":
+            if not Air.objects.filter(sampleid=s_uuid).exists():
+                Air.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
             else:
-                refDict[s_uuid] = 'replace'
+                Air.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-            row.pop('seq_method')
-            row.pop('geo_loc_name')
-            row.pop('lat_lon')
-
-            debug("Parsing sample: ", str(row['sample_name']))
-            try:
-                badChars = set('&')  # add to this whenever a problematic character shows up
-                row['sample_name'] = "".join([c for c in row['sample_name'] if c not in badChars])
-            except:
-                pass
-
-            idList.append(s_uuid)
-            if Sample.objects.filter(sampleid=s_uuid).exists():
-                Sample.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, **row)
+        elif pType == "human associated":
+            if not Human_Associated.objects.filter(sampleid=s_uuid).exists():
+                Human_Associated.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
             else:
-                Sample.objects.create(projectid=project, refid=reference, **row)
-                # error: create() got multiple values for keyword argument 'refid'
+                Human_Associated.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-            sample = Sample.objects.get(sampleid=s_uuid)
-
-            row = dict2[i]
-            if 'sampleid' in row:
-                row.pop('sampleid')
-            if 'sample_name' in row:
-                row.pop('sample_name')
-
-            if pType == "air":
-                if not Air.objects.filter(sampleid=s_uuid).exists():
-                    Air.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
-                else:
-                    Air.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
-
-            elif pType == "human associated":
-                if not Human_Associated.objects.filter(sampleid=s_uuid).exists():
-                    Human_Associated.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
-                else:
-                    Human_Associated.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
-
-            elif pType == "microbial":
-                if not Microbial.objects.filter(sampleid=s_uuid).exists():
-                    Microbial.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
-                else:
-                    Microbial.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
-
-            elif pType == "soil":
-                if not Soil.objects.filter(sampleid=s_uuid).exists():
-                    Soil.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
-                else:
-                    Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
-
-            elif pType == "water":
-                if not Water.objects.filter(sampleid=s_uuid).exists():
-                    Water.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
-                else:
-                    Water.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+        elif pType == "microbial":
+            if not Microbial.objects.filter(sampleid=s_uuid).exists():
+                Microbial.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
             else:
-                pass
+                Microbial.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-            row = dict3[i]
-            if 'sampleid' in row:
-                row.pop('sampleid')
-            if 'sample_name' in row:
-                row.pop('sample_name')
-
-            if not UserDefined.objects.filter(sampleid=s_uuid).exists():
-                UserDefined.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+        elif pType == "soil":
+            if not Soil.objects.filter(sampleid=s_uuid).exists():
+                Soil.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
             else:
-                UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+                Soil.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-            perc += 20/num_samp
+        elif pType == "water":
+            if not Water.objects.filter(sampleid=s_uuid).exists():
+                Water.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+            else:
+                Water.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
+        else:
+            pass
 
-            if stopList[PID] == RID:
-                return None
+        row = dict3[i]
+        if 'sampleid' in row:
+            row.pop('sampleid')
+        if 'sample_name' in row:
+            row.pop('sample_name')
 
-        ### add myPhyloDB generated IDs to excel metafile
-        wb = openpyxl.load_workbook(Document, data_only=False, read_only=False)
-        ws = wb['Project']
-        ws.cell(row=6, column=4).value = p_uuid
+        if not UserDefined.objects.filter(sampleid=s_uuid).exists():
+            UserDefined.objects.create(projectid=project, refid=reference, sampleid=sample, **row)
+        else:
+            UserDefined.objects.filter(sampleid=s_uuid).update(projectid=project, refid=reference, sampleid=sample, **row)
 
-        ws = wb['MIMARKs']
-        for i in xrange(len(idList)):
-            j = i + 7
-            ws.cell(row=j, column=1).value = idList[i]
-            ws.cell(row=j, column=2).value = 'replace'  # all samples are automatically set to replace in meta-file
-            perc += 5/len(idList)
+        perc += 20/num_samp
 
-        wb.save(Document)
-        return refDict
+        if stopList[PID] == RID:
+            return None
 
-    except Exception as e:
-        print "Error parsing sample: ", e
-        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-        logging.exception(myDate)
-        return None
+    ### add myPhyloDB generated IDs to excel metafile
+    wb = openpyxl.load_workbook(Document, data_only=False, read_only=False)
+    ws = wb['Project']
+    ws.cell(row=6, column=4).value = p_uuid
+
+    ws = wb['MIMARKs']
+    for i in xrange(len(idList)):
+        j = i + 7
+        ws.cell(row=j, column=1).value = idList[i]
+        ws.cell(row=j, column=2).value = 'replace'  # all samples are automatically set to replace in meta-file
+        perc += 5/len(idList)
+
+    wb.save(Document)
+    return refDict
 
 
 def parse_taxonomy(Document, stopList, PID, RID):
@@ -900,593 +892,595 @@ def parse_taxonomy(Document, stopList, PID, RID):
         if newOtuList:
             updateKoOtuList(newOtuList, stopList, PID, RID)
 
-    except Exception as e:
+    except Exception as e:  # TODO 1.3 remove try except in parser functions, exceptions need to be visible at caller level
         print "Parse_taxonomy error: ", e
         logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
         myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
         logging.exception(myDate)
 
 
-def parse_biom(biom, taxa, sequence, project_id, refDict, stopList, PID, RID):
+def parse_biom(biom, taxa, sequence, project_id, refDict, minConfidence, stopList, PID, RID):
     # does this function assume use of sequence or count values for column 1 (id, ?, taxa)
+    # TODO 1.3 better stop support in this function
     debug("Parse_biom: Starting")
-    try:
-        global stage, perc
+    global stage, perc
 
-        # get current number of unclassified seqs
-        numUnclass = OTU_99.objects.filter(otuName__startswith='isv_').count()  # assert no gaps exist
-        # although its fine if a gap does exist, just an isv number we won't ever use
-        # the other problem being collisions if gaps exist, but we detect those now
-        newOtuList = []
+    # get current number of unclassified seqs
+    numUnclass = OTU_99.objects.filter(otuName__startswith='isv_').count()  # assert no gaps exist
+    # although its fine if a gap does exist, just an isv number we won't ever use
+    # the other problem being collisions if gaps exist, but we detect those now
+    newOtuList = []
 
-        # read files
-        stage = "Step 4 of 5: Parsing biom file..."
-        perc = 0
+    # read files
+    stage = "Step 4 of 5: Parsing biom file..."
+    perc = 0
 
-        debug("Reading taxa:", taxa)
-        #print "AbundDict:", abundDict.keys()
-        #for k in abundDict.keys():
-        #    print "\tKey:", k, "taxa:", abundDict[k]
 
-        # Now we have abundances of local taxa ids mapped to the sample names which contain them
-        # so we need to read taxa file now, its a tab delimited file with three columns: id, taxonomy, and confidence
+    debug("Reading biom:", biom)
+    # lets try h5py instead, skip R entirely
+    biomDict = h5py.File(biom, 'r')
+    obs = biomDict['observation']
+    # obs_group = obs['group-metadata']  # group, 0 members
+    obs_ids = obs['ids'][:]  # dataset, type "|0"
+    obs_matrix = obs['matrix']  # group, 3 members
+    # obs_meta = obs['metadata']  # group, 0 members
 
-        # the taxonomy itself is a ';' delimited string, with each part headed by l__, where l is the first letter of the taxa level
-        # so we'll build a dictionary where k:v is taxaid : levelDict (ie 2b67a:{k:v, k:v})
-        # levelDict uses k:v of level : name (ie kingdom:bacteria)
-        # currently no use for confidence values for our purposes, maybe have a minimum?
-        minConfidence = 0.97    # TODO 1.3 get this value from the user
+    samp = biomDict['sample']
+    # samp_group = samp['group-metadata'] # group, 0 members
+    samp_ids = samp['ids'][:]  # dataset, type "|0"
+    # samp_matrix = samp['matrix']  # group, 3 members
+    # samp_meta = samp['meta']    # group, 0 members
 
-        # metrics for tracking taxonomy behavior with this upload
-        mappedCount = 0
-        madeCount = 0
-        madeTotal = 0
+    # verify all names match
+    myProj = Project.objects.get(projectid=project_id)
+    mySamples = Sample.objects.filter(projectid=myProj)
+    missingSamples = []
+    missingBiom = []
+    # check all meta against biom
+    sampNames = []
+    for samp in mySamples:
+        myName = samp.sample_name
+        if myName not in samp_ids:
+            missingSamples.append(myName)
+        sampNames.append(myName)
+    # check all biom against meta
+    for samp in samp_ids:
+        if samp not in sampNames:
+            missingBiom.append(samp)
+    if len(missingSamples) != 0 or len(missingBiom) != 0:
+        return missingSamples, missingBiom
+    # TODO 1.3 this /\ kind of check goes in all parser pipelines
 
-        taxaFile = open(taxa, 'r')
-        lines = taxaFile.readlines()    # load the lines of tsv taxa file into memory
-        maxLine = len(lines)
-        curLine = 0
-        taxaDict = {}
-        for line in lines:  # iterate through each line of taxa data and make sure each otu is represented in database
-            parts = line.split("\t")
-            myID = parts[0]
-            myNames = parts[1].split("; ")
-            myConfidence = parts[2]
-            myNameList = []
-            for name in myNames:
-                nameSplit = name.split("__")
-                if len(nameSplit) > 1:
-                    myNameList.append(nameSplit[1])  # for otu support, this nameList needs to always go to otu level
-                    # using unclassified whenever a level is missing
+    debug("Reading taxa:", taxa)
+    #print "AbundDict:", abundDict.keys()
+    #for k in abundDict.keys():
+    #    print "\tKey:", k, "taxa:", abundDict[k]
 
+    # Now we have abundances of local taxa ids mapped to the sample names which contain them
+    # so we need to read taxa file now, its a tab delimited file with three columns: id, taxonomy, and confidence
+
+    # the taxonomy itself is a ';' delimited string, with each part headed by l__, where l is the first letter of the taxa level
+    # so we'll build a dictionary where k:v is taxaid : levelDict (ie 2b67a:{k:v, k:v})
+    # levelDict uses k:v of level : name (ie kingdom:bacteria)
+
+    # metrics for tracking taxonomy behavior with this upload
+    mappedCount = 0
+    madeCount = 0
+    madeTotal = 0
+
+    taxaFile = open(taxa, 'r')
+    lines = taxaFile.readlines()    # load the lines of tsv taxa file into memory
+    maxLine = len(lines)
+    curLine = 0
+    taxaDict = {}
+    # TODO 1.4 This loop is the main timesink of parse_biom, and is not inherently sequential. Multiprocessing time
+    # the only race condition which could occur in this loop is when duplicate names exist (rare human error case)
+    # in such a race, the database should throw an exception, just catch for this line and keep going (print debug)
+    # TODO 1.4 while we're at it, this is a high performance computing server, there's not much point asking users
+    # for how many threads they want to use, we should just have a configured value (or maybe a load-based max)
+    for line in lines:  # iterate through each line of taxa data and make sure each otu is represented in database
+        parts = line.split("\t")
+        myID = parts[0]
+        myNames = parts[1].split("; ")
+        myConfidence = parts[2]
+        myNameList = []
+        for name in myNames:
+            nameSplit = name.split("__")
+            if len(nameSplit) > 1:
+                myNameList.append(nameSplit[1])  # for otu support, this nameList needs to always go to otu level
+                # using unclassified whenever a level is missing
+
+        depth = len(myNameList)
+
+        if myConfidence < minConfidence:
+            # not confident enough, likely just a problem with the lowest listed level, switch that to unclassified
+            myNameList[depth-1] = "unclassified"
+
+        while depth < 7:
+            myNameList.append("unclassified")
             depth = len(myNameList)
+        if depth < 8 or myNameList[7] == "unclassified":
+            # append new ISV tag
 
-            if myConfidence < minConfidence:
-                # not confident enough, likely just a problem with the lowest listed level, switch that to unclassified
-                myNameList[depth-1] = "unclassified"
-
-            while depth < 7:
-                myNameList.append("unclassified")
-                depth = len(myNameList)
-            if depth < 8 or myNameList[7] == "unclassified":
-                # append new ISV tag
-
-                otuName = 'isv_' + str(numUnclass)  # TODO 1.4 can put this otuName maker into a function (parse_taxa)
+            otuName = 'isv_' + str(numUnclass)  # TODO 1.4 can put this otuName maker into a function (parse_taxa)
+            numUnclass += 1
+            while OTU_99.objects.filter(otuName=otuName).exists():  # guarantee no duplicate names
+                otuName = 'isv_' + str(numUnclass)
                 numUnclass += 1
-                while OTU_99.objects.filter(otuName=otuName).exists():  # guarantee no duplicate names
-                    otuName = 'isv_' + str(numUnclass)
-                    numUnclass += 1
 
-                # made the name, now either add it or replace the old one
-                if depth < 8:
-                    myNameList.append(otuName)
-                if myNameList[7] == "unclassified":
-                    myNameList[7] = otuName
+            # made the name, now either add it or replace the old one
+            if depth < 8:
+                myNameList.append(otuName)
+            if myNameList[7] == "unclassified":
+                myNameList[7] = otuName
 
-            # now we have the ability to make or find this taxa in the main database, then map the database id to the file id
-            # then use the file id to match the database id to the abundances of each sample
-            lastTaxa = None
-            foundTo = -1
-            # how to do this accurately, need to know exactly which level to stop at, if any level doesn't exist, make the whole set (top down)
-            try:
-                king = Kingdom.objects.get(kingdomName=myNameList[0])
+        # now we have the ability to make or find this taxa in the main database, then map the database id to the file id
+        # then use the file id to match the database id to the abundances of each sample
+        lastTaxa = None
+        foundTo = -1
+        # how to do this accurately, need to know exactly which level to stop at, if any level doesn't exist, make the whole set (top down)
+        try:
+            king = Kingdom.objects.get(kingdomName=myNameList[0])
+            lastTaxa = king.kingdomid
+            foundTo += 1
+            phyl = Phyla.objects.get(phylaName=myNameList[1], kingdomid=king)   # TODO 1.3 seriously need to refactor this, kingdomid is a kingdom
+            lastTaxa = phyl.phylaid
+            foundTo += 1
+            clas = Class.objects.get(className=myNameList[2], phylaid=phyl, kingdomid=king)
+            lastTaxa = clas.classid
+            foundTo += 1
+            orde = Order.objects.get(orderName=myNameList[3], classid=clas, phylaid=phyl, kingdomid=king)
+            lastTaxa = orde.orderid
+            foundTo += 1
+            fami = Family.objects.get(familyName=myNameList[4], orderid=orde, classid=clas, phylaid=phyl, kingdomid=king)
+            lastTaxa = fami.familyid
+            foundTo += 1
+            genu = Genus.objects.get(genusName=myNameList[5], familyid=fami, orderid=orde, classid=clas, phylaid=phyl, kingdomid=king)
+            lastTaxa = genu.genusid
+            foundTo += 1
+            spec = Species.objects.get(speciesName=myNameList[6], genusid=genu, familyid=fami, orderid=orde, classid=clas, phylaid=phyl, kingdomid=king)
+            lastTaxa = spec.speciesid
+            foundTo += 1
+            otu9 = OTU_99.objects.get(otuName=myNameList[7], speciesid=spec, genusid=genu, familyid=fami, orderid=orde, classid=clas, phylaid=phyl, kingdomid=king)
+            lastTaxa = otu9.otuid
+            foundTo += 1
+        except ObjectDoesNotExist:
+            # this exception catches missing taxa, use foundTo to start building new taxa, keep going down to depth
+            # then set lastTaxa to the id of the lowest new value
+            if foundTo <= -1:
+                # new kingdom, I don't find this case likely but heck, we'll cover it
+                king = Kingdom.objects.create(kingdomName=myNameList[0], kingdomid=uuid4().hex)
+                king.save()
                 lastTaxa = king.kingdomid
-                foundTo += 1
-                phyl = Phyla.objects.get(phylaName=myNameList[1], kingdomid=king)   # TODO 1.3 seriously need to refactor this, kingdomid is a kingdom
+            if foundTo <= 0:
+                # new phyla
+                phyl = Phyla.objects.create(phylaName=myNameList[1], phylaid=uuid4().hex, kingdomid=king)
+                phyl.save()
                 lastTaxa = phyl.phylaid
-                foundTo += 1
-                clas = Class.objects.get(className=myNameList[2], phylaid=phyl, kingdomid=king)
+            if foundTo <= 1:
+                # new class
+                clas = Class.objects.create(className=myNameList[2], classid=uuid4().hex, kingdomid=king, phylaid=phyl)
+                clas.save()
                 lastTaxa = clas.classid
-                foundTo += 1
-                orde = Order.objects.get(orderName=myNameList[3], classid=clas, phylaid=phyl, kingdomid=king)
+            if foundTo <= 2:
+                # new order
+                orde = Order.objects.create(orderName=myNameList[3], orderid=uuid4().hex, kingdomid=king, phylaid=phyl, classid=clas)
+                orde.save()
                 lastTaxa = orde.orderid
-                foundTo += 1
-                fami = Family.objects.get(familyName=myNameList[4], orderid=orde, classid=clas, phylaid=phyl, kingdomid=king)
+            if foundTo <= 3:
+                # new family
+                fami = Family.objects.create(familyName=myNameList[4], familyid=uuid4().hex, kingdomid=king, phylaid=phyl, classid=clas, orderid=orde)
+                fami.save()
                 lastTaxa = fami.familyid
-                foundTo += 1
-                genu = Genus.objects.get(genusName=myNameList[5], familyid=fami, orderid=orde, classid=clas, phylaid=phyl, kingdomid=king)
+            if foundTo <= 4:
+                # new genus
+                genu = Genus.objects.create(genusName=myNameList[5], genusid=uuid4().hex, kingdomid=king, phylaid=phyl, classid=clas, orderid=orde, familyid=fami)
+                genu.save()
                 lastTaxa = genu.genusid
-                foundTo += 1
-                spec = Species.objects.get(speciesName=myNameList[6], genusid=genu, familyid=fami, orderid=orde, classid=clas, phylaid=phyl, kingdomid=king)
+            if foundTo <= 5:
+                # new species
+                spec = Species.objects.create(speciesName=myNameList[6], speciesid=uuid4().hex, kingdomid=king, phylaid=phyl, classid=clas, orderid=orde, familyid=fami, genusid=genu)
+                spec.save()
                 lastTaxa = spec.speciesid
-                foundTo += 1
-                otu9 = OTU_99.objects.get(otuName=myNameList[7], speciesid=spec, genusid=genu, familyid=fami, orderid=orde, classid=clas, phylaid=phyl, kingdomid=king)
-                lastTaxa = otu9.otuid
-                foundTo += 1
-            except ObjectDoesNotExist:
-                # this exception catches missing taxa, use foundTo to start building new taxa, keep going down to depth
-                # then set lastTaxa to the id of the lowest new value
-                if foundTo <= -1:
-                    # new kingdom, I don't find this case likely but heck, we'll cover it
-                    king = Kingdom.objects.create(kingdomName=myNameList[0], kingdomid=uuid4().hex)
-                    king.save()
-                    lastTaxa = king.kingdomid
-                if foundTo <= 0:
-                    # new phyla
-                    phyl = Phyla.objects.create(phylaName=myNameList[1], phylaid=uuid4().hex, kingdomid=king)
-                    phyl.save()
-                    lastTaxa = phyl.phylaid
-                if foundTo <= 1:
-                    # new class
-                    clas = Class.objects.create(className=myNameList[2], classid=uuid4().hex, kingdomid=king, phylaid=phyl)
-                    clas.save()
-                    lastTaxa = clas.classid
-                if foundTo <= 2:
-                    # new order
-                    orde = Order.objects.create(orderName=myNameList[3], orderid=uuid4().hex, kingdomid=king, phylaid=phyl, classid=clas)
-                    orde.save()
-                    lastTaxa = orde.orderid
-                if foundTo <= 3:
-                    # new family
-                    fami = Family.objects.create(familyName=myNameList[4], familyid=uuid4().hex, kingdomid=king, phylaid=phyl, classid=clas, orderid=orde)
-                    fami.save()
-                    lastTaxa = fami.familyid
-                if foundTo <= 4:
-                    # new genus
-                    genu = Genus.objects.create(genusName=myNameList[5], genusid=uuid4().hex, kingdomid=king, phylaid=phyl, classid=clas, orderid=orde, familyid=fami)
-                    genu.save()
-                    lastTaxa = genu.genusid
-                if foundTo <= 5:
-                    # new species
-                    spec = Species.objects.create(speciesName=myNameList[6], speciesid=uuid4().hex, kingdomid=king, phylaid=phyl, classid=clas, orderid=orde, familyid=fami, genusid=genu)
-                    spec.save()
-                    lastTaxa = spec.speciesid
-                if foundTo <= 6:
-                    # new otu
+            if foundTo <= 6:
+                # new otu
+                oid = uuid4().hex
+                while OTU_99.objects.filter(otuid=oid).exists():  # guarantee no duplicate ids, a bit overkill since DB will error if id matches on create
                     oid = uuid4().hex
-                    while OTU_99.objects.filter(otuid=oid).exists():  # guarantee no duplicate ids, a bit overkill since DB will error if id matches on create
-                        oid = uuid4().hex
-                    otu9 = OTU_99.objects.create(otuName=myNameList[7], otuid=oid, kingdomid=king, phylaid=phyl, classid=clas, orderid=orde, familyid=fami, genusid=genu, speciesid=spec)
-                    otu9.save()
-                    lastTaxa = otu9.otuid
-                    newOtuList.append(oid)
+                otu9 = OTU_99.objects.create(otuName=myNameList[7], otuid=oid, kingdomid=king, phylaid=phyl, classid=clas, orderid=orde, familyid=fami, genusid=genu, speciesid=spec)
+                otu9.save()
+                lastTaxa = otu9.otuid
+                newOtuList.append(oid)
 
-            taxaDict[myID] = lastTaxa
-            if depth-1 == foundTo:
-                mappedCount += 1
-            else:
-                madeCount += 1
-                madeTotal += depth-foundTo-1
+        taxaDict[myID] = lastTaxa
+        if depth-1 == foundTo:
+            mappedCount += 1
+        else:
+            madeCount += 1
+            madeTotal += depth-foundTo-1
 
-            # update perc for progress tracking, this is the first major step so we'll track out of .33 for this loop
-            # spending most of upload at 20, then a jump to 33, 66, snag there until done (loops not iterating?)
-            curLine += 1
-            perc = curLine*1.0 / maxLine * 60.0
+        # update perc for progress tracking, this is the first major step so we'll track out of .33 for this loop
+        # spending most of upload at 20, then a jump to 33, 66, snag there until done (loops not iterating?)
+        curLine += 1
+        perc = curLine*1.0 / maxLine * 60.0
 
-        # TODO 1.4 do we want this to print always? like debug controls printouts that tell us where things crashed, this is very useful for database size tracking
-        debug("Finished taxonomy handling, found", mappedCount, "existing entries and made", madeCount, "new ones (", madeTotal, " including parents)")
+    debug("Finished taxonomy handling, found", mappedCount, "existing entries and made", madeCount, "new ones (", madeTotal, " including parents)")
+    # TODO 1.4 more useful debug printouts like this one /\ in other database-altering functions
 
-        debug("Reading biom:", biom)
+    # so obs ids are taxa ids, to be used with taxa.tsv to find taxa names)
+    # obs_matrix contains idptr, indices, and data
+    # idptr has one row for each taxa, with a value listing the starting index of that taxon's listing in indices and data
+    # (stop at next rows index, if next row does not exist, this entry is the end of the file, skip)
+    # indices point to a sample number, for a given sample containing the taxa in idptr
+    # data gives abundances of a given taxa in a given sample (the sample can be found from indices, using samp_ids)
 
-        # lets try h5py instead, skip R entirely
-        biomDict = h5py.File(biom, 'r')
-        obs = biomDict['observation']
-        # obs_group = obs['group-metadata']  # group, 0 members
-        obs_ids = obs['ids'][:]  # dataset, type "|0"
-        obs_matrix = obs['matrix']  # group, 3 members
-        # obs_meta = obs['metadata']  # group, 0 members
+    # need to get data grouped by sample id
+    # so we make a dictionary, k:v of samp_id:taxa_dict
+    # taxa_dict k:v is taxa_id (from obs_ids) : count_for_sample
+    # samp_id is found by taking the index from obs_indices and accessing samp_ids with it
+    # count_for_sample is found by iterating through this taxa's index range in obs_matrix['data'], match with sample index
+    # ( so this loop will go from obs_matrix['indptr'], iterating over each TAXA, pointing back towards the sample when saving )
 
-        samp = biomDict['sample']
-        # samp_group = samp['group-metadata'] # group, 0 members
-        samp_ids = samp['ids'][:]  # dataset, type "|0"
-        samp_matrix = samp['matrix']  # group, 3 members
-        # samp_meta = samp['meta']    # group, 0 members
+    # This section parses the hdf5 data into a dictionary, keyed by sample name (which should exist in the meta file)
+    # also describes taxon abundances, using a local taxaid (not matching database, instead pairing with taxa and
+    # sequence files, which we have at this point as 'taxa' and 'sequence' (simple enough)
+    abundDict = {}
 
-        # so obs ids are taxa ids, to be used with taxa.tsv to find taxa names)
-        # obs_matrix contains idptr, indices, and data
-        # idptr has one row for each taxa, with a value listing the starting index of that taxon's listing in indices and data
-        # (stop at next rows index, if next row does not exist, this entry is the end of the file, skip)
-        # indices point to a sample number, for a given sample containing the taxa in idptr
-        # data gives abundances of a given taxa in a given sample (the sample can be found from indices, using samp_ids)
+    taxCount = 0
+    taxSize = 0
+    maxTaxa = len(obs_ids)
+    for ptr in range(maxTaxa):
+        myTaxID = obs_ids[ptr]
+        # get the real taxaid from taxaDict
+        myTaxID = taxaDict[myTaxID]  # TODO 1.3 key error here, if .tsv file is not used (or used for something else)
+        # get start and end points of the range for this taxon
+        startInd = obs_matrix['indptr'][ptr]
+        endInd = obs_matrix['indptr'][ptr + 1]
+        for taxptr in range(startInd, endInd):
+            mySampID = samp_ids[obs_matrix['indices'][taxptr]]
+            myAbund = obs_matrix['data'][taxptr]
+            if mySampID not in abundDict.keys():
+                abundDict[mySampID] = {}
+            abundDict[mySampID][myTaxID] = myAbund
+            taxSize += 1
+        taxCount += 1
+        perc = 60 + taxCount*1.0 / maxTaxa * 10.0
 
-        # need to get data grouped by sample id
-        # so we make a dictionary, k:v of samp_id:taxa_dict
-        # taxa_dict k:v is taxa_id (from obs_ids) : count_for_sample
-        # samp_id is found by taking the index from obs_indices and accessing samp_ids with it
-        # count_for_sample is found by iterating through this taxa's index range in obs_matrix['data'], match with sample index
-        # ( so this loop will go from obs_matrix['indptr'], iterating over each TAXA, pointing back towards the sample when saving )
+    debug("Finished parsing HDF5 biom, found", taxCount, "taxa with avg", float(taxSize) / float(taxCount),
+          "entries per taxa")
 
-        # This section parses the hdf5 data into a dictionary, keyed by sample name (which should exist in the meta file)
-        # also describes taxon abundances, using a local taxaid (not matching database, instead pairing with taxa and
-        # sequence files, which we have at this point as 'taxa' and 'sequence' (simple enough)
-        abundDict = {}
+    # So now we have taxaDict for pairing biom taxaids with database ids that definitely exist
+    # and we can pair that with the sample_name keyed dictionary containing all biom taxaids with their abundances in specified samples
+    # The goal is now to create profile objects, which map taxa in the myphylo database with abundances in specific samples in the same database
+    # We should have samples in the database courtesy of parsing the meta file, we can find the right ones using abundDict.keys() and the project info
+    myProj = Project.objects.get(projectid=project_id)
+    mySamples = Sample.objects.filter(projectid=myProj)
+    missingSamples = []  # TODO 1.3 move missing check to start of function
+    # for samp in mySamp: if sampName not in abundDict.keys(), append missingSamples(sampName)
+    # need to grab sample names earlier in the function to run this check
+    sampCount = len(mySamples)
+    curSamp = 0
+    for samp in mySamples:
+        # for each sample, get the name, use it to access abundDict
+        sampName = samp.sample_name
+        # verify this sample is in the biom data, skip if its not, after saving in missingSamples to report back
+        if sampName not in abundDict.keys():
+            missingSamples.append(sampName)
+            continue
+        myTaxa = abundDict[sampName]    # k:v = taxaid:count
+        # create profile object for each taxa in this sample
+        # we don't have otu data with this, at least not always
+        myReads = 0
+        for tax in myTaxa.keys():
+            # get otu object by id
+            myOTU = OTU_99.objects.get(otuid=tax)
+            count = myTaxa[tax]
+            replaceType = refDict[samp.sampleid]    # todo 1.3 one of these is none
+            # Parse_profile code section, we should respect replaceType
+            if replaceType == 'replace':
+                Profile.objects.filter(sampleid=samp).delete()
+                # TODO 1.4 refactor the ids, either use the actual id or change the label to just sample (since its
+                # a foreign key to a sample object)
 
-        taxCount = 0
-        taxSize = 0
-        maxTaxa = len(obs_ids)
-        for ptr in range(maxTaxa):
-            myTaxID = obs_ids[ptr]
-            # get the real taxaid from taxaDict
-            myTaxID = taxaDict[myTaxID]
-            # get start and end points of the range for this taxon
-            startInd = obs_matrix['indptr'][ptr]
-            endInd = obs_matrix['indptr'][ptr + 1]
-            for taxptr in range(startInd, endInd):
-                mySampID = samp_ids[obs_matrix['indices'][taxptr]]
-                myAbund = obs_matrix['data'][taxptr]
-                if mySampID not in abundDict.keys():
-                    abundDict[mySampID] = {}
-                abundDict[mySampID][myTaxID] = myAbund
-                taxSize += 1
-            taxCount += 1
-            perc = 60 + taxCount*1.0 / maxTaxa * 10.0
+            if replaceType == 'new' or replaceType == 'replace':
+                Profile.objects.create(projectid=myProj, sampleid=samp, kingdomid=myOTU.kingdomid,
+                phylaid=myOTU.phylaid, classid=myOTU.classid, orderid=myOTU.orderid, familyid=myOTU.familyid,
+                genusid=myOTU.genusid, speciesid=myOTU.speciesid, otuid=myOTU, count=count)
 
-        debug("Finished parsing HDF5 biom, found", taxCount, "taxa with avg", float(taxSize) / float(taxCount),
-              "entries per taxa")
-
-        # So now we have taxaDict for pairing biom taxaids with database ids that definitely exist
-        # and we can pair that with the sample_name keyed dictionary containing all biom taxaids with their abundances in specified samples
-        # The goal is now to create profile objects, which map taxa in the myphylo database with abundances in specific samples in the same database
-        # We should have samples in the database courtesy of parsing the meta file, we can find the right ones using abundDict.keys() and the project info
-        myProj = Project.objects.get(projectid=project_id)
-        mySamples = Sample.objects.filter(projectid=myProj)
-        missingSamples = []
-        sampCount = len(mySamples)
-        curSamp = 0
-        for samp in mySamples:
-            # for each sample, get the name, use it to access abundDict
-            sampName = samp.sample_name
-            # verify this sample is in the biom data, skip if its not, after saving in missingSamples to report back
-            if sampName not in abundDict.keys():
-                missingSamples.append(sampName)
-                continue
-            myTaxa = abundDict[sampName]    # k:v = taxaid:count
-            # create profile object for each taxa in this sample
-            # we don't have otu data with this, at least not always
-            myReads = 0
-            for tax in myTaxa.keys():
-                # get otu object by id
-                myOTU = OTU_99.objects.get(otuid=tax)
-                count = myTaxa[tax]
-                replaceType = refDict[samp.sampleid]
-                # Parse_profile code section, we should respect replaceType
-                if replaceType == 'replace':
-                    Profile.objects.filter(sampleid=samp).delete()
-                    # TODO 1.4 refactor the ids, either use the actual id or change the label to just sample (since its
-                    # a foreign key to a sample object)
-
-                if replaceType == 'new' or replaceType == 'replace':
+            if replaceType == 'append':
+                if Profile.objects.filter(projectid=myProj, sampleid=samp, kingdomid=myOTU.kingdomid,
+                phylaid=myOTU.phylaid, classid=myOTU.classid, orderid=myOTU.orderid, familyid=myOTU.familyid,
+                genusid=myOTU.genusid, speciesid=myOTU.speciesid, otuid=myOTU).exists():
+                    t = Profile.objects.get(projectid=myProj, sampleid=samp, kingdomid=myOTU.kingdomid,
+                    phylaid=myOTU.phylaid, classid=myOTU.classid, orderid=myOTU.orderid, familyid=myOTU.familyid,
+                    genusid=myOTU.genusid, speciesid=myOTU.speciesid, otuid=myOTU)
+                    old = t.count
+                    count += old
+                    t.count = count
+                    t.save()
+                else:
                     Profile.objects.create(projectid=myProj, sampleid=samp, kingdomid=myOTU.kingdomid,
                     phylaid=myOTU.phylaid, classid=myOTU.classid, orderid=myOTU.orderid, familyid=myOTU.familyid,
                     genusid=myOTU.genusid, speciesid=myOTU.speciesid, otuid=myOTU, count=count)
 
-                if replaceType == 'append':
-                    if Profile.objects.filter(projectid=myProj, sampleid=samp, kingdomid=myOTU.kingdomid,
-                    phylaid=myOTU.phylaid, classid=myOTU.classid, orderid=myOTU.orderid, familyid=myOTU.familyid,
-                    genusid=myOTU.genusid, speciesid=myOTU.speciesid, otuid=myOTU).exists():
-                        t = Profile.objects.get(projectid=myProj, sampleid=samp, kingdomid=myOTU.kingdomid,
-                        phylaid=myOTU.phylaid, classid=myOTU.classid, orderid=myOTU.orderid, familyid=myOTU.familyid,
-                        genusid=myOTU.genusid, speciesid=myOTU.speciesid, otuid=myOTU)
-                        old = t.count
-                        count += old
-                        t.count = count
-                        t.save()
-                    else:
-                        Profile.objects.create(projectid=myProj, sampleid=samp, kingdomid=myOTU.kingdomid,
-                        phylaid=myOTU.phylaid, classid=myOTU.classid, orderid=myOTU.orderid, familyid=myOTU.familyid,
-                        genusid=myOTU.genusid, speciesid=myOTU.speciesid, otuid=myOTU, count=count)
+            myReads += count
 
-                myReads += count
+        # update reads field for sample to this parse
+        samp.reads = myReads
+        samp.save()
 
-            # update reads field for sample to this parse
-            samp.reads = myReads
-            samp.save()
+        curSamp += 1
+        perc = 70 + curSamp*1.0 / sampCount * 28.0
 
-            curSamp += 1
-            perc = 70 + curSamp*1.0 / sampCount * 28.0
-
-        # find samples which were present in biom but not in meta (we have the reverse from earlier)
-        missingBiom = []
-        for sampName in abundDict.keys():
-            found = False
-            for samp in mySamples:
-                if sampName == samp.sample_name:
-                    found = True
-            if not found:
-                missingBiom.append(sampName)
-        perc = 99.0
-        # update koOTUList takes new OTU from this upload and attempts to pair them with gene lists (ko) for faster
-        # queries during taxonomic profile table searches
-        if newOtuList:
-            updateKoOtuList(newOtuList, stopList, PID, RID)
-        perc = 100.0
-        # report back with missingSample and missingBiom lists so user knows which data is missing where (or mismatched)
-        return missingSamples, missingBiom
-
-    except Exception as e:
-        print "Parse_biom error: ", e
-        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-        logging.exception(myDate)
+    # find samples which were present in biom but not in meta (we have the reverse from earlier)
+    missingBiom = []
+    for sampName in abundDict.keys():
+        found = False
+        for samp in mySamples:
+            if sampName == samp.sample_name:
+                found = True
+        if not found:
+            missingBiom.append(sampName)
+    perc = 99.0
+    # update koOTUList takes new OTU from this upload and attempts to pair them with gene lists (ko) for faster
+    # queries during taxonomic profile table searches
+    if newOtuList:
+        updateKoOtuList(newOtuList, stopList, PID, RID)
+    perc = 100.0
+    # report back with missingSample and missingBiom lists so user knows which data is missing where (or mismatched)
+    return missingSamples, missingBiom
 
 
 def updateKoOtuList(otuList, stopList, PID, RID):  # for during a new upload
     # get otuList from project data (argument): Should be a list of all  NEW otu's in project
     # get all ko genelists and search for matching otus (out of new otus from related upload)
     # add matching otus to related koOtuList entries
-    try:
-        # get every single ko_entry object (or equivalent data from levels 1-3)
-        koList = []
-        records = ko_lvl1.objects.using('picrust').all()
-        for record in records:
-            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+    # get every single ko_entry object (or equivalent data from levels 1-3)
+    koList = []
+    records = ko_lvl1.objects.using('picrust').all()
+    for record in records:
+        koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
 
-        records = ko_lvl2.objects.using('picrust').all()
-        for record in records:
-            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+    records = ko_lvl2.objects.using('picrust').all()
+    for record in records:
+        koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
 
-        records = ko_lvl3.objects.using('picrust').all()
-        for record in records:
-            koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
+    records = ko_lvl3.objects.using('picrust').all()
+    for record in records:
+        koList.extend(record.ko_entry_set.values_list('ko_orthology', flat=True))
 
-        koList.extend(ko_entry.objects.all())
+    koList.extend(ko_entry.objects.all())
 
-        if stopList[PID] == RID:
-            return
+    if stopList[PID] == RID:
+        return
 
-        curOtu = 0
-        if koList:
-            koOtuDict = {}
-            for otu in otuList:
-                curTotal = 0
-                creTotal = 0
-                if PICRUSt.objects.using('picrust').filter(otuid=otu).exists():
-                    qs = PICRUSt.objects.using('picrust').filter(otuid=otu)
-                    geneList = qs[0].geneList
-                    geneList = geneList.replace("[", "")
-                    geneList = geneList.replace("]", "")
-                    geneList = geneList.replace("'", "")
-                    geneList = geneList.replace(" ", "")
-                    genes = geneList.split(",")
-                    for gene in genes:
-                        if gene in koList:
-                            # get or make koOtuList object for this ko
-                            if gene not in koOtuDict.keys():
-                                koOtuDict[gene] = []
-                                creTotal += 1
-                            koOtuDict[gene].append(otu)
-                            curTotal += 1
+    curOtu = 0
+    if koList:
+        koOtuDict = {}
+        for otu in otuList:
+            curTotal = 0
+            creTotal = 0
+            if PICRUSt.objects.using('picrust').filter(otuid=otu).exists():
+                qs = PICRUSt.objects.using('picrust').filter(otuid=otu)
+                geneList = qs[0].geneList
+                geneList = geneList.replace("[", "")
+                geneList = geneList.replace("]", "")
+                geneList = geneList.replace("'", "")
+                geneList = geneList.replace(" ", "")
+                genes = geneList.split(",")
+                for gene in genes:
+                    if gene in koList:
+                        # get or make koOtuList object for this ko
+                        if gene not in koOtuDict.keys():
+                            koOtuDict[gene] = []
+                            creTotal += 1
+                        koOtuDict[gene].append(otu)
+                        curTotal += 1
 
-                    curOtu += 1
-                    if stopList[PID] == RID:
-                        return
+                curOtu += 1
+                if stopList[PID] == RID:
+                    return
 
-            for ko in koOtuDict.keys():
-                if not koOtuList.objects.filter(koID=ko).exists():
-                    # koOtuList did not exist from main pop function, can just save list on new entry
-                    newKo = koOtuList.objects.create(koID=ko)
-                    newKo.otuList = koOtuDict[ko]
-                    newKo.save()
-                else:
-                    myKo = koOtuList.objects.get(koID=ko)
-                    # slightly trickier, as existing entry likely has a unicode comma split string, add comma then list
-                    oldList = myKo.otuList  # other thing to consider is duplicate entries, need to rebuild entirely
-                    # need to convert oldList from full string
-                    newList = koOtuDict[ko]
-                    myKo.otuList = oldList + "," + str(newList)
-                    myKo.save()
-
-
-    except Exception as er:
-        print "Problem with updateKOL (M) ", er
-    return
+        for ko in koOtuDict.keys():
+            if not koOtuList.objects.filter(koID=ko).exists():
+                # koOtuList did not exist from main pop function, can just save list on new entry
+                newKo = koOtuList.objects.create(koID=ko)
+                newKo.otuList = koOtuDict[ko]
+                newKo.save()
+            else:
+                myKo = koOtuList.objects.get(koID=ko)
+                # slightly trickier, as existing entry likely has a unicode comma split string, add comma then list
+                oldList = myKo.otuList  # other thing to consider is duplicate entries, need to rebuild entirely
+                # need to convert oldList from full string
+                newList = koOtuDict[ko]
+                myKo.otuList = oldList + "," + str(newList)
+                myKo.save()
 
 
 def parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID):   # TODO 1.4 this pipeline needs refactored
     debug("Parsing profile!")
+    global stage, perc
+    stage = "Step 5 of 5: Parsing shared file..."
+    perc = 0
+
+    # taxonomy file
+    data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True, encoding=None)  # getting empty dataset...
+    df1 = pd.DataFrame(data1[1:, 1:], index=data1[1:, 0], columns=data1[0, 1:])  # too many indices crash
+    df1 = df1[df1.index != 'False']
+    a = df1.columns.values.tolist()
+    a = [x for x in a if x != 'False']
+    df1 = df1[a]
+    # file3.close() # this line breaks when using a filename instead of a file object
+
+    # shared file
+    data2 = genfromtxt(file4, delimiter='\t', dtype=None, autostrip=True, encoding=None)
+    arr2 = data2.T
+    arr2 = np.delete(arr2, 0, axis=0)
+    arr2 = np.delete(arr2, 1, axis=0)
+    df2 = pd.DataFrame(arr2[1:, 1:], index=arr2[1:, 0], columns=arr2[0, 1:])
+    df2 = df2[df2.index != 'False']
+    b = df2.columns.values.tolist()
+    b = [x for x in b if x != 'False']
+    df2 = df2[b]
+    file4.close()
+
+    df3 = pd.merge(df1, df2, left_index=True, right_index=True, how='inner')
+    df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', value='', regex=True,
+                            inplace=True)
+    df3.reset_index(drop=True, inplace=True)
+    del df1, df2
+
+    total, columns = df3.shape
+    sampleList = df3.columns.values.tolist()
     try:
-        global stage, perc
-        stage = "Step 5 of 5: Parsing shared file..."
-        perc = 0
+        sampleList.remove('Seq')
+    except:
+        pass
+    try:
+        sampleList.remove('Taxonomy')
+    except:
+        pass
+    try:
+        sampleList.remove('Size')   # do we need this?
+    except:
+        pass
 
-        # taxonomy file
-        data1 = genfromtxt(file3, delimiter='\t', dtype=None, autostrip=True, encoding=None)  # getting empty dataset...
-        df1 = pd.DataFrame(data1[1:, 1:], index=data1[1:, 0], columns=data1[0, 1:])  # too many indices crash
-        df1 = df1[df1.index != 'False']
-        a = df1.columns.values.tolist()
-        a = [x for x in a if x != 'False']
-        df1 = df1[a]
-        # file3.close() # this line breaks when using a filename instead of a file object
+    # need to get rid of any old taxonomy data if sample type is set to replace
+    for name in sampleList:
+        sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
+        sampid = sample.sampleid
+        replaceType = refDict[sampid]
+        if replaceType == 'replace':
+            Profile.objects.filter(sampleid=sampid).delete()
+        if stopList[PID] == RID:
+            return
 
-        # shared file
-        data2 = genfromtxt(file4, delimiter='\t', dtype=None, autostrip=True, encoding=None)
-        arr2 = data2.T
-        arr2 = np.delete(arr2, 0, axis=0)
-        arr2 = np.delete(arr2, 1, axis=0)
-        df2 = pd.DataFrame(arr2[1:, 1:], index=arr2[1:, 0], columns=arr2[0, 1:])
-        df2 = df2[df2.index != 'False']
-        b = df2.columns.values.tolist()
-        b = [x for x in b if x != 'False']
-        df2 = df2[b]
-        file4.close()
 
-        df3 = pd.merge(df1, df2, left_index=True, right_index=True, how='inner')
-        df3['Taxonomy'].replace(to_replace='(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', value='', regex=True,
-                                inplace=True)
-        df3.reset_index(drop=True, inplace=True)
-        del df1, df2
+    idList = []
+    step = 0.0
+    for index, row in df3.iterrows():
+        perc = int(step / total * 100)
+        taxon = str(row['Taxonomy'])
+        taxon = taxon[:-1]
+        taxaList = taxon.split(';')
 
-        total, columns = df3.shape
-        sampleList = df3.columns.values.tolist()
+        k = taxaList[0]
+        p = taxaList[1]
+        c = taxaList[2]
+        o = taxaList[3]
+        f = taxaList[4]
+        g = taxaList[5]
+
+        if len(taxaList) < 7:
+            taxaList.append('unclassified')
+        if len(taxaList) < 8:
+            taxaList.append('unclassified')
+
+        s = taxaList[6]
+
+        otu = taxaList[7]
+
         try:
-            sampleList.remove('Seq')
-        except:
-            pass
-        try:
-            sampleList.remove('Taxonomy')
-        except:
-            pass
-        try:
-            sampleList.remove('Size')   # do we need this?
-        except:
-            pass
+            t_kingdom = Kingdom.objects.get(kingdomName=k)
+            t_phyla = Phyla.objects.get(kingdomid=t_kingdom, phylaName=p)
+            t_class = Class.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, className=c)
+            t_order = Order.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderName=o)
+            t_family = Family.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                          familyName=f)
+            t_genus = Genus.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                        familyid=t_family, genusName=g)
+            t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                            familyid=t_family, genusid=t_genus, speciesName=s)
+        except Exception as e:
+            print "Error finding taxa: ", e     # currently getting here via "unknown" kingdom
+            print taxaList
 
-        # need to get rid of any old taxonomy data if sample type is set to replace
+        t_otu = ''
+        try:
+            if k == 'unclassified':
+                t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                           familyid=t_family, genusid=t_genus, speciesid=t_species, otuSeq=row['Seq'])
+            else:
+                t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                           familyid=t_family, genusid=t_genus, speciesid=t_species, otuName=otu)
+        except Exception as e:
+            # otuID needs to be unique, apparently not specifying allows duplicates? based on name maybe
+            oid = uuid4().hex
+            t_otu = OTU_99.objects.create(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                          familyid=t_family, genusid=t_genus, speciesid=t_species,
+                                          otuName=otu, otuid=oid)
+            t_otu.save()
+
+        if stopList[PID] == RID:
+            return
+
         for name in sampleList:
-            sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
-            sampid = sample.sampleid
-            replaceType = refDict[sampid]
-            if replaceType == 'replace':
-                Profile.objects.filter(sampleid=sampid).delete()
-            if stopList[PID] == RID:
-                return
-
-
-        idList = []
-        step = 0.0
-        for index, row in df3.iterrows():
-            perc = int(step / total * 100)
-            taxon = str(row['Taxonomy'])
-            taxon = taxon[:-1]
-            taxaList = taxon.split(';')
-
-            k = taxaList[0]
-            p = taxaList[1]
-            c = taxaList[2]
-            o = taxaList[3]
-            f = taxaList[4]
-            g = taxaList[5]
-
-            if len(taxaList) < 7:
-                taxaList.append('unclassified')
-            if len(taxaList) < 8:
-                taxaList.append('unclassified')
-
-            s = taxaList[6]
-
-            otu = taxaList[7]
-
             try:
-                t_kingdom = Kingdom.objects.get(kingdomName=k)
-                t_phyla = Phyla.objects.get(kingdomid=t_kingdom, phylaName=p)
-                t_class = Class.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, className=c)
-                t_order = Order.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderName=o)
-                t_family = Family.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                              familyName=f)
-                t_genus = Genus.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                            familyid=t_family, genusName=g)
-                t_species = Species.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                                familyid=t_family, genusid=t_genus, speciesName=s)
-            except Exception as e:
-                print "Error finding taxa: ", e     # currently getting here via "unknown" kingdom
-                print taxaList
-
-            t_otu = ''
-            try:
-                if k == 'unclassified':
-                    t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                               familyid=t_family, genusid=t_genus, speciesid=t_species, otuSeq=row['Seq'])
-                else:
-                    t_otu = OTU_99.objects.get(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                               familyid=t_family, genusid=t_genus, speciesid=t_species, otuName=otu)
-            except Exception as e:
-                # otuID needs to be unique, apparently not specifying allows duplicates? based on name maybe
-                oid = uuid4().hex
-                t_otu = OTU_99.objects.create(kingdomid=t_kingdom, phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                              familyid=t_family, genusid=t_genus, speciesid=t_species,
-                                              otuName=otu, otuid=oid)
-                t_otu.save()
-
-            if stopList[PID] == RID:
-                return
-
-            for name in sampleList:
-                try:
-                    count = int(row[name])
-                    project = Project.objects.get(projectid=p_uuid)
-                    sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
-                    sampid = sample.sampleid
-                    idList.append(sampid)
-                    replaceType = refDict[sampid]
+                count = int(row[name])
+                project = Project.objects.get(projectid=p_uuid)
+                sample = Sample.objects.filter(projectid=p_uuid).get(sample_name=name)
+                sampid = sample.sampleid
+                idList.append(sampid)
+                replaceType = refDict[sampid]
 
 
-                    if count > 0:
-                        if replaceType == 'new' or replaceType == 'replace':
+                if count > 0:
+                    if replaceType == 'new' or replaceType == 'replace':
+                        Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom,
+                                               phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family,
+                                               genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
+
+                    if replaceType == 'append':
+                        if Profile.objects.filter(projectid=project, sampleid=sample, kingdomid=t_kingdom,
+                                                  phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                                  familyid=t_family, genusid=t_genus, speciesid=t_species,
+                                                  otuid=t_otu).exists():
+                            t = Profile.objects.get(projectid=project, sampleid=sample, kingdomid=t_kingdom,
+                                                    phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                                    familyid=t_family, genusid=t_genus, speciesid=t_species,
+                                                    otuid=t_otu)
+                            old = t.count
+                            new = old + int(count)
+                            t.count = new
+                            t.save()
+                        else:
                             Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom,
-                                                   phylaid=t_phyla, classid=t_class, orderid=t_order, familyid=t_family,
-                                                   genusid=t_genus, speciesid=t_species, otuid=t_otu, count=count)
-
-                        if replaceType == 'append':
-                            if Profile.objects.filter(projectid=project, sampleid=sample, kingdomid=t_kingdom,
-                                                      phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                                      familyid=t_family, genusid=t_genus, speciesid=t_species,
-                                                      otuid=t_otu).exists():
-                                t = Profile.objects.get(projectid=project, sampleid=sample, kingdomid=t_kingdom,
-                                                        phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                                        familyid=t_family, genusid=t_genus, speciesid=t_species,
-                                                        otuid=t_otu)
-                                old = t.count
-                                new = old + int(count)
-                                t.count = new
-                                t.save()
-                            else:
-                                Profile.objects.create(projectid=project, sampleid=sample, kingdomid=t_kingdom,
-                                                       phylaid=t_phyla, classid=t_class, orderid=t_order,
-                                                       familyid=t_family, genusid=t_genus, speciesid=t_species,
-                                                       otuid=t_otu, count=count)
-                except Exception as exc:
-                    print 'Sample could not be added: ', str(name), " because ", exc
-                if stopList[PID] == RID:
-                    return
-
-            step += 1.0
-
-        idUnique = list(set(idList))
-        for ID in idUnique:
-            sample = Sample.objects.get(sampleid=ID)
-            reads = Profile.objects.filter(sampleid=sample).aggregate(count=Sum('count'))
-            sample.reads = reads['count']
-            sample.save()
+                                                   phylaid=t_phyla, classid=t_class, orderid=t_order,
+                                                   familyid=t_family, genusid=t_genus, speciesid=t_species,
+                                                   otuid=t_otu, count=count)
+            except Exception as exc:
+                print 'Sample could not be added: ', str(name), " because ", exc
             if stopList[PID] == RID:
                 return
 
-        stage = "Step 1 of 5: Parsing project file..."
+        step += 1.0
 
-    except Exception as e:
-        print "Error with shared file parsing: ", e
-        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
-        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
-        logging.exception(myDate)
+    idUnique = list(set(idList))
+    for ID in idUnique:
+        sample = Sample.objects.get(sampleid=ID)
+        reads = Profile.objects.filter(sampleid=sample).aggregate(count=Sum('count'))
+        sample.reads = reads['count']
+        sample.save()
+        if stopList[PID] == RID:
+            return
 
+    stage = "Step 1 of 5: Parsing project file..."
     debug("Done parsing profile")
 
 
 def repStop(request):
     debug("Repstop!")
-    try:
-        # cleanup in repro project!
-        # reset WIP flag
-        ids = request.POST["ids"]
-        if isinstance(ids, list):
-            refList = Reference.objects.all().filter(refid__in=ids)
-        else:
-            refList = Reference.objects.all().filter(refid=ids)
-        for ref in refList:
-            curProj = Project.objects.get(projectid=ref.projectid)
-            curProj.wip = False
-            curProj.save()
-    except Exception as e:
-        print "Repstop errored:", e
+    # cleanup in repro project!
+    # reset WIP flag
+    ids = request.POST["ids"]
+    if isinstance(ids, list):
+        refList = Reference.objects.all().filter(refid__in=ids)
+    else:
+        refList = Reference.objects.all().filter(refid=ids)
+    for ref in refList:
+        curProj = Project.objects.get(projectid=ref.projectid)
+        curProj.wip = False
+        curProj.save()
     return "Stopped"
 
 
@@ -1511,10 +1505,10 @@ def bubbleFiles(dest):
     return
 
 
-def reanalyze(request, stopList):
+def reanalyze(request, stopList):   # TODO 1.3 change script upload for reprocess to script selector tree (like process)
     ### create savepoint
     sid = transaction.savepoint()
-
+    # this try except is for the sake of rolling back the database, then calling repStop to handle error output
     try:
         global rep_project
 
@@ -1694,6 +1688,8 @@ def reanalyze(request, stopList):
                 shutil.copy('% s/dada2.R' % dest, '% s/dada2.R' % mothurdest)
 
             shutil.copy('% s/final_meta.xlsx' % dest, '% s/final_meta.xlsx' % mothurdest)
+            # for ref in reflist, copy meta from dest to mothurdest?
+            # then copy meta from mothurdest to dest?? why?
 
             if stopList[PID] == RID:
                 mothurRestore(dest)

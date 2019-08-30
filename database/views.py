@@ -48,17 +48,27 @@ pd.set_option('display.max_colwidth', -1)
 LOG_FILENAME = 'error_log.txt'
 pro = None
 
+# when adding new file types, just add name used in html (and for directory) to subDirList
+subDirList = 'meta', 'shared', 'taxa', 'sequence', 'script', \
+                         'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq'
 
-def home(request):
-    functions.log(request, "PAGE", "HOME")
+
+def home(request, errorText=""):
+    if errorText == "":
+        functions.log(request, "PAGE", "HOME")
+    else:
+        functions.log(request, "ERR", "HOME")
     return render(
         request,
-        'home.html'
+        'home.html',
+        {
+            'error': errorText  # TODO 1.3 home page doesn't check error text, add to base?
+        }
     )
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def admin_console(request):
+def admin_console(request):  # console is a page with ongoing data, atm cannot think of a use for onload error alerts
     functions.log(request, "PAGE", "CONSOLE")
     if request.user.is_superuser:
         return render(
@@ -70,35 +80,32 @@ def admin_console(request):
         # flagging it in console log for crime and punishment reasons (can we ban people? ips?)
         functions.log(request, "ILLEGAL", "ILL_CONSOLE")
         # this error message is not displayed to user, they are simply sent the home page instead
-        return render(
-            request,
-            'home.html'
-        )
+        return home(request, errorText="Invalid permissions")
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def history(request):
+def history(request, errorText=""):   # TODO 1.4 support error case: RID not find? request out of date, etc
     # page for viewing previous analyses (can add ongoing and shared results next)
     # the page itself makes all needed calls, so just render the template and go
     return render(
         request,
-        'history.html'
+        'history.html',
+        {
+            'error': errorText
+        }
     )
 
 
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def files(request):
-    functions.log(request, "PAGE", "FILES")
-
-    # TODO 1.3 file upload page doesn't reload template
-
+def files(request, errorText=""):
+    if errorText == "":
+        functions.log(request, "PAGE", "FILES")
+    else:
+        functions.log(request, "ERR", "FILES")
     # script files are unusable unless uploaded by admin (literal account name, not role) for security purposes
-    # TODO 1.3 change script admin restriction to another account, un-super admin (too obvious)
     # scriptVis flag doesn't prevent user from uploading scripts, just makes it harder
     # supers can see it, but only the ones uploaded by admin can be used
-
     scriptVis = "false"
-
     if request.user.is_superuser:
         scriptVis = "true"
 
@@ -108,7 +115,7 @@ def files(request):
         {'BulkForm': BulkForm,
          'form2': UploadForm2,
          'scriptVis': scriptVis,
-         'error': ""}
+         'error': errorText}
     )
 
 
@@ -116,7 +123,8 @@ def fileUpFunc(request, stopList):  # TODO 1.3 this doesn't need to be synced wi
     errorText = ""
     RID = ''    # TODO 1.4 stopList and RID NYI, can go in with progress bar (same recoding basically)
     # There exists a django form plugin which can accomplish the progress tracking issue (as well as allow bigger file uploads overall)
-    # TODO 1.4 Progress bar for uploading files. This part is hard to test locally, local uploads are somewhat fast
+    # TODO 1.3 Progress bar for uploading files. This part is hard to test locally, local uploads are somewhat fast
+    # TODO 1.3 progress bar should come along with chunk based uploader
     # RID not particularly necessary for a one-way operation such as this. May be handy for logging of some description
     # Stoplist is the main reason to use RID, assuming stop function is implemented on the front end
     # Stopping a file upload is awkward since this is coded with only a single line technically performing the download
@@ -124,8 +132,7 @@ def fileUpFunc(request, stopList):  # TODO 1.3 this doesn't need to be synced wi
     # Further, progress bar AND stop both involve having a tighter control over this upload process, not sure if Django
     # supports accessing upload percentages and executing commands on operations I believe it assumes are done by now
 
-    # TODO 1.3 global subdir list
-
+    errorText = ""
     try:
         RID = request.POST['RID']
     except:
@@ -142,9 +149,6 @@ def fileUpFunc(request, stopList):  # TODO 1.3 this doesn't need to be synced wi
             if not os.path.exists(uploadDest):
                 os.makedirs(uploadDest)
 
-            # when adding new file types, just add name used in html (and for directory) to subDirList
-            subDirList = 'meta', 'shared', 'taxa', 'sequence', 'script', \
-                         'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq'
             subFilesDict = {}
             for subDir in subDirList:
                 subFilesDict[subDir] = request.FILES.getlist(str(subDir) + "files")
@@ -162,23 +166,15 @@ def fileUpFunc(request, stopList):  # TODO 1.3 this doesn't need to be synced wi
     else:
         errorText = "Error: invalid form"
 
-    scriptVis = "false"
-
-    if request.user.is_superuser:
-        scriptVis = "true"
-
-    return render(
-        request,
-        'files.html',
-        {'BulkForm': BulkForm,
-         'scriptVis': scriptVis,
-         'error': errorText}
-    )
+    return files(request, errorText)
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
-def upload(request):
-    functions.log(request, "PAGE", "UPLOAD")
+def process(request, errorText=""):
+    if errorText == "":
+        functions.log(request, "PAGE", "PROCESS")
+
     projects = Reference.objects.none()
     if request.user.is_superuser:
         projects = Reference.objects.all().order_by('projectid__project_name', 'path')
@@ -191,10 +187,11 @@ def upload(request):
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'error': ""}
+         'error': errorText}
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def download(request):
     functions.log(request, "PAGE", "DOWNLOAD")
@@ -287,31 +284,15 @@ def getProjectFiles(request):
 
 
 def upStop(request):  # upStop is not cleaning up uploaded files (directory, selection)
-    # cleanup mid upload project!
-    functions.log(request, "STOP", "UPLOAD")
-
-    #print "Cleaning up upload!"
-
-    projects = Reference.objects.none()
-    if request.user.is_superuser:
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path')
-    elif request.user.is_authenticated():
-        projects = Reference.objects.all().order_by('projectid__project_name', 'path').filter(author=request.user)
-
-    #print "Got projects, returning"
-    return render(
-        request,
-        'process.html',
-        {'projects': projects,
-         'form1': UploadForm1,
-         'form2': UploadForm2,
-         'error': "Upload stopped"
-         }
-    )
+    # this function exists for logging sake basically
+    functions.log(request, "STOP", "PROCESS")
+    process(request, errorText="Processing stopped")
 
 
+# TODO 1.3 html check
 def upErr(msg, request, dest, sid):
     logException()
+    debug("upErr: user", request.user.username, "msg", msg)
     functions.log(request, "ERROR", "UPLOAD")
     projects = Reference.objects.none()
     try:
@@ -336,7 +317,7 @@ def upErr(msg, request, dest, sid):
         {'projects': projects,
          'form1': UploadForm1,
          'form2': UploadForm2,
-         'error': msg
+         'error': msg   # TODO 1.3 verify security of msg, can user custom write? can it inject?
          }
     )
 
@@ -465,6 +446,7 @@ def copyFromUpload(source, dest, name):
         print "Error with", name, "shutil:", er
 
 
+# TODO 1.3 html check
 def cancelUploadEarly(request, projects, reason):
     functions.log(request, "UP_FAIL", reason)
     return render(
@@ -492,7 +474,7 @@ def checkCompsGetNames(compList, user, key):
     for comp in selcomps:
         if curComp == 0:
             if key == 'script':
-                if comp != 'admin' and comp != "None":  # TODO 1.3 this is where the script admin is listed, revise
+                if comp != 'admin' and comp != "None":  # TODO 1.4 this is where the script admin is listed, revise
                     return "Illegal file access", "error"
             else:
                 # can bypass with superuser, or by whitelist from permissions/user_profile system
@@ -646,7 +628,9 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
     return open('% s/final.cons.taxonomy' % dest)
 
 
-def handleArchive(dest, name):  # TODO 1.3 this function needs to find all member files and bring them to surface level
+def handleArchive(dest, name):  # take archive 'name' at location 'dest', extract all contents, move contents to pwd
+    # this function performed a security check by making sure all contents of the archive will end up where their name
+    # implies, throwing a security error back up if something doesn't match (absolute paths in archive possibly)
     try:
         unArchived = False
         debug("Attempting to extract archive at:", dest, "named:", name)
@@ -676,13 +660,10 @@ def handleArchive(dest, name):  # TODO 1.3 this function needs to find all membe
             return False  # file is unlikely to be an archive, as unzip and untar both failed
         if unArchived:
             # walk through the newly unarchived files and make sure everything is on the same level
-            for maindir, subdirs, filenames in os.walk(dest):
-                for filename in filenames:
-                    # print "Moving ", filename
-                    try:
-                        shutil.move(os.path.join(maindir, filename), dest)
-                    except Exception as exc:
-                        debug("Error with move: ", exc)
+            try:
+                bubbleFiles(dest)
+            except Exception as exc:
+                debug("Error with move: ", exc)
     return True  # return true if file was successfully extracted as an archive, false otherwise
 
 # TODO 1.3 sid usage in uploads (for transaction rollbacks, variable goes unused)
@@ -979,7 +960,11 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
         for filename in filenames:
             # print "Moving ", filename
             try:
-                shutil.move(os.path.join(maindir, filename), mothurdest)
+                if filename == "final_meta.xlsx":
+                    debug("Copying meta file")
+                    shutil.copy(os.path.join(maindir, filename), '% s/final_meta.xlsx' % mothurdest)    # TODO 1.3 verify
+                else:
+                    shutil.move(os.path.join(maindir, filename), mothurdest)
             except Exception as exc:
                 debug("Error with move: ", exc)
         # need to move to mothurdest AFTER all handleArchive calls
@@ -1082,7 +1067,7 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
     return "None"
 
 
-def uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors):
+def uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, minConfidence, stopList, PID, RID, sid, processors):
     debug("UPLOAD WITH BIOM")
     try:
         # directly added taxa file (in biom format)
@@ -1101,7 +1086,7 @@ def uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, 
         return "Problem with taxa file: " + str(e)
 
     try:
-        errSamp, errBiom = functions.parse_biom(biomFile, taxaFile, sequenceFile, p_uuid, refDict, stopList, PID, RID)
+        errSamp, errBiom = functions.parse_biom(biomFile, taxaFile, sequenceFile, p_uuid, refDict, minConfidence, stopList, PID, RID)
         # check errSamp and errBiom for names of samples which were in one file but not the other
         errText = ""
         if len(errSamp) > 0:
@@ -1127,7 +1112,8 @@ def uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, 
     return "None"
 
 
-def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
+# TODO 1.3 html check
+def processFunc(request, stopList):
 
     # validation process involves checking settings paired with actual files sent
 
@@ -1181,13 +1167,10 @@ def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
     textDict = {}
     hasDict = {}
 
-    # MUST KEEP THIS SYNCED WITH SAME NAME VARIABLE IN FILEUPFUNC, make global?
-    subDirList = 'meta', 'shared', 'taxa', 'sequence', 'script', \
-                 'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq'
     # sff, oligos, and a couple others need multi select support
 
     allTheThings = request.POST
-
+    debug("processFunc: allTheThings", allTheThings.keys())
     curData = json.loads(allTheThings['data'])
 
     for subDir in subDirList:
@@ -1273,9 +1256,14 @@ def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
     # get sample info from selected meta file
     try:
         refDict = functions.parse_sample(metaFile, p_uuid, pType, num_samp, dest, raw, source, userID, stopList, RID, PID)
+        debug("processFunc: refDict", refDict)
         # stop will force an early return, full stop will occur when detected again right after here
-    except Exception:
-        return upErr("There was an error parsing your meta file:" + str(selDict['meta']), request, dest, sid)
+    except Exception as e:
+        print "Error parsing sample: ", e
+        logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG,)
+        myDate = "\nDate: " + str(datetime.datetime.now()) + "\n"
+        logging.exception(myDate)
+        return upErr("There was an error parsing your meta file:" + str(e), request, dest, sid)
 
     if stopList[PID] == RID:
         functions.remove_proj(dest, request.user)
@@ -1285,6 +1273,7 @@ def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
     # if using shared+taxa or shared+sequence mothur combo
     debug("Upload finished shared section")
     errorText = "Invalid source type for processing"
+    # TODO 1.3 move sample name matching check to the start of each pipeline, rather than profile
     if source == 'mothur':
         errorText = uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID)  # TODO 1.3 sid on mothur upload
 
@@ -1298,7 +1287,8 @@ def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
         errorText = uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors, platform)
 
     if source == "biom":
-        errorText = uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID, sid, processors)
+        minConfidence = curData['cutoff']
+        errorText = uploadWithBiom(request, nameDict, selDict, refDict, p_uuid, dest, minConfidence, stopList, PID, RID, sid, processors)
 
     if errorText == "Stop":  # upload subfuncs all return "Stop" when told to end early, saving cleanup for here
         functions.remove_proj(dest, request.user)
@@ -1310,7 +1300,7 @@ def uploadFunc(request, stopList):  # TODO 1.3 refactor to processFunc
 
     end = datetime.datetime.now()
     print 'Total time for ' + str(request.user.username) + '\'s upload:', end - start
-
+    # TODO 1.3 verify files are winding up in the right place after upload is done
     myProject = Project.objects.get(projectid=p_uuid)
     myProject.wip = False
     myProject.save()
@@ -2192,6 +2182,7 @@ def userTableJSON(request):
         functions.log(request, "NON_AJAX", "USER_TABLE")
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def select(request):
     # send Locations to page, should be based on visible samples and projects
@@ -2438,6 +2429,7 @@ def taxaJSON(request):
     return HttpResponse(myJson)
 
 
+# TODO 1.3 html check
 def taxa(request):
     functions.log(request, "PAGE", "TAXA")
     return render(
@@ -2815,6 +2807,7 @@ def pathTaxaJSON(request):
         print "Error during kegg path: ", e
 
 
+# TODO 1.3 html check
 def kegg_path(request):
     functions.log(request, "PAGE", "KEGG_PATH")
     return render(
@@ -2870,6 +2863,7 @@ def nzTaxaJSON(request):
         print "Error during kegg enzyme: ", e
 
 
+# TODO 1.3 html check
 def kegg_enzyme(request):
     functions.log(request, "PAGE", "KEGG_NZ")
     return render(
@@ -2878,6 +2872,7 @@ def kegg_enzyme(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def norm(request):
     functions.log(request, "PAGE", "NORM")
@@ -2889,6 +2884,7 @@ def norm(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def ANOVA(request):
     functions.log(request, "PAGE", "ANOVA")
@@ -2900,6 +2896,7 @@ def ANOVA(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def CORR(request):
     functions.log(request, "PAGE", "CORR")
@@ -2911,6 +2908,7 @@ def CORR(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def core(request):
     functions.log(request, "PAGE", "CORE")
@@ -2921,6 +2919,7 @@ def core(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def spac(request):  # refactored from rich to spac, not a typo
     functions.log(request, "PAGE", "SpAC")
@@ -2932,6 +2931,7 @@ def spac(request):  # refactored from rich to spac, not a typo
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def soil_index(request):
     functions.log(request, "PAGE", "SOIL_INDEX")
@@ -2943,6 +2943,7 @@ def soil_index(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def DiffAbund(request):
     functions.log(request, "PAGE", "DIFFABUND")
@@ -2954,6 +2955,7 @@ def DiffAbund(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def GAGE(request):
     functions.log(request, "PAGE", "GAGE")
@@ -2965,6 +2967,7 @@ def GAGE(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def PCA(request):
     functions.log(request, "PAGE", "PCA+")
@@ -2976,6 +2979,7 @@ def PCA(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def PCoA(request):
     functions.log(request, "PAGE", "PCoA")
@@ -2987,6 +2991,7 @@ def PCoA(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def RF(request):
     functions.log(request, "PAGE", "RF")
@@ -2998,6 +3003,7 @@ def RF(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def SPLS(request):
     functions.log(request, "PAGE", "sPLS")
@@ -3009,6 +3015,7 @@ def SPLS(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def WGCNA(request):
     functions.log(request, "PAGE", "WGCNA")
@@ -3077,6 +3084,7 @@ def saveSampleList(request):
         functions.log(request, "NON_AJAX", "SAVE_SAMPLE")
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def reprocess(request):
     functions.log(request, "PAGE", "REPROCESS")
@@ -3088,6 +3096,7 @@ def reprocess(request):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def update(request):
     functions.log(request, "PAGE", "UPDATE")
@@ -3100,6 +3109,7 @@ def update(request):
     )
 
 
+# TODO 1.3 html check
 def updaStop(request):
     file1 = request.FILES['docfile11']
     p_uuid, pType, num_samp = functions.projectid(file1)
@@ -3116,7 +3126,8 @@ def updaStop(request):
     )
 
 
-def updateFunc(request, stopList):
+# TODO 1.3 html check
+def updateFunc(request, stopList):  # TODO 1.3 update should use meta file from user uploads (atm using upload form)
     form5 = UploadForm5(request.POST, request.FILES)
     state = ''
     curUser = User.objects.get(username=request.user.username)
@@ -3200,6 +3211,7 @@ def updateFunc(request, stopList):
     )
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 @user_passes_test(lambda u: u.is_superuser)
 def pybake(request):
@@ -3214,6 +3226,7 @@ def pybake(request):
     )
 
 
+# TODO 1.3 html check
 def uploadNorm(request):
     uploaded = request.FILES["normFile"]
     savedDF = pd.read_csv(uploaded, index_col=0, sep='\t')
@@ -3349,6 +3362,7 @@ def usrFiles(request):
     }
 
 
+# TODO 1.3 html check
 @login_required(login_url='/myPhyloDB/accounts/login/')
 def profile(request):
     functions.log(request, "PAGE", "PROFILE")
@@ -3368,6 +3382,7 @@ def profile(request):
     )
 
 
+# TODO 1.3 html check
 def changeuser(request):
     functions.log(request, "PAGE", "CHANGEUSER")
     return render(
@@ -3378,6 +3393,7 @@ def changeuser(request):
     )
 
 
+# TODO 1.3 html check
 def updateInfo(request):
     functions.log(request, "FUNCTION", "UPDATEINFO")
     stuff = request.POST
