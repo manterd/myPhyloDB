@@ -49,6 +49,10 @@ def getStopDict():
     stopFinal['error'] = 'Your request was stopped'
     return json.dumps(stopFinal)
 
+# TODO 1.3 when selecting multiple meta variables, all values are chosen, regardless of which subset is highlighted
+# metaDF is adding too many categories basically: when we go to combine available variables for comparison, we ought to
+# filter out comparison combinations which contain values not in the selection list (even if they match chosen variable)
+# utils_df definitely has the function in question, probably getMetaDF
 
 # analysis class is a base for other analyses to overwrite (not intended for direct use)
 class Analysis:  # abstract parent class, not to be run on its own. Instead, should be used as a template
@@ -124,6 +128,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         # Create meta-variable DataFrame, final sample list, final category and quantitative field lists based on tree selections
         # getMetaDF is pretty much the only memory spike in this pipeline, courtesy of exploding panda
         self.savedDF, self.metaDF, self.finalSampleIDs, self.catFields, remCatFields, self.quantFields, self.catValues, self.quantValues = functions.getMetaDF(self.request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, self.DepVar, levelDep=True)
+        debug("Analysis: catFields", self.catFields)
         self.allFields = self.catFields + self.quantFields
         if reqMultiLevel:
             if not self.catFields:
@@ -293,6 +298,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             return HttpResponse(res, content_type='application/json')
 
         debug("Second!")
+        debug("Query: finalDF", self.finalDF[self.catFields[0]].unique(), self.finalDF[self.catFields[1]].unique())
 
         # make sure column types are correct
         self.finalDF[self.catFields] = self.finalDF[self.catFields].astype(str)
@@ -504,7 +510,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         self.pValDict = {}
         counter = 1
 
-        for name1, group1 in grouped1:  # TODO 1.4 parallelize this loop and its equivalents
+        for name1, group1 in grouped1:  # TODO 1.4 parallelize this loop and its equivalents (if significant timestep)
             D = ''
             r.assign("df", group1)
             trtString = " * ".join(self.allFields)

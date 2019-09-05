@@ -548,17 +548,17 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
         for key in sorted(metaDictCat):
             catFields.append(key)
             catValues.extend(metaDictCat[key])
+    debug("getMetaDF: catFields:", catFields)
+    # catValues matches the selection subset from the page, use this to filter metaDict in exploding_panda
     catSampleIDs = []
     if metaIDsCat:
         idDictCat = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
         for key in sorted(idDictCat):
             myIDs = idDictCat[key]
             if type(myIDs) == list:
-                print "List!"
                 for ID in myIDs:
                     catSampleIDs.append(ID)
             else:
-                print "Not list!"
                 catSampleIDs.append(myIDs)
     quantFields = []
     quantValues = []
@@ -589,7 +589,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     path = str(myDir) + 'myphylodb.biom'
     # if there are memory issues in analysis, blame the exploding panda
     debug("getMetaDF: Exploding Panda")
-    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields, levelDep=levelDep, depVar=DepVar)
+    savedDF, metaDF, remCatFields = exploding_panda(path, finalSampleIDs=finalSampleIDs, catFields=catFields, quantFields=quantFields, levelDep=levelDep, depVar=DepVar, catVals=catValues, quantVals=quantValues)
     return savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues
 
 
@@ -720,7 +720,7 @@ def memDiff():
     # else just skip this function entirely
 
 
-def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False, depVar=10):
+def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], levelDep=False, depVar=10, catVals=[], quantVals=[]):
     # this function is the primary memory hog for analysis, and the largest chunk of normalize too
     # this uses the myphylodb.biom file normalization made
     global prevMem, memTally
@@ -728,7 +728,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     prevMem = process.memory_info().rss / 1024.0 ** 2
     # Load file
     file = open(path)
-    data = json.load(file)      # assuming data is the main spike for this area, ideally be done with it ASAP (before peak), for cleanup sake
+    data = json.load(file)
     file.close()
     debug("Exploding panda loaded json", len(data))
     memDiff()   # 139.8
@@ -737,10 +737,40 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     datCols = data['columns']
     datRows = data['rows']
     debug("Cols and Rows", len(datCols), len(datRows))
+
+    # get unique vals from catVals and quantVals
+    cats = []
+    quants = []
+    for val in catVals:
+        if val not in cats:
+            cats.append(val)
+    for val in quantVals:
+        if val not in quants:
+            quants.append(val)
+    debug("exploding_panda: cats", cats)
+    debug("exploding_panda: quants", quants)
+
     # get metadata into dicionary keyed by id
     metaDict = {}
     for i in datCols:
-        metaDict[str(i['id'])] = i['metadata']
+        # if cats AND quants are empty, process as normal with full data
+        # if cats OR quants contain values, only add samples to metaDict whose catField or quantField values are
+        # found in their respective vals list
+        canAdd = True
+        for field in catFields:
+            if i['metadata'][field] not in cats:
+                canAdd = False
+
+        for field in quantFields:
+            if i['metadata'][field] not in quants:
+                canAdd = False
+        if canAdd:
+            # need to skip sample ids which were selected under one variable but not another (logical 'AND' gate)
+            metaDict[str(i['id'])] = i['metadata']
+
+    # it is entirely possible to select metadata which has zero overlap, but we can't analyze an empty set, so error
+    assert len(metaDict) > 0, "No samples match chosen meta values"  # TODO 1.4 assert is so good for this job, use more
+
     # get taxa data into dictionary
     taxaDict = {}
     for i in datRows:
@@ -922,6 +952,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
 
     # Check if there is at least one categorical variable with multiple levels
     # Remove fields with only 1 level
+    debug("exploding_panda: catFields", catFields)
     remCatFields = []
     if levelDep:
         if catFields:
@@ -974,7 +1005,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
 
 def exploding_panda2(path, treeType):
     try:
-        # Load file     # TODO 1.3 revert changes to this function based on getRawTabData's needs
+        # Load file
         debug("exploding_panda2")
         file = open(path)
         data = json.load(file)
