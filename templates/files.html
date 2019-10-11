@@ -154,7 +154,7 @@
 
         function progressBar(percent, $element) {
            var progressBarWidth = percent * $element.width() / 100;
-            $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
+            $element.find("div").animate({ width: progressBarWidth, fill: "forwards" }, 100).html(percent + "%&nbsp;");
         }
 
         function removeUploads() {
@@ -274,11 +274,11 @@
             // fastq
             simplifyFiles(allFastq, "fastq");
 
-            console.log("Found "+myFiles.length+" files");
+            //console.log("Found "+myFiles.length+" files");
 
             var percent;
-            var chunkSize = 5000; // 5 KB chunk size, needs testing / metrics to fine tune
-            // TODO 1.3 error encountered when file is <= chunk size
+            var chunkSize = 10000; // 10 KB chunk size, needs testing / metrics to fine tune (50KB throws warnings)
+            // also the file needs to be in memory for this? like a lot of it.... ACK TODO 1.3 run big file, watch RAM
             var currentFile = 0;
             var fileCount = myFiles.length;
             // actually send files
@@ -291,7 +291,7 @@
                 var fileSize = myFile.size;
                 var fileName = myFile.name;
                 updateStage("Uploading "+fileName);
-                console.log("File "+fileName+" ("+currentFile+") is "+fileSize+" bytes");
+                //console.log("File "+fileName+" ("+currentFile+") is "+fileSize+" bytes");
                 // get chunk count
                 var chunkCount = Math.ceil(fileSize/chunkSize);
                 var chunkNum = 0;
@@ -303,8 +303,8 @@
                 reader.onload = function(){
                     //console.log("onload!");
                     readChunk = new Uint8Array(reader.result);//.split(",")[1];
-                    console.log("readChunk: "+Object.keys(readChunk).length);
-                    console.log(readChunk);
+                    //console.log("readChunk: "+Object.keys(readChunk).length);
+                    //console.log(readChunk);
                     //curHash = SparkMD5.hash(readChunk);
                     var spark = new SparkMD5.ArrayBuffer();
                     spark.append(readChunk);
@@ -317,7 +317,7 @@
                     myDict['chunk'] = readChunk;
                     myDict['chunkNum'] = chunkNum;
                     var jsonDict = JSON.stringify(myDict);
-                    console.log("trying to send chunk "+chunkNum);
+                    //console.log("trying to send chunk "+chunkNum);
                     $.ajax({
                         url: '/myPhyloDB/fileUploadChunk/',
                         type: 'POST',
@@ -325,15 +325,15 @@
                         processData: false,
                         data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),// + "&chunkBinaryData="+readChunk,
                         success: function (data) {
-                            console.log("Returned from chunk "+chunkNum);
+                            //console.log("Returned from chunk "+chunkNum);
                             // data should have the hash from the server, check if it matches our hash
                             // if it does, move on to the next chunk
                             // if it does not, resend this chunk by decrementing chunkNum and start values
                             var result = JSON.stringify(data);
-                            console.log("Successful return: "+result);
+                            //console.log("Successful return: "+result);
                             var obj = $.parseJSON(result);
                             var serverHash = obj['hash'];
-                            console.log("Server returned hash: "+serverHash);
+                            //console.log("Server returned hash: "+serverHash);
                             if (serverHash != curHash){
                                 // resend this chunk, the hashes didn't match TIMEOUT CHECK? Number of attempts limit! TODO 1.3
                                 console.log("Hash mismatch for "+chunkNum);
@@ -368,7 +368,7 @@
                 function sendChunk(currentPosition){
                     // this function gets called again by the onload function in the filereader, javascript is weird ok?
                     curChunk = myFile.slice(currentPosition, Math.min(currentPosition+chunkSize, fileSize));
-                    console.log("curChunk: "+Object.keys(curChunk).length);
+                    //console.log("curChunk: "+Object.keys(curChunk).length);
                     reader.readAsArrayBuffer(curChunk);
                     //reader.readAsText(curChunk);
                     //reader.readAsBinaryString(curChunk);
