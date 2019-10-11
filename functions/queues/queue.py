@@ -56,6 +56,8 @@ time2 = {}
 TimeDiff = {}
 complete = {}
 
+QUEUE_LIMIT = 6  # this MUST be >= history limit+1 or we deadlock. history limit is handled by the model (one var)
+
 
 def setBase(RID, val):
     global base
@@ -202,8 +204,6 @@ def process(pid):
                 functions.log(request, "QSTART", funcName)
                 if activeList[pid] == RID:
                     # TODO 1.3 finish moving analyses into analysis.py classes
-                    # TODO 1.3 cleanup and history are treating getNorm like a proper analysis (no point in norm history view)
-                    # TODO 1.3 put a limit on how many requests can be queued from the same user at one time (queueUsers has the needed info)
                     if funcName == "getNorm":   # at present likely not worthwhile to port norm to analysis class
                         recent[RID] = functions.getNorm(request, RID, stopList, pid)
                     elif funcName == "getCatUnivData":
@@ -264,15 +264,17 @@ def process(pid):
             print "Error during analysis queue:", e
             if request is not None:
                 functions.log(request, "ERROR_AQ", str(e)+"\n")  # atm this triggers when an UNHANDLED exception occurs. Handled check is the other ERROR_AQ line
+                cleanup(RID, queueUsers[RID])
             myDict = {'error': "Exception: "+str(e.message)}
             # this depends on the page in question directly, as each is responsible for handling 'error' in response
             stop = json.dumps(myDict)
             recent[RID] = HttpResponse(stop, content_type='application/json')
 
 
-def cleanup(RID, username):   # cleanup and removeRID two parts of the same concept, group and add recent and such cleanup
+def cleanup(RID, username):
+    # TODO 1.3 make history data persistent (atm wipes with server resets because volatile memory)
+    # likely accomplish this via pkl, use RID for filename so we can open it back up if key is not in memory already
     global queueFuncs, queueTimes, queueUsers, queueList, cleanupQueue, base, stage, time1, time2, TimeDiff
-    # TODO 1.3 cleanup rplots and such (find directories named RID and remove them and their content)
     # get the user's recent RID list, add the new RID, and potentially receive an older RID to add to the queue
     myProf = UserProfile.objects.get(user=User.objects.get(username=username))
     toClean = myProf.addRecentRID(RID)
@@ -394,6 +396,18 @@ def funcCall(request):
             return HttpResponse(json_data,  content_type='application/json')
 
         if dataID == UserProfile.objects.get(user=request.user).dataID:
+            # check if username is present QUEUE_LIMIT or more times in the queue, if so then return a "too many requests" msg
+            # queueUsers isn't cleaned up during errors?
+            foundUser = 0
+            for key in queueUsers.keys():
+                if queueUsers[key] == request.user.username:
+                    foundUser += 1
+            if foundUser >= QUEUE_LIMIT:
+                myDict = {}
+                myDict['resType'] = "status"
+                myDict['error'] = "Error: too many active requests, please wait"
+                json_data = json.dumps(myDict)
+                return HttpResponse(json_data, content_type='application/json')
             time1[RID] = time()
             qDict = {'RID': RID, 'funcName': funcName, 'request': request}
             qList.append(qDict)  # what on earth does this do?

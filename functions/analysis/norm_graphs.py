@@ -114,7 +114,7 @@ def getNorm(request, RID, stopList, PID):   # TODO 1.3 error: index out of bound
                 with open(path, 'wb') as f:
                     pickle.dump(newList, f)
 
-            metaDF = UnivMetaDF(newList, RID, stopList, PID)    # TODO 1.3 what is PID for in practice?
+            metaDF = UnivMetaDF(newList, RID, stopList, PID)    # TODO 1.4 what is PID for in practice?
 
             # remove emptycols
             metaDF.replace('nan', np.nan, inplace=True)
@@ -536,7 +536,7 @@ def getNorm(request, RID, stopList, PID):   # TODO 1.3 error: index out of bound
             myBiom["shape"] = shape
             myBiom['rows'] = filteredTaxaList
 
-            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'   # TODO 1.3 do we still want phyloseq.biom?
+            myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'   # TODO 1.4 do we still want phyloseq.biom?
             path = str(myDir) + 'phyloseq.biom'
             with open(path, 'w') as outfile:
                 json.dump(myBiom, outfile, ensure_ascii=True, indent=4)
@@ -544,7 +544,7 @@ def getNorm(request, RID, stopList, PID):   # TODO 1.3 error: index out of bound
 
             functions.setBase(RID, 'Step 5 of 5: Formatting biome data...done!')
 
-            # TODO 1.3 call the taxa tree middleground file creator here
+            # generate taxa summary file for tree filtering later
             functions.write_taxa_summary(myDir+"available_taxa_summary.pkl", taxaList)
 
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #

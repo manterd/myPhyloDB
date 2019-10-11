@@ -382,7 +382,7 @@
                 });
             });
 
-            $("#Upload").click(function() {
+            $("#Process").click(function() {
                 $("#stage").show();
                 $("#progressBar").show();
                 document.getElementById("mothurStat").value = "";
@@ -793,7 +793,7 @@
         <table>
             <tr>
                 <td>
-                    <input id='Upload' name='Upload' type="submit" onclick="createProject();" value="Create new project"/>
+                    <input id='Process' name='Process' type="submit" onclick="createProject();" value="Create new project"/>
                 </td>
                 <td>
                     <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop!"/>
@@ -815,7 +815,7 @@
 
     <textarea id="mothurStat" rows=25 cols=72 style="width: 925px"></textarea>
 
-    <h2>List of previous uploads:</h2>
+    <h2>List of previous projects:</h2>
     <table id="meta_files" border="2" cellspacing="0" cellpadding="1">
             <tr>
                 <th>Select project path to remove:<a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>

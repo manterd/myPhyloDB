@@ -207,7 +207,7 @@ def getTaxaDF(selectAll, taxaDict, savedDF, metaDF, allFields, DepVar, RID, stop
         debug("getTaxaDF: metaDF.reset_index")
         metaDF.reset_index(drop=False, inplace=True)
         #print "Type meta:", type(metaDF), "Type taxa:", type(taxaDF)
-        debug("getTaxaDF: metaDF", metaDF[allFields[0]].unique(), metaDF[allFields[1]].unique())
+        #debug("getTaxaDF: metaDF", metaDF[allFields[0]].unique())
         #debug("getTaxaDF: taxaDF", taxaDF)
         finalDF = pd.merge(metaDF, taxaDF, left_on='sampleid', right_on='sampleid', how='inner')
         #debug("getTaxaDF: finalDF", finalDF)

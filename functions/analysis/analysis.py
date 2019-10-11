@@ -49,10 +49,6 @@ def getStopDict():
     stopFinal['error'] = 'Your request was stopped'
     return json.dumps(stopFinal)
 
-# TODO 1.3 when selecting multiple meta variables, all values are chosen, regardless of which subset is highlighted
-# metaDF is adding too many categories basically: when we go to combine available variables for comparison, we ought to
-# filter out comparison combinations which contain values not in the selection list (even if they match chosen variable)
-# utils_df definitely has the function in question, probably getMetaDF
 
 # analysis class is a base for other analyses to overwrite (not intended for direct use)
 class Analysis:  # abstract parent class, not to be run on its own. Instead, should be used as a template
@@ -86,7 +82,8 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         allJson = self.request.body.split('&')[0]
         self.all = json.loads(allJson)
 
-        debug("Analysis data: ", self.all)
+        #debug("Analysis data: ", self.all)
+        debug("Analysis starting")
 
         functions.setBase(self.RID, 'Step 1 of 4: Selecting your chosen meta-variables...')
 
@@ -298,7 +295,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             return HttpResponse(res, content_type='application/json')
 
         debug("Second!")
-        debug("Query: finalDF", self.finalDF[self.catFields[0]].unique(), self.finalDF[self.catFields[1]].unique())
 
         # make sure column types are correct
         self.finalDF[self.catFields] = self.finalDF[self.catFields].astype(str)

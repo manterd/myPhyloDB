@@ -23,7 +23,7 @@ class UploadForm2(forms.Form):
     docfile6 = forms.FileField(label='Select Oligos file:', required=False)
     docfile7 = forms.FileField(label='Select batch file:', required=False)
     docfile13 = forms.FileField(label='Select 3-column contig file:', required=False)
-    platform = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'mothur'), ('dada2', 'dada2')))
+    platform = forms.ChoiceField(widget=forms.Select, choices=(('mothur', 'mothur'), ('dada2', 'dada2')), initial='dada2')
     fastq_files = MultiFileField()
 
     # biom upload files

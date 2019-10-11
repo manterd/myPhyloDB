@@ -82,4 +82,11 @@
 
         }
     });
+
+    function updateNodesQuant(){
+        nodesQuant = $.map($("#tree_metaQuant").dynatree("getSelectedNodes"), function(node) {
+                            return node;
+                        });
+    }
+
 </script>

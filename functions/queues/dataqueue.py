@@ -48,11 +48,11 @@ def datstop(request):
 
             retStuff = None
 
-            if thisFunc == "processFunc":    # just directly rendering page because request chaining is clunky
+            if thisFunc == "processFunc":
                 retStuff = database.views.process(request, errorText="Processing stopped")
 
             elif thisFunc == "reanalyze":
-                # reprocess and pybake are fine without stoplists since they are page requests
+                # do these pages support errorText flag? TODO 1.3 they need to
                 retStuff = database.views.reprocess(request)
 
             elif thisFunc == "updateFunc":
@@ -87,7 +87,7 @@ def datstop(request):
 
 
 # TODO 1.4 put general function description (going over parameters and usage) at the start of each function definition
-def getDataQueue(request):  # TODO 1.3 console display items getting stuck when errored
+def getDataQueue(request):  # TODO 1.4 console display items getting stuck when errored (not urgent, self fixes with new queued item)
     if not request.user.is_superuser or not request.user.is_authenticated:
         output = json.dumps({'display': "Invalid Permissions"})
         return HttpResponse(output, content_type='application/json')
@@ -164,8 +164,6 @@ def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: inval
                     debug("About to run", funcName, "for", request.user.username)
                     if funcName == "processFunc":
                         datRecent[RID] = database.views.processFunc(request, datStopList)
-                    elif funcName == "fileUpFunc":
-                        datRecent[RID] = database.views.fileUpFunc(request, datStopList)
                     elif funcName == "reanalyze":
                         resp = functions.reanalyze(request, datStopList)    # run reanalyze, check results for errors
                         if resp is None:    # if no errors, return a standard reprocess page
@@ -201,9 +199,31 @@ def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: inval
             print "Error during data queue:", e
             if request is not None:
                 functions.log(request, "ERROR_DQ", str(e)+"\n")
-            myDict = {'error': "Exception: "+str(e.message)}    # TODO 1.3 this doesn't always display to user FIX
-            stop = json.dumps(myDict)   # {"error": "Exception: 'data'"} # TODO 1.3 the bug is that this response is being used as a page
-            datRecent[RID] = HttpResponse(stop, content_type='application/json')
+            pid = datQueueList[RID]
+            thisFunc = datQueueFuncs[pid]
+            if thisFunc == "processFunc":
+                retStuff = database.views.process(request, errorText=str(e))
+
+            elif thisFunc == "reanalyze":
+                # do these pages support errorText flag? TODO 1.3 they need to
+                retStuff = database.views.reprocess(request)
+
+            elif thisFunc == "updateFunc":
+                functions.log(request, "ERROR", "UPDATE")
+                state = str(e)
+                retStuff = render(
+                    request,
+                    'update.html',
+                    {'form5': UploadForm5,
+                     'state': state}
+                )
+
+            elif thisFunc == "pybake":
+                retStuff = database.views.pybake(request)
+
+            if retStuff is None:
+                print "DataQueue error has no valid func?"  # "unreachable state" haha
+            datRecent[pid] = retStuff
 
 
 def cleanup(RID):
@@ -230,7 +250,6 @@ def cleanup(RID):
 def datfuncCall(request):
     global datActiveList, datQueueList, datQueueFuncs, datStopList, datStopDict, datStatDict, datQList, datQueueTimes, datQueueUsers
     debug("DatFuncCall called by", request.user.username)
-    # current issue seems to be that this function doesn't get called until after the file transfer is complete
     RID = request.POST['RID']
     funcName = request.POST['funcName']
     datQueueList[RID] = RID  # add to queuelist, remove when processed or stopped
@@ -242,7 +261,7 @@ def datfuncCall(request):
     datQList.append(qDict)
     datQ.put(qDict, True)
     datStatDict[RID] = int(datQ.qsize())
-    debug("Added statDict for RID", RID)    # TODO 1.3 chunk based uploader will get this going faster
+    debug("Added statDict for RID", RID)
 
     # print log info, need to write this to a file somewhere
     functions.log(request, "QADD", funcName)
@@ -271,7 +290,7 @@ def datstat(RID):
     except Exception:
         # if not in stopDict (ie not called to stop) queuepos is current (minus number of pre stops)
         try:
-            return datStatDict[RID]  # TODO 1.3 some way to track preemptive stops, decremQ with arg?
+            return datStatDict[RID]  # TODO 1.4 some way to track preemptive stops, decremQ with arg?
         except Exception as ex:
             print "Exception with datstat:", ex
 

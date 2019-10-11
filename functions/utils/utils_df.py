@@ -38,6 +38,7 @@ pd.set_option('display.max_colwidth', -1)
 # logging code
 loggerRunning = 0
 preLogBackLog = Queue(maxsize=0)    # queue containing entries to write to log file
+# TODO 1.3 preLogBackLog is for server_log.txt, make extras for security and error logging
 # second log for console page, should store most recent N entries, so make a queue and pop it when we reach N
 consoleLog = []  # using array for full access without popping
 # can't use queue because we want to keep the entries after reading them, will have to maintain order manually
@@ -46,6 +47,12 @@ oldestLogEntry = 0  # integer marking the index in consoleLog containing the fir
 # when oldestLogEntry reaches N, reset it to 0
 # this ensures we have a list of N log entries we can always read in correct order
 maximumLogEntryCount = 50   # change this to influence logging history size (N)
+
+securityLogList = []
+oldestSecurityEntry = 0
+
+errorLogList = []
+oldestErrorEntry = 0
 
 server_start_time = -1
 
@@ -65,6 +72,40 @@ def log(request, reqType, name):
     print text
     # add to secondary log for console page, this stores the N most recent log functions
     addToConsoleLog(text)
+
+
+def securityLog(request, reqType, name):
+    global preLogBackLog
+    text = ""
+    text += str(datetime.datetime.now())
+    typeLength = str(reqType).__len__()
+    while typeLength < 8:
+        reqType += " "
+        typeLength += 1
+    text += "  User: " + str(request.user.username) + "  \tType: " + str(reqType) + " \tName: " + str(name)
+    # formatting subject to change
+    preLogBackLog.put(text, True)
+    # actual console output
+    print text
+    # add to secondary log for console page, this stores the N most recent log functions
+    addToSecurityLog(text)
+
+
+def errorLog(request, reqType, name):
+    global preLogBackLog
+    text = ""
+    text += str(datetime.datetime.now())
+    typeLength = str(reqType).__len__()
+    while typeLength < 8:
+        reqType += " "
+        typeLength += 1
+    text += "  User: " + str(request.user.username) + "  \tType: " + str(reqType) + " \tName: " + str(name)
+    # formatting subject to change
+    preLogBackLog.put(text, True)
+    # actual console output
+    print text
+    # add to secondary log for console page, this stores the N most recent log functions
+    addToErrorLog(text)
 
 
 def addToConsoleLog(text):
@@ -98,6 +139,72 @@ def getConsoleLog(request):
         return HttpResponse(res, content_type='application/json')
 
 
+# TODO 1.3 todo current add security error log
+def addToSecurityLog(text):
+    # check if list is full, if not just add. If full, overwrite oldest entry and move iterator for oldest by one
+    global securityLogList, oldestSecurityEntry
+    if len(securityLogList) >= maximumLogEntryCount:
+        securityLogList[oldestSecurityEntry] = text
+        oldestSecurityEntry += 1
+        if oldestSecurityEntry >= maximumLogEntryCount:
+            oldestSecurityEntry = 0
+    else:
+        securityLogList.append(text)
+
+
+def getSecurityLog(request):
+    if request.is_ajax():
+        if not request.user.is_superuser or not request.user.is_authenticated:
+            output = json.dumps("Invalid Permissions")
+            return HttpResponse(output, content_type='application/json')
+        # get console log for page, use oldestSecurityEntry to track the oldest value, loop if passing maximum count
+        output = ""
+        try:
+            for iter in range(0, min(maximumLogEntryCount, len(securityLogList))):
+                if oldestSecurityEntry + iter < maximumLogEntryCount:
+                    output += str(securityLogList[oldestSecurityEntry+iter]) + "\n"
+                else:
+                    output += str(securityLogList[oldestSecurityEntry+iter-maximumLogEntryCount]) + "\n"
+        except Exception as e:
+            print "Exception during console log:", e
+        res = json.dumps(output)
+        return HttpResponse(res, content_type='application/json')
+
+
+# TODO 1.3 add generic error log
+def addToErrorLog(text):
+    # check if list is full, if not just add. If full, overwrite oldest entry and move iterator for oldest by one
+    global errorLogList, oldestErrorEntry
+    if len(errorLogList) >= maximumLogEntryCount:
+        errorLogList[oldestErrorEntry] = text
+        oldestErrorEntry += 1
+        if oldestErrorEntry >= maximumLogEntryCount:
+            oldestErrorEntry = 0
+    else:
+        errorLogList.append(text)
+
+
+# TODO 1.4 could cleanup logging code (6 functions for what only needs 2) by grouping logs into a single list of lists
+# use an index parameter to specify which log and which tracker variables to access
+def getErrorLog(request):
+    if request.is_ajax():
+        if not request.user.is_superuser or not request.user.is_authenticated:
+            output = json.dumps("Invalid Permissions")
+            return HttpResponse(output, content_type='application/json')
+        # get console log for page, use oldestErrorEntry to track the oldest value, loop if passing maximum count
+        output = ""
+        try:
+            for iter in range(0, min(maximumLogEntryCount, len(errorLogList))):
+                if oldestErrorEntry + iter < maximumLogEntryCount:
+                    output += str(errorLogList[oldestErrorEntry+iter]) + "\n"
+                else:
+                    output += str(errorLogList[oldestErrorEntry+iter-maximumLogEntryCount]) + "\n"
+        except Exception as e:
+            print "Exception during console log:", e
+        res = json.dumps(output)
+        return HttpResponse(res, content_type='application/json')
+
+
 def setServerStartTime():
     global server_start_time
     server_start_time = time.time()
@@ -115,6 +222,7 @@ def getServerMetrics(request):
         seconds = math.trunc((((time.time() - server_start_time) % 86400) % 3600) % 60)
         output = "Server has been running for: " + str(days) + " days, " + str(hours) + " hours, " + str(minutes) + \
                  " minutes, " + str(seconds) + " seconds"
+        # TODO 1.4 add user activity info
         res = json.dumps(output)
         return HttpResponse(res, content_type='application/json')
 
@@ -156,6 +264,7 @@ def handle_uploaded_file(f, path, name):  # move file from memory to disc
             os.makedirs(path)
         dest = "/".join([str(path), str(name)])
         with open(str(dest), 'wb+') as destination:
+            # we write the file down in chunks, but receive the whole of it into memory first
             for chunk in f.chunks():
                 destination.write(chunk)
     except Exception as e:
@@ -553,13 +662,9 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
     catSampleIDs = []
     if metaIDsCat:
         idDictCat = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsCat)
-        for key in sorted(idDictCat):
-            myIDs = idDictCat[key]
-            if type(myIDs) == list:
-                for ID in myIDs:
-                    catSampleIDs.append(ID)
-            else:
-                catSampleIDs.append(myIDs)
+        LoL = list(idDictCat.values())
+        if len(LoL) > 0:
+            catSampleIDs = list(set.intersection(*(set(el) for el in LoL)))
     quantFields = []
     quantValues = []
     if metaValsQuant:
@@ -730,13 +835,12 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     file = open(path)
     data = json.load(file)
     file.close()
-    debug("Exploding panda loaded json", len(data))
+    debug("Exploding panda loaded json")
     memDiff()   # 139.8
 
     # Get metadata
     datCols = data['columns']
     datRows = data['rows']
-    debug("Cols and Rows", len(datCols), len(datRows))
 
     # get unique vals from catVals and quantVals
     cats = []
@@ -753,23 +857,13 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     # get metadata into dicionary keyed by id
     metaDict = {}
     for i in datCols:
-        # if cats AND quants are empty, process as normal with full data
-        # if cats OR quants contain values, only add samples to metaDict whose catField or quantField values are
-        # found in their respective vals list
-        canAdd = True
-        for field in catFields:
-            if i['metadata'][field] not in cats:
-                canAdd = False
-
-        for field in quantFields:
-            if i['metadata'][field] not in quants:
-                canAdd = False
-        if canAdd:
-            # need to skip sample ids which were selected under one variable but not another (logical 'AND' gate)
+        if i['id'] in finalSampleIDs:
             metaDict[str(i['id'])] = i['metadata']
+
 
     # it is entirely possible to select metadata which has zero overlap, but we can't analyze an empty set, so error
     assert len(metaDict) > 0, "No samples match chosen meta values"  # TODO 1.4 assert is so good for this job, use more
+    debug("exploding_panda: meta filtered")
 
     # get taxa data into dictionary
     taxaDict = {}
@@ -803,7 +897,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
             tempDict['otuName'] = taxon[7].split(': ')[1]
         taxaDict[str(i['id'])] = tempDict
     # Get count data and calculate various dependent variables
-    sampleids = [col['id'] for col in datCols]
+    sampleids = [col['id'] for col in datCols]  # should this respect the filter step from earlier? TODO 1.3
     taxaids = [col['id'] for col in datRows]
     memDiff()   # 70.38
     mat = np.asarray(data['data']).T.tolist()
@@ -835,7 +929,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     memDiff()   # 0.0
 
     if finalSampleIDs:
-        debug("Exploding_panda: finalSampleIDs:", finalSampleIDs)
+        debug("Exploding_panda: finalSampleIDs")
         metaDF = metaDF.loc[finalSampleIDs]     # TODO 1.3 error here when small sample count is run in soil health (?)
 
     metaDF.dropna(axis=1, how='all', inplace=True)
@@ -850,7 +944,6 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
     memDiff()   # 22.04
-    # check depVar, 0 for abundDF, 1 for rel_abundDF, 2 for richDF, 3 for diversityDF, 4 for abund_16SDF, ALL for all
     abundDF = df.reset_index(drop=False)
     abundDF.rename(columns={'index': 'sampleid'}, inplace=True)
     abundDF = pd.melt(abundDF, id_vars='sampleid', value_vars=taxaids)
@@ -862,6 +955,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     richDF = pd.DataFrame()
     diversityDF = pd.DataFrame()
 
+    # check depVar, 0 for abundDF only, 1 for rel_abundDF, 2 for richDF, 3 for diversityDF, 4 for abund_16SDF, 10 for all
     if depVar == 0:
         countDF = pd.DataFrame({
             'taxaid': abundDF['variable'],
@@ -937,7 +1031,8 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
                 'taxaid': abundDF['variable'],
                 'abund': abundDF['value'],
                 'abund_16S': abund_16SDF['value']
-            }, index=abundDF.index)
+            })
+            countDF.set_index(abundDF.index)
 
         if depVar == 10:
             countDF = pd.DataFrame({
@@ -952,7 +1047,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
 
     # Check if there is at least one categorical variable with multiple levels
     # Remove fields with only 1 level
-    debug("exploding_panda: catFields", catFields)
+    debug("exploding_panda: catFields")
     remCatFields = []
     if levelDep:
         if catFields:
@@ -981,7 +1076,7 @@ def exploding_panda(path, finalSampleIDs=[], catFields=[], quantFields=[], level
     taxaDF.reset_index(drop=False, inplace=True)
     taxaDF.rename(columns={'index': 'taxaid'}, inplace=True)
     memDiff()   # 0.0
-    #categorize(taxaDF)     # categorizing taxaDF breaks kegg search, also only saves a small amount of memory (< 1%)
+
     # SPIKE HEREISH
     savedDF = pd.merge(savedDF, taxaDF, left_on='taxaid', right_on='taxaid', how='inner')   # this merge is the biggest memory spike by far, seems necessary though
     memDiff()   # 427.2

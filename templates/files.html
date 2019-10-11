@@ -4,6 +4,8 @@
     <title>File Manager</title>
 {% endblock %}
 
+{% load static %}
+
 {% block user %}
     {% if user.is_authenticated %}
         <p>You are logged in as:<br>&nbsp;{{ user.username }}</p>
@@ -11,6 +13,7 @@
 {% endblock user %}
 
 {% block javascript %}
+
     <style>
         #progressBar {
                 width: 200px;
@@ -29,10 +32,22 @@
         }
     </style>
 
+    <script src="{% static 'chunk-upload/jquery.ui.widget.js' %}" type="text/javascript"></script>
+    <!-- The Iframe Transport is required for browsers without support for XHR file uploads -->
+    <script src="{% static 'chunk-upload/jquery.iframe-transport.js' %}" type="text/javascript"></script>
+    <!-- The basic File Upload plugin -->
+    <script src="{% static 'chunk-upload/jquery.fileupload.js' %}" type="text/javascript"></script>
+    <!-- Calculate md5 -->
+    <script src="{% static 'chunk-upload/spark-md5.js' %}" type="text/javascript"></script>
+
     <script type="text/javascript">
         var RID = makeGUID();
         var ref_data = 'yes';
         var source = 'mothur';
+
+        var md5 = "",
+        csrf = encodeURI('{{ csrf_token }}');
+        var curHash;
 
         $(function () {
             var test = '{{ error }}';
@@ -68,7 +83,7 @@
             $("#Upload").click(function() {
                 $("#stage").show();
                 $("#progressBar").show();
-                setInterval(updateStatus, 1000);
+                //setInterval(updateStatus, 1000);
             });
 
             $("#id_ref_data").change(function() {
@@ -128,12 +143,6 @@
                 value: RID
             }).appendTo('form');
 
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'funcName',
-                value: 'fileUpFunc'
-            }).appendTo('form');
-
         });
 
         function makeGUID(){
@@ -184,7 +193,7 @@
 
         function stop() {
             $.ajax({
-                url: '/myPhyloDB/datstop/',
+                url: '/myPhyloDB/filestop/',
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -199,27 +208,211 @@
             });
         }
 
-        function updateStatus() {   // check mothur upload status / display console output
-            $.ajax({
-                url: '/myPhyloDB/status/',
-                type: 'GET',
-                dataType: 'json',
-                data: {
-                    all: RID
-                },
-                success: function (data) {
-                    var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    var stage = obj['stage'];
-                    var perc = obj['perc'];
-                    updateStage(stage);
-                    progressBar(perc, $("#progressBar"));
-                }
-            });
-        }
-
         function updateStage(stage) {
             $("#stage").empty().append(stage);
+        }
+
+        function fileUpload() {
+            console.log("Starting upload");
+            // get file data, need a line like this for each file type in the form (quite a few actually)
+            // its by name because some file types show up multiple times, we need to get all the files from that type
+            // into a single file list for the actual upload handling
+            var allMeta = document.getElementsByName("metafiles");
+            var allShared = document.getElementsByName("sharedfiles");
+            var allTaxa = document.getElementsByName("taxafiles");
+            var allSequence = document.getElementsByName("sequencefiles");
+            var allSFF = document.getElementsByName("sfffiles");
+            var allOligos = document.getElementsByName("oligosfiles");
+            var allFiles = document.getElementsByName("filesfiles");
+            var allScript = document.getElementsByName("scriptfiles");
+            var allFNA = document.getElementsByName("fnafiles");
+            var allQual = document.getElementsByName("qualfiles");
+            var allContig = document.getElementsByName("contigfiles");
+            var allFastq = document.getElementsByName("fastqfiles");
+            // figure out how many files we need to send, and maybe how big they are for progress bar sake
+            var myFiles = [];
+            var myTypes = [];
+            var c, d, chunkNum;
+            var found;
+            function simplifyFiles(fileContainer, fileType){
+                //console.log("Simplifying "+fileType+" with "+fileContainer.length+" fields");
+                found = 0;
+                for (c=0; c<fileContainer.length; c++){
+                    for (d=0; d<fileContainer[c].files.length; d++){
+                        myFiles.push(fileContainer[c].files[d]);
+                        myTypes.push(fileType);
+                        found++;
+                    }
+                }
+                //console.log("Actually found "+found+" files");
+            }
+            //console.log("Defined simplify");
+            // since we're uploading one file at a time, put all of them into the same list (paired with a type list)
+            // twelve types of files, here we go
+            // meta
+            simplifyFiles(allMeta, "meta");
+            // shared
+            simplifyFiles(allShared, "shared");
+            // taxa
+            simplifyFiles(allTaxa, "taxa");
+            // sequence
+            simplifyFiles(allSequence, "sequence");
+            // sff
+            simplifyFiles(allSFF, "sff");
+            // oligos
+            simplifyFiles(allOligos, "oligos");
+            // files
+            simplifyFiles(allFiles, "files");
+            // script
+            simplifyFiles(allScript, "script");
+            // fna
+            simplifyFiles(allFNA, "fna");
+            // qual
+            simplifyFiles(allQual, "qual");
+            // contig
+            simplifyFiles(allContig, "contig");
+            // fastq
+            simplifyFiles(allFastq, "fastq");
+
+            console.log("Found "+myFiles.length+" files");
+
+            var percent;
+            var chunkSize = 5000; // 5 KB chunk size, needs testing / metrics to fine tune
+            // TODO 1.3 error encountered when file is <= chunk size
+            var currentFile = 0;
+            var fileCount = myFiles.length;
+            // actually send files
+            function sendNextFile(myFile, myType){
+                // need to reset RID for each upload so tracking on the server is clean
+                RID = makeGUID();
+                //this should be called within the context of fileUpload, so we can let that handle progress stage
+                //meanwhile this function will handle percent progress within this specific file upload
+                percent = 0.0;
+                var fileSize = myFile.size;
+                var fileName = myFile.name;
+                updateStage("Uploading "+fileName);
+                console.log("File "+fileName+" ("+currentFile+") is "+fileSize+" bytes");
+                // get chunk count
+                var chunkCount = Math.ceil(fileSize/chunkSize);
+                var chunkNum = 0;
+                var currentPosition = 0;
+                var curChunk, readChunk;  // had to define curHash back at global scope for the sake of ajax success call
+                // can we slice the file without pulling it into memory?
+                // remember the last chunk is probably smaller than the others
+                var reader = new FileReader();
+                reader.onload = function(){
+                    //console.log("onload!");
+                    readChunk = new Uint8Array(reader.result);//.split(",")[1];
+                    console.log("readChunk: "+Object.keys(readChunk).length);
+                    console.log(readChunk);
+                    //curHash = SparkMD5.hash(readChunk);
+                    var spark = new SparkMD5.ArrayBuffer();
+                    spark.append(readChunk);
+                    curHash = spark.end();
+                    //console.log("curHash");
+                    // send chunk to server, wait for confirmation, go to next chunk
+                    var myDict = {};
+                    myDict['RID'] = RID;
+                    //console.log("Sending chunk for file with RID "+RID);
+                    myDict['chunk'] = readChunk;
+                    myDict['chunkNum'] = chunkNum;
+                    var jsonDict = JSON.stringify(myDict);
+                    console.log("trying to send chunk "+chunkNum);
+                    $.ajax({
+                        url: '/myPhyloDB/fileUploadChunk/',
+                        type: 'POST',
+                        //dataType: 'json',
+                        processData: false,
+                        data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),// + "&chunkBinaryData="+readChunk,
+                        success: function (data) {
+                            console.log("Returned from chunk "+chunkNum);
+                            // data should have the hash from the server, check if it matches our hash
+                            // if it does, move on to the next chunk
+                            // if it does not, resend this chunk by decrementing chunkNum and start values
+                            var result = JSON.stringify(data);
+                            console.log("Successful return: "+result);
+                            var obj = $.parseJSON(result);
+                            var serverHash = obj['hash'];
+                            console.log("Server returned hash: "+serverHash);
+                            if (serverHash != curHash){
+                                // resend this chunk, the hashes didn't match TIMEOUT CHECK? Number of attempts limit! TODO 1.3
+                                console.log("Hash mismatch for "+chunkNum);
+                                alert("Hash mismatch, wanted hash: "+curHash);
+                            } else {
+                                currentPosition += chunkSize;
+                                chunkNum++;
+                            }
+                            percent = Math.min(100, Math.round(100.0*currentPosition / fileSize));
+                            progressBar(percent, $("#progressBar"));
+                            if (percent < 100){
+                                sendChunk(currentPosition);
+                            } else {
+                                // hey we actually finished sending this file!
+                                fileWasSent();
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+
+                            $('#result').html('<p>status code: '+jqXHR.status+'</p><p>errorThrown: ' + errorThrown + '</p><p>jqXHR.responseText:</p><div>'+jqXHR.responseText + '</div>');
+                            console.log('jqXHR:');
+                            console.log(jqXHR);
+                            console.log('textStatus:');
+                            console.log(textStatus);
+                            console.log('errorThrown:');
+                            console.log(errorThrown);
+                            // we had an error, not based on hash mismatch though
+
+                        }
+                    });
+                };
+                function sendChunk(currentPosition){
+                    // this function gets called again by the onload function in the filereader, javascript is weird ok?
+                    curChunk = myFile.slice(currentPosition, Math.min(currentPosition+chunkSize, fileSize));
+                    console.log("curChunk: "+Object.keys(curChunk).length);
+                    reader.readAsArrayBuffer(curChunk);
+                    //reader.readAsText(curChunk);
+                    //reader.readAsBinaryString(curChunk);
+                    //reader.readAsDataURL(curChunk);
+                }
+                sendChunk(0); // go from start of file, this will keep calling itself until the end of file is sent
+
+                function fileWasSent(){
+                    console.log("Finished sending file with RID "+RID);
+                    // file was sent successfully (?) send "fileDone" message to server, function is done
+                    // fileDone message can include file type from myType parameter, use that to know where to move the file
+                    var myDict = {};
+                    myDict['RID'] = RID;
+                    myDict['type'] = myType;
+                    myDict['name'] = fileName;
+                    var jsonDict = JSON.stringify(myDict);
+                    $.ajax({
+                        url: '/myPhyloDB/fileUploadComplete/',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: jsonDict + "&csrfmiddlewaretoken=" + encodeURI('{{ csrf_token }}'),
+                        success: function (data) {
+                            var result = JSON.stringify(data);
+                            var obj = $.parseJSON(result);
+                            var err = obj['error'];
+                            if (err != "none"){
+                                alert(err);
+                            }
+                            // not sure what should go in the response message yet, just errors for now
+                            currentFile++;
+                            if (currentFile<fileCount){
+                                sendNextFile(myFiles[currentFile], myTypes[currentFile]);
+                            } else {
+                                updateStage("All uploads complete"); // TODO 1.3 actually check how many succeeded
+                            }
+                        }
+                    });
+                }
+
+            }
+
+            // call above chunk based uploader for each file in list
+            sendNextFile(myFiles[currentFile], myTypes[currentFile]);
+
         }
 
     </script>
@@ -228,7 +421,7 @@
 
     <h2>Upload new data files:</h2>
 
-    <form id="form" action="{% url 'datfuncCall' %}" method="post" onclick="RID = makeGUID();" enctype="multipart/form-data">
+    <form id="form" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <br>
         <h3>Select file(s) for upload:</h3>
@@ -333,7 +526,7 @@
         <table>
             <tr>
                 <td>
-                    <input id='Upload' name='Upload' type="submit" value="Upload Files!"/>
+                    <input id='Upload' name='Upload' type="button" onclick="fileUpload();"  value="Upload Files!"/>
                 </td>
                 <td>
                     <input id='Stop' name='Stop' type="button" onclick="stop();" value="Stop!"/>

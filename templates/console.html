@@ -12,10 +12,29 @@
 
 {% block javascript %}
 
+    <style>
+        #progressBar {
+                width: 200px;
+                height: 22px;
+                border: 1px solid #111;
+                background-color: #292929;
+        }
+
+        #progressBar div {
+                height: 100%;
+                color: #fff;
+                text-align: right;
+                line-height: 22px;
+                width: 0;
+                background-color: #0099ff;
+        }
+    </style>
+
     <script type="text/javascript">
         var RID = makeGUID();
         var selectedRID = 0;
         var selectedType = 0; // 0 for none, 1 for dataqueue, 2 for analysis
+        var perc = 0.0;
 
         $(function () {
             var test = '{{ error }}';
@@ -25,6 +44,8 @@
 
             // calling each function once before timers are set, for snappier page loads
             updateMainConsole();
+            updateSecurityConsole();
+            updateErrorConsole();
             updateMetrics();
             updateDataQueue();
             updateAnalysisQueue();
@@ -33,6 +54,8 @@
             // set timers going, change delay (which is in milliseconds) to change response time averages
             var delay = 5000;
             setInterval(updateMainConsole, delay);
+            setInterval(updateSecurityConsole, delay);
+            setInterval(updateErrorConsole, delay);
             setInterval(updateMetrics, delay);
             setInterval(updateDataQueue, delay);
             setInterval(updateAnalysisQueue, delay);
@@ -63,7 +86,13 @@
             });
         }
 
+        function progressBar(percent, $element) {
+                   var progressBarWidth = percent * $element.width() / 100;
+                    $element.find("div").animate({ width: progressBarWidth }, 100).html(percent + "%&nbsp;");
+                }
+
         function updateStatus() {   // check mothur upload status / display console output
+            // TODO 1.3 need to be able to view percentage progress from console page (without javascript commands)
             $.ajax({
                 url: '/myPhyloDB/status/',
                 type: 'GET',
@@ -75,7 +104,7 @@
                     var result = JSON.stringify(data);
                     var obj = $.parseJSON(result);
                     var stage = obj['stage'];
-                    var perc = obj['perc'];
+                    perc = obj['perc'];
                     updateStage(stage);
                     progressBar(perc, $("#progressBar"));
                     // get text box
@@ -94,10 +123,8 @@
         }
 
         function updateMainConsole(){
-            // need to call getConsoleLog from utils_df.py
-            // will return a string of text to display (should be formatted correctly already)
+            // call getConsoleLog function, which will return a string of text to display (should be formatted correctly already)
             // this function gets called on a timer, so just get the text and set the display box value to it. Simple
-            // for some reason this generates internal server errors
             $.ajax({
                 url: '/myPhyloDB/getConsoleLog/',
                 type: 'GET',
@@ -107,8 +134,39 @@
                 },
                 success: function (data) {
                     var result = JSON.stringify(data);
-                    var obj = $.parseJSON(result);
-                    document.getElementById("mainLog").value = obj;
+                    document.getElementById("mainLog").value = $.parseJSON(result);
+                }
+            });
+        }
+
+        function updateSecurityConsole(){
+            // same as main console, but security log
+            $.ajax({
+                url: '/myPhyloDB/getSecurityLog/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    document.getElementById("securityLog").value = $.parseJSON(result);
+                }
+            });
+        }
+
+        function updateErrorConsole(){
+            // same as main console, but for error log
+            $.ajax({
+                url: '/myPhyloDB/getErrorLog/',
+                type: 'GET',
+                dataType: 'json',
+                data: {
+                    all: RID
+                },
+                success: function (data) {
+                    var result = JSON.stringify(data);
+                    document.getElementById("errorLog").value = $.parseJSON(result);
                 }
             });
         }
@@ -330,14 +388,25 @@
 {% endblock %}
 {% block my_content %}
 
-    <h2>Server console:</h2>
-    <table>
+    <table style="background: #ffffff;">
     <tr>
         <td>
-            <textarea id="mainLog" rows=25 cols=55 style="width: 700px;" readonly="readonly"></textarea>
+            <h2>Server console:</h2>
+            <textarea id="mainLog" rows=15 cols=55 style="width: 700px;" readonly="readonly"></textarea>
         </td>
         <td>
+            <h2>Metrics:</h2>
             <textarea id="metricsLog" rows=5 cols=40 style="width: 600px;" readonly="readonly"></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <h2>Error log:</h2>
+            <textarea id="errorLog" rows=10 cols=55 style="width: 700px;" readonly="readonly"></textarea>
+        </td>
+        <td>
+            <h2>Security log:</h2>
+            <textarea id="securityLog" rows=10 cols=55 style="width: 700px;" readonly="readonly"></textarea>
         </td>
     </tr>
     </table>
@@ -368,6 +437,17 @@
             </td>
             <td>
                 <input id="stop" type="submit" value="Stop Request" style="background-color: lightgray" onclick="genericStop()">
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <br>
+                <div id="stage"></div>
+                <div id="progressBar"><div></div></div>
+                <br>
+            </td>
+            <td>
+
             </td>
         </tr>
     </table>

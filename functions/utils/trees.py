@@ -1151,20 +1151,24 @@ def getTaxaTree(request):   # Get main taxanomic datapoints (just kingdoms as fo
 
 
 def getTaxaTreeChildren(request):   # get deeper layers of the taxa tree upon request (based on selected parent node)
+    # TODO 1.4 this slows down dramatically if the database is busy (makes sense), can we make this more scalable?
     if request.is_ajax():
+        #startTime = time.time()
         myDir = 'myPhyloDB/media/usr_temp/' + str(request.user) + '/'
         path = str(myDir) + 'usr_norm_samples.pkl'
         with open(path, 'rb') as f:
             selected = pickle.load(f)
-
+        #readTime = time.time() - startTime
         filtered = []
         reads = Sample.objects.filter(sampleid__in=selected).values('sampleid', 'sample_name', 'reads')
+        #filterTime = time.time() - readTime
         for i in reads:
             if i['reads'] > 0:
                 filtered.append(i['sampleid'])
 
+        #readsTime = time.time() - filterTime
         selected_taxa = Profile.objects.filter(sampleid__in=filtered)
-
+        #profileTime = time.time() - readsTime
         taxa = request.GET["tooltip"]
         id = request.GET["id"]
 
@@ -1172,12 +1176,14 @@ def getTaxaTreeChildren(request):   # get deeper layers of the taxa tree upon re
         path = str(myDir) + 'available_taxa_summary.pkl'
         with open(path, 'rb') as f:
             uniqueTaxaDict = pickle.load(f)
-
+        #pklTime = time.time() - profileTime
 
         nodes = []
+        # now we create taxa tree children by joining the list of available unique taxa from the summary.pkl file with
+        # the data available from our selected sampleIDs
         if taxa == 'Kingdom':
             qs = Phyla.objects.filter(phylaid__in=selected_taxa.values_list('phylaid')).filter(**{'kingdomid': id}).order_by('phylaName')
-            # TODO 1.3 filter results by looping through unique kingdoms from middleground file, if file_taxa in qs: final_data.append(qs data)
+            # filter results by looping through unique kingdoms from middleground file, if file_taxa in qs: final_data.append(qs data)
             # hrm, qs contains phyla that match selected samples
             # uniqueTaxaDict['phyla'] should be a list of valid phyla
             # len(uniqueTaxaDict['phyla']) <= len(qs), so we'll loop uniqueTaxa first
@@ -1278,7 +1284,8 @@ def getTaxaTreeChildren(request):   # get deeper layers of the taxa tree upon re
 
         elif taxa == 'OTU_99':
             pass
-
+        #nodeTime = time.time() - pklTime
+        #print "Timings for taxaChildren: readTime", readTime, "filterTime", filterTime, "readsTime", readsTime, "profileTime", profileTime, "pklTime", pklTime, "nodeTime", nodeTime
         res = json.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 
@@ -1509,6 +1516,7 @@ def getNZTreeChildren(request):  # get child nodes from lazy-loaded kegg enzyme 
 
 
 def makeUpdateTree(request):    # TODO 1.3 change this and other reference-based trees to project-based
+    # permissions are project and user based, reference still seems a bit odd to use at all
     myTree = {'title': 'All Projects', 'isFolder': True, 'expand': True, 'hideCheckbox': True, 'children': []}
 
     projects = perms.getEditProjects(request)
@@ -1579,6 +1587,7 @@ def makeFilesTree(request):
 
         if filter == "true":
             if name.lower() == "script":
+                # TODO 1.3 drop the admin folder name display for scripts, unhelpful and reveals structure a tad
                 userList = []
                 userList.append('admin')
 

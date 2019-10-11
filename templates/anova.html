@@ -609,7 +609,6 @@
                 $("#container-1").empty().append('Analysis has been cancelled!');
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
             } else {
-                updateNodesCat();
                 var metaValsCat = '';
                 if (nodesCat.length > 0) {
                     metaValsCat = "{" + arrayValsCat.join(",") + "}";
@@ -802,7 +801,6 @@
                 $("#container-1").empty().append('Analysis has been cancelled!');
                 alert("Selected meta data only has one level.\nPlease select a different variable.");
             } else {
-                updateNodesCat();
                 var metaValsCat = '';
                 if (nodesCat.length > 0) {
                     metaValsCat = "{" + arrayValsCat.join(",") + "}";

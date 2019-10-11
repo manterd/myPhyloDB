@@ -4,7 +4,7 @@ import views
 
 urlpatterns = [
     url(r'^home/$', views.home, name='home'),
-    url(r'^process/$', views.process, name='upload'),   # todo 1.3 finish upload -> process refactor
+    url(r'^process/$', views.process, name='process'),
     url(r'^download/$', views.download, name='download'),
     url(r'^select/$', views.select, name='select'),
     url(r'^taxa/$', views.taxa, name='taxa'),

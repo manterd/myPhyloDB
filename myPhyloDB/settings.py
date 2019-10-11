@@ -15,10 +15,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # generate secret key on bootup, will break current session (ie log out all users)
-SECRET_KEY = "ALPHABETSOUPFORTESTINGONLY"   # FOR TESTING ONLY, USE BELOW LINE WHEN NOT DEBUGGING
-# TODO change this back for live build
-# TODO 1.3 TODO 1.4 TODO 1.5
-#SECRET_KEY = get_random_secret_key()   # the actually secure version, will reset logins on boot
+SECRET_KEY = 'VeryBadKeyForDevBuildsOnly'#get_random_secret_key()   # the actually secure version, will reset logins on boot
 ALLOWED_HOSTS = []
 
 
@@ -42,6 +39,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     #'allauth.socialaccount.providers.google',
+    'chunked_upload',
 ]
 
 

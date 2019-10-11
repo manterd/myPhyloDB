@@ -1,3 +1,18 @@
+<script>
+    function updateMetaNodes(){
+        try {
+            updateNodesCat();
+        } catch(err){
+
+        }
+        try {
+            updateNodesQuant();
+        } catch(err){
+
+        }
+    }
+</script>
+
 <tr class="accordion">
     <td bgcolor="white" width="5px"></td>
     <td colspan="2" bgcolor="lightgray"  style="outline: thin solid"><strong><em><span class="arrow">►</span> Run Analysis:</em></strong></td>
@@ -6,7 +21,7 @@
 <tr>
     <td bgcolor="white" width="5px"></td>
     <td bgcolor="white">
-        <input id="run" type="submit" value="Run!" style="background-color: lightgray" onClick="runAnalysis()"/>
+        <input id="run" type="submit" value="Run!" style="background-color: lightgray" onClick="updateMetaNodes(); runAnalysis()"/>
         &nbsp;
         <input id="stop" type="submit" value="Stop!" style="background-color: lightgray" onClick="stopAnalysis()"/>
         &nbsp; <-- Start/stop analysis

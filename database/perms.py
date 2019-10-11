@@ -65,7 +65,8 @@ def remPub(p_uuid):
 
 
 # Remove p_uuid from private lists, remember to check the project's whitelist as well as the owner's
-def remPriv(p_uuid):    # TODO 1.3 project removal currently limited to successful uploads
+def remPriv(p_uuid):
+    # TODO 1.3 project removal currently limited to successful uploads (failed uploads sometimes get stuck)
     # TODO 1.3 move uploads and user_uploads directories to a different folder (not inside of myphylodb) to prevent certain security problems
     # get actual project object
     myProj = Project.objects.get(projectid=p_uuid)
