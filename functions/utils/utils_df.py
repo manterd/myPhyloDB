@@ -69,7 +69,7 @@ def log(request, reqType, name):
     # formatting subject to change
     preLogBackLog.put(text, True)
     # actual console output
-    print text
+    print "LOG:", text
     # add to secondary log for console page, this stores the N most recent log functions
     addToConsoleLog(text)
 
@@ -86,7 +86,7 @@ def securityLog(request, reqType, name):
     # formatting subject to change
     preLogBackLog.put(text, True)
     # actual console output
-    print text
+    print "SECURITY:", text
     # add to secondary log for console page, this stores the N most recent log functions
     addToSecurityLog(text)
 
@@ -103,7 +103,7 @@ def errorLog(request, reqType, name):
     # formatting subject to change
     preLogBackLog.put(text, True)
     # actual console output
-    print text
+    print "ERROR:", text
     # add to secondary log for console page, this stores the N most recent log functions
     addToErrorLog(text)
 
@@ -657,7 +657,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
         for key in sorted(metaDictCat):
             catFields.append(key)
             catValues.extend(metaDictCat[key])
-    debug("getMetaDF: catFields:", catFields)
+    debug("getMetaDF: catFields")#, catFields)
     # catValues matches the selection subset from the page, use this to filter metaDict in exploding_panda
     catSampleIDs = []
     if metaIDsCat:
@@ -675,7 +675,7 @@ def getMetaDF(username, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, De
             for key in sorted(metaDictQuant):
                 quantFields.append(key)
                 quantValues.extend(metaDictQuant[key])
-    debug("getMetaDF: quantFields:", quantFields)
+    debug("getMetaDF: quantFields")#, quantFields)
     quantSampleLists = []
     if metaIDsQuant:
         idDictQuant = json.JSONDecoder(object_pairs_hook=multidict).decode(metaIDsQuant)
@@ -819,7 +819,7 @@ def memDiff():
     if enableMemDiff:
         global prevMem, memTally
         curMem = process.memory_info().rss / 1024.0 ** 2
-        print memTally, ":", curMem - prevMem, "MB"
+        print memTally, ":", curMem - prevMem, "MiB"
         prevMem = curMem
         memTally += 1
     # else just skip this function entirely

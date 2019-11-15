@@ -258,6 +258,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
 
         self.finalDF = pd.DataFrame()
         self.allDF = pd.DataFrame()
+        debug("Query: treeType:", self.treeType)
         if self.treeType == 1:
             if self.selectAll == 0 or self.selectAll == 8:
                 try:
@@ -275,8 +276,10 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 self.result += '===============================================\n'
         if self.treeType == 2:
             keggDict = ''
+            debug("keggAll:", self.keggAll)
             if self.keggAll == 0:
                 keggString = self.all["kegg"]
+                debug("keggString:", keggString)
                 keggDict = json.JSONDecoder(object_pairs_hook=functions.multidict).decode(keggString)
             self.finalDF, self.allDF = functions.getKeggDF(self.keggAll, keggDict, self.savedDF, self.metaDF, self.DepVar, self.mapTaxa, self.RID, self.stopList, self.PID)
         if self.treeType == 3:
@@ -4050,9 +4053,11 @@ class Gage(Analysis):
 
     def run(self):
         debug("Running Gage")
+        self.treeType = 2
+        self.keggAll = 1
         ret = self.validate(sig=False, reqMultiLevel=False, selAll=False, metaQuant=False, taxTree=False)
         if ret == 0:
-            ret = self.query(taxmap=False, filterable=False)
+            ret = self.query(taxmap=False, usetransform=False, filterable=False)
             if ret == 0:
                 return self.statsGraph()
 
@@ -4199,6 +4204,7 @@ class Core(Analysis):
                 colName = self.catFields[0]
             uniqueCats = self.metaDF[colName].unique()
             r.assign("catField", colName)
+            debug("Core: Cat(s)")
             for j in uniqueCats:
                 r.assign("value", j)
                 myStr = 'P.sub <- subset_samples(P, ' + str(colName) + '==\"' + str(j) + '\")'
@@ -4243,7 +4249,7 @@ class Core(Analysis):
         finalDict['res_table'] = str(res_table)
         finalDict['text'] = self.result
 
-        functions.setBase(self.RID, 'Step 4 of 4: Formatting graph data for display...done!')
+        functions.setBase(self.RID, 'Step 5 of 5: Formatting graph data for display...done!')
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if self.stopList[self.PID] == self.RID:

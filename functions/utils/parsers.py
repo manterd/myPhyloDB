@@ -114,6 +114,12 @@ def dada2(dest, source):
                     f.write(line)
                 else:
                     break
+                line = pro.stderr.readline()
+                if line != '':
+                    mothurStat += line
+                    f.write(line)
+                else:
+                    break
 
             if os.name == 'nt':
                 cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
@@ -981,7 +987,7 @@ def parse_biom(biom, taxa, sequence, project_id, refDict, minConfidence, stopLis
     # TODO 1.4 This loop is the main timesink of parse_biom, and is not inherently sequential. Multiprocessing time
     # the only race condition which could occur in this loop is when duplicate names exist (rare human error case)
     # in such a race, the database should throw an exception, just catch for this line and keep going (print debug)
-    # TODO 1.4 while we're at it, this is a high performance computing server, there's not much point asking users
+    # TODO 1.4 while we're at it, this is a high performance server, there's not much point asking users
     # for how many threads they want to use, we should just have a configured value (or maybe a load-based max)
     for line in lines:  # iterate through each line of taxa data and make sure each otu is represented in database
         parts = line.split("\t")

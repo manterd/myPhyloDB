@@ -22,6 +22,7 @@ Current functions:
 
 # Add p_uuid to public project list, assume it does not exist already
 def newPub(p_uuid):
+    debug("newPub")
     # get the single instance (at least there should only be one) of the public projects list
     publicList = PublicProjects.objects.all().first()
     # add this p_uuid to the list, using method implemented in the model
@@ -33,6 +34,7 @@ def newPub(p_uuid):
 
 # Add p_uuid to relevant private lists, assume it did not exist before
 def newPriv(p_uuid):
+    debug("newPriv")
     # get actual project object
     myProj = Project.objects.get(projectid=p_uuid)
     # get owner of project
@@ -55,6 +57,7 @@ def newPriv(p_uuid):
 
 # Remove p_uuid from public
 def remPub(p_uuid):
+    debug("remPub")
     # get the single instance (at least there should only be one) of the public projects list
     publicList = PublicProjects.objects.all().first()
     # remove p_uuid from list
@@ -66,6 +69,7 @@ def remPub(p_uuid):
 
 # Remove p_uuid from private lists, remember to check the project's whitelist as well as the owner's
 def remPriv(p_uuid):
+    debug("remPriv")
     # TODO 1.3 project removal currently limited to successful uploads (failed uploads sometimes get stuck)
     # TODO 1.3 move uploads and user_uploads directories to a different folder (not inside of myphylodb) to prevent certain security problems
     # get actual project object
@@ -108,12 +112,14 @@ def remPriv(p_uuid):
 # included in their whitelist
 
 def pubToPriv(p_uuid):
+    debug("pubToPriv")
     remPub(p_uuid)
     newPriv(p_uuid)
     return
 
 
 def privToPub(p_uuid):
+    debug("privToPub")
     remPriv(p_uuid)
     newPub(p_uuid)
     return
@@ -121,6 +127,7 @@ def privToPub(p_uuid):
 
 # Entering the realm of older code: beware of nonsense
 def updateAccPerms(request):
+    debug("updateAccPerms")
     # gets called from ajax, given list of names to remove or add
     functions.log(request, "FUNCTION", "ACCPERMS")
     if request.is_ajax():
@@ -150,6 +157,7 @@ def updateAccPerms(request):
 # given a user (owner) and a list of usernames to give permissions to (addList), update info for all users involved
 # such that all of owner's projects are visible to all users in addList (and previous list members)
 def giveFilePerms(owner, addList):
+    debug("giveFilePerms")
     # given a user and a list of usernames, add username list to user's whitelist
     ownProfile = UserProfile.objects.get(user=owner)  # owner is a user object, ie request.user
     currentList = ownProfile.gavePermsTo.split(';')
@@ -188,6 +196,7 @@ def giveFilePerms(owner, addList):
 
 
 def removeFilePerms(owner, remList):
+    debug("removeFilePerms")
     # use .lower on everything, remove users in remList from owner's whitelist (if they are there already)
     # also, go to each user on remList and remove owner from their "added by" list (again, check if its there already)
     ownProfile = UserProfile.objects.get(user=owner)  # owner is a user object, ie request.user
@@ -227,6 +236,7 @@ def removeFilePerms(owner, remList):
 
 
 def updateProjPerms(request):  # this is the project whitelisting section, a tree of projects and a list of names were sent
+    debug("updateProjPerms")
     functions.log(request, "FUNCTION", "PROJPERMS")
     if request.is_ajax():
         allJson = json.loads(request.GET["all"])
@@ -322,6 +332,7 @@ def updateProjPerms(request):  # this is the project whitelisting section, a tre
 
 
 def getViewProjects(request):   # use this function as often as possible for project queries, put all perms stuff here
+    debug("getViewProjects")
     # permissions are both project and account based, for improved usability
 
     # give account perms to co-workers and common collaborators
@@ -365,6 +376,7 @@ def getViewProjects(request):   # use this function as often as possible for pro
 
 
 def getEditProjects(request):
+    debug("getEditProjects")
     # TODO 1.3 implement privateProjectList equivalent for editing permissions, to improve scalability
     projects = Project.objects.none()
     if request.user.is_superuser:

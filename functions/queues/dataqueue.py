@@ -158,9 +158,9 @@ def dataprocess(pid):   # TODO 1.3 uploads end with "{"error": "Exception: inval
                 # TODO 1.4 cleanup
                 stopList = data['stop']  # not sure what this is for, this whole file has a lot of cleaning up to be done
                 datQueueList.pop(RID, 0)
-                datActiveList[pid] = RID
+                datActiveList[pid] = RID    # TODO 1.4 cleanup datActiveList \/
                 functions.log(request, "QSTART", funcName)
-                if datActiveList[pid] == RID:
+                if datActiveList[pid] == RID:   # TODO 1.4 why do we assign and immediately check?
                     debug("About to run", funcName, "for", request.user.username)
                     if funcName == "processFunc":
                         datRecent[RID] = database.views.processFunc(request, datStopList)

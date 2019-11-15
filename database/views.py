@@ -506,6 +506,8 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
             cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\reference\\dada2\\gg_13_5_99.V3_V4.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
         if request.POST['ref_var'] == 'V13':
             cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\reference\\dada2\\gg_13_5_99.V1_V3.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
+        if request.POST['ref_var'] == 'V19':
+            cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\reference\\dada2\\gg_13_5_99.V1_V9.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
     else:
         if request.POST['ref_var'] == 'V4':
             cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/reference/dada2/gg_13_5_99.V4.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
@@ -513,6 +515,8 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
             cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/reference/dada2/gg_13_5_99.V3_V4.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
         if request.POST['ref_var'] == 'V13':
             cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/reference/dada2/gg_13_5_99.V1_V3.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
+        if request.POST['ref_var'] == 'V19':
+            cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/reference/dada2/gg_13_5_99.V1_V9.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
 
     pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            bufsize=0)   # this should run mothur, does subprocess ever get started though?
@@ -1290,7 +1294,7 @@ def processFunc(request, stopList):
         return upErr("Error during " + str(source) + ":" + str(errorText), request, dest, sid)
 
     end = datetime.datetime.now()
-    print 'Total time for ' + str(request.user.username) + '\'s upload:', end - start
+    debug('Total time for ' + str(request.user.username) + '\'s upload:', end - start)
     # TODO 1.3 verify files are winding up in the right place after upload is done
     myProject = Project.objects.get(projectid=p_uuid)
     myProject.wip = False

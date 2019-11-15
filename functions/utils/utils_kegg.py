@@ -376,12 +376,27 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
 
         # get PICRUSt data for otu
         otuList = pd.unique(profileDF.index.ravel().tolist())
-        qs = PICRUSt.objects.using('picrust').filter(otuid__in=otuList)
+        # otuList is an actual list of otuids
+        # meanwhile, picrust objects have an otuid attribute, which is actually a foreign key to an otu99 object
+        # so we need to get the otulist into a list of otu99 objects
+        myOTUs = OTU_99.objects.filter(otuid__in=otuList)
+        print "len myOTUs:", len(myOTUs)
+        qs = []
+        for otu in myOTUs:
+            curQS = PICRUSt.objects.using('picrust').filter(otuid=otu)
+            print "For otu", otu.otuName, "found", len(curQS), "matches in picrust" # TODO 1.3 error here based on mismatched otuids
+            # we have otus, but we don't have picrust objects
+            for pi in curQS:
+                qs.append(pi)
+        #qs = PICRUSt.objects.using('picrust').filter(otuid__in=myOTUs)
+        print "len qs:", len(qs)
         piList = []
         for item in qs:
             piList.append([item.otuid_id, item.geneList])
+        print "piList:", piList
         picrustDF = pd.DataFrame(piList, columns=['otuid', 'geneList'])
         picrustDF.set_index('otuid', drop=True, inplace=True)
+        print "picrustDF head:", picrustDF.head()
 
         curStep = functions.getBase(RID)
         sumKEGG(picrustDF, koDict, 0, RID, PID, stops)
@@ -435,13 +450,13 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
             functions.setBase(RID, 'Calculating KEGG pathway abundances...sample ' + str(counter) + ' out of ' + str(total) + ' is finished!')
-            sampRunTime = time.time() - sampStartTime
-            percentTime = loopRunTime * 100.0 / sampRunTime
-            debug("GAGE tracker: this sample took", sampRunTime, "and", percentTime, "% was spent in for loop")
+            sampRunTime = round((time.time() - sampStartTime) * 1000, 2)
+            percentTime = round(loopRunTime * 100.0 / sampRunTime, 2)
+            #debug("KEGG DF tracker: this sample took", sampRunTime, "ms and", percentTime, "% was spent in for loop")
             counter += 1
 
         functions.setBase(RID, curStep)
-
+        debug("keggDF: abundances")
         # df of mapped taxa to selected kegg orthologies
         if mapTaxa == 'yes':
             namesDict = {}
@@ -489,7 +504,7 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             allDF.rename(columns=namesDict, inplace=True)
         else:
             allDF = ''
-
+        debug("keggDF: mapped")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
             return '', None
@@ -510,14 +525,16 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         taxaDF.set_index('sampleid', drop=True, inplace=True)
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
         finalDF.reset_index(drop=False, inplace=True)
-
+        debug("keggDF: melted")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
             return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-
+        print "finalDF head:", finalDF.head()
         idList = functions.getFullKO(list(finalDF.rank_id.unique()))
+        print "idList:", idList
         finalDF['rank_name'] = finalDF['rank_id'].map(idList)
+        print "final finalDF head:", finalDF.head()
 
         # required to match getTaxaDF output
         metaDF.reset_index(drop=False, inplace=True)
@@ -1484,8 +1501,8 @@ def getFullTaxaFromID(id, level):
             results.append(myGenus.orderid.orderid)
             results.append(myGenus.familyid.familyid)
     elif level == 7:
-        if Species.objects.all().filter(species=id).exists():
-            mySpecies = Species.objects.get(species=id)
+        if Species.objects.all().filter(speciesid=id).exists():
+            mySpecies = Species.objects.get(speciesid=id)
             results.append(mySpecies.kingdomid.kingdomid)
             results.append(mySpecies.phylaid.phylaid)
             results.append(mySpecies.classid.classid)

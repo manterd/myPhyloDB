@@ -13,7 +13,7 @@ class UploadForm2(forms.Form):
     docfile4 = forms.FileField(label='Select shared file:', required=False)
     ref_data = forms.ChoiceField(label='Create new taxonomy file:', widget=forms.Select, choices=(('yes', 'yes'), ('no', 'no')))
     ref_fasta = forms.FileField(label='Select representative sequence file (e.g., dada.rep_seqs.fasta:', required=False)
-    ref_var = forms.ChoiceField(label='Select the variable region:', widget=forms.Select, choices=(('V34', 'V34'), ('V4', 'V4'), ('V13', 'V13')))
+    ref_var = forms.ChoiceField(label='Select the variable region:', widget=forms.Select, choices=(('V34', 'V34'), ('V4', 'V4'), ('V13', 'V13'), ('V19', 'V19')))
     docfile3 = forms.FileField(label='Select conserved taxonomy file:', required=False)
     sff_files = MultiFileField()
     oligo_files = MultiFileField()
