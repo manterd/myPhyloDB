@@ -1521,29 +1521,29 @@ def makeUpdateTree(request):    # TODO 1.3 change this and other reference-based
 
     projects = perms.getEditProjects(request)
     for project in projects:
-        if not project.wip:
-            myNode = {
-                'title': project.project_name,
-                'tooltip': project.project_desc,
+        #if not project.wip:    # we use updateTree for project removal, WIP projects need to be visible to cleanup
+        myNode = {
+            'title': project.project_name,
+            'tooltip': project.project_desc,
+            'isFolder': True,
+            'hideCheckbox': True,
+            'children': [],
+            'wip': project.wip
+        }
+
+        refids = project.reference_set.all().order_by('path')
+        for ref in refids:
+            myNode1={
+                'title': "Path: " + str(ref.path),
+                'tooltip': ref.projectid.project_desc,
+                'id': ref.refid,
                 'isFolder': True,
-                'hideCheckbox': True,
-                'children': [],
-                'wip': project.wip
+                'children': []
             }
 
-            refids = project.reference_set.all().order_by('path')
-            for ref in refids:
-                myNode1={
-                    'title': "Path: " + str(ref.path),
-                    'tooltip': ref.projectid.project_desc,
-                    'id': ref.refid,
-                    'isFolder': True,
-                    'children': []
-                }
+            myNode['children'].append(myNode1)
 
-                myNode['children'].append(myNode1)
-
-            myTree['children'].append(myNode)
+        myTree['children'].append(myNode)
 
     # Convert result list to a JSON string
     res = json.dumps(myTree)
@@ -1747,17 +1747,17 @@ def getDownloadTreeChildren(request):
     # get project children which are visible to current user (check
     if request.is_ajax():
         projectid = request.GET["id"]
-        samples = Reference.objects.filter(projectid=projectid)
+        refs = Reference.objects.filter(projectid=projectid)
 
         nodes = []
-        for sample in samples:
+        for ref in refs:
             myNode = {
-                'title': sample.path,
-                'id': sample.refid,
+                'title': ref.path,
+                'id': ref.refid,
                 'isFolder': False,
                 'children': []
             }
-            for root, dirs, files in os.walk(sample.path):
+            for root, dirs, files in os.walk(ref.path):
                 for file in files:
                     myNode2 = {
                         'title': file,

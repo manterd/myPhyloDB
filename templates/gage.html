@@ -36,7 +36,7 @@
                 $(this).nextUntil(".accordion").fadeToggle('fast');
             });
             $(".input tr.accordion:eq(0)").trigger('click');
-            $(".input tr.accordion:eq(1)").trigger('click');
+            $(".input tr.accordion:eq(2)").trigger('click');
             $("#tree_kegg").dynatree({
                 checkbox: true,
                 selectMode: 2,
@@ -171,6 +171,29 @@
                 var kegg = "{" + array3.join(",") + "}";
 
                 var myDict = {};
+
+                if ($("#remUnclass").is(':checked')) {
+                    myDict['remUnclass'] = 'yes'
+                } else {
+                    myDict['remUnclass'] = 'no'
+                }
+
+                if ($("#remZeroes").is(':checked')) {
+                    myDict['remZeroes'] = 'yes'
+                } else {
+                    myDict['remZeroes'] = 'no'
+                }
+
+                if ($("#filterData").is(':checked')) {
+                    myDict['filterData'] = 'yes'
+                } else {
+                    myDict['filterData'] = 'no'
+                }
+
+                myDict['perZeroes'] = document.getElementById("perZeroes").value;
+                myDict['filterPer'] = document.getElementById("filterPer").value;
+                myDict['filterMeth'] = document.getElementById("filterMeth").value;
+
                 myDict['metaValsCat'] = metaValsCat;
                 myDict['metaIDsCat'] = metaIDsCat;
                 myDict['kegg'] = kegg;
@@ -431,6 +454,9 @@
                     &nbsp; <-- Dependent variable <span title="Abundance = number of sequence reads<br>Total Abundance = 16S rRNA copies per mg soil"><font class="info" color="red">[info]</font></span>
                 </td>
             </tr>
+
+            <tr><td colspan="3" bgcolor="white"></td></tr>
+            {% include "html/Data-Filtering.html" %}
 
             <tr><td colspan="3" bgcolor="white"></td></tr>
             {% include "html/Data-RunButton.html" %}

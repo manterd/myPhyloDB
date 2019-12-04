@@ -642,7 +642,7 @@ def makeSamplesErrorText(missingMeta, missingSecondary, secondaryFileType):
 
 # TODO 1.3 sid usage in uploads (for transaction rollbacks, variable goes unused)
 def uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID):
-
+    debug("Upload with mothur")
     try:
         copyFromUpload(selDict['shared'], dest, nameDict['shared'])
         file4 = open(os.path.join(dest, nameDict['shared']), 'r')
@@ -679,10 +679,10 @@ def uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList
 
     try:
         functions.parse_taxonomy(file3, stopList, PID, RID)
-        file3 = file3.name
-    except Exception:
-        return "Failed parsing your taxonomy file:" + nameDict['taxa']
+    except Exception as ex:
+        return "Failed parsing your taxonomy file:" + str(file3.name) + ", " + str(ex)
 
+    file3 = file3.name
     if stopList[PID] == RID:
         return "Stop"
 
@@ -1026,7 +1026,7 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
             return "Stop"
 
         try:
-            functions.dada2(dest, "miseq")
+            functions.dada2(dest, "miseq", stopList, PID, RID)
         except Exception as er:
             logException()
             return "Encountered problem while processing data2:" + str(er)    # probably not an accurate error message

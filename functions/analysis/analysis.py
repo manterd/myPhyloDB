@@ -32,7 +32,7 @@ import os
 from collections import OrderedDict
 import numpy as np
 from scipy import stats
-from database.models import Sample
+from database.models import Sample, ko_entry
 from natsort import natsorted
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import psutil
@@ -3780,12 +3780,13 @@ class Gage(Analysis):
                     return HttpResponse(getStopDict(), content_type='application/json')
                     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            keggAll = 4
-            mapTaxa = 'no'
-            finalDF, junk = functions.getKeggDF(keggAll, '', self.savedDF, self.metaDF, self.DepVar, mapTaxa, RID, self.stopList, self.PID)
+            #keggAll = 4
+            #mapTaxa = 'no'
+            # keggDF from query is good but not here, is this step needed?
+            #finalDF, junk = functions.getKeggDF(keggAll, '', self.savedDF, self.metaDF, self.DepVar, mapTaxa, RID, self.stopList, self.PID)
 
             # make sure column types are correct
-            finalDF[self.catFields] = finalDF[self.catFields].astype(str)
+            self.finalDF[self.catFields] = self.finalDF[self.catFields].astype(str)
 
             functions.setBase(RID, 'Step 4 of 6: Performing GAGE analysis...')
 
@@ -3794,23 +3795,30 @@ class Gage(Analysis):
             if not os.path.exists(myDir):
                 os.makedirs(myDir)
 
-            path = str(myDir) + str(RID) + '.biom'
-            functions.imploding_panda(path, 2, self.DepVar, self.finalSampleIDs, self.metaDF, finalDF)
+            #path = str(myDir) + str(RID) + '.biom'
+            #functions.imploding_panda(path, 2, self.DepVar, self.finalSampleIDs, self.metaDF, self.finalDF)
 
             count_rDF = pd.DataFrame()
             if self.DepVar == 0:
-                count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
+                count_rDF = self.finalDF.pivot(index='rank_id', columns='sampleid', values='abund')
             elif self.DepVar == 4:
-                count_rDF = finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
+                count_rDF = self.finalDF.pivot(index='rank_id', columns='sampleid', values='abund_16S')
 
             # need to change rank_id to kegg orthologies for gage analysis
             count_rDF.reset_index(drop=False, inplace=True)
             count_rDF.rename(columns={'index': 'rank_id'}, inplace=True)
+            #print "PRE Count_rDF", count_rDF
             idList = count_rDF.rank_id.tolist()
+            #print "idList:", idList
             idDict = {}
             for id in idList:
-                entry = self.ko_entry.objects.using('picrust').get(ko_lvl4_id=id).ko_orthology
-                idDict[id] = entry
+                try:
+                    entry = ko_entry.objects.using('picrust').get(ko_lvl4_id=id).ko_orthology
+                    idDict[id] = entry
+                except:
+                    idDict[id] = "None"
+                    # TODO 1.4 log this / track this to present to user
+            #print "idDict:", len(idDict.keys()), idDict.keys(), idDict
             count_rDF['ko'] = count_rDF['rank_id'].map(idDict)
             count_rDF.drop('rank_id', axis=1, inplace=True)
             count_rDF.drop_duplicates(keep='last', inplace=True)  # remove dups - KOs mapped to multiple pathways
@@ -3841,6 +3849,8 @@ class Gage(Analysis):
 
             finalDict = {}
             metaDF.sort_values('sampleid', inplace=True)
+            #print "metaDF", metaDF
+            #print "count_rDF", count_rDF
             r.assign("metaDF", metaDF)
             r("trt <- factor(metaDF$merge)")
 
@@ -3974,7 +3984,7 @@ class Gage(Analysis):
 
                     r("sig <- sig * binary")
                     r("names(sig) <- row.names(res)")
-
+                    #print "keggDict:", keggDict
                     for key in keggDict.iterkeys():
                         r.assign("pathway", key)
                         r("pid <- substr(pathway, start=1, stop=7)")
@@ -4054,10 +4064,10 @@ class Gage(Analysis):
     def run(self):
         debug("Running Gage")
         self.treeType = 2
-        self.keggAll = 1
+        self.keggAll = 4
         ret = self.validate(sig=False, reqMultiLevel=False, selAll=False, metaQuant=False, taxTree=False)
         if ret == 0:
-            ret = self.query(taxmap=False, usetransform=False, filterable=False)
+            ret = self.query(taxmap=False, usetransform=False, filterable=True)
             if ret == 0:
                 return self.statsGraph()
 

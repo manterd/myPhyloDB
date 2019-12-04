@@ -53,6 +53,68 @@ def fixISV():
     print("Overwrote old ISV names, saving")
 
 
+def fixBlankTaxaNames():
+    # new problem: this function can wind up creating duplicate name sets
+    # (multiple unclassified entries with same parents)
+    # need to merge duplicates into the same entry (only for unclassified in this context, ignore sequence)
+    from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
+    # for all levels of taxa that aren't OTU, find blanks and replace with 'unclassified'
+    print "Starting blank taxa fix..."
+    # kingdom
+    blanks = Kingdom.objects.filter(kingdomName="")
+    for kingdom in blanks:
+        kingdom.kingdomName = "unclassified"
+        kingdom.save()
+    print "Kingdoms complete"
+
+    # phyla
+    blanks = Phyla.objects.filter(phylaName="")
+    for phyla in blanks:
+        phyla.phylaName = "unclassified"
+        phyla.save()
+    print "Phyla complete"
+
+    # class
+    blanks = Class.objects.filter(className="")
+    for clas in blanks:
+        clas.className = "unclassified"
+        clas.save()
+    print "Class complete"
+
+    # order
+    blanks = Order.objects.filter(orderName="")
+    for order in blanks:
+        order.orderName = "unclassified"
+        order.save()
+    print "Order complete"
+
+    # family
+    blanks = Family.objects.filter(familyName="")
+    for family in blanks:
+        family.familyName = "unclassified"
+        family.save()
+    print "Family complete"
+
+    # genus
+    blanks = Genus.objects.filter(genusName="")
+    for genus in blanks:
+        genus.genusName = "unclassified"
+        genus.save()
+    print "Genus complete"
+
+    # species
+    blanks = Species.objects.filter(speciesName="")
+    for species in blanks:
+        # this needs to check for existing versions of this, profile use, etc
+        species.speciesName = "unclassified"
+        species.save()
+    print "Species complete"
+
+    # could do a step for otu, bear in mind that sequences are potentially available here
+
+    print "Blank taxa names fixed"
+
+
 # this is main, check arg[1] for command and run it
 if len(sys.argv) != 2:
     print("Incorrect number of arguments")
@@ -66,5 +128,7 @@ else:
         createPublicList()
     elif myCommand == "createPrivateLists":
         createPrivateLists()
+    elif myCommand == "fixBlankTaxaNames":
+        print "Function currently disabled" #fixBlankTaxaNames()
     else:
-        print("Incorrect command: Options are adminLog fixISV createPublicList createPrivateLists")
+        print("Incorrect command: Options are adminLog fixISV fixBlankTaxaNames createPublicList createPrivateLists")

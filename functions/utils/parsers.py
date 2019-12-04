@@ -69,7 +69,7 @@ def validateSamples(p_uuid, secondarySampNameList):
     return missingSamples, missingSecondary
 
 
-def dada2(dest, source):
+def dada2(dest, source, stopList, PID, RID):
     global pro
     try:
         global stage, perc, mothurStat
@@ -127,19 +127,26 @@ def dada2(dest, source):
                 cmd = "mothur/mothur-linux/vsearch -usearch_global mothur/temp/dada.fasta -db mothur/temp/ref_trimmed.fa.gz --strand both --id 0.99 --fastapairs mothur/temp/pairs.fasta --notmatched mothur/temp/nomatch.fasta"
 
             pro = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
-            while True:
+            while stopList[PID] != RID:
+                # TODO 1.3 this needs a timeout condition where we assume the subprocess has died and throw an exception
+                # or at least stopDict support so someone can call cancel
                 line = pro.stdout.readline()
                 if line != '':
-                    mothurStat += line
+                    mothurStat += "Out: " + line
                     f.write(line)
                 else:
                     break
                 line = pro.stderr.readline()
                 if line != '':
-                    mothurStat += line
+                    mothurStat += "Err: " + line
                     f.write(line)
                 else:
                     break
+            if stopList[PID] == RID:
+                mothurStat += 'Process was stopped\n'
+                f.close()
+                return "Stopped"    # TODO 1.3 this is not handled, ie dada2 currently expects no return
+
             mothurStat += '\n\nR processing is done! \n\n'
             f.close()
 
@@ -1736,7 +1743,7 @@ def reanalyze(request, stopList):   # TODO 1.3 change script upload for reproces
                 if platform == 'mothur':
                     mothur(dest, source)
                 else:
-                    dada2(dest, source)
+                    dada2(dest, source, stopList, PID, RID)
 
             except Exception as e:
                 transaction.savepoint_rollback(sid)

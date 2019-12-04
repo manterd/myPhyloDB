@@ -380,23 +380,23 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
         # meanwhile, picrust objects have an otuid attribute, which is actually a foreign key to an otu99 object
         # so we need to get the otulist into a list of otu99 objects
         myOTUs = OTU_99.objects.filter(otuid__in=otuList)
-        print "len myOTUs:", len(myOTUs)
+        #print "len myOTUs:", len(myOTUs)
         qs = []
         for otu in myOTUs:
             curQS = PICRUSt.objects.using('picrust').filter(otuid=otu)
-            print "For otu", otu.otuName, "found", len(curQS), "matches in picrust" # TODO 1.3 error here based on mismatched otuids
+            #print "For otu", otu.otuName, "found", len(curQS), "matches in picrust" # TODO 1.3 error here based on mismatched otuids
             # we have otus, but we don't have picrust objects
             for pi in curQS:
                 qs.append(pi)
         #qs = PICRUSt.objects.using('picrust').filter(otuid__in=myOTUs)
-        print "len qs:", len(qs)
+        #print "len qs:", len(qs)
         piList = []
         for item in qs:
             piList.append([item.otuid_id, item.geneList])
-        print "piList:", piList
+        #print "piList:", piList
         picrustDF = pd.DataFrame(piList, columns=['otuid', 'geneList'])
         picrustDF.set_index('otuid', drop=True, inplace=True)
-        print "picrustDF head:", picrustDF.head()
+        #print "picrustDF head:", picrustDF.head()
 
         curStep = functions.getBase(RID)
         sumKEGG(picrustDF, koDict, 0, RID, PID, stops)
@@ -523,18 +523,27 @@ def getKeggDF(keggAll, keggDict, savedDF, metaDF, DepVar, mapTaxa, RID, stops, P
             taxaDF = pd.melt(taxaDF, id_vars='sampleid', var_name='rank_id', value_name='abund_16S')
 
         taxaDF.set_index('sampleid', drop=True, inplace=True)
+        #print "Merging"
+        if metaDF.empty:
+            print "MetaDF is empty!"
+        if taxaDF.empty:
+            print "TaxaDF is empty!"
         finalDF = pd.merge(metaDF, taxaDF, left_index=True, right_index=True, how='inner')
+        if finalDF.empty:
+            print "finalDF is empty after merge"
         finalDF.reset_index(drop=False, inplace=True)
+        if finalDF.empty:
+            print "finalDF is empty after reset"
         debug("keggDF: melted")
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:
             return '', None
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
-        print "finalDF head:", finalDF.head()
+        #print "finalDF head:", finalDF.head()
         idList = functions.getFullKO(list(finalDF.rank_id.unique()))
-        print "idList:", idList
+        #print "idList:", idList
         finalDF['rank_name'] = finalDF['rank_id'].map(idList)
-        print "final finalDF head:", finalDF.head()
+        #print "final finalDF head:", finalDF.head()
 
         # required to match getTaxaDF output
         metaDF.reset_index(drop=False, inplace=True)
@@ -1343,7 +1352,7 @@ def getNZDF(nzAll, myDict, savedDF, metaDF,  DepVar, mapTaxa, RID, stops, PID):
             if nzAll < 5:
                 allDF.rename(columns=namesDict, inplace=True)
         else:
-            allDF = ''  # soil health uses this
+            allDF = pd.DataFrame()  # soil health uses this, needs to return an empty dataframe
 
         # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
         if stops[PID] == RID:

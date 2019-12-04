@@ -76,8 +76,8 @@ def getsoil_index(request, stops, RID, PID):
                 metaDF.set_index('sampleid', drop=True, inplace=True)  # getTaxaDF resets index of metaDF
                 debug("SoilHealth: NZDF")
                 keggDF, mtDF = functions.getNZDF(nzAll, '', savedDF, metaDF, DepVar, mapTaxa, RID, stops, PID)
-                if keggDF.empty or mtDF.empty:
-                    res = 'Error: empty dataframe after NZDF'
+                if keggDF.empty:  # or mtDF.empty:
+                    res = json.dumps({'error': 'Error: empty dataframe after NZDF'})
                     return HttpResponse(res, content_type='application/json')
                 # TODO 1.3 move soil_index to analysis
 
