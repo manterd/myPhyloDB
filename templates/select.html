@@ -870,9 +870,8 @@
 {% endblock javascript %}
 
 {% block my_content %}
-    <br>
     <div>
-    <h2>Select new combination of sample(s)</h2>
+    <h2>Select new combination of sample(s):&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="submit" type="button" value="Save Selection(s)!"/></h2>
     <table border="2" cellspacing="0" cellpadding="5" class="inlineTable">
         <tr>
             <th>Select any combination of data for analysis:<br><a href="#" id="clearMeta" style="font-size: 12px;">-Deselect all-</a></th>
@@ -1341,7 +1340,6 @@
         </tr>
     </table>
     <br>
-    <input id="submit" type="button" value="Save Selection(s)!"/>
     <br>
     <br>
     <form id='form' action="{% url 'select' %}" method="post" enctype="multipart/form-data">

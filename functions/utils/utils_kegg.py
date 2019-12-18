@@ -1605,7 +1605,7 @@ def insertTaxaInfo(treeType, zipped, DF, pos=1):
     DF.fillna(value='N/A', inplace=True)
 
 
-def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth):
+def filterDF(savedDF, DepVar, level, remUnclass, remMito, remChloro, remZeroes, perZeroes, filterData, filterPer, filterMeth):
     debug("filterDF")
     numSamples = len(savedDF['sampleid'].unique())
     myVar = ''
@@ -1647,6 +1647,25 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         myLevel = 'otuName'
         myID = 'otuid'
     debug("filterDF: remUnclass")
+
+    if remMito == 'yes':
+        savedDF = savedDF[~savedDF['kingdomName'].isin(['mitochondria', 'Mitochondria'])]
+        savedDF = savedDF[~savedDF['phylaName'].isin(['mitochondria', 'Mitochondria'])]
+        savedDF = savedDF[~savedDF['className'].isin(['mitochondria', 'Mitochondria'])]
+        savedDF = savedDF[~savedDF['orderName'].isin(['mitochondria', 'Mitochondria'])]
+        savedDF = savedDF[~savedDF['familyName'].isin(['mitochondria', 'Mitochondria'])]
+        savedDF = savedDF[~savedDF['genusName'].isin(['mitochondria', 'Mitochondria'])]
+        savedDF = savedDF[~savedDF['speciesName'].isin(['mitochondria', 'Mitochondria'])]
+
+    if remChloro == 'yes':
+        savedDF = savedDF[~savedDF['kingdomName'].isin(['chloroplast', 'Chloroplast'])]
+        savedDF = savedDF[~savedDF['phylaName'].isin(['chloroplast', 'Chloroplast'])]
+        savedDF = savedDF[~savedDF['className'].isin(['chloroplast', 'Chloroplast'])]
+        savedDF = savedDF[~savedDF['orderName'].isin(['chloroplast', 'Chloroplast'])]
+        savedDF = savedDF[~savedDF['familyName'].isin(['chloroplast', 'Chloroplast'])]
+        savedDF = savedDF[~savedDF['genusName'].isin(['chloroplast', 'Chloroplast'])]
+        savedDF = savedDF[~savedDF['speciesName'].isin(['chloroplast', 'Chloroplast'])]
+
     if remUnclass == 'yes':
         # check if selecting based on level first, create else statement for tree usage
         savedDF = savedDF[~savedDF[myLevel].str.contains('unclassified')]
@@ -1656,6 +1675,7 @@ def filterDF(savedDF, DepVar, level, remUnclass, remZeroes, perZeroes, filterDat
         bytag = savedDF.groupby(myID).aggregate(np.count_nonzero)
         tags = bytag[bytag[myVar] >= threshold].index.tolist()
         savedDF = savedDF[savedDF[myID].isin(tags)]
+
     debug("filterDF: filterData")
     if filterData == 'yes' and not level == 8:
         threshold = int(filterPer)

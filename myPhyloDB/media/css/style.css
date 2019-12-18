@@ -83,7 +83,7 @@ span.dynatree-highlight {
 }
 
 .menuItems li {
-    margin-left: 15px;
+    margin-left: 5px;
     text-align: left;
 }
 
@@ -102,8 +102,7 @@ span.dynatree-highlight {
     font-style: italic;
 }
 
-.blank_row
-{
+.blank_row {
     height: 20px !important;
     background-color: white;
 }

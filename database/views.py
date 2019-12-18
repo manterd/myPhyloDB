@@ -580,7 +580,7 @@ def handleMothurRefData(request, nameDict, selDict, dest):  # no samples with th
     shutil.copy('mothur/temp/pairs.fasta', '% s/dada.vsearch_pairs.txt' % dest)
     shutil.copy('mothur/temp/dada.fasta', '% s/dada.rep_seqs.fasta' % dest)
     shutil.copy('mothur/temp/dada.cons.taxonomy', '% s/final.cons.taxonomy' % dest)
-    return open('% s/final.cons.taxonomy' % dest)
+    return open('% s/final.cons.taxonomy' % dest)  ##TODO: Is this line correct?
 
 
 def handleArchive(dest, name, request):  # take archive 'name' at location 'dest', extract all contents, move contents to pwd
@@ -624,7 +624,6 @@ def handleArchive(dest, name, request):  # take archive 'name' at location 'dest
     return True  # return true if file was successfully extracted as an archive, false otherwise
 
 
-
 def makeSamplesErrorText(missingMeta, missingSecondary, secondaryFileType):
     errText = ""
     if len(missingMeta) != 0 or len(missingSecondary) != 0:
@@ -640,6 +639,7 @@ def makeSamplesErrorText(missingMeta, missingSecondary, secondaryFileType):
             errText += "\n"
     return errText
 
+
 # TODO 1.3 sid usage in uploads (for transaction rollbacks, variable goes unused)
 def uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList, PID, RID):
     debug("Upload with mothur")
@@ -654,6 +654,8 @@ def uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList
             if lineNum != 0 and len(parts) > 1:
                 sampNames.append(parts[1])
             lineNum += 1
+        file4.seek(0)
+
         missingSamples, missingShared = functions.validateSamples(p_uuid, sampNames)
         errText = makeSamplesErrorText(missingSamples, missingShared, "shared")
         if errText != "":
@@ -688,8 +690,8 @@ def uploadWithMothur(request, nameDict, selDict, refDict, p_uuid, dest, stopList
 
     try:
         functions.parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID)  # taxafile vs file3
-    except Exception:
-        return "Failed parsing your shared file:" + str(file4.name)
+    except Exception as ex:
+        return "Failed parsing your shared file:" + str(ex)
 
     if stopList[PID] == RID:
         return "Stop"
@@ -1029,7 +1031,7 @@ def uploadWithMiseq(request, nameDict, selDict, refDict, p_uuid, dest, stopList,
             functions.dada2(dest, "miseq", stopList, PID, RID)
         except Exception as er:
             logException()
-            return "Encountered problem while processing data2:" + str(er)    # probably not an accurate error message
+            return "Encountered problem while processing dada2:" + str(er)    # probably not an accurate error message
 
         if stopList[PID] == RID:
             return "Stop"
@@ -1294,7 +1296,7 @@ def processFunc(request, stopList):
         return upErr("Error during " + str(source) + ":" + str(errorText), request, dest, sid)
 
     end = datetime.datetime.now()
-    debug('Total time for ' + str(request.user.username) + '\'s upload:', end - start)
+    debug('Total time for ' + str(request.user.username) + '\'s upload:', str(end - start))
     # TODO 1.3 verify files are winding up in the right place after upload is done
     myProject = Project.objects.get(projectid=p_uuid)
     myProject.wip = False

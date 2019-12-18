@@ -117,44 +117,47 @@
             <hr><p><em><strong>General Info</strong></em></p><hr>
 
             {% if user.is_active %}
-                <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
-                <a class="Offmouse" href="{% url "profile" %}"  onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Manage your account">My Account</li></a>
-                <a class="Offmouse" href="{% url "history" %}"  onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="View your recent analyses">My History</li></a>
+                <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Instructions and sample files can be found here.">Home</li></a>
+                <a class="Offmouse" href="{% url "profile" %}"  onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Manage your account">My Account</li></a>
+                <a class="Offmouse" href="{% url "history" %}"  onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="View your recent analyses">My History</li></a>
                     {% if user.is_superuser %}
-                        <a class="Offmouse" href="/myPhyloDB/admin/" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add/remove users">Manage Users</li></a>
+                        <a class="Offmouse" href="/myPhyloDB/admin/" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Add/remove users">Manage Users</li></a>
                     {% endif %}
-                <a class="Offmouse" href="/myPhyloDB/accounts/logout/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Logout current user">Logout</li></a>
+                <a class="Offmouse" href="/myPhyloDB/accounts/logout/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Logout current user">Logout</li></a>
             {% else %}
-                <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Instructions and sample files can be found here.">Home</li></a>
-                <a class="Offmouse" href="/myPhyloDB/accounts/login/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Login as a registered user.">Login</li></a>
+                <a class="Offmouse" href="{% url "home" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Instructions and sample files can be found here.">Home</li></a>
+                <a class="Offmouse" href="/myPhyloDB/accounts/login/" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Login as a registered user.">Login</li></a>
             {% endif %}
             <br>
 
             <div>
                 <hr><p><em><strong>Data Ref</strong></em></p><hr>
             </div>
-            <a class="Offmouse" href="{% url "taxa" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore taxonomic data in your database.">Taxonomy</li></a>
-            <a class="Offmouse" href="{% url "kegg_path" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore KEGG orthology data in your database.">KEGG Orthology</li></a>
-            <a class="Offmouse" href="{% url "kegg_enzyme" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Explore KEGG enzyme data in your database.">KEGG Enzyme</li></a>
+            <a class="Offmouse" href="{% url "taxa" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Explore taxonomic data in your database.">Taxonomy</li></a>
+            <a class="Offmouse" href="{% url "kegg_path" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Explore KEGG orthology data in your database.">KEGG Orthology</li></a>
+            <a class="Offmouse" href="{% url "kegg_enzyme" %}" target="_blank" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Explore KEGG enzyme data in your database.">KEGG Enzyme</li></a>
             <br>
 
             <div>
-                <hr><p><em><strong>Data Mgt</strong></em></p><hr>
+                <hr><p><em><strong>Project Mgt</strong></em></p><hr>
             </div>
             {% if user.is_authenticated %}
-                <a class="Offmouse" href="{% url "files" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Manage server-side file.">Upload</li></a>
-                <a class="Offmouse" href="{% url "process" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Add new projects/samples here.">Process</li></a>
-                <a class="Offmouse" href="{% url "reprocess" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Reprocess uploaded projects with new reference files.">Reprocess</li></a>
-                <a class="Offmouse" href="{% url "download" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Reprocess uploaded projects with new reference files.">Download</li></a>
-                <a class="Offmouse" href="{% url "update" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update/edit metadata for uploaded projects.">Update</li></a>
+                <a class="Offmouse" href="{% url "files" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Upload your files to myPhyloDB.">Upload Files</li></a>
+                <a class="Offmouse" href="{% url "process" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Add raw or pre-processed data to myPhyloDB database.">Create Project</li></a>
+                <a class="Offmouse" href="{% url "reprocess" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px; color: #F90" title="Re-process myPhyloDB project(s) with new taxonomy reference files or new analytical pipeline.">Update Project</li></a>
+                <a class="Offmouse" href="{% url "update" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px; color: #F90" title="Update/edit metadata for myPhyloDB project(s).">Update Metadata</li></a>
+                <a class="Offmouse" href="{% url "download" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px; color: #F90" title="Download files from the myPhyloDB database.">Download Files</li></a>
             {% endif %}
             {% if user.is_superuser %}
-                <a class="Offmouse" href="{% url "pybake" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Update PICRUSt reference files.">PyBake</li></a>
+                <a class="Offmouse" href="{% url "pybake" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px; color: #F90" title="Update PICRUSt reference files.">PyBake</li></a>
             {% endif %}
             <br>
-            <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Select projects/samples for analysis.">Select Data</li></a>
+            <div>
+                <hr><p><em><strong>Data Mgt</strong></em></p><hr>
+            </div>
+            <a class="Offmouse" href="{% url "select" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Select projects/samples for analysis.">Select Data</li></a>
             <div id="link5" style="display: none;" >
-                <a class="Offmouse" href="{% url "norm" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Normalize and export data for external analysis">Normalize Data</li></a>
+                <a class="Offmouse" href="{% url "norm" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Normalize and export data for external analysis">Normalize Data</li></a>
             </div>
                 <br>
 
@@ -164,25 +167,25 @@
 
             <p id="link1" style="display: none;"><strong>Univariate</strong></p>
             <div id="link2" style="display: none;" >
-                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>AN</u>alysis of <u>cO</u>-variance <u>A</u>nalyses" >ANcOVA</li></a>
-                <a class="Offmouse" href="{% url "corr" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Correlation Matrix" >CorrPlot</li></a>
-                <a class="Offmouse" href="{% url "spac" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>Sp</u>ecies <u>Acc</u>umulation <u>Curve</u>s" >SpAccCurve</li></a>
-                <a class="Offmouse" href="{% url "soil_index" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Soil Health Indices" >SoilHealth</li></a>
+                <a class="Offmouse" href="{% url "anova" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="<u>AN</u>alysis of <u>cO</u>-variance <u>A</u>nalyses" >ANcOVA</li></a>
+                <a class="Offmouse" href="{% url "corr" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Correlation Matrix" >CorrPlot</li></a>
+                <a class="Offmouse" href="{% url "spac" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="<u>Sp</u>ecies <u>Acc</u>umulation <u>Curve</u>s" >SpAccCurve</li></a>
+                <a class="Offmouse" href="{% url "soil_index" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Soil Health Indices" >SoilHealth</li></a>
             </div>
             <br>
 
             <p id="link3" style="display: none;"><strong>Multivariate</strong></p>
             <div id="link6" style="display: none;" >
-                <a class="Offmouse" href="{% url "rf" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>C</u>lassification <u>A</u>nd <u>RE</u>gression <u>T</u>raining">CARET</li></a>
-                <a class="Offmouse" href="{% url "core" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Core microbiome analyses">CORE</li></a>
+                <a class="Offmouse" href="{% url "rf" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="<u>C</u>lassification <u>A</u>nd <u>RE</u>gression <u>T</u>raining">CARET</li></a>
+                <a class="Offmouse" href="{% url "core" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Core microbiome analyses">CORE</li></a>
                 <div id="link4" style="display: none;">
-                    <a class="Offmouse" href="{% url "diffabund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Genewise Negative Binomial GLM (edgeR)">DiffAbund</li></a>
-                    <a class="Offmouse" href="{% url "gage" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>G</u>enerally <u>A</u>pplicable <u>GE</u>ne-set / Pathway Analysis">GAGE</li></a>
+                    <a class="Offmouse" href="{% url "diffabund" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Genewise Negative Binomial GLM (edgeR)">DiffAbund</li></a>
+                    <a class="Offmouse" href="{% url "gage" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="<u>G</u>enerally <u>A</u>pplicable <u>GE</u>ne-set / Pathway Analysis">GAGE</li></a>
                 </div>
-                <a class="Offmouse" href="{% url "pca" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Abundance-based ordination analyses:</br><u>P</u>rincipal <u>C</u>omponents <u>A</u>nalysis (PCA)</br><u>C</u>anonical <u>C</u>orrespondence <u>A</u>nalysis (CCA)</br><u>D</u>etrended <u>C</u>orrespondence <u>A</u>nalysis (DCA)">PCA+</li></a>
-                <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="Distance-based ordination analyses:</br><u>P</u>rincipal <u>Co</u>ordinates <u>A</u>nalysis (PCoA)">PCoA</li></a>
-                <a class="Offmouse" href="{% url "spls" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>s</u>parse <u>P</u>artial <u>L</u>east <u>S</u>quares Regression">sPLS</li></a>
-                <a class="Offmouse" href="{% url "wgcna" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 15px" title="<u>W</u>eighted <u>C</u>orrelation <u>N</u>etwork <u>A</u>nalysis">WGCNA</li></a>
+                <a class="Offmouse" href="{% url "pca" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Abundance-based ordination analyses:</br><u>P</u>rincipal <u>C</u>omponents <u>A</u>nalysis (PCA)</br><u>C</u>anonical <u>C</u>orrespondence <u>A</u>nalysis (CCA)</br><u>D</u>etrended <u>C</u>orrespondence <u>A</u>nalysis (DCA)">PCA+</li></a>
+                <a class="Offmouse" href="{% url "pcoa" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="Distance-based ordination analyses:</br><u>P</u>rincipal <u>Co</u>ordinates <u>A</u>nalysis (PCoA)">PCoA</li></a>
+                <a class="Offmouse" href="{% url "spls" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="<u>s</u>parse <u>P</u>artial <u>L</u>east <u>S</u>quares Regression">sPLS</li></a>
+                <a class="Offmouse" href="{% url "wgcna" %}" onmouseout="this.className='Offmouse'" onmouseover="this.className='Onmouse'"><li style="margin-left: 5px" title="<u>W</u>eighted <u>C</u>orrelation <u>N</u>etwork <u>A</u>nalysis">WGCNA</li></a>
             </div>
             <br>
 

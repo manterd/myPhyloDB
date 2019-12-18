@@ -52,6 +52,7 @@ def getProjectTreeChildren(request):    # get the samples belonging to projects 
         samples = Sample.objects.filter(projectid=projectid).values_list('sampleid', flat=True)
 
         nodes = []
+        readless = 0
         sampVals = Sample.objects.filter(sampleid__in=samples).order_by('sample_name').values('sampleid', 'sample_name', 'reads')
         for i in sampVals:
             if int(i['reads'] > 0):
@@ -62,6 +63,9 @@ def getProjectTreeChildren(request):    # get the samples belonging to projects 
                     'isFolder': False
                 }
                 nodes.append(myNode)
+            else:
+                readless += 1
+        print "Readless", readless
         res = json.dumps(nodes)
         return HttpResponse(res, content_type='application/json')
 

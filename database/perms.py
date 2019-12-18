@@ -43,8 +43,13 @@ def newPriv(p_uuid):
     myProfile = UserProfile.objects.get(user=myOwner)
     # get owner's list of shared user ids
     myGivenPerms = myProfile.gavePermsTo.split(";")
+    searchablePerms = []
+    for perm in myGivenPerms:
+        if perm != '':
+            searchablePerms.append(perm)
     # get list of users that corresponds to ids
-    myGivenPermsUsers = User.objects.filter(id__in=myGivenPerms)
+    debug("newPriv: trouble spot:", searchablePerms)
+    myGivenPermsUsers = User.objects.filter(id__in=searchablePerms)
     # get profiles of shared users
     mySharedUsers = UserProfile.objects.filter(user__in=myGivenPermsUsers)
     # add this project to shared users lists
@@ -80,12 +85,17 @@ def remPriv(p_uuid):
     myProfile = UserProfile.objects.get(user=myOwner)
     # get owner's list of shared user ids
     myGivenPerms = myProfile.gavePermsTo.split(";")
+    searchablePerms = []
+    for perm in myGivenPerms:
+        if perm != '':
+            searchablePerms.append(perm)
     # get actual user objects from ids
-    debug("remPriv: trouble spot:", myGivenPerms)
-    myGivenPermsUsers = User.objects.filter(id__in=myGivenPerms)
-    # TODO 1.3 /\ ValueError: invalid literal for int() with base 10: ''
+    debug("remPriv: trouble spot:", searchablePerms)
+    myGivenPermsUsers = UserProfile.objects.filter(id__in=searchablePerms)
+
     # get profiles of shared users
-    mySharedUsers = UserProfile.objects.filter(user__in=myGivenPermsUsers)
+    mySharedUsers = User.objects.filter(user__in=myGivenPermsUsers)
+
     # add this project to shared users lists
     for share in mySharedUsers:
         share.update_list(remove=p_uuid)
@@ -350,6 +360,7 @@ def getViewProjects(request):   # use this function as often as possible for pro
         # queryStartTime = time.time()
         publicIDs = []
         privateIDs = []
+        myIDs = []
         try:
             publicIDs = PublicProjects.objects.all().first().List.split(",")    # got the public
             debug("Found", len(publicIDs), "public projects")
@@ -362,7 +373,16 @@ def getViewProjects(request):   # use this function as often as possible for pro
         except Exception as e:
             print e
 
-        filterIDS = np.unique(privateIDs+publicIDs)
+        # also kind of important to add this user's own projects
+        try:
+            myProjects = Project.objects.filter(owner=request.user)
+            for proj in myProjects:
+                myIDs.append(proj.projectid)
+            debug("Found", len(myIDs), "owned projects")
+        except Exception as e:
+            print e
+
+        filterIDS = np.unique(privateIDs+publicIDs+myIDs)
 
         # queryTime = time.time() - queryStartTime
         # print "Select query time:", queryTime

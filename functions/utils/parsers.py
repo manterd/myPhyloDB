@@ -114,12 +114,6 @@ def dada2(dest, source, stopList, PID, RID):
                     f.write(line)
                 else:
                     break
-                line = pro.stderr.readline()
-                if line != '':
-                    mothurStat += line
-                    f.write(line)
-                else:
-                    break
 
             if os.name == 'nt':
                 cmd = "mothur\\mothur-win\\vsearch -usearch_global mothur\\temp\\dada.fasta -db mothur\\temp\\ref_trimmed.fa.gz --strand both --id 0.99 --fastapairs mothur\\temp\\pairs.fasta --notmatched mothur\\temp\\nomatch.fasta"
@@ -136,12 +130,7 @@ def dada2(dest, source, stopList, PID, RID):
                     f.write(line)
                 else:
                     break
-                line = pro.stderr.readline()
-                if line != '':
-                    mothurStat += "Err: " + line
-                    f.write(line)
-                else:
-                    break
+
             if stopList[PID] == RID:
                 mothurStat += 'Process was stopped\n'
                 f.close()
@@ -749,7 +738,8 @@ def parse_taxonomy(Document, stopList, PID, RID):
             perc = int(step / total * 100)
             # prep taxonomy line by cleaning up tags and percentages (we don't use either here)
             subbed = re.sub(r'(\(.*?\)|k__|p__|c__|o__|f__|g__|s__|otu__)', '', row[colLabels["Taxonomy"]])
-            subbed = subbed[:-1]
+            if subbed.endswith(';'):
+                subbed = subbed[:-1]
 
             taxon = subbed.split(';')
 
@@ -763,13 +753,10 @@ def parse_taxonomy(Document, stopList, PID, RID):
                 taxon.append("unclassified")
             if len(taxon) < 5:  # missing family
                 taxon.append("unclassified")
-
             if len(taxon) < 6:  # missing genus
                 taxon.append("unclassified")
-
             if len(taxon) < 7:  # missing species
                 taxon.append("unclassified")
-
             if len(taxon) < 8:  # missing otu, unclassified the best thing to fill here?
                 taxon.append("unclassified")    # in case sequence is true but otu is not
 
@@ -1473,7 +1460,7 @@ def parse_profile(file3, file4, p_uuid, refDict, stopList, PID, RID):   # TODO 1
         if stopList[PID] == RID:
             return
 
-    stage = "Step 1 of 5: Parsing project file..."
+    #stage = "Step 5 of 5: Parsing project file..."
     debug("Done parsing profile")
 
 

@@ -684,6 +684,18 @@
                 myDict['reqType'] = "call";
                 myDict['dataID'] = dataID;
 
+                if ($("#remMito").is(':checked')) {
+                    myDict['remMito'] = 'yes'
+                } else {
+                    myDict['remMito'] = 'no'
+                }
+
+                if ($("#remChloro").is(':checked')) {
+                    myDict['remChloro'] = 'yes'
+                } else {
+                    myDict['remChloro'] = 'no'
+                }
+
                 if ($("#remUnclass").is(':checked')) {
                     myDict['remUnclass'] = 'yes'
                 } else {

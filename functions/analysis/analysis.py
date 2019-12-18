@@ -237,12 +237,16 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             # filter otus based on user settings
             remUnclass = self.all['remUnclass']
             remZeroes = self.all['remZeroes']
+            remMito = self.all['remMito']
+            remChloro = self.all['remChloro']
             perZeroes = int(self.all['perZeroes'])
             filterData = self.all['filterData']
             filterPer = int(self.all['filterPer'])
             filterMeth = int(self.all['filterMeth'])
         else:
             remUnclass = None
+            remMito = None
+            remChloro = None
             remZeroes = None
             perZeroes = None
             filterData = None
@@ -269,7 +273,7 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
                 filteredDF = self.savedDF.copy()
             else:   # Filter lists being sent, need default values for unfiltered for gage? TODO 1.4 More readable code / more comments
                 taxaDict = ''
-                filteredDF = functions.filterDF(self.savedDF, self.DepVar, self.selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                filteredDF = functions.filterDF(self.savedDF, self.DepVar, self.selectAll, remUnclass, remMito, remChloro, remZeroes, perZeroes, filterData, filterPer, filterMeth)
             self.finalDF, missingList = functions.getTaxaDF(self.selectAll, taxaDict, filteredDF, self.metaDF, self.allFields, self.DepVar, self.RID, self.stopList, self.PID)
             if self.selectAll == 8:
                 self.result += '\nThe following PGPRs were not detected: ' + ", ".join(missingList) + '\n'
@@ -926,8 +930,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
         else:
             print "Validate failed"
 
-    def deprint(self, text):
-        debug(text)
 
 
 
@@ -1679,7 +1681,7 @@ class Corr(Analysis):
 
     # overwrite stats and graph
     def statsGraph(self):
-        print 'statsGraph'
+        #print 'statsGraph'
         debug("statsgraph! (corr)")
         functions.setBase(self.RID, 'Step 3 of 4: Calculating Correlations Matrix...')
         if self.DepVar == 0:
@@ -1853,7 +1855,7 @@ class diffAbund(Analysis):
 
         debug("diffAbund: statsGraph")
 
-        print self.catFields, len(self.catFields)
+        #print self.catFields, len(self.catFields)
 
         if len(self.catFields) == 0:    # if catFields is empty, let user know they need to select more data
             errDict = {}
@@ -3025,7 +3027,7 @@ class PCoA(Analysis):   # TODO 1.4 move analysis classes into their own .py file
                     trt = name
                 dataList = []
                 for index, row in group.iterrows():
-                    print "Row:", row
+                    #print "Row:", row
                     dataDict = {}
                     dataDict['name'] = row['Sample ID']
                     dataDict['x'] = float(row[-2])
@@ -3675,7 +3677,7 @@ class Caret(Analysis):
                 return HttpResponse(getStopDict(), content_type='application/json')
             # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\//\ #
 
-            self.deprint("Returning Caret results")
+            debug("Returning Caret results")
 
             finalDict['error'] = 'none'
             res = json.dumps(finalDict)
