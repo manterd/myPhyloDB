@@ -49,8 +49,8 @@ LOG_FILENAME = 'error_log.txt'
 pro = None
 
 # when adding new file types, just add name used in html (and for directory) to subDirList
-subDirList = 'meta', 'shared', 'taxa', 'sequence', 'script', \
-                         'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq'
+subDirList = ['meta', 'shared', 'taxa', 'sequence', 'script',
+              'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq']
 
 
 def home(request, errorText=""):

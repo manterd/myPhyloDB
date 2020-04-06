@@ -71,6 +71,8 @@ def getSpAC(request, stops, RID, PID):
                 functions.setBase(RID, 'Step 3 of 5: Selecting your chosen taxa or KEGG level...')
 
                 # filter otus based on user settings
+                remMito = all['remMito']
+                remChloro = all['remChloro']
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
                 perZeroes = int(all['perZeroes'])
@@ -82,7 +84,7 @@ def getSpAC(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remMito, remChloro, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 

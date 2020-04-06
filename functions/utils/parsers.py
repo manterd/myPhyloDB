@@ -731,7 +731,6 @@ def parse_taxonomy(Document, stopList, PID, RID):
                         row.insert(badIndex, subRow[0])   # add its components back in
                         row.insert(badIndex+1, subRow[1])
                         debug("Fixed a row:", row)
-
                     badIndex += 1
 
             step += 1.0
@@ -934,7 +933,6 @@ def parse_biom(biom, taxa, sequence, project_id, refDict, minConfidence, stopLis
     # read files
     stage = "Step 4 of 4: Parsing biom file..."
     perc = 0
-
 
     debug("Reading biom:", biom)
     # lets try h5py instead, skip R entirely

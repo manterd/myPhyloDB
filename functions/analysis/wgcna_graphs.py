@@ -145,6 +145,8 @@ def getWGCNA(request, stops, RID, PID):
                 # filter phylotypes based on user settings
                 remUnclass = all['remUnclass']
                 remZeroes = all['remZeroes']
+                remMito = all['remMito']
+                remChloro = all['remChloro']
                 perZeroes = int(all['perZeroes'])
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
@@ -154,7 +156,7 @@ def getWGCNA(request, stops, RID, PID):
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remMito, remChloro, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 

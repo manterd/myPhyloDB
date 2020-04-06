@@ -75,7 +75,7 @@ USE_L10N = False
 
 # Maximum size, in bytes, of a request before it will be streamed to the
 # file system instead of into memory.
-FILE_UPLOAD_MAX_MEMORY_SIZE = 2147483648  # i.e. 2 GB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 8589934592  # i.e. 8 GB
 
 # Maximum size in bytes of request data (excluding file uploads) that will be
 # read before a SuspiciousOperation (RequestDataTooBig) is raised.

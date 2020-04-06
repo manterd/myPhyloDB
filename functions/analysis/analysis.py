@@ -42,6 +42,7 @@ import datetime
 
 process = psutil.Process(os.getpid())
 
+
 # stop function for creating proper return message
 def getStopDict():
     stopFinal = {}
@@ -929,8 +930,6 @@ class Analysis:  # abstract parent class, not to be run on its own. Instead, sho
             return output
         else:
             print "Validate failed"
-
-
 
 
 # TODO 1.4 trim these down and/or split them up further (more helper functions!)

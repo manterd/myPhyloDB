@@ -5,7 +5,7 @@ import os
 import math
 import datetime
 import time
-from database.views import subDirList
+#from database.views import subDirList
 from functions.utils.debug import debug
 from functions.utils.utils_df import log, securityLog, errorLog
 from threading import Lock
@@ -43,6 +43,11 @@ process = psutil.Process(os.getpid())
 prevMem = 0.0
 memTally = 0
 enableMemDiff = False   # set this back to true for memory analysis during exploding_panda
+
+# when adding new file types, just add name used in html (and for directory) to subDirList
+subDirList = ['meta', 'shared', 'taxa', 'sequence', 'script',
+              'sff', 'oligos', 'files', 'fna', 'qual', 'contig', 'fastq']
+
 
 def memDiff():
     if enableMemDiff:
