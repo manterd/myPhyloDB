@@ -162,7 +162,7 @@ def fileUploadChunk(request):
         if curChunkMem >= maximumMemorizedChunks:
             # acquire lock to proceed
             #print "Capacity", myChunkNum
-            if bunchLock.acquire(False):   # TODO 1.3 this lock should be unique to RID, atm its global
+            if bunchLock.acquire(False):   # TODO current this lock should be unique to RID, atm its global
                 # we have enough chunks to at least check for continuous chunks
                 #print "LOCK", myChunkNum
                 chunkKeys = myStorage.keys()
@@ -219,6 +219,7 @@ def fileUploadChunk(request):
     return HttpResponse(res, content_type='json')
 
 
+# TODO current cleanup or use, at present this function is never called
 def writeBunchFile(chunks, path, number):
     if not os.path.exists(path):
         try:
@@ -232,100 +233,114 @@ def writeBunchFile(chunks, path, number):
             bunchFile.write(chunk)
         bunchFile.close()
         return True
-    return False
 
 
 def fileUploadComplete(request):
+    # TODO current Need to ensure this function waits for existing fileUploadChunk calls to complete
+    if bunchLock.acquire(False):
+        retDict = {"error": "none"}
 
-    retDict = {"error": "none"}
+        try:
 
-    try:
+            if not request.user.is_authenticated():
+                securityLog(request, "fileUploadComplete", "Authentication")
+                raise Exception("Error: invalid user credentials")
 
-        if not request.user.is_authenticated():
-            securityLog(request, "fileUploadComplete", "Authentication")
-            raise Exception("Error: invalid user credentials")
+            # myToken = request.POST['csrfmiddlewaretoken'] TODO 1.3 are we supposed to check these or does Django on its own?
+            myData = json.loads(request.body.split('&')[0])
+            myType = myData['type']
+            myName = myData['name']
+            myRID = myData['RID']
+            log(request, "fileUploadComplete", myName)
+            bunchDir = "temp/bunches/"+myRID
 
-        # myToken = request.POST['csrfmiddlewaretoken'] TODO 1.3 are we supposed to check these or does Django on its own?
-        myData = json.loads(request.body.split('&')[0])
-        myType = myData['type']
-        myName = myData['name']
-        myRID = myData['RID']
-        log(request, "fileUploadComplete", myName)
-        bunchDir = "temp/bunches/"+myRID
+            uploadDest = str(os.getcwd()) + "/user_uploads/" + str(request.user.username) + "/" + datetime.date.today().isoformat()
 
-        uploadDest = str(os.getcwd()) + "/user_uploads/" + str(request.user.username) + "/" + datetime.date.today().isoformat()
+            if not os.path.exists(uploadDest):
+                os.makedirs(uploadDest)
 
-        if not os.path.exists(uploadDest):
-            os.makedirs(uploadDest)
+            if myType in subDirList:
+                subDest = os.path.join(uploadDest, myType)
+                if not os.path.exists(subDest):
+                    os.makedirs(subDest)
+                if len(myName.split('/')) != 1 or len(myName.split('\\')) != 1 or len(myName.split('..')) != 1:
+                    securityLog(request, "fileUploadComplete", "Traversal attempt with filename: "+str(myName))
+                    raise Exception("Invalid file name: "+str(myName))
+                myFullPath = subDest + "/" + myName
 
-        if myType in subDirList:
-            subDest = os.path.join(uploadDest, myType)
-            if not os.path.exists(subDest):
-                os.makedirs(subDest)
-            if len(myName.split('/')) != 1 or len(myName.split('\\')) != 1 or len(myName.split('..')) != 1:
-                securityLog(request, "fileUploadComplete", "Traversal attempt with filename: "+str(myName))
-                raise Exception("Invalid file name: "+str(myName))
-            myFullPath = subDest + "/" + myName
+                with open(myFullPath, "wb") as myFile:
+                    if os.path.exists(bunchDir):
+                        # we have actually saved bunch data for this upload, let's handle that first
+                        bunchFileNames = [f for f in os.listdir(bunchDir) if os.path.isfile(os.path.join(bunchDir, f))]
+                        bunchNums = []
+                        for bunchName in bunchFileNames:
+                            bunchNums.append(int(bunchName))
+                        bunchNums = sorted(bunchNums)
+                        for num in bunchNums:
+                            #print "Reading bunch num", num
+                            # TODO current large file corruption bug, I suspect bunches are either being skipped or are given duplicate names
+                            # read .bunch file named by num, write its data into myFile, then close and delete bunch
+                            numPath = bunchDir + "/" + str(num)
+                            # should double check the size of the bunchFile
+                            #assert os.stat(numPath).st_size <= maxMemory, ".bunch file size error"  # TODO 1.4 better error msg
+                            # this assertion breaks courtesy of thread-safe bunch writer (bunches are sometimes slightly bigger)
 
-            with open(myFullPath, "wb") as myFile:
-                if os.path.exists(bunchDir):
-                    # we have actually saved bunch data for this upload, let's handle that first
-                    bunchFileNames = [f for f in os.listdir(bunchDir) if os.path.isfile(os.path.join(bunchDir, f))]
-                    bunchNums = []
-                    for bunchName in bunchFileNames:
-                        bunchNums.append(int(bunchName))
-                    bunchNums = sorted(bunchNums)
-                    for num in bunchNums:
-                        # read .bunch file named by num, write its data into myFile, then close and delete bunch
-                        numPath = bunchDir + "/" + str(num)
-                        # should double check the size of the bunchFile
-                        #assert os.stat(numPath).st_size <= maxMemory, ".bunch file size error"  # TODO 1.4 better error msg
-                        # this assertion breaks courtesy of thread-safe bunch writer (bunches are sometimes slightly bigger)
+                            with open(numPath, "rb") as bunchFile:
+                                myFile.write(bunchFile.read())  # assert says the file will fit in memory entirely
+                                # so we can just write directly from the input, so long as maxMemory is configured correctly
 
-                        with open(numPath, "rb") as bunchFile:
-                            myFile.write(bunchFile.read())  # assert says the file will fit in memory entirely
-                            # so we can just write directly from the input, so long as maxMemory is configured correctly
+                            # delete this file
+                            #print "\tDone reading, removing"
+                            os.remove(numPath)
 
-                            bunchFile.close()   # more of a formality to call this but we are done, so close() it
+                        # done with all bunches, delete directory
+                        #print "All bunches done"
+                        os.rmdir(bunchDir)  # this seems like the error trigger, got here too soon?
+                        # TODO current bug seems caused by a race condition somewhere, it only sometimes errors (more likely with more bunches)
+                        # previous error case had bunch 268 leftover, good run had 263 as final (264 total)
+                        # missed the very last bunchfile somehow in both observed error cases
+                        # removing the bunchfile directory throws an error due to the last bunch file being skipped, causing both that bunchfile's data AND the final chunk memory to be absent in the final file
 
-                        # delete this file
-                        os.remove(numPath)
+                    # Get currently loaded chunks from memory
+                    myChunkData = chunkStorageDict[myRID]
+                    # need to update loop to go from lastBunchEnd onward, can assume all chunks are present TODO 1.3
+                    startChunk = bunchedChunkNumDict[myRID]
+                    # just run the rest of the list in sorted order, maybe throw an error if a sequence issue shows up
+                    if len(myChunkData.keys()) > 0:
+                        myRemKeys = []
+                        for key in myChunkData.keys():
+                            myRemKeys.append(int(key))
+                        prevKey = myRemKeys[0]
+                        myRemKeys = sorted(myRemKeys)
+                        for numKey in myRemKeys:
+                            if numKey < startChunk:
+                                # we have a problem, a chunk was never written to bunch, so this file will be corrupted
+                                raise Exception("Chunk start error")
+                            if prevKey != myRemKeys[0] and prevKey+1 != numKey:
+                                # we have a different problem, non-sequential sequence of chunks (file will be corrupted)
+                                raise Exception("Chunk sequencing error")
+                            # safe to write
+                            myFile.write(myChunkData[numKey])
+                            prevKey = numKey
+                    myFile.close()
 
-                    # done with all bunches, delete directory
-                    os.rmdir(bunchDir)
+                    '''
+                    Error thrown with Example4.zip (corrupted, never reached this point in the code)
+                    ('fileUploadComplete:', u'admin', 'encountered error', OSError(39, 'Directory not empty'))
+                    ERROR: 2020-05-02 18:43:37.523409  User: admin  	Type: fileUploadComplete 	Name: [Errno 39] Directory not empty: 'temp/bunches/557ea9f3-ef0a-4004-847d-047c4c5a3ee7'
+                    '''
 
-                # Get currently loaded chunks from memory
-                myChunkData = chunkStorageDict[myRID]
-                # need to update loop to go from lastBunchEnd onward, can assume all chunks are present TODO 1.3
-                startChunk = bunchedChunkNumDict[myRID]
-                # just run the rest of the list in sorted order, maybe throw an error if a sequence issue shows up
-                if len(myChunkData.keys()) > 0:
-                    myRemKeys = []
-                    for key in myChunkData.keys():
-                        myRemKeys.append(int(key))
-                    prevKey = myRemKeys[0]
-                    myRemKeys = sorted(myRemKeys)
-                    for numKey in myRemKeys:
-                        if numKey < startChunk:
-                            # we have a problem, a chunk was never written to bunch, so this file will be corrupted
-                            raise Exception("Chunk start error")
-                        if prevKey != myRemKeys[0] and prevKey+1 != numKey:
-                            # we have a different problem, non-sequential sequence of chunks (file will be corrupted)
-                            raise Exception("Chunk sequencing error")
-                        # safe to write
-                        myFile.write(myChunkData[numKey])
-                        prevKey = numKey
-                myFile.close()
-                '''
-                for chunk in myChunkData:
-                    myFile.write(chunk)
-                myFile.close()
-                '''
-                debug(request.user.username, "finished a file upload:", myFullPath)
+                    '''
+                    for chunk in myChunkData:
+                        myFile.write(chunk)
+                    myFile.close()
+                    '''
+                    debug(request.user.username, "finished a file upload:", myFullPath)
 
-    except Exception as e:
-        debug("fileUploadComplete:", request.user.username, "encountered error", e)
-        errorLog(request, "fileUploadComplete", e)
-        retDict['error'] = e
-    res = json.dumps(retDict)
-    return HttpResponse(res, content_type='application/json')
+        except Exception as e:
+            debug("fileUploadComplete:", request.user.username, "encountered error", e)
+            errorLog(request, "fileUploadComplete", e)
+            retDict['error'] = e
+        bunchLock.release()
+        res = json.dumps(retDict)
+        return HttpResponse(res, content_type='application/json')
