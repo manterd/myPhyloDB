@@ -12,6 +12,8 @@ from database.models import Kingdom, Phyla, Class, Order, Family, Genus, Species
 
 import functions
 
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 LOG_FILENAME = 'error_log.txt'
 pd.set_option('display.max_colwidth', -1)
@@ -20,6 +22,7 @@ pd.set_option('display.max_colwidth', -1)
 def getSPLS(request, stops, RID, PID):
     try:
         while True:
+            if request.is_ajax():
                 allJson = request.body.split('&')[0]
                 all = json.loads(allJson)
                 functions.setBase(RID, 'Step 1 of 6: Reading normalized data file...')
@@ -42,6 +45,7 @@ def getSPLS(request, stops, RID, PID):
                 savedDF, metaDF, finalSampleIDs, catFields, remCatFields, quantFields, catValues, quantValues = functions.getMetaDF(request.user, metaValsCat, metaIDsCat, metaValsQuant, metaIDsQuant, DepVar)
                 allFields = catFields + quantFields
 
+                print "ok"
                 if not finalSampleIDs:
                     error = "No valid samples were contained in your final dataset.\nPlease select different variable(s)."
                     myDict = {'error': error}
@@ -123,12 +127,14 @@ def getSPLS(request, stops, RID, PID):
                 filterData = all['filterData']
                 filterPer = int(all['filterPer'])
                 filterMeth = int(all['filterMeth'])
+                remMito = all['remMito']
+                remChloro = all['remChloro']
                 mapTaxa = 'no'
 
                 finalDF = pd.DataFrame()
                 if treeType == 1:
                     if selectAll != 8:
-                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remZeroes, perZeroes, filterData, filterPer, filterMeth)
+                        filteredDF = functions.filterDF(savedDF, DepVar, selectAll, remUnclass, remMito, remChloro, remZeroes, perZeroes, filterData, filterPer, filterMeth)
                     else:
                         filteredDF = savedDF.copy()
 
